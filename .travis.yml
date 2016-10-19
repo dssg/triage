@@ -4,6 +4,14 @@ python: 3.5
 notifications:
   email: false
 
+services:
+  - postgresql
+addons:
+  postgresql: "9.4"
+before_script:
+  - psql -U postgres -c "create extension postgis"
+
+
 env:
   - TOXENV=py35
   - TOXENV=py34
