@@ -8,7 +8,7 @@ env:
   - TOXENV=py33
   - TOXENV=py27
   - TOXENV=py26
-  - TOXENV=pypy
+  - TOXENV=flake8
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install -U tox
