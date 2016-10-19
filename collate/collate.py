@@ -42,7 +42,7 @@ class Aggregate(object):
         Args:
             quantity: an SQL string expression for the quantity to aggregate
             function: an SQL aggregate function
-            name: a name for the quantity, usd in the aggregate column name
+            name: a name for the quantity, used in the aggregate column name
 
         Note that quantity and function can also be collections of the above,
         in which case the cross product of those is used. If quantity is a
@@ -135,8 +135,8 @@ class SpacetimeAggregation(object):
         queries = []
 
         for date in self.dates:
-            columns = chain(*(
-                    self._get_aggregates_sql(i, date) for i in self.intervals))
+            columns = list(chain(*(
+                    self._get_aggregates_sql(i, date) for i in self.intervals)))
             where = "{date_column} < '{date}'".format(
                     date_column=self.date_column, date=date)
             queries.append(Select(columns, self.table, where, self.groupby))
