@@ -54,7 +54,7 @@ class Aggregate(object):
         if name is not None:
             self.quantity_names = make_list(name)
             if len(self.quantity_names) != len(self.quantities):
-                raise ValueError("Name length doesn't match quantitie length")
+                raise ValueError("Name length doesn't match quantity length")
         else:
             self.quantity_names = map(str, self.quantities)
 
