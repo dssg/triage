@@ -91,8 +91,8 @@ class SpacetimeAggregation(object):
         """
         Args:
             aggregates: collection of Aggregate objects
-            intervals: collection of PostgreSQL time interval strings,
-                e.g. ["1 month', "1 year"]
+            intervals: collection of PostgreSQL time interval strings, or "all"
+                e.g. ["1 month', "1 year", "all"]
             table: name of table (or SQL subquery) to select from
             groupby: SQL group by clause
             dates: list of PostgreSQL date strings,
@@ -114,12 +114,16 @@ class SpacetimeAggregation(object):
         """
         Helper for getting aggregates sql
         Args:
-            interval: SQL time interval string
+            interval: SQL time interval string, or "all"
             date: SQL date string
         Returns: collection of aggregate column SQL strings
         """
-        when = "'{date}' - {date_column} < interval '{interval}'".format(
-                interval=interval, date=date, date_column=self.date_column)
+        if interval != 'all':
+            when = "'{date}' - {date_column} < interval '{interval}'".format(
+                    interval=interval, date=date, date_column=self.date_column)
+        else:
+            when = None
+
         prefix = "{prefix}_{groupby}_{interval}_".format(
                 prefix=self.prefix, interval=interval.replace(' ', ''),
                 groupby=self.groupby)
@@ -135,8 +139,8 @@ class SpacetimeAggregation(object):
         queries = []
 
         for date in self.dates:
-            columns = list(chain(*(
-                    self._get_aggregates_sql(i, date) for i in self.intervals)))
+            columns = list(chain(*(self._get_aggregates_sql(i, date)
+                                   for i in self.intervals)))
             where = "{date_column} < '{date}'".format(
                     date_column=self.date_column, date=date)
             queries.append(Select(columns, self.table, where, self.groupby))
