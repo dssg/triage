@@ -92,7 +92,7 @@ class SpacetimeAggregation(object):
         Args:
             aggregates: collection of Aggregate objects
             intervals: collection of PostgreSQL time interval strings, or "all"
-                e.g. ["1 month', "1 year", "all"]
+                e.g. ["1 month", "1 year", "all"]
             table: name of table (or SQL subquery) to select from
             groupby: SQL group by clause
             dates: list of PostgreSQL date strings,
@@ -105,10 +105,8 @@ class SpacetimeAggregation(object):
         self.table = table
         self.groupby = groupby
         self.dates = dates
-        if prefix is None:
-            self.prefix = table
-        if date_column is None:
-            self.date_column = "date"
+        self.prefix = prefix if prefix else table
+        self.date_column = date_column if date_column else "date"
 
     def _get_aggregates_sql(self, interval, date):
         """
