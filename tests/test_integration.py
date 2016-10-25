@@ -25,9 +25,9 @@ def test_simple_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         intervals = ["1 year", "2 years", "all"],
-        table = 'food_inspections',
-        groupby = '"License #"',
+        from_obj = 'food_inspections',
+        group_by = '"License #"',
         dates = ['2016-08-31'],
         date_column = '"Inspection Date"')
     for sel in st.get_queries():
-        engine.execute(sel.get_sql()) # Just test that we can execute the query
+        engine.execute(sel) # Just test that we can execute the query
