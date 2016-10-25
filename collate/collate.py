@@ -30,7 +30,7 @@ class Aggregate(object):
             if len(self.quantity_names) != len(self.quantities):
                 raise ValueError("Name length doesn't match quantity length")
         else:
-            self.quantity_names = map(str, self.quantities)
+            self.quantity_names = [x.replace('"', '') for x in self.quantities]
 
     def get_columns(self, when=None, prefix=None):
         """
@@ -88,10 +88,8 @@ class SpacetimeAggregation(object):
         self.from_obj = from_obj
         self.group_by = group_by
         self.dates = dates
-        if prefix is None:
-            self.prefix = str(from_obj)
-        if date_column is None:
-            self.date_column = "date"
+        self.prefix = prefix if prefix else str(from_obj)
+        self.date_column = date_column if date_column else "date"
 
     def _get_aggregates_sql(self, interval, date):
         """
@@ -102,7 +100,7 @@ class SpacetimeAggregation(object):
         Returns: collection of aggregate column SQL strings
         """
         if interval != 'all':
-            when = "'{date}' - {date_column} < interval '{interval}'".format(
+            when = "'{date}' < {date_column} + interval '{interval}'".format(
                     interval=interval, date=date, date_column=self.date_column)
         else:
             when = None
