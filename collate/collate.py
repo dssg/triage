@@ -2,8 +2,10 @@
 from itertools import product, chain
 from sqlalchemy.sql.expression import select, literal_column
 
+
 def make_list(a):
         return [a] if not type(a) in (list, tuple) else list(a)
+
 
 class Aggregate(object):
     """
@@ -49,10 +51,14 @@ class Aggregate(object):
             column_template = ("{function}(CASE WHEN {when} "
                                "THEN {quantity} END)")
 
+        format_kwargs = dict(prefix=prefix, when=when)
+
         for function, (quantity, quantity_name) in product(
-                self.functions, zip(self.quantities,self.quantity_names)):
-            column = column_template.format(function=function, quantity=quantity, when=when)
-            name = name_template.format(prefix=prefix, function=function, quantity_name=quantity_name)
+                self.functions, zip(self.quantities, self.quantity_names)):
+            format_kwargs.update(quantity=quantity, function=function,
+                                 quantity_name=quantity_name)
+            column = column_template.format(**format_kwargs)
+            name = name_template.format(**format_kwargs)
 
             yield literal_column(column).label(name)
 
@@ -70,10 +76,11 @@ class SpacetimeAggregation(object):
             dates: list of PostgreSQL date strings,
                 e.g. ["2012-01-01", "2013-01-01"]
             prefix: name of prefix for column names, defaults to from_obj
-            date_column: name of date column in the from_obj, defaults to "date"
+            date_column: name of date column in from_obj, defaults to "date"
 
-        The from_obj and group_by arguments are passed directly to the SQLAlchemy
-            Select object so could be anything supported there. For details see:
+        The from_obj and group_by arguments are passed directly to the
+            SQLAlchemy Select object so could be anything supported there.
+            For details see:
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
         self.aggregates = aggregates
@@ -119,8 +126,8 @@ class SpacetimeAggregation(object):
                                    for i in self.intervals)))
             where = "{date_column} < '{date}'".format(
                     date_column=self.date_column, date=date)
-            queries.append(select(columns=columns, from_obj=self.from_obj)\
-                    .where(where)\
-                    .group_by(self.group_by))
+            queries.append(select(columns=columns, from_obj=self.from_obj)
+                                 .where(where)
+                                 .group_by(self.group_by))
 
         return queries
