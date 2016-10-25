@@ -1,9 +1,29 @@
 # -*- coding: utf-8 -*-
+import re
+from collections import defaultdict
 from itertools import product, chain
 
 
 def make_list(a):
-        return [a] if not type(a) in (list, tuple) else list(a)
+    return [a] if not type(a) in (list, tuple) else list(a)
+
+
+def clean_column_name(c):
+    # preserve some important characters, defaulting to _
+    replace_dict = defaultdict(lambda: '_', {
+        '=': 'e',
+        '!': 'n',
+        '>': 'gt',
+        '<': 'lt',
+        '~': 'sim',
+        "'": '',
+        '"': ''})
+    return re.sub('\W', lambda m: replace_dict[m.group(0)], c)
+
+
+def create_column(quantity_template, name_template, **kwargs):
+    return (quantity_template.format(**kwargs) +
+            ' AS ' + clean_column_name(name_template.format(**kwargs)))
 
 
 class Select(object):
@@ -75,13 +95,12 @@ class Aggregate(object):
             quantity_template = ("{function}(CASE WHEN {when} "
                                  "THEN {quantity} END)")
 
-        template = "%s AS %s" % (quantity_template, name_template)
-
         args = product(self.functions, zip(self.quantities,
                                            self.quantity_names))
-        return [template.format(function=function, quantity=quantity,
-                                when=when, quantity_name=quantity_name,
-                                prefix=prefix)
+        return [create_column(quantity_template, name_template,
+                              function=function, quantity=quantity,
+                              when=when, quantity_name=quantity_name,
+                              prefix=prefix)
                 for function, (quantity, quantity_name) in args]
 
 
