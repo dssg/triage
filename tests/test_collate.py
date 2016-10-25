@@ -5,7 +5,7 @@
 test_collate
 ----------------------------------
 
-Tests for `collate` module.
+Unit tests for `collate` module.
 """
 
 import pytest

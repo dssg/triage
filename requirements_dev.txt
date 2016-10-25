@@ -9,3 +9,6 @@ Sphinx==1.4.8
 cryptography==1.4
 PyYAML==3.11
 pytest==2.9.2
+SQLAlchemy==1.0.12
+psycopg2==2.6.1
+csvkit==0.9.1
