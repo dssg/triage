@@ -17,6 +17,10 @@ collate
      :target: https://pyup.io/repos/github/dssg/collate/
      :alt: Updates
 
+.. image:: https://codecov.io/gh/dssg/collate/branch/master/graph/badge.svg
+	 :target: https://codecov.io/gh/dssg/collate
+	 :alt: Code Coverage
+
 
 Aggregated feature generation made easy.
 
