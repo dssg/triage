@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
-from sqlalchemy.sql.expression import select, ColumnClause, column, literal_column, table
+from sqlalchemy.sql.expression import select, literal_column
 
 def make_list(a):
         return [a] if not type(a) in (list, tuple) else list(a)
