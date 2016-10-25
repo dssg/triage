@@ -56,7 +56,7 @@ class Aggregate(object):
             if len(self.quantity_names) != len(self.quantities):
                 raise ValueError("Name length doesn't match quantity length")
         else:
-            self.quantity_names = map(str, self.quantities)
+            self.quantity_names = [x.replace('"', '') for x in self.quantities]
 
     def get_sql(self, when=None, prefix=None):
         """
@@ -75,7 +75,7 @@ class Aggregate(object):
             quantity_template = ("{function}(CASE WHEN {when} "
                                  "THEN {quantity} END)")
 
-        template = "%s AS %s" % (quantity_template, name_template)
+        template = '%s AS "%s"' % (quantity_template, name_template)
 
         args = product(self.functions, zip(self.quantities,
                                            self.quantity_names))
@@ -124,7 +124,7 @@ class SpacetimeAggregation(object):
 
         prefix = "{prefix}_{groupby}_{interval}_".format(
                 prefix=self.prefix, interval=interval.replace(' ', ''),
-                groupby=self.groupby)
+                groupby=self.groupby.replace('"', ''))
 
         return chain(*[a.get_sql(when, prefix) for a in self.aggregates])
 
