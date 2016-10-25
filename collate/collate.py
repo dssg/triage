@@ -145,7 +145,7 @@ class SpacetimeAggregation(object):
                 prefix=self.prefix, interval=interval.replace(' ', ''),
                 groupby=self.groupby)
 
-        return chain(*(a.get_sql(when, prefix) for a in self.aggregates))
+        return chain(*[a.get_sql(when, prefix) for a in self.aggregates])
 
     def get_queries(self):
         """
@@ -156,8 +156,8 @@ class SpacetimeAggregation(object):
         queries = []
 
         for date in self.dates:
-            columns = list(chain(*(self._get_aggregates_sql(i, date)
-                                   for i in self.intervals)))
+            columns = list(chain(*[self._get_aggregates_sql(i, date)
+                                   for i in self.intervals]))
             where = "{date_column} < '{date}'".format(
                     date_column=self.date_column, date=date)
             queries.append(Select(columns, self.table, where, self.groupby))
