@@ -125,7 +125,7 @@ class SpacetimeAggregation(object):
             where = "{date_column} < '{date}'".format(
                     date_column=self.date_column, date=date)
             queries.append(select(columns=columns, from_obj=self.from_obj)
-                                 .where(where)
-                                 .group_by(self.group_by))
+                           .where(where)
+                           .group_by(self.group_by))
 
         return queries
