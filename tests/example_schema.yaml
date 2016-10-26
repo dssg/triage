@@ -1,0 +1,44 @@
+---
+entities:
+    -
+        name: house
+        attributes:
+            siding: str
+            construction_year: int
+    -
+        name: kid
+        attributes:
+            age: int
+    -
+        name: insurance_policy
+        attributes:
+            deductible: bool
+    -
+        name: address
+        attributes:
+            street_address: str
+
+relationships:
+    -
+        name: residency
+        entity_one: house
+        entity_two: kid
+        type: m2m
+        temporal: True
+    -
+        entity_one: house
+        entity_two: insurance_policy
+        type: o2m
+        temporal: True
+    -
+        entity_one: house
+        entity_two: address
+        type: o2m
+events:
+    -
+        name: inspection
+        entity: house
+        attributes:
+            result: bool
+primary_entity: kid
+outcome_variable: lead_level
