@@ -25,6 +25,8 @@ install: pip install -r requirements_dev.txt
 # command to run tests, e.g. python setup.py test
 script: tox -e ${TOXENV}
 
+after_success: codecov
+
 # Automatically push tags to PyPI
 deploy:
   provider: pypi
