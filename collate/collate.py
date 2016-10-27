@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
-from sqlalchemy.sql.expression import select, literal_column
+import sqlalchemy.sql.expression as ex
 
 
 def make_list(a):
-        return [a] if not type(a) in (list, tuple) else list(a)
+    return [a] if not type(a) in (list, tuple) else list(a)
+
+
+def make_sql_clause(s, constructor):
+    if not isinstance(s, ex.ClauseElement):
+        return constructor(s)
+    else:
+        return s
 
 
 class Aggregate(object):
@@ -60,7 +67,7 @@ class Aggregate(object):
             column = column_template.format(**format_kwargs)
             name = name_template.format(**format_kwargs)
 
-            yield literal_column(column).label(name)
+            yield ex.literal_column(column).label(name)
 
 
 class SpacetimeAggregation(object):
@@ -85,8 +92,8 @@ class SpacetimeAggregation(object):
         """
         self.aggregates = aggregates
         self.intervals = intervals
-        self.from_obj = from_obj
-        self.group_by = group_by
+        self.from_obj = make_sql_clause(from_obj, ex.table)
+        self.group_by = make_sql_clause(group_by, ex.literal_column)
         self.dates = dates
         self.prefix = prefix if prefix else str(from_obj)
         self.date_column = date_column if date_column else "date"
@@ -122,9 +129,9 @@ class SpacetimeAggregation(object):
         for date in self.dates:
             columns = list(chain(*(self._get_aggregates_sql(i, date)
                                    for i in self.intervals)))
-            where = "{date_column} < '{date}'".format(
-                    date_column=self.date_column, date=date)
-            queries.append(select(columns=columns, from_obj=self.from_obj)
+            where = ex.text("{date_column} < '{date}'".format(
+                    date_column=self.date_column, date=date))
+            queries.append(ex.select(columns=columns, from_obj=self.from_obj)
                            .where(where)
                            .group_by(self.group_by))
 
