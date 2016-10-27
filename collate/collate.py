@@ -1,36 +1,17 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
+import sqlalchemy.sql.expression as ex
 
 
 def make_list(a):
-        return [a] if not type(a) in (list, tuple) else list(a)
+    return [a] if not type(a) in (list, tuple) else list(a)
 
 
-class Select(object):
-    """
-    Simple SQL select query string builder
-    """
-    def __init__(self, columns, table, where, groupby):
-        """
-        Args:
-            columns: collection of SQL column strings
-            table: source table or SQL query from which to select
-            where: SQL where clause
-            groupby: SQL group-by clause
-        """
-        self.columns = columns
-        self.table = table
-        self.where = where
-        self.groupby = groupby
-
-    def get_sql(self):
-        columns = str.join(',\n    ', self.columns)
-        return ("SELECT {columns}\n"
-                "FROM {table}\n"
-                "WHERE {where}\n"
-                "GROUP BY {groupby}".format(
-                    columns=columns, table=self.table,
-                    where=self.where, groupby=self.groupby))
+def make_sql_clause(s, constructor):
+    if not isinstance(s, ex.ClauseElement):
+        return constructor(s)
+    else:
+        return s
 
 
 class Aggregate(object):
@@ -58,54 +39,63 @@ class Aggregate(object):
         else:
             self.quantity_names = [x.replace('"', '') for x in self.quantities]
 
-    def get_sql(self, when=None, prefix=None):
+    def get_columns(self, when=None, prefix=None):
         """
         Args:
             when: used in a case statement to filter the rows going into the
                 aggregation function
             prefix: prefix for column names
+        Returns:
+            collection of SQLAlchemy columns
         """
         if prefix is None:
             prefix = ""
 
         name_template = "{prefix}{quantity_name}_{function}"
         if when is None:
-            quantity_template = "{function}({quantity})"
+            column_template = "{function}({quantity})"
         else:
-            quantity_template = ("{function}(CASE WHEN {when} "
-                                 "THEN {quantity} END)")
+            column_template = ("{function}(CASE WHEN {when} "
+                               "THEN {quantity} END)")
 
-        template = '%s AS "%s"' % (quantity_template, name_template)
+        format_kwargs = dict(prefix=prefix, when=when)
 
-        args = product(self.functions, zip(self.quantities,
-                                           self.quantity_names))
-        return [template.format(function=function, quantity=quantity,
-                                when=when, quantity_name=quantity_name,
-                                prefix=prefix)
-                for function, (quantity, quantity_name) in args]
+        for function, (quantity, quantity_name) in product(
+                self.functions, zip(self.quantities, self.quantity_names)):
+            format_kwargs.update(quantity=quantity, function=function,
+                                 quantity_name=quantity_name)
+            column = column_template.format(**format_kwargs)
+            name = name_template.format(**format_kwargs)
+
+            yield ex.literal_column(column).label(name)
 
 
 class SpacetimeAggregation(object):
-    def __init__(self, aggregates, intervals, table, groupby, dates,
+    def __init__(self, aggregates, intervals, from_obj, group_by, dates,
                  prefix=None, date_column=None):
         """
         Args:
             aggregates: collection of Aggregate objects
             intervals: collection of PostgreSQL time interval strings, or "all"
-                e.g. ["1 month", "1 year", "all"]
-            table: name of table (or SQL subquery) to select from
-            groupby: SQL group by clause
+                e.g. ["1 month', "1 year", "all"]
+            from_obj: defines the from clause, e.g. the name of the table
+            group_by: defines the groupby, e.g. the name of a column
             dates: list of PostgreSQL date strings,
                 e.g. ["2012-01-01", "2013-01-01"]
-            prefix: name of prefix for column names, defaults to table
-            date_column: name of date column in the table, defaults to "date"
+            prefix: name of prefix for column names, defaults to from_obj
+            date_column: name of date column in from_obj, defaults to "date"
+
+        The from_obj and group_by arguments are passed directly to the
+            SQLAlchemy Select object so could be anything supported there.
+            For details see:
+            http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
         self.aggregates = aggregates
         self.intervals = intervals
-        self.table = table
-        self.groupby = groupby
+        self.from_obj = make_sql_clause(from_obj, ex.table)
+        self.group_by = make_sql_clause(group_by, ex.literal_column)
         self.dates = dates
-        self.prefix = prefix if prefix else table
+        self.prefix = prefix if prefix else str(from_obj)
         self.date_column = date_column if date_column else "date"
 
     def _get_aggregates_sql(self, interval, date):
@@ -122,25 +112,27 @@ class SpacetimeAggregation(object):
         else:
             when = None
 
-        prefix = "{prefix}_{groupby}_{interval}_".format(
+        prefix = "{prefix}_{group_by}_{interval}_".format(
                 prefix=self.prefix, interval=interval.replace(' ', ''),
-                groupby=self.groupby.replace('"', ''))
+                group_by=self.group_by)
 
-        return chain(*(a.get_sql(when, prefix) for a in self.aggregates))
+        return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
 
     def get_queries(self):
         """
         Constructs select queries for this aggregation
 
-        Returns: one Select object for each date
+        Returns: one SQLAlchemy Select query object per date
         """
         queries = []
 
         for date in self.dates:
             columns = list(chain(*(self._get_aggregates_sql(i, date)
                                    for i in self.intervals)))
-            where = "{date_column} < '{date}'".format(
-                    date_column=self.date_column, date=date)
-            queries.append(Select(columns, self.table, where, self.groupby))
+            where = ex.text("{date_column} < '{date}'".format(
+                    date_column=self.date_column, date=date))
+            queries.append(ex.select(columns=columns, from_obj=self.from_obj)
+                           .where(where)
+                           .group_by(self.group_by))
 
         return queries
