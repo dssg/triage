@@ -93,9 +93,7 @@ class SpacetimeAggregation(object):
         """
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.table)
-        self.group_intervals = {
-                make_sql_clause(group_by, ex.literal_column):
-                intervals for group_by, intervals in group_intervals.items()}
+        self.group_intervals = group_intervals
         self.dates = dates
         self.prefix = prefix if prefix else str(from_obj)
         self.date_column = date_column if date_column else "date"
@@ -125,7 +123,9 @@ class SpacetimeAggregation(object):
         """
         Constructs select queries for this aggregation
 
-        Returns: one SQLAlchemy Select query object per date
+        Returns: a dictionary of group_by : queries pairs where
+            group_by are the same keys as group_intervals
+            queries is a list of Select queries, one for each date in dates
         """
         queries = {}
 
@@ -137,9 +137,11 @@ class SpacetimeAggregation(object):
                         for i in intervals)))
                 where = ex.text("{date_column} < '{date}'".format(
                         date_column=self.date_column, date=date))
+
+                gb_clause = make_sql_clause(group_by, ex.literal_column)
                 queries[group_by].append(
                         ex.select(columns=columns, from_obj=self.from_obj)
                           .where(where)
-                          .group_by(group_by))
+                          .group_by(gb_clause))
 
         return queries
