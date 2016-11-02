@@ -71,15 +71,16 @@ class Aggregate(object):
 
 
 class SpacetimeAggregation(object):
-    def __init__(self, aggregates, intervals, from_obj, group_by, dates,
+    def __init__(self, aggregates, group_intervals, from_obj, dates,
                  prefix=None, date_column=None):
         """
         Args:
             aggregates: collection of Aggregate objects
-            intervals: collection of PostgreSQL time interval strings, or "all"
-                e.g. ["1 month', "1 year", "all"]
             from_obj: defines the from clause, e.g. the name of the table
-            group_by: defines the groupby, e.g. the name of a column
+            group_intervals: a dictionary of group_by : intervals pairs where
+                group_by is an expression by which to group and
+                intervals is a collection of datetime intervals, e.g.
+                {"address_id": ["1 month", "1 year]}
             dates: list of PostgreSQL date strings,
                 e.g. ["2012-01-01", "2013-01-01"]
             prefix: name of prefix for column names, defaults to from_obj
@@ -91,19 +92,21 @@ class SpacetimeAggregation(object):
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
         self.aggregates = aggregates
-        self.intervals = intervals
         self.from_obj = make_sql_clause(from_obj, ex.table)
-        self.group_by = make_sql_clause(group_by, ex.literal_column)
+        self.group_intervals = {
+                make_sql_clause(group_by, ex.literal_column):
+                intervals for group_by, intervals in group_intervals.items()}
         self.dates = dates
         self.prefix = prefix if prefix else str(from_obj)
         self.date_column = date_column if date_column else "date"
 
-    def _get_aggregates_sql(self, interval, date):
+    def _get_aggregates_sql(self, interval, date, group_by):
         """
         Helper for getting aggregates sql
         Args:
             interval: SQL time interval string, or "all"
             date: SQL date string
+            group_by: group_by clause, for naming columns
         Returns: collection of aggregate column SQL strings
         """
         if interval != 'all':
@@ -114,7 +117,7 @@ class SpacetimeAggregation(object):
 
         prefix = "{prefix}_{group_by}_{interval}_".format(
                 prefix=self.prefix, interval=interval.replace(' ', ''),
-                group_by=self.group_by)
+                group_by=group_by)
 
         return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
 
@@ -124,15 +127,19 @@ class SpacetimeAggregation(object):
 
         Returns: one SQLAlchemy Select query object per date
         """
-        queries = []
+        queries = {}
 
-        for date in self.dates:
-            columns = list(chain(*(self._get_aggregates_sql(i, date)
-                                   for i in self.intervals)))
-            where = ex.text("{date_column} < '{date}'".format(
-                    date_column=self.date_column, date=date))
-            queries.append(ex.select(columns=columns, from_obj=self.from_obj)
-                           .where(where)
-                           .group_by(self.group_by))
+        for group_by, intervals in self.group_intervals.items():
+            queries[group_by] = []
+            for date in self.dates:
+                columns = list(chain(*(
+                        self._get_aggregates_sql(i, date, group_by)
+                        for i in intervals)))
+                where = ex.text("{date_column} < '{date}'".format(
+                        date_column=self.date_column, date=date))
+                queries[group_by].append(
+                        ex.select(columns=columns, from_obj=self.from_obj)
+                          .where(where)
+                          .group_by(group_by))
 
         return queries

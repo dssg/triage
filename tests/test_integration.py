@@ -25,21 +25,19 @@ def test_engine():
 def test_simple_explicit_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
-        intervals = ["1 year", "2 years", "all"],
         from_obj = ex.table('food_inspections'),
-        group_by = ex.column('License #'),
+        group_intervals = {ex.column('License #') : ["1 year", "2 years", "all"]},
         dates = ['2016-08-31'],
         date_column = '"Inspection Date"')
-    for sel in st.get_queries():
+    for sel in st.get_queries().values()[0]:
         engine.execute(sel) # Just test that we can execute the query
 
 def test_simple_lazy_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
-        intervals = ["1 year", "2 years", "all"],
         from_obj = 'food_inspections',
-        group_by = '"License #"',
+        group_intervals = {'"License #"':["1 year", "2 years", "all"]},
         dates = ['2016-08-31'],
         date_column = '"Inspection Date"')
-    for sel in st.get_queries():
+    for sel in st.get_queries().values()[0]:
         engine.execute(sel) # Just test that we can execute the query
