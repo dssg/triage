@@ -7,7 +7,7 @@ tox==2.4.1
 coverage==4.2
 Sphinx==1.4.8
 cryptography==1.5.3
-PyYAML==3.11
+PyYAML==3.12
 pytest==2.9.2
 SQLAlchemy==1.0.12
 psycopg2==2.6.2
