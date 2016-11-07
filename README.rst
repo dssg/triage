@@ -6,7 +6,7 @@ collate
 .. image:: https://img.shields.io/pypi/v/collate.svg
         :target: https://pypi.python.org/pypi/collate
 
-.. image:: https://img.shields.io/travis/dssg/collate.svg
+.. image:: https://travis-ci.org/dssg/collate.svg?branch=master
         :target: https://travis-ci.org/dssg/collate
 
 .. image:: https://readthedocs.org/projects/collate/badge/?version=latest
