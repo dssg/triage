@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, String, Table, DateTime
+from sqlalchemy import \
+    Boolean, Integer, String, DateTime,\
+    Column, ForeignKey, MetaData, Table
 from inflection import pluralize
 
 coltype_lookup = {
@@ -55,7 +57,6 @@ class InspectionsSchema(object):
         self.metadata = MetaData()
         self._basic_entities(config['entities'])
         self._relationships(config['relationships'])
-        self._events(config['events'])
 
     def _basic_entities(self, entity_config):
         """Create top-level entities
@@ -70,6 +71,10 @@ class InspectionsSchema(object):
                 self.metadata,
                 Column('id', Integer, primary_key=True)
             )
+            if entity.get('event'):
+                self.models[entity_name].append_column(
+                    Column('event_datetime', DateTime, index=True)
+                )
             attach_attributes(self.models[entity_name], entity)
 
     def _relationships(self, relationship_config):
@@ -112,26 +117,10 @@ class InspectionsSchema(object):
                         Column('end_datetime', DateTime, index=True)
                     )
                 else:
-                    self.models[pluralize(relationship['entity_one'])].append_column(
+                    self.models[
+                        pluralize(relationship['entity_one'])
+                    ].append_column(
                         fk_column(relationship['entity_two'])
                     )
             if name in self.models:
                 attach_attributes(self.models[name], relationship)
-
-    def _events(self, event_config):
-        """Create events concerning other entities
-
-        Arguments:
-        event_config -- configuration dict representing the event
-        """
-        for event in event_config:
-            event_entity = event['entity']
-            table_name = pluralize(event['name'])
-            self.models[table_name] = Table(
-                table_name,
-                self.metadata,
-                Column('id', Integer, primary_key=True),
-                fk_column(event_entity),
-                Column('event_datetime', DateTime, index=True)
-            )
-            attach_attributes(self.models[table_name], event)

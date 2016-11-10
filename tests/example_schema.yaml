@@ -17,6 +17,11 @@ entities:
         name: address
         attributes:
             street_address: str
+    -
+        name: inspection
+        event: True
+        attributes:
+            result: bool
 
 relationships:
     -
@@ -34,11 +39,9 @@ relationships:
         entity_one: house
         entity_two: address
         type: o2m
-events:
     -
-        name: inspection
-        entity: house
-        attributes:
-            result: bool
+        entity_one: house
+        entity_two: inspection
+        type: o2m
 primary_entity: kid
 outcome_variable: lead_level
