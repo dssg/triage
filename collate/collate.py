@@ -119,7 +119,7 @@ class SpacetimeAggregation(object):
 
         return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
 
-    def get_queries(self):
+    def get_selects(self):
         """
         Constructs select queries for this aggregation
 
@@ -145,3 +145,28 @@ class SpacetimeAggregation(object):
                           .group_by(gb_clause))
 
         return queries
+
+    def get_creates(self, selects=None):
+        """
+        Construct create queries for this aggregation
+        Args:
+            selects: the dictionary of select queries to use
+                if None, use self.get_selects()
+                this allows you to customize select queries before creation
+
+        Returns:
+            a dictionary of group_by : create pairs where
+                group_by are the same keys as group_intervals
+                create is a CreateTable query
+        """
+        if not selects:
+            selects = self.get_selects()
+
+        creates = {}
+        for group_by, sels in selects.items():
+            iter_sels = iter(sels)
+            creates[group_by] = next(iter_sels)
+            for s in iter_sels:
+                creates[group_by] = creates[group_by].union_all(s)
+
+        return creates
