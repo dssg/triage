@@ -52,11 +52,11 @@ def test_simple_creates():
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
 
-    creates = st.get_creates()
-    drops = st.get_drops()
+    creates, drops, indexes = st.get_creates(), st.get_drops(), st.get_indexes()
     for group in st.groups:
         conn = engine.connect()
         trans = conn.begin()
         conn.execute(drops[group])
         conn.execute(creates[group])
+        conn.execute(indexes[group])
         trans.commit()
