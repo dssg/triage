@@ -15,6 +15,7 @@ entities:
             deductible: bool
     -
         name: address
+        spatial: True
         attributes:
             street_address: str
     -

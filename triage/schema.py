@@ -1,6 +1,7 @@
 from sqlalchemy import \
     Boolean, Integer, String, DateTime,\
     Column, ForeignKey, MetaData, Table
+from geoalchemy2 import Geometry
 from inflection import pluralize
 
 coltype_lookup = {
@@ -74,6 +75,10 @@ class InspectionsSchema(object):
             if entity.get('event'):
                 self.models[entity_name].append_column(
                     Column('event_datetime', DateTime, index=True)
+                )
+            if entity.get('spatial'):
+                self.models[entity_name].append_column(
+                    Column('geom', Geometry())
                 )
             attach_attributes(self.models[entity_name], entity)
 

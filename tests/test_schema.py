@@ -56,3 +56,7 @@ def test_events_pk():
 def test_events_datetime():
     assert 'event_datetime' in schema.models['inspections'].columns.keys()
     assert schema.models['inspections'].columns['event_datetime'].index
+
+
+def test_spatial():
+    assert 'geom' in schema.models['addresses'].columns.keys()
