@@ -154,7 +154,7 @@ class SpacetimeAggregation(object):
         for group, intervals in self.group_intervals.items():
             queries[group] = []
             for date in self.dates:
-                columns = list(chain(*(
+                columns = [group] + list(chain(*(
                         self._get_aggregates_sql(i, date, group)
                         for i in intervals)))
                 where = ex.text("{date_column} < '{date}'".format(
@@ -205,4 +205,16 @@ class SpacetimeAggregation(object):
             drop is a raw drop table query for the corresponding table
         """
         return {group: "DROP TABLE IF EXISTS %s;" % self._get_table_name(group)
+                for group in self.groups}
+
+    def get_create_indexes(self):
+        """
+        Generate drop queries for this aggregation
+
+        Returns: a dictionary of group : index pairs where
+            group are the same keys as group_intervals
+            index is a raw create index query for the corresponding table
+        """
+        return {group: "CREATE INDEX ON %s (%s);" % 
+                (self._get_table_name(group), group)
                 for group in self.groups}
