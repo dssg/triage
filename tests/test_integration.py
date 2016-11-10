@@ -40,6 +40,23 @@ def test_simple_lazy_agg():
         group_intervals = {'"License #"':["1 year", "2 years", "all"]},
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
-    for group_by, sels in st.get_selects().items():
+    for group, sels in st.get_selects().items():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
+
+def test_simple_creates():
+    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    st = collate.SpacetimeAggregation([agg],
+        from_obj = 'food_inspections',
+        group_intervals = {'"License #"':["1 year", "2 years", "all"]},
+        dates = ['2016-08-31', '2015-08-31'],
+        date_column = '"Inspection Date"')
+
+    creates = st.get_creates()
+    drops = st.get_drops()
+    for group in st.groups:
+        conn = engine.connect()
+        trans = conn.begin()
+        conn.execute(drops[group])
+        conn.execute(creates[group])
+        trans.commit()

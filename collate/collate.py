@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
+from sqlalchemy.ext.compiler import compiles
 
 
 def make_list(a):
@@ -12,6 +13,25 @@ def make_sql_clause(s, constructor):
         return constructor(s)
     else:
         return s
+
+
+class CreateTableAs(ex.Executable, ex.ClauseElement):
+
+    def __init__(self, name, query):
+        self.name = name
+        self.query = query
+
+
+@compiles(CreateTableAs)
+def _create_table_as(element, compiler, **kw):
+    return "CREATE TABLE %s AS %s" % (
+        element.name,
+        compiler.process(element.query)
+    )
+
+
+def to_sql_name(name):
+    return name.replace('"', '""')
 
 
 class Aggregate(object):
@@ -77,8 +97,8 @@ class SpacetimeAggregation(object):
         Args:
             aggregates: collection of Aggregate objects
             from_obj: defines the from clause, e.g. the name of the table
-            group_intervals: a dictionary of group_by : intervals pairs where
-                group_by is an expression by which to group and
+            group_intervals: a dictionary of group : intervals pairs where
+                group is an expression by which to group and
                 intervals is a collection of datetime intervals, e.g.
                 {"address_id": ["1 month", "1 year]}
             dates: list of PostgreSQL date strings,
@@ -86,7 +106,7 @@ class SpacetimeAggregation(object):
             prefix: name of prefix for column names, defaults to from_obj
             date_column: name of date column in from_obj, defaults to "date"
 
-        The from_obj and group_by arguments are passed directly to the
+        The from_obj and group arguments are passed directly to the
             SQLAlchemy Select object so could be anything supported there.
             For details see:
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
@@ -94,17 +114,18 @@ class SpacetimeAggregation(object):
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.table)
         self.group_intervals = group_intervals
+        self.groups = group_intervals.keys()
         self.dates = dates
         self.prefix = prefix if prefix else str(from_obj)
         self.date_column = date_column if date_column else "date"
 
-    def _get_aggregates_sql(self, interval, date, group_by):
+    def _get_aggregates_sql(self, interval, date, group):
         """
         Helper for getting aggregates sql
         Args:
             interval: SQL time interval string, or "all"
             date: SQL date string
-            group_by: group_by clause, for naming columns
+            group: group clause, for naming columns
         Returns: collection of aggregate column SQL strings
         """
         if interval != 'all':
@@ -113,9 +134,9 @@ class SpacetimeAggregation(object):
         else:
             when = None
 
-        prefix = "{prefix}_{group_by}_{interval}_".format(
+        prefix = "{prefix}_{group}_{interval}_".format(
                 prefix=self.prefix, interval=interval.replace(' ', ''),
-                group_by=group_by)
+                group=group)
 
         return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
 
@@ -123,28 +144,34 @@ class SpacetimeAggregation(object):
         """
         Constructs select queries for this aggregation
 
-        Returns: a dictionary of group_by : queries pairs where
-            group_by are the same keys as group_intervals
+        Returns: a dictionary of group : queries pairs where
+            group are the same keys as group_intervals
             queries is a list of Select queries, one for each date in dates
         """
         queries = {}
 
-        for group_by, intervals in self.group_intervals.items():
-            queries[group_by] = []
+        for group, intervals in self.group_intervals.items():
+            queries[group] = []
             for date in self.dates:
                 columns = list(chain(*(
-                        self._get_aggregates_sql(i, date, group_by)
+                        self._get_aggregates_sql(i, date, group)
                         for i in intervals)))
                 where = ex.text("{date_column} < '{date}'".format(
                         date_column=self.date_column, date=date))
 
-                gb_clause = make_sql_clause(group_by, ex.literal_column)
-                queries[group_by].append(
+                gb_clause = make_sql_clause(group, ex.literal_column)
+                queries[group].append(
                         ex.select(columns=columns, from_obj=self.from_obj)
                           .where(where)
                           .group_by(gb_clause))
 
         return queries
+
+    def _get_table_name(self, group):
+        """
+        Returns name for table for the given group
+        """
+        return '"%s"' % to_sql_name("%s_%s" % (self.prefix, group))
 
     def get_creates(self, selects=None):
         """
@@ -155,18 +182,26 @@ class SpacetimeAggregation(object):
                 this allows you to customize select queries before creation
 
         Returns:
-            a dictionary of group_by : create pairs where
-                group_by are the same keys as group_intervals
-                create is a CreateTable query
+            a dictionary of group : create pairs where
+                group are the same keys as group_intervals
+                create is a CreateTableAs object
         """
         if not selects:
             selects = self.get_selects()
 
-        creates = {}
-        for group_by, sels in selects.items():
-            iter_sels = iter(sels)
-            creates[group_by] = next(iter_sels)
-            for s in iter_sels:
-                creates[group_by] = creates[group_by].union_all(s)
+        selects = {group: reduce(lambda s, t: s.union_all(t), sels)
+                   for group, sels in selects.items()}
 
-        return creates
+        return {group: CreateTableAs(self._get_table_name(group), select)
+                for group, select in selects.items()}
+
+    def get_drops(self):
+        """
+        Generate drop queries for this aggregation
+
+        Returns: a dictionary of group : drop pairs where
+            group are the same keys as group_intervals
+            drop is a raw drop table query for the corresponding table
+        """
+        return {group: "DROP TABLE IF EXISTS %s;" % self._get_table_name(group)
+                for group in self.groups}
