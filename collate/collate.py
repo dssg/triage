@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
+from functools import reduce
 import sqlalchemy.sql.expression as ex
 from sqlalchemy.ext.compiler import compiles
 
