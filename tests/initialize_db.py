@@ -12,3 +12,4 @@ with open("config/database.yml") as f:
 system("""psql -c "DROP TABLE IF EXISTS food_inspections;" """)
 system("""csvsql --no-constraints --table food_inspections < food_inspections_subset.csv | psql """)
 system("""psql -c "\copy food_inspections FROM 'food_inspections_subset.csv' WITH CSV HEADER;" """)
+system("""psql -c 'CREATE TABLE licenses AS (select \"License #\", \"Zip\" from food_inspections group by 1,2)' """)

@@ -26,7 +26,8 @@ def test_simple_explicit_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = ex.table('food_inspections'),
-        group_intervals = {ex.column('License #') : ["1 year", "2 years", "all"]},
+        group_intervals = {ex.column('License #') : ["1 year", "2 years", "all"],
+                           ex.column('Zip') : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
     for group_by, sels in st.get_selects().items():
@@ -37,7 +38,8 @@ def test_simple_lazy_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
-        group_intervals = {'"License #"':["1 year", "2 years", "all"]},
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
     for group, sels in st.get_selects().items():
@@ -48,15 +50,38 @@ def test_simple_creates():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
-        group_intervals = {'"License #"':["1 year", "2 years", "all"]},
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
 
     creates, drops, indexes = st.get_creates(), st.get_drops(), st.get_indexes()
+    conn = engine.connect()
+    trans = conn.begin()
     for group in st.groups:
-        conn = engine.connect()
-        trans = conn.begin()
         conn.execute(drops[group])
         conn.execute(creates[group])
         conn.execute(indexes[group])
-        trans.commit()
+    trans.commit()
+
+def test_simple_creates():
+    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    st = collate.SpacetimeAggregation([agg],
+        from_obj = 'food_inspections',
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
+        dates = ['2016-08-31', '2015-08-31'],
+        date_column = '"Inspection Date"')
+
+    creates, drops, indexes = st.get_creates(), st.get_drops(), st.get_indexes()
+
+    conn = engine.connect()
+    trans = conn.begin()
+    for group in st.groups:
+        conn.execute(drops[group])
+        conn.execute(creates[group])
+        conn.execute(indexes[group])
+
+    conn.execute(st.get_drop())
+    conn.execute(st.get_create('licenses'))
+    trans.commit()
