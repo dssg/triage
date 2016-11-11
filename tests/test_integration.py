@@ -83,5 +83,5 @@ def test_simple_creates():
         conn.execute(indexes[group])
 
     conn.execute(st.get_drop())
-    conn.execute(st.get_create('licenses'))
+    conn.execute(st.get_create())
     trans.commit()

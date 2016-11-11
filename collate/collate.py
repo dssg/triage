@@ -224,20 +224,29 @@ class SpacetimeAggregation(object):
                 (self._get_table_name(group), group, "date")
                 for group in self.groups}
 
-    def get_create(self, join_table):
+    def get_join_table(self):
         """
-        Generate a single aggregation table by joining together the results of
-            get_creates()
+        Generate a query for a join table
+        """
+        return ex.Select(columns=self.groups, from_obj=self.from_obj)\
+                 .group_by(*self.groups)
 
-        Returns: a CreateTableAs object
+    def get_create(self, join_table=None):
         """
+        Generate a single aggregation table creation query by joining
+            together the results of get_creates()
+        Returns: a CREATE TABLE AS query
+        """
+        if not join_table:
+            join_table = '(%s) t1' % self.get_join_table()
+
         name = "%s_%s" % (self.prefix, self.suffix)
 
-        query = ("SELECT * FROM %s "
-                 "CROSS JOIN (select unnest('{%s}'::date[]) as date) t\n") % (
+        query = ("SELECT * FROM %s\n"
+                 "CROSS JOIN (select unnest('{%s}'::date[]) as date) t2\n") % (
                 join_table, str.join(',', self.dates))
         for group in self.groups:
-            query += "JOIN %s USING (%s, date)" % (
+            query += "LEFT JOIN %s USING (%s, date)" % (
                     self._get_table_name(group), group)
 
         return "CREATE TABLE %s AS (%s);" % (name, query)
