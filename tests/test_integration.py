@@ -22,7 +22,7 @@ engine = sqlalchemy.create_engine('postgres://', connect_args=config)
 def test_engine():
     assert len(engine.execute("SELECT * FROM food_inspections").fetchall()) == 966
 
-def test_simple_explicit_agg():
+def test_explicit_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = ex.table('food_inspections'),
@@ -34,7 +34,7 @@ def test_simple_explicit_agg():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
 
-def test_simple_lazy_agg():
+def test_lazy_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
@@ -46,7 +46,7 @@ def test_simple_lazy_agg():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
 
-def test_simple_creates():
+def test_creates():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
@@ -64,7 +64,7 @@ def test_simple_creates():
         conn.execute(indexes[group])
     trans.commit()
 
-def test_simple_create():
+def test_execute():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',

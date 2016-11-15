@@ -39,7 +39,7 @@ class Aggregate(object):
     """
     An object representing one or more SQL aggregate columns in a groupby
     """
-    def __init__(self, quantity, function):
+    def __init__(self, quantity, function, order=None):
         """
         Args:
             quantity: an SQL string expression for the quantity to aggregate
@@ -57,6 +57,7 @@ class Aggregate(object):
         else:
             self.quantities = {to_sql_name(q): q for q in make_list(quantity)}
         self.functions = make_list(function)
+        self.orders = make_list(order)
 
     def get_columns(self, when=None, prefix=None):
         """
@@ -71,18 +72,28 @@ class Aggregate(object):
             prefix = ""
 
         name_template = "{prefix}{quantity_name}_{function}"
-        if when is None:
-            column_template = "{function}({quantity})"
+
+        if self.orders == [None]:
+            if when is None:
+                column_template = "{function}({quantity})"
+            else:
+                column_template = ("{function}(CASE WHEN {when} "
+                                   "THEN {quantity} END)")
         else:
-            column_template = ("{function}(CASE WHEN {when} "
-                               "THEN {quantity} END)")
+            if when is None:
+                column_template = ("{function}({quantity}) "
+                                   "WITHIN GROUP (ORDER BY {order})")
+            else:
+                column_template = ("{function}({quantity}) "
+                                   "WITHIN GROUP (ORDER BY CASE WHEN {when} "
+                                   "THEN {order} END)")
 
         format_kwargs = dict(prefix=prefix, when=when)
 
-        for function, (quantity_name, quantity) in product(
-                self.functions, self.quantities.items()):
+        for function, (quantity_name, quantity), order in product(
+                self.functions, self.quantities.items(), self.orders):
             format_kwargs.update(quantity=quantity, function=function,
-                                 quantity_name=quantity_name)
+                                 quantity_name=quantity_name, order=order)
             column = column_template.format(**format_kwargs)
             name = name_template.format(**format_kwargs)
 

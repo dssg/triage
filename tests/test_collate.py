@@ -9,22 +9,21 @@ Unit tests for `collate` module.
 """
 
 import pytest
-
-
 from collate import collate
 
+def test_aggregate():
+    agg = collate.Aggregate("*", "count")
+    assert str(list(agg.get_columns())[0]) == "count(*)"
 
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
+def test_aggregate_when():
+    agg = collate.Aggregate("1", "count")
+    assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == "count(CASE WHEN date < '2012-01-01' THEN 1 END)"
 
+def test_ordered_aggregate():
+    agg = collate.Aggregate("", "mode", "x")
+    assert str(list(agg.get_columns())[0]) == "mode() WITHIN GROUP (ORDER BY x)"
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument.
-    """
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+def test_ordered_aggregate_when():
+    agg = collate.Aggregate("", "mode", "x")
+    assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == "mode() WITHIN GROUP (ORDER BY CASE WHEN date < '2012-01-01' THEN x END)"
+
