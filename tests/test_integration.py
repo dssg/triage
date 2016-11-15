@@ -64,7 +64,7 @@ def test_simple_creates():
         conn.execute(indexes[group])
     trans.commit()
 
-def test_simple_creates():
+def test_simple_create():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
