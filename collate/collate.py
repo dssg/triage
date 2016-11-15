@@ -44,21 +44,19 @@ class Aggregate(object):
         Args:
             quantity: an SQL string expression for the quantity to aggregate
             function: an SQL aggregate function
-            name: a name for the quantity, used in the aggregate column name
 
         Note that quantity and function can also be collections of the above,
         in which case the cross product of those is used. If quantity is a
         collection than name should also be a collection of the same length.
-        """
-        self.quantities = make_list(quantity)
-        self.functions = make_list(function)
 
-        if name is not None:
-            self.quantity_names = make_list(name)
-            if len(self.quantity_names) != len(self.quantities):
-                raise ValueError("Name length doesn't match quantity length")
+        And quantity can be a dictionary in which case the keys are names
+        for the expressions and values are expressions.
+        """
+        if isinstance(quantity, dict):
+            self.quantities = quantity
         else:
-            self.quantity_names = [x.replace('"', '') for x in self.quantities]
+            self.quantities = {to_sql_name(q): q for q in make_list(quantity)}
+        self.functions = make_list(function)
 
     def get_columns(self, when=None, prefix=None):
         """
@@ -81,8 +79,8 @@ class Aggregate(object):
 
         format_kwargs = dict(prefix=prefix, when=when)
 
-        for function, (quantity, quantity_name) in product(
-                self.functions, zip(self.quantities, self.quantity_names)):
+        for function, (quantity_name, quantity) in product(
+                self.functions, self.quantities.items()):
             format_kwargs.update(quantity=quantity, function=function,
                                  quantity_name=quantity_name)
             column = column_template.format(**format_kwargs)
@@ -138,7 +136,7 @@ class SpacetimeAggregation(object):
             when = None
 
         prefix = "{prefix}_{group}_{interval}_".format(
-                prefix=self.prefix, interval=interval.replace(' ', ''),
+                prefix=self.prefix, interval=interval,
                 group=group)
 
         return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
