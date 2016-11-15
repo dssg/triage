@@ -141,7 +141,7 @@ class SpacetimeAggregation(object):
         Returns: collection of aggregate column SQL strings
         """
         if interval != 'all':
-            when = "'{date}' <= {date_column} + interval '{interval}'".format(
+            when = "{date_column} >= '{date}'::date - interval '{interval}'".format(
                     interval=interval, date=date, date_column=self.date_column)
         else:
             when = None
