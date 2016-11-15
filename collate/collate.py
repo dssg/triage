@@ -266,3 +266,21 @@ class SpacetimeAggregation(object):
         """
         name = "%s_%s" % (self.prefix, self.suffix)
         return "DROP TABLE IF EXISTS %s" % name
+
+    def execute(self, conn):
+        """
+
+        """
+        creates = self.get_creates()
+        drops = self.get_drops()
+        indexes = self.get_indexes()
+
+        trans = conn.begin()
+        for group in self.groups:
+            conn.execute(drops[group])
+            conn.execute(creates[group])
+            conn.execute(indexes[group])
+
+        conn.execute(self.get_drop())
+        conn.execute(self.get_create())
+        trans.commit()

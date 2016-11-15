@@ -73,15 +73,4 @@ def test_simple_create():
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
 
-    creates, drops, indexes = st.get_creates(), st.get_drops(), st.get_indexes()
-
-    conn = engine.connect()
-    trans = conn.begin()
-    for group in st.groups:
-        conn.execute(drops[group])
-        conn.execute(creates[group])
-        conn.execute(indexes[group])
-
-    conn.execute(st.get_drop())
-    conn.execute(st.get_create())
-    trans.commit()
+    st.execute(engine.connect())
