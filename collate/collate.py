@@ -39,7 +39,7 @@ class Aggregate(object):
     """
     An object representing one or more SQL aggregate columns in a groupby
     """
-    def __init__(self, quantity, function, name=None):
+    def __init__(self, quantity, function):
         """
         Args:
             quantity: an SQL string expression for the quantity to aggregate
