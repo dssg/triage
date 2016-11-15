@@ -160,14 +160,24 @@ class SpacetimeAggregation(object):
                 columns += list(chain(*(self._get_aggregates_sql(
                         i, date, group) for i in intervals)))
 
+                # upper bound on date_column by date
                 where = ex.text("{date_column} < '{date}'".format(
                         date_column=self.date_column, date=date))
 
                 gb_clause = make_sql_clause(group, ex.literal_column)
-                queries[group].append(
-                        ex.select(columns=columns, from_obj=self.from_obj)
-                          .where(where)
-                          .group_by(gb_clause))
+                query = ex.select(columns=columns, from_obj=self.from_obj)\
+                          .where(where)\
+                          .group_by(gb_clause)
+
+                if 'all' not in intervals:
+                    greatest = "greatest(%s)" % str.join(",", 
+                            ["interval '%s'" % i for i in intervals])
+                    query = query.where(ex.text(
+                        "{date_column} >= '{date}'::date - {greatest}".format(
+                            date_column=self.date_column, date=date, 
+                            greatest=greatest)))
+
+                queries[group].append(query)
 
         return queries
 
