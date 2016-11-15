@@ -170,11 +170,11 @@ class SpacetimeAggregation(object):
                           .group_by(gb_clause)
 
                 if 'all' not in intervals:
-                    greatest = "greatest(%s)" % str.join(",", 
-                            ["interval '%s'" % i for i in intervals])
+                    greatest = "greatest(%s)" % str.join(
+                            ",", ["interval '%s'" % i for i in intervals])
                     query = query.where(ex.text(
                         "{date_column} >= '{date}'::date - {greatest}".format(
-                            date_column=self.date_column, date=date, 
+                            date_column=self.date_column, date=date,
                             greatest=greatest)))
 
                 queries[group].append(query)
