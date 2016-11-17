@@ -22,24 +22,55 @@ engine = sqlalchemy.create_engine('postgres://', connect_args=config)
 def test_engine():
     assert len(engine.execute("SELECT * FROM food_inspections").fetchall()) == 966
 
-def test_simple_explicit_agg():
+def test_explicit_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
-        intervals = ["1 year", "2 years", "all"],
         from_obj = ex.table('food_inspections'),
-        group_by = ex.column('License #'),
-        dates = ['2016-08-31'],
+        group_intervals = {ex.column('License #') : ["1 year", "2 years", "all"],
+                           ex.column('Zip') : ["1 year"]},
+        dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
-    for sel in st.get_queries():
-        engine.execute(sel) # Just test that we can execute the query
+    for group_by, sels in st.get_selects().items():
+        for sel in sels:
+            engine.execute(sel) # Just test that we can execute the query
 
-def test_simple_lazy_agg():
+def test_lazy_agg():
     agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
     st = collate.SpacetimeAggregation([agg],
-        intervals = ["1 year", "2 years", "all"],
         from_obj = 'food_inspections',
-        group_by = '"License #"',
-        dates = ['2016-08-31'],
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
+        dates = ['2016-08-31', '2015-08-31'],
         date_column = '"Inspection Date"')
-    for sel in st.get_queries():
-        engine.execute(sel) # Just test that we can execute the query
+    for group, sels in st.get_selects().items():
+        for sel in sels:
+            engine.execute(sel) # Just test that we can execute the query
+
+def test_creates():
+    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    st = collate.SpacetimeAggregation([agg],
+        from_obj = 'food_inspections',
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
+        dates = ['2016-08-31', '2015-08-31'],
+        date_column = '"Inspection Date"')
+
+    creates, drops, indexes = st.get_creates(), st.get_drops(), st.get_indexes()
+    conn = engine.connect()
+    trans = conn.begin()
+    for group in st.groups:
+        conn.execute(drops[group])
+        conn.execute(creates[group])
+        conn.execute(indexes[group])
+    trans.commit()
+
+def test_execute():
+    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    st = collate.SpacetimeAggregation([agg],
+        from_obj = 'food_inspections',
+        group_intervals = {'"License #"':["1 year", "2 years", "all"],
+                           '"Zip"' : ["1 year"]},
+        dates = ['2016-08-31', '2015-08-31'],
+        date_column = '"Inspection Date"')
+
+    st.execute(engine.connect())
