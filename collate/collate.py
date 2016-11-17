@@ -8,8 +8,10 @@ from sqlalchemy.ext.compiler import compiles
 def make_list(a):
     return [a] if not isinstance(a, list) else a
 
+
 def make_tuple(a):
     return (a,) if not isinstance(a, tuple) else a
+
 
 def make_sql_clause(s, constructor):
     if not isinstance(s, ex.ClauseElement):
@@ -95,8 +97,8 @@ class Aggregate(object):
 
         for function, (quantity_name, quantity), order in product(
                 self.functions, self.quantities.items(), self.orders):
-            args = str.join(", ", (arg_template.format(when=when, quantity=q) 
-                    for q in make_tuple(quantity)))
+            args = str.join(", ", (arg_template.format(when=when, quantity=q)
+                                   for q in make_tuple(quantity)))
             order_clause = order_template.format(when=when, order=order)
 
             format_kwargs = dict(function=function, args=args, prefix=prefix,
