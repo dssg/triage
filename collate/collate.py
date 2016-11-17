@@ -40,21 +40,23 @@ def to_sql_name(name):
 
 
 class AggregateExpression(object):
-    def __init__(self, aggregates, operator):
+    def __init__(self, aggregates, operator, cast=None):
         self.aggregates = aggregates
         self.operator = operator
+        self.cast = cast if cast else ""
 
     def get_columns(self, when=None, prefix=None):
         if prefix is None:
             prefix = ""
 
-        columns0 = self.aggregates[0].get_columns()
-        columns1 = self.aggregates[1].get_columns()
+        columns0 = self.aggregates[0].get_columns(when)
+        columns1 = self.aggregates[1].get_columns(when)
 
         for c0, c1 in product(columns0, columns1):
-            c = ex.literal_column("({} {} {})".format(c0,self.operator,c1))\
-                  .label("{}{}{}{}".format(prefix, c0.name, self.operator, c1.name))
-            yield c
+            c = ex.literal_column("({}{} {} {})".format(
+                    c0, self.cast, self.operator, c1))
+            yield c.label("{}{}{}{}".format(
+                    prefix, c0.name, self.operator, c1.name))
 
     # TODO: floordiv and truediv for py3
     def __add__(self, other):
@@ -67,8 +69,7 @@ class AggregateExpression(object):
         return AggregateExpression([self, other], "*")
 
     def __div__(self, other):
-        return AggregateExpression([self, other], "/")
-
+        return AggregateExpression([self, other], "/", "*1.0")
 
 
 class Aggregate(AggregateExpression):
