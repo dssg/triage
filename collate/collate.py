@@ -39,7 +39,39 @@ def to_sql_name(name):
     return name.replace('"', '')
 
 
-class Aggregate(object):
+class AggregateExpression(object):
+    def __init__(self, aggregates, operator):
+        self.aggregates = aggregates
+        self.operator = operator
+
+    def get_columns(self, when=None, prefix=None):
+        if prefix is None:
+            prefix = ""
+
+        columns0 = self.aggregates[0].get_columns()
+        columns1 = self.aggregates[1].get_columns()
+
+        for c0, c1 in product(columns0, columns1):
+            c = ex.literal_column("({} {} {})".format(c0,self.operator,c1))\
+                  .label("{}{}{}{}".format(prefix, c0.name, self.operator, c1.name))
+            yield c
+
+    # TODO: floordiv and truediv for py3
+    def __add__(self, other):
+        return AggregateExpression([self, other], "+")
+
+    def __sub__(self, other):
+        return AggregateExpression([self, other], "-")
+
+    def __mul__(self, other):
+        return AggregateExpression([self, other], "*")
+
+    def __div__(self, other):
+        return AggregateExpression([self, other], "/")
+
+
+
+class Aggregate(AggregateExpression):
     """
     An object representing one or more SQL aggregate columns in a groupby
     """

@@ -38,3 +38,10 @@ def test_aggregate_tuple_quantity_when():
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
             "corr(CASE WHEN date < '2012-01-01' THEN x END, "
             "CASE WHEN date < '2012-01-01' THEN y END)")
+
+def test_aggregate_div():
+    n = collate.Aggregate("x", "sum")
+    d = collate.Aggregate("1", "count")
+
+    print list((n/d + d - n).get_columns())[0].name
+
