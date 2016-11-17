@@ -42,6 +42,7 @@ def test_aggregate_tuple_quantity_when():
 def test_aggregate_div():
     n = collate.Aggregate("x", "sum")
     d = collate.Aggregate("1", "count")
+    m = collate.Aggregate("y", "avg")
 
-    print list((n/d + d - n).get_columns())[0].name
+    assert str(list((n/d + m).get_columns())[0]) == "((sum(x)*1.0 / count(1)) + avg(y))"
 
