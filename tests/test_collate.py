@@ -30,11 +30,11 @@ def test_ordered_aggregate_when():
             "mode() WITHIN GROUP (ORDER BY CASE WHEN date < '2012-01-01' THEN x END)")
 
 def test_aggregate_tuple_quantity():
-    agg = collate.Aggregate(("x","y"), "cov")
-    assert str(list(agg.get_columns())[0]) == "cov(x, y)"
+    agg = collate.Aggregate(("x","y"), "corr")
+    assert str(list(agg.get_columns())[0]) == "corr(x, y)"
 
 def test_aggregate_tuple_quantity_when():
-    agg = collate.Aggregate(("x","y"), "cov")
+    agg = collate.Aggregate(("x","y"), "corr")
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
-            "cov(CASE WHEN date < '2012-01-01' THEN x END, "
+            "corr(CASE WHEN date < '2012-01-01' THEN x END, "
             "CASE WHEN date < '2012-01-01' THEN y END)")

@@ -44,15 +44,20 @@ class Aggregate(object):
     def __init__(self, quantity, function, order=None):
         """
         Args:
-            quantity: an SQL string expression for the quantity to aggregate
-            function: an SQL aggregate function
+            quantity: SQL for the quantity to aggregate
+            function: SQL aggregate function
+            order: SQL for order by clause in an ordered set aggregate
 
-        Note that quantity and function can also be collections of the above,
-        in which case the cross product of those is used. If quantity is a
-        collection than name should also be a collection of the same length.
+        Notes:
+            quantity, function, and order can also be lists of the above,
+            in which case the cross product of those is used. If quantity is a
+            collection than name should also be a collection of the same length.
 
-        And quantity can be a dictionary in which case the keys are names
-        for the expressions and values are expressions.
+            quantity can be a tuple of SQL quantities for aggregate functions
+            that take multiple arguments, e.g. corr, regr_slope
+
+            quantity can be a dictionary in which case the keys are names
+            for the expressions and values are expressions.
         """
         if isinstance(quantity, dict):
             self.quantities = quantity
