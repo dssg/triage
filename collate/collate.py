@@ -6,8 +6,10 @@ from sqlalchemy.ext.compiler import compiles
 
 
 def make_list(a):
-    return [a] if not type(a) in (list, tuple) else list(a)
+    return [a] if not isinstance(a, list) else a
 
+def make_tuple(a):
+    return (a,) if not isinstance(a, tuple) else a
 
 def make_sql_clause(s, constructor):
     if not isinstance(s, ex.ClauseElement):
@@ -42,20 +44,29 @@ class Aggregate(object):
     def __init__(self, quantity, function, order=None):
         """
         Args:
-            quantity: an SQL string expression for the quantity to aggregate
-            function: an SQL aggregate function
+            quantity: SQL for the quantity to aggregate
+            function: SQL aggregate function
+            order: SQL for order by clause in an ordered set aggregate
 
-        Note that quantity and function can also be collections of the above,
-        in which case the cross product of those is used. If quantity is a
-        collection than name should also be a collection of the same length.
+        Notes:
+            quantity, function, and order can also be lists of the above,
+            in which case the cross product of those is used. If quantity is a
+            collection than name should also be a collection of the same length.
 
-        And quantity can be a dictionary in which case the keys are names
-        for the expressions and values are expressions.
+            quantity can be a tuple of SQL quantities for aggregate functions
+            that take multiple arguments, e.g. corr, regr_slope
+
+            quantity can be a dictionary in which case the keys are names
+            for the expressions and values are expressions.
         """
         if isinstance(quantity, dict):
             self.quantities = quantity
         else:
-            self.quantities = {to_sql_name(q): q for q in make_list(quantity)}
+            # first convert to list of tuples
+            quantities = [make_tuple(q) for q in make_list(quantity)]
+            # then dict with name keys
+            self.quantities = {to_sql_name(str.join("_", q)): q for q in quantities}
+
         self.functions = make_list(function)
         self.orders = make_list(order)
 
@@ -72,28 +83,26 @@ class Aggregate(object):
             prefix = ""
 
         name_template = "{prefix}{quantity_name}_{function}"
+        column_template = "{function}({args})"
+        arg_template = "{quantity}"
+        order_template = ""
 
-        if self.orders == [None]:
-            if when is None:
-                column_template = "{function}({quantity})"
-            else:
-                column_template = ("{function}(CASE WHEN {when} "
-                                   "THEN {quantity} END)")
-        else:
-            if when is None:
-                column_template = ("{function}({quantity}) "
-                                   "WITHIN GROUP (ORDER BY {order})")
-            else:
-                column_template = ("{function}({quantity}) "
-                                   "WITHIN GROUP (ORDER BY CASE WHEN {when} "
-                                   "THEN {order} END)")
-
-        format_kwargs = dict(prefix=prefix, when=when)
+        if self.orders != [None]:
+            column_template += " WITHIN GROUP (ORDER BY {order_clause})"
+            order_template = "CASE WHEN {when} THEN {order} END" if when else "{order}"
+        elif when:
+            arg_template = "CASE WHEN {when} THEN {quantity} END"
 
         for function, (quantity_name, quantity), order in product(
                 self.functions, self.quantities.items(), self.orders):
-            format_kwargs.update(quantity=quantity, function=function,
-                                 quantity_name=quantity_name, order=order)
+            args = str.join(", ", (arg_template.format(when=when, quantity=q) 
+                    for q in make_tuple(quantity)))
+            order_clause = order_template.format(when=when, order=order)
+
+            format_kwargs = dict(function=function, args=args, prefix=prefix,
+                                 order_clause=order_clause,
+                                 quantity_name=quantity_name)
+
             column = column_template.format(**format_kwargs)
             name = name_template.format(**format_kwargs)
 
