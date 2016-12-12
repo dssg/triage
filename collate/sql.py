@@ -1,6 +1,7 @@
 import sqlalchemy.sql.expression as ex
 from sqlalchemy.ext.compiler import compiles
 
+
 def make_sql_clause(s, constructor):
     if not isinstance(s, ex.ClauseElement):
         return constructor(s)
