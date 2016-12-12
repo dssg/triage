@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
-from sqlalchemy.ext.compiler import compiles
+
+from sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 
 
 def make_list(a):
@@ -10,47 +11,6 @@ def make_list(a):
 
 def make_tuple(a):
     return (a,) if not isinstance(a, tuple) else a
-
-
-def make_sql_clause(s, constructor):
-    if not isinstance(s, ex.ClauseElement):
-        return constructor(s)
-    else:
-        return s
-
-
-class CreateTableAs(ex.Executable, ex.ClauseElement):
-
-    def __init__(self, name, query):
-        self.name = name
-        self.query = query
-
-
-@compiles(CreateTableAs)
-def _create_table_as(element, compiler, **kw):
-    return "CREATE TABLE %s AS %s" % (
-        element.name,
-        compiler.process(element.query)
-    )
-
-
-class InsertFromSelect(ex.Executable, ex.ClauseElement):
-
-    def __init__(self, name, query):
-        self.name = name
-        self.query = query
-
-
-@compiles(InsertFromSelect)
-def _insert_from_select(element, compiler, **kw):
-    return "INSERT INTO %s (%s)" % (
-        element.name,
-        compiler.process(element.query)
-    )
-
-
-def to_sql_name(name):
-    return name.replace('"', '')
 
 
 class Aggregate(object):
@@ -240,7 +200,7 @@ class SpacetimeAggregation(object):
             selects = self.get_selects()
 
         return {group: CreateTableAs(self._get_table_name(group),
-                                     iter(sels).next().limit(0))
+                                     next(iter(sels)).limit(0))
                 for group, sels in selects.items()}
 
     def get_inserts(self, selects=None):
