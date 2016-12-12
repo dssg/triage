@@ -148,7 +148,7 @@ class SpacetimeAggregation(object):
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
         self.aggregates = aggregates
-        self.from_obj = make_sql_clause(from_obj, ex.table)
+        self.from_obj = make_sql_clause(from_obj, ex.text)
         self.group_intervals = group_intervals
         self.groups = group_intervals.keys()
         self.dates = dates
