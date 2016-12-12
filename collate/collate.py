@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
-from functools import reduce
 import sqlalchemy.sql.expression as ex
 from sqlalchemy.ext.compiler import compiles
 
@@ -225,11 +224,9 @@ class SpacetimeAggregation(object):
         if not selects:
             selects = self.get_selects()
 
-        selects = {group: reduce(lambda s, t: s.union_all(t), sels)
-                   for group, sels in selects.items()}
-
-        return {group: CreateTableAs(self._get_table_name(group), select)
-                for group, select in selects.items()}
+        return {group: CreateTableAs(self._get_table_name(group),
+                                     iter(sels).next().limit(0))
+                for group, sels in selects.items()}
 
     def get_drops(self):
         """
