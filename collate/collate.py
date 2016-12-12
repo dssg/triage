@@ -34,6 +34,21 @@ def _create_table_as(element, compiler, **kw):
     )
 
 
+class InsertFromSelect(ex.Executable, ex.ClauseElement):
+
+    def __init__(self, name, query):
+        self.name = name
+        self.query = query
+
+
+@compiles(InsertFromSelect)
+def _insert_from_select(element, compiler, **kw):
+    return "INSERT INTO %s (%s)" % (
+        element.name,
+        compiler.process(element.query)
+    )
+
+
 def to_sql_name(name):
     return name.replace('"', '')
 
@@ -228,6 +243,25 @@ class SpacetimeAggregation(object):
                                      iter(sels).next().limit(0))
                 for group, sels in selects.items()}
 
+    def get_inserts(self, selects=None):
+        """
+        Construct insert queries from this aggregation
+        Args:
+            selects: the dictionary of select queries to use
+                if None, use self.get_selects()
+                this allows you to customize select queries before creation
+
+        Returns:
+            a dictionary of group : inserts pairs where
+                group are the same keys as group_intervals
+                inserts is a list of InsertFromSelect objects
+        """
+        if not selects:
+            selects = self.get_selects()
+
+        return {group: [InsertFromSelect(self._get_table_name(group), sel) for sel in sels]
+                for group, sels in selects.items()}
+
     def get_drops(self):
         """
         Generate drop queries for this aggregation
@@ -288,16 +322,21 @@ class SpacetimeAggregation(object):
 
     def execute(self, conn):
         """
-
+        Execute all SQL statements to create final aggregation table.
+        Args:
+            conn: the SQLAlchemy connection on which to execute
         """
         creates = self.get_creates()
         drops = self.get_drops()
         indexes = self.get_indexes()
+        inserts = self.get_inserts()
 
         trans = conn.begin()
         for group in self.groups:
             conn.execute(drops[group])
             conn.execute(creates[group])
+            for insert in inserts[group]:
+                conn.execute(insert)
             conn.execute(indexes[group])
 
         conn.execute(self.get_drop())
