@@ -58,7 +58,6 @@ class AggregateExpression(object):
             yield c.label("{}{}{}{}".format(
                     prefix, c0.name, self.operator, c1.name))
 
-    # TODO: floordiv and truediv for py3
     def __add__(self, other):
         return AggregateExpression([self, other], "+")
 
@@ -69,6 +68,9 @@ class AggregateExpression(object):
         return AggregateExpression([self, other], "*")
 
     def __div__(self, other):
+        return AggregateExpression([self, other], "/", "*1.0")
+
+    def __truediv__(self, other):
         return AggregateExpression([self, other], "/", "*1.0")
 
 
