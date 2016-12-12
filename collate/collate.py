@@ -46,17 +46,20 @@ class Aggregate(object):
         self.functions = make_list(function)
         self.orders = make_list(order)
 
-    def get_columns(self, when=None, prefix=None):
+    def get_columns(self, when=None, prefix=None, format_kwargs=None):
         """
         Args:
             when: used in a case statement to filter the rows going into the
                 aggregation function
             prefix: prefix for column names
+            format_kwargs: kwargs to pass to format the aggregate quantity
         Returns:
             collection of SQLAlchemy columns
         """
         if prefix is None:
             prefix = ""
+        if format_kwargs is None:
+            format_kwargs = {}
 
         name_template = "{prefix}{quantity_name}_{function}"
         column_template = "{function}({args})"
@@ -75,12 +78,12 @@ class Aggregate(object):
                                    for q in make_tuple(quantity)))
             order_clause = order_template.format(when=when, order=order)
 
-            format_kwargs = dict(function=function, args=args, prefix=prefix,
-                                 order_clause=order_clause,
-                                 quantity_name=quantity_name)
+            kwargs = dict(function=function, args=args, prefix=prefix,
+                          order_clause=order_clause,
+                          quantity_name=quantity_name, **format_kwargs)
 
-            column = column_template.format(**format_kwargs)
-            name = name_template.format(**format_kwargs)
+            column = column_template.format(**kwargs).format(**format_kwargs)
+            name = name_template.format(**kwargs)
 
             yield ex.literal_column(column).label(to_sql_name(name))
 
@@ -135,7 +138,8 @@ class SpacetimeAggregation(object):
                 prefix=self.prefix, interval=interval,
                 group=group)
 
-        return chain(*(a.get_columns(when, prefix) for a in self.aggregates))
+        return chain(*(a.get_columns(when, prefix, {'date': date})
+                       for a in self.aggregates))
 
     def get_selects(self):
         """
