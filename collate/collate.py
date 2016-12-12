@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
-from functools import reduce
 import sqlalchemy.sql.expression as ex
-from sqlalchemy.ext.compiler import compiles
+
+from sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 
 
 def make_list(a):
@@ -11,32 +11,6 @@ def make_list(a):
 
 def make_tuple(a):
     return (a,) if not isinstance(a, tuple) else a
-
-
-def make_sql_clause(s, constructor):
-    if not isinstance(s, ex.ClauseElement):
-        return constructor(s)
-    else:
-        return s
-
-
-class CreateTableAs(ex.Executable, ex.ClauseElement):
-
-    def __init__(self, name, query):
-        self.name = name
-        self.query = query
-
-
-@compiles(CreateTableAs)
-def _create_table_as(element, compiler, **kw):
-    return "CREATE TABLE %s AS %s" % (
-        element.name,
-        compiler.process(element.query)
-    )
-
-
-def to_sql_name(name):
-    return name.replace('"', '')
 
 
 class Aggregate(object):
@@ -134,7 +108,7 @@ class SpacetimeAggregation(object):
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
         self.aggregates = aggregates
-        self.from_obj = make_sql_clause(from_obj, ex.table)
+        self.from_obj = make_sql_clause(from_obj, ex.text)
         self.group_intervals = group_intervals
         self.groups = group_intervals.keys()
         self.dates = dates
@@ -225,11 +199,28 @@ class SpacetimeAggregation(object):
         if not selects:
             selects = self.get_selects()
 
-        selects = {group: reduce(lambda s, t: s.union_all(t), sels)
-                   for group, sels in selects.items()}
+        return {group: CreateTableAs(self._get_table_name(group),
+                                     next(iter(sels)).limit(0))
+                for group, sels in selects.items()}
 
-        return {group: CreateTableAs(self._get_table_name(group), select)
-                for group, select in selects.items()}
+    def get_inserts(self, selects=None):
+        """
+        Construct insert queries from this aggregation
+        Args:
+            selects: the dictionary of select queries to use
+                if None, use self.get_selects()
+                this allows you to customize select queries before creation
+
+        Returns:
+            a dictionary of group : inserts pairs where
+                group are the same keys as group_intervals
+                inserts is a list of InsertFromSelect objects
+        """
+        if not selects:
+            selects = self.get_selects()
+
+        return {group: [InsertFromSelect(self._get_table_name(group), sel) for sel in sels]
+                for group, sels in selects.items()}
 
     def get_drops(self):
         """
@@ -291,16 +282,21 @@ class SpacetimeAggregation(object):
 
     def execute(self, conn):
         """
-
+        Execute all SQL statements to create final aggregation table.
+        Args:
+            conn: the SQLAlchemy connection on which to execute
         """
         creates = self.get_creates()
         drops = self.get_drops()
         indexes = self.get_indexes()
+        inserts = self.get_inserts()
 
         trans = conn.begin()
         for group in self.groups:
             conn.execute(drops[group])
             conn.execute(creates[group])
+            for insert in inserts[group]:
+                conn.execute(insert)
             conn.execute(indexes[group])
 
         conn.execute(self.get_drop())
