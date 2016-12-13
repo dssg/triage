@@ -31,7 +31,7 @@ Aggregated feature generation made easy.
 Overview
 ========
 
-Collate allows you to easily specify and execute statements like “find the number of restaurants in a given zip code that have had food safety violations within the past year.”  The real power is that it allows you to vary both the spatial and temporal windows, choosing not just zip code and one year, but a range over multiple partitions and times.  Collate will automatically generate and execute all the required SQL scripts to aggregate the data across many groups in an efficient manner. We mainly use the results as features in machine learning models. It is especially powerful for so-called spatiotemporal aggregation in which the groups are a combination of a spatial level (e.g. address, census tract, state) and a time interval (e.g. 6 months, 5 years).
+Collate allows you to easily specify and execute statements like “find the number of restaurants in a given zip code that have had food safety violations within the past year.”  The real power is that it allows you to vary both the spatial and temporal windows, choosing not just zip code and one year, but a range over multiple partitions and times. Specifying features is also easier and more efficient than writing raw sql. Collate will automatically generate and execute all the required SQL scripts to aggregate the data across many groups in an efficient manner. We mainly use the results as features in machine learning models.
 
 Inputs
 ======
@@ -92,13 +92,32 @@ Usage Examples
 ==============
 
 Multiple quantities
-Multiple functions
-Tuple quantity
-Date substitution
-Categorical counts
-Naming of features
-More complicated from objects
+~~~~~~~~~~~~~~~~~~~
+TODO
 
+Multiple functions
+~~~~~~~~~~~~~~~~~~
+TODO
+
+Tuple quantity
+~~~~~~~~~~~~~~
+TODO
+
+Date substitution
+~~~~~~~~~~~~~~~~~
+TODO
+
+Categorical counts
+~~~~~~~~~~~~~~~~~~
+TODO
+
+Naming of features
+~~~~~~~~~~~~~~~~~~
+TODO
+
+More complicated from_obj
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TODO
 
 Technical details
 =================
