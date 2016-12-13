@@ -1,0 +1,35 @@
+---
+events_table: 'events'
+data_table: 'cool_stuff'
+temporal_splits:
+    start_time: '2014-04-01'
+    end_time: '2016-04-01'
+    update_window: 6
+    prediction_windows:
+        - 6
+window_strategy: 'EntireWindow'
+feature_aggregations:
+    -
+        aggregates:
+            -
+                predicate: "'Results' = 'Fail'"
+                metrics:
+                    - 'count'
+        group_intervals:
+            -
+                name: 'License #'
+                intervals:
+                    - '1 year'
+                    - '2 years'
+                    - 'all'
+            -
+                name: 'Zip'
+                intervals:
+                    - '1 year'
+models:
+    - 'sklearn.ensemble.ExtraTreesClassifier':
+        n_estimators: [100,100]
+        criterion: [gini, entropy]
+        max_depth: [1,5,10,20,50,100]
+        max_features: [sqrt,log2]
+        min_samples_split: [2,5,10]
