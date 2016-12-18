@@ -20,6 +20,20 @@ def temporal_splits(start_time, end_time, update_window, prediction_windows):
                     'train_end': train_end_time,
                     'test_start': test_start_time,
                     'test_end': test_end_time,
-                    'prediction_window': window
+                    'feature_dates': generate_as_of_dates(
+                        train_start_time,
+                        train_end_time,
+                        window
+                    )
                 }
             test_end_time -= relativedelta(months=+update_window)
+
+
+def generate_as_of_dates(start_date, end_date, prediction_window):
+    as_of_dates = []
+    as_of_date = start_date
+    while as_of_date <= end_date - relativedelta(months=prediction_window):
+        as_of_dates.append(as_of_date)
+        as_of_date += relativedelta(months=prediction_window)
+
+    return as_of_dates
