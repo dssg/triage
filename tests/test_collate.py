@@ -40,6 +40,6 @@ def test_aggregate_tuple_quantity_when():
             "CASE WHEN date < '2012-01-01' THEN y END)")
 
 def test_aggregate_format_kwargs():
-    agg = collate.Aggregate("'{date}' - date", "min")
-    assert str(list(agg.get_columns(format_kwargs={"date":"2012-01-01"}))[0]) == (
+    agg = collate.Aggregate("'{collate_date}' - date", "min")
+    assert str(list(agg.get_columns(format_kwargs={"collate_date":"2012-01-01"}))[0]) == (
             "min('2012-01-01' - date)")

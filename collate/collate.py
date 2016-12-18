@@ -138,7 +138,7 @@ class SpacetimeAggregation(object):
                 prefix=self.prefix, interval=interval,
                 group=group)
 
-        return chain(*(a.get_columns(when, prefix, {'date': date})
+        return chain(*(a.get_columns(when, prefix, format_kwargs={"collate_date": date})
                        for a in self.aggregates))
 
     def get_selects(self):
