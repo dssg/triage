@@ -23,36 +23,36 @@ def test_engine():
     assert len(engine.execute("SELECT * FROM food_inspections").fetchall()) == 966
 
 def test_explicit_agg():
-    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    agg = collate.Aggregate("results='Fail'",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = ex.table('food_inspections'),
-        group_intervals = {ex.column('License #') : ["1 year", "2 years", "all"],
-                           ex.column('Zip') : ["1 year"]},
+        group_intervals = {ex.column('license_no') : ["1 year", "2 years", "all"],
+                           ex.column('zip') : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
-        date_column = '"Inspection Date"')
+        date_column = 'inspection_date')
     for group_by, sels in st.get_selects().items():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
 
 def test_lazy_agg():
-    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    agg = collate.Aggregate("results='Fail'",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
-        group_intervals = {'"License #"':["1 year", "2 years", "all"],
-                           '"Zip"' : ["1 year"]},
+        group_intervals = {'license_no':["1 year", "2 years", "all"],
+                           'zip' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
-        date_column = '"Inspection Date"')
+        date_column = 'inspection_date')
     for group, sels in st.get_selects().items():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
 
 def test_execute():
-    agg = collate.Aggregate(""" "Results" = 'Fail'""",["count"])
+    agg = collate.Aggregate("results='Fail'",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
-        group_intervals = {'"License #"':["1 year", "2 years", "all"],
-                           '"Zip"' : ["1 year"]},
+        group_intervals = {'license_no':["1 year", "2 years", "all"],
+                           'zip' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
-        date_column = '"Inspection Date"')
+        date_column = '"inspection_date"')
 
     st.execute(engine.connect())
