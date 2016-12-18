@@ -1,7 +1,7 @@
 from triage.utils import temporal_splits
-import triage.entity_feature_date_generators as efd_generators
-from triage.training_label_generators import TrainingLabelGenerator
+from triage.label_generators import LabelGenerator
 from triage.feature_generators import FeatureGenerator
+from triage.set_generators import SetGenerator
 from triage.model_trainers import ModelTrainer
 from triage.model_results_generators import ModelResultsGenerator
 import logging
@@ -21,47 +21,55 @@ class Pipeline(object):
             self.config['temporal_splits']['prediction_windows']
         )
 
-    def entity_feature_date_generator_cls(self):
-        window_strategy = self.config['window_strategy']
-        if window_strategy == 'EntireWindow':
-            return efd_generators.WholeWindowFeatureDateGenerator
-        elif window_strategy == 'TimeOfEvent':
-            return efd_generators.TimeOfEventFeatureDateGenerator
-        else:
-            raise 'No entity feature date generator available for window_strategy {}'.format(window_strategy)
-
     def run(self):
         # 1. generate temporal splits
         for split in self.temporal_splits():
-            # 2. calculate entity feature dates (ie self.entity_feature_dates(splits))
-            entity_feature_dates_table = self.entity_feature_date_generator_cls()(
+
+            # 2. create labels
+            labels_table = LabelGenerator(
+                events_table=self.config['events_table'],
+                start_date=split['train_start'],
+                end_date=split['train_end'],
                 split=split,
-                events_table=self.config['events_table'],
-                db_engine=db_engine
+                db_engine=self.db_engine
             ).generate()
-            # 3. create training set
-            training_label_table = TrainingLabelGenerator(
-                entity_feature_dates_table=entity_feature_dates_table,
-                events_table=self.config['events_table'],
-                db_engine=db_engine
-            ).generate()
-            # 4. generate features
+
+            # 3. generate features
             features_table = FeatureGenerator(
-                training_label_table=training_label_table,
+                feature_aggregations=self.config['feature_aggregations'],
+                feature_dates=split['feature_dates'],
                 data_table=self.config['data_table'],
-                feature_aggregations=self.config['feature_aggregations']
+                db_engine=self.db_engine
             ).generate()
-            trained_model_path = 'project/trained_models'
-            # 5. train models
-            model_uuids = ModelTrainer(
+
+            # 4. create training and test sets
+            set_generator = SetGenerator(
                 features_table=features_table,
+                labels_table=labels_table,
+                db_engine=self.db_engine
+            )
+            training_set_path = set_generator.generate(
+                start_date=split['train_start'],
+                end_date=split['train_end'],
+            )
+            test_set_path = set_generator.generate(
+                start_date=split['test_start'],
+                end_date=split['test_end'],
+            )
+
+            # 5. train models
+            trained_model_path = 'project/trained_models'
+            model_ids = ModelTrainer(
+                training_set_path=training_set_path,
+                test_set_path=test_set_path,
                 model_config=self.config['models'],
                 trained_model_path=trained_model_path
             ).train()
+
             # 6. generate model results
             ModelResultsGenerator(
                 trained_model_path=trained_model_path,
-                model_uuids=model_uuids
+                model_ids=model_ids
             ).generate()
 
 if __name__ == '__main__':

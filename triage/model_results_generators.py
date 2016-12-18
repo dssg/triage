@@ -1,7 +1,7 @@
 class ModelResultsGenerator(object):
-    def __init__(self, trained_model_path, model_uuids):
+    def __init__(self, trained_model_path, model_ids):
         self.trained_model_path = trained_model_path
-        self.model_uuids = model_uuids
+        self.model_ids = model_ids
 
     def generate(self):
         """TODO: for each trained model,

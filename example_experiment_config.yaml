@@ -12,6 +12,7 @@ feature_aggregations:
     -
         aggregates:
             -
+                name: 'fails'
                 predicate: "'Results' = 'Fail'"
                 metrics:
                     - 'count'
