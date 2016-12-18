@@ -101,6 +101,7 @@ class SpacetimeAggregation(object):
             prefix: prefix for column names, defaults to from_obj
             suffix: suffix for aggregation table, defaults to "aggregation"
             date_column: name of date column in from_obj, defaults to "date"
+            output_date_column: name of date column in aggregated output, defaults to "date"
 
         The from_obj and group arguments are passed directly to the
             SQLAlchemy Select object so could be anything supported there.
