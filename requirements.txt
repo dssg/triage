@@ -1,5 +1,4 @@
 PyYAML==3.12
--e git+https://github.com/dssg/metta-data.git@4e0042a6512cdb55125df2c9a1a93e16b75f2b9d#egg=metta_data-metta_io
 numexpr==2.6.1
 numpy==1.11.3
 pandas==0.19.1
