@@ -1,16 +1,43 @@
 """
-Interface
+Metta IO
 
-Interface to train test matrix
+Library for storing train-test sets.
 """
-import pandas as pd
 import yaml
 
-# Create a HDF5 container to load YAML
-# and train and test sets.
+
+def archive_train_test(train_config, df_train, title_train,
+                       test_config, df_test, title_test):
+    """
+    Main function for archiving train and test sets
+
+    Parameters
+    ----------
+    (train_config, test_config): dict
+        dicts to be yamled for train and test
+    (df_train, df_test): df
+        DataFrame of features and label (as last
+        column) for training and testing set
+    (title_train, title_test): str
+        Unique name for train and test sets
 
 
-def store_matrix(metadata, df_data, title):
+    Returns
+    -------
+    train_yaml: file
+        Writes out to YAML file title.yaml
+    data_file: file
+        CSV of dataframe feature set title.csv
+    """
+
+    _store_matrix(train_config, df_train, title_train)
+    _store_matrix(test_config, df_test, title_test)
+
+    with open('matrix_pairs.txt', 'a') as outfile:
+        outfile.write(','.join([title_train, title_test]) + '\n')
+
+
+def _store_matrix(metadata, df_data, title):
     """
     Store matrix and associated meta-data
 
@@ -33,8 +60,8 @@ def store_matrix(metadata, df_data, title):
         CSV of dataframe feature set title.csv
     """
 
-    # dump the file into a yaml format
-    with file(title + '.yaml', 'w') as stream:
+    # dump the config file into a yaml format
+    with open(title + '.yaml', 'w') as stream:
         yaml.dump(metadata, stream)
 
     # dump data into a csv
