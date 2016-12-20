@@ -1,0 +1,8 @@
+PyYAML==3.12
+numexpr==2.6.1
+numpy==1.11.3
+pandas==0.19.1
+python-dateutil==2.6.0
+pytz==2016.10
+six==1.10.0
+tables==3.3.0
