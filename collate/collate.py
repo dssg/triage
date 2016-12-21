@@ -87,7 +87,7 @@ class Aggregate(object):
 
 class SpacetimeAggregation(object):
     def __init__(self, aggregates, group_intervals, from_obj, dates,
-                 prefix=None, suffix=None, date_column=None):
+                 prefix=None, suffix=None, date_column=None, output_date_column=None):
         """
         Args:
             aggregates: collection of Aggregate objects
@@ -101,6 +101,7 @@ class SpacetimeAggregation(object):
             prefix: prefix for column names, defaults to from_obj
             suffix: suffix for aggregation table, defaults to "aggregation"
             date_column: name of date column in from_obj, defaults to "date"
+            output_date_column: name of date column in aggregated output, defaults to "date"
 
         The from_obj and group arguments are passed directly to the
             SQLAlchemy Select object so could be anything supported there.
@@ -115,6 +116,7 @@ class SpacetimeAggregation(object):
         self.prefix = prefix if prefix else str(from_obj)
         self.suffix = suffix if suffix else "aggregation"
         self.date_column = date_column if date_column else "date"
+        self.output_date_column = output_date_column if output_date_column else "date"
 
     def _get_aggregates_sql(self, interval, date, group):
         """
@@ -152,7 +154,7 @@ class SpacetimeAggregation(object):
             for date in self.dates:
                 columns = [group,
                            ex.literal_column("'%s'::date"
-                                             % date).label("date")]
+                                             % date).label(self.output_date_column)]
                 columns += list(chain(*(self._get_aggregates_sql(
                         i, date, group) for i in intervals)))
 
@@ -242,7 +244,7 @@ class SpacetimeAggregation(object):
             index is a raw create index query for the corresponding table
         """
         return {group: "CREATE INDEX ON %s (%s, %s);" %
-                (self._get_table_name(group), group, "date")
+                (self._get_table_name(group), group, self.output_date_column)
                 for group in self.groups}
 
     def get_join_table(self):
@@ -264,11 +266,11 @@ class SpacetimeAggregation(object):
         name = "%s_%s" % (self.prefix, self.suffix)
 
         query = ("SELECT * FROM %s\n"
-                 "CROSS JOIN (select unnest('{%s}'::date[]) as date) t2\n") % (
-                join_table, str.join(',', self.dates))
+                 "CROSS JOIN (select unnest('{%s}'::date[]) as %s) t2\n") % (
+                join_table, str.join(',', self.dates), self.output_date_column)
         for group in self.groups:
-            query += "LEFT JOIN %s USING (%s, date)" % (
-                    self._get_table_name(group), group)
+            query += "LEFT JOIN %s USING (%s, %s)" % (
+                    self._get_table_name(group), group, self.output_date_column)
 
         return "CREATE TABLE %s AS (%s);" % (name, query)
 
