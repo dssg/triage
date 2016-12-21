@@ -38,3 +38,8 @@ def test_aggregate_tuple_quantity_when():
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
             "corr(CASE WHEN date < '2012-01-01' THEN x END, "
             "CASE WHEN date < '2012-01-01' THEN y END)")
+
+def test_aggregate_format_kwargs():
+    agg = collate.Aggregate("'{collate_date}' - date", "min")
+    assert str(list(agg.get_columns(format_kwargs={"collate_date":"2012-01-01"}))[0]) == (
+            "min('2012-01-01' - date)")
