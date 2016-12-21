@@ -17,8 +17,38 @@ testing sets.
 - `prediction_window` (int): The length of the prediction window you are using in this matrix (in months).
 - `label_name` (str): The outcome variable's column name. This column must be in the last position in your dataframe.
 
-## Installation
+```
+import metta
 
+
+train_config = {'start_time': datetime.date(2012, 12, 20),
+                'end_time': datetime.date(2016, 12, 20),
+                'prediction_window': 29,
+                'label_name': 'inspection_1yr',
+                'label_type': 'binary',
+                'prediction_window': 3,
+                'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+
+
+test_config = {'start_time': datetime.date(2015, 12, 20),
+               'end_time': datetime.date(2016, 12, 21),
+               'prediction_window': 29,
+               'label_name': 'inspection_1yr',
+               'label_type': 'binary',
+               'prediction_window': 3,
+               'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+
+
+metta.archive_train_test(train_config, X_train,
+                         'CPDH_train_2012', test_config, X_test, 'CPDH_test_2014',
+                         directory='./old_matrices')
+
+```
+
+## Installation
+```
+pip install git+git://github.com/dssg/metta-data.git
+```
 ## Dependencies
 
 ## Developers
