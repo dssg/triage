@@ -92,18 +92,21 @@ class Aggregation(object):
     def __init__(self, aggregates, groups, from_obj, prefix=None, suffix=None, schema=None):
         """
         Args:
-            aggregates: collection of Aggregate objects
-            from_obj: defines the from clause, e.g. the name of the table
+            aggregates: collection of Aggregate objects.
+            from_obj: defines the from clause, e.g. the name of the table. can use 
             groups: a list of expressions to group by in the aggregation or a dictionary
                 pairs group: expr pairs where group is the alias (used in column names)
             prefix: prefix for aggregation tables and column names, defaults to from_obj
             suffix: suffix for aggregation table, defaults to "aggregation"
             schema: schema for aggregation tables
 
-        The from_obj and group arguments are passed directly to the
+        The from_obj and group expressions are passed directly to the
             SQLAlchemy Select object so could be anything supported there.
             For details see:
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
+
+        Aggregates will have {collate_date} in their quantities substituted with the date
+        of aggregation.
         """
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.text)
