@@ -229,14 +229,12 @@ class Aggregation(object):
         if not join_table:
             join_table = '(%s) t1' % self.get_join_table()
 
-        name = self.get_table_name()
-
         query = "SELECT * FROM %s\n" % join_table
         for group in self.groups:
             query += "LEFT JOIN %s USING (%s)" % (
                     self.get_table_name(group), group)
 
-        return "CREATE TABLE %s AS (%s);" % (name, query)
+        return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
 
     def get_drop(self):
         """
