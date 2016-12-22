@@ -94,7 +94,8 @@ class Aggregation(object):
         Args:
             aggregates: collection of Aggregate objects
             from_obj: defines the from clause, e.g. the name of the table
-            groups: a list of expressions to group by in the aggregation
+            groups: a list of expressions to group by in the aggregation or a dictionary
+                pairs group: expr pairs where group is the alias (used in column names)
             prefix: prefix for aggregation tables and column names, defaults to from_obj
             suffix: suffix for aggregation table, defaults to "aggregation"
             schema: schema for aggregation tables
@@ -284,7 +285,8 @@ class SpacetimeAggregation(Aggregation):
         Args:
             aggregates: collection of Aggregate objects
             from_obj: defines the from clause, e.g. the name of the table
-            groups: a list of expressions to group by in the aggregation
+            groups: a list of expressions to group by in the aggregation or a dictionary
+                pairs group: expr pairs where group is the alias (used in column names)
             intervals: the intervals to aggregate over. either a list of
                 datetime intervals, e.g. ["1 month", "1 year"], or
                 a dictionary of group : intervals pairs where
