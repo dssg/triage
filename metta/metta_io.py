@@ -150,7 +150,7 @@ def check_config_types(dict_config):
     """
     set_required_names = set(
         ['start_time', 'end_time', 'prediction_window', 'label_name',
-         'data_id'])
+         'matrix_id'])
 
     if not(set_required_names.issubset(dict_config.keys())):
         raise IOError('missing required keys in dictionary',
