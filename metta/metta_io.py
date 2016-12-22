@@ -160,7 +160,7 @@ def check_config_types(dict_config):
     assert isinstance(dict_config['start_time'], datetime.date)
     assert isinstance(dict_config['end_time'], datetime.date)
     assert isinstance(dict_config['prediction_window'], int)
-    assert isinstance(dict_config['label'], str)
+    assert isinstance(dict_config['matrix_id'], str)
 
 
 def load_uuids(directory):
