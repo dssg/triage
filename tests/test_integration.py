@@ -65,13 +65,14 @@ def test_execute():
 
     st.execute(engine.connect())
 
-def test_execute_output_date_column():
+def test_execute_schema_output_date_column():
     agg = collate.Aggregate("results='Fail'",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
         group_intervals = {'license_no':["1 year", "2 years", "all"],
                            'zip' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
+        schema = "agg",
         date_column = '"inspection_date"',
         output_date_column = "aggregation_date")
 

@@ -43,3 +43,18 @@ def test_aggregate_format_kwargs():
     agg = collate.Aggregate("'{collate_date}' - date", "min")
     assert str(list(agg.get_columns(format_kwargs={"collate_date":"2012-01-01"}))[0]) == (
             "min('2012-01-01' - date)")
+
+def test_aggregation_table_name_no_schema():
+    # no schema
+    assert collate.Aggregation([], from_obj='source', groups=[])\
+            .get_table_name() == '"source_aggregation"'
+
+    # prefix
+    assert collate.Aggregation([], from_obj='source', prefix="mysource",
+            groups=[])\
+            .get_table_name() == '"mysource_aggregation"'
+
+    # schema
+    assert collate.Aggregation([], from_obj='source', schema='schema',
+            groups=[])\
+            .get_table_name() == '"schema"."source_aggregation"'
