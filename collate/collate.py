@@ -241,8 +241,7 @@ class Aggregation(object):
         Generate a drop table statement for the aggregation table
         Returns: string sql query
         """
-        name = "%s_%s" % (self.prefix, self.suffix)
-        return "DROP TABLE IF EXISTS %s" % name
+        return "DROP TABLE IF EXISTS %s" % self.get_table_name()
 
     def get_create_schema(self):
         """
