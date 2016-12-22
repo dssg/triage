@@ -2,7 +2,7 @@
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
 
-from sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
+from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 
 
 def make_list(a):
@@ -88,9 +88,201 @@ class Aggregate(object):
             yield ex.literal_column(column).label(to_sql_name(name))
 
 
-class SpacetimeAggregation(object):
+class Aggregation(object):
+    def __init__(self, aggregates, groups, from_obj, prefix=None, suffix=None, schema=None):
+        """
+        Args:
+            aggregates: collection of Aggregate objects
+            from_obj: defines the from clause, e.g. the name of the table
+            groups: a list of expressions to group by in the aggregation
+            prefix: prefix for aggregation tables and column names, defaults to from_obj
+            suffix: suffix for aggregation table, defaults to "aggregation"
+            schema: schema for aggregation tables
+
+        The from_obj and group arguments are passed directly to the
+            SQLAlchemy Select object so could be anything supported there.
+            For details see:
+            http://docs.sqlalchemy.org/en/latest/core/selectable.html
+        """
+        self.aggregates = aggregates
+        self.from_obj = make_sql_clause(from_obj, ex.text)
+        self.groups = groups
+        self.prefix = prefix if prefix else str(from_obj)
+        self.suffix = suffix if suffix else "aggregation"
+        self.schema = schema
+
+    def _get_aggregates_sql(self, group):
+        """
+        Helper for getting aggregates sql
+        Args:
+            group: group clause, for naming columns
+        Returns: collection of aggregate column SQL strings
+        """
+        prefix = "{prefix}_{group}_".format(
+                prefix=self.prefix, group=group)
+
+        return chain(*(a.get_columns(prefix=prefix)
+                       for a in self.aggregates))
+
+    def get_selects(self):
+        """
+        Constructs select queries for this aggregation
+
+        Returns: a dictionary of group : queries pairs where
+            group are the same keys as group_intervals
+            queries is a list of Select queries, one for each date in dates
+        """
+        queries = {}
+
+        for group in self.groups:
+            columns = [group]
+            columns += self._get_aggregates_sql(group)
+
+            gb_clause = make_sql_clause(group, ex.literal_column)
+            query = ex.select(columns=columns, from_obj=self.from_obj)\
+                      .group_by(gb_clause)
+
+            queries[group] = [query]
+
+        return queries
+
+    def get_table_name(self, group=None):
+        """
+        Returns name for table for the given group
+        """
+        if group is None:
+            name = '"%s_%s"' % (self.prefix, self.suffix)
+        else:
+            name = '"%s"' % to_sql_name("%s_%s" % (self.prefix, group))
+        schema = '"%s".' % self.schema if self.schema else ''
+        return "%s%s" % (schema, name)
+
+    def get_creates(self):
+        """
+        Construct create queries for this aggregation
+        Args:
+            selects: the dictionary of select queries to use
+                if None, use self.get_selects()
+                this allows you to customize select queries before creation
+
+        Returns:
+            a dictionary of group : create pairs where
+                group are the same keys as group_intervals
+                create is a CreateTableAs object
+        """
+        return {group: CreateTableAs(self.get_table_name(group),
+                                     next(iter(sels)).limit(0))
+                for group, sels in self.get_selects().items()}
+
+    def get_inserts(self):
+        """
+        Construct insert queries from this aggregation
+        Args:
+            selects: the dictionary of select queries to use
+                if None, use self.get_selects()
+                this allows you to customize select queries before creation
+
+        Returns:
+            a dictionary of group : inserts pairs where
+                group are the same keys as group_intervals
+                inserts is a list of InsertFromSelect objects
+        """
+        return {group: [InsertFromSelect(self.get_table_name(group), sel) for sel in sels]
+                for group, sels in self.get_selects().items()}
+
+    def get_drops(self):
+        """
+        Generate drop queries for this aggregation
+
+        Returns: a dictionary of group : drop pairs where
+            group are the same keys as group_intervals
+            drop is a raw drop table query for the corresponding table
+        """
+        return {group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
+                for group in self.groups}
+
+    def get_indexes(self):
+        """
+        Generate create index queries for this aggregation
+
+        Returns: a dictionary of group : index pairs where
+            group are the same keys as group_intervals
+            index is a raw create index query for the corresponding table
+        """
+        return {group: "CREATE INDEX ON %s (%s);" %
+                (self.get_table_name(group), group)
+                for group in self.groups}
+
+    def get_join_table(self):
+        """
+        Generate a query for a join table
+        """
+        return ex.Select(columns=self.groups, from_obj=self.from_obj)\
+                 .group_by(*self.groups)
+
+    def get_create(self, join_table=None):
+        """
+        Generate a single aggregation table creation query by joining
+            together the results of get_creates()
+        Returns: a CREATE TABLE AS query
+        """
+        if not join_table:
+            join_table = '(%s) t1' % self.get_join_table()
+
+        name = self.get_table_name()
+
+        query = "SELECT * FROM %s\n" % join_table
+        for group in self.groups:
+            query += "LEFT JOIN %s USING (%s)" % (
+                    self.get_table_name(group), group)
+
+        return "CREATE TABLE %s AS (%s);" % (name, query)
+
+    def get_drop(self):
+        """
+        Generate a drop table statement for the aggregation table
+        Returns: string sql query
+        """
+        name = "%s_%s" % (self.prefix, self.suffix)
+        return "DROP TABLE IF EXISTS %s" % name
+
+    def get_create_schema(self):
+        """
+        Generate a create schema statement
+        """
+        if self.schema is not None:
+            return "CREATE SCHEMA IF NOT EXISTS %s" % self.schema
+
+    def execute(self, conn):
+        """
+        Execute all SQL statements to create final aggregation table.
+        Args:
+            conn: the SQLAlchemy connection on which to execute
+        """
+        creates = self.get_creates()
+        drops = self.get_drops()
+        indexes = self.get_indexes()
+        inserts = self.get_inserts()
+
+        trans = conn.begin()
+        if self.schema is not None:
+            conn.execute(self.get_create_schema())
+
+        for group in self.groups:
+            conn.execute(drops[group])
+            conn.execute(creates[group])
+            for insert in inserts[group]:
+                conn.execute(insert)
+            conn.execute(indexes[group])
+
+        conn.execute(self.get_drop())
+        conn.execute(self.get_create())
+        trans.commit()
+
+
+class SpacetimeAggregation(Aggregation):
     def __init__(self, aggregates, group_intervals, from_obj, dates,
-                 prefix=None, suffix=None, date_column=None, output_date_column=None):
+                 prefix=None, suffix=None, schema=None, date_column=None, output_date_column=None):
         """
         Args:
             aggregates: collection of Aggregate objects
@@ -111,13 +303,16 @@ class SpacetimeAggregation(object):
             For details see:
             http://docs.sqlalchemy.org/en/latest/core/selectable.html
         """
-        self.aggregates = aggregates
-        self.from_obj = make_sql_clause(from_obj, ex.text)
+        Aggregation.__init__(self,
+                             aggregates=aggregates,
+                             from_obj=from_obj,
+                             groups=group_intervals.keys(),
+                             prefix=prefix,
+                             suffix=suffix,
+                             schema=schema)
+
         self.group_intervals = group_intervals
-        self.groups = group_intervals.keys()
         self.dates = dates
-        self.prefix = prefix if prefix else str(from_obj)
-        self.suffix = suffix if suffix else "aggregation"
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
 
@@ -183,62 +378,6 @@ class SpacetimeAggregation(object):
 
         return queries
 
-    def _get_table_name(self, group):
-        """
-        Returns name for table for the given group
-        """
-        return '"%s"' % to_sql_name("%s_%s" % (self.prefix, group))
-
-    def get_creates(self, selects=None):
-        """
-        Construct create queries for this aggregation
-        Args:
-            selects: the dictionary of select queries to use
-                if None, use self.get_selects()
-                this allows you to customize select queries before creation
-
-        Returns:
-            a dictionary of group : create pairs where
-                group are the same keys as group_intervals
-                create is a CreateTableAs object
-        """
-        if not selects:
-            selects = self.get_selects()
-
-        return {group: CreateTableAs(self._get_table_name(group),
-                                     next(iter(sels)).limit(0))
-                for group, sels in selects.items()}
-
-    def get_inserts(self, selects=None):
-        """
-        Construct insert queries from this aggregation
-        Args:
-            selects: the dictionary of select queries to use
-                if None, use self.get_selects()
-                this allows you to customize select queries before creation
-
-        Returns:
-            a dictionary of group : inserts pairs where
-                group are the same keys as group_intervals
-                inserts is a list of InsertFromSelect objects
-        """
-        if not selects:
-            selects = self.get_selects()
-
-        return {group: [InsertFromSelect(self._get_table_name(group), sel) for sel in sels]
-                for group, sels in selects.items()}
-
-    def get_drops(self):
-        """
-        Generate drop queries for this aggregation
-
-        Returns: a dictionary of group : drop pairs where
-            group are the same keys as group_intervals
-            drop is a raw drop table query for the corresponding table
-        """
-        return {group: "DROP TABLE IF EXISTS %s;" % self._get_table_name(group)
-                for group in self.groups}
-
     def get_indexes(self):
         """
         Generate create index queries for this aggregation
@@ -248,15 +387,8 @@ class SpacetimeAggregation(object):
             index is a raw create index query for the corresponding table
         """
         return {group: "CREATE INDEX ON %s (%s, %s);" %
-                (self._get_table_name(group), group, self.output_date_column)
+                (self.get_table_name(group), group, self.output_date_column)
                 for group in self.groups}
-
-    def get_join_table(self):
-        """
-        Generate a query for a join table
-        """
-        return ex.Select(columns=self.groups, from_obj=self.from_obj)\
-                 .group_by(*self.groups)
 
     def get_create(self, join_table=None):
         """
@@ -274,37 +406,6 @@ class SpacetimeAggregation(object):
                 join_table, str.join(',', self.dates), self.output_date_column)
         for group in self.groups:
             query += "LEFT JOIN %s USING (%s, %s)" % (
-                    self._get_table_name(group), group, self.output_date_column)
+                    self.get_table_name(group), group, self.output_date_column)
 
         return "CREATE TABLE %s AS (%s);" % (name, query)
-
-    def get_drop(self):
-        """
-        Generate a drop table statement for the aggregation table
-        Returns: string sql query
-        """
-        name = "%s_%s" % (self.prefix, self.suffix)
-        return "DROP TABLE IF EXISTS %s" % name
-
-    def execute(self, conn):
-        """
-        Execute all SQL statements to create final aggregation table.
-        Args:
-            conn: the SQLAlchemy connection on which to execute
-        """
-        creates = self.get_creates()
-        drops = self.get_drops()
-        indexes = self.get_indexes()
-        inserts = self.get_inserts()
-
-        trans = conn.begin()
-        for group in self.groups:
-            conn.execute(drops[group])
-            conn.execute(creates[group])
-            for insert in inserts[group]:
-                conn.execute(insert)
-            conn.execute(indexes[group])
-
-        conn.execute(self.get_drop())
-        conn.execute(self.get_create())
-        trans.commit()
