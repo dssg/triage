@@ -106,7 +106,7 @@ class Aggregation(object):
         """
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.text)
-        self.groups = groups
+        self.groups = groups if isinstance(groups, dict) else {str(g): g for g in groups}
         self.prefix = prefix if prefix else str(from_obj)
         self.suffix = suffix if suffix else "aggregation"
         self.schema = schema
@@ -129,16 +129,16 @@ class Aggregation(object):
         Constructs select queries for this aggregation
 
         Returns: a dictionary of group : queries pairs where
-            group are the same keys as group_intervals
+            group are the same keys as groups
             queries is a list of Select queries, one for each date in dates
         """
         queries = {}
 
-        for group in self.groups:
-            columns = [group]
+        for group, groupby in self.groups.items():
+            columns = [groupby]
             columns += self._get_aggregates_sql(group)
 
-            gb_clause = make_sql_clause(group, ex.literal_column)
+            gb_clause = make_sql_clause(groupby, ex.literal_column)
             query = ex.select(columns=columns, from_obj=self.from_obj)\
                       .group_by(gb_clause)
 
@@ -167,7 +167,7 @@ class Aggregation(object):
 
         Returns:
             a dictionary of group : create pairs where
-                group are the same keys as group_intervals
+                group are the same keys as groups
                 create is a CreateTableAs object
         """
         return {group: CreateTableAs(self.get_table_name(group),
@@ -184,7 +184,7 @@ class Aggregation(object):
 
         Returns:
             a dictionary of group : inserts pairs where
-                group are the same keys as group_intervals
+                group are the same keys as groups
                 inserts is a list of InsertFromSelect objects
         """
         return {group: [InsertFromSelect(self.get_table_name(group), sel) for sel in sels]
@@ -195,7 +195,7 @@ class Aggregation(object):
         Generate drop queries for this aggregation
 
         Returns: a dictionary of group : drop pairs where
-            group are the same keys as group_intervals
+            group are the same keys as groups
             drop is a raw drop table query for the corresponding table
         """
         return {group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
@@ -206,19 +206,19 @@ class Aggregation(object):
         Generate create index queries for this aggregation
 
         Returns: a dictionary of group : index pairs where
-            group are the same keys as group_intervals
+            group are the same keys as groups
             index is a raw create index query for the corresponding table
         """
         return {group: "CREATE INDEX ON %s (%s);" %
-                (self.get_table_name(group), group)
-                for group in self.groups}
+                (self.get_table_name(group), groupby)
+                for group, groupby in self.groups.items()}
 
     def get_join_table(self):
         """
         Generate a query for a join table
         """
-        return ex.Select(columns=self.groups, from_obj=self.from_obj)\
-                 .group_by(*self.groups)
+        return ex.Select(columns=self.groups.values(), from_obj=self.from_obj)\
+                 .group_by(*self.groups.values())
 
     def get_create(self, join_table=None):
         """
@@ -230,9 +230,9 @@ class Aggregation(object):
             join_table = '(%s) t1' % self.get_join_table()
 
         query = "SELECT * FROM %s\n" % join_table
-        for group in self.groups:
+        for group, groupby in self.groups.items():
             query += "LEFT JOIN %s USING (%s)" % (
-                    self.get_table_name(group), group)
+                    self.get_table_name(group), groupby)
 
         return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
 
@@ -278,16 +278,18 @@ class Aggregation(object):
 
 
 class SpacetimeAggregation(Aggregation):
-    def __init__(self, aggregates, group_intervals, from_obj, dates,
+    def __init__(self, aggregates, groups, intervals, from_obj, dates,
                  prefix=None, suffix=None, schema=None, date_column=None, output_date_column=None):
         """
         Args:
             aggregates: collection of Aggregate objects
             from_obj: defines the from clause, e.g. the name of the table
-            group_intervals: a dictionary of group : intervals pairs where
-                group is an expression by which to group and
-                intervals is a collection of datetime intervals, e.g.
-                {"address_id": ["1 month", "1 year]}
+            groups: a list of expressions to group by in the aggregation
+            intervals: the intervals to aggregate over. either a list of
+                datetime intervals, e.g. ["1 month", "1 year"], or
+                a dictionary of group : intervals pairs where
+                group is a group in groups and intervals is a collection
+                of datetime intervals, e.g. {"address_id": ["1 month", "1 year]}
             dates: list of PostgreSQL date strings,
                 e.g. ["2012-01-01", "2013-01-01"]
             prefix: prefix for column names, defaults to from_obj
@@ -303,12 +305,15 @@ class SpacetimeAggregation(Aggregation):
         Aggregation.__init__(self,
                              aggregates=aggregates,
                              from_obj=from_obj,
-                             groups=group_intervals.keys(),
+                             groups=groups,
                              prefix=prefix,
                              suffix=suffix,
                              schema=schema)
 
-        self.group_intervals = group_intervals
+        if isinstance(intervals, dict):
+            self.intervals = intervals
+        else:
+            self.intervals = {g: intervals for g in self.groups}
         self.dates = dates
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
@@ -340,15 +345,16 @@ class SpacetimeAggregation(Aggregation):
         Constructs select queries for this aggregation
 
         Returns: a dictionary of group : queries pairs where
-            group are the same keys as group_intervals
+            group are the same keys as groups
             queries is a list of Select queries, one for each date in dates
         """
         queries = {}
 
-        for group, intervals in self.group_intervals.items():
+        for group, groupby in self.groups.items():
+            intervals = self.intervals[group]
             queries[group] = []
             for date in self.dates:
-                columns = [group,
+                columns = [groupby,
                            ex.literal_column("'%s'::date"
                                              % date).label(self.output_date_column)]
                 columns += list(chain(*(self._get_aggregates_sql(
@@ -358,7 +364,7 @@ class SpacetimeAggregation(Aggregation):
                 where = ex.text("{date_column} < '{date}'".format(
                         date_column=self.date_column, date=date))
 
-                gb_clause = make_sql_clause(group, ex.literal_column)
+                gb_clause = make_sql_clause(groupby, ex.literal_column)
                 query = ex.select(columns=columns, from_obj=self.from_obj)\
                           .where(where)\
                           .group_by(gb_clause)
@@ -380,12 +386,12 @@ class SpacetimeAggregation(Aggregation):
         Generate create index queries for this aggregation
 
         Returns: a dictionary of group : index pairs where
-            group are the same keys as group_intervals
+            group are the same keys as groups
             index is a raw create index query for the corresponding table
         """
         return {group: "CREATE INDEX ON %s (%s, %s);" %
-                (self.get_table_name(group), group, self.output_date_column)
-                for group in self.groups}
+                (self.get_table_name(group), groupby, self.output_date_column)
+                for group, groupby in self.groups.items()}
 
     def get_create(self, join_table=None):
         """
@@ -399,8 +405,8 @@ class SpacetimeAggregation(Aggregation):
         query = ("SELECT * FROM %s\n"
                  "CROSS JOIN (select unnest('{%s}'::date[]) as %s) t2\n") % (
                 join_table, str.join(',', self.dates), self.output_date_column)
-        for group in self.groups:
+        for group, groupby in self.groups.items():
             query += "LEFT JOIN %s USING (%s, %s)" % (
-                    self.get_table_name(group), group, self.output_date_column)
+                    self.get_table_name(group), groupby, self.output_date_column)
 
         return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
