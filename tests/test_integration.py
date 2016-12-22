@@ -46,7 +46,7 @@ def test_lazy_agg():
         for sel in sels:
             engine.execute(sel) # Just test that we can execute the query
 
-def test_execute():
+def test_st_execute():
     agg = collate.Aggregate("results='Fail'",["count"])
     st = collate.SpacetimeAggregation([agg],
         from_obj = 'food_inspections',
@@ -54,6 +54,14 @@ def test_execute():
                            'zip' : ["1 year"]},
         dates = ['2016-08-31', '2015-08-31'],
         date_column = '"inspection_date"')
+
+    st.execute(engine.connect())
+
+def test_execute():
+    agg = collate.Aggregate("results='Fail'",["count"])
+    st = collate.Aggregation([agg],
+        from_obj = 'food_inspections',
+        groups = ['license_no', 'zip'])
 
     st.execute(engine.connect())
 
