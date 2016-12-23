@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 def categorical(col, op, choices, include_null=True, maxlen=32):
     """
     ``categorical(col, op, choices, include_null=True, maxlen=32)``
@@ -19,7 +21,7 @@ def categorical(col, op, choices, include_null=True, maxlen=32):
     The type of the comparison is converted to an integer so it can easily be
     used with 'sum' (for total count) and 'avg' (for relative fraction)
     aggregate functions.
-    
+
     By default, the aggregates are simply named "{col}_{op}_{choice}", but
     that can easily get long and exceed the maximum column name length. If any
     name ends up longer than ``maxlen`` characters (32 by default), then each
@@ -27,11 +29,11 @@ def categorical(col, op, choices, include_null=True, maxlen=32):
     that they remain identifiable and unique (but note that ordering is not
     preserved).
     """
-    
+
     if type(choices) is not dict:
         choices = {k: k for k in choices}
-    d = {'{}_{}_{}'.format(col, op, nickname):
-        "({} {} '{}')::INT".format(col, op, choice) for nickname, choice in choices.items()}
+    d = {'{}_{}_{}'.format(col, op, nickname): "({} {} '{}')::INT".format(col, op, choice)
+         for nickname, choice in choices.items()}
     if include_null:
         d['{}__NULL'.format(col)] = '({} is NULL)::INT'.format(col)
     if any(len(k) > maxlen for k in d.keys()):
