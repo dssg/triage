@@ -46,6 +46,15 @@ metta.archive_train_test(train_config, X_train,
                          test_config, X_test,
                          directory='./old_matrices')
 
+
+dict_config = yaml.load(open('aws_keys.yaml'))
+
+metta.upload_to_s3(access_key_id=dict_config['AWSAccessKey'],
+                   secret_access_key=dict_config['AWSSecretKey'],
+                   bucket=dict_config['Bucket'],
+                   folder=dict_config['Folder'],
+                   directory='./old_matrices')
+
 ```
 
 ## Installation
