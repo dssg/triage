@@ -6,3 +6,4 @@ python-dateutil==2.6.0
 pytz==2016.10
 six==1.10.0
 tables==3.3.0
+boto3

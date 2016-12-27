@@ -6,8 +6,6 @@ import botocore
 import os
 import glob
 import logging
-logging.basicConfig(filename='/tmp/upload_s3.log',
-                    level=logging.DEBUG)
 
 
 def upload_to_s3(access_key_id,
@@ -43,6 +41,9 @@ def upload_to_s3(access_key_id,
 
     abs_path_dir = os.path.abspath(directory)
 
+    logging.basicConfig(filename=abs_path_dir + '/upload_s3.log',
+                        level=logging.DEBUG)
+
     s3 = boto3.client('s3',
                       aws_access_key_id=access_key_id,
                       aws_secret_access_key=secret_access_key)
@@ -51,7 +52,7 @@ def upload_to_s3(access_key_id,
         try:
             s3.download_file(Bucket=bucket,
                              Key=folder + '/' + filename,
-                             Filename="old_" + filename)
+                             Filename=directory + '/' + "old_" + filename)
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 logging.info('File {} not in bucket'.format(filename))
