@@ -39,6 +39,8 @@ def archive_train_test(train_config, df_train,
 
     Returns
     -------
+    (train_uuid, test_uuid): 'str'
+       uuids for training and test set
     train_yaml: file
         Writes out to YAML file title.yaml
     data_file: file
@@ -64,6 +66,8 @@ def archive_train_test(train_config, df_train,
 
     with open(abs_path_dir + '/' + 'matrix_pairs.txt', 'a') as outfile:
         outfile.write(','.join([train_uuid, test_uuid]) + '\n')
+
+    return train_uuid, test_uuid
 
 
 def _store_matrix(metadata, df_data, title, directory, format='hd5'):
