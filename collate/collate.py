@@ -37,7 +37,7 @@ class Aggregate(object):
         """
         if isinstance(quantity, dict):
             # make quantity values tuples
-            self.quantities = {k: make_tuple(q) for k,q in quantity.items()}
+            self.quantities = {k: make_tuple(q) for k, q in quantity.items()}
         else:
             # first convert to list of tuples
             quantities = [make_tuple(q) for q in make_list(quantity)]
@@ -94,7 +94,7 @@ class Aggregation(object):
         """
         Args:
             aggregates: collection of Aggregate objects.
-            from_obj: defines the from clause, e.g. the name of the table. can use 
+            from_obj: defines the from clause, e.g. the name of the table. can use
             groups: a list of expressions to group by in the aggregation or a dictionary
                 pairs group: expr pairs where group is the alias (used in column names)
             prefix: prefix for aggregation tables and column names, defaults to from_obj
