@@ -105,12 +105,6 @@ class Aggregate(object):
 
             yield ex.literal_column(column).label(to_sql_name(name))
 
-def multicompare(col, op, choices, include_null=True, maxlen=None):
-    """
-    Returns: a dictionary of aggregate quantities to be passed to Aggregate()
-    """
-
-    
 
 def maybequote(elt):
     "Quote for passing to SQL if necessary, based upon the python type"
@@ -118,6 +112,7 @@ def maybequote(elt):
         return elt
     else:
         return "'{}'".format(elt)
+
 
 class MultiCompare(Aggregate):
     """
@@ -155,7 +150,7 @@ class MultiCompare(Aggregate):
             choices = {k: k for k in choices}
         opname = '_{}_'.format(op) if op != '=' else '_'
         d = {'{}{}{}'.format(col, opname, nickname):
-                "({} {} {})::INT".format(col, op, maybequote(choice))
+             "({} {} {})::INT".format(col, op, maybequote(choice))
              for nickname, choice in choices.items()}
         if include_null:
             d['{}__NULL'.format(col)] = '({} is NULL)::INT'.format(col)
@@ -164,6 +159,7 @@ class MultiCompare(Aggregate):
                 d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
 
         Aggregate.__init__(self, d, function, order)
+
 
 class Aggregation(object):
     def __init__(self, aggregates, groups, from_obj, prefix=None, suffix=None, schema=None):
