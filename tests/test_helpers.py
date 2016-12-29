@@ -1,13 +1,12 @@
 from collate import collate
-from collate.helpers import categorical
 
 def assert_contains(haystack, needle):
     for h in haystack:
         if needle in h: return
     assert False
 
-def test_categorical_lists():
-    d = categorical('col','=',['a','b','c'])
+def test_multicompare_lists():
+    d = collate.MultiCompare('col','=',['a','b','c'],[]).quantities
     assert len(d) == 4
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)
@@ -16,7 +15,16 @@ def test_categorical_lists():
     assert_contains(d.values(), "col = 'c'")
     assert_contains(map(str.lower, d.values()), "col is null")
 
-    d = categorical('col','=',['a','b','c'], include_null=False)
+    d = collate.MultiCompare('col','>',[1,2,3],[]).quantities
+    assert len(d) == 4
+    assert len(set(d.values())) == len(d)
+    assert len(set(d.keys())) == len(d)
+    assert_contains(d.values(), "col > 1")
+    assert_contains(d.values(), "col > 2")
+    assert_contains(d.values(), "col > 3")
+    assert_contains(map(str.lower, d.values()), "col is null")
+
+    d = collate.MultiCompare('col','=',['a','b','c'], [], include_null=False).quantities
     assert len(d) == 3
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)
@@ -24,11 +32,11 @@ def test_categorical_lists():
     assert_contains(d.values(), "col = 'b'")
     assert_contains(d.values(), "col = 'c'")
 
-    d = categorical('really_long_column_name','=',
+    d = collate.MultiCompare('really_long_column_name','=',
         ['really long string value that is similar to others',
          'really long string value that is like others',
          'really long string value that is quite alike to others',
-         'really long string value that is also like everything else'])
+         'really long string value that is also like everything else'], [], maxlen=32).quantities
     assert len(d) == 5
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)
@@ -39,8 +47,8 @@ def test_categorical_lists():
     assert_contains(d.values(), "really_long_column_name = 'really long string value that is also like everything else'")
     assert_contains(map(str.lower, d.values()), "really_long_column_name is null")
 
-def test_categorical_dicts():
-    d = categorical('col','=',{'vala': 'a','valb': 'b','valc': 'c'})
+def test_multicompare_dicts():
+    d = collate.MultiCompare('col','=',{'vala': 'a','valb': 'b','valc': 'c'}, []).quantities
     assert len(d) == 4
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)
@@ -53,11 +61,24 @@ def test_categorical_dicts():
     assert_contains(map(str.lower, d.keys()), 'null')
     assert_contains(map(str.lower, d.values()), "col is null")
 
-    d = categorical('long_column_name','=',
+    d = collate.MultiCompare('col','<',{'val1': 1,'val2': 2,'val3': 3}, []).quantities
+    assert len(d) == 4
+    assert len(set(d.values())) == len(d)
+    assert len(set(d.keys())) == len(d)
+    assert_contains(d.values(), "col < 1")
+    assert_contains(d.values(), "col < 2")
+    assert_contains(d.values(), "col < 3")
+    assert_contains(d.keys(), 'val1')
+    assert_contains(d.keys(), 'val2')
+    assert_contains(d.keys(), 'val3')
+    assert_contains(map(str.lower, d.keys()), 'null')
+    assert_contains(map(str.lower, d.values()), "col is null")
+
+    d = collate.MultiCompare('long_column_name','=',
         {'really long string key that is similar to others': 'really long string value that is similar to others',
          'really long string key that is like others': 'really long string value that is like others',
          'different key': 'really long string value that is quite alike to others',
-         'ni': 'really long string value that is also like everything else'})
+         'ni': 'really long string value that is also like everything else'}, [], maxlen=32).quantities
     assert len(d) == 5
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)

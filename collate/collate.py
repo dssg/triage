@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from numbers import Number
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
 import re
@@ -104,6 +105,65 @@ class Aggregate(object):
 
             yield ex.literal_column(column).label(to_sql_name(name))
 
+def multicompare(col, op, choices, include_null=True, maxlen=None):
+    """
+    Returns: a dictionary of aggregate quantities to be passed to Aggregate()
+    """
+
+    
+
+def maybequote(elt):
+    "Quote for passing to SQL if necessary, based upon the python type"
+    if isinstance(elt, Number):
+        return elt
+    else:
+        return "'{}'".format(elt)
+
+class MultiCompare(Aggregate):
+    """
+    A simple shorthand to automatically create many comparisons against one column
+    """
+    def __init__(self, col, op, choices, function, order=None, include_null=True, maxlen=None):
+        """
+        Args:
+            col: the column name (or equivalent SQL expression)
+            op: the SQL operation (e.g., '=' or '~' or 'LIKE')
+            choices: A list or dictionary of values. When a dictionary is
+                passed, the keys are a short name for the value.
+            function: (from Aggregate)
+            order: (from Aggregate)
+            include_null: Add an extra `{col} is NULL` if True (default True)
+            maxlen: The maximum length of aggregate quantity names (default 32)
+                Names longer than this will be truncated.
+
+        A simple helper method to easily create many comparison columns from
+        one source column by comparing it against many values. It effectively
+        creates many quantities of the form "({col} {op} {elt})::INT" for elt
+        in choices. It automatically quotes strings appropriately and leaves
+        numbers unquoted. The type of the comparison is converted to an
+        integer so it can easily be used with 'sum' (for total count) and
+        'avg' (for relative fraction) aggregate functions.
+
+        By default, the aggregates are named "{col}_{op}_{elt}" (or just
+        "{col}_{elt}" in the common case where op is '='), but that can get
+        long and exceed the maximum column name length. If ``maxlen`` is
+        specified then any aggregate name longer than ``maxlen`` gets
+        truncated with a number appended to ensure that they remain unique and
+        identifiable (but note that sequntial ordering is not preserved).
+        """
+        if type(choices) is not dict:
+            choices = {k: k for k in choices}
+        opname = '_{}_'.format(op) if op != '=' else '_'
+        d = {'{}{}{}'.format(col, opname, nickname):
+                "({} {} {})::INT".format(col, op, maybequote(choice))
+             for nickname, choice in choices.items()}
+        if include_null:
+            d['{}__NULL'.format(col)] = '({} is NULL)::INT'.format(col)
+        if maxlen is not None and any(len(k) > maxlen for k in d.keys()):
+            for i, k in enumerate(d.keys()):
+                d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
+
+        Aggregate.__init__(self, d, function, order)
 
 class Aggregation(object):
     def __init__(self, aggregates, groups, from_obj, prefix=None, suffix=None, schema=None):
