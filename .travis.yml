@@ -1,0 +1,18 @@
+language: python
+python:
+  - "3.5"
+
+
+# command to install dependencies
+install:
+    - pip install tox
+
+
+# command to run tests
+
+script:
+    - tox
+
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

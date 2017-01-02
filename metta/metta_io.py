@@ -48,7 +48,11 @@ def archive_train_test(train_config, df_train,
     """
 
     abs_path_dir = os.path.abspath(directory)
-    set_uuids = load_uuids(abs_path_dir)
+    if not os.path.exists(abs_path_dir):
+        os.makedirs(abs_path_dir)
+
+    uuid_fname = directory + '/' + '.matrix_uuids'
+    set_uuids = load_uuids(uuid_fname)
 
     check_config_types(train_config)
     check_config_types(test_config)
@@ -60,9 +64,11 @@ def archive_train_test(train_config, df_train,
     test_config['metta-uuid'] = test_uuid
 
     if not(train_uuid in set_uuids):
-        _store_matrix(train_config, df_train, train_uuid, abs_path_dir)
+        _store_matrix(train_config, df_train, train_uuid, abs_path_dir,
+                      format=format)
     if not(test_uuid in set_uuids):
-        _store_matrix(test_config, df_test, test_uuid, abs_path_dir)
+        _store_matrix(test_config, df_test, test_uuid,
+                      abs_path_dir, format=format)
 
     with open(abs_path_dir + '/' + 'matrix_pairs.txt', 'a') as outfile:
         outfile.write(','.join([train_uuid, test_uuid]) + '\n')
@@ -108,9 +114,6 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
 
     if not(metadata['label_name'] == last_col):
         raise IOError('label_name is not last column')
-
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
     yaml_fname = directory + '/' + title + '.yaml'
 
@@ -167,7 +170,7 @@ def check_config_types(dict_config):
     assert isinstance(dict_config['matrix_id'], str)
 
 
-def load_uuids(directory):
+def load_uuids(uuid_fname):
     """
     Check if uuid already exits.
 
@@ -183,7 +186,7 @@ def load_uuids(directory):
        no .matrix_uuids file
 
     """
-    uuid_fname = directory + '/' + '.matrix_uuids'
+
     if os.path.isfile(uuid_fname):
         with open(uuid_fname, 'r') as uuid_file:
             uuids = set([str_uuid.strip('\n') for str_uuid in uuid_file])

@@ -53,22 +53,22 @@ def upload_to_s3(access_key_id,
             s3.download_file(Bucket=bucket,
                              Key=folder + '/' + filename,
                              Filename=directory + '/' + "old_" + filename)
+
+            if os.path.isfile("old_" + filename):
+                abs_fname = directory + '/' + filename
+                abs_oldfname = directory + '/' + "old_" + filename
+                cmd = 'cat {} {} > tmp;mv tmp {};rm {}'.format(abs_fname,
+                                                               abs_oldfname,
+                                                               abs_fname,
+                                                               abs_oldfname)
+                logging.info(cmd)
+                os.system(cmd)
+
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
                 logging.info('File {} not in bucket'.format(filename))
         else:
             logging.info('Downloaded: {}'.format(filename))
-
-    for filename in ls_check_for_files:
-        if os.path.isfile("old_" + filename):
-            abs_fname = directory + '/' + filename
-            abs_oldfname = directory + '/' + "old_" + filename
-            cmd = 'cat {} {} > tmp; mv -v tmp {}; rm {}'.format(abs_fname,
-                                                                abs_oldfname,
-                                                                abs_fname,
-                                                                abs_oldfname)
-            logging.info(cmd)
-            os.system(cmd)
 
     abs_path_check_files = [abs_path_dir + '/' +
                             fname for fname in ls_check_for_files]

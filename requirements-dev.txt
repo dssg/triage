@@ -1,3 +1,8 @@
+moto
+codecov
+pytest
+pytest-cov
+pytest-pep8
 PyYAML
 numpy
 pandas
