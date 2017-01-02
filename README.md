@@ -1,5 +1,7 @@
 # metta-data
 Train Matrix and Test Matrix Storage
+[![Build Status](https://travis-ci.org/dssg/metta-data.svg?branch=master)](https://travis-ci.org/dssg/metta-data)
+[![codecov](https://codecov.io/gh/dssg/metta-data/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/metta-data)
 
 ## Short Description
 Store and recall matrices.
@@ -61,9 +63,6 @@ metta.upload_to_s3(access_key_id=dict_config['AWSAccessKey'],
 ```
 pip install git+git://github.com/dssg/metta-data.git
 ```
-## Dependencies
-
-## Developers
 
 ## License
 Licensed under MIT License
