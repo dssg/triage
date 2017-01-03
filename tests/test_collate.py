@@ -58,3 +58,12 @@ def test_aggregation_table_name_no_schema():
     assert collate.Aggregation([], from_obj='source', schema='schema',
             groups=[])\
             .get_table_name() == '"schema"."source_aggregation"'
+
+def test_distinct():
+    assert str(list(collate.Aggregate("distinct x", "count").get_columns())[0]) == "count(distinct x)"
+
+    assert str(list(collate.Aggregate("distinct x", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN x END)"
+
+    assert str(list(collate.Aggregate("distinct(x)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN (x) END)"
+
+    assert str(list(collate.Aggregate("distinct(x,y)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN (x,y) END)"

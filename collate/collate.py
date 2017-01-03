@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
+import re
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 
@@ -11,6 +12,20 @@ def make_list(a):
 
 def make_tuple(a):
     return (a,) if not isinstance(a, tuple) else a
+
+
+DISTINCT_REGEX = re.compile(r"distinct[ (]")
+
+
+def split_distinct(quantity):
+    # Only support distinct clauses with one-argument quantities
+    if len(quantity) != 1:
+        return ('', quantity)
+    q = quantity[0]
+    if DISTINCT_REGEX.match(q):
+        return "distinct ", (q[8:].lstrip(" "),)
+    else:
+        return "", (q,)
 
 
 class Aggregate(object):
@@ -63,7 +78,7 @@ class Aggregate(object):
             format_kwargs = {}
 
         name_template = "{prefix}{quantity_name}_{function}"
-        column_template = "{function}({args})"
+        column_template = "{function}({distinct}{args})"
         arg_template = "{quantity}"
         order_template = ""
 
@@ -75,12 +90,13 @@ class Aggregate(object):
 
         for function, (quantity_name, quantity), order in product(
                 self.functions, self.quantities.items(), self.orders):
+            distinct, quantity = split_distinct(quantity)
             args = str.join(", ", (arg_template.format(when=when, quantity=q)
                                    for q in quantity))
             order_clause = order_template.format(when=when, order=order)
 
             kwargs = dict(function=function, args=args, prefix=prefix,
-                          order_clause=order_clause,
+                          distinct=distinct, order_clause=order_clause,
                           quantity_name=quantity_name, **format_kwargs)
 
             column = column_template.format(**kwargs).format(**format_kwargs)
