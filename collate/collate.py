@@ -114,11 +114,12 @@ def maybequote(elt):
         return "'{}'".format(elt)
 
 
-class MultiCompare(Aggregate):
+class Compare(Aggregate):
     """
     A simple shorthand to automatically create many comparisons against one column
     """
-    def __init__(self, col, op, choices, function, order=None, include_null=True, maxlen=None):
+    def __init__(self, col, op, choices, function,
+                 order=None, include_null=True, maxlen=None, op_in_name=True):
         """
         Args:
             col: the column name (or equivalent SQL expression)
@@ -128,8 +129,9 @@ class MultiCompare(Aggregate):
             function: (from Aggregate)
             order: (from Aggregate)
             include_null: Add an extra `{col} is NULL` if True (default True)
-            maxlen: The maximum length of aggregate quantity names (default 32)
+            maxlen: The maximum length of aggregate quantity names, if specified.
                 Names longer than this will be truncated.
+            op_in_name: Include the operator in aggregate names (default False)
 
         A simple helper method to easily create many comparison columns from
         one source column by comparing it against many values. It effectively
@@ -139,8 +141,8 @@ class MultiCompare(Aggregate):
         integer so it can easily be used with 'sum' (for total count) and
         'avg' (for relative fraction) aggregate functions.
 
-        By default, the aggregates are named "{col}_{op}_{elt}" (or just
-        "{col}_{elt}" in the common case where op is '='), but that can get
+        By default, the aggregates are named "{col}_{op}_{elt}", but the
+        operator may be ommitted if `op_in_name=False`. This name can become
         long and exceed the maximum column name length. If ``maxlen`` is
         specified then any aggregate name longer than ``maxlen`` gets
         truncated with a number appended to ensure that they remain unique and
@@ -148,7 +150,7 @@ class MultiCompare(Aggregate):
         """
         if type(choices) is not dict:
             choices = {k: k for k in choices}
-        opname = '_{}_'.format(op) if op != '=' else '_'
+        opname = '_{}_'.format(op) if op_in_name else '_'
         d = {'{}{}{}'.format(col, opname, nickname):
              "({} {} {})::INT".format(col, op, maybequote(choice))
              for nickname, choice in choices.items()}
@@ -159,6 +161,18 @@ class MultiCompare(Aggregate):
                 d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
 
         Aggregate.__init__(self, d, function, order)
+
+
+class Categorical(Compare):
+    """
+    A simple shorthand to automatically create many equality comparisons against one column
+    """
+    def __init__(self, col, choices, function, order=None, op_in_name=False, **kwargs):
+        """
+        Create a Compare object with an equality operator, ommitting the `=`
+        from the generated aggregation names. See Compare for more details.
+        """
+        Compare.__init__(self, col, '=', choices, function, order, op_in_name=op_in_name, **kwargs)
 
 
 class Aggregation(object):
