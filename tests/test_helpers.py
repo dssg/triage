@@ -60,16 +60,18 @@ def test_compare_dicts():
     assert_contains(map(str.lower, d.keys()), 'null')
     assert_contains(map(lambda x: x[0].lower(), d.values()), "col is null")
 
-    d = collate.Compare('col','<',{'val1': 1,'val2': 2,'val3': 3}, []).quantities
-    assert len(d) == 3
+    d = collate.Compare('col','<',{'val1': 1,'val2': 2,'val3': 3}, [], include_null='missing').quantities
+    assert len(d) == 4
     assert len(set(d.values())) == len(d)
     assert len(set(d.keys())) == len(d)
     assert_contains(d.values(), "col < 1")
     assert_contains(d.values(), "col < 2")
     assert_contains(d.values(), "col < 3")
+    assert_contains(map(lambda x: x[0].lower(), d.values()), "null")
     assert_contains(d.keys(), 'val1')
     assert_contains(d.keys(), 'val2')
     assert_contains(d.keys(), 'val3')
+    assert_contains(d.keys(), 'missing')
 
     d = collate.Compare('long_column_name','=',
         {'really long string key that is similar to others': 'really long string value that is similar to others',
@@ -94,6 +96,8 @@ def test_categorical_same_as_compare():
     assert d2 == d3
 
 def test_categorical_nones():
-    d1 = collate.Categorical('col',{'vala': 'a','valb': 'b','valc': 'c','null': None}, []).quantities
+    d1 = collate.Categorical('col',{'vala': 'a','valb': 'b','valc': 'c','_NULL': None}, []).quantities
     d2 = collate.Compare('col','=',{'vala': 'a','valb': 'b','valc': 'c'}, [], op_in_name=False, include_null=True).quantities
     assert d1 == d2
+    d3 = collate.Categorical('col',['a','b','c',None],[]).quantities
+    assert sorted(d1.values()) == sorted(d2.values())
