@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from numbers import Number
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
 import re
@@ -103,6 +104,91 @@ class Aggregate(object):
             name = name_template.format(**kwargs)
 
             yield ex.literal_column(column).label(to_sql_name(name))
+
+
+def maybequote(elt):
+    "Quote for passing to SQL if necessary, based upon the python type"
+    if isinstance(elt, Number):
+        return elt
+    else:
+        return "'{}'".format(elt)
+
+
+class Compare(Aggregate):
+    """
+    A simple shorthand to automatically create many comparisons against one column
+    """
+    def __init__(self, col, op, choices, function,
+                 order=None, include_null=False, maxlen=None, op_in_name=True):
+        """
+        Args:
+            col: the column name (or equivalent SQL expression)
+            op: the SQL operation (e.g., '=' or '~' or 'LIKE')
+            choices: A list or dictionary of values. When a dictionary is
+                passed, the keys are a short name for the value.
+            function: (from Aggregate)
+            order: (from Aggregate)
+            include_null: Add an extra `{col} is NULL` if True (default False).
+                 May also be non-boolean, in which case its truthiness determines
+                 the behavior and the value is used as the value short name.
+            maxlen: The maximum length of aggregate quantity names, if specified.
+                Names longer than this will be truncated.
+            op_in_name: Include the operator in aggregate names (default False)
+
+        A simple helper method to easily create many comparison columns from
+        one source column by comparing it against many values. It effectively
+        creates many quantities of the form "({col} {op} {elt})::INT" for elt
+        in choices. It automatically quotes strings appropriately and leaves
+        numbers unquoted. The type of the comparison is converted to an
+        integer so it can easily be used with 'sum' (for total count) and
+        'avg' (for relative fraction) aggregate functions.
+
+        By default, the aggregates are named "{col}_{op}_{elt}", but the
+        operator may be ommitted if `op_in_name=False`. This name can become
+        long and exceed the maximum column name length. If ``maxlen`` is
+        specified then any aggregate name longer than ``maxlen`` gets
+        truncated with a number appended to ensure that they remain unique and
+        identifiable (but note that sequntial ordering is not preserved).
+        """
+        if type(choices) is not dict:
+            choices = {k: k for k in choices}
+        opname = '_{}_'.format(op) if op_in_name else '_'
+        d = {'{}{}{}'.format(col, opname, nickname):
+             "({} {} {})::INT".format(col, op, maybequote(choice))
+             for nickname, choice in choices.items()}
+        if include_null is True:
+            include_null = '_NULL'
+        if include_null:
+            d['{}_{}'.format(col, include_null)] = '({} is NULL)::INT'.format(col)
+        if maxlen is not None and any(len(k) > maxlen for k in d.keys()):
+            for i, k in enumerate(d.keys()):
+                d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
+
+        Aggregate.__init__(self, d, function, order)
+
+
+class Categorical(Compare):
+    """
+    A simple shorthand to automatically create many equality comparisons against one column
+    """
+    def __init__(self, col, choices, function, order=None, op_in_name=False, **kwargs):
+        """
+        Create a Compare object with an equality operator, ommitting the `=`
+        from the generated aggregation names. See Compare for more details.
+
+        As a special extension, Compare's 'include_null' keyword option may be
+        enabled by including the value `None` in the choices list. Multiple
+        None values are ignored.
+        """
+        if None in choices:
+            kwargs['include_null'] = True
+            choices.remove(None)
+        elif type(choices) is dict and None in choices.values():
+            ks = [k for k, v in choices.items() if v is None]
+            for k in ks:
+                choices.pop(k)
+                kwargs['include_null'] = str(k)
+        Compare.__init__(self, col, '=', choices, function, order, op_in_name=op_in_name, **kwargs)
 
 
 class Aggregation(object):
