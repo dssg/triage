@@ -119,7 +119,7 @@ class Compare(Aggregate):
     A simple shorthand to automatically create many comparisons against one column
     """
     def __init__(self, col, op, choices, function,
-                 order=None, include_null=True, maxlen=None, op_in_name=True):
+                 order=None, include_null=False, maxlen=None, op_in_name=True):
         """
         Args:
             col: the column name (or equivalent SQL expression)
@@ -128,7 +128,7 @@ class Compare(Aggregate):
                 passed, the keys are a short name for the value.
             function: (from Aggregate)
             order: (from Aggregate)
-            include_null: Add an extra `{col} is NULL` if True (default True)
+            include_null: Add an extra `{col} is NULL` if True (default False)
             maxlen: The maximum length of aggregate quantity names, if specified.
                 Names longer than this will be truncated.
             op_in_name: Include the operator in aggregate names (default False)
@@ -171,7 +171,19 @@ class Categorical(Compare):
         """
         Create a Compare object with an equality operator, ommitting the `=`
         from the generated aggregation names. See Compare for more details.
+
+        As a special extension, Compare's 'include_null' keyword option may be
+        enabled by including the value `None` in the choices list. Multiple
+        None values are ignored, as is the custom name (if provided in a dict).
         """
+        if None in choices:
+            kwargs['include_null'] = True
+            choices.remove(None)
+        elif type(choices) is dict and None in choices.values():
+            kwargs['include_null'] = True
+            ks = [k for k,v in choices.items() if v is None]
+            for k in ks:
+                choices.pop(k)
         Compare.__init__(self, col, '=', choices, function, order, op_in_name=op_in_name, **kwargs)
 
 
