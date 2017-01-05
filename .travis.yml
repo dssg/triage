@@ -1,18 +1,11 @@
 language: python
 python:
   - "3.5"
+notifications:
+  email: false
 
-
-# command to install dependencies
 install:
     - pip install tox
 
-
-# command to run tests
-
 script:
     - tox
-
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash) -t 58a0b889-eac7-463c-886a-4a685829e20b
