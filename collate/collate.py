@@ -357,7 +357,7 @@ class Aggregation(object):
         if self.schema is not None:
             return "CREATE SCHEMA IF NOT EXISTS %s" % self.schema
 
-    def execute(self, conn):
+    def execute(self, conn, join_table=None):
         """
         Execute all SQL statements to create final aggregation table.
         Args:
@@ -380,5 +380,5 @@ class Aggregation(object):
             conn.execute(indexes[group])
 
         conn.execute(self.get_drop())
-        conn.execute(self.get_create())
+        conn.execute(self.get_create(join_table=join_table))
         trans.commit()

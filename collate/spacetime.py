@@ -126,6 +126,24 @@ class SpacetimeAggregation(Aggregation):
                 (self.get_table_name(group), groupby, self.output_date_column)
                 for group, groupby in self.groups.items()}
 
+    def get_join_table(self):
+        """
+        Generates a join table, consisting of an entry for each combination of
+        groups and dates in the from_obj
+        """
+        groups = list(self.groups.values())
+        intervals = list(set(chain(*self.intervals.values())))
+
+        queries = []
+        for date in self.dates:
+            columns = groups + [ex.literal_column("'%s'::date" % date).label(
+                    self.output_date_column)]
+            queries.append(ex.select(columns, from_obj=self.from_obj)
+                             .where(self.where(date, intervals))
+                             .group_by(*groups))
+
+        return str.join("\nUNION ALL\n", map(str, queries))
+
     def get_create(self, join_table=None):
         """
         Generate a single aggregation table creation query by joining
@@ -134,12 +152,9 @@ class SpacetimeAggregation(Aggregation):
         """
         if not join_table:
             join_table = '(%s) t1' % self.get_join_table()
-
-        query = ("SELECT * FROM %s\n"
-                 "CROSS JOIN (select unnest('{%s}'::date[]) as %s) t2\n") % (
-                join_table, str.join(',', self.dates), self.output_date_column)
+        query = "SELECT * FROM %s\n" % join_table
         for group, groupby in self.groups.items():
-            query += "LEFT JOIN %s USING (%s, %s)" % (
+            query += " LEFT JOIN %s USING (%s, %s)" % (
                     self.get_table_name(group), groupby, self.output_date_column)
 
         return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
