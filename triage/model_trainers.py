@@ -1,12 +1,13 @@
 class ModelTrainer(object):
-    def __init__(self, features_table, model_config, trained_model_path):
-        self.features_table = features_table
+    def __init__(self, training_set_path, test_set_path, model_config, trained_model_path):
+        self.training_set_path = training_set_path
+        self.test_set_path = test_set_path
         self.model_config = model_config
         self.trained_model_path = trained_model_path
 
     def train(self):
         """TODO:
-        select x_train, x_test, y_train, y_test from features table
+        retrieve x_train, x_test, y_train, y_test from s3 path
         for each model from model config:
             instantiate model
             run
