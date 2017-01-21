@@ -1,5 +1,44 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import pickle
+import tempfile
+import botocore
+
+
+def split_s3_path(path):
+    """
+    Args:
+        path: a string representing an s3 path including a bucket
+            (bucket_name/prefix/prefix2)
+    Returns:
+        A tuple containing the bucket name and full prefix)
+    """
+    return path.split('/', 1)
+
+
+def upload_object_to_key(obj, cache_key):
+    """Pickles object and uploads it to the given s3 key
+
+    Args:
+        obj (object) any picklable Python object
+        cache_key (boto3.s3.Object) an s3 key
+    """
+    with tempfile.NamedTemporaryFile('w+b') as f:
+        pickle.dump(obj, f)
+        f.seek(0)
+        cache_key.upload_file(f.name)
+
+
+def key_exists(key):
+    try:
+        key.load()
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            return False
+        else:
+            raise
+    else:
+        return True
 
 
 def temporal_splits(start_time, end_time, update_window, prediction_windows):

@@ -1,5 +1,5 @@
 language: python
-python: 3.5
+python: 3.4
 notifications:
   email: false
 
@@ -9,15 +9,11 @@ addons:
   postgresql: "9.4"
 before_script:
   - psql -U postgres -c "create extension postgis"
-
-
 env:
-  - TOXENV=py35
-  - TOXENV=py27
-  - TOXENV=flake8
-
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox
-
-# command to run tests, e.g. python setup.py test
-script: tox -e ${TOXENV}
+- BOTO_CONFIG=/tmp/nowhere
+before_install:
+- sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
+install:
+- pip install -r requirements_dev.txt
+script: py.test -vvv -s --cov=triage
+after_success: codecov

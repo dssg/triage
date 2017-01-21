@@ -1,4 +1,4 @@
-from collate import collate
+from collate.collate import collate
 import logging
 
 

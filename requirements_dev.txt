@@ -6,9 +6,13 @@ inflection
 psycopg2
 python-dateutil
 collate
+scipy
+sklearn
+tables
+
 testing.postgresql
 pandas
-boto
+boto3
 moto
 
 pip==8.1.2
@@ -21,3 +25,4 @@ coverage==4.1
 Sphinx==1.4.8
 
 pytest==2.9.2
+pytest-cov
