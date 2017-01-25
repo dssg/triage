@@ -1,7 +1,6 @@
 from triage.utils import temporal_splits
 from triage.label_generators import LabelGenerator
 from triage.feature_generators import FeatureGenerator
-from triage.set_generators import SetGenerator
 from triage.model_trainers import ModelTrainer
 from triage.model_results_generators import ModelResultsGenerator
 import logging
@@ -43,34 +42,22 @@ class Pipeline(object):
             ).generate()
 
             # 4. create training and test sets
-            set_generator = SetGenerator(
-                features_table=features_table,
-                labels_table=labels_table,
-                db_engine=self.db_engine
-            )
-            training_set_path = set_generator.generate(
-                start_date=split['train_start'],
-                end_date=split['train_end'],
-            )
-            test_set_path = set_generator.generate(
-                start_date=split['test_start'],
-                end_date=split['test_end'],
-            )
+            # timechop!
 
             # 5. train models
-            trained_model_path = 'project/trained_models'
-            model_ids = ModelTrainer(
-                training_set_path=training_set_path,
-                test_set_path=test_set_path,
-                model_config=self.config['models'],
-                trained_model_path=trained_model_path
-            ).train()
+            #trained_model_path = 'project/trained_models'
+            #model_ids = ModelTrainer(
+                #training_set_path=training_set_path,
+                #test_set_path=test_set_path,
+                #model_config=self.config['models'],
+                #trained_model_path=trained_model_path
+            #).train()
 
             # 6. generate model results
-            ModelResultsGenerator(
-                trained_model_path=trained_model_path,
-                model_ids=model_ids
-            ).generate()
+            #ModelResultsGenerator(
+                #trained_model_path=trained_model_path,
+                #model_ids=model_ids
+            #).generate()
 
 if __name__ == '__main__':
     with open('example_experiment_config.yaml') as f:

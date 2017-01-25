@@ -1,8 +1,9 @@
-from triage.feature_generators import FeatureGenerator
+#from triage.feature_generators import FeatureGenerator
 import testing.postgresql
 from sqlalchemy import create_engine
 from datetime import date
 import logging
+import pytest
 
 
 input_data = [
@@ -36,6 +37,7 @@ expected_output = {
 
 }
 
+@pytest.mark.skip(reason='collate package currently broken')
 def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())

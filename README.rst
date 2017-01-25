@@ -3,19 +3,12 @@ Triage
 ===============================
 
 
-.. image:: https://img.shields.io/pypi/v/triage.svg
-        :target: https://pypi.python.org/pypi/triage
-
 .. image:: https://img.shields.io/travis/dssg/triage.svg
         :target: https://travis-ci.org/dssg/triage
 
-.. image:: https://readthedocs.org/projects/triage/badge/?version=latest
-        :target: https://triage.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/dssg/triage/shield.svg
-     :target: https://pyup.io/repos/github/dssg/triage/
-     :alt: Updates
+.. image:: https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg
+	 :target: https://codecov.io/gh/dssg/triage
+	 :alt: Code Coverage
 
 
 Risk modeling and prediction
