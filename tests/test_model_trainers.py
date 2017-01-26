@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from triage.db import ensure_db
 from triage.utils import model_cache_key
 
-from triage.model_trainers import SimpleModelTrainer
+from triage.model_trainers import SimpleModelTrainer, S3ModelStorageEngine
 
 
 @contextmanager
@@ -56,7 +56,7 @@ def test_simple_model_trainer():
                 project_path = 'econ-dev/inspections'
                 trainer = SimpleModelTrainer(
                     project_path=project_path,
-                    s3_conn=s3_conn,
+                    model_storage_engine=S3ModelStorageEngine(s3_conn, project_path),
                     db_engine=engine
                 )
                 trainer.train_models(

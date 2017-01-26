@@ -104,14 +104,11 @@ class SimpleModelTrainer(object):
     def __init__(
         self,
         project_path,
-        s3_conn=None,
+        model_storage_engine,
         db_engine=None
     ):
         self.project_path = project_path
-        if s3_conn:
-            self.storage_engine = S3ModelStorageEngine(s3_conn, project_path)
-        else:
-            self.storage_engine = FSModelStorageEngine(project_path)
+        self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
@@ -275,7 +272,7 @@ class SimpleModelTrainer(object):
         model_ids = []
         for class_path, parameters in self._generate_model_configs(model_config):
             model_hash = self._model_hash(training_metadata_path, class_path, parameters)
-            model_store = self.storage_engine.get_store(model_hash)
+            model_store = self.model_storage_engine.get_store(model_hash)
             if replace or not model_store.exists():
                 logging.info('Training %s/%s', class_path, parameters)
                 model_id = self._train_and_store_model(
