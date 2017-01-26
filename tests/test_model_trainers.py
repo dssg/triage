@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.db import ensure_db
+from triage.utils import model_cache_key
 
 from triage.model_trainers import SimpleModelTrainer
 
@@ -52,18 +53,37 @@ def test_simple_model_trainer():
                 'label': ['good', 'bad']
             }, {'label_name': 'label'}) as (matrix_path, metadata_path):
 
+                project_path = 'econ-dev/inspections'
                 trainer = SimpleModelTrainer(
                     training_set_path=matrix_path,
                     training_metadata_path=metadata_path,
                     model_config=model_config,
-                    project_path='econ-dev/inspections',
+                    project_path=project_path,
                     s3_conn=s3_conn,
                     db_engine=engine
                 )
-                cache_keys = trainer.train_models()
+                trainer.train_models()
 
                 # assert
-                # 1. that all four models are cached
+                # 1. that the models table entries are present
+                records = [
+                    row for row in
+                    engine.execute('select * from results.feature_importances')
+                ]
+                assert len(records) == 4 * 3  # maybe exclude entity_id?
+
+                records = [
+                    row for row in
+                    engine.execute('select model_hash from results.models')
+                ]
+                assert len(records) == 4
+
+                cache_keys = [
+                    model_cache_key(project_path, model_row[0], s3_conn)
+                    for model_row in records
+                ]
+
+                # 2. that all four models are cached
                 model_pickles = [
                     pickle.loads(cache_key.get()['Body'].read())
                     for cache_key in cache_keys
@@ -71,7 +91,7 @@ def test_simple_model_trainer():
                 assert len(model_pickles) == 4
                 assert len([x for x in model_pickles if x is not None]) == 4
 
-                # 2. that their results can have predictions made on it
+                # 3. that their results can have predictions made on it
                 test_matrix = pandas.DataFrame.from_dict({
                     'entity_id': [3, 4],
                     'feature_one': [4, 4],
@@ -80,16 +100,3 @@ def test_simple_model_trainer():
                 for model_pickle in model_pickles:
                     predictions = model_pickle.predict(test_matrix)
                     assert len(predictions) == 2
-
-                # 3. that the models table entries are present
-                records = [
-                    row for row in
-                    engine.execute('select * from results.models')
-                ]
-                assert len(records) == 4
-
-                records = [
-                    row for row in
-                    engine.execute('select * from results.feature_importances')
-                ]
-                assert len(records) == 4 * 3  # maybe exclude entity_id?

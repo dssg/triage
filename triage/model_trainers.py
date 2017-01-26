@@ -1,11 +1,14 @@
 from sklearn.grid_search import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 from .db import Model, FeatureImportance
-from .utils import split_s3_path, upload_object_to_key, key_exists
+from .utils import \
+    upload_object_to_key,\
+    key_exists,\
+    model_cache_key,\
+    get_matrix_and_metadata
 import importlib
 import json
 import logging
-import pandas
 import yaml
 
 
@@ -70,7 +73,7 @@ class SimpleModelTrainer(object):
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
 
-    def _model_id(self, class_path, parameters):
+    def _model_hash(self, class_path, parameters):
         """Generates a unique identifier for a trained model
         based on attributes of the model that together define
         equivalence; in other words, if we train a second model with these
@@ -103,19 +106,6 @@ class SimpleModelTrainer(object):
             for parameters in ParameterGrid(parameter_config):
                 yield class_path, parameters
 
-    def _output_cache_key(self, model_id):
-        """Generates an s3 key for a given model_id
-
-        Args:
-            model_id (string) a unique model id
-
-        Returns:
-            (boto3.s3.Object) an s3 key, which may or may not have contents
-        """
-        bucket_name, prefix = split_s3_path(self.project_path)
-        path = '/'.join([prefix, 'trained_models', model_id])
-        return self.s3_conn.Object(bucket_name, path)
-
     def _train(self, class_path, parameters, label_name, train_matrix):
         """Fit a model to a training set. Works on any modeling class that
         is available in this package's environment and implements .fit
@@ -142,7 +132,7 @@ class SimpleModelTrainer(object):
         class_path,
         parameters,
         feature_names,
-        model_id,
+        model_hash,
         trained_model
     ):
         """Writes model and feature importance data to a database
@@ -151,12 +141,12 @@ class SimpleModelTrainer(object):
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
             feature_names (list) feature names in order given to model
-            model_id (string) a unique id for the model
-            trained_model a trained model
+            model_hash (string) a unique id for the model
+            trained_model (object) a trained model object
         """
         session = self.sessionmaker()
         model = Model(
-            unique_identifier=model_id,
+            model_hash=model_hash,
             model_type=class_path,
             model_parameters=parameters
         )
@@ -171,23 +161,13 @@ class SimpleModelTrainer(object):
             )
             session.add(feature_importance)
         session.commit()
-
-    def _get_train_matrix_and_metadata(self):
-        """Retrieve a training matrix in hdf format and
-        training data in yaml format
-
-        Returns: (tuple) training matrix, training metadata
-        """
-        matrix = pandas.read_hdf(self.training_set_path)
-        with open(self.training_metadata_path) as f:
-            metadata = yaml.load(f)
-        return matrix, metadata
+        return model.model_id
 
     def _train_and_store_model(
         self,
         class_path,
         parameters,
-        model_id,
+        model_hash,
         cache_key
     ):
         """Train a model, cache it in s3, and write metadata to a database
@@ -195,10 +175,15 @@ class SimpleModelTrainer(object):
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
-            model_id (string) a unique id for the model
+            model_hash (string) a unique id for the model
             cache_key (boto3.s3.Object) the s3 key in which to store the model
+
+        Returns: (int) a database id for the model
         """
-        matrix, metadata = self._get_train_matrix_and_metadata()
+        matrix, metadata = get_matrix_and_metadata(
+            self.training_set_path,
+            self.training_metadata_path
+        )
         trained_model, feature_names = self._train(
             class_path,
             parameters,
@@ -208,14 +193,15 @@ class SimpleModelTrainer(object):
         logging.info('Trained model')
         upload_object_to_key(trained_model, cache_key)
         logging.info('Cached model')
-        self._write_model_to_db(
+        model_id = self._write_model_to_db(
             class_path,
             parameters,
             feature_names,
-            model_id,
+            model_hash,
             trained_model
         )
         logging.info('Wrote model to db')
+        return model_id
 
     def train_models(self, replace=False):
         """Train and store configured models
@@ -224,22 +210,26 @@ class SimpleModelTrainer(object):
             replace (optional, False): whether to replace already cached models
 
         Returns:
-            (list) of s3 cache keys where the trained models can be accessed
+            (list) of model ids
         """
-        cache_keys = []
+        model_ids = []
         for class_path, parameters in self._generate_model_configs():
-            model_id = self._model_id(class_path, parameters)
-            cache_key = self._output_cache_key(model_id)
+            model_hash = self._model_hash(class_path, parameters)
+            cache_key = model_cache_key(
+                self.project_path,
+                model_hash,
+                self.s3_conn
+            )
             if replace or not key_exists(cache_key):
                 logging.info('Training %s/%s', class_path, parameters)
-                self._train_and_store_model(
+                model_id = self._train_and_store_model(
                     class_path,
                     parameters,
-                    model_id,
+                    model_hash,
                     cache_key
                 )
-                cache_keys.append(cache_key)
+                model_ids.append(model_id)
             else:
                 logging.info('Skipping %s/%s', class_path, parameters)
 
-        return cache_keys
+        return model_ids

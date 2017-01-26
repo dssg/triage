@@ -3,6 +3,8 @@ from dateutil.relativedelta import relativedelta
 import pickle
 import tempfile
 import botocore
+import pandas
+import yaml
 
 
 def split_s3_path(path):
@@ -29,6 +31,27 @@ def upload_object_to_key(obj, cache_key):
         cache_key.upload_file(f.name)
 
 
+def download_object(cache_key):
+    with tempfile.NamedTemporaryFile() as f:
+        cache_key.download_fileobj(f)
+        f.seek(0)
+        return pickle.load(f)
+
+
+def model_cache_key(project_path, model_id, s3_conn):
+    """Generates an s3 key for a given model_id
+
+    Args:
+        model_id (string) a unique model id
+
+    Returns:
+        (boto3.s3.Object) an s3 key, which may or may not have contents
+    """
+    bucket_name, prefix = split_s3_path(project_path)
+    path = '/'.join([prefix, 'trained_models', model_id])
+    return s3_conn.Object(bucket_name, path)
+
+
 def key_exists(key):
     try:
         key.load()
@@ -39,6 +62,18 @@ def key_exists(key):
             raise
     else:
         return True
+
+
+def get_matrix_and_metadata(matrix_path, metadata_path):
+    """Retrieve a matrix in hdf format and
+    metadata about the matrix in yaml format
+
+    Returns: (tuple) matrix, metadata
+    """
+    matrix = pandas.read_hdf(matrix_path)
+    with open(metadata_path) as f:
+        metadata = yaml.load(f)
+    return matrix, metadata
 
 
 def temporal_splits(start_time, end_time, update_window, prediction_windows):
