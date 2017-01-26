@@ -1,21 +1,21 @@
 from .db import Model, Prediction
-from .utils import model_cache_key, download_object, get_matrix_and_metadata
+from .utils import get_matrix_and_metadata
 from sqlalchemy.orm import sessionmaker
 
 
 class Predictor(object):
-    def __init__(self, project_path, s3_conn, db_engine):
+    def __init__(self, project_path, model_storage_engine, db_engine):
         """Encapsulates the task of generating predictions on an arbitrary
         dataset and storing the results
 
         Args:
             project_path (string) a desired fs/s3 project path
-            s3_conn (boto3.s3.connection)
+            model_storage_engine (triage.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
         """
         self.project_path = project_path
+        self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
-        self.s3_conn = s3_conn
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
 
@@ -28,12 +28,9 @@ class Predictor(object):
         Returns:
             A python object which implements .predict()
         """
-        cache_key = model_cache_key(
-            self.project_path,
-            self.sessionmaker().query(Model).get(model_id).model_hash,
-            self.s3_conn
-        )
-        return download_object(cache_key)
+        model_hash = self.sessionmaker().query(Model).get(model_id).model_hash
+        model_store = self.model_storage_engine.get_store(model_hash)
+        return model_store.load()
 
     def _write_to_db(self, model_id, as_of_date, entity_ids, predictions, labels):
         """Writes given predictions to database

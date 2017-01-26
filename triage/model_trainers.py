@@ -1,71 +1,12 @@
 from sklearn.grid_search import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 from .db import Model, FeatureImportance
-from .utils import \
-    upload_object_to_key,\
-    key_exists,\
-    model_cache_key,\
-    get_matrix_and_metadata
+from .utils import get_matrix_and_metadata
 import importlib
 import json
 import logging
 import yaml
-import os.path
-import pickle
 
-
-class ModelStorageEngine(object):
-    def __init__(self, project_path):
-        self.project_path = project_path
-
-    def get_store(self, model_hash):
-        pass
-
-
-class Store(object):
-    def __init__(self, path):
-        self.path = path
-
-    def exists(self):
-        pass
-
-
-class S3Store(Store):
-    def exists(self):
-        key_exists(self.path)
-
-    def write(self, obj):
-        upload_object_to_key(obj, self.path)
-
-
-class FSStore(Store):
-    def exists(self):
-        return os.path.isfile(self.path)
-
-    def write(self, obj):
-        with open(self.path, 'w+b') as f:
-            pickle.dump(obj, f)
-
-
-class S3ModelStorageEngine(ModelStorageEngine):
-    def __init__(self, s3_conn, *args, **kwargs):
-        super(S3ModelStorageEngine, self).__init__(*args, **kwargs)
-        self.s3_conn = s3_conn
-
-    def get_store(self, model_hash):
-        return S3Store(model_cache_key(
-            self.project_path,
-            model_hash,
-            self.s3_conn
-        ))
-
-class FSModelStorageEngine(ModelStorageEngine):
-    def get_store(self, model_hash):
-        return FSStore('/'.join([
-            self.project_path,
-            'trained_models',
-            model_hash
-        ]))
 
 def get_feature_importances(model):
     """

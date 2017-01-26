@@ -7,6 +7,7 @@ from triage.db import ensure_db
 
 from triage.predictors import Predictor
 from tests.utils import fake_metta, fake_trained_model
+from triage.storage import S3ModelStorageEngine
 import datetime
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
@@ -14,15 +15,16 @@ AS_OF_DATE = datetime.date(2016, 12, 21)
 
 def test_predictor():
     with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        ensure_db(engine)
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
 
         with mock_s3():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
             project_path = 'econ-dev/inspections'
-            model_id = fake_trained_model(project_path, s3_conn, engine)
-            predictor = Predictor(project_path, s3_conn, engine)
+            model_id = fake_trained_model(project_path, s3_conn, db_engine)
+            model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+            predictor = Predictor(project_path, model_storage_engine, db_engine)
             # create prediction set
             with fake_metta({
                 'entity_id': [1, 2],
@@ -44,7 +46,7 @@ def test_predictor():
                 # can be linked to the original models
                 records = [
                     row for row in
-                    engine.execute('select entity_id, as_of_date from results.predictions join results.models using (model_id)')
+                    db_engine.execute('select entity_id, as_of_date from results.predictions join results.models using (model_id)')
                 ]
                 assert len(records) == 2
 

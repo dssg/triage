@@ -11,7 +11,8 @@ from sqlalchemy import create_engine
 from triage.db import ensure_db
 from triage.utils import model_cache_key
 
-from triage.model_trainers import SimpleModelTrainer, S3ModelStorageEngine
+from triage.model_trainers import SimpleModelTrainer
+from triage.storage import S3ModelStorageEngine
 
 
 @contextmanager
