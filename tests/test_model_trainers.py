@@ -55,14 +55,15 @@ def test_simple_model_trainer():
 
                 project_path = 'econ-dev/inspections'
                 trainer = SimpleModelTrainer(
-                    training_set_path=matrix_path,
-                    training_metadata_path=metadata_path,
-                    model_config=model_config,
                     project_path=project_path,
                     s3_conn=s3_conn,
                     db_engine=engine
                 )
-                trainer.train_models()
+                trainer.train_models(
+                    training_set_path=matrix_path,
+                    training_metadata_path=metadata_path,
+                    model_config=model_config
+                )
 
                 # assert
                 # 1. that the models table entries are present

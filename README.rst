@@ -23,6 +23,31 @@ Features
 
 * TODO
 
+Usage
+--------
+```
+from triage.model_trainers import SimpleModelTrainer
+from triage.predictors import Predictor
+
+db_engine = ...
+s3_conn = ...
+project_path = 'econ-dev/inspections'
+
+trainer = SimpleModelTrainer(
+    training_set_path=...,
+    training_metadata_path=...,
+    model_config=...,
+    project_path=project_path,
+    s3_conn=s3_conn,
+    db_engine=db_engine
+)
+model_ids = trainer.train_models()
+
+predictor = Predictor(project_path, s3_conn, engine)
+for model_id in model_ids:
+    predictions = predictor.predict(model_id, test_matrix_path=..., test_metadata_path=...)
+```
+
 Credits
 ---------
 

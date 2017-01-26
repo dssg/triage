@@ -10,7 +10,62 @@ import importlib
 import json
 import logging
 import yaml
+import os.path
+import pickle
 
+
+class ModelStorageEngine(object):
+    def __init__(self, project_path):
+        self.project_path = project_path
+
+    def get_store(self, model_hash):
+        pass
+
+
+class Store(object):
+    def __init__(self, path):
+        self.path = path
+
+    def exists(self):
+        pass
+
+
+class S3Store(Store):
+    def exists(self):
+        key_exists(self.path)
+
+    def write(self, obj):
+        upload_object_to_key(obj, self.path)
+
+
+class FSStore(Store):
+    def exists(self):
+        return os.path.isfile(self.path)
+
+    def write(self, obj):
+        with open(self.path, 'w+b') as f:
+            pickle.dump(obj, f)
+
+
+class S3ModelStorageEngine(ModelStorageEngine):
+    def __init__(self, s3_conn, *args, **kwargs):
+        super(S3ModelStorageEngine, self).__init__(*args, **kwargs)
+        self.s3_conn = s3_conn
+
+    def get_store(self, model_hash):
+        return S3Store(model_cache_key(
+            self.project_path,
+            model_hash,
+            self.s3_conn
+        ))
+
+class FSModelStorageEngine(ModelStorageEngine):
+    def get_store(self, model_hash):
+        return FSStore('/'.join([
+            self.project_path,
+            'trained_models',
+            model_hash
+        ]))
 
 def get_feature_importances(model):
     """
@@ -41,15 +96,6 @@ def get_feature_importances(model):
 class SimpleModelTrainer(object):
     """Trains a series of classifiers using the same training set
     Args:
-        training_set_path (string): filepath to (hdf5) training set
-        training_metadata_path (string): filepath to (yaml) training metadata
-        model_config (dict) of format {classpath: hyperparameter dicts}
-            example: { 'sklearn.ensemble.RandomForestClassifier': {
-                'n_estimators': [1,10,100,1000,10000],
-                'max_depth': [1,5,10,20,50,100],
-                'max_features': ['sqrt','log2'],
-                'min_samples_split': [2,5,10]
-            } }
         project_path (string) path to project folder on s3,
             under which to cache model pickles
         s3_conn (boto3.s3.connection)
@@ -57,23 +103,20 @@ class SimpleModelTrainer(object):
     """
     def __init__(
         self,
-        training_set_path,
-        training_metadata_path,
-        model_config,
         project_path,
-        s3_conn,
+        s3_conn=None,
         db_engine=None
     ):
-        self.training_set_path = training_set_path
-        self.training_metadata_path = training_metadata_path
-        self.model_config = model_config
         self.project_path = project_path
-        self.s3_conn = s3_conn
+        if s3_conn:
+            self.storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+        else:
+            self.storage_engine = FSModelStorageEngine(project_path)
         self.db_engine = db_engine
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
 
-    def _model_hash(self, class_path, parameters):
+    def _model_hash(self, training_metadata_path, class_path, parameters):
         """Generates a unique identifier for a trained model
         based on attributes of the model that together define
         equivalence; in other words, if we train a second model with these
@@ -85,7 +128,7 @@ class SimpleModelTrainer(object):
 
         Returns: (string) a unique identifier
         """
-        with open(self.training_metadata_path) as f:
+        with open(training_metadata_path) as f:
             training_metadata = yaml.load(f)
 
         unique = {
@@ -96,13 +139,13 @@ class SimpleModelTrainer(object):
         }
         return hex(hash(json.dumps(unique, sort_keys=True)))
 
-    def _generate_model_configs(self):
+    def _generate_model_configs(self, model_config):
         """Flattens a model/parameter grid configuration into individually
         trainable model/parameter pairs
 
         Yields: (tuple) classpath and parameters
         """
-        for class_path, parameter_config in self.model_config.items():
+        for class_path, parameter_config in model_config.items():
             for parameters in ParameterGrid(parameter_config):
                 yield class_path, parameters
 
@@ -168,7 +211,9 @@ class SimpleModelTrainer(object):
         class_path,
         parameters,
         model_hash,
-        cache_key
+        training_set_path,
+        training_metadata_path,
+        model_store
     ):
         """Train a model, cache it in s3, and write metadata to a database
 
@@ -181,8 +226,8 @@ class SimpleModelTrainer(object):
         Returns: (int) a database id for the model
         """
         matrix, metadata = get_matrix_and_metadata(
-            self.training_set_path,
-            self.training_metadata_path
+            training_set_path,
+            training_metadata_path
         )
         trained_model, feature_names = self._train(
             class_path,
@@ -191,7 +236,7 @@ class SimpleModelTrainer(object):
             matrix
         )
         logging.info('Trained model')
-        upload_object_to_key(trained_model, cache_key)
+        model_store.write(trained_model)
         logging.info('Cached model')
         model_id = self._write_model_to_db(
             class_path,
@@ -203,30 +248,43 @@ class SimpleModelTrainer(object):
         logging.info('Wrote model to db')
         return model_id
 
-    def train_models(self, replace=False):
+    def train_models(
+        self,
+        training_set_path,
+        training_metadata_path,
+        model_config,
+        replace=False
+    ):
         """Train and store configured models
 
         Args:
+            training_set_path (string): filepath to (hdf5) training set
+            training_metadata_path (string): filepath to (yaml) training metadata
+            model_config (dict) of format {classpath: hyperparameter dicts}
+                example: { 'sklearn.ensemble.RandomForestClassifier': {
+                    'n_estimators': [1,10,100,1000,10000],
+                    'max_depth': [1,5,10,20,50,100],
+                    'max_features': ['sqrt','log2'],
+                    'min_samples_split': [2,5,10]
+                } }
             replace (optional, False): whether to replace already cached models
 
         Returns:
             (list) of model ids
         """
         model_ids = []
-        for class_path, parameters in self._generate_model_configs():
-            model_hash = self._model_hash(class_path, parameters)
-            cache_key = model_cache_key(
-                self.project_path,
-                model_hash,
-                self.s3_conn
-            )
-            if replace or not key_exists(cache_key):
+        for class_path, parameters in self._generate_model_configs(model_config):
+            model_hash = self._model_hash(training_metadata_path, class_path, parameters)
+            model_store = self.storage_engine.get_store(model_hash)
+            if replace or not model_store.exists():
                 logging.info('Training %s/%s', class_path, parameters)
                 model_id = self._train_and_store_model(
                     class_path,
                     parameters,
                     model_hash,
-                    cache_key
+                    training_set_path,
+                    training_metadata_path,
+                    model_store
                 )
                 model_ids.append(model_id)
             else:
