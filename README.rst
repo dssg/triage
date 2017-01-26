@@ -26,7 +26,7 @@ Features
 Usage
 --------
 
-.. code-block::
+::
     from triage.storage import S3ModelStorageEngine
     from triage.model_trainers import SimpleModelTrainer
     from triage.predictors import Predictor
