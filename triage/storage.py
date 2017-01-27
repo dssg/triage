@@ -1,6 +1,8 @@
 from .utils import upload_object_to_key, key_exists, model_cache_key, download_object
 import os
 import pickle
+import pandas
+import yaml
 
 
 class ModelStorageEngine(object):
@@ -66,3 +68,29 @@ class FSModelStorageEngine(ModelStorageEngine):
             'trained_models',
             model_hash
         ]))
+
+
+class MatrixStore(object):
+    matrix = None
+    metadata = None
+    _labels = None
+
+    def labels(self):
+        if self._labels is not None:
+            return self._labels
+        else:
+            self._labels = self.matrix.pop(self.metadata['label_name'])
+            return self._labels
+
+
+class MettaMatrixStore(MatrixStore):
+    def __init__(self, matrix_path, metadata_path):
+        self.matrix = pandas.read_hdf(matrix_path)
+        with open(metadata_path) as f:
+            self.metadata = yaml.load(f)
+
+
+class InMemoryMatrixStore(MatrixStore):
+    def __init__(self, matrix, metadata):
+        self.matrix = matrix
+        self.metadata = metadata

@@ -1,5 +1,4 @@
 from .db import Model, Prediction
-from .utils import get_matrix_and_metadata
 from sqlalchemy.orm import sessionmaker
 
 
@@ -57,25 +56,19 @@ class Predictor(object):
             session.add(prediction)
         session.commit()
 
-    def predict(self, model_id, dataset_path, metadata_path):
+    def predict(self, model_id, matrix_store):
         """Generate predictions and store them in the database
 
         Args:
             model_id (int) the id of the trained model to predict based off of
-            dataset_path (string) filepath of the dataset to predict
-                Expected to be in a form consistent with metta-data,
-                and also for the entity ids to be the only index column
-            metadata_path (string) path to a yaml file describing the dataset,
-                in a form consistent with metta-data
 
         Returns:
             (numpy.Array) the generated prediction values
         """
-        dataset, metadata = get_matrix_and_metadata(dataset_path, metadata_path)
-        label_name = metadata['label_name']
+        label_name = matrix_store.metadata['label_name']
         model = self._load_model(model_id)
-        labels = dataset.pop(label_name)
-        as_of_date = metadata['end_time']
-        predictions = model.predict(dataset)
-        self._write_to_db(model_id, as_of_date, dataset.index, predictions, labels)
+        labels = matrix_store.matrix.pop(label_name)
+        as_of_date = matrix_store.metadata['end_time']
+        predictions = model.predict(matrix_store.matrix)
+        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions, labels)
         return predictions

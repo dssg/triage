@@ -7,7 +7,7 @@ from triage.db import ensure_db
 
 from triage.predictors import Predictor
 from tests.utils import fake_metta, fake_trained_model
-from triage.storage import S3ModelStorageEngine
+from triage.storage import S3ModelStorageEngine, MettaMatrixStore
 import datetime
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
@@ -36,7 +36,8 @@ def test_predictor():
                 'end_time': AS_OF_DATE
             }) as (matrix_path, metadata_path):
 
-                predictions = predictor.predict(model_id, matrix_path, metadata_path)
+                matrix_store = MettaMatrixStore(matrix_path, metadata_path)
+                predictions = predictor.predict(model_id, matrix_store)
 
                 # assert
                 # 1. that the returned predictions are of the desired length

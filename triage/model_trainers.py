@@ -1,7 +1,6 @@
 from sklearn.grid_search import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 from .db import Model, FeatureImportance
-from .utils import get_matrix_and_metadata
 import importlib
 import json
 import logging
@@ -46,15 +45,17 @@ class SimpleModelTrainer(object):
         self,
         project_path,
         model_storage_engine,
+        matrix_store,
         db_engine=None
     ):
         self.project_path = project_path
         self.model_storage_engine = model_storage_engine
+        self.matrix_store = matrix_store
         self.db_engine = db_engine
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
 
-    def _model_hash(self, training_metadata_path, class_path, parameters):
+    def _model_hash(self, class_path, parameters):
         """Generates a unique identifier for a trained model
         based on attributes of the model that together define
         equivalence; in other words, if we train a second model with these
@@ -66,14 +67,11 @@ class SimpleModelTrainer(object):
 
         Returns: (string) a unique identifier
         """
-        with open(training_metadata_path) as f:
-            training_metadata = yaml.load(f)
-
         unique = {
             'className': class_path,
             'parameters': parameters,
             'project_path': self.project_path,
-            'training_metadata': training_metadata
+            'training_metadata': self.matrix_store.metadata
         }
         return hex(hash(json.dumps(unique, sort_keys=True)))
 
@@ -87,14 +85,13 @@ class SimpleModelTrainer(object):
             for parameters in ParameterGrid(parameter_config):
                 yield class_path, parameters
 
-    def _train(self, class_path, parameters, label_name, train_matrix):
+    def _train(self, class_path, parameters):
         """Fit a model to a training set. Works on any modeling class that
         is available in this package's environment and implements .fit
 
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
-            label_name (string) the name of the label column in the matrix
             train_matrix (pandas.DataFrame) the training matrix including label
 
         Returns:
@@ -104,9 +101,9 @@ class SimpleModelTrainer(object):
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls(**parameters)
-        y = train_matrix.pop(label_name)
+        y = self.matrix_store.labels()
 
-        return instance.fit(train_matrix, y), train_matrix.columns
+        return instance.fit(self.matrix_store.matrix, y), self.matrix_store.matrix.columns
 
     def _write_model_to_db(
         self,
@@ -149,8 +146,6 @@ class SimpleModelTrainer(object):
         class_path,
         parameters,
         model_hash,
-        training_set_path,
-        training_metadata_path,
         model_store
     ):
         """Train a model, cache it in s3, and write metadata to a database
@@ -163,15 +158,9 @@ class SimpleModelTrainer(object):
 
         Returns: (int) a database id for the model
         """
-        matrix, metadata = get_matrix_and_metadata(
-            training_set_path,
-            training_metadata_path
-        )
         trained_model, feature_names = self._train(
             class_path,
             parameters,
-            metadata['label_name'],
-            matrix
         )
         logging.info('Trained model')
         model_store.write(trained_model)
@@ -188,16 +177,12 @@ class SimpleModelTrainer(object):
 
     def train_models(
         self,
-        training_set_path,
-        training_metadata_path,
         model_config,
         replace=False
     ):
         """Train and store configured models
 
         Args:
-            training_set_path (string): filepath to (hdf5) training set
-            training_metadata_path (string): filepath to (yaml) training metadata
             model_config (dict) of format {classpath: hyperparameter dicts}
                 example: { 'sklearn.ensemble.RandomForestClassifier': {
                     'n_estimators': [1,10,100,1000,10000],
@@ -212,7 +197,7 @@ class SimpleModelTrainer(object):
         """
         model_ids = []
         for class_path, parameters in self._generate_model_configs(model_config):
-            model_hash = self._model_hash(training_metadata_path, class_path, parameters)
+            model_hash = self._model_hash(class_path, parameters)
             model_store = self.model_storage_engine.get_store(model_hash)
             if replace or not model_store.exists():
                 logging.info('Training %s/%s', class_path, parameters)
@@ -220,8 +205,6 @@ class SimpleModelTrainer(object):
                     class_path,
                     parameters,
                     model_hash,
-                    training_set_path,
-                    training_metadata_path,
                     model_store
                 )
                 model_ids.append(model_id)
