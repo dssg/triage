@@ -1,15 +1,20 @@
 from sqlalchemy import \
     Column,\
+    BigInteger,\
+    Boolean,\
     Integer,\
     String,\
     Numeric,\
     Date,\
     DateTime,\
     JSON,\
+    Float,\
+    Text,\
     ForeignKey,\
     MetaData,\
     DDL,\
     event
+from sqlalchemy.types import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -21,13 +26,29 @@ event.listen(
 )
 
 
+class ModelGroup(Base):
+    __tablename__ = 'model_groups'
+    model_group_id = Column(Integer, primary_key=True)
+    model_type = Column(String)
+    model_parameters = Column(JSON)
+    prediction_window = Column(String)
+    feature_list = Column(ARRAY(String))
+
+
 class Model(Base):
     __tablename__ = 'models'
     model_id = Column(Integer, primary_key=True)
+    model_group_id = Column(Integer, ForeignKey('model_groups.model_group_id'))
     model_hash = Column(String, unique=True, index=True)
     run_time = Column(DateTime)
+    batch_run_time = Column(DateTime)
     model_type = Column(String)
     model_parameters = Column(JSON)
+    model_comment = Column(Text)
+    batch_comment = Column(Text)
+    config = Column(JSON)
+    pickle_file_path_name = Column(Text)
+    test = Column(Boolean)
 
 
 class FeatureImportance(Base):
@@ -41,10 +62,12 @@ class FeatureImportance(Base):
 class Prediction(Base):
     __tablename__ = 'predictions'
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
-    entity_id = Column(Integer, primary_key=True)
+    entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(Date, primary_key=True)
     entity_score = Column(Numeric)
     label_value = Column(Integer)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
 
 
 def ensure_db(engine):

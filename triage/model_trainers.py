@@ -4,7 +4,8 @@ from .db import Model, FeatureImportance
 import importlib
 import json
 import logging
-import yaml
+import datetime
+import copy
 
 
 def get_feature_importances(model):
@@ -33,12 +34,13 @@ def get_feature_importances(model):
     return None
 
 
-class SimpleModelTrainer(object):
+class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
     Args:
-        project_path (string) path to project folder on s3,
+        project_path (string) path to project folder,
             under which to cache model pickles
-        s3_conn (boto3.s3.connection)
+        model_storage_engine (triage.storage.ModelStorageEngine)
+        matrix_storage (triage.storage.MatrixStore)
         db_engine (sqlalchemy.engine)
     """
     def __init__(
@@ -75,13 +77,13 @@ class SimpleModelTrainer(object):
         }
         return hex(hash(json.dumps(unique, sort_keys=True)))
 
-    def _generate_model_configs(self, model_config):
+    def _generate_model_configs(self, grid_config):
         """Flattens a model/parameter grid configuration into individually
         trainable model/parameter pairs
 
         Yields: (tuple) classpath and parameters
         """
-        for class_path, parameter_config in model_config.items():
+        for class_path, parameter_config in grid_config.items():
             for parameters in ParameterGrid(parameter_config):
                 yield class_path, parameters
 
@@ -92,7 +94,6 @@ class SimpleModelTrainer(object):
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
-            train_matrix (pandas.DataFrame) the training matrix including label
 
         Returns:
             tuple of (fitted model, list of column names without label)
@@ -111,7 +112,8 @@ class SimpleModelTrainer(object):
         parameters,
         feature_names,
         model_hash,
-        trained_model
+        trained_model,
+        misc_db_parameters
     ):
         """Writes model and feature importance data to a database
 
@@ -121,12 +123,14 @@ class SimpleModelTrainer(object):
             feature_names (list) feature names in order given to model
             model_hash (string) a unique id for the model
             trained_model (object) a trained model object
+            misc_db_parameters (dict) params to pass through to the database
         """
         session = self.sessionmaker()
         model = Model(
             model_hash=model_hash,
             model_type=class_path,
-            model_parameters=parameters
+            model_parameters=parameters,
+            **misc_db_parameters
         )
         session.add(model)
 
@@ -146,7 +150,8 @@ class SimpleModelTrainer(object):
         class_path,
         parameters,
         model_hash,
-        model_store
+        model_store,
+        misc_db_parameters
     ):
         """Train a model, cache it in s3, and write metadata to a database
 
@@ -154,10 +159,12 @@ class SimpleModelTrainer(object):
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
             model_hash (string) a unique id for the model
-            cache_key (boto3.s3.Object) the s3 key in which to store the model
+            model_store (triage.storage.Store) the place in which to store the model
+            misc_db_parameters (dict) params to pass through to the database
 
         Returns: (int) a database id for the model
         """
+        misc_db_parameters['run_time'] = datetime.datetime.now().isoformat()
         trained_model, feature_names = self._train(
             class_path,
             parameters,
@@ -170,33 +177,38 @@ class SimpleModelTrainer(object):
             parameters,
             feature_names,
             model_hash,
-            trained_model
+            trained_model,
+            misc_db_parameters
         )
         logging.info('Wrote model to db')
         return model_id
 
     def train_models(
         self,
-        model_config,
+        grid_config,
+        misc_db_parameters,
         replace=False
     ):
         """Train and store configured models
 
         Args:
-            model_config (dict) of format {classpath: hyperparameter dicts}
+            grid_config (dict) of format {classpath: hyperparameter dicts}
                 example: { 'sklearn.ensemble.RandomForestClassifier': {
                     'n_estimators': [1,10,100,1000,10000],
                     'max_depth': [1,5,10,20,50,100],
                     'max_features': ['sqrt','log2'],
                     'min_samples_split': [2,5,10]
                 } }
+            misc_db_parameters (dict) params to pass through to the database
             replace (optional, False): whether to replace already cached models
 
         Returns:
             (list) of model ids
         """
         model_ids = []
-        for class_path, parameters in self._generate_model_configs(model_config):
+        misc_db_parameters = copy.deepcopy(misc_db_parameters)
+        misc_db_parameters['batch_run_time'] = datetime.datetime.now().isoformat()
+        for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(class_path, parameters)
             model_store = self.model_storage_engine.get_store(model_hash)
             if replace or not model_store.exists():
@@ -205,7 +217,8 @@ class SimpleModelTrainer(object):
                     class_path,
                     parameters,
                     model_hash,
-                    model_store
+                    model_store,
+                    misc_db_parameters
                 )
                 model_ids.append(model_id)
             else:

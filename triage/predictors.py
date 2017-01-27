@@ -1,5 +1,6 @@
 from .db import Model, Prediction
 from sqlalchemy.orm import sessionmaker
+import pandas
 
 
 class Predictor(object):
@@ -8,7 +9,7 @@ class Predictor(object):
         dataset and storing the results
 
         Args:
-            project_path (string) a desired fs/s3 project path
+            project_path (string) the path under which to store project data
             model_storage_engine (triage.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
         """
@@ -42,16 +43,26 @@ class Predictor(object):
             entity_ids (iterable) entity ids that predictions were made on
             predictions (iterable) predicted values
             labels (iterable) labels of prediction set (int) the id of the model to predict based off of
-            dataset_path (string)
         """
         session = self.sessionmaker()
-        for entity_id, score, label in zip(entity_ids, predictions, labels):
+        temp_df = pandas.DataFrame({'score': predictions})
+        rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
+        rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
+        for entity_id, score, label, rank_abs, rank_pct in zip(
+            entity_ids,
+            predictions,
+            labels,
+            rankings_abs,
+            rankings_pct
+        ):
             prediction = Prediction(
                 model_id=model_id,
                 entity_id=int(entity_id),
                 as_of_date=as_of_date,
                 entity_score=score,
-                label_value=int(label)
+                label_value=int(label),
+                rank_abs=rank_abs,
+                rank_pct=rank_pct
             )
             session.add(prediction)
         session.commit()
@@ -61,6 +72,8 @@ class Predictor(object):
 
         Args:
             model_id (int) the id of the trained model to predict based off of
+            matrix_store (triage.storage.MatrixStore) a wrapper for the
+                prediction matrix and metadata
 
         Returns:
             (numpy.Array) the generated prediction values

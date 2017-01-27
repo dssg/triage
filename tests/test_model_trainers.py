@@ -1,41 +1,23 @@
 import boto3
-import logging
 import pandas
 import pickle
-import tempfile
 import testing.postgresql
-import yaml
 
-from contextlib import contextmanager
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.db import ensure_db
 from triage.utils import model_cache_key
 
-from triage.model_trainers import SimpleModelTrainer
+from triage.model_trainers import ModelTrainer
 from triage.storage import S3ModelStorageEngine, InMemoryMatrixStore
 
 
-@contextmanager
-def fake_metta(matrix_dict, metadata):
-    matrix = pandas.DataFrame.from_dict(matrix_dict)
-    with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile('w') as metadata_file:
-            hdf = pandas.HDFStore(matrix_file.name)
-            hdf.put('title', matrix, data_columns=True)
-            matrix_file.seek(0)
-
-            yaml.dump(metadata, metadata_file)
-            metadata_file.seek(0)
-            yield (matrix_file.name, metadata_file.name)
-
-
-def test_simple_model_trainer():
+def test_model_trainer():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
 
-        model_config = {
+        grid_config = {
             'sklearn.linear_model.LogisticRegression': {
                 'C': [0.00001, 0.0001],
                 'penalty': ['l1', 'l2'],
@@ -56,17 +38,16 @@ def test_simple_model_trainer():
             })
             metadata = {'label_name': 'label'}
             project_path = 'econ-dev/inspections'
-            s = InMemoryMatrixStore(matrix, metadata)
-            trainer = SimpleModelTrainer(
+            trainer = ModelTrainer(
                 project_path=project_path,
                 model_storage_engine=S3ModelStorageEngine(s3_conn, project_path),
-                matrix_store=s,
-                db_engine=engine
+                matrix_store=InMemoryMatrixStore(matrix, metadata),
+                db_engine=engine,
             )
-            trainer.train_models(model_config=model_config)
+            trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
 
             # assert
-            # 1. that the models table entries are present
+            # 1. that the models and feature importances table entries are present
             records = [
                 row for row in
                 engine.execute('select * from results.feature_importances')

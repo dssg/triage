@@ -5,14 +5,6 @@ import pandas
 import yaml
 
 
-class ModelStorageEngine(object):
-    def __init__(self, project_path):
-        self.project_path = project_path
-
-    def get_store(self, model_hash):
-        pass
-
-
 class Store(object):
     def __init__(self, path):
         self.path = path
@@ -46,6 +38,14 @@ class FSStore(Store):
     def load(self):
         with open(self.path, 'rb') as f:
             return pickle.load(f)
+
+
+class ModelStorageEngine(object):
+    def __init__(self, project_path):
+        self.project_path = project_path
+
+    def get_store(self, model_hash):
+        pass
 
 
 class S3ModelStorageEngine(ModelStorageEngine):
