@@ -56,13 +56,13 @@ class Predictor(object):
             rankings_pct
         ):
             prediction = Prediction(
-                model_id=model_id,
+                model_id=int(model_id),
                 entity_id=int(entity_id),
                 as_of_date=as_of_date,
-                entity_score=score,
+                entity_score=int(score),
                 label_value=int(label),
-                rank_abs=rank_abs,
-                rank_pct=rank_pct
+                rank_abs=int(rank_abs),
+                rank_pct=float(rank_pct)
             )
             session.add(prediction)
         session.commit()
@@ -78,9 +78,8 @@ class Predictor(object):
         Returns:
             (numpy.Array) the generated prediction values
         """
-        label_name = matrix_store.metadata['label_name']
         model = self._load_model(model_id)
-        labels = matrix_store.matrix.pop(label_name)
+        labels = matrix_store.labels()
         as_of_date = matrix_store.metadata['end_time']
         predictions = model.predict(matrix_store.matrix)
         self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions, labels)

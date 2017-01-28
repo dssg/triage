@@ -10,15 +10,18 @@ class Store(object):
         self.path = path
 
     def exists(self):
-        pass
+        raise NotImplementedError
 
     def load(self):
-        pass
+        raise NotImplementedError
+
+    def write(self, obj):
+        raise NotImplementedError
 
 
 class S3Store(Store):
     def exists(self):
-        key_exists(self.path)
+        return key_exists(self.path)
 
     def write(self, obj):
         upload_object_to_key(obj, self.path)
@@ -91,6 +94,7 @@ class MettaMatrixStore(MatrixStore):
 
 
 class InMemoryMatrixStore(MatrixStore):
-    def __init__(self, matrix, metadata):
+    def __init__(self, matrix, metadata, labels=None):
         self.matrix = matrix
         self.metadata = metadata
+        self._labels = labels

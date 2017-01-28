@@ -48,14 +48,13 @@ class ModelTrainer(object):
         project_path,
         model_storage_engine,
         matrix_store,
-        db_engine=None
+        db_engine
     ):
         self.project_path = project_path
         self.model_storage_engine = model_storage_engine
         self.matrix_store = matrix_store
         self.db_engine = db_engine
-        if self.db_engine:
-            self.sessionmaker = sessionmaker(bind=self.db_engine)
+        self.sessionmaker = sessionmaker(bind=self.db_engine)
 
     def _model_hash(self, class_path, parameters):
         """Generates a unique identifier for a trained model
@@ -153,7 +152,7 @@ class ModelTrainer(object):
         model_store,
         misc_db_parameters
     ):
-        """Train a model, cache it in s3, and write metadata to a database
+        """Train a model, cache it, and write metadata to a database
 
         Args:
             class_path (string) A full classpath to the model class
