@@ -44,7 +44,7 @@ def test_model_trainer():
                 matrix_store=InMemoryMatrixStore(matrix, metadata),
                 db_engine=engine,
             )
-            trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
+            model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
 
             # assert
             # 1. that the models and feature importances table entries are present
@@ -82,3 +82,8 @@ def test_model_trainer():
             for model_pickle in model_pickles:
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
+
+
+            # 4. when run again, same models are returned
+            new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
+            assert model_ids == new_model_ids

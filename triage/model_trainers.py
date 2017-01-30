@@ -222,5 +222,9 @@ class ModelTrainer(object):
                 model_ids.append(model_id)
             else:
                 logging.info('Skipping %s/%s', class_path, parameters)
+                session = self.sessionmaker()
+                saved = session.query(Model).filter_by(model_hash=model_hash).one()
+                model_ids.append(saved.model_id)
+                session.close()
 
         return model_ids
