@@ -83,7 +83,28 @@ def test_model_trainer():
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
 
-
             # 4. when run again, same models are returned
             new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
+            assert len([
+                row for row in
+                engine.execute('select model_hash from results.models')
+            ]) == 4
             assert model_ids == new_model_ids
+
+            # 5. if metadata is deleted but the cache is still there,
+            # retrains that one and replaces the feature importance records
+            engine.execute('delete from results.feature_importances where model_id = 3')
+            engine.execute('delete from results.models where model_id = 3')
+            new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
+            expected_model_ids = [1, 2, 4, 5]
+            assert expected_model_ids == sorted(new_model_ids)
+            assert [
+                row['model_id'] for row in
+                engine.execute('select model_id from results.models order by 1 asc')
+            ] == expected_model_ids
+
+            records = [
+                row for row in
+                engine.execute('select * from results.feature_importances')
+            ]
+            assert len(records) == 4 * 3  # maybe exclude entity_id?

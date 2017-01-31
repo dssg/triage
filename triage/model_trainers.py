@@ -115,6 +115,8 @@ class ModelTrainer(object):
         misc_db_parameters
     ):
         """Writes model and feature importance data to a database
+        Will overwrite the data of any previous versions
+        (any existing model that shares a hash)
 
         Args:
             class_path (string) A full classpath to the model class
@@ -125,6 +127,16 @@ class ModelTrainer(object):
             misc_db_parameters (dict) params to pass through to the database
         """
         session = self.sessionmaker()
+        existing_model = session.query(Model)\
+            .filter_by(model_hash=model_hash)\
+            .one_or_none()
+        if existing_model:
+            logging.warning('deleting existing model %s', existing_model.model_id)
+            session.query(FeatureImportance)\
+                .filter_by(model_id=existing_model.model_id)\
+                .delete()
+            existing_model.delete()
+
         model = Model(
             model_hash=model_hash,
             model_type=class_path,
@@ -223,8 +235,25 @@ class ModelTrainer(object):
             else:
                 logging.info('Skipping %s/%s', class_path, parameters)
                 session = self.sessionmaker()
-                saved = session.query(Model).filter_by(model_hash=model_hash).one()
-                model_ids.append(saved.model_id)
+                saved = session.query(Model)\
+                    .filter_by(model_hash=model_hash)\
+                    .one_or_none()
                 session.close()
+                if not saved:
+                    logging.warning(
+                        '%s/%s cache found but metadata not found, retraining',
+                        class_path,
+                        parameters
+                    )
+                    model_id = self._train_and_store_model(
+                        class_path,
+                        parameters,
+                        model_hash,
+                        model_store,
+                        misc_db_parameters
+                    )
+                else:
+                    model_id = saved.model_id
+                model_ids.append(model_id)
 
         return model_ids
