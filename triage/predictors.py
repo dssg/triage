@@ -45,6 +45,10 @@ class Predictor(object):
             labels (iterable) labels of prediction set (int) the id of the model to predict based off of
         """
         session = self.sessionmaker()
+        session.query(Prediction)\
+            .filter_by(model_id=model_id, as_of_date=as_of_date)\
+            .delete()
+
         temp_df = pandas.DataFrame({'score': predictions})
         rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
         rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
