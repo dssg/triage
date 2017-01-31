@@ -47,7 +47,6 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    pickle_file_path_name = Column(Text)
     test = Column(Boolean)
 
 
@@ -57,6 +56,8 @@ class FeatureImportance(Base):
     model = relationship(Model)
     feature = Column(String, primary_key=True)
     feature_importance = Column(Numeric)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
 
 
 class Prediction(Base):
@@ -64,7 +65,7 @@ class Prediction(Base):
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(Date, primary_key=True)
-    entity_score = Column(Numeric)
+    score = Column(Numeric)
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)

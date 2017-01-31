@@ -59,7 +59,7 @@ class Predictor(object):
                 model_id=int(model_id),
                 entity_id=int(entity_id),
                 as_of_date=as_of_date,
-                entity_score=int(score),
+                score=float(score),
                 label_value=int(label),
                 rank_abs=int(rank_abs),
                 rank_pct=float(rank_pct)
@@ -82,5 +82,6 @@ class Predictor(object):
         labels = matrix_store.labels()
         as_of_date = matrix_store.metadata['end_time']
         predictions = model.predict(matrix_store.matrix)
-        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions, labels)
-        return predictions
+        predictions_proba = model.predict_proba(matrix_store.matrix)
+        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions_proba[:,1], labels)
+        return predictions, predictions_proba[:,1]
