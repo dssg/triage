@@ -1,4 +1,5 @@
 from .utils import upload_object_to_key, key_exists, model_cache_key, download_object
+import logging
 import os
 import pickle
 import pandas
@@ -43,6 +44,23 @@ class FSStore(Store):
             return pickle.load(f)
 
 
+class InMemoryStore(Store):
+    store = {}
+
+    def __init__(self, path):
+        self.path = path
+
+    def exists(self):
+        return self.path in self.store[self.path]
+
+    def write(self, obj):
+        logging.warning('writing %s', self.path)
+        self.store[self.path] = obj
+
+    def load(self):
+        return self.store[self.path]
+
+
 class ModelStorageEngine(object):
     def __init__(self, project_path):
         self.project_path = project_path
@@ -71,6 +89,11 @@ class FSModelStorageEngine(ModelStorageEngine):
             'trained_models',
             model_hash
         ]))
+
+
+class InMemoryModelStorageEngine(ModelStorageEngine):
+    def get_store(self, model_hash):
+        return InMemoryStore(model_hash)
 
 
 class MatrixStore(object):

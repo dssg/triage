@@ -1,10 +1,16 @@
-from .db import Model, Prediction
+from triage.db import Model, Prediction
 from sqlalchemy.orm import sessionmaker
 import pandas
 
 
 class Predictor(object):
-    def __init__(self, project_path, model_storage_engine, db_engine):
+    def __init__(
+        self,
+        project_path,
+        model_storage_engine,
+        db_engine,
+        entity_column_name=None
+    ):
         """Encapsulates the task of generating predictions on an arbitrary
         dataset and storing the results
 
@@ -18,6 +24,7 @@ class Predictor(object):
         self.db_engine = db_engine
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
+        self.entity_column_name = entity_column_name or 'entity_id'
 
     def _load_model(self, model_id):
         """Downloads the cached model associated with a given model id
@@ -57,13 +64,13 @@ class Predictor(object):
         ):
             prediction = Prediction(
                 model_id=int(model_id),
-                entity_id=int(entity_id),
                 as_of_date=as_of_date,
                 entity_score=int(score),
                 label_value=int(label),
                 rank_abs=int(rank_abs),
                 rank_pct=float(rank_pct)
             )
+            setattr(prediction, self.entity_column_name, int(entity_id))
             session.add(prediction)
         session.commit()
 
