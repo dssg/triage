@@ -9,106 +9,66 @@ from sqlalchemy import \
     DateTime,\
     JSON,\
     Float,\
-    Table,\
     Text,\
     ForeignKey,\
     MetaData,\
     DDL,\
     event
 from sqlalchemy.types import ARRAY
-from sqlalchemy.orm import mapper, relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
-metadata = MetaData(schema='results')
+Base = declarative_base(metadata=MetaData(schema='results'))
 event.listen(
-    metadata,
+    Base.metadata,
     'before_create',
     DDL("CREATE SCHEMA IF NOT EXISTS results")
 )
 
-class TriageModelBase(object):
-    def __init__(self, *args, **kwargs):
-        for key, val in kwargs.items():
-            setattr(self, key, val)
 
-class ModelGroup(TriageModelBase):
-    pass
-
-
-class Model(TriageModelBase):
-    pass
+class ModelGroup(Base):
+    __tablename__ = 'model_groups'
+    model_group_id = Column(Integer, primary_key=True)
+    model_type = Column(String)
+    model_parameters = Column(JSON)
+    prediction_window = Column(String)
+    feature_list = Column(ARRAY(String))
 
 
-class FeatureImportance(TriageModelBase):
-    pass
+class Model(Base):
+    __tablename__ = 'models'
+    model_id = Column(Integer, primary_key=True)
+    model_group_id = Column(Integer, ForeignKey('model_groups.model_group_id'))
+    model_hash = Column(String, unique=True, index=True)
+    run_time = Column(DateTime)
+    batch_run_time = Column(DateTime)
+    model_type = Column(String)
+    model_parameters = Column(JSON)
+    model_comment = Column(Text)
+    batch_comment = Column(Text)
+    config = Column(JSON)
+    pickle_file_path_name = Column(Text)
+    test = Column(Boolean)
 
 
-class Prediction(TriageModelBase):
-    pass
+class FeatureImportance(Base):
+    __tablename__ = 'feature_importances'
+    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model = relationship(Model)
+    feature = Column(String, primary_key=True)
+    feature_importance = Column(Numeric)
 
 
-def define_models():
-    cols = [
-        Column('model_id', Integer, primary_key=True),
-        Column('model_group_id', Integer, ForeignKey('model_groups.model_group_id')),
-        Column('model_hash', String, unique=True, index=True),
-        Column('run_time', DateTime),
-        Column('batch_run_time', DateTime),
-        Column('model_type', String),
-        Column('model_parameters', JSON),
-        Column('model_comment', Text),
-        Column('batch_comment', Text),
-        Column('config', JSON),
-        Column('test', Boolean),
-    ]
-    mapper(
-        Model,
-        Table('models', metadata, *cols)
-    )
-
-def define_feature_importances():
-    cols = [
-        Column('model_id', Integer, ForeignKey('models.model_id'), primary_key=True),
-        Column('feature', String, primary_key=True),
-        Column('feature_importance', Numeric),
-    ]
-    mapper(
-        FeatureImportance,
-        Table('feature_importances', metadata, *cols),
-        properties={'model': relationship(Model)}
-    )
+class Prediction(Base):
+    __tablename__ = 'predictions'
+    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    entity_id = Column(BigInteger, primary_key=True)
+    as_of_date = Column(Date, primary_key=True)
+    entity_score = Column(Numeric)
+    label_value = Column(Integer)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
 
 
-def define_model_groups():
-    cols = [
-        Column('model_group_id', Integer, primary_key=True),
-        Column('model_type', String),
-        Column('model_parameters', JSON),
-        Column('prediction_window', String),
-        Column('feature_list', ARRAY(String)),
-    ]
-    mapper(
-        ModelGroup,
-        Table('model_groups', metadata, *cols)
-    )
-
-
-def define_predictions(entity_column_name):
-    prediction_columns = [
-        Column('model_id', Integer, ForeignKey('models.model_id'), primary_key=True),
-        Column(entity_column_name, BigInteger, primary_key=True),
-        Column('as_of_date', Date, primary_key=True),
-        Column('entity_score', Numeric),
-        Column('label_value', Integer),
-        Column('rank_abs', Integer),
-        Column('rank_pct', Float)
-    ]
-    t = Table('predictions', metadata, *prediction_columns)
-    mapper(Prediction, t)
-
-
-def ensure_db(engine, entity_column_name=None):
-    define_predictions(entity_column_name or 'entity_id')
-    define_models()
-    define_model_groups()
-    define_feature_importances()
-    metadata.create_all(engine)
+def ensure_db(engine):
+    Base.metadata.create_all(engine)

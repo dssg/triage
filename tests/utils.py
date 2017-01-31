@@ -4,21 +4,9 @@ import tempfile
 import yaml
 import numpy
 import random
-from triage.db import ensure_db, Model, metadata
-from sqlalchemy.orm import sessionmaker, clear_mappers
-import testing.postgresql
-from sqlalchemy import create_engine
-from functools import wraps
-import logging
-
-
-@contextmanager
-def fake_db():
-    metadata.clear()
-    clear_mappers()
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        yield engine
+from triage.db import Model
+from sqlalchemy.orm import sessionmaker
+from triage.utils import upload_object_to_key, model_cache_key
 
 
 @contextmanager
@@ -50,19 +38,22 @@ class MockTrainedModel(object):
         return numpy.array([random.random() for i in range(0, len(dataset))])
 
 
-def fake_trained_model(project_path, storage_engine, db_engine):
+def fake_trained_model(project_path, s3_conn, db_engine):
     """Creates and stores a trivial trained model
 
     Args:
         project_path (string) a desired fs/s3 project path
-        storage_engine (triage.storage.StorageEngine)
+        s3_conn (boto3.s3.connection)
         db_engine (sqlalchemy.engine)
 
     Returns:
         (int) model id for database retrieval
     """
     trained_model = MockTrainedModel()
-    storage_engine.get_store('abcd').write(trained_model)
+    upload_object_to_key(
+        trained_model,
+        model_cache_key(project_path, 'abcd', s3_conn)
+    )
     session = sessionmaker(db_engine)()
     db_model = Model(model_hash='abcd')
     session.add(db_model)

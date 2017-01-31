@@ -1,19 +1,22 @@
 import boto3
 import pandas
 import pickle
+import testing.postgresql
 
 from moto import mock_s3
+from sqlalchemy import create_engine
 from triage.db import ensure_db
 from triage.utils import model_cache_key
 
-from tests.utils import fake_db
 from triage.model_trainers import ModelTrainer
 from triage.storage import S3ModelStorageEngine, InMemoryMatrixStore
 
 
 def test_model_trainer():
-    with fake_db() as db_engine:
-        ensure_db(db_engine)
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        ensure_db(engine)
+
         grid_config = {
             'sklearn.linear_model.LogisticRegression': {
                 'C': [0.00001, 0.0001],
@@ -39,7 +42,7 @@ def test_model_trainer():
                 project_path=project_path,
                 model_storage_engine=S3ModelStorageEngine(s3_conn, project_path),
                 matrix_store=InMemoryMatrixStore(matrix, metadata),
-                db_engine=db_engine,
+                db_engine=engine,
             )
             model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
 
@@ -47,13 +50,13 @@ def test_model_trainer():
             # 1. that the models and feature importances table entries are present
             records = [
                 row for row in
-                db_engine.execute('select * from results.feature_importances')
+                engine.execute('select * from results.feature_importances')
             ]
             assert len(records) == 4 * 3  # maybe exclude entity_id?
 
             records = [
                 row for row in
-                db_engine.execute('select model_hash from results.models')
+                engine.execute('select model_hash from results.models')
             ]
             assert len(records) == 4
 
@@ -83,27 +86,4 @@ def test_model_trainer():
 
             # 4. when run again, same models are returned
             new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
-            assert len([
-                row for row in
-                db_engine.execute('select model_hash from results.models')
-            ]) == 4
             assert model_ids == new_model_ids
-
-
-            # 5. if metadata is deleted but the cache is still there,
-            # retrains that one and replaces the feature importance records
-            db_engine.execute('delete from results.feature_importances where model_id = 3')
-            db_engine.execute('delete from results.models where model_id = 3')
-            new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
-            expected_model_ids = [1, 2, 4, 5]
-            assert expected_model_ids == sorted(new_model_ids)
-            assert [
-                row['model_id'] for row in
-                db_engine.execute('select model_id from results.models order by 1 asc')
-            ] == expected_model_ids
-
-            records = [
-                row for row in
-                db_engine.execute('select * from results.feature_importances')
-            ]
-            assert len(records) == 4 * 3  # maybe exclude entity_id?
