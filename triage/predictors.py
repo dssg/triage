@@ -61,9 +61,9 @@ class Predictor(object):
         ):
             prediction = Prediction(
                 model_id=int(model_id),
-                entity_id=int(entity_id),
+                unit_id=int(entity_id),
                 as_of_date=as_of_date,
-                score=float(score),
+                unit_score=float(score),
                 label_value=int(label),
                 rank_abs=int(rank_abs),
                 rank_pct=float(rank_pct)

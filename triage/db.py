@@ -63,9 +63,9 @@ class FeatureImportance(Base):
 class Prediction(Base):
     __tablename__ = 'predictions'
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
-    entity_id = Column(BigInteger, primary_key=True)
+    unit_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(Date, primary_key=True)
-    score = Column(Numeric)
+    unit_score = Column(Numeric)
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)

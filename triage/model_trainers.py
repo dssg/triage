@@ -6,6 +6,7 @@ import json
 import logging
 import datetime
 import copy
+import pandas
 
 
 def get_feature_importances(model):
@@ -112,6 +113,7 @@ class ModelTrainer(object):
         feature_names,
         model_hash,
         trained_model,
+        model_group_id,
         misc_db_parameters
     ):
         """Writes model and feature importance data to a database
@@ -141,16 +143,27 @@ class ModelTrainer(object):
             model_hash=model_hash,
             model_type=class_path,
             model_parameters=parameters,
+            model_group_id=model_group_id,
             **misc_db_parameters
         )
         session.add(model)
 
-        for feature_index, importance in \
-                enumerate(get_feature_importances(trained_model)):
+        feature_importance = get_feature_importances(trained_model)
+        temp_df = pandas.DataFrame({'feature_importance': feature_importance})
+        features_index = temp_df.index.tolist()
+        rankings_abs = temp_df['feature_importance'].rank(method='dense', ascending=False)
+        rankings_pct = temp_df['feature_importance'].rank(method='dense', ascending=False, pct=True)
+        for feature_index, importance, rank_abs, rank_pct in zip(
+            features_index,
+            feature_importance,
+            rankings_abs,
+            rankings_pct):
             feature_importance = FeatureImportance(
                 model=model,
                 feature_importance=importance,
                 feature=feature_names[feature_index],
+                rank_abs=int(rank_abs),
+                rank_pct=float(rank_pct)
             )
             session.add(feature_importance)
         session.commit()
@@ -180,6 +193,13 @@ class ModelTrainer(object):
             class_path,
             parameters,
         )
+        
+        model_group_id = self._get_model_group_id(
+             class_path,
+             parameters,
+             self.matrix_store.metadata['prediction_window'],
+             self.matrix_store.metadata['feature_names']
+        ) 
         logging.info('Trained model')
         model_store.write(trained_model)
         logging.info('Cached model')
@@ -189,10 +209,53 @@ class ModelTrainer(object):
             feature_names,
             model_hash,
             trained_model,
+            model_group_id,
             misc_db_parameters
         )
         logging.info('Wrote model to db')
         return model_id
+
+    def _get_model_group_id(
+        self,
+        class_path,
+        parameters,
+        prediction_window,
+        feature_names
+    ):
+        """
+        """
+        #with self.db_engine.raw_connection() as db_conn:
+        db_conn = self.db_engine.raw_connection()
+        cur = db_conn.cursor()
+        cur.execute( "SELECT EXISTS ( "
+                     "       SELECT * "
+                     "       FROM pg_catalog.pg_proc "
+                     "       WHERE proname = 'pivot_table' ) ")
+        condition = cur.fetchone()
+        confition = condition[0]
+
+        if condition:
+            query = ("SELECT get_model_group_id( "
+                     "            '{class_path}'::TEXT, "
+                     "            '{parameters}'::JSONB, "
+                     "            '{prediction_window}'::TEXT, "
+                     "             ARRAY{feature_names}::TEXT [] )"
+                     .format(class_path=class_path,
+                             parameters=json.dumps(parameters),
+                             prediction_window=prediction_window,
+                             feature_names=feature_names))
+            cur.execute(query)
+            db_conn.commit()
+            model_group_id = cur.fetchone()
+            model_group_id = model_group_id[0]
+
+        else:
+            logging.info("Could not found store procedure public.pivot_table")
+            model_group_id = None
+        db_conn.close()
+
+        logging.debug('Model_group_id = {}'.format(model_group_id))
+        return model_group_id         
 
     def train_models(
         self,
