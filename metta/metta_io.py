@@ -3,6 +3,7 @@ Metta IO
 
 Library for storing train-test sets.
 """
+import copy
 import yaml
 import os
 import pandas as pd
@@ -47,6 +48,53 @@ def archive_train_test(train_config, df_train,
         CSV of dataframe feature set title.csv
     """
 
+    train_uuid = archive_matrix(
+        train_config,
+        df_train,
+        directory=directory,
+        format=format
+    )
+
+    test_uuid = archive_matrix(
+        test_config,
+        df_test,
+        directory=directory,
+        format=format,
+        train_uuid=train_uuid
+    )
+
+    return train_uuid, test_uuid
+
+
+def archive_matrix(
+        matrix_config,
+        df_matrix,
+        directory='.',
+        format='hd5',
+        train_uuid=None
+):
+    """Store a design matrix.
+
+    Parameters
+    ----------
+    matrix_config: dict
+        dict to be yamled
+    df_matrix: df
+        DataFrame of features and label (as last column)
+    directory: str
+        Relative path to where the data will be stored
+    format: str
+        format to save files in
+        - hd5: HDF5
+        - csv: Comma Separated Values
+    train_uuid (optional): uuid of train set to associate with as a test set
+
+    Returns
+    -------
+    uuid: str
+        uuid for the stored set
+    """
+
     abs_path_dir = os.path.abspath(directory)
     if not os.path.exists(abs_path_dir):
         os.makedirs(abs_path_dir)
@@ -54,26 +102,22 @@ def archive_train_test(train_config, df_train,
     uuid_fname = directory + '/' + '.matrix_uuids'
     set_uuids = load_uuids(uuid_fname)
 
-    check_config_types(train_config)
-    check_config_types(test_config)
+    check_config_types(matrix_config)
 
-    train_uuid = generate_uuid(train_config)
-    test_uuid = generate_uuid(test_config)
+    matrix_uuid = generate_uuid(matrix_config)
 
-    train_config['metta-uuid'] = train_uuid
-    test_config['metta-uuid'] = test_uuid
+    matrix_config = copy.deepcopy(matrix_config)
+    matrix_config['metta-uuid'] = matrix_uuid
 
-    if not(train_uuid in set_uuids):
-        _store_matrix(train_config, df_train, train_uuid, abs_path_dir,
+    if not(matrix_uuid in set_uuids):
+        _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
                       format=format)
-    if not(test_uuid in set_uuids):
-        _store_matrix(test_config, df_test, test_uuid,
-                      abs_path_dir, format=format)
 
-    with open(abs_path_dir + '/' + 'matrix_pairs.txt', 'a') as outfile:
-        outfile.write(','.join([train_uuid, test_uuid]) + '\n')
+    if train_uuid:
+        with open(abs_path_dir + '/' + 'matrix_pairs.txt', 'a') as outfile:
+            outfile.write(','.join([train_uuid, matrix_uuid]) + '\n')
 
-    return train_uuid, test_uuid
+    return matrix_uuid
 
 
 def _store_matrix(metadata, df_data, title, directory, format='hd5'):
@@ -93,7 +137,7 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         Relative path to where the data will be stored
     format: str
         format to save files in
-        - hd5: HDF5
+        - hd5: HDF5 (default) compressoin level 5, complib zlib
         - csv: Comma Separated Values
 
     Returns
@@ -122,7 +166,8 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
             yaml.dump(metadata, stream)
 
         if format == 'hd5':
-            hdf = pd.HDFStore(directory + '/' + title + '.h5')
+            hdf = pd.HDFStore(directory + '/' + title + '.h5',
+                              complevel=5, complib="zlib")
             hdf.put(title, df_data, data_columns=True)
             hdf.close()
         elif format == 'csv':
@@ -166,7 +211,7 @@ def check_config_types(dict_config):
     # check that the start time and end times are correct
     assert isinstance(dict_config['start_time'], datetime.date)
     assert isinstance(dict_config['end_time'], datetime.date)
-    assert isinstance(dict_config['prediction_window'], int)
+    assert isinstance(dict_config['prediction_window'], str)
     assert isinstance(dict_config['matrix_id'], str)
 
 

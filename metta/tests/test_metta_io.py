@@ -2,30 +2,44 @@
 Tests for Metta IO
 """
 import datetime
+from dateutil.relativedelta import relativedelta
 import metta.metta_io
 import pandas as pd
 import os
 from metta.datafiles import example_uuid_fname, example_data
+import unittest
+from tempfile import mkdtemp
+from shutil import rmtree
+import copy
 
 dict_test_config = {'start_time': datetime.date(2016, 1, 1),
                     'end_time': datetime.date(2016, 12, 31),
                     'matrix_id': 'testing_matrix',
                     'label': 'testing_data',
                     'label_name': 'SexCode',
-                    'prediction_window': 1,
+                    'prediction_window': '1yr',
                     'feature_names': ['break_last_3y', 'soil',
                                       'pressure_zone']}
 
 
-class TestMettaIO():
+class TestMettaIO(unittest.TestCase):
     """Tests Metta IO functionality"""
+
+    def setUp(self):
+        self.temp_dir = mkdtemp()
+
+    def tearDown(self):
+        rmtree(self.temp_dir)
+
+    def temp_file(self, fname):
+        return os.path.join(self.temp_dir, fname)
 
     def test_config(self):
 
         metta.metta_io.check_config_types(dict_test_config)
 
     def test_uuid(self):
-        fake_uuid = '74f1ee3f-2a87-3f0c-a838-7fc806b355f5'
+        fake_uuid = '55c1c5ab-1325-3c80-a79b-aaa23e37bb82'
         assert fake_uuid == metta.metta_io.generate_uuid(
             dict_test_config)
 
@@ -37,31 +51,80 @@ class TestMettaIO():
         df_data = pd.read_csv(example_data)
 
         metta.metta_io._store_matrix(
-            dict_test_config, df_data, 'test_titanic', '/tmp/', format='csv')
+            dict_test_config,
+            df_data,
+            'test_titanic',
+            self.temp_dir,
+            format='csv'
+        )
         metta.metta_io._store_matrix(
-            dict_test_config, df_data, 'test_titanich5', '/tmp/', format='hd5')
+            dict_test_config,
+            df_data,
+            'test_titanich5',
+            self.temp_dir,
+            format='hd5'
+        )
         metta.metta_io._store_matrix(
-            dict_test_config, df_data, 'test_titanich5', '/tmp/', format='csv')
+            dict_test_config,
+            df_data,
+            'test_titanich5',
+            self.temp_dir,
+            format='csv'
+        )
         # check it wrote to files
-        os.path.isfile('/tmp/test_titanic.csv')
-        os.path.isfile('/tmp/test_titanich5.h5')
-        os.path.isfile('/tmp/test_titanic.yaml')
-        os.path.isfile('/tmp/test_titanich5.yaml')
-        os.path.isfile('/tmp/.matrix_uuids')
+        assert os.path.isfile(self.temp_file('test_titanic.csv'))
+        assert os.path.isfile(self.temp_file('test_titanich5.h5'))
+        assert os.path.isfile(self.temp_file('test_titanic.yaml'))
+        assert os.path.isfile(self.temp_file('test_titanich5.yaml'))
+        assert os.path.isfile(self.temp_file('.matrix_uuids'))
+
+    def test_archive_matrix(self):
+        df_data = pd.read_csv(example_data)
+
+        train_uuid = metta.metta_io.archive_matrix(
+            dict_test_config, df_data, self.temp_dir, format='csv')
+
+        # check it wrote to files
+        assert os.path.isfile(self.temp_file('{}.csv'.format(train_uuid)))
+        assert os.path.isfile(self.temp_file('{}.yaml'.format(train_uuid)))
+
+        def store_new_split(years):
+            new_test_config = copy.deepcopy(dict_test_config)
+            new_test_config['start_time'] += relativedelta(years=years)
+            new_test_config['end_time'] += relativedelta(years=years)
+            return metta.metta_io.archive_matrix(
+                new_test_config,
+                df_data,
+                self.temp_dir,
+                format='csv',
+                train_uuid=train_uuid
+            )
+
+        test_uuids = [store_new_split(years) for years in range(1, 5)]
+        with open(self.temp_file('matrix_pairs.txt')) as f:
+            matrix_pairs = f.readlines()
+
+        for test_uuid in test_uuids:
+            assert os.path.isfile(self.temp_file('{}.csv'.format(test_uuid)))
+            assert os.path.isfile(self.temp_file('{}.yaml'.format(test_uuid)))
+            assert '{},{}\n'.format(train_uuid, test_uuid) in matrix_pairs
 
     def test_archive_train_test(self):
         df_data = pd.read_csv(example_data)
 
         metta.metta_io.archive_train_test(dict_test_config, df_data,
                                           dict_test_config, df_data,
-                                          directory='/tmp/')
+                                          directory=self.temp_dir)
 
         # check that you don't write to a file again
         metta.metta_io.archive_train_test(dict_test_config, df_data,
                                           dict_test_config, df_data,
-                                          directory='/tmp/')
+                                          directory=self.temp_dir)
 
-        os.path.isfile('74f1ee3f-2a87-3f0c-a838-7fc806b355f5.h5')
-        os.path.isfile('74f1ee3f-2a87-3f0c-a838-7fc806b355f5.yaml')
-        os.path.isfile('acfda439-3fc1-3c01-9308-f397109973c6.h5')
-        os.path.isfile('acfda439-3fc1-3c01-9308-f397109973c6.yaml')
+        assert os.path.isfile(
+            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5')
+        )
+        assert os.path.isfile(
+            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.yaml')
+        )
+        assert len(os.listdir(self.temp_dir)) == 4
