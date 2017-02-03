@@ -223,6 +223,18 @@ class ModelTrainer(object):
         feature_names
     ):
         """
+        Returns model group id using store procedure 'get_model_group_id' which will 
+        return the same value for models with the same class_path, parameters, 
+        prediction_window and features
+
+        Args:
+            class_path (string) A full classpath to the model class
+            parameters (dict) hyperparameters to give to the model constructor
+            prediction_window (string) The prediction window used for generating the labels
+                                       stored in metadata
+           features_names (list) Features used for train/test
+
+        Returns: (int) a database id for the model group id
         """
         #with self.db_engine.raw_connection() as db_conn:
         db_conn = self.db_engine.raw_connection()
@@ -230,7 +242,7 @@ class ModelTrainer(object):
         cur.execute( "SELECT EXISTS ( "
                      "       SELECT * "
                      "       FROM pg_catalog.pg_proc "
-                     "       WHERE proname = 'pivot_table' ) ")
+                     "       WHERE proname = 'get_model_group_id' ) ")
         condition = cur.fetchone()
         confition = condition[0]
 
