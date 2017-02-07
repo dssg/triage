@@ -32,7 +32,7 @@ class Predictor(object):
         model_store = self.model_storage_engine.get_store(model_hash)
         return model_store.load()
 
-    def _write_to_db(self, model_id, as_of_date, entity_ids, predictions, labels):
+    def _write_to_db(self, model_id, as_of_date, entity_ids, predictions, labels, misc_db_parameters):
         """Writes given predictions to database
 
         entity_ids, predictions, labels are expected to be in the same order
@@ -66,12 +66,13 @@ class Predictor(object):
                 unit_score=float(score),
                 label_value=int(label),
                 rank_abs=int(rank_abs),
-                rank_pct=float(rank_pct)
+                rank_pct=float(rank_pct),
+                **misc_db_parameters
             )
             session.add(prediction)
         session.commit()
 
-    def predict(self, model_id, matrix_store):
+    def predict(self, model_id, matrix_store, misc_db_parameters):
         """Generate predictions and store them in the database
 
         Args:
@@ -87,5 +88,5 @@ class Predictor(object):
         as_of_date = matrix_store.metadata['end_time']
         predictions = model.predict(matrix_store.matrix)
         predictions_proba = model.predict_proba(matrix_store.matrix)
-        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions_proba[:,1], labels)
+        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions_proba[:,1], labels, misc_db_parameters)
         return predictions, predictions_proba[:,1]

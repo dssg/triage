@@ -48,6 +48,7 @@ class Model(Base):
     batch_comment = Column(Text)
     config = Column(JSON)
     test = Column(Boolean)
+    train_matrix_uuid = Column(Text)
 
 
 class FeatureImportance(Base):
@@ -69,6 +70,7 @@ class Prediction(Base):
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
+    matrix_uuid = Column(Text)
 
 
 def ensure_db(engine):
