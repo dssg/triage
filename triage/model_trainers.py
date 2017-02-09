@@ -75,7 +75,11 @@ class ModelTrainer(object):
             'project_path': self.project_path,
             'training_metadata': self.matrix_store.metadata
         }
-        return hex(hash(json.dumps(unique, sort_keys=True)))
+        def dt_handler(x):
+            if isinstance(x, datetime.datetime) or isinstance(x, datetime.date):
+                return x.isoformat()
+            raise TypeError("Unknown type")
+        return hex(hash(json.dumps(unique, default=dt_handler, sort_keys=True)))
 
     def _generate_model_configs(self, grid_config):
         """Flattens a model/parameter grid configuration into individually

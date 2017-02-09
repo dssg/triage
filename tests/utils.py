@@ -37,6 +37,9 @@ class MockTrainedModel(object):
     def predict(self, dataset):
         return numpy.array([random.random() for i in range(0, len(dataset))])
 
+    def predict_proba(self, dataset):
+        return numpy.random.rand(len(dataset), len(dataset))
+
 
 def fake_trained_model(project_path, s3_conn, db_engine):
     """Creates and stores a trivial trained model
