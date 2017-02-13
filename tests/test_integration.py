@@ -33,7 +33,11 @@ def test_predictor():
                 'label': [7, 8]
             }).set_index('entity_id')
             train_metadata = {
+                'start_time': datetime.date(2012, 12, 20),
+                'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
+                'prediction_window': '1y',
+                'feature_names': ['ft1', 'ft2']
             }
 
             train_store = InMemoryMatrixStore(train_matrix, train_metadata)
@@ -68,7 +72,7 @@ def test_predictor():
             test_store = InMemoryMatrixStore(test_matrix, test_metadata)
 
             for model_id in model_ids:
-                predictor.predict(model_id, test_store)
+                predictor.predict(model_id, test_store, misc_db_parameters=dict())
 
             # assert
             # 1. that the predictions table entries are present and

@@ -7,7 +7,7 @@ from triage.db import ensure_db
 import pandas
 
 from triage.predictors import Predictor
-from tests.utils import fake_metta, fake_trained_model
+from tests.utils import fake_trained_model
 from triage.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
 
@@ -39,7 +39,7 @@ def test_predictor():
             }
 
             matrix_store = InMemoryMatrixStore(matrix, metadata)
-            predictions = predictor.predict(model_id, matrix_store)
+            predictions = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
 
             # assert
             # 1. that the returned predictions are of the desired length
@@ -62,7 +62,6 @@ def test_predictor():
             # 4. that the entity ids match the given dataset
             assert sorted([record[0] for record in records]) == [1, 2]
 
-
             # 5. running with same model_id, different as of date
             # then with same as of date only replaces the records
             # with the same date
@@ -77,8 +76,8 @@ def test_predictor():
                 'end_time': AS_OF_DATE + datetime.timedelta(days=1)
             }
             new_matrix_store = InMemoryMatrixStore(new_matrix, new_metadata)
-            predictor.predict(model_id, new_matrix_store)
-            predictor.predict(model_id, matrix_store)
+            predictor.predict(model_id, new_matrix_store, misc_db_parameters=dict())
+            predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, as_of_date

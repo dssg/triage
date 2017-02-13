@@ -17,6 +17,7 @@ from sqlalchemy import \
 from sqlalchemy.types import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 Base = declarative_base(metadata=MetaData(schema='results'))
 event.listen(
@@ -25,14 +26,23 @@ event.listen(
     DDL("CREATE SCHEMA IF NOT EXISTS results")
 )
 
+with open('triage/model_group_stored_procedure.sql') as f:
+    stmt = f.read()
+
+event.listen(
+    Base.metadata,
+    'before_create',
+    DDL(stmt)
+)
+
 
 class ModelGroup(Base):
     __tablename__ = 'model_groups'
     model_group_id = Column(Integer, primary_key=True)
-    model_type = Column(String)
-    model_parameters = Column(JSON)
-    prediction_window = Column(String)
-    feature_list = Column(ARRAY(String))
+    model_type = Column(Text)
+    model_parameters = Column(JSONB)
+    prediction_window = Column(Text)
+    feature_list = Column(ARRAY(Text))
 
 
 class Model(Base):
@@ -43,12 +53,12 @@ class Model(Base):
     run_time = Column(DateTime)
     batch_run_time = Column(DateTime)
     model_type = Column(String)
-    model_parameters = Column(JSON)
+    model_parameters = Column(JSONB)
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    pickle_file_path_name = Column(Text)
     test = Column(Boolean)
+    train_matrix_uuid = Column(Text)
 
 
 class FeatureImportance(Base):
@@ -57,6 +67,8 @@ class FeatureImportance(Base):
     model = relationship(Model)
     feature = Column(String, primary_key=True)
     feature_importance = Column(Numeric)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
 
 
 class Prediction(Base):
@@ -64,10 +76,11 @@ class Prediction(Base):
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(Date, primary_key=True)
-    entity_score = Column(Numeric)
+    score = Column(Numeric)
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
+    matrix_uuid = Column(Text)
 
 
 def ensure_db(engine):

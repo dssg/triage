@@ -2,6 +2,7 @@ import boto3
 import pandas
 import pickle
 import testing.postgresql
+import datetime
 
 from moto import mock_s3
 from sqlalchemy import create_engine
@@ -36,7 +37,13 @@ def test_model_trainer():
                 'feature_two': [5, 6],
                 'label': ['good', 'bad']
             })
-            metadata = {'label_name': 'label'}
+            metadata = {
+                'start_time': datetime.date(2012, 12, 20),
+                'end_time': datetime.date(2016, 12, 20),
+                'label_name': 'label',
+                'prediction_window': '1y',
+                'feature_names': ['ft1', 'ft2']
+            }
             project_path = 'econ-dev/inspections'
             trainer = ModelTrainer(
                 project_path=project_path,
@@ -65,7 +72,14 @@ def test_model_trainer():
                 for model_row in records
             ]
 
-            # 2. that all four models are cached
+            # 2. that the model groups are distinct
+            records = [
+                row for row in
+                engine.execute('select distinct model_group_id from results.models')
+            ]
+            assert len(records) == 4
+
+            # 3. that all four models are cached
             model_pickles = [
                 pickle.loads(cache_key.get()['Body'].read())
                 for cache_key in cache_keys
@@ -73,7 +87,7 @@ def test_model_trainer():
             assert len(model_pickles) == 4
             assert len([x for x in model_pickles if x is not None]) == 4
 
-            # 3. that their results can have predictions made on it
+            # 4. that their results can have predictions made on it
             test_matrix = pandas.DataFrame.from_dict({
                 'entity_id': [3, 4],
                 'feature_one': [4, 4],
@@ -83,7 +97,7 @@ def test_model_trainer():
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
 
-            # 4. when run again, same models are returned
+            # 5. when run again, same models are returned
             new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
             assert len([
                 row for row in
@@ -91,7 +105,7 @@ def test_model_trainer():
             ]) == 4
             assert model_ids == new_model_ids
 
-            # 5. if metadata is deleted but the cache is still there,
+            # 6. if metadata is deleted but the cache is still there,
             # retrains that one and replaces the feature importance records
             engine.execute('delete from results.feature_importances where model_id = 3')
             engine.execute('delete from results.models where model_id = 3')
