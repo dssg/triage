@@ -6,7 +6,6 @@ import numpy
 import random
 from triage.db import Model
 from sqlalchemy.orm import sessionmaker
-from triage.utils import upload_object_to_key, model_cache_key
 
 
 @contextmanager
@@ -33,32 +32,33 @@ def fake_metta(matrix_dict, metadata):
             yield (matrix_file.name, metadata_file.name)
 
 
+def fake_labels(length):
+    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+
+
 class MockTrainedModel(object):
     def predict(self, dataset):
-        return numpy.array([random.random() for i in range(0, len(dataset))])
+        return numpy.array([random.choice([True, False]) for i in range(0, len(dataset))])
 
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
 
-def fake_trained_model(project_path, s3_conn, db_engine):
+def fake_trained_model(project_path, model_storage_engine, db_engine):
     """Creates and stores a trivial trained model
 
     Args:
         project_path (string) a desired fs/s3 project path
-        s3_conn (boto3.s3.connection)
+        model_storage_engine (triage.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
 
     Returns:
         (int) model id for database retrieval
     """
     trained_model = MockTrainedModel()
-    upload_object_to_key(
-        trained_model,
-        model_cache_key(project_path, 'abcd', s3_conn)
-    )
+    model_storage_engine.get_store('abcd').write(trained_model)
     session = sessionmaker(db_engine)()
     db_model = Model(model_hash='abcd')
     session.add(db_model)
     session.commit()
-    return db_model.model_id
+    return trained_model, db_model.model_id

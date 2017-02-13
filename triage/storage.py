@@ -43,6 +43,19 @@ class FSStore(Store):
             return pickle.load(f)
 
 
+class MemoryStore(Store):
+    store = None
+
+    def exists(self):
+        return self.store is not None
+
+    def write(self, obj):
+        self.store = obj
+
+    def load(self):
+        return self.store
+
+
 class ModelStorageEngine(object):
     def __init__(self, project_path):
         self.project_path = project_path
@@ -71,6 +84,15 @@ class FSModelStorageEngine(ModelStorageEngine):
             'trained_models',
             model_hash
         ]))
+
+
+class InMemoryModelStorageEngine(ModelStorageEngine):
+    stores = {}
+
+    def get_store(self, model_hash):
+        if model_hash not in self.stores:
+            self.stores[model_hash] = MemoryStore(model_hash)
+        return self.stores[model_hash]
 
 
 class MatrixStore(object):
