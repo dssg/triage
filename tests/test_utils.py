@@ -1,5 +1,6 @@
-from triage.utils import temporal_splits
+from triage.utils import temporal_splits, filename_friendly_hash
 import logging
+import re
 
 
 def assert_split(output, expected):
@@ -44,3 +45,29 @@ def test_temporal_splits():
         }
     ]
     assert_split(splits, expected)
+
+
+def test_filename_friendly_hash():
+    data = {
+        'stuff': 'stuff',
+        'other_stuff': 'more_stuff',
+        'a_number': 5.0
+    }
+    output = filename_friendly_hash(data)
+    assert isinstance(output, str)
+    assert re.match('^[\w]+$', output) is not None
+
+    # make sure ordering keys differently doesn't change the hash
+    new_output = filename_friendly_hash({
+        'other_stuff': 'more_stuff',
+        'stuff': 'stuff',
+        'a_number': 5.0
+    })
+    assert new_output == output
+
+    # make sure new data hashes to something different
+    new_output = filename_friendly_hash({
+        'stuff': 'stuff',
+        'a_number': 5.0
+    })
+    assert new_output != output
