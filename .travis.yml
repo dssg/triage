@@ -12,6 +12,7 @@ before_script:
 env:
 - BOTO_CONFIG=/tmp/nowhere
 before_install:
+- sudo apt-get update
 - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
 install:
 - pip install -r requirements_dev.txt
