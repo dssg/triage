@@ -83,5 +83,14 @@ class Prediction(Base):
     matrix_uuid = Column(Text)
 
 
+class Evaluation(Base):
+    __tablename__ = 'evaluations'
+    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    as_of_date = Column(Date, primary_key=True)
+    metric = Column(String, primary_key=True)
+    parameter = Column(String, primary_key=True)
+    value = Column(Numeric)
+
+
 def ensure_db(engine):
     Base.metadata.create_all(engine)

@@ -23,8 +23,9 @@ def test_predictor():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
             project_path = 'econ-dev/inspections'
-            model_id = fake_trained_model(project_path, s3_conn, db_engine)
             model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+            _, model_id = \
+                fake_trained_model(project_path, model_storage_engine, db_engine)
             predictor = Predictor(project_path, model_storage_engine, db_engine)
             # create prediction set
             matrix = pandas.DataFrame.from_dict({
