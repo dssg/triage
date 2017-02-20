@@ -1,4 +1,5 @@
 from triage.utils import temporal_splits, filename_friendly_hash
+import datetime
 import logging
 import re
 
@@ -51,6 +52,8 @@ def test_filename_friendly_hash():
     data = {
         'stuff': 'stuff',
         'other_stuff': 'more_stuff',
+        'a_datetime': datetime.datetime(2015, 1, 1),
+        'a_date': datetime.date(2016, 1, 1),
         'a_number': 5.0
     }
     output = filename_friendly_hash(data)
@@ -61,6 +64,8 @@ def test_filename_friendly_hash():
     new_output = filename_friendly_hash({
         'other_stuff': 'more_stuff',
         'stuff': 'stuff',
+        'a_datetime': datetime.datetime(2015, 1, 1),
+        'a_date': datetime.date(2016, 1, 1),
         'a_number': 5.0
     })
     assert new_output == output
