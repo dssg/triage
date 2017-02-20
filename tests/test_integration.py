@@ -14,7 +14,7 @@ import datetime
 import pandas
 
 
-def test_predictor():
+def test_integration():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -121,14 +121,14 @@ def test_predictor():
                 order by 3, 2''')
             ]
             assert records == [
-                (3, 1, datetime.date(2016, 12, 21)),
-                (3, 2, datetime.date(2016, 12, 21)),
-                (3, 3, datetime.date(2016, 12, 21)),
-                (3, 4, datetime.date(2016, 12, 21)),
-                (3, 1, datetime.date(2017, 1, 21)),
-                (3, 2, datetime.date(2017, 1, 21)),
-                (3, 3, datetime.date(2017, 1, 21)),
-                (3, 4, datetime.date(2017, 1, 21)),
+                (3, 1, datetime.datetime(2016, 12, 21)),
+                (3, 2, datetime.datetime(2016, 12, 21)),
+                (3, 3, datetime.datetime(2016, 12, 21)),
+                (3, 4, datetime.datetime(2016, 12, 21)),
+                (3, 1, datetime.datetime(2017, 1, 21)),
+                (3, 2, datetime.datetime(2017, 1, 21)),
+                (3, 3, datetime.datetime(2017, 1, 21)),
+                (3, 4, datetime.datetime(2017, 1, 21)),
             ]
 
             # that evaluations are there
@@ -138,12 +138,12 @@ def test_predictor():
                 from results.evaluations order by 2, 1''')
             ]
             assert records == [
-                (1, datetime.date(2016, 12, 21), 'precision@', '5_abs'),
-                (2, datetime.date(2016, 12, 21), 'precision@', '5_abs'),
-                (3, datetime.date(2016, 12, 21), 'precision@', '5_abs'),
-                (4, datetime.date(2016, 12, 21), 'precision@', '5_abs'),
-                (1, datetime.date(2017, 1, 21), 'precision@', '5_abs'),
-                (2, datetime.date(2017, 1, 21), 'precision@', '5_abs'),
-                (3, datetime.date(2017, 1, 21), 'precision@', '5_abs'),
-                (4, datetime.date(2017, 1, 21), 'precision@', '5_abs'),
+                (1, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),
+                (2, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),
+                (3, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),
+                (4, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),
+                (1, datetime.datetime(2017, 1, 21), 'precision@', '5_abs'),
+                (2, datetime.datetime(2017, 1, 21), 'precision@', '5_abs'),
+                (3, datetime.datetime(2017, 1, 21), 'precision@', '5_abs'),
+                (4, datetime.datetime(2017, 1, 21), 'precision@', '5_abs'),
             ]

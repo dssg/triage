@@ -1,14 +1,16 @@
 ---
 events_table: 'events'
 temporal_splits:
-    start_time: '2014-04-01'
-    end_time: '2016-04-01'
+    start_time: '1998-01-01'
+    end_time: '1999-01-01'
     update_window: 6
     prediction_windows:
-        - 6
-window_strategy: 'EntireWindow'
+        - 3
+    feature_frequency: 6
+    test_frequency: 3
 feature_aggregations:
     -
+        prefix: 'prefix'
         from_obj: 'cool_stuff'
         knowledge_date_column: 'open_date'
         aggregates:
@@ -24,16 +26,33 @@ feature_aggregations:
                     - 'red'
                     - 'blue'
                     - 'green'
+                metrics:
+                    - 'sum'
         intervals:
             - '1 year'
             - '2 years'
             - 'all'
         groups:
             - 'entity_id'
-models:
-    - 'sklearn.ensemble.ExtraTreesClassifier':
+grid_config:
+    'sklearn.ensemble.ExtraTreesClassifier':
         n_estimators: [100,100]
         criterion: [gini, entropy]
-        max_depth: [1,5,10,20,50,100]
+        max_depth: [1,5,10,20,50]
         max_features: [sqrt,log2]
         min_samples_split: [2,5,10]
+scoring:
+    -
+        metrics: [precision@, recall@]
+        thresholds:
+            percentiles: [5.0, 10.0]
+            top_n: [5, 10]
+    -
+        metrics: [f1]
+    -
+        metrics: [fbeta@]
+        parameters:
+            -
+                beta: 0.75
+            -
+                beta: 1.25

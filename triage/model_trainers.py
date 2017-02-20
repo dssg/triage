@@ -135,10 +135,8 @@ class ModelTrainer(object):
             .one_or_none()
         if existing_model:
             logging.warning('deleting existing model %s', existing_model.model_id)
-            session.query(FeatureImportance)\
-                .filter_by(model_id=existing_model.model_id)\
-                .delete()
-            existing_model.delete()
+            existing_model.delete(session)
+            session.commit()
 
         model = Model(
             model_hash=model_hash,
@@ -201,9 +199,9 @@ class ModelTrainer(object):
              self.matrix_store.metadata['prediction_window'],
              self.matrix_store.metadata['feature_names']
         ) 
-        logging.info('Trained model')
+        logging.debug('Trained model')
         model_store.write(trained_model)
-        logging.info('Cached model')
+        logging.debug('Cached model')
         model_id = self._write_model_to_db(
             class_path,
             parameters,
@@ -237,7 +235,6 @@ class ModelTrainer(object):
 
         Returns: (int) a database id for the model group id
         """
-        #with self.db_engine.raw_connection() as db_conn:
         db_conn = self.db_engine.raw_connection()
         cur = db_conn.cursor()
         cur.execute( "SELECT EXISTS ( "

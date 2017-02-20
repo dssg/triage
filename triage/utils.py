@@ -78,7 +78,14 @@ def get_matrix_and_metadata(matrix_path, metadata_path):
     return matrix, metadata
 
 
-def temporal_splits(start_time, end_time, update_window, prediction_windows):
+def temporal_splits(
+    start_time,
+    end_time,
+    update_window,
+    prediction_windows,
+    feature_frequency,
+    test_frequency
+):
     start_time_date = datetime.datetime.strptime(start_time, '%Y-%m-%d')
     end_time_date = datetime.datetime.strptime(end_time, '%Y-%m-%d')
 
@@ -94,13 +101,19 @@ def temporal_splits(start_time, end_time, update_window, prediction_windows):
                 yield {
                     'train_start': train_start_time,
                     'train_end': train_end_time,
-                    'test_start': test_start_time,
-                    'test_end': test_end_time,
-                    'feature_dates': generate_as_of_dates(
+                    'train_as_of_dates': generate_as_of_dates(
                         train_start_time,
                         train_end_time,
-                        window
-                    )
+                        feature_frequency
+                    ),
+                    'test_start': test_start_time,
+                    'test_end': test_end_time,
+                    'test_as_of_dates': generate_as_of_dates(
+                        test_start_time,
+                        test_end_time,
+                        test_frequency
+                    ),
+                    'prediction_window': window
                 }
             test_end_time -= relativedelta(months=+update_window)
 

@@ -3,6 +3,7 @@ import os
 import pickle
 import pandas
 import yaml
+import logging
 
 
 class Store(object):
@@ -102,8 +103,10 @@ class MatrixStore(object):
 
     def labels(self):
         if self._labels is not None:
+            logging.debug('using stored labels')
             return self._labels
         else:
+            logging.debug('popping labels from matrix')
             self._labels = self.matrix.pop(self.metadata['label_name'])
             return self._labels
 
