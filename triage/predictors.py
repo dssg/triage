@@ -4,6 +4,10 @@ import pandas
 import logging
 
 
+class ModelNotFoundError(ValueError):
+    pass
+
+
 class Predictor(object):
     def __init__(self, project_path, model_storage_engine, db_engine):
         """Encapsulates the task of generating predictions on an arbitrary
@@ -20,7 +24,7 @@ class Predictor(object):
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
 
-    def _load_model(self, model_id):
+    def load_model(self, model_id):
         """Downloads the cached model associated with a given model id
 
         Args:
@@ -31,7 +35,18 @@ class Predictor(object):
         """
         model_hash = self.sessionmaker().query(Model).get(model_id).model_hash
         model_store = self.model_storage_engine.get_store(model_hash)
-        return model_store.load()
+        if model_store.exists():
+            return model_store.load()
+
+    def delete_model(self, model_id):
+        """Deletes the cached model associated with a given model id
+
+        Args:
+            model_id (int) The id of a given model in the database
+        """
+        model_hash = self.sessionmaker().query(Model).get(model_id).model_hash
+        model_store = self.model_storage_engine.get_store(model_hash)
+        model_store.delete()
 
     def _write_to_db(self, model_id, as_of_date, entity_ids, predictions, labels, misc_db_parameters):
         """Writes given predictions to database
@@ -84,7 +99,9 @@ class Predictor(object):
         Returns:
             (numpy.Array) the generated prediction values
         """
-        model = self._load_model(model_id)
+        model = self.load_model(model_id)
+        if not model:
+            raise ModelNotFoundError('Model id {} not found'.format(model_id))
         labels = matrix_store.labels()
         as_of_date = matrix_store.metadata['end_time']
         predictions = model.predict(matrix_store.matrix)

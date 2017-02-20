@@ -86,3 +86,7 @@ def test_predictor():
                 join results.models using (model_id)''')
             ]
             assert len(records) == 4
+
+            # 6. That we can delete the model when done prediction on it
+            predictor.delete_model(model_id)
+            assert predictor.load_model(model_id) == None
