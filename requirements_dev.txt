@@ -5,7 +5,7 @@ click
 inflection
 psycopg2
 python-dateutil
-collate
+git+git://github.com/dssg/collate.git
 scipy
 sklearn
 tables
