@@ -1,44 +1,42 @@
-from collate.collate import collate
+from collate.collate import Categorical, Aggregate
+from collate.spacetime import SpacetimeAggregation
 import logging
 
 
 class FeatureGenerator(object):
-    def __init__(self, feature_aggregations, feature_dates, data_table, db_engine):
-        self.data_table = data_table
-        self.feature_dates = feature_dates
-        self.feature_aggregations = feature_aggregations
+    def __init__(self, db_engine):
         self.db_engine = db_engine
 
-    def aggregation(self, aggregation_config):
+    def aggregation(self, aggregation_config, feature_dates):
         aggregates = [
-            collate.Aggregate({aggregate['name']: aggregate['predicate']}, aggregate['metrics'])
-            for aggregate in aggregation_config['aggregates']
+            Aggregate(aggregate['quantity'], aggregate['metrics'])
+            for aggregate in aggregation_config.get('aggregates', [])
         ]
-        group_intervals = {
-            interval['name']: interval['intervals']
-            for interval in aggregation_config['group_intervals']
-        }
-        return collate.SpacetimeAggregation(
-            aggregates,
-            from_obj=self.data_table,
-            group_intervals=group_intervals,
-            dates=self.feature_dates,
-            date_column='knowledge_date',
+        logging.info('Found %s quantity aggregates', len(aggregates))
+        categoricals = [
+            Categorical(categorical['column'], categorical['choices'], categorical['metrics'])
+            for categorical in aggregation_config.get('categoricals', [])
+        ]
+        logging.info('Found %s categorical aggregates', len(categoricals))
+        return SpacetimeAggregation(
+            aggregates + categoricals,
+            from_obj=aggregation_config['from_obj'],
+            intervals=aggregation_config['intervals'],
+            groups=aggregation_config['groups'],
+            dates=feature_dates,
+            date_column=aggregation_config['knowledge_date_column'],
             prefix=aggregation_config['prefix']
         )
 
-    def _table_names(self):
-        all_tables = []
-        for aggregation_config in self.feature_aggregations:
-            for group_interval in aggregation_config['group_intervals']:
-                all_tables.append('{}_{}'.format(aggregation_config['prefix'], group_interval['name']))
-        return all_tables
-
-    def generate(self):
+    def generate(self, feature_aggregations, feature_dates):
         aggregations = [
-            self.aggregation(aggregation_config)
-            for aggregation_config in self.feature_aggregations
+            self.aggregation(aggregation_config, feature_dates)
+            for aggregation_config in feature_aggregations
         ]
         for aggregation in aggregations:
+            logging.warning('getting selects')
+            for selectlist in aggregation.get_selects().values():
+                for select in selectlist:
+                    logging.warning(select)
             aggregation.execute(self.db_engine.connect())
-        return self._table_names()
+        return [agg.get_table_name() for agg in aggregations]

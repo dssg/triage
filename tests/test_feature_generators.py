@@ -1,68 +1,100 @@
-#from triage.feature_generators import FeatureGenerator
+from triage.feature_generators import FeatureGenerator
 import testing.postgresql
 from sqlalchemy import create_engine
 from datetime import date
-import logging
-import pytest
+import pandas
 
 
 input_data = [
-    # entity_id, knowledge_date, category, quantity_one, quantity_two
-    (1, date(2014, 1, 1), 'a thing', 10000, None),
-    (1, date(2014, 10, 11), 'a thing', None, 40404),
-    (3, date(2012, 6, 8), 'a thing', 342, 9234),
-    (3, date(2014, 12, 21), 'another thing', 600, None),
-    (4, date(2014, 4, 4), 'another thing', 1236, 6270)
+    # entity_id, knowledge_date, cat_one, quantity_one
+    (1, date(2014, 1, 1), 'good', 10000),
+    (1, date(2014, 10, 11), 'good', None),
+    (3, date(2012, 6, 8), 'bad', 342),
+    (3, date(2014, 12, 21), 'inbetween', 600),
+    (4, date(2014, 4, 4), 'bad', 1236)
 ]
 
 aggregate_config = [{
     'prefix': 'aprefix',
     'aggregates': [
-        { 'name': 'q1', 'predicate': 'quantity_one', 'metrics': ['sum', 'count'] },
-        { 'name': 'q2', 'predicate': 'quantity_two', 'metrics': ['count', 'min'] },
+        {'quantity': 'quantity_one', 'metrics': ['sum', 'count']},
     ],
-    'group_intervals': [
-        { 'name': 'entity_id', 'intervals': ['all'] },
-    ]
+    'categoricals': [
+        {'column': 'cat_one', 'choices': ['good', 'bad'], 'metrics': ['sum']},
+    ],
+    'groups': ['entity_id'],
+    'intervals': ['all'],
+    'knowledge_date_column': 'knowledge_date',
+    'from_obj': 'data'
 }]
 
 expected_output = {
-    'aprefix_entity_id': [
-        # entity_id, date, quantity_one_sum, quantity_one_count, quantity_two_count, quantity_two_min
-        (3, date(2013, 9, 30), 342, 1, 1, 9234),
-        (1, date(2014, 9, 30), 10000, 1, 0, None),
-        (3, date(2014, 9, 30), 342, 1, 1, 9234),
-        (4, date(2014, 9, 30), 1236, 1, 1, 6270),
+    '"aprefix_aggregation"': [
+        {
+            'entity_id': 3,
+            'date': date(2013, 9, 30),
+            'aprefix_entity_id_all_quantity_one_sum': 342,
+            'aprefix_entity_id_all_quantity_one_count': 1,
+            'aprefix_entity_id_all_cat_one_good_sum': 0,
+            'aprefix_entity_id_all_cat_one_bad_sum': 1
+        },
+        {
+            'entity_id': 1,
+            'date': date(2014, 9, 30),
+            'aprefix_entity_id_all_quantity_one_sum': 10000,
+            'aprefix_entity_id_all_quantity_one_count': 1,
+            'aprefix_entity_id_all_cat_one_good_sum': 1,
+            'aprefix_entity_id_all_cat_one_bad_sum': 0
+        },
+        {
+            'entity_id': 3,
+            'date': date(2014, 9, 30),
+            'aprefix_entity_id_all_quantity_one_sum': 342,
+            'aprefix_entity_id_all_quantity_one_count': 1,
+            'aprefix_entity_id_all_cat_one_good_sum': 0,
+            'aprefix_entity_id_all_cat_one_bad_sum': 1
+        },
+        {
+            'entity_id': 4,
+            'date': date(2014, 9, 30),
+            'aprefix_entity_id_all_quantity_one_sum': 1236,
+            'aprefix_entity_id_all_quantity_one_count': 1,
+            'aprefix_entity_id_all_cat_one_good_sum': 0,
+            'aprefix_entity_id_all_cat_one_bad_sum': 1
+        },
     ]
 
 }
 
-@pytest.mark.skip(reason='collate package currently broken')
+
 def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
 
-        engine.execute(
-            'create table data (entity_id int, knowledge_date date, category varchar, quantity_one float, quantity_two float)'
-        )
+        engine.execute("""
+            create table data (
+                entity_id int,
+                knowledge_date date,
+                cat_one varchar,
+                quantity_one float
+            )
+        """)
         for row in input_data:
             engine.execute(
-                'insert into data values (%s, %s, %s, %s, %s)',
+                'insert into data values (%s, %s, %s, %s)',
                 row
             )
 
         output_tables = FeatureGenerator(
-            data_table='data',
+            db_engine=engine,
+        ).generate(
             feature_dates=['2013-09-30', '2014-09-30'],
             feature_aggregations=aggregate_config,
-            db_engine=engine,
-        ).generate()
+        )
 
         for output_table in output_tables:
-            result = engine.execute(
-                'select * from {} order by date, entity_id'.format(output_table)
-            )
-            records = [row for row in result]
-            logging.warning(records)
-            logging.warning(expected_output[output_table])
+            records = pandas.read_sql(
+                'select * from {} order by date, entity_id'.format(output_table),
+                engine
+            ).to_dict('records')
             assert records == expected_output[output_table]

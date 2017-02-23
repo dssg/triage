@@ -35,11 +35,11 @@ class Pipeline(object):
 
             # 3. generate features
             features_table = FeatureGenerator(
+                db_engine=self.db_engine
+            ).generate(
                 feature_aggregations=self.config['feature_aggregations'],
                 feature_dates=split['feature_dates'],
-                data_table=self.config['data_table'],
-                db_engine=self.db_engine
-            ).generate()
+            )
 
             # 4. create training and test sets
             # timechop!
