@@ -1,6 +1,5 @@
 ---
 events_table: 'events'
-data_table: 'cool_stuff'
 temporal_splits:
     start_time: '2014-04-01'
     end_time: '2016-04-01'
@@ -10,23 +9,27 @@ temporal_splits:
 window_strategy: 'EntireWindow'
 feature_aggregations:
     -
+        from_obj: 'cool_stuff'
+        knowledge_date_column: 'open_date'
         aggregates:
             -
-                name: 'fails'
-                predicate: "'Results' = 'Fail'"
+                quantity: 'homeless::INT'
                 metrics:
                     - 'count'
-        group_intervals:
+                    - 'sum'
+        categoricals:
             -
-                name: 'License #'
-                intervals:
-                    - '1 year'
-                    - '2 years'
-                    - 'all'
-            -
-                name: 'Zip'
-                intervals:
-                    - '1 year'
+                column: 'color'
+                choices:
+                    - 'red'
+                    - 'blue'
+                    - 'green'
+        intervals:
+            - '1 year'
+            - '2 years'
+            - 'all'
+        groups:
+            - 'entity_id'
 models:
     - 'sklearn.ensemble.ExtraTreesClassifier':
         n_estimators: [100,100]
