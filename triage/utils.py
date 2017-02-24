@@ -1,10 +1,12 @@
-from datetime import datetime
+import datetime
 from dateutil.relativedelta import relativedelta
 import pickle
 import tempfile
+import hashlib
 import botocore
 import pandas
 import yaml
+import json
 
 
 def split_s3_path(path):
@@ -77,8 +79,8 @@ def get_matrix_and_metadata(matrix_path, metadata_path):
 
 
 def temporal_splits(start_time, end_time, update_window, prediction_windows):
-    start_time_date = datetime.strptime(start_time, '%Y-%m-%d')
-    end_time_date = datetime.strptime(end_time, '%Y-%m-%d')
+    start_time_date = datetime.datetime.strptime(start_time, '%Y-%m-%d')
+    end_time_date = datetime.datetime.strptime(end_time, '%Y-%m-%d')
 
     for window in prediction_windows:
         test_end_time = end_time_date
@@ -111,3 +113,14 @@ def generate_as_of_dates(start_date, end_date, prediction_window):
         as_of_date += relativedelta(months=prediction_window)
 
     return as_of_dates
+
+
+def filename_friendly_hash(inputs):
+    def dt_handler(x):
+        if isinstance(x, datetime.datetime) or isinstance(x, datetime.date):
+            return x.isoformat()
+        raise TypeError("Unknown type")
+    return hashlib.md5(
+        json.dumps(inputs, default=dt_handler, sort_keys=True)
+            .encode('utf-8')
+    ).hexdigest()
