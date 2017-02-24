@@ -58,7 +58,7 @@ def test_predictor():
 
             # 3. that the contained as_of_dates match what we sent in
             for record in records:
-                assert record[1] == AS_OF_DATE
+                assert record[1].date() == AS_OF_DATE
 
             # 4. that the entity ids match the given dataset
             assert sorted([record[0] for record in records]) == [1, 2]

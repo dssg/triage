@@ -1,4 +1,4 @@
-from collate.collate import Categorical, Aggregate
+from collate.collate import Aggregate, Categorical
 from collate.spacetime import SpacetimeAggregation
 import logging
 
@@ -33,10 +33,13 @@ class FeatureGenerator(object):
             self.aggregation(aggregation_config, feature_dates)
             for aggregation_config in feature_aggregations
         ]
+        logging.debug('---------------------')
+        logging.debug('---------FEATURE GENERATION------------')
+        logging.debug('---------------------')
         for aggregation in aggregations:
-            logging.warning('getting selects')
             for selectlist in aggregation.get_selects().values():
                 for select in selectlist:
-                    logging.warning(select)
+                    logging.debug(select)
             aggregation.execute(self.db_engine.connect())
+        logging.info('Created %s aggregations', len(aggregations))
         return [agg.get_table_name() for agg in aggregations]
