@@ -76,3 +76,26 @@ def test_filename_friendly_hash():
         'a_number': 5.0
     })
     assert new_output != output
+
+
+def test_filename_friendly_hash_stability():
+    nested_data = {
+        'one': 'two',
+        'three': {
+            'four': 'five',
+            'six': 'seven'
+        }
+    }
+    output = filename_friendly_hash(nested_data)
+    # 1. we want to make sure this is stable across different runs
+    # so hardcode an expected value
+    assert output == '9a844a7ebbfd821010b1c2c13f7391e6'
+    other_nested_data = {
+        'one': 'two',
+        'three': {
+            'six': 'seven',
+            'four': 'five'
+        }
+    }
+    new_output = filename_friendly_hash(other_nested_data)
+    assert output == new_output
