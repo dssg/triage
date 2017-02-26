@@ -21,6 +21,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine.url import URL
 
+import os
 import yaml
 
 
@@ -31,7 +32,11 @@ event.listen(
     DDL("CREATE SCHEMA IF NOT EXISTS results")
 )
 
-with open('triage/model_group_stored_procedure.sql') as f:
+group_proc_filename = os.path.join(
+    os.path.dirname(__file__),
+    'model_group_stored_procedure.sql'
+)
+with open(group_proc_filename) as f:
     stmt = f.read()
 
 event.listen(

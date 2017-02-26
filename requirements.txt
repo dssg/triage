@@ -1,0 +1,13 @@
+SQLAlchemy
+GeoAlchemy2
+PyYAML
+psycopg2
+python-dateutil
+scipy
+sklearn
+tables
+pandas
+boto3
+collate
+click
+inflection

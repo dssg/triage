@@ -1,18 +1,6 @@
-SQLAlchemy
-GeoAlchemy2
-PyYAML
-click
-inflection
-psycopg2
-python-dateutil
-git+git://github.com/dssg/collate.git
-scipy
-sklearn
-tables
+-r requirements.txt
 
 testing.postgresql
-pandas
-boto3
 moto
 
 pip==8.1.2
