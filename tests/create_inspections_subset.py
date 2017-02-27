@@ -23,7 +23,15 @@ def create_subset(src, dest, n=250):
     lics = pd.unique(df["License #"])
     sublics = lics[random.sample(range(0,len(lics)), n)]
     subset = df[df["License #"].isin(sublics)]
+    # Make the column names a little more readable
+    subset.columns = map(clean_column_name, subset.columns)
     subset.to_csv(dest, index=False)
+
+def clean_column_name(col):
+    col = col.lower()
+    col = col.replace(' ', '_')
+    col = col.replace('#', 'no')
+    return re.sub('[\W]+', '', col)
 
 if __name__ == '__main__':
     # download the entire Chicago restaurant inspections CSV file
