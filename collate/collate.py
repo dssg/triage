@@ -310,8 +310,8 @@ class Aggregation(object):
         prefix = "{prefix}_{group}_".format(
                 prefix=self.prefix, group=group)
 
-        return chain(*(a.get_columns(prefix=prefix)
-                       for a in self.aggregates))
+        return chain(*[a.get_columns(prefix=prefix)
+                       for a in self.aggregates])
 
     def get_selects(self):
         """
