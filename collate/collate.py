@@ -58,9 +58,11 @@ class AggregateExpression(object):
         self.expression_template = expression_template
         return self
 
-    def get_columns(self, when=None, prefix=None):
+    def get_columns(self, when=None, prefix=None, format_kwargs=None):
         if prefix is None:
             prefix = ""
+        if format_kwargs is None:
+            format_kwargs = {}
 
         columns1 = self.aggregate1.get_columns(when)
         columns2 = self.aggregate2.get_columns(when)
@@ -69,7 +71,8 @@ class AggregateExpression(object):
             c = ex.literal_column("({}{} {} {})".format(
                     c1, self.cast, self.operator, c2))
             yield c.label(prefix + self.expression_template.format(
-                    name1=c1.name, operator=self.operator_str, name2=c2.name))
+                    name1=c1.name, operator=self.operator_str, name2=c2.name,
+                    **format_kwargs))
 
     def __add__(self, other):
         return AggregateExpression(self, other, "+")
