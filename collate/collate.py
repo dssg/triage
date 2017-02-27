@@ -34,13 +34,12 @@ class AggregateExpression(object):
                  cast=None, operator_str=None, expression_template=None):
         """
         Args:
-            aggregate1:
-            aggregate2:
+            aggregate1: first aggregate
+            aggregate2: second aggregate
             operator: string of SQL operator, e.g. "+"
-            cast: string to put after aggregate1, e.g. "*1.0", "::decimal"
-                defaults to empty
-            operator_str: name of operator to use
-            expression_template: formatting template with the following keywords:
+            cast: optional string to put after aggregate1, e.g. "*1.0", "::decimal"
+            operator_str: optional name of operator to use, defaults to operator
+            expression_template: optional formatting template with the following keywords:
                 name1, operator, name2
         """
         self.aggregate1 = aggregate1
