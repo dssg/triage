@@ -363,14 +363,17 @@ class Aggregation(object):
         Args:
             conn: the SQLAlchemy connection on which to execute
         """
+        create_schema = self.get_create_schema()
         creates = self.get_creates()
         drops = self.get_drops()
         indexes = self.get_indexes()
         inserts = self.get_inserts()
+        drop = self.get_drop()
+        create = self.get_create(join_table=join_table)
 
         trans = conn.begin()
-        if self.schema is not None:
-            conn.execute(self.get_create_schema())
+        if create_schema is not None:
+            conn.execute(create_schema)
 
         for group in self.groups:
             conn.execute(drops[group])
@@ -379,6 +382,6 @@ class Aggregation(object):
                 conn.execute(insert)
             conn.execute(indexes[group])
 
-        conn.execute(self.get_drop())
-        conn.execute(self.get_create(join_table=join_table))
+        conn.execute(drop)
+        conn.execute(create)
         trans.commit()
