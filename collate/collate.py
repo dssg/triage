@@ -34,6 +34,18 @@ class AggregateExpression(object):
         self.aggregates = aggregates
         self.operator = operator
         self.cast = cast if cast else ""
+        self.expression_template = "{name1}{operator}{name2}"
+
+    def alias(self, expression_template):
+        """
+        Set the expression template used for naming columns of an AggregateExpression
+        Args:
+            expression_template: formatting template with the following keywords:
+                name0, operator, name1
+        Returns: self, for chaining
+        """
+        self.expression_template = expression_template
+        return self
 
     def get_columns(self, when=None, prefix=None):
         if prefix is None:
@@ -45,8 +57,8 @@ class AggregateExpression(object):
         for c0, c1 in product(columns0, columns1):
             c = ex.literal_column("({}{} {} {})".format(
                     c0, self.cast, self.operator, c1))
-            yield c.label("{}{}{}{}".format(
-                    prefix, c0.name, self.operator, c1.name))
+            yield c.label(prefix + self.expression_template.format(
+                    name1=c0.name, operator=self.operator, name2=c1.name))
 
     def __add__(self, other):
         return AggregateExpression([self, other], "+")
@@ -62,6 +74,30 @@ class AggregateExpression(object):
 
     def __truediv__(self, other):
         return AggregateExpression([self, other], "/", "*1.0")
+
+    def __lt__(self, other):
+        return AggregateExpression([self, other], "<")
+
+    def __le__(self, other):
+        return AggregateExpression([self, other], "<=")
+
+    def __eq__(self, other):
+        return AggregateExpression([self, other], "=")
+
+    def __ne__(self, other):
+        return AggregateExpression([self, other], "!=")
+
+    def __gt__(self, other):
+        return AggregateExpression([self, other], ">")
+
+    def __ge__(self, other):
+        return AggregateExpression([self, other], ">=")
+
+    def __or__(self, other):
+        return AggregateExpression([self, other], "|")
+
+    def __and__(self, other):
+        return AggregateExpression([self, other], "&")
 
 
 class Aggregate(AggregateExpression):
