@@ -1,4 +1,6 @@
 
+include triage/model_group_stored_procedure.sql
+
 include AUTHORS.rst
 
 include CONTRIBUTING.rst
