@@ -80,7 +80,7 @@ def archive_matrix(
     matrix_config: dict
         dict to be yamled
     df_matrix: df
-        DataFrame of features and label (as last column)
+        DataFrame of features and label (as last column) or path to a CSV
     directory: str
         Relative path to where the data will be stored
     format: str
@@ -94,6 +94,23 @@ def archive_matrix(
     uuid: str
         uuid for the stored set
     """
+
+    if isinstance(df_matrix, pd.DataFrame):
+        pass
+    elif type(df_matrix) == str:
+        abs_path_file = os.path.abspath(df_matrix)
+        if not(os.path.isfile(abs_path_file)):
+            raise IOError('Not a file: {}'.format(abs_path_file))
+
+        if abs_path_file[-3:] == 'csv':
+            df_matrix = pd.read_csv(abs_path_file)
+        elif abs_path_file[-2:] == 'h5':
+            df_matrix = pd.read_hdf(abs_path_file)
+        else:
+            raise IOError('Not a csv or h5 file: {}'.format(abs_path_file))
+    else:
+        raise IOError(
+            'Not a dataframe of path to a dataframe: {}'.type(df_matrix))
 
     abs_path_dir = os.path.abspath(directory)
     if not os.path.exists(abs_path_dir):
