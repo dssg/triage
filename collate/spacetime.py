@@ -58,7 +58,8 @@ class SpacetimeAggregation(Aggregation):
                 prefix=self.prefix, interval=interval,
                 group=group)
 
-        return chain(*[a.get_columns(when, prefix, format_kwargs={"collate_date": date})
+        return chain(*[a.get_columns(when, prefix, format_kwargs={"collate_date": date,
+                                                                  "collate_interval": interval})
                        for a in self.aggregates])
 
     def get_selects(self):
