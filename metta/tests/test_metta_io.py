@@ -6,8 +6,11 @@ from dateutil.relativedelta import relativedelta
 import metta.metta_io
 import pandas as pd
 import os
-from metta.datafiles import example_uuid_fname, example_data
 import unittest
+from metta.datafiles import (example_uuid_fname,
+                             example_data_csv,
+                             example_data_h5)
+
 from tempfile import mkdtemp
 from shutil import rmtree
 import copy
@@ -48,7 +51,7 @@ class TestMettaIO(unittest.TestCase):
         assert len(metta.metta_io.load_uuids('notafile')) == 0
 
     def test_store_matrix(self):
-        df_data = pd.read_csv(example_data)
+        df_data = pd.read_csv(example_data_csv)
 
         metta.metta_io._store_matrix(
             dict_test_config,
@@ -64,13 +67,7 @@ class TestMettaIO(unittest.TestCase):
             self.temp_dir,
             format='hd5'
         )
-        metta.metta_io._store_matrix(
-            dict_test_config,
-            df_data,
-            'test_titanich5',
-            self.temp_dir,
-            format='csv'
-        )
+
         # check it wrote to files
         assert os.path.isfile(self.temp_file('test_titanic.csv'))
         assert os.path.isfile(self.temp_file('test_titanich5.h5'))
@@ -79,7 +76,13 @@ class TestMettaIO(unittest.TestCase):
         assert os.path.isfile(self.temp_file('.matrix_uuids'))
 
     def test_archive_matrix(self):
-        df_data = pd.read_csv(example_data)
+        df_data = pd.read_csv(example_data_csv)
+
+        train_uuid = metta.metta_io.archive_matrix(
+            dict_test_config, example_data_csv, self.temp_dir, format='csv')
+
+        train_uuid = metta.metta_io.archive_matrix(
+            dict_test_config, example_data_h5, self.temp_dir, format='csv')
 
         train_uuid = metta.metta_io.archive_matrix(
             dict_test_config, df_data, self.temp_dir, format='csv')
@@ -110,7 +113,7 @@ class TestMettaIO(unittest.TestCase):
             assert '{},{}\n'.format(train_uuid, test_uuid) in matrix_pairs
 
     def test_archive_train_test(self):
-        df_data = pd.read_csv(example_data)
+        df_data = pd.read_csv(example_data_csv)
 
         metta.metta_io.archive_train_test(dict_test_config, df_data,
                                           dict_test_config, df_data,
