@@ -131,3 +131,21 @@ class TestMettaIO(unittest.TestCase):
             self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.yaml')
         )
         assert len(os.listdir(self.temp_dir)) == 4
+
+    def test_recover(self):
+        df_data = pd.read_csv(example_data_csv)
+        fake_uuid = '55c1c5ab-1325-3c80-a79b-aaa23e37bb82'
+        metta.metta_io.archive_train_test(dict_test_config, df_data,
+                                          dict_test_config, df_data,
+                                          directory=self.temp_dir)
+
+        assert metta.metta_io.recover_matrix(
+            'garbageuuid', directory=self.temp_dir) is None
+
+        df_uuid = metta.metta_io.recover_matrix(dict_test_config,
+                                                directory=self.temp_dir)
+        assert df_data.equals(df_uuid)
+
+        df_config = metta.metta_io.recover_matrix(fake_uuid,
+                                                  directory=self.temp_dir)
+        assert df_data.equals(df_config)

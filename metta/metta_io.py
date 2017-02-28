@@ -234,7 +234,7 @@ def check_config_types(dict_config):
 
 def load_uuids(uuid_fname):
     """
-    Check if uuid already exits.
+    Return a list of existing uuids.
 
     Parameters
     ---------
@@ -270,3 +270,37 @@ def generate_uuid(metadata):
         identifier = '{0}_{1}'.format(identifier, str(metadata[key]))
     name_uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, identifier))
     return name_uuid
+
+
+def recover_matrix(config, directory='.'):
+    """Recover a matrix by either its config or uuid.
+
+    Parameters
+    ----------
+    config: str or dict
+        config metadata for the matrix or uuid
+    directory: str
+        path to search for the matrix
+
+    Returns
+    -------
+    df_matrix: DataFrame
+        DataFrame of specified matrix
+    None:
+        If no matrix matrix is found
+    """
+
+    if isinstance(config, dict):
+        uuid = generate_uuid(config)
+    else:
+        uuid = config
+
+    uuid_fname = directory + '/' + '.matrix_uuids'
+    set_uuids = load_uuids(uuid_fname)
+
+    if uuid in set_uuids:
+        fname = directory + '/' + uuid + '.h5'
+        df_matrix = pd.read_hdf(fname)
+        return df_matrix
+    else:
+        return None
