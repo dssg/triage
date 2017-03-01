@@ -14,6 +14,7 @@ from metta.datafiles import (example_uuid_fname,
 from tempfile import mkdtemp
 from shutil import rmtree
 import copy
+import time
 
 dict_test_config = {'start_time': datetime.date(2016, 1, 1),
                     'end_time': datetime.date(2016, 12, 31),
@@ -79,13 +80,18 @@ class TestMettaIO(unittest.TestCase):
         df_data = pd.read_csv(example_data_csv)
 
         train_uuid = metta.metta_io.archive_matrix(
-            dict_test_config, example_data_csv, self.temp_dir, format='csv')
+            dict_test_config,
+            example_data_csv,
+            directory=self.temp_dir,
+            format='csv')
 
         train_uuid = metta.metta_io.archive_matrix(
-            dict_test_config, example_data_h5, self.temp_dir, format='csv')
+            dict_test_config, example_data_h5,
+            directory=self.temp_dir, format='csv')
 
         train_uuid = metta.metta_io.archive_matrix(
-            dict_test_config, df_data, self.temp_dir, format='csv')
+            dict_test_config, df_data,
+            directory=self.temp_dir, format='csv')
 
         # check it wrote to files
         assert os.path.isfile(self.temp_file('{}.csv'.format(train_uuid)))
@@ -98,7 +104,7 @@ class TestMettaIO(unittest.TestCase):
             return metta.metta_io.archive_matrix(
                 new_test_config,
                 df_data,
-                self.temp_dir,
+                directory=self.temp_dir,
                 format='csv',
                 train_uuid=train_uuid
             )
@@ -115,21 +121,47 @@ class TestMettaIO(unittest.TestCase):
     def test_archive_train_test(self):
         df_data = pd.read_csv(example_data_csv)
 
-        metta.metta_io.archive_train_test(dict_test_config, df_data,
-                                          dict_test_config, df_data,
-                                          directory=self.temp_dir)
+        metta.metta_io.archive_train_test(dict_test_config,
+                                          df_data,
+                                          dict_test_config,
+                                          df_data,
+                                          directory=self.temp_dir,
+                                          format='hd5',
+                                          overwrite=False)
 
         # check that you don't write to a file again
-        metta.metta_io.archive_train_test(dict_test_config, df_data,
-                                          dict_test_config, df_data,
-                                          directory=self.temp_dir)
+        metta.metta_io.archive_train_test(dict_test_config,
+                                          df_data,
+                                          dict_test_config,
+                                          df_data,
+                                          directory=self.temp_dir,
+                                          format='hd5',
+                                          overwrite=False)
 
         assert os.path.isfile(
             self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5')
         )
+
         assert os.path.isfile(
             self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.yaml')
         )
+
+        prior_creation_time = os.path.getmtime(
+            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5'))
+
+        metta.metta_io.archive_train_test(dict_test_config,
+                                          df_data,
+                                          dict_test_config,
+                                          df_data,
+                                          directory=self.temp_dir,
+                                          format='hd5',
+                                          overwrite=True)
+
+        later_creation_time = os.path.getmtime(
+            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5'))
+
+        assert (later_creation_time - prior_creation_time) > 0
+
         assert len(os.listdir(self.temp_dir)) == 4
 
     def test_recover(self):

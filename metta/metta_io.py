@@ -15,9 +15,13 @@ import uuid
 warnings.filterwarnings("ignore")
 
 
-def archive_train_test(train_config, df_train,
-                       test_config, df_test,
-                       directory='.', format='hd5'):
+def archive_train_test(train_config,
+                       df_train,
+                       test_config,
+                       df_test,
+                       directory='.',
+                       format='hd5',
+                       overwrite=False):
     """
     Main function for archiving train and test sets
 
@@ -36,6 +40,9 @@ def archive_train_test(train_config, df_train,
         format to save files in
         - hd5: HDF5
         - csv: Comma Separated Values
+    overwrite: bool
+        If true then identical matrices
+        will be overridden.
 
 
     Returns
@@ -51,6 +58,7 @@ def archive_train_test(train_config, df_train,
     train_uuid = archive_matrix(
         train_config,
         df_train,
+        overwrite=overwrite,
         directory=directory,
         format=format
     )
@@ -58,6 +66,7 @@ def archive_train_test(train_config, df_train,
     test_uuid = archive_matrix(
         test_config,
         df_test,
+        overwrite=overwrite,
         directory=directory,
         format=format,
         train_uuid=train_uuid
@@ -69,9 +78,10 @@ def archive_train_test(train_config, df_train,
 def archive_matrix(
         matrix_config,
         df_matrix,
+        overwrite=False,
         directory='.',
         format='hd5',
-        train_uuid=None
+        train_uuid=None,
 ):
     """Store a design matrix.
 
@@ -81,6 +91,8 @@ def archive_matrix(
         dict to be yamled
     df_matrix: df
         DataFrame of features and label (as last column) or path to a CSV
+    overwrite: bool
+        If true will overwrite the same prexisting matrix.
     directory: str
         Relative path to where the data will be stored
     format: str
@@ -126,7 +138,11 @@ def archive_matrix(
     matrix_config = copy.deepcopy(matrix_config)
     matrix_config['metta-uuid'] = matrix_uuid
 
-    if not(matrix_uuid in set_uuids):
+    write_matrix = (overwrite) or (not(matrix_uuid in set_uuids))
+    print('OVERWRITE', overwrite)
+
+    if write_matrix:
+        print('writing the matrix')
         _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
                       format=format)
 
@@ -178,20 +194,22 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
 
     yaml_fname = directory + '/' + title + '.yaml'
 
-    if not(os.path.isfile(yaml_fname)):
-        with open(yaml_fname, 'w') as stream:
-            yaml.dump(metadata, stream)
+    with open(yaml_fname, 'w') as stream:
+        yaml.dump(metadata, stream)
 
-        if format == 'hd5':
-            hdf = pd.HDFStore(directory + '/' + title + '.h5',
-                              complevel=5, complib="zlib")
-            hdf.put(title, df_data, data_columns=True)
-            hdf.close()
-        elif format == 'csv':
-            df_data.to_csv(directory + '/' + title + '.csv')
+    if format == 'hd5':
+        print(directory + '/' + title + '.h5')
+        hdf = pd.HDFStore(directory + '/' + title + '.h5',
+                          mode='w',
+                          complevel=5,
+                          complib="zlib")
+        hdf.put(title, df_data, data_columns=True)
+        hdf.close()
+    elif format == 'csv':
+        df_data.to_csv(directory + '/' + title + '.csv')
 
-        with open(directory + '/' + '.matrix_uuids', 'a') as uuid_file:
-            uuid_file.write(title + '\n')
+    with open(directory + '/' + '.matrix_uuids', 'a') as uuid_file:
+        uuid_file.write(title + '\n')
 
 
 def check_config_types(dict_config):
