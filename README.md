@@ -32,7 +32,8 @@ train_config = {'start_time': datetime.date(2012, 12, 20),
                 'label_type': 'binary',
                 'prediction_window': '3m',
                 'matrix_id': 'CDPH_2012',
-                'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+                'feature_names': ['break_last_3yr', 'soil', 'pressure_zone'],
+                'indices': ['entity_id', 'as_of_date'] }
 
 
 test_config = {'start_time': datetime.date(2015, 12, 20),
@@ -42,7 +43,8 @@ test_config = {'start_time': datetime.date(2015, 12, 20),
                'label_type': 'binary',
                'prediction_window': '3m',
                'matrix_id': 'CDPH_2015',
-               'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+               'feature_names': ['break_last_3yr', 'soil', 'pressure_zone'],
+               'inidces': ['entity_id', 'as_of_date'] }
 
 
 metta.archive_train_test(train_config, X_train,
@@ -61,7 +63,8 @@ train_config = {'start_time': datetime.date(2012, 12, 20),
                 'label_name': 'inspection_1yr',
                 'label_type': 'binary',
                 'matrix_id': 'CDPH_2012',
-                'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+                'feature_names': ['break_last_3yr', 'soil', 'pressure_zone'],
+                'indices': ['entity_id', 'as_of_date'] }
 
 
 base_test_config = {'start_time': datetime.date(2015, 12, 20),
@@ -70,7 +73,8 @@ base_test_config = {'start_time': datetime.date(2015, 12, 20),
                'label_name': 'inspection_1yr',
                'label_type': 'binary',
                'matrix_id': 'CDPH_2015',
-               'feature_names': ['break_last_3yr', 'soil', 'pressure_zone']}
+               'feature_names': ['break_last_3yr', 'soil', 'pressure_zone'],
+               'indices': ['entity_id', 'as_of_date']}
 
 train_uuid = metta.archive_matrix(train_config, X_train, directory='./matrices')
 
