@@ -8,7 +8,7 @@ coverage==4.3.4
 Sphinx==1.5.3
 cryptography==1.7.2
 PyYAML==3.12
-pytest==3.0.5
+pytest==3.0.6
 SQLAlchemy==1.1.6
 psycopg2==2.7
 csvkit==1.0.1
