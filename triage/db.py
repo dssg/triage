@@ -18,6 +18,7 @@ from sqlalchemy import \
 from sqlalchemy.types import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.pool import NullPool
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine.url import URL
 
@@ -130,4 +131,4 @@ def connect():
             'port': profile['port'],
         }
         dburl = URL('postgres', **dbconfig)
-        return create_engine(dburl)
+        return create_engine(dburl, poolclass=NullPool)
