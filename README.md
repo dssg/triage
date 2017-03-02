@@ -47,9 +47,13 @@ test_config = {'start_time': datetime.date(2015, 12, 20),
                'inidces': ['entity_id', 'as_of_date'] }
 
 
-metta.archive_train_test(train_config, X_train,
-                         test_config, X_test,
-                         directory='./old_matrices')
+metta.archive_train_test(train_config,
+                         X_train,
+                         test_config,
+                         X_test,
+                         directory='./old_matrices',
+                         format='hd5',
+                         overwrite=False)
 ```
 
 ### Storing a train and multiple test sets
@@ -88,7 +92,8 @@ for years in range(1, 5):
 	test_uuids.append(metta.archive_matrix(
 		test_config,
 		df_data,
-		'./matrices',
+		directory='./matrices',
+        overwrite=False,
 		format='csv',
 		train_uuid=train_uuid
 	))
