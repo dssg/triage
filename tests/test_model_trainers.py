@@ -122,3 +122,11 @@ def test_model_trainer():
                 engine.execute('select * from results.feature_importances')
             ]
             assert len(records) == 4 * 3  # maybe exclude entity_id?
+
+            # 7. that the generator interface works the same way
+            new_model_ids = trainer.generate_trained_models(
+                grid_config=grid_config,
+                misc_db_parameters=dict()
+            )
+            assert expected_model_ids == \
+                sorted([model_id for model_id in new_model_ids])

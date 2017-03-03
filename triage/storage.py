@@ -30,6 +30,9 @@ class S3Store(Store):
     def load(self):
         return download_object(self.path)
 
+    def delete(self):
+        self.path.delete()
+
 
 class FSStore(Store):
     def exists(self):
@@ -43,6 +46,9 @@ class FSStore(Store):
         with open(self.path, 'rb') as f:
             return pickle.load(f)
 
+    def delete(self):
+        os.remove(self.path)
+
 
 class MemoryStore(Store):
     store = None
@@ -55,6 +61,9 @@ class MemoryStore(Store):
 
     def load(self):
         return self.store
+
+    def delete(self):
+        self.store = None
 
 
 class ModelStorageEngine(object):

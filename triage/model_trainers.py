@@ -267,13 +267,13 @@ class ModelTrainer(object):
         logging.debug('Model_group_id = {}'.format(model_group_id))
         return model_group_id         
 
-    def train_models(
+    def generate_trained_models(
         self,
         grid_config,
         misc_db_parameters,
         replace=False
     ):
-        """Train and store configured models
+        """Train and store configured models, yielding the ids one by one
 
         Args:
             grid_config (dict) of format {classpath: hyperparameter dicts}
@@ -286,10 +286,8 @@ class ModelTrainer(object):
             misc_db_parameters (dict) params to pass through to the database
             replace (optional, False): whether to replace already cached models
 
-        Returns:
-            (list) of model ids
+        Yields: (int) model ids
         """
-        model_ids = []
         misc_db_parameters = copy.deepcopy(misc_db_parameters)
         misc_db_parameters['batch_run_time'] = datetime.datetime.now().isoformat()
         for class_path, parameters in self._generate_model_configs(grid_config):
@@ -304,7 +302,7 @@ class ModelTrainer(object):
                     model_store,
                     misc_db_parameters
                 )
-                model_ids.append(model_id)
+                yield model_id
             else:
                 logging.info('Skipping %s/%s', class_path, parameters)
                 session = self.sessionmaker()
@@ -327,6 +325,35 @@ class ModelTrainer(object):
                     )
                 else:
                     model_id = saved.model_id
-                model_ids.append(model_id)
+                yield model_id
 
-        return model_ids
+    def train_models(
+        self,
+        grid_config,
+        misc_db_parameters,
+        replace=False
+    ):
+        """Train and store configured models
+
+        Args:
+            grid_config (dict) of format {classpath: hyperparameter dicts}
+                example: { 'sklearn.ensemble.RandomForestClassifier': {
+                    'n_estimators': [1,10,100,1000,10000],
+                    'max_depth': [1,5,10,20,50,100],
+                    'max_features': ['sqrt','log2'],
+                    'min_samples_split': [2,5,10]
+                } }
+            misc_db_parameters (dict) params to pass through to the database
+            replace (optional, False): whether to replace already cached models
+
+        Returns:
+            (list) of model ids
+        """
+        return [
+            model_id for model_id in self.generate_trained_models(
+                grid_config,
+                misc_db_parameters,
+                replace
+            )
+        ]
+

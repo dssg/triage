@@ -1,4 +1,4 @@
-from triage.storage import S3Store, FSStore
+from triage.storage import S3Store, FSStore, MemoryStore
 from moto import mock_s3
 import boto3
 import os
@@ -19,6 +19,8 @@ def test_S3Store():
         assert store.exists()
         newVal = store.load()
         assert newVal.val == 'val'
+        store.delete()
+        assert not store.exists()
 
 
 def test_FSStore():
@@ -30,4 +32,16 @@ def test_FSStore():
     assert store.exists()
     newVal = store.load()
     assert newVal.val == 'val'
-    os.remove('tmpfile')
+    store.delete()
+    assert not store.exists()
+
+
+def test_MemoryStore():
+    store = MemoryStore(None)
+    assert not store.exists()
+    store.write(SomeClass('val'))
+    assert store.exists()
+    newVal = store.load()
+    assert newVal.val == 'val'
+    store.delete()
+    assert not store.exists()
