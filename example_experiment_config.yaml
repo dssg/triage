@@ -1,5 +1,7 @@
 ---
-events_table: 'events'
+# TIME SPLITTING
+# The time window to look at, and how to divide the window into
+# train/test splits
 temporal_splits:
     start_time: '1998-01-01'
     end_time: '1999-01-01'
@@ -8,17 +10,53 @@ temporal_splits:
         - 3
     feature_frequency: 6
     test_frequency: 3
+# LABEL GENERATION
+# Information needed to generate labels
+#
+# An events table is expected, with the columns:
+#   entity_id - an identifier for which the labels are applied to
+#   outcome_date - The date at which some outcome was known
+#   outcome - A boolean outcome
+# These are used to generate appropriate labels for each train/test split
+events_table: 'events'
+
+# FEATURE GENERATION
+# The aggregate features to generate for each train/test split
+#
+# Implemented by wrapping collate: https://github.com/dssg/collate
+# Most terminology here is taken directly from collate
+#
+# Each entry describes a collate.SpacetimeAggregation object, and the
+# arguments needed to create it. Generally, each of these entries controls
+# the features from one source table, though in the case of multiple groups
+# may result in multiple output tables
 feature_aggregations:
     -
+        # prefix given to the resultant tables
         prefix: 'prefix'
+        # from_obj is usually a source table but can be an expression, such as
+        # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
         from_obj: 'cool_stuff'
+        # The date column to use for specifying which records to include
+        # in temporal features. It is important that the column used specifies
+        # the date at which the event is known about, which may be different
+        # from the date the event happened.
         knowledge_date_column: 'open_date'
+
+        # aggregates and categoricals define the actual features created. So
+        # at least one is required
+        #
+        # Aggregates of numerical columns. Each quantity is a number of some
+        # sort, and the list of metrics are applied to each quantity
         aggregates:
             -
                 quantity: 'homeless::INT'
                 metrics:
                     - 'count'
                     - 'sum'
+        # Categorical features. The column given can be of any type, but the
+        # choices must comparable to that type for equality within SQL
+        # The result will be one feature for each choice/metric combination
         categoricals:
             -
                 column: 'color'
@@ -28,12 +66,24 @@ feature_aggregations:
                     - 'green'
                 metrics:
                     - 'sum'
+        # The time intervals over which to aggregate features
         intervals:
             - '1 year'
             - '2 years'
             - 'all'
+        # A list of different columns to separately group by
         groups:
             - 'entity_id'
+# GRID CONFIGURATION
+# The classifier/hyperparameter combinations that should be trained
+#
+# Each top-level key should be a class name, importable from triage. sklearn is
+# available, and if you have another classifier package you would like available,
+# contribute it to requirements.txt
+#
+# Each lower-level key is a hyperparameter name for the given classifier, and
+# each value is a list of potential values. All possible combinations of
+# classifiers and hyperparameters are trained.
 grid_config:
     'sklearn.ensemble.ExtraTreesClassifier':
         n_estimators: [100,100]
@@ -41,6 +91,19 @@ grid_config:
         max_depth: [1,5,10,20,50]
         max_features: [sqrt,log2]
         min_samples_split: [2,5,10]
+# MODEL SCORING
+# How each trained model is scored
+#
+# Each entry needs a list of one of the metrics defined in
+# triage.scoring.ModelScorer.available_metrics (contributions welcome!)
+# Depending on the metric, either thresholds or parameters
+#
+# Parameters specify any hyperparameters needed. For most metrics,
+# which are simply wrappers of sklearn functions, these
+# are passed directly to sklearn.
+#
+# Thresholds are more specific: The list is subset and only the
+# top percentile or top n entities are scored
 scoring:
     -
         metrics: [precision@, recall@]
