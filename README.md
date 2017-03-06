@@ -11,6 +11,12 @@ Store and recall matrices.
 Python library for storing meta data, pandas of training and
 testing sets.
 
+## Installation
+```
+pip install git+git://github.com/dssg/metta-data.git
+```
+
+
 ## How-to
 
 `metta` expects you to hand it a dictionary for each dataframe with the following keys:
@@ -111,11 +117,6 @@ metta.upload_to_s3(access_key_id=dict_config['AWSAccessKey'],
                    folder=dict_config['Folder'],
                    directory='./old_matrices')
 
-```
-
-## Installation
-```
-pip install git+git://github.com/dssg/metta-data.git
 ```
 
 ## License
