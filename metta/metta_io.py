@@ -139,10 +139,7 @@ def archive_matrix(
     matrix_config['metta-uuid'] = matrix_uuid
 
     write_matrix = (overwrite) or (not(matrix_uuid in set_uuids))
-    print('OVERWRITE', overwrite)
-
     if write_matrix:
-        print('writing the matrix')
         _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
                       format=format)
 
