@@ -43,7 +43,7 @@ class TestMettaIO(unittest.TestCase):
         metta.metta_io.check_config_types(dict_test_config)
 
     def test_uuid(self):
-        fake_uuid = '55c1c5ab-1325-3c80-a79b-aaa23e37bb82'
+        fake_uuid = 'f6187a0cfc4fc3af0f5febd040e9e07e'
         assert fake_uuid == metta.metta_io.generate_uuid(
             dict_test_config)
 
@@ -139,15 +139,15 @@ class TestMettaIO(unittest.TestCase):
                                           overwrite=False)
 
         assert os.path.isfile(
-            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5')
+            self.temp_file('f6187a0cfc4fc3af0f5febd040e9e07e.h5')
         )
 
         assert os.path.isfile(
-            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.yaml')
+            self.temp_file('f6187a0cfc4fc3af0f5febd040e9e07e.yaml')
         )
 
         prior_creation_time = os.path.getmtime(
-            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5'))
+            self.temp_file('f6187a0cfc4fc3af0f5febd040e9e07e.h5'))
 
         metta.metta_io.archive_train_test(dict_test_config,
                                           df_data,
@@ -158,7 +158,7 @@ class TestMettaIO(unittest.TestCase):
                                           overwrite=True)
 
         later_creation_time = os.path.getmtime(
-            self.temp_file('55c1c5ab-1325-3c80-a79b-aaa23e37bb82.h5'))
+            self.temp_file('f6187a0cfc4fc3af0f5febd040e9e07e.h5'))
 
         assert (later_creation_time - prior_creation_time) > 0
 
@@ -166,7 +166,7 @@ class TestMettaIO(unittest.TestCase):
 
     def test_recover(self):
         df_data = pd.read_csv(example_data_csv)
-        fake_uuid = '55c1c5ab-1325-3c80-a79b-aaa23e37bb82'
+        fake_uuid = 'f6187a0cfc4fc3af0f5febd040e9e07e'
         metta.metta_io.archive_train_test(dict_test_config, df_data,
                                           dict_test_config, df_data,
                                           directory=self.temp_dir)
