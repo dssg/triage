@@ -2,6 +2,7 @@ from timechop.utils import convert_str_to_relativedelta
 from timechop.utils import parse_delta_string
 import datetime
 import unittest
+import warnings
 
 class test_convert_str_to_relativedelta(unittest.TestCase):
     def test_valid_input(self):
@@ -24,6 +25,17 @@ class test_convert_str_to_relativedelta(unittest.TestCase):
         bad_delta_string = '4 tacos'
         with self.assertRaises(ValueError):
             convert_str_to_relativedelta(bad_delta_string)
+
+    def test_warning_for_m(self):
+        delta_strings = ['1m', '2M']
+        for delta_string in delta_strings:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                convert_str_to_relativedelta(delta_string)
+                assert len(w) == 1
+                assert issubclass(w[-1].category, RuntimeWarning)
+                assert 'months' in str(w[-1].message)
+
 
 class test_parse_delta_string(unittest.TestCase):
     def test_valid_input(self):

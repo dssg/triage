@@ -1,5 +1,6 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import warnings
 
 def convert_str_to_relativedelta(delta_string):
     """ Given a string in a postgres interval format (e.g., '1 month'),
@@ -24,6 +25,11 @@ def convert_str_to_relativedelta(delta_string):
         delta = relativedelta(years = value)
     elif units in ['month', 'months', 'm', 'M']:
         delta = relativedelta(months = value)
+        if units in ['m', 'M']:
+            warnings.warn(
+                'Time delta units "{}" converted to months.'.format(units),
+                RuntimeWarning
+            )
     elif units in ['day', 'days', 'd', 'D']:
         delta = relativedelta(days = value)
     elif units in ['week', 'weeks', 'w', 'W']:
