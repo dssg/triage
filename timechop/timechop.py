@@ -13,7 +13,7 @@ class Inspections(object):
             raise ValueError('Beginning of time is later than modeling start time.')
 
     def chop_time(self):
-        matrix_definitions = []
+        matrix_set_definitions = []
         matrix_end_times = self.calculate_matrix_end_times()
         for look_back_duration in self.look_back_durations:
             for matrix_end_time in matrix_end_times:
@@ -23,7 +23,7 @@ class Inspections(object):
                         look_back_duration
                     )
                 )
-        return(matrix_definitions)
+        return(matrix_set_definitions)
 
     def calculate_matrix_end_times(self):
         matrix_end_times = []
