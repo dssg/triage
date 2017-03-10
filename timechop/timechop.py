@@ -65,15 +65,19 @@ class Inspections(object):
             train_matrix_end_time,
             self.modeling_end_time
         )
-        matrix_definition ={
+        matrix_definition = {
             'beginning_of_time': self.beginning_of_time,
             'modeling_start_time': self.modeling_start_time,
             'modeling_end_time': self.modeling_end_time,
-            'train_matrix_start_time': train_matrix_start_time,
-            'train_matrix_end_time': train_matrix_end_time,
-            'train_as_of_times': train_as_of_times,
-            'test_matrix_start_time': train_matrix_end_time,
-            'test_matrix_end_time': self.modeling_end_time,
-            'test_as_of_times': test_as_of_times
+            'train_matrix': {
+                'matrix_start_time': train_matrix_start_time,
+                'matrix_end_time': train_matrix_end_time,
+                'as_of_times': train_as_of_times
+            },
+            'test_matrices': [{
+                'matrix_start_time': train_matrix_end_time,
+                'matrix_end_time': self.modeling_end_time,
+                'as_of_times': test_as_of_times
+            }]
         }
         return(matrix_definition)
