@@ -4,4 +4,3 @@ pandas
 python-dateutil
 boto3
 tables
-flufl.lock
