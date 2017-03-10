@@ -9,6 +9,7 @@ class test_calculate_update_times(TestCase):
             datetime.datetime(2012, 1, 1, 0, 0)
         ]
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2013, 1, 1, 0, 0),
             '1 year',
@@ -18,6 +19,7 @@ class test_calculate_update_times(TestCase):
 
     def test_invalid_input(self):
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2012, 1, 1, 0, 0),
             '5 months',
@@ -40,6 +42,7 @@ def test_calculate_as_of_times():
         datetime.datetime(2011, 1, 10, 0, 0),
     ]
     chopper = Inspections(
+        datetime.datetime(1990, 1, 1, 0, 0),
         datetime.datetime(2010, 1, 1, 0, 0),
         datetime.datetime(2012, 1, 1, 0, 0),
         '1 year',
@@ -54,6 +57,7 @@ def test_calculate_as_of_times():
 class test_generate_matrix_definition(TestCase):
     def test_valid_input(self):
         expected_result = {
+            'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
             'modeling_end_time': datetime.datetime(2010, 1, 11, 0, 0),
             'train_matrix_start_time': datetime.datetime(2010, 1, 1, 0, 0),
@@ -76,6 +80,7 @@ class test_generate_matrix_definition(TestCase):
             ],
         }
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 11, 0, 0),
             '5 days',
@@ -89,6 +94,7 @@ class test_generate_matrix_definition(TestCase):
 
     def test_invalid_input(self):
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 11, 0, 0),
             '5 days',
@@ -105,6 +111,7 @@ class test_chop_time(TestCase):
     def test_valid_input(self):
         expected_result = [
             {
+                'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
                 'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
                 'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'train_matrix_start_time': datetime.datetime(2010, 1, 1, 0, 0),
@@ -132,6 +139,7 @@ class test_chop_time(TestCase):
                 ],
             },
             {
+                'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
                 'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
                 'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'train_matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -155,6 +163,7 @@ class test_chop_time(TestCase):
             }
         ]
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 16, 0, 0),
             '5 days',
@@ -165,6 +174,7 @@ class test_chop_time(TestCase):
 
     def test_bad_look_back_time(self):
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 16, 0, 0),
             '5 days',
@@ -175,6 +185,7 @@ class test_chop_time(TestCase):
 
     def test_bad_update_window(self):
         chopper = Inspections(
+            datetime.datetime(1990, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 1, 0, 0),
             datetime.datetime(2010, 1, 16, 0, 0),
             '6 days',

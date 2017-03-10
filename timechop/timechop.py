@@ -2,8 +2,9 @@ from . import utils
 from dateutil.relativedelta import relativedelta
 
 class Inspections(object):
-    def __init__(self, modeling_start_time, modeling_end_time, update_window,
-                 look_back_durations):
+    def __init__(self, beginning_of_time, modeling_start_time,
+                 modeling_end_time, update_window, look_back_durations):
+        self.beginning_of_time = beginning_of_time # earliest date included in features
         self.modeling_start_time = modeling_start_time # earliest date in any model
         self.modeling_end_time = modeling_end_time # all dates in any model are < this date
         self.update_window = update_window # how frequently to retrain models
@@ -63,6 +64,7 @@ class Inspections(object):
             self.modeling_end_time
         )
         matrix_definition ={
+            'beginning_of_time': self.beginning_of_time,
             'modeling_start_time': self.modeling_start_time,
             'modeling_end_time': self.modeling_end_time,
             'train_matrix_start_time': train_matrix_start_time,
