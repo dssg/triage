@@ -13,7 +13,7 @@ class test_calculate_update_times(TestCase):
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
             modeling_end_time = datetime.datetime(2013, 1, 1, 0, 0),
             update_window = '1 year',
-            look_back_durations = '1 year'
+            look_back_durations = ['1 year']
         )
         result = chopper.calculate_matrix_end_times()
         assert(result == expected_result)
@@ -24,7 +24,7 @@ class test_calculate_update_times(TestCase):
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
             modeling_end_time = datetime.datetime(2012, 1, 1, 0, 0),
             update_window = '5 months',
-            look_back_durations = '1 year'
+            look_back_durations = ['1 year']
         )
         with self.assertRaises(ValueError):
             chopper.calculate_matrix_end_times()
@@ -87,11 +87,11 @@ class test_generate_matrix_definition(TestCase):
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
             modeling_end_time = datetime.datetime(2010, 1, 11, 0, 0),
             update_window = '5 days',
-            look_back_durations = '5 days'
+            look_back_durations = ['5 days']
         )
         result = chopper.generate_matrix_definition(
             train_matrix_end_time = datetime.datetime(2010, 1, 06, 0, 0),
-            look_back_duration = '5 days'
+            look_back_duration = ['5 days']
         )
         assert(result == expected_result)
 
@@ -101,12 +101,12 @@ class test_generate_matrix_definition(TestCase):
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
             modeling_end_time = datetime.datetime(2010, 1, 11, 0, 0),
             update_window = '5 days',
-            look_back_durations = '10 days'
+            look_back_durations = ['10 days']
         )
         with self.assertRaises(ValueError):
             chopper.generate_matrix_definition(
                 train_matrix_end_time = datetime.datetime(2010, 1, 6, 0, 0),
-                look_back_duration = '10 days'
+                look_back_duration = ['10 days']
             )
 
 
