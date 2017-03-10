@@ -9,6 +9,8 @@ class Inspections(object):
         self.modeling_end_time = modeling_end_time # all dates in any model are < this date
         self.update_window = update_window # how frequently to retrain models
         self.look_back_durations = look_back_durations # length of time included in a model
+        if beginning_of_time > modeling_start_time:
+            raise ValueError('Beginning of time is later than modeling start time.')
 
     def chop_time(self):
         matrix_definitions = []
