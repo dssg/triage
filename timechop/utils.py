@@ -18,30 +18,21 @@ def convert_str_to_relativedelta(delta_string):
 
     :raises: ValueError if the delta_string is not in the expected format
     """
-    # split the prediction window string into its component parts
-    try:
-        units = delta_string.split(' ')[1]
-    except:
-        raise ValueError('Could not parse units from prediction_window string')
+    units, value = parse_delta_string(delta_string)
 
-    try:
-        value = int(delta_string.split(' ')[0])
-    except:
-        raise ValueError('Could not parse value from prediction_window string')
-
-    if units == 'year' or units == 'years':
+    if units in ['year', 'years', 'y', 'Y']:
         delta = relativedelta(years = value)
-    elif units == 'month' or units == 'months':
+    elif units in ['month', 'months', 'm', 'M']:
         delta = relativedelta(months = value)
-    elif units == 'day' or units == 'days':
+    elif units in ['day', 'days', 'd', 'D']:
         delta = relativedelta(days = value)
-    elif units == 'week' or units == 'weeks':
+    elif units in ['week', 'weeks', 'w', 'W']:
         delta = relativedelta(weeks = value)
-    elif units == 'hour' or units == 'hours':
+    elif units in ['hour', 'hours', 'h', 'H']:
         delta = relativedelta(hours = value)
-    elif units == 'minute' or units == 'minutes':
+    elif units in ['minute', 'minutes']:
         delta = relativedelta(minutes = value)
-    elif units == 'second' or units == 'seconds':
+    elif units in ['second', 'seconds', 's', 'S']:
         delta = relativedelta(seconds = value)
     elif units == 'microsecond' or units == 'microseconds':
         delta = relativedelta(microseconds = value)
@@ -51,3 +42,37 @@ def convert_str_to_relativedelta(delta_string):
         )
 
     return(delta)
+
+def parse_delta_string(delta_string):
+    if len(delta_string.split(' ')) == 2:
+        try:
+            units = delta_string.split(' ')[1]
+        except:
+            raise ValueError('''
+                Could not parse units from time delta string: {}
+            '''.format(delta_string))
+        try:
+            value = int(delta_string.split(' ')[0])
+        except:
+            raise ValueError('''
+                Could not parse value from time delta string: {}
+            '''.format(delta_string))
+    elif len(delta_string) == 2:
+        try:
+            units = delta_string[1]
+        except:
+            raise ValueError('''
+                Could not parse units from time delta string: {}
+            '''.format(delta_string))
+        try:
+            value = int(delta_string[0])
+        except:
+            raise ValueError('''
+                Could not parse value from time delta string: {}
+            '''.format(delta_string))
+    else:
+        raise ValueError(
+            'Could not parse time delta string: {}'.format(delta_string)
+        )
+
+    return(units, value)

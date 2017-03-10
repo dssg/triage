@@ -91,7 +91,7 @@ class test_generate_matrix_definition(TestCase):
         )
         result = chopper.generate_matrix_definition(
             train_matrix_end_time = datetime.datetime(2010, 1, 06, 0, 0),
-            look_back_duration = ['5 days']
+            look_back_duration = '5 days'
         )
         assert(result == expected_result)
 
@@ -106,7 +106,7 @@ class test_generate_matrix_definition(TestCase):
         with self.assertRaises(ValueError):
             chopper.generate_matrix_definition(
                 train_matrix_end_time = datetime.datetime(2010, 1, 6, 0, 0),
-                look_back_duration = ['10 days']
+                look_back_duration = '10 days'
             )
 
 
