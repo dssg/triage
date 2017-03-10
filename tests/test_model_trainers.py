@@ -45,9 +45,10 @@ def test_model_trainer():
                 'feature_names': ['ft1', 'ft2']
             }
             project_path = 'econ-dev/inspections'
+            model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
-                model_storage_engine=S3ModelStorageEngine(s3_conn, project_path),
+                model_storage_engine=model_storage_engine,
                 matrix_store=InMemoryMatrixStore(matrix, metadata),
                 db_engine=engine,
             )
@@ -123,7 +124,14 @@ def test_model_trainer():
             ]
             assert len(records) == 4 * 3  # maybe exclude entity_id?
 
-            # 7. that the generator interface works the same way
+            # 7. if the cache is missing but the metadata is still there, reuse the metadata
+            for row in engine.execute('select model_hash from results.models'):
+                model_storage_engine.get_store(row[0]).delete()
+            expected_model_ids = [1, 2, 4, 5]
+            new_model_ids = trainer.train_models(grid_config=grid_config, misc_db_parameters=dict())
+            assert expected_model_ids == sorted(new_model_ids)
+
+            # 8. that the generator interface works the same way
             new_model_ids = trainer.generate_trained_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict()

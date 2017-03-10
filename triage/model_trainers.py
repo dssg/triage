@@ -134,9 +134,11 @@ class ModelTrainer(object):
             .filter_by(model_hash=model_hash)\
             .one_or_none()
         if existing_model:
-            logging.warning('deleting existing model %s', existing_model.model_id)
-            existing_model.delete(session)
-            session.commit()
+            #logging.warning('deleting existing model %s', existing_model.model_id)
+            #existing_model.delete(session)
+            #session.commit()
+            logging.warning('model meta data already stored %s', existing_model.model_id)
+            return existing_model.model_id
 
         model = Model(
             model_hash=model_hash,
