@@ -25,6 +25,8 @@ class FeatureGenerator(object):
             groups=aggregation_config['groups'],
             dates=feature_dates,
             date_column=aggregation_config['knowledge_date_column'],
+            output_date_column='as_of_date',
+            schema='features',
             prefix=aggregation_config['prefix']
         )
 

@@ -29,10 +29,10 @@ aggregate_config = [{
 }]
 
 expected_output = {
-    '"aprefix_aggregation"': [
+    '"features"."aprefix_aggregation"': [
         {
             'entity_id': 3,
-            'date': date(2013, 9, 30),
+            'as_of_date': date(2013, 9, 30),
             'aprefix_entity_id_all_quantity_one_sum': 342,
             'aprefix_entity_id_all_quantity_one_count': 1,
             'aprefix_entity_id_all_cat_one_good_sum': 0,
@@ -40,7 +40,7 @@ expected_output = {
         },
         {
             'entity_id': 1,
-            'date': date(2014, 9, 30),
+            'as_of_date': date(2014, 9, 30),
             'aprefix_entity_id_all_quantity_one_sum': 10000,
             'aprefix_entity_id_all_quantity_one_count': 1,
             'aprefix_entity_id_all_cat_one_good_sum': 1,
@@ -48,7 +48,7 @@ expected_output = {
         },
         {
             'entity_id': 3,
-            'date': date(2014, 9, 30),
+            'as_of_date': date(2014, 9, 30),
             'aprefix_entity_id_all_quantity_one_sum': 342,
             'aprefix_entity_id_all_quantity_one_count': 1,
             'aprefix_entity_id_all_cat_one_good_sum': 0,
@@ -56,7 +56,7 @@ expected_output = {
         },
         {
             'entity_id': 4,
-            'date': date(2014, 9, 30),
+            'as_of_date': date(2014, 9, 30),
             'aprefix_entity_id_all_quantity_one_sum': 1236,
             'aprefix_entity_id_all_quantity_one_count': 1,
             'aprefix_entity_id_all_cat_one_good_sum': 0,
@@ -94,7 +94,7 @@ def test_training_label_generation():
 
         for output_table in output_tables:
             records = pandas.read_sql(
-                'select * from {} order by date, entity_id'.format(output_table),
+                'select * from {} order by as_of_date, entity_id'.format(output_table),
                 engine
             ).to_dict('records')
             assert records == expected_output[output_table]

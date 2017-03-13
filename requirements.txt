@@ -11,3 +11,5 @@ boto3
 collate
 click
 inflection
+git+git://github.com/dssg/timechop.git@master
+git+git://github.com/dssg/metta-data.git
