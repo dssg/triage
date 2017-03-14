@@ -58,9 +58,9 @@ class SpacetimeAggregation(Aggregation):
                 prefix=self.prefix, interval=interval,
                 group=group)
 
-        return chain(*(a.get_columns(when, prefix, format_kwargs={"collate_date": date,
+        return chain(*[a.get_columns(when, prefix, format_kwargs={"collate_date": date,
                                                                   "collate_interval": interval})
-                       for a in self.aggregates))
+                       for a in self.aggregates])
 
     def get_selects(self):
         """
@@ -79,8 +79,8 @@ class SpacetimeAggregation(Aggregation):
                 columns = [groupby,
                            ex.literal_column("'%s'::date"
                                              % date).label(self.output_date_column)]
-                columns += list(chain(*(self._get_aggregates_sql(
-                        i, date, group) for i in intervals)))
+                columns += list(chain(*[self._get_aggregates_sql(
+                        i, date, group) for i in intervals]))
 
                 gb_clause = make_sql_clause(groupby, ex.literal_column)
                 query = ex.select(columns=columns, from_obj=self.from_obj)\

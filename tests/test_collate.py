@@ -39,6 +39,15 @@ def test_aggregate_tuple_quantity_when():
             "corr(CASE WHEN date < '2012-01-01' THEN x END, "
             "CASE WHEN date < '2012-01-01' THEN y END)")
 
+def test_aggregate_arithmetic():
+    n = collate.Aggregate("x", "sum")
+    d = collate.Aggregate("1", "count")
+    m = collate.Aggregate("y", "avg")
+
+    e = list((n/d + m).get_columns(prefix="prefix_"))[0]
+    assert str(e) == "((sum(x)*1.0 / count(1)) + avg(y))"
+    assert e.name == "prefix_x_sum/1_count+y_avg"
+
 def test_aggregate_format_kwargs():
     agg = collate.Aggregate("'{collate_date}' - date", "min")
     assert str(list(agg.get_columns(format_kwargs={"collate_date":"2012-01-01"}))[0]) == (

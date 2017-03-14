@@ -29,7 +29,92 @@ def split_distinct(quantity):
         return "", (q,)
 
 
-class Aggregate(object):
+class AggregateExpression(object):
+    def __init__(self, aggregate1, aggregate2, operator,
+                 cast=None, operator_str=None, expression_template=None):
+        """
+        Args:
+            aggregate1: first aggregate
+            aggregate2: second aggregate
+            operator: string of SQL operator, e.g. "+"
+            cast: optional string to put after aggregate1, e.g. "*1.0", "::decimal"
+            operator_str: optional name of operator to use, defaults to operator
+            expression_template: optional formatting template with the following keywords:
+                name1, operator, name2
+        """
+        self.aggregate1 = aggregate1
+        self.aggregate2 = aggregate2
+        self.operator = operator
+        self.cast = cast if cast else ""
+        self.operator_str = operator if operator_str else operator
+        self.expression_template = expression_template \
+            if expression_template else "{name1}{operator}{name2}"
+
+    def alias(self, expression_template):
+        """
+        Set the expression template used for naming columns of an AggregateExpression
+        Returns: self, for chaining
+        """
+        self.expression_template = expression_template
+        return self
+
+    def get_columns(self, when=None, prefix=None, format_kwargs=None):
+        if prefix is None:
+            prefix = ""
+        if format_kwargs is None:
+            format_kwargs = {}
+
+        columns1 = self.aggregate1.get_columns(when)
+        columns2 = self.aggregate2.get_columns(when)
+
+        for c1, c2 in product(columns1, columns2):
+            c = ex.literal_column("({}{} {} {})".format(
+                    c1, self.cast, self.operator, c2))
+            yield c.label(prefix + self.expression_template.format(
+                    name1=c1.name, operator=self.operator_str, name2=c2.name,
+                    **format_kwargs))
+
+    def __add__(self, other):
+        return AggregateExpression(self, other, "+")
+
+    def __sub__(self, other):
+        return AggregateExpression(self, other, "-")
+
+    def __mul__(self, other):
+        return AggregateExpression(self, other, "*")
+
+    def __div__(self, other):
+        return AggregateExpression(self, other, "/", "*1.0")
+
+    def __truediv__(self, other):
+        return AggregateExpression(self, other, "/", "*1.0")
+
+    def __lt__(self, other):
+        return AggregateExpression(self, other, "<")
+
+    def __le__(self, other):
+        return AggregateExpression(self, other, "<=")
+
+    def __eq__(self, other):
+        return AggregateExpression(self, other, "=")
+
+    def __ne__(self, other):
+        return AggregateExpression(self, other, "!=")
+
+    def __gt__(self, other):
+        return AggregateExpression(self, other, ">")
+
+    def __ge__(self, other):
+        return AggregateExpression(self, other, ">=")
+
+    def __or__(self, other):
+        return AggregateExpression(self, other, "or", operator_str="|")
+
+    def __and__(self, other):
+        return AggregateExpression(self, other, "and", operator_str="&")
+
+
+class Aggregate(AggregateExpression):
     """
     An object representing one or more SQL aggregate columns in a groupby
     """
@@ -228,8 +313,8 @@ class Aggregation(object):
         prefix = "{prefix}_{group}_".format(
                 prefix=self.prefix, group=group)
 
-        return chain(*(a.get_columns(prefix=prefix)
-                       for a in self.aggregates))
+        return chain(*[a.get_columns(prefix=prefix)
+                       for a in self.aggregates])
 
     def get_selects(self):
         """
