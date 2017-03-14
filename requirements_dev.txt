@@ -10,7 +10,7 @@ cryptography==1.7.2
 PyYAML==3.12
 pytest==3.0.6
 SQLAlchemy==1.1.6
-psycopg2==2.7
+psycopg2==2.7.1
 csvkit==1.0.1
 codecov==2.0.5
 pytest-cov==2.4.0
