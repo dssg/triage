@@ -1,5 +1,7 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import functools
+import operator
 import warnings
 
 def convert_str_to_relativedelta(delta_string):
@@ -82,3 +84,16 @@ def parse_delta_string(delta_string):
         )
 
     return(units, value)
+
+
+def feature_list(feature_dictionary):
+    """Convert a feature dictionary to a sorted list.
+
+    Args: feature_dictionary (dict)
+
+    Returns: sorted list of feature names
+    """
+    return sorted(functools.reduce(
+        operator.concat,
+        [feature_dictionary[key] for key in feature_dictionary.keys()]
+    ))

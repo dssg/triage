@@ -262,7 +262,7 @@ class Architect(object):
 
             # columns
             'indices': ['entity_id', 'as_of_date'],
-            'feature_names': feature_dictionary,
+            'feature_names': utils.feature_list(feature_dictionary),
             'label_name': label_name,
 
             # other information
