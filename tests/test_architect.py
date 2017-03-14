@@ -128,6 +128,8 @@ def test_build_labels_query():
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = engine
@@ -173,6 +175,8 @@ def test_write_to_csv():
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = engine
@@ -213,6 +217,8 @@ def test_make_entity_dates_table():
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = engine
@@ -279,6 +285,8 @@ def test_build_features_query():
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = engine
@@ -308,6 +316,8 @@ class TestMergeFeatureCSVs(TestCase):
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = None
@@ -371,6 +381,8 @@ class TestMergeFeatureCSVs(TestCase):
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = None
@@ -429,6 +441,8 @@ def test_design_matrix():
             batch_id = 2,
             batch_timestamp = datetime.datetime.now(),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+            label_names = ['booking'],
+            label_types = ['binary'],
             db_config = db_config,
             user_metadata = {},
             engine = engine
@@ -453,7 +467,4 @@ def test_design_matrix():
 
         os.remove(matrix_filename)
         os.remove('{}.yaml'.format(uuid))
-        os.remove(.matrix_uuids)
-
-
-
+        os.remove('.matrix_uuids')
