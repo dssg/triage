@@ -17,7 +17,7 @@ class Inspections(object):
         matrix_end_times = self.calculate_matrix_end_times()
         for look_back_duration in self.look_back_durations:
             for matrix_end_time in matrix_end_times:
-                matrix_definitions.append(
+                matrix_set_definitions.append(
                     self.generate_matrix_definition(
                         matrix_end_time,
                         look_back_duration

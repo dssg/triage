@@ -23,7 +23,7 @@ class Architect(object):
     def chop_data(self, matrix_set_definitions):
         updated_definitions = []
         for matrix_set in matrix_set_definitions:
-            for label_name, label_type in itertools.product(label_names, label_types):
+            for label_name, label_type in itertools.product(self.label_names, self.label_types):
                 matrix_set['train_uuid'] = self.design_matrix(
                     matrix_definition = matrix_set['train_matrix'],
                     label_name = label_name,
@@ -159,7 +159,6 @@ class Architect(object):
                 '{}_features_list.csv'.format(feature_table_name)
             )
             feature_dictionary[feature_table_name] = feature_names
-
         return(feature_dictionary)
 
     def write_labels_data(self, as_of_dates, label_name, label_type):
@@ -188,7 +187,7 @@ class Architect(object):
         """
         # iterate! for each table, make query, write csv, save feature & file names
         features_csv_names = []
-        for feature_table_name, feature_names in feature_dictionary.iteritems():
+        for feature_table_name, feature_names in feature_dictionary.items():
             csv_name = '{}.csv'.format(feature_table_name)
             features_query = self.build_features_query(
                 as_of_dates,
@@ -211,8 +210,14 @@ class Architect(object):
             SELECT table_name
             FROM information_schema.tables
             WHERE table_schema = '{schema}' AND
-                  table_name != 'tmp_entity_date'
-        """.format(schema = self.db_config['features_schema_name'])
+                  table_name != 'tmp_entity_date' AND
+                  table_name != '{labels_name}' AND
+                  table_name not in ({rollup_feature_tables})
+        """.format(
+            rollup_feature_tables=",".join(self.db_config['rollup_feature_tables']),
+            schema=self.db_config['features_schema_name'],
+            labels_name=self.db_config['labels_table_name']
+        )
 
         return(feature_table_names_query)
 
@@ -312,9 +317,9 @@ class Architect(object):
         feature_imputations = [
             """,
                     CASE
-                        WHEN f.{0} IS NULL THEN 0
-                        ELSE f.{0}
-                    END as {0}""".format(feature_name) for feature_name in feature_names
+                        WHEN "{0}" IS NULL THEN 0
+                        ELSE "{0}"
+                    END as "{0}" """.format(feature_name) for feature_name in feature_names
         ]
         return(feature_imputations)
 
