@@ -17,13 +17,22 @@ def test_model_scoring():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         metric_groups = [{
-            'metrics': ['precision@', 'recall@'],
+            'metrics': ['precision@', 
+                        'recall@', 
+                        'true positives@',
+                        'true negatives@',
+                        'false positives@',
+                        'false negatives@'],
             'thresholds': {
                 'percentiles': [5.0, 10.0],
                 'top_n': [5, 10]
             }
         }, {
-            'metrics': ['f1', 'mediocre'],
+            'metrics': ['f1', 
+                        'mediocre', 
+                        'accuracy', 
+                        'roc_auc', 
+                        'average precision score'],
         }, {
             'metrics': ['fbeta@'],
             'parameters': [{'beta': 0.75}, {'beta': 1.25}]
@@ -61,6 +70,9 @@ def test_model_scoring():
         ]
         assert records == [
             'f1',
+            'accuracy',
+            'roc_auc',
+            'average precision score',
             'fbeta@0.75_beta',
             'fbeta@1.25_beta',
             'mediocre',
@@ -72,4 +84,20 @@ def test_model_scoring():
             'recall@10_abs',
             'recall@5.0_pct',
             'recall@5_abs',
+            'true positives@10.0_pct',
+            'true positives@10_abs',
+            'true positives@5.0_pct',
+            'true positives@5_abs',
+            'true negatives@10.0_pct',
+            'true negatives@10_abs',
+            'true negatives@5.0_pct',
+            'true negatives@5_abs',
+            'false positives@10.0_pct',
+            'false positives@10_abs',
+            'false positives@5.0_pct',
+            'false positives@5_abs',
+            'false negatives@10.0_pct',
+            'false negatives@10_abs',
+            'false negatives@5.0_pct',
+            'false negatives@5_abs'
         ]
