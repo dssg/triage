@@ -27,21 +27,24 @@ class Architect(object):
                 matrix_set['train_uuid'] = self.design_matrix(
                     matrix_definition = matrix_set['train_matrix'],
                     label_name = label_name,
-                    label_type = label_type
+                    label_type = label_type,
+                    matrix_type = 'train'
                 )
                 test_uuids = []
                 for test_matrix in matrix_set['test_matrices']:
                     test_uuid = self.design_matrix(
                         matrix_definition = test_matrix,
                         label_name = label_name,
-                        label_type = label_type
+                        label_type = label_type,
+                        matrix_type = 'test'
                     )
                     test_uuids.append(test_uuid)
                 matrix_set['test_uuids'] = test_uuids
                 updated_definitions.append(matrix_set)
         return(updated_definitions)
 
-    def design_matrix(self, matrix_definition, label_name, label_type):
+    def design_matrix(self, matrix_definition, label_name, label_type,
+                      matrix_type):
         """ Generate matrix metadata and, if no such matrix has already been
         made this batch, build the matrix.
 
@@ -74,7 +77,8 @@ class Architect(object):
             feature_dictionary,
             label_name,
             label_type,
-            matrix_id
+            matrix_id,
+            matrix_type
         )
         uuid = metta.generate_uuid(matrix_metadata)
         matrix_filename = '{}.csv'.format(uuid)
@@ -86,13 +90,15 @@ class Architect(object):
                 label_type,
                 feature_dictionary,
                 matrix_filename,
-                matrix_metadata
+                matrix_metadata,
+                matrix_type
             )
 
         return(uuid)
 
-    def build_matrix(self, as_of_dates, label_name, label_type,
-                     feature_dictionary, matrix_filename, matrix_metadata):
+    def build_matrix(self, as_of_times, label_name, label_type,
+                     feature_dictionary, matrix_filename, matrix_metadata,
+                     matrix_type):
         """ Write a design matrix to disk with the specified paramters.
 
         :param as_of_dates: dates to be included in the matrix
@@ -113,20 +119,26 @@ class Architect(object):
         :rtype: none
         """
         # make the entity date table and query the labels and features tables
-        self.make_entity_dates_table(as_of_dates, label_name, label_type)
-        labels_csv_name = self.write_labels_data(
-            as_of_dates,
+        self.make_entity_dates_table(
+            as_of_times,
             label_name,
-            label_type
+            label_type,
+            matrix_type
         )
         features_csv_names = self.write_features_data(
-            as_of_dates,
+            as_of_times,
             feature_dictionary
         )
+        if matrix_type = 'train':
+            labels_csv_name = self.write_labels_data(
+                as_of_times,
+                label_name,
+                label_type
+            )
+            features_csv_names.insert(0, labels_csv_name)
 
         # stitch together the csvs
-        features_csv_names.insert(0, labels_csv_name)
-        self.merge_feature_csvs(features_csv_names, matrix_filename)
+        self.merge_feature_csvs(features_csv_names, matrix_filename, matrix_type)
 
         # store the matrix
         metta.archive_matrix(matrix_metadata, matrix_filename, format = 'csv')
@@ -248,7 +260,7 @@ class Architect(object):
         return(item_list)
 
     def _make_metadata(self, matrix_definition, feature_dictionary, label_name,
-                       label_type, matrix_id):
+                       label_type, matrix_id, matrix_type):
         """ Generate dictionary of matrix metadata.
 
         :param feature_names: names of feature columns
@@ -274,7 +286,8 @@ class Architect(object):
             'label_type': label_type,
             'matrix_id': matrix_id,
             'batch_id': self.batch_id,
-            'batch_timestamp': self.batch_timestamp
+            'batch_timestamp': self.batch_timestamp,
+            'matrix_type': matrix_type
 
         }
         matrix_metadata.update(matrix_definition)
@@ -421,7 +434,8 @@ class Architect(object):
         cur = conn.cursor()
         cur.copy_expert(copy_sql, matrix_csv)
 
-    def make_entity_dates_table(self, as_of_dates, label_name, label_type):
+    def make_entity_dates_table(self, as_of_times, label_name, label_type,
+                                matrix_type):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
 
@@ -433,21 +447,55 @@ class Architect(object):
         :return: none
         :rtype: none
         """
+        if matrix_type == 'train':
+            indices_query = self.build_labels_query(
+                as_of_times = as_of_times,
+                final_column = '',
+                label_name = label_name,
+                label_type = label_type
+            )
+        elif matrix_type == 'test':
+            indices_query = self.get_all_valid_entity_date_combos(
+                as_of_times = as_of_times,
+            )
+        else:
+            raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
+
         query = """
             CREATE TABLE {features_schema_name}.tmp_entity_date
             AS ({index_query})
         """.format(
             features_schema_name = self.db_config['features_schema_name'],
-            index_query = self.build_labels_query(
-                as_of_times = as_of_dates,
-                final_column = '',
-                label_name = label_name,
-                label_type = label_type
-            )
+            index_query = indices_query
         )
         self.engine.execute(query)
 
-    def merge_feature_csvs(self, source_filenames, out_filename):
+    def get_all_valid_entity_date_combos(self, as_of_times):
+        feature_table_names = self._get_list_of_schema_metadata(
+            self.build_feature_tables_list_query(),
+            'feature_tables_list.csv'
+        )
+        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]     
+        query_list = []       
+        for index, table in enumerate(feature_table_names):
+            union = ''        
+            if index != 0:      
+                union = 'UNION'       
+            subquery = """ {u}        
+                SELECT DISTINCT entity_id, as_of_date     
+                FROM {schema_name}.{table_name}       
+                WHERE as_of_date IN (SELECT (UNNEST (ARRAY{dates}::date[])))       
+            """.format(       
+                u = union,        
+                table_name = table,       
+                dates = as_of_time_strings,      
+                schema_name = self.db_config['features_schema_name']      
+            )     
+            query_list.append(subquery)
+        
+        return(''.join(query_list))
+
+    def merge_feature_csvs(self, source_filenames, out_filename, matrix_type):
         """Horizontally merge a list of feature CSVs
         Assumptions:
         - The first and second columns of each CSV are
