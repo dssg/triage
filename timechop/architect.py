@@ -205,18 +205,23 @@ class Architect(object):
         :return: query
         :rtype: str
         """
-        # format the query that gets column names, excluding indices from result
+        # format the query that gets table names,
+        # excluding certain tables from result
+        tables_to_exclude = [
+            "'tmp_entity_date'",
+            "'{}'".format(self.db_config['labels_table_name'])
+        ]
+        if 'rollup_feature_tables' in self.db_config:
+            tables_to_exclude.extend(self.db_config['rollup_feature_tables'])
+
         feature_table_names_query = """
             SELECT table_name
             FROM information_schema.tables
             WHERE table_schema = '{schema}' AND
-                  table_name != 'tmp_entity_date' AND
-                  table_name != '{labels_name}' AND
-                  table_name not in ({rollup_feature_tables})
+                  table_name not in ({tables_to_exclude})
         """.format(
-            rollup_feature_tables=",".join(self.db_config['rollup_feature_tables']),
+            tables_to_exclude=",".join(tables_to_exclude),
             schema=self.db_config['features_schema_name'],
-            labels_name=self.db_config['labels_table_name']
         )
 
         return(feature_table_names_query)

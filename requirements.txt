@@ -2,3 +2,7 @@ pytest==2.9.2
 python-dateutil
 codecov
 pytest-cov
+git+git://github.com/dssg/metta-data.git
+testing.postgresql
+SQLAlchemy
+psycopg2
