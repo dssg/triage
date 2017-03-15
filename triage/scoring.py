@@ -1,3 +1,4 @@
+import numpy
 from sklearn import metrics
 from triage.db import Evaluation
 from sqlalchemy.orm import sessionmaker
@@ -33,6 +34,42 @@ def fbeta(_, predictions_binary, labels, parameters):
 
 def f1(_, predictions_binary, labels, parameters):
     return metrics.f1_score(labels, predictions_binary, **parameters)
+
+
+def accuracy(_, predictions_binary, labels, parameters):
+    return metrics.accuracy_score(labels, predictions_binary, **parameters)
+
+
+def roc_auc(predictions_proba, _, labels, parameters):
+    return metrics.roc_auc_score(labels, predictions_proba)
+
+
+def avg_precision(predictions_proba, _, labels, parameters):
+    return metrics.average_precision_score(labels, predictions_proba)
+
+
+def true_positives(_, predictions_binary, labels, parameters):
+     tp = [1 if x == 1 and y == 1 else 0 
+             for (x, y) in zip(predictions_binary, labels)]
+     return int(numpy.sum(tp))
+
+
+def false_positives(_, predictions_binary, labels, parameters):
+    fp = [1 if x == 1 and y == 0 else 0
+            for (x, y) in zip(predictions_binary, labels)]
+    return int(numpy.sum(fp))
+
+
+def true_negatives(_, predictions_binary, labels, parameters):
+    tn = [1 if x == 0 and y == 0 else 0 
+            for (x, y) in zip(predictions_binary, labels)]
+    return int(numpy.sum(tn))
+
+
+def false_negatives(_, predictions_binary, labels, parameters):
+    fn = [1 if x == 0 and y == 1 else 0
+            for (x, y) in zip(predictions_binary, labels)]
+    return int(numpy.sum(fn))
 
 
 class UnknownMetricError(ValueError):
@@ -77,7 +114,14 @@ class ModelScorer(object):
         'precision@': precision,
         'recall@': recall,
         'fbeta@': fbeta,
-        'f1': f1
+        'f1': f1,
+        'accuracy': accuracy,
+        'roc_auc': roc_auc,
+        'average precision score': avg_precision,
+        'true positives@': true_positives,
+        'true negatives@': true_negatives,
+        'false positives@': false_positives,
+        'false negatives@': false_negatives
     }
 
     def __init__(self, metric_groups, db_engine, custom_metrics=None):
@@ -210,7 +254,7 @@ class ModelScorer(object):
                 binary_subset = generate_binary_at_x(
                     predictions_proba_sorted,
                     pct_thresh,
-                    unit='pct'
+                    unit='percentile'
                 )
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
@@ -218,14 +262,14 @@ class ModelScorer(object):
                     {'pct': pct_thresh},
                     None,
                     binary_subset,
-                    labels,
+                    labels_sorted,
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
                 binary_subset = generate_binary_at_x(
                     predictions_proba_sorted,
                     abs_thresh,
-                    unit='abs'
+                    unit='top_n'
                 )
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
@@ -233,7 +277,7 @@ class ModelScorer(object):
                     {'abs': abs_thresh},
                     None,
                     binary_subset,
-                    labels,
+                    labels_sorted,
                 )
 
         self._write_to_db(model_id, as_of_date, evaluations)
