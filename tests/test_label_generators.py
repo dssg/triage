@@ -1,7 +1,7 @@
-from triage.label_generators import LabelGenerator
+from triage.label_generators import BinaryLabelGenerator
 import testing.postgresql
 from sqlalchemy import create_engine
-from datetime import date
+from datetime import date, timedelta
 import logging
 
 events_data = [
@@ -21,12 +21,12 @@ events_data = [
 ]
 
 expected = [
-    # entity_id, outcome_date, outcome
-    (1, date(2014, 9, 30), False),
-    (2, date(2014, 9, 30), False),
-    (3, date(2014, 9, 30), True),
-    (4, date(2014, 9, 30), False),
+    # entity_id, as_of_date, prediction_window, name, type, label
+    (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+    (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
+    (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
 ]
+
 
 def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
@@ -41,21 +41,20 @@ def test_training_label_generation():
             )
 
         labels_table_name = 'labels'
-        engine.execute(
-            'create table labels (entity_id int, outcome_date date, outcome bool)'
-        )
 
-        LabelGenerator(
+        label_generator = BinaryLabelGenerator(
             events_table='events',
             db_engine=engine,
-        ).generate(
+        )
+        label_generator._create_labels_table(labels_table_name)
+        label_generator.generate(
             start_date='2014-09-30',
-            end_date='2015-09-30',
+            prediction_window='6month',
             labels_table=labels_table_name
         )
 
         result = engine.execute(
-            'select * from {} order by entity_id, outcome_date'.format(labels_table_name)
+            'select * from {} order by entity_id, as_of_date'.format(labels_table_name)
         )
         records = [row for row in result]
         assert records == expected

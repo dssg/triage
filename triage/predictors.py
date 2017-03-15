@@ -1,5 +1,6 @@
 from .db import Model, Prediction
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
 import pandas
 import logging
 
@@ -48,7 +49,15 @@ class Predictor(object):
         model_store = self.model_storage_engine.get_store(model_hash)
         model_store.delete()
 
-    def _write_to_db(self, model_id, as_of_date, entity_ids, predictions, labels, misc_db_parameters):
+    def _write_to_db(
+        self,
+        model_id,
+        matrix_end_time,
+        matrix,
+        predictions,
+        labels,
+        misc_db_parameters,
+    ):
         """Writes given predictions to database
 
         entity_ids, predictions, labels are expected to be in the same order
@@ -60,32 +69,65 @@ class Predictor(object):
             predictions (iterable) predicted values
             labels (iterable) labels of prediction set (int) the id of the model to predict based off of
         """
+        if 'as_of_date' in matrix.index.names:
+            as_of_dates = matrix.index.levels[
+                matrix.index.names.index('as_of_date')
+            ].tolist()
+        else:
+            as_of_dates = [matrix_end_time]
         session = self.sessionmaker()
         session.query(Prediction)\
-            .filter_by(model_id=model_id, as_of_date=as_of_date)\
-            .delete()
+            .filter_by(model_id=model_id)\
+            .filter(Prediction.as_of_date.in_(as_of_dates))\
+            .delete(synchronize_session=False)
+        session.expire_all()
+        if 'as_of_date' in matrix.index.names:
+            for name, group in matrix.reset_index().groupby('as_of_date'):
+                indices = group.index.values.tolist()
+                temp_df = pandas.DataFrame({'score': predictions[indices]})
+                rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
+                rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
+                for index, score, label, rank_abs, rank_pct in zip(
+                    indices,
+                    predictions,
+                    labels,
+                    rankings_abs,
+                    rankings_pct
+                ):
+                    prediction = Prediction(
+                        model_id=int(model_id),
+                        entity_id=int(group['entity_id'][index]),
+                        as_of_date=group['as_of_date'][index],
+                        score=float(score),
+                        label_value=int(label),
+                        rank_abs=int(rank_abs),
+                        rank_pct=float(rank_pct),
+                        **misc_db_parameters
+                    )
+                    session.add(prediction)
+        else:
+            temp_df = pandas.DataFrame({'score': predictions})
+            rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
+            rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
+            for entity_id, score, label, rank_abs, rank_pct in zip(
+                matrix.index,
+                predictions,
+                labels,
+                rankings_abs,
+                rankings_pct
+            ):
+                prediction = Prediction(
+                    model_id=int(model_id),
+                    entity_id=int(entity_id),
+                    as_of_date=matrix_end_time,
+                    score=float(score),
+                    label_value=int(label),
+                    rank_abs=int(rank_abs),
+                    rank_pct=float(rank_pct),
+                    **misc_db_parameters
+                )
+                session.add(prediction)
 
-        temp_df = pandas.DataFrame({'score': predictions})
-        rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
-        rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
-        for entity_id, score, label, rank_abs, rank_pct in zip(
-            entity_ids,
-            predictions,
-            labels,
-            rankings_abs,
-            rankings_pct
-        ):
-            prediction = Prediction(
-                model_id=int(model_id),
-                entity_id=int(entity_id),
-                as_of_date=as_of_date,
-                score=float(score),
-                label_value=int(label),
-                rank_abs=int(rank_abs),
-                rank_pct=float(rank_pct),
-                **misc_db_parameters
-            )
-            session.add(prediction)
         session.commit()
 
     def predict(self, model_id, matrix_store, misc_db_parameters):
@@ -103,8 +145,14 @@ class Predictor(object):
         if not model:
             raise ModelNotFoundError('Model id {} not found'.format(model_id))
         labels = matrix_store.labels()
-        as_of_date = matrix_store.metadata['end_time']
         predictions = model.predict(matrix_store.matrix)
         predictions_proba = model.predict_proba(matrix_store.matrix)
-        self._write_to_db(model_id, as_of_date, matrix_store.matrix.index, predictions_proba[:,1], labels, misc_db_parameters)
+        self._write_to_db(
+            model_id,
+            matrix_store.metadata['end_time'],
+            matrix_store.matrix,
+            predictions_proba[:,1],
+            labels,
+            misc_db_parameters
+        )
         return predictions, predictions_proba[:,1]
