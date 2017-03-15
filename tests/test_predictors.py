@@ -8,7 +8,10 @@ import pandas
 
 from triage.predictors import Predictor
 from tests.utils import fake_trained_model
-from triage.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from triage.storage import \
+    InMemoryModelStorageEngine,\
+    S3ModelStorageEngine,\
+    InMemoryMatrixStore
 import datetime
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
@@ -90,3 +93,44 @@ def test_predictor():
             # 6. That we can delete the model when done prediction on it
             predictor.delete_model(model_id)
             assert predictor.load_model(model_id) == None
+
+
+def test_predictor_composite_index():
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        project_path = 'econ-dev/inspections'
+        model_storage_engine = InMemoryModelStorageEngine(project_path)
+        _, model_id = \
+            fake_trained_model(project_path, model_storage_engine, db_engine)
+        predictor = Predictor(project_path, model_storage_engine, db_engine)
+        dayone = datetime.datetime(2011, 1, 1)
+        daytwo = datetime.datetime(2011, 1, 2)
+        # create prediction set
+        matrix = pandas.DataFrame.from_dict({
+            'entity_id': [1, 2, 1, 2],
+            'as_of_date': [dayone, dayone, daytwo, daytwo],
+            'feature_one': [3, 4, 5, 6],
+            'feature_two': [5, 6, 7, 8],
+            'label': [7, 8, 8, 7]
+        }).set_index(['entity_id', 'as_of_date'])
+        metadata = {
+            'label_name': 'label',
+            'end_time': AS_OF_DATE,
+        }
+        matrix_store = InMemoryMatrixStore(matrix, metadata)
+        predictions, predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+
+        # assert
+        # 1. that the returned predictions are of the desired length
+        assert len(predictions) == 4
+
+        # 2. that the predictions table entries are present and
+        # can be linked to the original models
+        records = [
+            row for row in
+            db_engine.execute('''select entity_id, as_of_date
+            from results.predictions
+            join results.models using (model_id)''')
+        ]
+        assert len(records) == 4
