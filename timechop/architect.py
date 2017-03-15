@@ -129,16 +129,16 @@ class Architect(object):
             as_of_times,
             feature_dictionary
         )
-        if matrix_type = 'train':
-            labels_csv_name = self.write_labels_data(
-                as_of_times,
-                label_name,
-                label_type
-            )
-            features_csv_names.insert(0, labels_csv_name)
+        labels_csv_name = self.write_labels_data(
+            as_of_times,
+            label_name,
+            label_type,
+            matrix_type
+        )
+        features_csv_names.insert(0, labels_csv_name)
 
         # stitch together the csvs
-        self.merge_feature_csvs(features_csv_names, matrix_filename, matrix_type)
+        self.merge_feature_csvs(features_csv_names, matrix_filename)
 
         # store the matrix
         metta.archive_matrix(matrix_metadata, matrix_filename, format = 'csv')
@@ -173,23 +173,44 @@ class Architect(object):
             feature_dictionary[feature_table_name] = feature_names
         return(feature_dictionary)
 
-    def write_labels_data(self, as_of_dates, label_name, label_type):
+    def write_labels_data(self, as_of_times, label_name, label_type,
+                          matrix_type):
         """ Query the labels table and write the data to disk in csv format.
         
         :return: name of csv containing labels
         :rtype: str
         """
         csv_name = '{}.csv'.format(self.db_config['labels_table_name'])
-        labels_query = self.build_labels_query(
-            as_of_times = as_of_dates,
-            final_column = ', label as {}'.format(label_name),
-            label_name = label_name,
-            label_type = label_type
-        )
+        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
+        if matrix_type == 'train':
+            labels_query = self.build_labels_query(
+                as_of_times = as_of_times,
+                final_column = ', label as {}'.format(label_name),
+                label_name = label_name,
+                label_type = label_type
+            )
+        elif matrix_type == 'test':
+            labels_query = self.build_features_query(
+                as_of_times = as_of_times,
+                schema_name = self.db_config['labels_schema_name'],
+                table_name = self.db_config['labels_table_name'],
+                feature_names = ', f.label',
+                where_clause = '''
+                    WHERE f.label_name = '{name}' AND
+                          f.label_type = '{type}
+                '''.format(
+                    name = label_name,
+                    type = label_type
+                )
+            )
+        else:
+            raise ValueError(
+                'Did not recognize matrix type: {}'.format(matrix_type)
+            )
         self.write_to_csv(labels_query, csv_name)
         return(csv_name)
 
-    def write_features_data(self, as_of_dates, feature_dictionary):
+    def write_features_data(self, as_of_times, feature_dictionary):
         """ Loop over tables in features schema, writing the data from each to a
         csv. Return the full list of feature csv names and the list of all
         features.
@@ -202,9 +223,10 @@ class Architect(object):
         for feature_table_name, feature_names in feature_dictionary.items():
             csv_name = '{}.csv'.format(feature_table_name)
             features_query = self.build_features_query(
-                as_of_dates,
-                feature_table_name,
-                feature_names
+                as_of_times = as_of_times, 
+                schema_name =self.db_config['features_schema_name'],
+                table_name = feature_table_name,
+                feature_names = self._format_imputations(feature_names)
             )
             self.write_to_csv(features_query, csv_name)
             features_csv_names.append(csv_name)
@@ -321,7 +343,7 @@ class Architect(object):
 
         return(feature_names_query)
 
-    def _format_imputations(self, feature_names):
+    def _format_imputations(self, column_names):
         """ For a list of feature columns, format them for a SQL query, imputing
         0 for missing values.
 
@@ -332,14 +354,14 @@ class Architect(object):
                  imputations
         :rtype: list
         """
-        feature_imputations = [
+        imputations = [
             """,
                     CASE
                         WHEN "{0}" IS NULL THEN 0
                         ELSE "{0}"
-                    END as "{0}" """.format(feature_name) for feature_name in feature_names
+                    END as "{0}" """.format(column_name) for column_name in column_names
         ]
-        return(feature_imputations)
+        return(imputations)
 
     def build_labels_query(self, as_of_times, final_column, label_name,
                            label_type):
@@ -361,7 +383,7 @@ class Architect(object):
             SELECT entity_id,
                    as_of_date{labels}
             FROM {labels_schema_name}.{labels_table_name}
-            WHERE as_of_date IN (SELECT (UNNEST (ARRAY{dates}::date[]))) AND
+            WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))) AND
                   label_name = '{l_name}' AND
                   label_type = '{l_type}'
             ORDER BY entity_id,
@@ -370,13 +392,14 @@ class Architect(object):
             labels = final_column,
             labels_schema_name = self.db_config['labels_schema_name'],
             labels_table_name = self.db_config['labels_table_name'],
-            dates = as_of_time_strings,
+            times = as_of_time_strings,
             l_name = label_name,
             l_type = label_type
         )
         return(query)
 
-    def build_features_query(self, as_of_dates, table_name, feature_names):
+    def build_features_query(self, as_of_times, schema_name, table_name,
+                             feature_names, where_clause = ''):
         """ Given a table, list of impuations, and list of dates, write a query
         to perform a left outer join on the entity date table
 
@@ -389,25 +412,26 @@ class Architect(object):
         :rtype: str
         """
         # format inputs for adding to query
-        as_of_date_strings = [str(as_of_date) for as_of_date in as_of_dates]
-        feature_selections = self._format_imputations(feature_names)
+        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
 
         # put everything into the query
         query = """
             SELECT ed.entity_id,
                    ed.as_of_date{features}
-            FROM {schema_name}.tmp_entity_date ed
-            LEFT OUTER JOIN {schema_name}.{feature_table} f
+            FROM {feature_schema}.tmp_entity_date ed
+            LEFT OUTER JOIN {schema}.{table} f
             ON ed.entity_id = f.entity_id AND
                ed.as_of_date = f.as_of_date AND
-               ed.as_of_date IN (SELECT (UNNEST (ARRAY{dates}::date[])))
+               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))){where}
             ORDER BY ed.entity_id,
                      ed.as_of_date
         """.format(
-            features = ''.join(feature_selections),
-            schema_name = self.db_config['features_schema_name'],
-            dates = as_of_date_strings,
-            feature_table = table_name
+            features = ''.join(feature_names),
+            feature_schema = self.db_config['features_schema_name'],
+            schema = schema_name,
+            times = as_of_time_strings,
+            table = table_name,
+            where = where_clause
         )
         return(query)
 
@@ -495,7 +519,7 @@ class Architect(object):
         
         return(''.join(query_list))
 
-    def merge_feature_csvs(self, source_filenames, out_filename, matrix_type):
+    def merge_feature_csvs(self, source_filenames, out_filename):
         """Horizontally merge a list of feature CSVs
         Assumptions:
         - The first and second columns of each CSV are
@@ -563,5 +587,3 @@ class Architect(object):
             finally:
                 for fh in source_filehandles:
                     fh.close()
-
-    
