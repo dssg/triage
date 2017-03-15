@@ -51,7 +51,7 @@ def test_model_scoring():
         labels = fake_labels(5)
         as_of_date = datetime.date(2016, 5, 5)
         model_scorer.score(
-            trained_model.predict_proba(labels),
+            trained_model.predict_proba(labels)[:,1],
             trained_model.predict(labels),
             labels,
             model_id,
@@ -69,10 +69,17 @@ def test_model_scoring():
             )
         ]
         assert records == [
-            'f1',
             'accuracy',
-            'roc_auc',
             'average precision score',
+            'f1',
+            'false negatives@10.0_pct',
+            'false negatives@10_abs',
+            'false negatives@5.0_pct',
+            'false negatives@5_abs',
+            'false positives@10.0_pct',
+            'false positives@10_abs',
+            'false positives@5.0_pct',
+            'false positives@5_abs',
             'fbeta@0.75_beta',
             'fbeta@1.25_beta',
             'mediocre',
@@ -84,20 +91,13 @@ def test_model_scoring():
             'recall@10_abs',
             'recall@5.0_pct',
             'recall@5_abs',
-            'true positives@10.0_pct',
-            'true positives@10_abs',
-            'true positives@5.0_pct',
-            'true positives@5_abs',
+            'roc_auc',
             'true negatives@10.0_pct',
             'true negatives@10_abs',
             'true negatives@5.0_pct',
             'true negatives@5_abs',
-            'false positives@10.0_pct',
-            'false positives@10_abs',
-            'false positives@5.0_pct',
-            'false positives@5_abs',
-            'false negatives@10.0_pct',
-            'false negatives@10_abs',
-            'false negatives@5.0_pct',
-            'false negatives@5_abs'
+            'true positives@10.0_pct',
+            'true positives@10_abs',
+            'true positives@5.0_pct',
+            'true positives@5_abs'
         ]

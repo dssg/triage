@@ -51,25 +51,25 @@ def avg_precision(predictions_proba, _, labels, parameters):
 def true_positives(_, predictions_binary, labels, parameters):
      tp = [1 if x == 1 and y == 1 else 0 
              for (x, y) in zip(predictions_binary, labels)]
-     return numpy.sum(tp)
+     return int(numpy.sum(tp))
 
 
 def false_positives(_, predictions_binary, labels, parameters):
     fp = [1 if x == 1 and y == 0 else 0
             for (x, y) in zip(predictions_binary, labels)]
-    return numpy.sum(fp)
+    return int(numpy.sum(fp))
 
 
 def true_negatives(_, predictions_binary, labels, parameters):
     tn = [1 if x == 0 and y == 0 else 0 
             for (x, y) in zip(predictions_binary, labels)]
-    return numpy.sum(tn)
+    return int(numpy.sum(tn))
 
 
 def false_negatives(_, predictions_binary, labels, parameters):
     fn = [1 if x == 0 and y == 1 else 0
             for (x, y) in zip(predictions_binary, labels)]
-    return numpy.sum(fn)
+    return int(numpy.sum(fn))
 
 
 class UnknownMetricError(ValueError):
@@ -262,7 +262,7 @@ class ModelScorer(object):
                     {'pct': pct_thresh},
                     None,
                     binary_subset,
-                    labels,
+                    labels_sorted,
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
@@ -277,7 +277,7 @@ class ModelScorer(object):
                     {'abs': abs_thresh},
                     None,
                     binary_subset,
-                    labels,
+                    labels_sorted,
                 )
 
         self._write_to_db(model_id, as_of_date, evaluations)
