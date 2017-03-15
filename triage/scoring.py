@@ -1,6 +1,6 @@
 import numpy
 from sklearn import metrics
-from .db import Evaluation
+from triage.db import Evaluation
 from sqlalchemy.orm import sessionmaker
 
 
