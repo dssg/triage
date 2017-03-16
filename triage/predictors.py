@@ -1,8 +1,8 @@
 from .db import Model, Prediction
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
 import pandas
 import logging
+import math
 
 
 class ModelNotFoundError(ValueError):
@@ -99,7 +99,7 @@ class Predictor(object):
                         entity_id=int(group['entity_id'][index]),
                         as_of_date=group['as_of_date'][index],
                         score=float(score),
-                        label_value=int(label),
+                        label_value=int(label) if not math.isnan(label) else None,
                         rank_abs=int(rank_abs),
                         rank_pct=float(rank_pct),
                         **misc_db_parameters
@@ -121,7 +121,7 @@ class Predictor(object):
                     entity_id=int(entity_id),
                     as_of_date=matrix_end_time,
                     score=float(score),
-                    label_value=int(label),
+                    label_value=int(label) if not math.isnan(label) else None,
                     rank_abs=int(rank_abs),
                     rank_pct=float(rank_pct),
                     **misc_db_parameters
