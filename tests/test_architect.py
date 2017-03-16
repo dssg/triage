@@ -123,7 +123,6 @@ def test_build_labels_query():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         create_features_and_labels_schemas(engine, features_tables, labels)
-
         matrix_maker = Architect(
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
@@ -453,10 +452,16 @@ def test_design_matrix():
             'as_of_times': dates
         }
 
+        feature_dictionary = {
+            'features0': ['f1', 'f2'],
+            'features1': ['f1', 'f2'],
+        }
+
         uuid = matrix_maker.design_matrix(
             matrix_definition = matrix_dates,
             label_name = 'booking',
-            label_type = 'binary'
+            label_type = 'binary',
+            feature_dictionary = feature_dictionary
         )
 
         matrix_filename = '{}.csv'.format(uuid)
