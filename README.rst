@@ -4,11 +4,16 @@ Triage
 
 
 .. image:: https://img.shields.io/travis/dssg/triage.svg
-        :target: https://travis-ci.org/dssg/triage
+    :target: https://travis-ci.org/dssg/triage
+    :alt: Build Status
 
 .. image:: https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg
-	 :target: https://codecov.io/gh/dssg/triage
-	 :alt: Code Coverage
+    :target: https://codecov.io/gh/dssg/triage
+    :alt: Code Coverage
+
+.. image:: https://codeclimate.com/github/dssg/triage.png
+    :target: https://codeclimate.com/github/dssg/triage
+    :alt: Code Climate
 
 
 Risk modeling and prediction
