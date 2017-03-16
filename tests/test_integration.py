@@ -66,10 +66,10 @@ def test_integration():
 
             # instantiate pipeline objects
             trainer = ModelTrainer(
-                project_path,
-                model_storage_engine,
-                train_store,
-                db_engine,
+                project_path=project_path,
+                model_storage_engine=model_storage_engine,
+                matrix_store=None,
+                db_engine=db_engine,
             )
             predictor = Predictor(
                 project_path,
@@ -91,7 +91,8 @@ def test_integration():
             }
             model_ids = trainer.train_models(
                 grid_config=grid_config,
-                misc_db_parameters=dict()
+                misc_db_parameters=dict(),
+                matrix_store=train_store
             )
 
             for model_id in model_ids:

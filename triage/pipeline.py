@@ -25,51 +25,95 @@ class Pipeline(object):
         self.project_path = project_path
         ensure_db(self.db_engine)
 
-    def run(self):
-        # 1. generate temporal splits
+        self.labels_table_name = 'labels'
+        self.features_schema_name = 'features'
+        self.initialize_components()
+
+    def initialize_components(self):
         split_config = self.config['temporal_config']
-        inspections_chopper = Inspections(
+        self.chopper = Inspections(
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             modeling_start_time=dt_from_str(split_config['modeling_start_time']),
             modeling_end_time=dt_from_str(split_config['modeling_end_time']),
             update_window=split_config['update_window'],
             look_back_durations=split_config['look_back_durations'],
         )
-        matrix_definitions = inspections_chopper.chop_time()
+
+        self.label_generator = BinaryLabelGenerator(
+            events_table=self.config['events_table'],
+            db_engine=self.db_engine
+        )
+
+        self.feature_generator = FeatureGenerator(
+            features_schema_name=self.features_schema_name,
+            db_engine=self.db_engine
+        )
+
+        self.feature_dictionary_creator = FeatureDictionaryCreator(
+            features_schema_name=self.features_schema_name,
+            db_engine=self.db_engine
+        )
+
+        self.architect = Architect(
+            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
+            label_names=['outcome'],
+            label_types=['binary'],
+            db_config={
+                'features_schema_name': self.features_schema_name,
+                'labels_schema_name': 'public',
+                'labels_table_name': self.labels_table_name,
+            },
+            user_metadata={},
+            engine=self.db_engine
+        )
+
+        self.trainer = ModelTrainer(
+            project_path=self.project_path,
+            model_storage_engine=self.model_storage_engine,
+            db_engine=self.db_engine,
+            matrix_store=None
+        )
+
+        self.predictor = Predictor(
+            project_path=self.project_path,
+            model_storage_engine=self.model_storage_engine,
+            db_engine=self.db_engine
+        )
+
+        self.model_scorer = ModelScorer(
+            metric_groups=self.config['scoring'],
+            db_engine=self.db_engine
+        )
+
+    def run(self):
+        # 1. generate temporal splits
+        split_definitions = self.chopper.chop_time()
 
         # 2. create labels
         logging.debug('---------------------')
         logging.debug('---------LABEL GENERATION------------')
         logging.debug('---------------------')
-        label_generator = BinaryLabelGenerator(
-            events_table=self.config['events_table'],
-            db_engine=self.db_engine
-        )
-
-        labels_table = 'labels'
 
         all_as_of_times = []
-        for split in matrix_definitions:
+        for split in split_definitions:
             all_as_of_times.extend(split['train_matrix']['as_of_times'])
             for test_matrix in split['test_matrices']:
                 all_as_of_times.extend(test_matrix['as_of_times'])
         all_as_of_times = list(set(all_as_of_times))
 
-        logging.warning(
+        logging.info(
             'Found %s distinct as_of_times for label and feature generation',
             len(all_as_of_times)
         )
-        label_generator.generate_all_labels(
-            labels_table,
+        self.label_generator.generate_all_labels(
+            self.labels_table_name,
             all_as_of_times,
-            split_config['prediction_window']
+            self.config['temporal_config']['prediction_window']
         )
 
         # 3. generate features
         logging.info('Generating features for %s', all_as_of_times)
-        tables_to_exclude = FeatureGenerator(
-            db_engine=self.db_engine
-        ).generate(
+        tables_to_exclude = self.feature_generator.generate(
             feature_aggregations=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
         )
@@ -80,11 +124,8 @@ class Pipeline(object):
             for tbl in tables_to_exclude
         ]
 
-        feature_dictionary = FeatureDictionaryCreator(
-            features_schema_name='features',
-            db_engine=self.db_engine
-        ).feature_dictionary(
-            tables_to_exclude + [labels_table, 'tmp_entity_ids']
+        feature_dict = self.feature_dictionary_creator.feature_dictionary(
+            tables_to_exclude + [self.labels_table_name, 'tmp_entity_ids']
         )
 
         # 4. create training and test sets
@@ -93,24 +134,12 @@ class Pipeline(object):
         logging.debug('---------MATRIX GENERATION------------')
         logging.debug('---------------------')
 
-        architect = Architect(
-            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
-            label_names=['outcome'],
-            label_types=['binary'],
-            db_config={
-                'features_schema_name': 'features',
-                'labels_schema_name': 'public',
-                'labels_table_name': labels_table,
-            },
-            user_metadata={},
-            engine=self.db_engine
-        )
-        updated_matrix_definitions = architect.chop_data(
-            matrix_definitions,
-            feature_dictionary
+        updated_split_definitions = self.architect.chop_data(
+            split_definitions,
+            feature_dict
         )
 
-        for split in updated_matrix_definitions:
+        for split in updated_split_definitions:
             train_store = MettaCSVMatrixStore(
                 matrix_path='{}.csv'.format(split['train_uuid']),
                 metadata_path='{}.yaml'.format(split['train_uuid'])
@@ -126,35 +155,19 @@ class Pipeline(object):
                 ''', split['train_uuid'])
                 continue
 
-            trainer = ModelTrainer(
-                project_path=self.project_path,
-                model_storage_engine=self.model_storage_engine,
-                matrix_store=train_store,
-                db_engine=self.db_engine
-            )
-
-            predictor = Predictor(
-                project_path=self.project_path,
-                model_storage_engine=self.model_storage_engine,
-                db_engine=self.db_engine
-            )
-            model_scorer = ModelScorer(
-                metric_groups=self.config['scoring'],
-                db_engine=self.db_engine
-            )
-
             logging.info('Training models')
-            model_ids = trainer.train_models(
+            model_ids = self.trainer.train_models(
                 grid_config=self.config['grid_config'],
-                misc_db_parameters=dict(test=False)
+                misc_db_parameters=dict(test=False),
+                matrix_store=train_store
             )
             logging.info('Done training models')
 
-            for matrix_def, test_uuid in zip(
+            for split_def, test_uuid in zip(
                 split['test_matrices'],
                 split['test_uuids']
             ):
-                as_of_times = matrix_def['as_of_times']
+                as_of_times = split_def['as_of_times']
                 logging.info(
                     'Testing and scoring as_of_times min: %s max: %s num: %s',
                     min(as_of_times),
@@ -172,18 +185,18 @@ class Pipeline(object):
                     continue
                 for model_id in model_ids:
                     logging.info('Testing model id %s', model_id)
-                    predictions, predictions_proba = predictor.predict(
+                    predictions, predictions_proba = self.predictor.predict(
                         model_id,
                         test_store,
                         misc_db_parameters=dict()
                     )
 
-                    model_scorer.score(
+                    self.model_scorer.score(
                         predictions_proba=predictions_proba,
                         predictions_binary=predictions,
                         labels=test_store.labels(),
                         model_id=model_id,
-                        evaluation_start_time=matrix_def['matrix_start_time'],
-                        evaluation_end_time=matrix_def['matrix_end_time'],
-                        prediction_frequency=split_config['prediction_frequency']
+                        evaluation_start_time=split_def['matrix_start_time'],
+                        evaluation_end_time=split_def['matrix_end_time'],
+                        prediction_frequency=self.config['temporal_config']['prediction_frequency']
                     )
