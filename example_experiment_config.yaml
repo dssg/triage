@@ -2,14 +2,15 @@
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
 # train/test splits
-temporal_splits:
-    start_time: '1998-01-01'
-    end_time: '1999-01-01'
-    update_window: 6
-    prediction_windows:
-        - 3
-    feature_frequency: 6
-    test_frequency: 3
+temporal_config:
+    beginning_of_time: '1995-01-01' # earliest date included in features
+    modeling_start_time: '2012-01-01' # earliest date in any model
+    modeling_end_time: '2015-01-01' # all dates in any model are < this date
+    update_window: '6m' # how frequently to retrain models
+    look_back_durations: # length of time included in a model
+        - '6m'
+        - '3m'
+
 # LABEL GENERATION
 # Information needed to generate labels
 #
