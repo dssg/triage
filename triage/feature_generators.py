@@ -7,6 +7,32 @@ class FeatureGenerator(object):
     def __init__(self, db_engine, features_schema_name):
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
+        self.categorical_cache = {}
+
+    def _compute_choices(self, choice_query):
+        if choice_query not in self.categorical_cache:
+            self.categorical_cache[choice_query] = [
+                row[0]
+                for row
+                in self.db_engine.execute(choice_query)
+            ]
+        return self.categorical_cache[choice_query]
+
+    def _build_choices(self, categorical):
+        if 'choices' in categorical:
+            return categorical['choices']
+        else:
+            return self._compute_choices(categorical['choice_query'])
+
+    def _build_categoricals(self, categorical_config):
+        return [
+            Categorical(
+                col=categorical['column'],
+                choices=self._build_choices(categorical),
+                function=categorical['metrics']
+            )
+            for categorical in categorical_config
+        ]
 
     def aggregation(self, aggregation_config, feature_dates):
         aggregates = [
@@ -14,10 +40,9 @@ class FeatureGenerator(object):
             for aggregate in aggregation_config.get('aggregates', [])
         ]
         logging.info('Found %s quantity aggregates', len(aggregates))
-        categoricals = [
-            Categorical(categorical['column'], categorical['choices'], categorical['metrics'])
-            for categorical in aggregation_config.get('categoricals', [])
-        ]
+        categoricals = self._build_categoricals(
+            aggregation_config.get('categoricals', [])
+        )
         logging.info('Found %s categorical aggregates', len(categoricals))
         return SpacetimeAggregation(
             aggregates + categoricals,

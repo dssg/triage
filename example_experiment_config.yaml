@@ -69,6 +69,11 @@ feature_aggregations:
                     - 'green'
                 metrics:
                     - 'sum'
+            -
+                column: 'shape'
+                choice_query: 'select distinct shape from cool_stuff'
+                metrics:
+                    - 'sum'
         # The time intervals over which to aggregate features
         intervals:
             - '1 year'
