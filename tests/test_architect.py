@@ -2,8 +2,8 @@ from timechop.architect import Architect
 from tests.utils import create_features_and_labels_schemas
 from tests.utils import create_entity_date_df
 from tests.utils import convert_string_column_to_date
+from tests.utils import NamedTempFile
 import testing.postgresql
-import tempfile
 import csv
 import datetime
 import pandas as pd
@@ -184,7 +184,7 @@ def test_write_to_csv():
 
         # for each table, check that corresponding csv has the correct # of rows
         for table in features_tables:
-            with tempfile.NamedTemporaryFile(mode='w+') as f:
+            with NamedTempFile() as f:
                 matrix_maker.write_to_csv(
                     '''
                         select * 
@@ -237,16 +237,14 @@ def test_make_entity_dates_table():
             engine
         )
         labels_df = pd.read_sql('select * from labels.labels', engine)
-       
+
         # compare the table to the test dataframe
         print("ids_dates")
         for i, row in ids_dates.iterrows():
             print(row.values)
-        print ids_dates.dtypes
         print("result")
         for i, row in result.iterrows():
             print(row.values)
-        print result.dtypes
         test = (result == ids_dates)
         print(test)
         assert(test.all().all())
@@ -351,14 +349,15 @@ class TestMergeFeatureCSVs(TestCase):
 
         sourcefiles = []
         for rows in rowlists:
-            f = tempfile.NamedTemporaryFile()
+
+            f = NamedTempFile()
             sourcefiles.append(f)
             writer = csv.writer(f)
             for row in rows:
                 writer.writerow(row)
             f.seek(0)
         try:
-            with tempfile.NamedTemporaryFile() as outfile:
+            with NamedTempFile() as outfile:
                 matrix_maker.merge_feature_csvs(
                     [f.name for f in sourcefiles],
                     outfile.name
@@ -410,14 +409,14 @@ class TestMergeFeatureCSVs(TestCase):
 
         sourcefiles = []
         for rows in rowlists:
-            f = tempfile.NamedTemporaryFile()
+            f = NamedTempFile()
             sourcefiles.append(f)
             writer = csv.writer(f)
             for row in rows:
                 writer.writerow(row)
             f.seek(0)
         try:
-            with tempfile.NamedTemporaryFile() as outfile:
+            with NamedTempFile() as outfile:
                 with self.assertRaises(ValueError):
                     matrix_maker.merge_feature_csvs(
                         [f.name for f in sourcefiles],
