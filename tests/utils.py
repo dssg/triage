@@ -53,37 +53,29 @@ def create_features_table(table_number, table, engine):
             row
         )
 
-def create_entity_date_df(dates, features_tables):
+def create_entity_date_df(dates, labels, as_of_dates, label_name,
+                          label_type):
     """ This function makes a pandas DataFrame that mimics the entity-date table
     for testing against.
     """
+    0, '2016-02-01', '1 month', 'booking', 'binary', 0
+    labels_table = pd.DataFrame(labels, columns = [
+        'entity_id',
+        'as_of_date',
+        'prediction_window',
+        'label_name',
+        'label_type',
+        'label'
+    ])
     dates = [date.date() for date in dates]
-
-    # master dataframe to add other dfs to
-    ids_dates = pd.DataFrame(
-        [],
-        columns = ['entity_id', 'as_of_date', 'f1', 'f2']
-    )
-
-    # convert each table to a dataframe and add it to master
-    for table in features_tables:
-        # temporary storage for the table
-        temp_df = pd.DataFrame(
-            table,
-            columns = ['entity_id', 'as_of_date', 'f1', 'f2']
-        )
-        # add temporary table to master
-        ids_dates = pd.concat([ids_dates, temp_df])
-
-    # select only the relevant columns, drop duplicates, sort, and convert dates
-    ids_dates = ids_dates[['entity_id', 'as_of_date']]
-    ids_dates = ids_dates.drop_duplicates()
+    labels_table = labels_table[labels_table['label_name'] == label_name]
+    labels_table = labels_table[labels_table['label_type'] == label_type]
+    ids_dates = labels_table[['entity_id', 'as_of_date']]
     ids_dates = ids_dates.sort_values(['entity_id', 'as_of_date'])
     ids_dates['as_of_date'] = [datetime.datetime.strptime(
         date,
         '%Y-%m-%d'
     ).date() for date in ids_dates['as_of_date']]
-
     ids_dates = ids_dates[ids_dates['as_of_date'].isin(dates)]
     print(ids_dates)
     print(dates)

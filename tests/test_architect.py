@@ -41,7 +41,6 @@ features_tables = [features0, features1]
 # make some fake labels data
 
 labels = [
-    [0, '2016-01-01', '1 month', 'booking', 'binary', 0],
     [0, '2016-02-01', '1 month', 'booking', 'binary', 0],
     [0, '2016-03-01', '1 month', 'booking', 'binary', 0],
     [0, '2016-04-01', '1 month', 'booking', 'binary', 0],
@@ -206,7 +205,7 @@ def test_make_entity_dates_table():
              datetime.datetime(2016, 3, 1, 0, 0)]
 
     # make a dataframe of entity ids and dates to test against
-    ids_dates = create_entity_date_df(dates, features_tables)
+    ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
 
     with testing.postgresql.Postgresql() as postgresql:
         # create an engine and generate a table with fake feature data
@@ -226,9 +225,10 @@ def test_make_entity_dates_table():
 
         # call the function to test the creation of the table
         matrix_maker.make_entity_dates_table(
-            as_of_dates = dates,
+            as_of_times = dates,
             label_type = 'binary',
-            label_name = 'booking'
+            label_name = 'booking',
+            matrix_type = 'train'
         )
 
         # read in the table
@@ -258,7 +258,7 @@ def test_build_features_query():
              datetime.datetime(2016, 2, 1, 0, 0)]
 
     # make dataframe for entity ids and dates
-    ids_dates = create_entity_date_df(dates, features_tables)
+    ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
     
     # make dataframes of features to test against
     features_dfs = []
@@ -294,9 +294,10 @@ def test_build_features_query():
 
         # make the entity-date table
         matrix_maker.make_entity_dates_table(
-            as_of_dates = dates,
+            as_of_times = dates,
             label_type = 'binary',
-            label_name = 'booking'
+            label_name = 'booking',
+            matrix_type = 'train'
         )
 
         # get the queries and test them
@@ -304,7 +305,10 @@ def test_build_features_query():
             table_name = 'features{}'.format(table_number)
             df = df.fillna(0)
             query = matrix_maker.build_features_query(
-                dates, table_name, ['f1', 'f2']
+                as_of_times = dates,
+                schema_name = 'features',
+                table_name = table_name,
+                feature_names = matrix_maker._format_imputations(['f1', 'f2'])
             )
             result = pd.read_sql(query, engine)
             test = (result == df)
@@ -427,44 +431,87 @@ class TestMergeFeatureCSVs(TestCase):
             for sourcefile in sourcefiles:
                 sourcefile.close()
 
-def test_design_matrix():
-    with testing.postgresql.Postgresql() as postgresql:
-        # create an engine and generate a table with fake feature data
-        engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
+class test_design_matrix(object):
+    def test_train_matrix():
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            create_features_and_labels_schemas(engine, features_tables, labels)
 
-        dates = [datetime.datetime(2016, 1, 1, 0, 0),
-                 datetime.datetime(2016, 2, 1, 0, 0),
-                 datetime.datetime(2016, 3, 1, 0, 0)]
+            dates = [datetime.datetime(2016, 1, 1, 0, 0),
+                     datetime.datetime(2016, 2, 1, 0, 0),
+                     datetime.datetime(2016, 3, 1, 0, 0)]
 
-        matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime.now(),
-            beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
-            label_names = ['booking'],
-            label_types = ['binary'],
-            db_config = db_config,
-            user_metadata = {},
-            engine = engine
-        )
+            matrix_maker = Architect(
+                batch_id = 2,
+                batch_timestamp = datetime.datetime.now(),
+                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                label_names = ['booking'],
+                label_types = ['binary'],
+                db_config = db_config,
+                user_metadata = {},
+                engine = engine
+            )
 
-        matrix_dates = {
-            'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-            'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
-            'as_of_times': dates
-        }
+            matrix_dates = {
+                'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                'as_of_times': dates
+            }
+            uuid = matrix_maker.design_matrix(
+                matrix_definition = matrix_dates,
+                label_name = 'booking',
+                label_type = 'binary',
+                matrix_type = 'train'
+            )
 
-        uuid = matrix_maker.design_matrix(
-            matrix_definition = matrix_dates,
-            label_name = 'booking',
-            label_type = 'binary'
-        )
+            matrix_filename = '{}.csv'.format(uuid)
+            with open(matrix_filename, 'r') as f:
+                reader = csv.reader(f)
+                assert(len([row for row in reader]) == 12)
 
-        matrix_filename = '{}.csv'.format(uuid)
-        with open(matrix_filename, 'r') as f:
-            reader = csv.reader(f)
-            assert(len([row for row in reader]) == 13)
+            os.remove(matrix_filename)
+            os.remove('{}.yaml'.format(uuid))
+            os.remove('.matrix_uuids')
 
-        os.remove(matrix_filename)
-        os.remove('{}.yaml'.format(uuid))
-        os.remove('.matrix_uuids')
+    def test_test_matrix():
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            create_features_and_labels_schemas(engine, features_tables, labels)
+
+            dates = [datetime.datetime(2016, 1, 1, 0, 0),
+                     datetime.datetime(2016, 2, 1, 0, 0),
+                     datetime.datetime(2016, 3, 1, 0, 0)]
+
+            matrix_maker = Architect(
+                batch_id = 2,
+                batch_timestamp = datetime.datetime.now(),
+                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                label_names = ['booking'],
+                label_types = ['binary'],
+                db_config = db_config,
+                user_metadata = {},
+                engine = engine
+            )
+
+            matrix_dates = {
+                'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                'as_of_times': dates
+            }
+            uuid = matrix_maker.design_matrix(
+                matrix_definition = matrix_dates,
+                label_name = 'booking',
+                label_type = 'binary',
+                matrix_type = 'test'
+            )
+
+            matrix_filename = '{}.csv'.format(uuid)
+            with open(matrix_filename, 'r') as f:
+                reader = csv.reader(f)
+                assert(len([row for row in reader]) == 13)
+
+            os.remove(matrix_filename)
+            os.remove('{}.yaml'.format(uuid))
+            os.remove('.matrix_uuids')
