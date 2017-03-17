@@ -299,7 +299,7 @@ class Architect(object):
             SELECT entity_id,
                    as_of_date{labels}
             FROM {labels_schema_name}.{labels_table_name}
-            WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))) AND
+            WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))) AND
                   label_name = '{l_name}' AND
                   label_type = '{l_type}'
             ORDER BY entity_id,
@@ -349,7 +349,7 @@ class Architect(object):
             LEFT OUTER JOIN {right_table} r
             ON ed.entity_id = r.entity_id AND
                ed.as_of_date = r.as_of_date AND
-               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))){more}
+               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))){more}
             ORDER BY ed.entity_id,
                      ed.as_of_date
         """.format(
@@ -431,7 +431,7 @@ class Architect(object):
             subquery = """ {u}        
                 SELECT DISTINCT entity_id, as_of_date     
                 FROM {schema_name}.{table_name}       
-                WHERE as_of_date IN (SELECT (UNNEST (ARRAY{dates}::date[])))       
+                WHERE as_of_date IN (SELECT (UNNEST (ARRAY{dates}::timestamp[])))       
             """.format(       
                 u = union,        
                 table_name = table,       
