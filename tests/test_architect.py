@@ -195,8 +195,8 @@ def test_write_to_csv():
                 assert(len([row for row in reader]) == len(table) + 1)
 
 
-def test_make_entity_dates_table():
-    """ Test that the make_entity_dates_table function contains the correct
+def test_make_entity_date_table():
+    """ Test that the make_entity_date_table function contains the correct
     values.
     """
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
@@ -223,7 +223,7 @@ def test_make_entity_dates_table():
         )
 
         # call the function to test the creation of the table
-        matrix_maker.make_entity_dates_table(
+        matrix_maker.make_entity_date_table(
             as_of_times = dates,
             label_type = 'binary',
             label_name = 'booking',
@@ -249,7 +249,7 @@ def test_make_entity_dates_table():
         print(test)
         assert(test.all().all())
 
-def test_build_features_query():
+def test_build_outer_join_query():
     """ 
     """
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
@@ -291,7 +291,7 @@ def test_build_features_query():
         )
 
         # make the entity-date table
-        matrix_maker.make_entity_dates_table(
+        matrix_maker.make_entity_date_table(
             as_of_times = dates,
             label_type = 'binary',
             label_name = 'booking',
@@ -303,11 +303,12 @@ def test_build_features_query():
         for table_number, df in enumerate(features_dfs):
             table_name = 'features{}'.format(table_number)
             df = df.fillna(0)
-            query = matrix_maker.build_features_query(
+            query = matrix_maker.build_outer_join_query(
                 as_of_times = dates,
-                schema_name = 'features',
-                table_name = table_name,
-                feature_names = matrix_maker._format_imputations(['f1', 'f2'])
+                right_table_name = 'features.{}'.format(table_name),
+                right_column_selections = matrix_maker._format_imputations(
+                    ['f1', 'f2']
+                )
             )
             result = pd.read_sql(query, engine)
             test = (result == df)

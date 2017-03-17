@@ -122,8 +122,8 @@ class Architect(object):
         :return: none
         :rtype: none
         """
-        # make the entity date table and query the labels and features tables
-        self.make_entity_dates_table(
+        # make the entity time table and query the labels and features tables
+        self.make_entity_date_table(
             as_of_times,
             label_name,
             label_type,
@@ -173,14 +173,16 @@ class Architect(object):
                 label_type = label_type
             )
         elif matrix_type == 'test':
-            labels_query = self.build_features_query(
+            labels_query = self.build_outer_join_query(
                 as_of_times = as_of_times,
-                schema_name = self.db_config['labels_schema_name'],
-                table_name = self.db_config['labels_table_name'],
-                feature_names = ', f.label as {}'.format(label_name),
+                right_table_name = '{schema}.{table}'.format(
+                    schema = self.db_config['labels_schema_name'],
+                    table = self.db_config['labels_table_name']
+                ),
+                right_column_selections = ', r.label as {}'.format(label_name),
                 additional_conditions = '''AND
-                    f.label_name = '{name}' AND
-                    f.label_type = '{type}'
+                    r.label_name = '{name}' AND
+                    r.label_type = '{type}'
                 '''.format(
                     name = label_name,
                     type = label_type
@@ -205,11 +207,13 @@ class Architect(object):
         features_csv_names = []
         for feature_table_name, feature_names in feature_dictionary.items():
             csv_name = '{}.csv'.format(feature_table_name)
-            features_query = self.build_features_query(
-                as_of_times = as_of_times, 
-                schema_name =self.db_config['features_schema_name'],
-                table_name = feature_table_name,
-                feature_names = self._format_imputations(feature_names)
+            features_query = self.build_outer_join_query(
+                as_of_times = as_of_times,
+                right_table_name = '{schema}.{table}'.format(
+                    schema = self.db_config['features_schema_name'],
+                    table = feature_table_name
+                ),
+                right_column_selections = self._format_imputations(feature_names)
             )
             self.write_to_csv(features_query, csv_name)
             features_csv_names.append(csv_name)
@@ -235,7 +239,7 @@ class Architect(object):
             'end_time': matrix_definition['matrix_end_time'],
 
             # columns
-            'indices': ['entity_id', 'as_of_date'],
+            'indices': ['entity_id', 'as_of_time'],
             'feature_names': utils.feature_list(feature_dictionary),
             'label_name': label_name,
 
@@ -310,17 +314,28 @@ class Architect(object):
         )
         return(query)
 
-    def build_features_query(self, as_of_times, schema_name, table_name,
-                             feature_names, additional_conditions = ''):
-        """ Given a table, list of impuations, and list of dates, write a query
-        to perform a left outer join on the entity date table
+    def build_outer_join_query(
+        self,
+        as_of_times,
+        right_table_name,
+        right_column_selections,
+        additional_conditions = ''
+    ):
+        """ Given a (features or labels) table, a list of times, columns to
+        select, and (optionally) a set of join conditions, perform an outer
+        join to the entity date table.
 
-        :param table_name: feature table to query
-        :param feature_names: names of features in the table
-        :type table_name: str
-        :type feature_names: list
+        :param as_of_times: the times to include in the join
+        :param right_table_name: the name of the right (feature/label) table
+        :param right_column_selections: formatted text for the columns to select
+        :param additional_conditions: formatted text for additional join
+                                      conditions
+        :type as_of_times: list
+        :type right_table_name: str
+        :type right_column_selections: str
+        :type additional_conditions: str
 
-        :return: query for feature table
+        :return: postgresql query for the outer join to the entity-dates table
         :rtype: str
         """
         # format inputs for adding to query
@@ -329,20 +344,19 @@ class Architect(object):
         # put everything into the query
         query = """
             SELECT ed.entity_id,
-                   ed.as_of_date{features}
+                   ed.as_of_date{columns}
             FROM {feature_schema}.tmp_entity_date ed
-            LEFT OUTER JOIN {schema}.{table} f
-            ON ed.entity_id = f.entity_id AND
-               ed.as_of_date = f.as_of_date AND
+            LEFT OUTER JOIN {right_table} r
+            ON ed.entity_id = r.entity_id AND
+               ed.as_of_date = r.as_of_date AND
                ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))){more}
             ORDER BY ed.entity_id,
                      ed.as_of_date
         """.format(
-            features = ''.join(feature_names),
+            columns = ''.join(right_column_selections),
             feature_schema = self.db_config['features_schema_name'],
-            schema = schema_name,
+            right_table = right_table_name,
             times = as_of_time_strings,
-            table = table_name,
             more = additional_conditions
         )
         return(query)
@@ -370,7 +384,7 @@ class Architect(object):
         cur = conn.cursor()
         cur.copy_expert(copy_sql, matrix_csv)
 
-    def make_entity_dates_table(self, as_of_times, label_name, label_type,
+    def make_entity_date_table(self, as_of_times, label_name, label_type,
                                 feature_table_names, matrix_type):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
