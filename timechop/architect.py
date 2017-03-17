@@ -197,7 +197,7 @@ class Architect(object):
                 feature_names = ', f.label',
                 where_clause = '''
                     WHERE f.label_name = '{name}' AND
-                          f.label_type = '{type}
+                          f.label_type = '{type}'
                 '''.format(
                     name = label_name,
                     type = label_type
