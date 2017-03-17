@@ -1,6 +1,6 @@
 from triage.db import ensure_db
 from triage.label_generators import BinaryLabelGenerator
-from triage.feature_generators import FeatureGenerator
+from triage.features import FeatureGenerator, FeatureDictionaryCreator
 from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
@@ -67,11 +67,24 @@ class Pipeline(object):
 
         # 3. generate features
         logging.info('Generating features for %s', all_as_of_times)
-        rollup_feature_tables = FeatureGenerator(
+        tables_to_exclude = FeatureGenerator(
             db_engine=self.db_engine
         ).generate(
             feature_aggregations=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
+        )
+
+        # remove the schema and quotes from the table names
+        tables_to_exclude = [
+            tbl.split('.')[1].replace('"', "'")
+            for tbl in tables_to_exclude
+        ]
+
+        feature_dictionary = FeatureDictionaryCreator(
+            features_schema_name='features',
+            db_engine=self.db_engine
+        ).feature_dictionary(
+            tables_to_exclude + [labels_table, 'tmp_entity_ids']
         )
 
         # 4. create training and test sets
@@ -80,10 +93,6 @@ class Pipeline(object):
         logging.debug('---------MATRIX GENERATION------------')
         logging.debug('---------------------')
 
-        rollup_tables = [
-            tbl.split('.')[1].replace('"', "'")
-            for tbl in rollup_feature_tables
-        ]
         architect = Architect(
             batch_id=str(uuid.uuid4()),
             batch_timestamp=datetime.now(),
@@ -92,14 +101,16 @@ class Pipeline(object):
             label_types=['binary'],
             db_config={
                 'features_schema_name': 'features',
-                'rollup_feature_tables': rollup_tables,
                 'labels_schema_name': 'public',
                 'labels_table_name': labels_table,
             },
             user_metadata={},
             engine=self.db_engine
         )
-        updated_matrix_definitions = architect.chop_data(matrix_definitions)
+        updated_matrix_definitions = architect.chop_data(
+            matrix_definitions,
+            feature_dictionary
+        )
 
         for split in updated_matrix_definitions:
             train_store = MettaCSVMatrixStore(
