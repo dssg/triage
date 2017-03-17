@@ -194,10 +194,10 @@ class Architect(object):
                 as_of_times = as_of_times,
                 schema_name = self.db_config['labels_schema_name'],
                 table_name = self.db_config['labels_table_name'],
-                feature_names = ', f.label',
-                where_clause = '''
-                    WHERE f.label_name = '{name}' AND
-                          f.label_type = '{type}'
+                feature_names = ', f.label as {}'.format(label_name),
+                additional_conditions = '''AND
+                    f.label_name = '{name}' AND
+                    f.label_type = '{type}'
                 '''.format(
                     name = label_name,
                     type = label_type
@@ -399,7 +399,7 @@ class Architect(object):
         return(query)
 
     def build_features_query(self, as_of_times, schema_name, table_name,
-                             feature_names, where_clause = ''):
+                             feature_names, additional_conditions = ''):
         """ Given a table, list of impuations, and list of dates, write a query
         to perform a left outer join on the entity date table
 
@@ -422,7 +422,7 @@ class Architect(object):
             LEFT OUTER JOIN {schema}.{table} f
             ON ed.entity_id = f.entity_id AND
                ed.as_of_date = f.as_of_date AND
-               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))){where}
+               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::date[]))){more}
             ORDER BY ed.entity_id,
                      ed.as_of_date
         """.format(
@@ -431,7 +431,7 @@ class Architect(object):
             schema = schema_name,
             times = as_of_time_strings,
             table = table_name,
-            where = where_clause
+            more = additional_conditions
         )
         return(query)
 
@@ -564,11 +564,21 @@ class Architect(object):
                     entity_ids = []
                     dates = []
                     all_features = []
-                    label = None
+                    label_observed = None
                     features = []
                     for row in rows:
-                        if not label:
-                            entity_id, date, label = row
+                        if not label_observed:
+                            if len(row) == 3:
+                                entity_id, date, label = row
+                            elif len(row) == 2:
+                                entity_id, date = row
+                                label = None
+                            else:
+                                raise ValueError('''
+                                    Unexpected number of values observed in 
+                                    labels: {}
+                                '''.format(row))
+                            label_observed = True
                         else:
                             entity_id, date, features = row[0], row[1], row[2:]
                         entity_ids.append(entity_id)

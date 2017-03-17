@@ -431,8 +431,8 @@ class TestMergeFeatureCSVs(TestCase):
             for sourcefile in sourcefiles:
                 sourcefile.close()
 
-class test_design_matrix(object):
-    def test_train_matrix():
+class TestDesignMatrix(object):
+    def test_train_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
@@ -474,7 +474,7 @@ class test_design_matrix(object):
             os.remove('{}.yaml'.format(uuid))
             os.remove('.matrix_uuids')
 
-    def test_test_matrix():
+    def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
