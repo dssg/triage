@@ -1,6 +1,10 @@
 from triage.db import ensure_db
 from triage.label_generators import BinaryLabelGenerator
-from triage.features import FeatureGenerator, FeatureDictionaryCreator
+from triage.features import \
+    FeatureGenerator,\
+    FeatureDictionaryCreator,\
+    FeatureGroupCreator,\
+    FeatureGroupMixer
 from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
@@ -57,6 +61,14 @@ class PipelineBase(object):
         self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name=self.features_schema_name,
             db_engine=self.db_engine
+        )
+
+        self.feature_group_creator = FeatureGroupCreator(
+            self.config.get('feature_group_definition', {'all': [True]})
+        )
+
+        self.feature_group_mixer = FeatureGroupMixer(
+            self.config.get('feature_group_strategies', ['all'])
         )
 
         self.architect = Architect(

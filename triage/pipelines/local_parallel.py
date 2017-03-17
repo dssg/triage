@@ -45,8 +45,12 @@ class LocalParallelPipeline(PipelineBase):
             feature_dates=all_as_of_times,
         )
 
-        feature_dict = self.feature_dictionary_creator\
+        master_feature_dict = self.feature_dictionary_creator\
             .feature_dictionary(feature_tables)
+
+        feature_dicts = self.feature_group_mixer.generate(
+            self.feature_group_creator.subsets(master_feature_dict)
+        )
 
         # 4. create training and test sets
         logging.info('Creating matrices')
@@ -56,7 +60,7 @@ class LocalParallelPipeline(PipelineBase):
 
         updated_split_definitions = self.architect.chop_data(
             split_definitions,
-            feature_dict
+            feature_dicts
         )
 
         for split in updated_split_definitions:
