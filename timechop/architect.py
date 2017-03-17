@@ -1,11 +1,10 @@
 import csv
 import logging
 import metta.metta_io as metta
-import datetime
 import os
 import itertools
 from . import utils
-from dateutil.relativedelta import relativedelta
+
 
 class Architect(object):
 
@@ -20,12 +19,13 @@ class Architect(object):
         self.user_metadata = user_metadata
         self.engine = engine
 
-    def chop_data(self, matrix_set_definitions):
+    def chop_data(self, matrix_set_definitions, feature_dictionary):
         updated_definitions = []
         for matrix_set in matrix_set_definitions:
             for label_name, label_type in itertools.product(self.label_names, self.label_types):
                 matrix_set['train_uuid'] = self.design_matrix(
                     matrix_definition = matrix_set['train_matrix'],
+                    feature_dictionary = feature_dictionary,
                     label_name = label_name,
                     label_type = label_type
                 )
@@ -33,6 +33,7 @@ class Architect(object):
                 for test_matrix in matrix_set['test_matrices']:
                     test_uuid = self.design_matrix(
                         matrix_definition = test_matrix,
+                        feature_dictionary = feature_dictionary,
                         label_name = label_name,
                         label_type = label_type
                     )
@@ -41,7 +42,13 @@ class Architect(object):
                 updated_definitions.append(matrix_set)
         return(updated_definitions)
 
-    def design_matrix(self, matrix_definition, label_name, label_type):
+    def design_matrix(
+        self,
+        matrix_definition,
+        feature_dictionary,
+        label_name,
+        label_type
+    ):
         """ Generate matrix metadata and, if no such matrix has already been
         made this batch, build the matrix.
 
@@ -64,9 +71,6 @@ class Architect(object):
             str(matrix_definition['matrix_start_time']),
             str(matrix_definition['matrix_end_time'])
         ])
-
-        # get the list of features to be included in the matrix
-        feature_dictionary = self.get_feature_names()
 
         # get a uuid
         matrix_metadata = self._make_metadata(
@@ -138,28 +142,6 @@ class Architect(object):
             'drop table {}.tmp_entity_date;'.format(self.db_config['features_schema_name'])
         )
 
-    def get_feature_names(self):
-        """ Create a dictionary of feature names, where keys are feature tables
-        and values are lists of feature names.
-
-        :return: feature_dictionary
-        :rtype: dict
-        """
-        # prepare for iteration! get items to iterate over & initialize results
-        feature_table_names = self._get_list_of_schema_metadata(
-            self.build_feature_tables_list_query(),
-            'feature_tables_list.csv'
-        )
-        feature_dictionary = {}
-
-        # iterate! store each table name + features names as key-value pair
-        for feature_table_name in feature_table_names:
-            feature_names = self._get_list_of_schema_metadata(
-                self.build_feature_names_query(feature_table_name),
-                '{}_features_list.csv'.format(feature_table_name)
-            )
-            feature_dictionary[feature_table_name] = feature_names
-        return(feature_dictionary)
 
     def write_labels_data(self, as_of_dates, label_name, label_type):
         """ Query the labels table and write the data to disk in csv format.
@@ -199,54 +181,6 @@ class Architect(object):
 
         return(features_csv_names)
 
-    def build_feature_tables_list_query(self):
-        """ Write a query to get a list of tables in the feature schema.
-
-        :return: query
-        :rtype: str
-        """
-        # format the query that gets table names,
-        # excluding certain tables from result
-        tables_to_exclude = [
-            "'tmp_entity_date'",
-            "'{}'".format(self.db_config['labels_table_name'])
-        ]
-        if 'rollup_feature_tables' in self.db_config:
-            tables_to_exclude.extend(self.db_config['rollup_feature_tables'])
-
-        feature_table_names_query = """
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = '{schema}' AND
-                  table_name not in ({tables_to_exclude})
-        """.format(
-            tables_to_exclude=",".join(tables_to_exclude),
-            schema=self.db_config['features_schema_name'],
-        )
-
-        return(feature_table_names_query)
-
-    def _get_list_of_schema_metadata(self, query, filename):
-        """ For a query to a single column in the information_schema, return a
-        list of the resulting values.
-
-        :return: list of items requested
-        :rtype: list
-        """
-        # write the results of the query to a csv
-        self.write_to_csv(query, filename, '')
-
-        # read in results from the csv one by one, stripping the \n character
-        with open(filename) as f:
-            item_list = f.readlines()
-        item_list = [item.strip() for item in item_list]
-
-        # destroy the evidence
-        os.remove(filename)
-
-        # done! whew!
-        return(item_list)
-
     def _make_metadata(self, matrix_definition, feature_dictionary, label_name,
                        label_type, matrix_id):
         """ Generate dictionary of matrix metadata.
@@ -284,29 +218,6 @@ class Architect(object):
             matrix_metadata['prediction_window'] = '0d'
 
         return(matrix_metadata)
-
-    def build_feature_names_query(self, table_name):
-        """ For a given feature table, get the names of the feature columns.
-
-        :param table_name: name of the feature table
-        :type table_name: str
-
-        :return: names of the feature columns in given table
-        :rtype: list
-        """
-        # format the query that gets column names, excluding indices from result
-        feature_names_query = """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = '{table}' AND
-                  table_schema = '{schema}' AND
-                  column_name NOT IN ('entity_id', 'as_of_date')
-        """.format(
-            table = table_name,
-            schema = self.db_config['features_schema_name']
-        )
-
-        return(feature_names_query)
 
     def _format_imputations(self, feature_names):
         """ For a list of feature columns, format them for a SQL query, imputing
