@@ -2,8 +2,8 @@ from timechop.architect import Architect
 from tests.utils import create_features_and_labels_schemas
 from tests.utils import create_entity_date_df
 from tests.utils import convert_string_column_to_date
+from tests.utils import NamedTempFile
 import testing.postgresql
-import tempfile
 import csv
 import datetime
 import pandas as pd
@@ -122,7 +122,6 @@ def test_build_labels_query():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         create_features_and_labels_schemas(engine, features_tables, labels)
-
         matrix_maker = Architect(
             batch_id = 2,
             batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
@@ -183,7 +182,7 @@ def test_write_to_csv():
 
         # for each table, check that corresponding csv has the correct # of rows
         for table in features_tables:
-            with tempfile.NamedTemporaryFile(mode='w+') as f:
+            with NamedTempFile() as f:
                 matrix_maker.write_to_csv(
                     '''
                         select * 
@@ -228,6 +227,7 @@ def test_make_entity_dates_table():
             as_of_times = dates,
             label_type = 'binary',
             label_name = 'booking',
+            feature_table_names = ['features0', 'features1'],
             matrix_type = 'train'
         )
 
@@ -237,16 +237,14 @@ def test_make_entity_dates_table():
             engine
         )
         labels_df = pd.read_sql('select * from labels.labels', engine)
-       
+
         # compare the table to the test dataframe
         print("ids_dates")
         for i, row in ids_dates.iterrows():
             print(row.values)
-        print ids_dates.dtypes
         print("result")
         for i, row in result.iterrows():
             print(row.values)
-        print result.dtypes
         test = (result == ids_dates)
         print(test)
         assert(test.all().all())
@@ -297,6 +295,7 @@ def test_build_features_query():
             as_of_times = dates,
             label_type = 'binary',
             label_name = 'booking',
+            feature_table_names = ['features0', 'features1'],
             matrix_type = 'train'
         )
 
@@ -355,14 +354,15 @@ class TestMergeFeatureCSVs(TestCase):
 
         sourcefiles = []
         for rows in rowlists:
-            f = tempfile.NamedTemporaryFile()
+
+            f = NamedTempFile()
             sourcefiles.append(f)
             writer = csv.writer(f)
             for row in rows:
                 writer.writerow(row)
             f.seek(0)
         try:
-            with tempfile.NamedTemporaryFile() as outfile:
+            with NamedTempFile() as outfile:
                 matrix_maker.merge_feature_csvs(
                     [f.name for f in sourcefiles],
                     outfile.name
@@ -414,14 +414,14 @@ class TestMergeFeatureCSVs(TestCase):
 
         sourcefiles = []
         for rows in rowlists:
-            f = tempfile.NamedTemporaryFile()
+            f = NamedTempFile()
             sourcefiles.append(f)
             writer = csv.writer(f)
             for row in rows:
                 writer.writerow(row)
             f.seek(0)
         try:
-            with tempfile.NamedTemporaryFile() as outfile:
+            with NamedTempFile() as outfile:
                 with self.assertRaises(ValueError):
                     matrix_maker.merge_feature_csvs(
                         [f.name for f in sourcefiles],
@@ -458,10 +458,16 @@ class TestDesignMatrix(object):
                 'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
                 'as_of_times': dates
             }
+            feature_dictionary = {
+                'features0': ['f1', 'f2'],
+                'features1': ['f1', 'f2'],
+            }
+
             uuid = matrix_maker.design_matrix(
                 matrix_definition = matrix_dates,
                 label_name = 'booking',
                 label_type = 'binary',
+                feature_dictionary = feature_dictionary,
                 matrix_type = 'train'
             )
 
@@ -500,10 +506,16 @@ class TestDesignMatrix(object):
                 'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
                 'as_of_times': dates
             }
+            feature_dictionary = {
+                'features0': ['f1', 'f2'],
+                'features1': ['f1', 'f2'],
+            }
+
             uuid = matrix_maker.design_matrix(
                 matrix_definition = matrix_dates,
                 label_name = 'booking',
                 label_type = 'binary',
+                feature_dictionary = feature_dictionary,
                 matrix_type = 'test'
             )
 

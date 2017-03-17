@@ -1,5 +1,8 @@
 import pandas as pd
 import datetime
+import sys
+import tempfile
+
 
 def convert_string_column_to_date(column):
     return(
@@ -81,3 +84,10 @@ def create_entity_date_df(dates, labels, as_of_dates, label_name,
     print(dates)
 
     return(ids_dates.reset_index(drop = True))
+
+
+def NamedTempFile():
+    if sys.version_info >= (3,0,0):
+        return tempfile.NamedTemporaryFile(mode='w+', newline='')
+    else:
+        return tempfile.NamedTemporaryFile()
