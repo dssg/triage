@@ -3,9 +3,9 @@ from sqlalchemy import \
     BigInteger,\
     Boolean,\
     Integer,\
+    Interval,\
     String,\
     Numeric,\
-    Date,\
     DateTime,\
     JSON,\
     Float,\
@@ -110,7 +110,9 @@ class Prediction(Base):
 class Evaluation(Base):
     __tablename__ = 'evaluations'
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
-    as_of_date = Column(DateTime, primary_key=True)
+    evaluation_start_time = Column(DateTime, primary_key=True)
+    evaluation_end_time = Column(DateTime, primary_key=True)
+    prediction_frequency = Column(Interval, primary_key=True)
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     value = Column(Numeric)

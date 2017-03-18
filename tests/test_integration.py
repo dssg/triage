@@ -107,7 +107,9 @@ def test_integration():
                         predictions,
                         test_store.labels(),
                         model_id,
-                        as_of_date
+                        as_of_date,
+                        as_of_date,
+                        '6month'
                     )
 
             # assert
@@ -134,8 +136,9 @@ def test_integration():
             # that evaluations are there
             records = [
                 row for row in
-                db_engine.execute('''select model_id, as_of_date, metric, parameter
-                from results.evaluations order by 2, 1''')
+                db_engine.execute('''
+                    select model_id, evaluation_start_time, metric, parameter
+                    from results.evaluations order by 2, 1''')
             ]
             assert records == [
                 (1, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),

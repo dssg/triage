@@ -95,6 +95,7 @@ def test_pipeline():
             'update_window': '1y',
             'prediction_window': '6m',
             'look_back_durations': ['6m'],
+            'prediction_frequency': '1d'
         }
         scoring_config = [
             {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
@@ -161,8 +162,12 @@ def test_pipeline():
         # 4. evaluations linked to predictions linked to models
         num_evaluations = len([
             row for row in db_engine.execute('''
-                select * from results.evaluations
-                join results.predictions using (model_id, as_of_date)
-                join results.models using (model_id)''')
+                select * from results.evaluations e
+                join results.models using (model_id)
+                join results.predictions p on (
+                    e.model_id = p.model_id and
+                    e.evaluation_start_time <= p.as_of_date and
+                    e.evaluation_end_time > p.as_of_date)
+            ''')
         ])
-        assert num_evaluations == 0
+        assert num_evaluations > 0
