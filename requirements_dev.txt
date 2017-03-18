@@ -1,5 +1,8 @@
 -r requirements.txt
 
+git+git://github.com/dssg/timechop.git@master
+git+git://github.com/dssg/metta-data.git
+
 testing.postgresql
 moto
 
