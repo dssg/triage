@@ -1,6 +1,7 @@
 from timechop.timechop import Inspections
 import datetime
 from unittest import TestCase
+import warnings
 
 class test_calculate_update_times(TestCase):
     def test_valid_input(self):
@@ -15,19 +16,19 @@ class test_calculate_update_times(TestCase):
             update_window = '1 year',
             look_back_durations = ['1 year']
         )
-        result = chopper.calculate_matrix_end_times()
+        result = chopper.calculate_matrix_end_times('1 year')
         assert(result == expected_result)
 
     def test_invalid_input(self):
         chopper = Inspections(
             beginning_of_time = datetime.datetime(1990, 1, 1, 0, 0),
-            modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-            modeling_end_time = datetime.datetime(2012, 1, 1, 0, 0),
+            modeling_start_time = datetime.datetime(2011, 1, 1, 0, 0),
+            modeling_end_time = datetime.datetime(2011, 2, 1, 0, 0),
             update_window = '5 months',
             look_back_durations = ['1 year']
         )
         with self.assertRaises(ValueError):
-            chopper.calculate_matrix_end_times()
+            chopper.calculate_matrix_end_times('1 year')
 
 
 def test_calculate_as_of_times():
@@ -115,7 +116,7 @@ class test_generate_matrix_definition(TestCase):
 
 
 class test_chop_time(TestCase):
-    def test_valid_input(self):
+    def test_evenly_divisible_values(self):
         expected_result = [
             {
                 'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
@@ -188,18 +189,88 @@ class test_chop_time(TestCase):
         result = chopper.chop_time()
         assert(result == expected_result)
 
-    def test_bad_look_back_time(self):
+    def test_unevenly_divisible_lookback_duration(self):
+        expected_result = [
+            {
+                'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+                'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
+                'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                'train_matrix': {
+                    'matrix_start_time': datetime.datetime(2010, 1, 4, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                    'as_of_times': [
+                        datetime.datetime(2010, 1, 4, 0, 0),
+                        datetime.datetime(2010, 1, 5, 0, 0),
+                        datetime.datetime(2010, 1, 6, 0, 0),
+                        datetime.datetime(2010, 1, 7, 0, 0),
+                        datetime.datetime(2010, 1, 8, 0, 0),
+                        datetime.datetime(2010, 1, 9, 0, 0),
+                        datetime.datetime(2010, 1, 10, 0, 0)
+                    ]
+                },
+                'test_matrices': [{
+                    'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                    'as_of_times': [
+                        datetime.datetime(2010, 1, 11, 0, 0),
+                        datetime.datetime(2010, 1, 12, 0, 0),
+                        datetime.datetime(2010, 1, 13, 0, 0),
+                        datetime.datetime(2010, 1, 14, 0, 0),
+                        datetime.datetime(2010, 1, 15, 0, 0)
+                    ]
+                }]
+            }
+        ]
+
         chopper = Inspections(
             beginning_of_time = datetime.datetime(1990, 1, 1, 0, 0),
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
             modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
             update_window = '5 days',
-            look_back_durations = ['6 days']
+            look_back_durations = ['7 days']
         )
-        with self.assertRaises(ValueError):
-            chopper.chop_time()
+        
+        with warnings.catch_warnings(record = True) as w:
+            warnings.simplefilter("always")
+            result = chopper.chop_time()
+            assert result == expected_result
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert 'update' in str(w[-1].message)
 
-    def test_bad_update_window(self):
+
+    def test_unevenly_divisible_update_window(self):
+        expected_result = [
+            {
+                'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+                'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
+                'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                'train_matrix': {
+                    'matrix_start_time': datetime.datetime(2010, 1, 5, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 10, 0, 0),
+                    'as_of_times': [
+                        datetime.datetime(2010, 1, 5, 0, 0),
+                        datetime.datetime(2010, 1, 6, 0, 0),
+                        datetime.datetime(2010, 1, 7, 0, 0),
+                        datetime.datetime(2010, 1, 8, 0, 0),
+                        datetime.datetime(2010, 1, 9, 0, 0)
+                    ]
+                },
+                'test_matrices': [{
+                    'matrix_start_time': datetime.datetime(2010, 1, 10, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                    'as_of_times': [
+                        datetime.datetime(2010, 1, 10, 0, 0),
+                        datetime.datetime(2010, 1, 11, 0, 0),
+                        datetime.datetime(2010, 1, 12, 0, 0),
+                        datetime.datetime(2010, 1, 13, 0, 0),
+                        datetime.datetime(2010, 1, 14, 0, 0),
+                        datetime.datetime(2010, 1, 15, 0, 0)
+                    ]
+                }]
+            }
+        ]
+
         chopper = Inspections(
             beginning_of_time = datetime.datetime(1990, 1, 1, 0, 0),
             modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
@@ -207,8 +278,14 @@ class test_chop_time(TestCase):
             update_window = '6 days',
             look_back_durations = ['5 days']
         )
-        with self.assertRaises(ValueError):
-            chopper.chop_time()
+        
+        with warnings.catch_warnings(record = True) as w:
+            warnings.simplefilter("always")
+            result = chopper.chop_time()
+            assert result == expected_result
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert 'update' in str(w[-1].message)
 
 
 class test__init__(TestCase):
