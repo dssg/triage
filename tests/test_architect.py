@@ -123,8 +123,6 @@ def test_build_labels_query():
         engine = create_engine(postgresql.url())
         create_features_and_labels_schemas(engine, features_tables, labels)
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -170,8 +168,6 @@ def test_write_to_csv():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -212,8 +208,6 @@ def test_make_entity_date_table():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -280,8 +274,6 @@ def test_build_outer_join_query():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -317,8 +309,6 @@ def test_build_outer_join_query():
 class TestMergeFeatureCSVs(TestCase):
     def test_merge_feature_csvs(self):
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -383,8 +373,6 @@ class TestMergeFeatureCSVs(TestCase):
 
     def test_badinput(self):
         matrix_maker = Architect(
-            batch_id = 2,
-            batch_timestamp = datetime.datetime(2017, 3, 1, 12, 0),
             beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
             label_names = ['booking'],
             label_types = ['binary'],
@@ -444,8 +432,6 @@ class TestDesignMatrix(object):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             matrix_maker = Architect(
-                batch_id = 2,
-                batch_timestamp = datetime.datetime.now(),
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
@@ -453,7 +439,6 @@ class TestDesignMatrix(object):
                 user_metadata = {},
                 engine = engine
             )
-
             matrix_dates = {
                 'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                 'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
@@ -469,6 +454,7 @@ class TestDesignMatrix(object):
                 label_name = 'booking',
                 label_type = 'binary',
                 feature_dictionary = feature_dictionary,
+                completed_uuids = set(),
                 matrix_type = 'train'
             )
 
@@ -492,8 +478,6 @@ class TestDesignMatrix(object):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             matrix_maker = Architect(
-                batch_id = 2,
-                batch_timestamp = datetime.datetime.now(),
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
@@ -517,6 +501,7 @@ class TestDesignMatrix(object):
                 label_name = 'booking',
                 label_type = 'binary',
                 feature_dictionary = feature_dictionary,
+                completed_uuids = set(),
                 matrix_type = 'test'
             )
 
@@ -528,3 +513,4 @@ class TestDesignMatrix(object):
             os.remove(matrix_filename)
             os.remove('{}.yaml'.format(uuid))
             os.remove('.matrix_uuids')
+
