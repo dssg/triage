@@ -12,7 +12,7 @@ def always_half(predictions_proba, predictions_binary, labels, parameters):
     return 0.5
 
 
-def test_model_scoring():
+def test_model_scoring_early_warning():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -55,7 +55,9 @@ def test_model_scoring():
             trained_model.predict(labels),
             labels,
             model_id,
-            as_of_date
+            as_of_date,
+            as_of_date,
+            '1y'
         )
 
         # assert
@@ -64,7 +66,7 @@ def test_model_scoring():
             row[0] for row in
             db_engine.execute(
                 '''select distinct(metric || parameter) from results.evaluations
-                where model_id = %s and as_of_date = %s order by 1''',
+                where model_id = %s and evaluation_start_time = %s order by 1''',
                 (model_id, as_of_date)
             )
         ]
@@ -100,4 +102,60 @@ def test_model_scoring():
             'true positives@10_abs',
             'true positives@5.0_pct',
             'true positives@5_abs'
+        ]
+
+def test_model_scoring_inspections():
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        metric_groups = [{
+            'metrics': ['precision@', 'recall@'],
+            'thresholds': {
+                'percentiles': [5.0, 10.0],
+                'top_n': [5, 10]
+            }
+        }]
+
+        model_scorer = ModelScorer(metric_groups, db_engine)
+
+        trained_model, model_id = fake_trained_model(
+            'myproject',
+            InMemoryModelStorageEngine('myproject'),
+            db_engine
+        )
+
+        labels = fake_labels(5)
+        as_of_date = datetime.date(2016, 5, 5)
+        evaluation_start = datetime.datetime(2016,4,1)
+        evaluation_end = datetime.datetime(2016,7,1)
+        prediction_frequency = '1d'
+        model_scorer.score(
+            trained_model.predict_proba(labels)[:,1],
+            trained_model.predict(labels),
+            labels,
+            model_id,
+            evaluation_start,
+            evaluation_end,
+            prediction_frequency
+        )
+
+        # assert
+        # that all of the records are there
+        results = db_engine.execute(
+                '''select distinct(metric || parameter) from results.evaluations
+                where model_id = %s and evaluation_start_time = %s order by 1''',
+                (model_id, evaluation_start)
+            )
+        records = [
+            row[0] for row in results
+        ]
+        assert records == [
+            'precision@10.0_pct',
+            'precision@10_abs',
+            'precision@5.0_pct',
+            'precision@5_abs',
+            'recall@10.0_pct',
+            'recall@10_abs',
+            'recall@5.0_pct',
+            'recall@5_abs',
         ]

@@ -94,8 +94,6 @@ class Pipeline(object):
         logging.debug('---------------------')
 
         architect = Architect(
-            batch_id=str(uuid.uuid4()),
-            batch_timestamp=datetime.now(),
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             label_names=['outcome'],
             label_types=['binary'],
@@ -156,13 +154,11 @@ class Pipeline(object):
                 split['test_matrices'],
                 split['test_uuids']
             ):
-                as_of_times = sorted(matrix_def['as_of_times'])
-                min_time = as_of_times[0]
-                max_time = as_of_times[-1]
+                as_of_times = matrix_def['as_of_times']
                 logging.info(
                     'Testing and scoring as_of_times min: %s max: %s num: %s',
-                    min_time,
-                    max_time,
+                    min(as_of_times),
+                    max(as_of_times),
                     len(as_of_times)
                 )
                 test_store = MettaCSVMatrixStore(
@@ -182,17 +178,12 @@ class Pipeline(object):
                         misc_db_parameters=dict()
                     )
 
-                    if len(as_of_times) > 1:
-                        logging.warning('''
-                            Scoring for multiple as_of_times not implemented.
-                            Predictions can be found in results.predictions
-                        ''')
-                        continue
-                    else:
-                        model_scorer.score(
-                            predictions_proba,
-                            predictions,
-                            test_store.labels(),
-                            model_id,
-                            as_of_times[0]
-                        )
+                    model_scorer.score(
+                        predictions_proba=predictions_proba,
+                        predictions_binary=predictions,
+                        labels=test_store.labels(),
+                        model_id=model_id,
+                        evaluation_start_time=matrix_def['matrix_start_time'],
+                        evaluation_end_time=matrix_def['matrix_end_time'],
+                        prediction_frequency=split_config['prediction_frequency']
+                    )

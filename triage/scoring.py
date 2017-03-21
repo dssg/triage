@@ -2,6 +2,7 @@ import numpy
 from sklearn import metrics
 from triage.db import Evaluation
 from sqlalchemy.orm import sessionmaker
+import logging
 
 
 """Metric definitions
@@ -20,6 +21,8 @@ All functions should return: (float) the resulting score
 
 Functions defined here are meant to be used in ModelScorer.available_metrics
 """
+
+
 def precision(_, predictions_binary, labels, parameters):
     return metrics.precision_score(labels, predictions_binary, **parameters)
 
@@ -220,7 +223,9 @@ class ModelScorer(object):
         predictions_binary,
         labels,
         model_id,
-        as_of_date
+        evaluation_start_time,
+        evaluation_end_time,
+        prediction_frequency
     ):
         """Score a model based on predictions, and save the results
 
@@ -229,11 +234,14 @@ class ModelScorer(object):
             predictions_binary (numpy.array) List of binarized predictions
             labels (numpy.array) The true labels for the prediction set
             model_id (int) The database identifier of the model
-            as_of_date (datetime.date) The date predictions were made as of
+            evaluation_start_time (datetime.datetime) The time of the first prediction being evaluated
+            evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
+            prediction_frequency (string) How frequently predictions were generated
         """
-        predictions_proba = predictions_proba.tolist()
-        predictions_binary = predictions_binary.tolist()
-        labels = labels.tolist()
+        nan_mask = numpy.isfinite(labels)
+        predictions_proba = (predictions_proba[nan_mask]).tolist()
+        predictions_binary = (predictions_binary[nan_mask]).tolist()
+        labels = (labels[nan_mask]).tolist()
 
         predictions_proba_sorted, labels_sorted = \
             zip(*sorted(zip(predictions_proba, labels), reverse=True))
@@ -280,9 +288,22 @@ class ModelScorer(object):
                     labels_sorted,
                 )
 
-        self._write_to_db(model_id, as_of_date, evaluations)
+        self._write_to_db(
+            model_id,
+            evaluation_start_time,
+            evaluation_end_time,
+            prediction_frequency,
+            evaluations
+        )
 
-    def _write_to_db(self, model_id, as_of_date, evaluations):
+    def _write_to_db(
+        self,
+        model_id,
+        evaluation_start_time,
+        evaluation_end_time,
+        prediction_frequency,
+        evaluations
+    ):
         """Write evaluation objects to the database
 
         Binds the model_id as as_of_date to the given ORM objects
@@ -295,11 +316,17 @@ class ModelScorer(object):
         """
         session = self.sessionmaker()
         session.query(Evaluation)\
-            .filter_by(model_id=model_id, as_of_date=as_of_date)\
-            .delete()
+            .filter_by(
+                model_id=model_id,
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
+                prediction_frequency=prediction_frequency
+            ).delete()
 
         for evaluation in evaluations:
             evaluation.model_id = model_id
-            evaluation.as_of_date = as_of_date
+            evaluation.evaluation_start_time = evaluation_start_time
+            evaluation.evaluation_end_time = evaluation_end_time
+            evaluation.prediction_frequency = prediction_frequency
             session.add(evaluation)
         session.commit()

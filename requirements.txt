@@ -11,3 +11,4 @@ boto3
 collate
 click
 inflection
+numpy>=1.12
