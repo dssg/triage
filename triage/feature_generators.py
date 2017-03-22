@@ -4,8 +4,9 @@ import logging
 
 
 class FeatureGenerator(object):
-    def __init__(self, db_engine):
+    def __init__(self, db_engine, features_schema_name):
         self.db_engine = db_engine
+        self.features_schema_name = features_schema_name
 
     def aggregation(self, aggregation_config, feature_dates):
         aggregates = [
@@ -26,7 +27,7 @@ class FeatureGenerator(object):
             dates=feature_dates,
             date_column=aggregation_config['knowledge_date_column'],
             output_date_column='as_of_date',
-            schema='features',
+            schema=self.features_schema_name,
             prefix=aggregation_config['prefix']
         )
 

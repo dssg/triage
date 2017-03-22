@@ -87,6 +87,7 @@ def test_training_label_generation():
 
         output_tables = FeatureGenerator(
             db_engine=engine,
+            features_schema_name='features'
         ).generate(
             feature_dates=['2013-09-30', '2014-09-30'],
             feature_aggregations=aggregate_config,
