@@ -10,6 +10,7 @@ temporal_config:
     look_back_durations: # length of time included in a model
         - '6m'
         - '3m'
+    test_durations: ['1m', '2m']
     prediction_frequency: '1d' # per test set how often to generate predictions
 
 # LABEL GENERATION
