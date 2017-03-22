@@ -1,7 +1,9 @@
 import pandas as pd
 import datetime
+import shutil
 import sys
 import tempfile
+from contextlib import contextmanager
 
 
 def convert_string_column_to_date(column):
@@ -91,3 +93,11 @@ def NamedTempFile():
         return tempfile.NamedTemporaryFile(mode='w+', newline='')
     else:
         return tempfile.NamedTemporaryFile()
+
+@contextmanager
+def TemporaryDirectory():
+    name = tempfile.mkdtemp()
+    try:
+        yield name
+    finally:
+        shutil.rmtree(name)

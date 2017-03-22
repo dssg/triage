@@ -9,11 +9,12 @@ from . import utils
 class Architect(object):
 
     def __init__(self, beginning_of_time, label_names, label_types, db_config,
-                 user_metadata, engine):
+                 matrix_directory, user_metadata, engine):
         self.beginning_of_time = beginning_of_time # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
         self.db_config = db_config
+        self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata
         self.engine = engine
 
@@ -90,7 +91,10 @@ class Architect(object):
             matrix_type
         )
         uuid = metta.generate_uuid(matrix_metadata)
-        matrix_filename = '{}.csv'.format(uuid)
+        matrix_filename = os.path.join(
+            self.matrix_directory,
+            '{}.csv'.format(uuid)
+        )
 
         if uuid not in completed_uuids:
             self.build_matrix(
@@ -168,7 +172,10 @@ class Architect(object):
         :return: name of csv containing labels
         :rtype: str
         """
-        csv_name = '{}.csv'.format(self.db_config['labels_table_name'])
+        csv_name = os.path.join(
+            self.matrix_directory,
+            '{}.csv'.format(self.db_config['labels_table_name'])
+        )
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == 'train':
             labels_query = self.build_labels_query(
@@ -211,7 +218,10 @@ class Architect(object):
         # iterate! for each table, make query, write csv, save feature & file names
         features_csv_names = []
         for feature_table_name, feature_names in feature_dictionary.items():
-            csv_name = '{}.csv'.format(feature_table_name)
+            csv_name = os.path.join(
+                self.matrix_directory,
+                '{}.csv'.format(feature_table_name)
+            )
             features_query = self.build_outer_join_query(
                 as_of_times = as_of_times,
                 right_table_name = '{schema}.{table}'.format(
