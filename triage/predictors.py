@@ -81,30 +81,23 @@ class Predictor(object):
             .filter(Prediction.as_of_date.in_(as_of_dates))\
             .delete(synchronize_session=False)
         session.expire_all()
+        db_objects = []
+
         if 'as_of_date' in matrix.index.names:
-            for name, group in matrix.reset_index().groupby('as_of_date'):
-                indices = group.index.values.tolist()
-                temp_df = pandas.DataFrame({'score': predictions[indices]})
-                rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
-                rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
-                for index, score, label, rank_abs, rank_pct in zip(
-                    indices,
-                    predictions,
-                    labels,
-                    rankings_abs,
-                    rankings_pct
-                ):
-                    prediction = Prediction(
-                        model_id=int(model_id),
-                        entity_id=int(group['entity_id'][index]),
-                        as_of_date=group['as_of_date'][index],
-                        score=float(score),
-                        label_value=int(label) if not math.isnan(label) else None,
-                        rank_abs=int(rank_abs),
-                        rank_pct=float(rank_pct),
-                        **misc_db_parameters
-                    )
-                    session.add(prediction)
+            for index, score, label in zip(
+                matrix.index,
+                predictions,
+                labels
+            ):
+                entity_id, as_of_date = index
+                db_objects.append(Prediction(
+                    model_id=int(model_id),
+                    entity_id=int(entity_id),
+                    as_of_date=as_of_date,
+                    score=float(score),
+                    label_value=int(label) if not math.isnan(label) else None,
+                    **misc_db_parameters
+                ))
         else:
             temp_df = pandas.DataFrame({'score': predictions})
             rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
@@ -116,7 +109,7 @@ class Predictor(object):
                 rankings_abs,
                 rankings_pct
             ):
-                prediction = Prediction(
+                db_objects.append(Prediction(
                     model_id=int(model_id),
                     entity_id=int(entity_id),
                     as_of_date=matrix_end_time,
@@ -125,9 +118,9 @@ class Predictor(object):
                     rank_abs=int(rank_abs),
                     rank_pct=float(rank_pct),
                     **misc_db_parameters
-                )
-                session.add(prediction)
+                ))
 
+        session.bulk_save_objects(db_objects)
         session.commit()
 
     def predict(self, model_id, matrix_store, misc_db_parameters):
