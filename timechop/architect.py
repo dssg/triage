@@ -155,7 +155,12 @@ class Architect(object):
         self.merge_feature_csvs(features_csv_names, matrix_filename)
 
         # store the matrix
-        metta.archive_matrix(matrix_metadata, matrix_filename, format = 'csv')
+        metta.archive_matrix(
+            matrix_metadata,
+            matrix_filename,
+            directory = self.matrix_directory,
+            format = 'csv'
+        )
 
         # clean up files and database before finishing
         for csv_name in features_csv_names:
