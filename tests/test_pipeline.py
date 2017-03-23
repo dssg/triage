@@ -1,4 +1,6 @@
+import os
 from sqlalchemy import create_engine
+from tempfile import TemporaryDirectory
 import testing.postgresql
 
 from triage.db import ensure_db
@@ -126,14 +128,14 @@ def test_pipeline():
             'grid_config': grid_config,
             'scoring': scoring_config,
         }
-        project_path = 'econ-dev/inspections'
 
-        Pipeline(
-            config=experiment_config,
-            db_engine=db_engine,
-            model_storage_class=InMemoryModelStorageEngine,
-            project_path=project_path
-        ).run()
+        with TemporaryDirectory() as temp_dir:
+            Pipeline(
+                config=experiment_config,
+                db_engine=db_engine,
+                model_storage_class=InMemoryModelStorageEngine,
+                project_path=os.path.join(temp_dir, 'inspections')
+            ).run()
 
         # assert
         # 1. that model groups entries are present
