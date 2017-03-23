@@ -1,6 +1,6 @@
 import csv
 import logging
-import metta.metta_io as metta
+from metta import metta_io as metta
 import os
 import itertools
 from . import utils
@@ -159,7 +159,8 @@ class Architect(object):
             matrix_metadata,
             matrix_filename,
             directory = self.matrix_directory,
-            format = 'csv'
+            format = 'csv',
+            write_index = False
         )
 
         # clean up files and database before finishing
