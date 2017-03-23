@@ -8,6 +8,7 @@ from triage.storage import MettaCSVMatrixStore
 from timechop.timechop import Inspections
 from timechop.architect import Architect
 import logging
+import os
 from datetime import datetime
 import uuid
 
@@ -27,6 +28,9 @@ class Pipeline(object):
 
         self.labels_table_name = 'labels'
         self.features_schema_name = 'features'
+        self.matrices_directory = os.path.join(self.project_path, 'matrices')
+        if not os.path.exists(self.matrices_directory):
+            os.makedirs(self.matrices_directory)
         self.initialize_components()
 
     def initialize_components(self):
@@ -63,6 +67,7 @@ class Pipeline(object):
                 'labels_schema_name': 'public',
                 'labels_table_name': self.labels_table_name,
             },
+            matrix_directory=self.matrices_directory,
             user_metadata={},
             engine=self.db_engine
         )
@@ -141,8 +146,14 @@ class Pipeline(object):
 
         for split in updated_split_definitions:
             train_store = MettaCSVMatrixStore(
-                matrix_path='{}.csv'.format(split['train_uuid']),
-                metadata_path='{}.yaml'.format(split['train_uuid'])
+                matrix_path=os.path.join(
+                    self.matrices_directory,
+                    '{}.csv'.format(split['train_uuid'])
+                ),
+                metadata_path=os.path.join(
+                    self.matrices_directory,
+                    '{}.yaml'.format(split['train_uuid'])
+                )
             )
             if train_store.matrix.empty:
                 logging.warning('''Train matrix for split %s was empty,
@@ -175,8 +186,14 @@ class Pipeline(object):
                     len(as_of_times)
                 )
                 test_store = MettaCSVMatrixStore(
-                    matrix_path='{}.csv'.format(test_uuid),
-                    metadata_path='{}.yaml'.format(test_uuid)
+                    matrix_path=os.path.join(
+                        self.matrices_directory,
+                        '{}.csv'.format(test_uuid)
+                    ),
+                    metadata_path=os.path.join(
+                        self.matrices_directory,
+                        '{}.yaml'.format(test_uuid)
+                    )
                 )
                 if test_store.matrix.empty:
                     logging.warning('''Test matrix for train uuid %s
