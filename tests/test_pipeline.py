@@ -97,6 +97,7 @@ def test_pipeline():
             'update_window': '1y',
             'prediction_window': '6m',
             'look_back_durations': ['6m'],
+            'test_durations': ['1m'],
             'prediction_frequency': '1d'
         }
         scoring_config = [
