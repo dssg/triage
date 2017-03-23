@@ -8,19 +8,59 @@ import warnings
 class test_convert_str_to_relativedelta(unittest.TestCase):
     def test_valid_input(self):
         date = datetime.datetime(2016, 1, 1, 0, 0)
-        delta_strings = ['1 year', '2 months', '3 days', '3s', '2y']
-        deltas = [convert_str_to_relativedelta(delta_string) for delta_string in delta_strings]
 
-        assert(date + deltas[0] == datetime.datetime(2017,  1,  1,  0, 0))
-        assert(date - deltas[0] == datetime.datetime(2015,  1,  1,  0, 0))
-        assert(date + deltas[1] == datetime.datetime(2016,  3,  1,  0, 0))
-        assert(date - deltas[1] == datetime.datetime(2015, 11,  1,  0, 0))
-        assert(date + deltas[2] == datetime.datetime(2016,  1,  4,  0, 0))
-        assert(date - deltas[2] == datetime.datetime(2015, 12, 29,  0, 0))
-        assert(date + deltas[3] == datetime.datetime(2016,  1,  1,  0,  0,  3))
-        assert(date - deltas[3] == datetime.datetime(2015, 12, 31, 23, 59, 57))
-        assert(date + deltas[4] == datetime.datetime(2018,  1,  1,  0, 0))
-        assert(date - deltas[4] == datetime.datetime(2014,  1,  1,  0, 0))
+        tests = [
+            {
+                'interval': '1 year',
+                'addition_result': datetime.datetime(2017, 1, 1, 0, 0),
+                'subtraction_result': datetime.datetime(2015, 1, 1, 0, 0)
+            },
+            {
+                'interval': '2 months',
+                'addition_result': datetime.datetime(2016, 3, 1, 0, 0),
+                'subtraction_result': datetime.datetime(2015, 11, 1, 0, 0)
+            },
+            {
+                'interval': '3 days',
+                'addition_result': datetime.datetime(2016, 1, 4, 0, 0),
+                'subtraction_result': datetime.datetime(2015, 12, 29, 0, 0)
+            },
+            {
+                'interval': '3s',
+                'addition_result': datetime.datetime(2016, 1, 1, 0, 0, 3),
+                'subtraction_result': datetime.datetime(2015, 12, 31, 23, 59, 57)
+            },
+            {
+                'interval': '2y',
+                'addition_result': datetime.datetime(2018, 1, 1, 0, 0),
+                'subtraction_result': datetime.datetime(2014, 1, 1, 0, 0)
+            },
+            {
+                'interval': '4 weeks',
+                'addition_result': datetime.datetime(2016, 1, 29, 0, 0),
+                'subtraction_result': datetime.datetime(2015, 12, 4, 0, 0)
+            },
+            {
+                'interval': '5 hours',
+                'addition_result': datetime.datetime(2016, 1, 1, 5, 0),
+                'subtraction_result': datetime.datetime(2015, 12, 31, 19, 0)
+            },
+            {
+                'interval': '10 minutes',
+                'addition_result': datetime.datetime(2016, 1, 1, 0, 10),
+                'subtraction_result': datetime.datetime(2015, 12, 31, 23, 50)
+            },
+            {
+                'interval': '1 microsecond',
+                'addition_result': datetime.datetime(2016, 1, 1, 0, 0, 0, 1),
+                'subtraction_result': datetime.datetime(2015, 12, 31, 23, 59, 59, 999999)
+            }
+        ]
+
+        for test in tests:
+            delta = convert_str_to_relativedelta(test['interval'])
+            assert date + delta == test['addition_result']
+            assert date - delta == test['subtraction_result']
 
     def test_bad_input(self):
         bad_delta_string = '4 tacos'
@@ -53,7 +93,7 @@ class test_parse_delta_string(unittest.TestCase):
             assert(result == expected_results[index])
 
     def test_invalid_input(self):
-        delta_strings = ['one year', '1yr', 'one_year']
+        delta_strings = ['one year', '1yr', 'one_year', 'ay']
         for delta_string in delta_strings:
             with self.assertRaises(ValueError):
                 parse_delta_string(delta_string)

@@ -53,12 +53,7 @@ def convert_str_to_relativedelta(delta_string):
 
 def parse_delta_string(delta_string):
     if len(delta_string.split(' ')) == 2:
-        try:
-            units = delta_string.split(' ')[1]
-        except:
-            raise ValueError('''
-                Could not parse units from time delta string: {}
-            '''.format(delta_string))
+        units = delta_string.split(' ')[1]
         try:
             value = int(delta_string.split(' ')[0])
         except:
@@ -66,12 +61,7 @@ def parse_delta_string(delta_string):
                 Could not parse value from time delta string: {}
             '''.format(delta_string))
     elif len(delta_string) == 2:
-        try:
-            units = delta_string[1]
-        except:
-            raise ValueError('''
-                Could not parse units from time delta string: {}
-            '''.format(delta_string))
+        units = delta_string[1]
         try:
             value = int(delta_string[0])
         except:
