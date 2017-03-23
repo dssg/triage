@@ -473,7 +473,10 @@ class TestDesignMatrix(object):
                     matrix_type = 'train'
                 )
 
-                matrix_filename = '{}.csv'.format(uuid)
+                matrix_filename = os.path.join(
+                    temp_dir,
+                    '{}.csv'.format(uuid)
+                )
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
                     assert(len([row for row in reader]) == 12)
@@ -518,7 +521,10 @@ class TestDesignMatrix(object):
                     matrix_type = 'test'
                 )
 
-                matrix_filename = '{}.csv'.format(uuid)
+                matrix_filename = os.path.join(
+                    temp_dir,
+                    '{}.csv'.format(uuid)
+                )
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
                     assert(len([row for row in reader]) == 13)
