@@ -45,14 +45,8 @@ class LocalParallelPipeline(PipelineBase):
             feature_dates=all_as_of_times,
         )
 
-        # remove the schema and quotes from the table names
-        tables_to_exclude = [
-            tbl.split('.')[1].replace('"', "'")
-            for tbl in tables_to_exclude
-        ]
-
         feature_dict = self.feature_dictionary_creator.feature_dictionary(
-            tables_to_exclude + [self.labels_table_name, 'tmp_entity_ids']
+            tables_to_exclude=tables_to_exclude + [self.labels_table_name]
         )
 
         # 4. create training and test sets

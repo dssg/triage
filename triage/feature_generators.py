@@ -31,6 +31,10 @@ class FeatureGenerator(object):
             prefix=aggregation_config['prefix']
         )
 
+    def _clean_table_name(self, table_name):
+        # remove the schema and quotes from the name
+        return table_name.split('.')[1].replace('"', "")
+
     def generate(self, feature_aggregations, feature_dates):
         aggregations = [
             self.aggregation(aggregation_config, feature_dates)
@@ -45,4 +49,7 @@ class FeatureGenerator(object):
                     logging.debug(select)
             aggregation.execute(self.db_engine.connect())
         logging.info('Created %s aggregations', len(aggregations))
-        return [agg.get_table_name() for agg in aggregations]
+        return [
+            self._clean_table_name(agg.get_table_name())
+            for agg in aggregations
+        ]

@@ -29,7 +29,7 @@ aggregate_config = [{
 }]
 
 expected_output = {
-    '"features"."aprefix_aggregation"': [
+    'aprefix_aggregation': [
         {
             'entity_id': 3,
             'as_of_date': date(2013, 9, 30),
@@ -85,9 +85,11 @@ def test_training_label_generation():
                 row
             )
 
+        features_schema_name = 'features'
+
         output_tables = FeatureGenerator(
             db_engine=engine,
-            features_schema_name='features'
+            features_schema_name=features_schema_name
         ).generate(
             feature_dates=['2013-09-30', '2014-09-30'],
             feature_aggregations=aggregate_config,
@@ -95,7 +97,9 @@ def test_training_label_generation():
 
         for output_table in output_tables:
             records = pandas.read_sql(
-                'select * from {} order by as_of_date, entity_id'.format(output_table),
+                'select * from {}.{} order by as_of_date, entity_id'.format(
+                    features_schema_name, output_table
+                ),
                 engine
             ).to_dict('records')
             assert records == expected_output[output_table]
