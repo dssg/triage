@@ -6,7 +6,7 @@ import testing.postgresql
 from triage.db import ensure_db
 from triage.storage import InMemoryModelStorageEngine
 
-from triage.pipeline import Pipeline
+from triage.pipelines import LocalParallelPipeline, SerialPipeline
 
 
 def populate_source_data(db_engine):
@@ -85,7 +85,7 @@ def populate_source_data(db_engine):
         )
 
 
-def test_pipeline():
+def generic_pipeline_test(pipeline_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -131,7 +131,7 @@ def test_pipeline():
         }
 
         with TemporaryDirectory() as temp_dir:
-            Pipeline(
+            pipeline_class(
                 config=experiment_config,
                 db_engine=db_engine,
                 model_storage_class=InMemoryModelStorageEngine,
@@ -174,3 +174,11 @@ def test_pipeline():
             ''')
         ])
         assert num_evaluations > 0
+
+
+def test_serial_pipeline():
+    generic_pipeline_test(SerialPipeline)
+
+
+def test_local_parallel_pipeline():
+    generic_pipeline_test(LocalParallelPipeline)

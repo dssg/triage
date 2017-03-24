@@ -129,10 +129,28 @@ class MettaMatrixStore(MatrixStore):
 
 class MettaCSVMatrixStore(MatrixStore):
     def __init__(self, matrix_path, metadata_path):
-        self.matrix = pandas.read_csv(matrix_path)
-        with open(metadata_path) as f:
-            self.metadata = yaml.load(f)
-        self.matrix.set_index(self.metadata['indices'], inplace=True)
+        self.matrix_path = matrix_path
+        self.metadata_path = metadata_path
+        self._matrix = None
+        self._metadata = None
+
+    @property
+    def matrix(self):
+        if self._matrix is None:
+            self._load()
+        return self._matrix
+
+    @property
+    def metadata(self):
+        if self._metadata is None:
+            self._load()
+        return self._metadata
+
+    def _load(self):
+        self._matrix = pandas.read_csv(self.matrix_path)
+        with open(self.metadata_path) as f:
+            self._metadata = yaml.load(f)
+        self._matrix.set_index(self.metadata['indices'], inplace=True)
 
 
 class InMemoryMatrixStore(MatrixStore):

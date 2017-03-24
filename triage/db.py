@@ -122,7 +122,7 @@ def ensure_db(engine):
     Base.metadata.create_all(engine)
 
 
-def connect():
+def connect(poolclass=NullPool):
     with open('database.yaml') as f:
         profile = yaml.load(f)
         dbconfig = {
@@ -133,4 +133,4 @@ def connect():
             'port': profile['port'],
         }
         dburl = URL('postgres', **dbconfig)
-        return create_engine(dburl, poolclass=NullPool)
+        return create_engine(dburl, poolclass=poolclass)

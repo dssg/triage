@@ -1,95 +1,16 @@
-from triage.db import ensure_db
-from triage.label_generators import BinaryLabelGenerator
-from triage.features import FeatureGenerator, FeatureDictionaryCreator
-from triage.model_trainers import ModelTrainer
-from triage.predictors import Predictor
-from triage.scoring import ModelScorer
 from triage.storage import MettaCSVMatrixStore
-from timechop.timechop import Inspections
-from timechop.architect import Architect
+from sqlalchemy import create_engine
+from triage.pipelines import PipelineBase
 import logging
+import concurrent.futures
+from functools import partial
 import os
-from datetime import datetime
-import uuid
 
 
-def dt_from_str(dt_str):
-    return datetime.strptime(dt_str, '%Y-%m-%d')
-
-
-class Pipeline(object):
-    def __init__(self, config, db_engine, model_storage_class, project_path):
-        self.config = config
-        self.db_engine = db_engine
-        self.model_storage_engine =\
-            model_storage_class(project_path=project_path)
-        self.project_path = project_path
-        ensure_db(self.db_engine)
-
-        self.labels_table_name = 'labels'
-        self.features_schema_name = 'features'
-        self.matrices_directory = os.path.join(self.project_path, 'matrices')
-        if not os.path.exists(self.matrices_directory):
-            os.makedirs(self.matrices_directory)
-        self.initialize_components()
-
-    def initialize_components(self):
-        split_config = self.config['temporal_config']
-        self.chopper = Inspections(
-            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
-            modeling_start_time=dt_from_str(split_config['modeling_start_time']),
-            modeling_end_time=dt_from_str(split_config['modeling_end_time']),
-            update_window=split_config['update_window'],
-            look_back_durations=split_config['look_back_durations'],
-            test_durations=split_config['test_durations'],
-        )
-
-        self.label_generator = BinaryLabelGenerator(
-            events_table=self.config['events_table'],
-            db_engine=self.db_engine
-        )
-
-        self.feature_generator = FeatureGenerator(
-            features_schema_name=self.features_schema_name,
-            db_engine=self.db_engine
-        )
-
-        self.feature_dictionary_creator = FeatureDictionaryCreator(
-            features_schema_name=self.features_schema_name,
-            db_engine=self.db_engine
-        )
-
-        self.architect = Architect(
-            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
-            label_names=['outcome'],
-            label_types=['binary'],
-            db_config={
-                'features_schema_name': self.features_schema_name,
-                'labels_schema_name': 'public',
-                'labels_table_name': self.labels_table_name,
-            },
-            matrix_directory=self.matrices_directory,
-            user_metadata={},
-            engine=self.db_engine
-        )
-
-        self.trainer = ModelTrainer(
-            project_path=self.project_path,
-            model_storage_engine=self.model_storage_engine,
-            db_engine=self.db_engine,
-            matrix_store=None
-        )
-
-        self.predictor = Predictor(
-            project_path=self.project_path,
-            model_storage_engine=self.model_storage_engine,
-            db_engine=self.db_engine
-        )
-
-        self.model_scorer = ModelScorer(
-            metric_groups=self.config['scoring'],
-            db_engine=self.db_engine
-        )
+class LocalParallelPipeline(PipelineBase):
+    def __init__(self, n_processes=1, *args, **kwargs):
+        super(LocalParallelPipeline, self).__init__(*args, **kwargs)
+        self.n_processes = n_processes
 
     def run(self):
         # 1. generate temporal splits
@@ -118,7 +39,7 @@ class Pipeline(object):
         )
 
         # 3. generate features
-        logging.info('Generating features for %s', all_as_of_times)
+        logging.info('Generating features for %s as_of_times', len(all_as_of_times))
         tables_to_exclude = self.feature_generator.generate(
             feature_aggregations=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
@@ -146,6 +67,7 @@ class Pipeline(object):
         )
 
         for split in updated_split_definitions:
+            logging.info('Starting split')
             train_store = MettaCSVMatrixStore(
                 matrix_path=os.path.join(
                     self.matrices_directory,
@@ -156,11 +78,13 @@ class Pipeline(object):
                     '{}.yaml'.format(split['train_uuid'])
                 )
             )
+            logging.info('Checking out train matrix')
             if train_store.matrix.empty:
                 logging.warning('''Train matrix for split %s was empty,
                 no point in training this model. Skipping
                 ''', split['train_uuid'])
                 continue
+            logging.info('Checking out train labels')
             if len(train_store.labels().unique()) == 1:
                 logging.warning('''Train Matrix for split %s had only one
                 unique value, no point in training this model. Skipping
@@ -201,20 +125,77 @@ class Pipeline(object):
                     was empty, no point in training this model. Skipping
                     ''', split['train_uuid'])
                     continue
-                for model_id in model_ids:
-                    logging.info('Testing model id %s', model_id)
-                    predictions, predictions_proba = self.predictor.predict(
-                        model_id,
-                        test_store,
-                        misc_db_parameters=dict()
+                partial_test_and_score = partial(
+                    test_and_score,
+                    predictor_cls=self.predictor.__class__,
+                    model_scorer_cls=self.model_scorer.__class__,
+                    project_path=self.project_path,
+                    test_store=test_store,
+                    model_storage_engine=self.model_storage_engine,
+                    db_connection_string=self.db_engine.url,
+                    split_def=split_def,
+                    config=self.config
+                )
+                logging.info('Starting parallel testing with %s processes', self.n_processes)
+                with concurrent.futures.ProcessPoolExecutor(max_workers=self.n_processes) as pool:
+                    num_successes = 0
+                    num_failures = 0
+                    #pdb.set_trace()
+                    for successful in pool.map(partial_test_and_score, model_ids):
+                        if successful:
+                            num_successes += 1
+                        else:
+                            num_failures += 1
+                    logging.info(
+                        'Done testing. successes: %s, failures: %s',
+                        num_successes,
+                        num_failures
                     )
+                logging.info('Cleaned up concurrent pool')
+            logging.info('Done with test matrix')
+        logging.info('Done with split')
 
-                    self.model_scorer.score(
-                        predictions_proba=predictions_proba,
-                        predictions_binary=predictions,
-                        labels=test_store.labels(),
-                        model_id=model_id,
-                        evaluation_start_time=split_def['matrix_start_time'],
-                        evaluation_end_time=split_def['matrix_end_time'],
-                        prediction_frequency=self.config['temporal_config']['prediction_frequency']
-                    )
+
+def test_and_score(
+    model_id,
+    predictor_cls,
+    model_scorer_cls,
+    project_path,
+    test_store,
+    model_storage_engine,
+    db_connection_string,
+    split_def,
+    config
+):
+    try:
+        db_engine = create_engine(db_connection_string)
+        logging.info('Generating predictions for model id %s', model_id)
+        predictor = predictor_cls(
+            project_path=project_path,
+            model_storage_engine=model_storage_engine,
+            db_engine=db_engine
+        )
+
+        model_scorer = model_scorer_cls(
+            metric_groups=config['scoring'],
+            db_engine=db_engine
+        )
+        predictions, predictions_proba = predictor.predict(
+            model_id,
+            test_store,
+            misc_db_parameters=dict()
+        )
+        logging.info('Generating evaluations for model id %s', model_id)
+        model_scorer.score(
+            predictions_proba=predictions_proba,
+            predictions_binary=predictions,
+            labels=test_store.labels(),
+            model_id=model_id,
+            evaluation_start_time=split_def['matrix_start_time'],
+            evaluation_end_time=split_def['matrix_end_time'],
+            prediction_frequency=config['temporal_config']['prediction_frequency']
+        )
+        return True
+    except Exception as e:
+        logging.error('Child error: %s', e)
+        return False
