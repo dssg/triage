@@ -93,14 +93,16 @@ class FeatureGenerator(object):
 
         tables = []
         for group in aggregation.groups:
+            group_table = self._clean_table_name(
+                aggregation.get_table_name(group=group)
+            )
+            logging.info('Processing group table %s', group_table)
             conn.execute(drops[group])
             conn.execute(creates[group])
             for insert in inserts[group]:
                 conn.execute(insert)
             conn.execute(indexes[group])
-            tables.append(
-                self._clean_table_name(aggregation.get_table_name(group=group))
-            )
+            tables.append(group_table)
 
         trans.commit()
         return tables
