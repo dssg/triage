@@ -501,7 +501,8 @@ class Architect(object):
                             if column not in labels_table_header
                         ] + [label]
                         writer.writerow(headers)
-                        logging.info('Found headers: %s', headers)
+                        logging.debug('Found headers: %s', headers)
+                        logging.info('Found {} headers'.format(len(headers)))
                         continue
                     entity_ids = []
                     dates = []
