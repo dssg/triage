@@ -79,7 +79,10 @@ class SerialPipeline(PipelineBase):
             logging.info('Training models')
             model_ids = self.trainer.train_models(
                 grid_config=self.config['grid_config'],
-                misc_db_parameters=dict(test=False),
+                misc_db_parameters=dict(
+                    test=False,
+                    model_comment=self.config.get('model_comment', None),
+                ),
                 matrix_store=train_store
             )
             logging.info('Done training models')

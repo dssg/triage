@@ -124,6 +124,7 @@ def generic_pipeline_test(pipeline_class):
         experiment_config = {
             'events_table': 'events',
             'entity_column_name': 'entity_id',
+            'model_comment': 'test2-final-final',
             'feature_aggregations': feature_config,
             'temporal_config': temporal_config,
             'grid_config': grid_config,
@@ -150,7 +151,9 @@ def generic_pipeline_test(pipeline_class):
         num_models = len([
             row for row in db_engine.execute('''
                 select * from results.model_groups
-                join results.models using (model_group_id)''')
+                join results.models using (model_group_id)
+                where model_comment = 'test2-final-final'
+            ''')
         ])
         assert num_models > 0
 
