@@ -1,4 +1,9 @@
 ---
+# EXPERIMENT METADATA
+# model_comment (optional) will end up in the model_comment column of the
+# models table for each model created in this experiment
+model_comment: 'test'
+
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
 # train/test splits
