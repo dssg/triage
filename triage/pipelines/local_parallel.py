@@ -40,14 +40,13 @@ class LocalParallelPipeline(PipelineBase):
 
         # 3. generate features
         logging.info('Generating features for %s as_of_times', len(all_as_of_times))
-        tables_to_exclude = self.feature_generator.generate(
+        feature_tables = self.feature_generator.generate(
             feature_aggregations=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
         )
 
-        feature_dict = self.feature_dictionary_creator.feature_dictionary(
-            tables_to_exclude=tables_to_exclude + [self.labels_table_name]
-        )
+        feature_dict = self.feature_dictionary_creator\
+            .feature_dictionary(feature_tables)
 
         # 4. create training and test sets
         logging.info('Creating matrices')

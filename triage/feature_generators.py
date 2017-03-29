@@ -56,10 +56,6 @@ class FeatureGenerator(object):
             prefix=aggregation_config['prefix']
         )
 
-    def _clean_table_name(self, table_name):
-        # remove the schema and quotes from the name
-        return table_name.split('.')[1].replace('"', "")
-
     def generate(self, feature_aggregations, feature_dates):
         aggregations = [
             self.aggregation(aggregation_config, feature_dates)
@@ -68,13 +64,43 @@ class FeatureGenerator(object):
         logging.debug('---------------------')
         logging.debug('---------FEATURE GENERATION------------')
         logging.debug('---------------------')
+        tables = []
         for aggregation in aggregations:
             for selectlist in aggregation.get_selects().values():
                 for select in selectlist:
                     logging.debug(select)
-            aggregation.execute(self.db_engine.connect())
-        logging.info('Created %s aggregations', len(aggregations))
-        return [
-            self._clean_table_name(agg.get_table_name())
-            for agg in aggregations
-        ]
+            tables += self._create_aggregation_tables(aggregation)
+        logging.info('Created %s tables', len(tables))
+        return tables
+
+    def _clean_table_name(self, table_name):
+        # remove the schema and quotes from the name
+        return table_name.split('.')[1].replace('"', "")
+
+    def _create_aggregation_tables(self, aggregation):
+        """Create feature table for aggregation
+        Remove when collate exposes this as an interface"""
+        conn = self.db_engine.connect()
+        create_schema = aggregation.get_create_schema()
+        creates = aggregation.get_creates()
+        drops = aggregation.get_drops()
+        indexes = aggregation.get_indexes()
+        inserts = aggregation.get_inserts()
+
+        trans = conn.begin()
+        if create_schema is not None:
+            conn.execute(create_schema)
+
+        tables = []
+        for group in aggregation.groups:
+            conn.execute(drops[group])
+            conn.execute(creates[group])
+            for insert in inserts[group]:
+                conn.execute(insert)
+            conn.execute(indexes[group])
+            tables.append(
+                self._clean_table_name(aggregation.get_table_name(group=group))
+            )
+
+        trans.commit()
+        return tables
