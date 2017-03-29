@@ -162,11 +162,11 @@ class Architect(object):
         # store the matrix
         logging.info('Archiving matrix with metta')
         metta.archive_matrix(
-            matrix_metadata,
-            matrix_filename,
-            directory = self.matrix_directory,
-            format = 'csv',
-            write_index = False
+            matrix_config=matrix_metadata,
+            df_matrix=matrix_filename,
+            overwrite=True,
+            directory=self.matrix_directory,
+            format='csv'
         )
 
         # clean up files and database before finishing
