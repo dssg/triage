@@ -51,7 +51,7 @@ def test_feature_generation():
     }]
 
     expected_output = {
-        'aprefix_aggregation': [
+        'aprefix_entity_id': [
             {
                 'entity_id': 3,
                 'as_of_date': date(2013, 9, 30),
@@ -126,7 +126,7 @@ def test_dynamic_categoricals():
         'from_obj': 'data'
     }]
     expected_output = {
-        'aprefix_aggregation': [
+        'aprefix_entity_id': [
             {
                 'entity_id': 3,
                 'as_of_date': date(2013, 9, 30),

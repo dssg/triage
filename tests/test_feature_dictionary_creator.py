@@ -34,7 +34,7 @@ def test_feature_dictionary_creator():
             db_engine=engine
         )
         feature_dictionary = creator.feature_dictionary(
-            ['random_other_table']
+            ['feature_table_one', 'feature_table_two']
         )
         assert feature_dictionary == {
             'feature_table_one': ['feature_one', 'feature_two'],
