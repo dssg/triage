@@ -91,6 +91,7 @@ class Architect(object):
             matrix_type
         )
         uuid = metta.generate_uuid(matrix_metadata)
+        logging.info('Creating matrix %s - %s', matrix_id, uuid)
         matrix_filename = os.path.join(
             self.matrix_directory,
             '{}.csv'.format(uuid)
@@ -132,6 +133,7 @@ class Architect(object):
         :rtype: none
         """
         # make the entity time table and query the labels and features tables
+        logging.info('Making entity date table')
         self.make_entity_date_table(
             as_of_times,
             label_name,
@@ -139,10 +141,12 @@ class Architect(object):
             feature_dictionary.keys(),
             matrix_type
         )
+        logging.info('Writing feature group data')
         features_csv_names = self.write_features_data(
             as_of_times,
             feature_dictionary
         )
+        logging.info('Writing label data')
         labels_csv_name = self.write_labels_data(
             as_of_times,
             label_name,
@@ -152,9 +156,11 @@ class Architect(object):
         features_csv_names.insert(0, labels_csv_name)
 
         # stitch together the csvs
+        logging.info('Merging features data')
         self.merge_feature_csvs(features_csv_names, matrix_filename)
 
         # store the matrix
+        logging.info('Archiving matrix with metta')
         metta.archive_matrix(
             matrix_metadata,
             matrix_filename,
@@ -224,6 +230,7 @@ class Architect(object):
         # iterate! for each table, make query, write csv, save feature & file names
         features_csv_names = []
         for feature_table_name, feature_names in feature_dictionary.items():
+            logging.info('Retrieving feature data from %s', feature_table_name)
             csv_name = os.path.join(
                 self.matrix_directory,
                 '{}.csv'.format(feature_table_name)
