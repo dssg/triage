@@ -18,11 +18,15 @@ class Architect(object):
         self.user_metadata = user_metadata
         self.engine = engine
 
-    def chop_data(self, matrix_set_definitions, feature_dictionary):
+    def chop_data(self, matrix_set_definitions, feature_dictionaries):
         updated_definitions = []
         completed_uuids = set()
         for matrix_set in matrix_set_definitions:
-            for label_name, label_type in itertools.product(self.label_names, self.label_types):
+            for label_name, label_type, feature_dictionary in itertools.product(
+                self.label_names,
+                self.label_types,
+                feature_dictionaries
+            ):
                 matrix_set['train_uuid'] = self.design_matrix(
                     matrix_definition = matrix_set['train_matrix'],
                     feature_dictionary = feature_dictionary,
