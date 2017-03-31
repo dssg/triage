@@ -18,144 +18,149 @@ class Architect(object):
         self.user_metadata = user_metadata
         self.engine = engine
 
-    def chop_data(self, matrix_set_definitions, feature_dictionaries):
+    def _generate_build_task(
+        self,
+        matrix_metadata,
+        matrix_uuid,
+        train_matrix,
+        feature_dictionary
+    ):
+        return {
+            'as_of_times': train_matrix['as_of_times'],
+            'label_name': matrix_metadata['label_name'],
+            'label_type': matrix_metadata['label_type'],
+            'feature_dictionary': feature_dictionary,
+            'matrix_directory': self.matrix_directory,
+            'matrix_uuid': matrix_uuid,
+            'matrix_metadata': matrix_metadata,
+            'matrix_type': matrix_metadata['matrix_type']
+        }
+
+
+    def generate_plans(self, matrix_set_definitions, feature_dictionaries):
+        """Create build tasks and update the matrix definitions with UUIDs
+
+        :param matrix_set_definitions: the temporal information needed to generate each matrix
+        :param feature_dictionaries: combinations of features to include in matrices
+        :type matrix_set_definitions: list
+        :type feature_dictionaries: list
+
+        :return: matrix set definitions (updated with matrix uuids) and build tasks
+        :rtype: tuple (list, dict)
+        """
         updated_definitions = []
-        completed_uuids = set()
+        build_tasks = dict()
         for matrix_set in matrix_set_definitions:
+            train_matrix = matrix_set['train_matrix']
             for label_name, label_type, feature_dictionary in itertools.product(
                 self.label_names,
                 self.label_types,
                 feature_dictionaries
             ):
-                matrix_set['train_uuid'] = self.design_matrix(
-                    matrix_definition = matrix_set['train_matrix'],
-                    feature_dictionary = feature_dictionary,
-                    label_name = label_name,
-                    label_type = label_type,
-                    completed_uuids = completed_uuids,
-                    matrix_type = 'train'
+                # get a uuid
+                train_metadata = self._make_metadata(
+                    train_matrix,
+                    feature_dictionary,
+                    label_name,
+                    label_type,
+                    'train',
                 )
-                completed_uuids.add(matrix_set['train_uuid'])
+                train_uuid = metta.generate_uuid(train_metadata)
+                if train_uuid not in build_tasks:
+                    build_tasks[train_uuid] = self._generate_build_task(
+                        train_metadata,
+                        train_uuid,
+                        train_matrix,
+                        feature_dictionary
+                    )
+
+                matrix_set['train_uuid'] = train_uuid
+
                 test_uuids = []
                 for test_matrix in matrix_set['test_matrices']:
-                    test_uuid = self.design_matrix(
-                        matrix_definition = test_matrix,
-                        feature_dictionary = feature_dictionary,
-                        label_name = label_name,
-                        label_type = label_type,
-                        completed_uuids = completed_uuids,
-                        matrix_type = 'test'
+                    test_metadata = self._make_metadata(
+                        test_matrix,
+                        feature_dictionary,
+                        label_name,
+                        label_type,
+                        'test',
                     )
+                    test_uuid = metta.generate_uuid(test_metadata)
+                    if test_uuid not in build_tasks:
+                        build_tasks[test_uuid] = self._generate_build_task(
+                            test_metadata,
+                            test_uuid,
+                            test_matrix,
+                            feature_dictionary
+                        )
+
                     test_uuids.append(test_uuid)
-                    completed_uuids.add(test_uuid)
                 matrix_set['test_uuids'] = test_uuids
                 updated_definitions.append(matrix_set)
 
-        return(updated_definitions)
+        return updated_definitions, build_tasks
 
-    def design_matrix(
-        self,
-        matrix_definition,
-        feature_dictionary,
-        label_name,
-        label_type,
-        matrix_type,
-        completed_uuids
-    ):
-        """ Generate matrix metadata and, if no such matrix has already been
-        made this batch, build the matrix.
-
-        :param end_time: the limit of the prediction window for the matrix
-        :param feature_frequency: the time between feature & label as_of_dates
-        :param label_name: the name of the label in the labels table
-        :param label_type: the type of the label in the labels table
-        :type end_time: datetime.datetime
-        :type feature_frequency: str
-        :type label_name: str
-        :type label_type: str
-
-        :return: uuid for the matrix
-        :rtype: str
-        """
-        # make a human-readable label for this matrix
-        matrix_id = '_'.join([
-            label_name,
-            label_type,
-            str(matrix_definition['matrix_start_time']),
-            str(matrix_definition['matrix_end_time'])
-        ])
-
-        # get a uuid
-        matrix_metadata = self._make_metadata(
-            matrix_definition,
-            feature_dictionary,
-            label_name,
-            label_type,
-            matrix_id,
-            matrix_type
-        )
-        uuid = metta.generate_uuid(matrix_metadata)
-        logging.info('Creating matrix %s - %s', matrix_id, uuid)
-        matrix_filename = os.path.join(
-            self.matrix_directory,
-            '{}.csv'.format(uuid)
-        )
-
-        if uuid not in completed_uuids:
-            self.build_matrix(
-                matrix_definition['as_of_times'],
-                label_name,
-                label_type,
-                feature_dictionary,
-                matrix_filename,
-                matrix_metadata,
-                matrix_type
-            )
-
-        return(uuid)
+    def build_all_matrices(self, build_tasks):
+        logging.info('Building %s matrices', len(build_tasks.keys()))
+        for matrix_uuid, task_arguments in build_tasks.items():
+            self.build_matrix(**task_arguments)
 
     def build_matrix(self, as_of_times, label_name, label_type,
-                     feature_dictionary, matrix_filename, matrix_metadata,
-                     matrix_type):
+                     feature_dictionary, matrix_directory, matrix_metadata,
+                     matrix_uuid, matrix_type):
         """ Write a design matrix to disk with the specified paramters.
 
-        :param as_of_dates: dates to be included in the matrix
+        :param as_of_times: datetimes to be included in the matrix
         :param label_name: name of the label to be used
         :param label_type: the type of label to be used
         :param feature_dictionary: a dictionary of feature tables and features
                                    to be included in the matrix
-        :param matrix_filename: the file name for the final matrix
+        :param matrix_directory: the directory in which to store the matrix
         :param matrix_metadata: a dictionary of metadata about the matrix
-        :type as_of_dates: list
+        :param matrix_uuid: a unique id for the matrix
+        :param matrix_type: the type (train/test) of matrix
+        :type as_of_times: list
         :type label_name: str
         :type label_type: str
         :type feature_dictionary: dict
-        :type matrix_filename: str
+        :type matrix_directory: str
         :type matrix_metadata: dict
+        :type matrix_uuid: str
+        :type matrix_type: str
 
         :return: none
         :rtype: none
         """
+        matrix_filename = os.path.join(
+            matrix_directory,
+            '{}.csv'.format(matrix_uuid)
+        )
+        logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
         logging.info('Making entity date table')
-        self.make_entity_date_table(
+        entity_date_table_name = self.make_entity_date_table(
             as_of_times,
             label_name,
             label_type,
             feature_dictionary.keys(),
-            matrix_type
+            matrix_type,
+            matrix_uuid
         )
         logging.info('Writing feature group data')
         features_csv_names = self.write_features_data(
             as_of_times,
-            feature_dictionary
+            feature_dictionary,
+            entity_date_table_name,
+            matrix_uuid
         )
         logging.info('Writing label data')
         labels_csv_name = self.write_labels_data(
             as_of_times,
             label_name,
             label_type,
-            matrix_type
+            matrix_type,
+            entity_date_table_name,
+            matrix_uuid
         )
         features_csv_names.insert(0, labels_csv_name)
 
@@ -177,12 +182,15 @@ class Architect(object):
         for csv_name in features_csv_names:
             os.remove(csv_name)
         self.engine.execute(
-            'drop table {}.tmp_entity_date;'.format(self.db_config['features_schema_name'])
+            'drop table "{}"."{}";'.format(
+                self.db_config['features_schema_name'],
+                entity_date_table_name
+            )
         )
 
 
     def write_labels_data(self, as_of_times, label_name, label_type,
-                          matrix_type):
+                          matrix_type, entity_date_table_name, matrix_uuid):
         """ Query the labels table and write the data to disk in csv format.
         
         :return: name of csv containing labels
@@ -190,7 +198,7 @@ class Architect(object):
         """
         csv_name = os.path.join(
             self.matrix_directory,
-            '{}.csv'.format(self.db_config['labels_table_name'])
+            '{}-{}.csv'.format(matrix_uuid, self.db_config['labels_table_name'])
         )
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == 'train':
@@ -206,6 +214,10 @@ class Architect(object):
                 right_table_name = '{schema}.{table}'.format(
                     schema = self.db_config['labels_schema_name'],
                     table = self.db_config['labels_table_name']
+                ),
+                entity_date_table_name='"{schema}"."{table}"'.format(
+                    schema = self.db_config['features_schema_name'],
+                    table = entity_date_table_name
                 ),
                 right_column_selections = ', r.label as {}'.format(label_name),
                 additional_conditions = '''AND
@@ -223,7 +235,7 @@ class Architect(object):
         self.write_to_csv(labels_query, csv_name)
         return(csv_name)
 
-    def write_features_data(self, as_of_times, feature_dictionary):
+    def write_features_data(self, as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid):
         """ Loop over tables in features schema, writing the data from each to a
         csv. Return the full list of feature csv names and the list of all
         features.
@@ -237,13 +249,17 @@ class Architect(object):
             logging.info('Retrieving feature data from %s', feature_table_name)
             csv_name = os.path.join(
                 self.matrix_directory,
-                '{}.csv'.format(feature_table_name)
+                '{}-{}.csv'.format(matrix_uuid, feature_table_name)
             )
             features_query = self.build_outer_join_query(
                 as_of_times = as_of_times,
                 right_table_name = '{schema}.{table}'.format(
                     schema = self.db_config['features_schema_name'],
                     table = feature_table_name
+                ),
+                entity_date_table_name = '{schema}."{table}"'.format(
+                    schema = self.db_config['features_schema_name'],
+                    table = entity_date_table_name
                 ),
                 right_column_selections = self._format_imputations(feature_names)
             )
@@ -253,17 +269,31 @@ class Architect(object):
         return(features_csv_names)
 
     def _make_metadata(self, matrix_definition, feature_dictionary, label_name,
-                       label_type, matrix_id, matrix_type):
+                       label_type, matrix_type):
         """ Generate dictionary of matrix metadata.
 
-        :param feature_names: names of feature columns
-        :param matrix_id: human-readable identifier for the matrix
-        :type feature_names: list
-        :type matrix_id: str
+        :param matrix_definition: temporal definition of matrix
+        :param feature dictionary: feature tables and the columns within them to use as features
+        :param label_name: name of label column
+        :param label_type: type of label
+        :param matrix_type: type (train/test) of matrix
+        :type matrix_definition: dict
+        :type feature dictionary: dict
+        :type label_name: str
+        :type label_type: str
+        :type matrix_type: str
 
         :return: metadata needed for matrix identification and modeling
         :rtype: dict
         """
+
+        # make a human-readable label for this matrix
+        matrix_id = '_'.join([
+            label_name,
+            label_type,
+            str(matrix_definition['matrix_start_time']),
+            str(matrix_definition['matrix_end_time'])
+        ])
         matrix_metadata = {
 
             # temporal information
@@ -349,6 +379,7 @@ class Architect(object):
         as_of_times,
         right_table_name,
         right_column_selections,
+        entity_date_table_name,
         additional_conditions = ''
     ):
         """ Given a (features or labels) table, a list of times, columns to
@@ -358,11 +389,13 @@ class Architect(object):
         :param as_of_times: the times to include in the join
         :param right_table_name: the name of the right (feature/label) table
         :param right_column_selections: formatted text for the columns to select
+        :param entity_date_table_name: name of table containing all valid entity ids and dates
         :param additional_conditions: formatted text for additional join
                                       conditions
         :type as_of_times: list
         :type right_table_name: str
         :type right_column_selections: str
+        :type entity_date_table_name: str
         :type additional_conditions: str
 
         :return: postgresql query for the outer join to the entity-dates table
@@ -375,7 +408,7 @@ class Architect(object):
         query = """
             SELECT ed.entity_id,
                    ed.as_of_date{columns}
-            FROM {feature_schema}.tmp_entity_date ed
+            FROM {entity_date_table_name} ed
             LEFT OUTER JOIN {right_table} r
             ON ed.entity_id = r.entity_id AND
                ed.as_of_date = r.as_of_date AND
@@ -385,6 +418,7 @@ class Architect(object):
         """.format(
             columns = ''.join(right_column_selections),
             feature_schema = self.db_config['features_schema_name'],
+            entity_date_table_name = entity_date_table_name,
             right_table = right_table_name,
             times = as_of_time_strings,
             more = additional_conditions
@@ -415,7 +449,7 @@ class Architect(object):
         cur.copy_expert(copy_sql, matrix_csv)
 
     def make_entity_date_table(self, as_of_times, label_name, label_type,
-                                feature_table_names, matrix_type):
+                                feature_table_names, matrix_type, matrix_uuid):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
 
@@ -424,8 +458,8 @@ class Architect(object):
         :type feature_tables: list
         :type schema: str
 
-        :return: none
-        :rtype: none
+        :return: table name
+        :rtype: str
         """
         if matrix_type == 'train':
             indices_query = self.build_labels_query(
@@ -442,15 +476,19 @@ class Architect(object):
         else:
             raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
 
+        table_name = '_'.join([matrix_uuid, 'tmp_entity_date'])
         query = """
-            DROP TABLE IF EXISTS {features_schema_name}.tmp_entity_date;
-            CREATE TABLE {features_schema_name}.tmp_entity_date
+            DROP TABLE IF EXISTS {features_schema_name}."{table_name}";
+            CREATE TABLE {features_schema_name}."{table_name}"
             AS ({index_query})
         """.format(
             features_schema_name = self.db_config['features_schema_name'],
+            table_name = table_name,
             index_query = indices_query
         )
         self.engine.execute(query)
+
+        return table_name
 
     def get_all_valid_entity_date_combos(self, as_of_times, feature_table_names):
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]     

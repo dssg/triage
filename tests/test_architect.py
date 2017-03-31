@@ -226,17 +226,18 @@ def test_make_entity_date_table():
                 'CREATE TABLE features.tmp_entity_date (a int, b date);'
             )
             # call the function to test the creation of the table
-            matrix_maker.make_entity_date_table(
+            entity_date_table_name = matrix_maker.make_entity_date_table(
                 as_of_times = dates,
                 label_type = 'binary',
                 label_name = 'booking',
                 feature_table_names = ['features0', 'features1'],
+                matrix_uuid = 'my_uuid',
                 matrix_type = 'train'
             )
 
             # read in the table
             result = pd.read_sql(
-                "select * from features.tmp_entity_date order by entity_id, as_of_date",
+                "select * from features.{} order by entity_id, as_of_date".format(entity_date_table_name),
                 engine
             )
             labels_df = pd.read_sql('select * from labels.labels', engine)
@@ -294,12 +295,13 @@ def test_build_outer_join_query():
             )
 
             # make the entity-date table
-            matrix_maker.make_entity_date_table(
+            entity_date_table_name = matrix_maker.make_entity_date_table(
                 as_of_times = dates,
                 label_type = 'binary',
                 label_name = 'booking',
                 feature_table_names = ['features0', 'features1'],
-                matrix_type = 'train'
+                matrix_type = 'train',
+                matrix_uuid = 'my_uuid',
             )
 
             # get the queries and test them
@@ -309,6 +311,7 @@ def test_build_outer_join_query():
                 query = matrix_maker.build_outer_join_query(
                     as_of_times = dates,
                     right_table_name = 'features.{}'.format(table_name),
+                    entity_date_table_name = 'features.{}'.format(entity_date_table_name),
                     right_column_selections = matrix_maker._format_imputations(
                         ['f1', 'f2']
                     )
@@ -435,7 +438,95 @@ class TestMergeFeatureCSVs(TestCase):
                 for sourcefile in sourcefiles:
                     sourcefile.close()
 
-class TestDesignMatrix(object):
+def test_generate_plans():
+    matrix_set_definitions = [
+        {
+            'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+            'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
+            'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+            'train_matrix': {
+                'matrix_start_time': datetime.datetime(2010, 1, 1, 0, 0),
+                'matrix_end_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'as_of_times': [
+                    datetime.datetime(2010, 1, 1, 0, 0),
+                    datetime.datetime(2010, 1, 2, 0, 0),
+                    datetime.datetime(2010, 1, 3, 0, 0),
+                    datetime.datetime(2010, 1, 4, 0, 0),
+                    datetime.datetime(2010, 1, 5, 0, 0)
+                ]
+            },
+            'test_matrices': [{
+                'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'as_of_times': [
+                    datetime.datetime(2010, 1, 6, 0, 0),
+                    datetime.datetime(2010, 1, 7, 0, 0),
+                    datetime.datetime(2010, 1, 8, 0, 0),
+                    datetime.datetime(2010, 1, 9, 0, 0),
+                    datetime.datetime(2010, 1, 10, 0, 0)
+                ]
+            }]
+        },
+        {
+            'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+            'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
+            'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+            'train_matrix': {
+                'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'as_of_times': [
+                    datetime.datetime(2010, 1, 6, 0, 0),
+                    datetime.datetime(2010, 1, 7, 0, 0),
+                    datetime.datetime(2010, 1, 8, 0, 0),
+                    datetime.datetime(2010, 1, 9, 0, 0),
+                    datetime.datetime(2010, 1, 10, 0, 0)
+                ]
+            },
+            'test_matrices': [{
+                'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                'as_of_times': [
+                    datetime.datetime(2010, 1, 11, 0, 0),
+                    datetime.datetime(2010, 1, 12, 0, 0),
+                    datetime.datetime(2010, 1, 13, 0, 0),
+                    datetime.datetime(2010, 1, 14, 0, 0),
+                    datetime.datetime(2010, 1, 15, 0, 0)
+                ]
+            }]
+        }
+    ]
+    feature_dict_one = {'features0': ['f1', 'f2'], 'features1': ['f1', 'f2']}
+    feature_dict_two = {'features2': ['f3', 'f4'], 'features3': ['f5', 'f6']}
+    feature_dicts = [feature_dict_one, feature_dict_two]
+    architect = Architect(
+        beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+        label_names = ['booking'],
+        label_types = ['binary'],
+        db_config = db_config,
+        user_metadata = {},
+        matrix_directory = '', # this test won't write anything
+        engine = None # or look at the db!
+    )
+
+    updated_matrix_definitions, build_tasks = architect.generate_plans(matrix_set_definitions, feature_dicts)
+    # test that it added uuids: we don't much care what they are
+    for matrix_def in updated_matrix_definitions:
+        assert isinstance(matrix_def['train_uuid'], str)
+        for test_uuid in matrix_def['test_uuids']:
+            assert isinstance(test_uuid, str)
+
+    # not going to assert anything on the keys (uuids), just get out the values
+    build_tasks = build_tasks.values()
+    assert len(build_tasks) == 8 # 2 splits * 2 matrices per split * 2 feature dicts
+
+    assert sum(1 for task in build_tasks if task['matrix_type'] == 'train') == 4
+    assert sum(1 for task in build_tasks if task['matrix_type'] == 'test') == 4
+    assert all(task for task in build_tasks if task['matrix_directory'] == '')
+    assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_one) == 4
+    assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_two) == 4
+
+
+class TestBuildMatrix(object):
     def test_train_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
@@ -456,22 +547,26 @@ class TestDesignMatrix(object):
                     user_metadata = {},
                     engine = engine
                 )
-                matrix_dates = {
-                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'as_of_times': dates
-                }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
                     'features1': ['f1', 'f2'],
                 }
 
-                uuid = matrix_maker.design_matrix(
-                    matrix_definition = matrix_dates,
+                uuid = '1234'
+                matrix_maker.build_matrix(
+                    as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
                     feature_dictionary = feature_dictionary,
-                    completed_uuids = set(),
+                    matrix_directory = temp_dir,
+                    matrix_metadata = {
+                        'matrix_id': 'hi',
+                        'label_name': 'booking',
+                        'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                        'start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                        'prediction_window': '1d'
+                    },
+                    matrix_uuid = uuid,
                     matrix_type = 'train'
                 )
 
@@ -514,12 +609,21 @@ class TestDesignMatrix(object):
                     'features1': ['f1', 'f2'],
                 }
 
-                uuid = matrix_maker.design_matrix(
-                    matrix_definition = matrix_dates,
+                uuid = '1234'
+                matrix_maker.build_matrix(
+                    as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
                     feature_dictionary = feature_dictionary,
-                    completed_uuids = set(),
+                    matrix_directory = temp_dir,
+                    matrix_metadata = {
+                        'matrix_id': 'hi',
+                        'label_name': 'booking',
+                        'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                        'start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                        'prediction_window': '1d'
+                    },
+                    matrix_uuid = uuid,
                     matrix_type = 'test'
                 )
 
@@ -527,6 +631,7 @@ class TestDesignMatrix(object):
                     temp_dir,
                     '{}.csv'.format(uuid)
                 )
+
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
                     assert(len([row for row in reader]) == 13)
