@@ -75,7 +75,7 @@ def populate_source_data(db_engine):
     db_engine.execute('''create table events (
         entity_id int,
         outcome int,
-        date date
+        outcome_date date
     )''')
 
     for event in events:
