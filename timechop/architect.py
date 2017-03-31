@@ -443,6 +443,7 @@ class Architect(object):
             raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
 
         query = """
+            DROP TABLE IF EXISTS {features_schema_name}.tmp_entity_date;
             CREATE TABLE {features_schema_name}.tmp_entity_date
             AS ({index_query})
         """.format(

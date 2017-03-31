@@ -222,7 +222,9 @@ def test_make_entity_date_table():
                 user_metadata = {},
                 engine = engine
             )
-
+            engine.execute(
+                'CREATE TABLE features.tmp_entity_date (a int, b date);'
+            )
             # call the function to test the creation of the table
             matrix_maker.make_entity_date_table(
                 as_of_times = dates,
