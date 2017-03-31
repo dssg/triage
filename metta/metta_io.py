@@ -89,7 +89,7 @@ def archive_matrix(
     ----------
     matrix_config: dict
         dict to be yamled
-    df_matrix: df
+    df_matrix: DataFrame or str
         DataFrame of features and label (as last column) or path to a CSV
     overwrite: bool
         If true will overwrite the same prexisting matrix.
@@ -203,7 +203,12 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         hdf.put(title, df_data, data_columns=True)
         hdf.close()
     elif format == 'csv':
-        df_data.to_csv(directory + '/' + title + '.csv')
+        fpath = '{directory}/{title}.csv'.format(directory=directory,
+                                                 title=title)
+        if df_data.index.name:
+            df_data.to_csv(fpath, index=False)
+        else:
+            df_data.to_csv(fpath)
 
     with open(directory + '/' + '.matrix_uuids', 'a') as uuid_file:
         uuid_file.write(title + '\n')
