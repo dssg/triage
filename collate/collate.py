@@ -177,7 +177,7 @@ class Aggregate(AggregateExpression):
         for function, (quantity_name, quantity), order in product(
                 self.functions, self.quantities.items(), self.orders):
             distinct, quantity = split_distinct(quantity)
-            args = str.join(", ", (arg_template.format(when=when, quantity=q)
+            args = str.join(", ", (arg_template.format(quantity=q)
                                    for q in quantity))
             order_clause = order_template.format(order=order)
             filter = filter_template.format(when=when)
