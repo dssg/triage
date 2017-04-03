@@ -18,7 +18,7 @@ def test_aggregate():
 def test_aggregate_when():
     agg = collate.Aggregate("1", "count")
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
-            "count(CASE WHEN date < '2012-01-01' THEN 1 END)")
+            "count(1) FILTER (WHERE date < '2012-01-01')")
 
 def test_ordered_aggregate():
     agg = collate.Aggregate("", "mode", "x")
@@ -27,7 +27,7 @@ def test_ordered_aggregate():
 def test_ordered_aggregate_when():
     agg = collate.Aggregate("", "mode", "x")
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
-            "mode() WITHIN GROUP (ORDER BY CASE WHEN date < '2012-01-01' THEN x END)")
+            "mode() WITHIN GROUP (ORDER BY x) FILTER (WHERE date < '2012-01-01')")
 
 def test_aggregate_tuple_quantity():
     agg = collate.Aggregate(("x","y"), "corr")
@@ -36,8 +36,7 @@ def test_aggregate_tuple_quantity():
 def test_aggregate_tuple_quantity_when():
     agg = collate.Aggregate(("x","y"), "corr")
     assert str(list(agg.get_columns(when="date < '2012-01-01'"))[0]) == (
-            "corr(CASE WHEN date < '2012-01-01' THEN x END, "
-            "CASE WHEN date < '2012-01-01' THEN y END)")
+            "corr(x, y) FILTER (WHERE date < '2012-01-01')")
 
 def test_aggregate_arithmetic():
     n = collate.Aggregate("x", "sum")
@@ -71,8 +70,8 @@ def test_aggregation_table_name_no_schema():
 def test_distinct():
     assert str(list(collate.Aggregate("distinct x", "count").get_columns())[0]) == "count(distinct x)"
 
-    assert str(list(collate.Aggregate("distinct x", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN x END)"
+    assert str(list(collate.Aggregate("distinct x", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct x) FILTER (WHERE date < '2012-01-01')"
 
-    assert str(list(collate.Aggregate("distinct(x)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN (x) END)"
+    assert str(list(collate.Aggregate("distinct(x)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct (x)) FILTER (WHERE date < '2012-01-01')"
 
-    assert str(list(collate.Aggregate("distinct(x,y)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct CASE WHEN date < '2012-01-01' THEN (x,y) END)"
+    assert str(list(collate.Aggregate("distinct(x,y)", "count").get_columns(when="date < '2012-01-01'"))[0]) == "count(distinct (x,y)) FILTER (WHERE date < '2012-01-01')"
