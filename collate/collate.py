@@ -183,7 +183,7 @@ class Aggregate(AggregateExpression):
 
             if order is not None:
                 if len(quantity_name) > 0:
-                    quantity_name += '_' 
+                    quantity_name += '_'
                 quantity_name += to_sql_name(order)
 
             kwargs = dict(function=function, args=args, prefix=prefix,
