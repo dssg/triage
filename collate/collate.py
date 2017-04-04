@@ -181,6 +181,11 @@ class Aggregate(AggregateExpression):
                                    for q in quantity))
             order_clause = order_template.format(when=when, order=order)
 
+            if order is not None:
+                if len(quantity_name) > 0:
+                    quantity_name += '_'
+                quantity_name += to_sql_name(order)
+
             kwargs = dict(function=function, args=args, prefix=prefix,
                           distinct=distinct, order_clause=order_clause,
                           quantity_name=quantity_name, **format_kwargs)

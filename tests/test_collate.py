@@ -23,6 +23,7 @@ def test_aggregate_when():
 def test_ordered_aggregate():
     agg = collate.Aggregate("", "mode", "x")
     assert str(list(agg.get_columns())[0]) == "mode() WITHIN GROUP (ORDER BY x)"
+    assert list(agg.get_columns())[0].name == "x_mode"
 
 def test_ordered_aggregate_when():
     agg = collate.Aggregate("", "mode", "x")
