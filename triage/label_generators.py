@@ -16,8 +16,8 @@ class BinaryLabelGenerator(object):
                 'binary' as label_type,
                 bool_or(outcome::bool)::int as label
             from {events_table}
-            where '{start_date}' <= date
-            and date < '{start_date}'::timestamp + interval '{prediction_window}'
+            where '{start_date}' <= outcome_date
+            and outcome_date < '{start_date}'::timestamp + interval '{prediction_window}'
             group by 1, 2, 3, 4, 5
         )""".format(
             events_table=self.events_table,

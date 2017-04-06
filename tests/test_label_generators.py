@@ -32,7 +32,7 @@ def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         engine.execute(
-            'create table events (entity_id int, date date, outcome bool)'
+            'create table events (entity_id int, outcome_date date, outcome bool)'
         )
         for event in events_data:
             engine.execute(
