@@ -36,11 +36,14 @@ class PipelineBase(object):
         self.matrices_directory = os.path.join(self.project_path, 'matrices')
         if not os.path.exists(self.matrices_directory):
             os.makedirs(self.matrices_directory)
+        self.initialize_factories()
         self.initialize_components()
 
-    def initialize_components(self):
+    def initialize_factories(self):
         split_config = self.config['temporal_config']
-        self.chopper = Inspections(
+
+        self.chopper_factory = partial(
+            Inspections,
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             modeling_start_time=dt_from_str(split_config['modeling_start_time']),
             modeling_end_time=dt_from_str(split_config['modeling_end_time']),
@@ -49,19 +52,19 @@ class PipelineBase(object):
             test_durations=split_config['test_durations'],
         )
 
-        self.label_generator = BinaryLabelGenerator(
+        self.label_generator_factory = partial(
+            BinaryLabelGenerator,
             events_table=self.config['events_table'],
-            db_engine=self.db_engine
         )
 
-        self.feature_generator = FeatureGenerator(
+        self.feature_dictionary_creator_factory = partial(
+            FeatureDictionaryCreator,
             features_schema_name=self.features_schema_name,
-            db_engine=self.db_engine
         )
 
-        self.feature_dictionary_creator = FeatureDictionaryCreator(
+        self.feature_generator_factory = partial(
+            FeatureGenerator,
             features_schema_name=self.features_schema_name,
-            db_engine=self.db_engine
         )
 
         self.feature_group_creator = FeatureGroupCreator(
@@ -86,25 +89,33 @@ class PipelineBase(object):
             user_metadata={},
         )
 
-        self.architect = self.architect_factory(engine=self.db_engine)
-
-        self.trainer = ModelTrainer(
+        self.trainer_factory = partial(
+            ModelTrainer,
             project_path=self.project_path,
             model_storage_engine=self.model_storage_engine,
-            db_engine=self.db_engine,
             matrix_store=None
         )
 
-        self.predictor = Predictor(
-            project_path=self.project_path,
+        self.predictor_factory = partial(
+            Predictor,
             model_storage_engine=self.model_storage_engine,
-            db_engine=self.db_engine
+            project_path=self.project_path,
         )
 
-        self.model_scorer = ModelScorer(
+        self.model_scorer_factory = partial(
+            ModelScorer,
             metric_groups=self.config['scoring'],
-            db_engine=self.db_engine
         )
+
+    def initialize_components(self):
+        self.chopper = self.chopper_factory()
+        self.label_generator = self.label_generator_factory(db_engine=self.db_engine)
+        self.feature_generator = self.feature_generator_factory(db_engine=self.db_engine)
+        self.feature_dictionary_creator = self.feature_dictionary_creator_factory(db_engine=self.db_engine)
+        self.architect = self.architect_factory(engine=self.db_engine)
+        self.trainer = self.trainer_factory(db_engine=self.db_engine)
+        self.predictor = self.predictor_factory(db_engine=self.db_engine)
+        self.model_scorer = self.model_scorer_factory(db_engine=self.db_engine)
 
     @abstractmethod
     def run(self):
