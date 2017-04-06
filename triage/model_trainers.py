@@ -206,7 +206,6 @@ class ModelTrainer(object):
         model_group_id = self._get_model_group_id(
              class_path,
              parameters,
-             matrix_store.metadata['prediction_window'],
              matrix_store.metadata['feature_names'],
              matrix_store.metadata.get('model_config', dict())
         )
