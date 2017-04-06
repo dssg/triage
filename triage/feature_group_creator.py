@@ -20,6 +20,7 @@ def all_subsetter(config_item, table, features):
 
 
 class FeatureGroupCreator(object):
+    """Divides a feature dictionary into groups based on given criteria"""
     subsetters = {
         'tables': table_subsetter,
         'prefix': prefix_subsetter,
@@ -45,7 +46,15 @@ class FeatureGroupCreator(object):
         Args:
             feature_dictionary (dict) tables and the features contained in each
 
-        Returns: (list) subsets of the feature dictionary
+            The feature dictionary is meant to be keyed on source table. Example:
+
+            {
+                'feature_table_one': ['feature_one', feature_two'],
+                'feature_table_two': ['feature_three', 'feature_four'],
+            }
+
+        Returns: (list) subsets of the feature dictionary, in the same
+            table-based structure
         """
         subsets = []
         for name, config in sorted(self.definition.items()):
