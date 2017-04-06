@@ -208,7 +208,7 @@ class ModelTrainer(object):
              parameters,
              matrix_store.metadata['prediction_window'],
              matrix_store.metadata['feature_names'],
-             matrix_store.metadata.get('model_config', default=dict())
+             matrix_store.metadata.get('model_config', dict())
         )
         logging.debug('Trained model')
         model_store.write(trained_model)
