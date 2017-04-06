@@ -13,6 +13,7 @@ from timechop.architect import Architect
 import os
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
+from functools import partial
 
 
 def dt_from_str(dt_str):
@@ -71,7 +72,8 @@ class PipelineBase(object):
             self.config.get('feature_group_strategies', ['all'])
         )
 
-        self.architect = Architect(
+        self.architect_factory = partial(
+            Architect,
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             label_names=['outcome'],
             label_types=['binary'],
@@ -82,8 +84,9 @@ class PipelineBase(object):
             },
             matrix_directory=self.matrices_directory,
             user_metadata={},
-            engine=self.db_engine
         )
+
+        self.architect = self.architect_factory(engine=self.db_engine)
 
         self.trainer = ModelTrainer(
             project_path=self.project_path,

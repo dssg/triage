@@ -58,10 +58,34 @@ class LocalParallelPipeline(PipelineBase):
         logging.debug('---------MATRIX GENERATION------------')
         logging.debug('---------------------')
 
-        updated_split_definitions = self.architect.chop_data(
+        updated_split_definitions, build_tasks = self.architect.generate_plans(
             split_definitions,
             feature_dicts
         )
+
+        partial_build_matrix = partial(
+            build_matrix,
+            architect_factory=self.architect_factory,
+            db_connection_string=self.db_engine.url
+        )
+        logging.info(
+            'Starting parallel matrix building: %s matrices, %s processes',
+            len(build_tasks.keys()),
+            self.n_processes
+        )
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self.n_processes) as pool:
+            num_successes = 0
+            num_failures = 0
+            for successful in pool.map(partial_build_matrix, build_tasks.values()):
+                if successful:
+                    num_successes += 1
+                else:
+                    num_failures += 1
+            logging.info(
+                'Done building. successes: %s, failures: %s',
+                num_successes,
+                num_failures
+            )
 
         for split in updated_split_definitions:
             logging.info('Starting split')
@@ -140,7 +164,6 @@ class LocalParallelPipeline(PipelineBase):
                 with concurrent.futures.ProcessPoolExecutor(max_workers=self.n_processes) as pool:
                     num_successes = 0
                     num_failures = 0
-                    #pdb.set_trace()
                     for successful in pool.map(partial_test_and_score, model_ids):
                         if successful:
                             num_successes += 1
@@ -154,6 +177,21 @@ class LocalParallelPipeline(PipelineBase):
                 logging.info('Cleaned up concurrent pool')
             logging.info('Done with test matrix')
         logging.info('Done with split')
+
+
+def build_matrix(
+    build_task,
+    architect_factory,
+    db_connection_string,
+):
+    try:
+        db_engine = create_engine(db_connection_string)
+        architect = architect_factory(engine=db_engine)
+        architect.build_matrix(**build_task)
+        return True
+    except Exception as e:
+        logging.error('Child error: %s', e)
+        return False
 
 
 def test_and_score(
