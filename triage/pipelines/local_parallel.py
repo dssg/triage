@@ -76,6 +76,7 @@ class LocalParallelPipeline(PipelineBase):
             len(build_tasks.keys()),
             self.n_processes
         )
+
         with ProcessPoolExecutor(max_workers=self.n_processes) as pool:
             num_successes = 0
             num_failures = 0
