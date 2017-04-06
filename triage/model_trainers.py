@@ -10,7 +10,6 @@ import pandas
 import warnings
 from triage.utils import filename_friendly_hash
 
-
 def get_feature_importances(model):
     """
     Get feature importances (from scikit-learn) of trained model.
@@ -168,10 +167,10 @@ class ModelTrainer(object):
             rankings_pct):
             feature_importance = FeatureImportance(
                 model=model,
-                feature_importance=importance,
+                feature_importance=round(float(importance), 10),
                 feature=feature_names[feature_index],
                 rank_abs=int(rank_abs),
-                rank_pct=float(rank_pct)
+                rank_pct=round(float(rank_pct), 10)
             )
             session.add(feature_importance)
         session.commit()
@@ -207,8 +206,8 @@ class ModelTrainer(object):
         model_group_id = self._get_model_group_id(
              class_path,
              parameters,
-             matrix_store.metadata['prediction_window'],
-             matrix_store.metadata['feature_names']
+             matrix_store.metadata['feature_names'],
+             matrix_store.metadata.get('model_config', dict())
         )
         logging.debug('Trained model')
         model_store.write(trained_model)
@@ -229,8 +228,8 @@ class ModelTrainer(object):
         self,
         class_path,
         parameters,
-        prediction_window,
-        feature_names
+        feature_names,
+        model_config
     ):
         """
         Returns model group id using store procedure 'get_model_group_id' which will 
@@ -240,9 +239,8 @@ class ModelTrainer(object):
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
-            prediction_window (string) The prediction window used for generating the labels
-                                       stored in metadata
-           features_names (list) Features used for train/test
+            features_names (list) Features used for train/test
+            model_config (dict) Dictionary of the classes for comparing groups
 
         Returns: (int) a database id for the model group id
         """
@@ -259,12 +257,13 @@ class ModelTrainer(object):
             query = ("SELECT get_model_group_id( "
                      "            '{class_path}'::TEXT, "
                      "            '{parameters}'::JSONB, "
-                     "            '{prediction_window}'::TEXT, "
-                     "             ARRAY{feature_names}::TEXT [] )"
+                     "             ARRAY{feature_names}::TEXT [] , "
+                     "            '{model_config}'::JSONB )"
                      .format(class_path=class_path,
                              parameters=json.dumps(parameters),
-                             prediction_window=prediction_window,
-                             feature_names=feature_names))
+                             feature_names=feature_names,
+                             model_config=json.dumps(model_config, sort_keys=True)))
+
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()

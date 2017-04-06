@@ -52,8 +52,8 @@ class ModelGroup(Base):
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
     model_parameters = Column(JSONB)
-    prediction_window = Column(Text)
     feature_list = Column(ARRAY(Text))
+    model_config = Column(JSONB)
 
 
 class Model(Base):

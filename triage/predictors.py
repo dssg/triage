@@ -113,10 +113,10 @@ class Predictor(object):
                     model_id=int(model_id),
                     entity_id=int(entity_id),
                     as_of_date=matrix_end_time,
-                    score=float(score),
+                    score=round(float(score), 10),
                     label_value=int(label) if not math.isnan(label) else None,
                     rank_abs=int(rank_abs),
-                    rank_pct=float(rank_pct),
+                    rank_pct=round(float(rank_pct),10),
                     **misc_db_parameters
                 ))
 
