@@ -96,9 +96,9 @@ def test_feature_generation():
         output_tables = FeatureGenerator(
             db_engine=engine,
             features_schema_name=features_schema_name
-        ).generate(
+        ).create_all_tables(
             feature_dates=['2013-09-30', '2014-09-30'],
-            feature_aggregations=aggregate_config,
+            feature_aggregation_config=aggregate_config,
         )
 
         for output_table in output_tables:
@@ -168,9 +168,9 @@ def test_dynamic_categoricals():
         output_tables = FeatureGenerator(
             db_engine=engine,
             features_schema_name=features_schema_name
-        ).generate(
+        ).create_all_tables(
             feature_dates=['2013-09-30', '2014-09-30'],
-            feature_aggregations=aggregate_config,
+            feature_aggregation_config=aggregate_config,
         )
 
         for output_table in output_tables:
@@ -181,3 +181,47 @@ def test_dynamic_categoricals():
                 engine
             ).to_dict('records')
             assert records == expected_output[output_table]
+
+
+def test_generate_table_tasks():
+    aggregate_config = [{
+        'prefix': 'prefix1',
+        'categoricals': [
+            {
+                'column': 'cat_one',
+                'choice_query': 'select distinct(cat_one) from data',
+                'metrics': ['sum']
+            },
+        ],
+        'groups': ['entity_id'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }, {
+        'prefix': 'prefix2',
+        'aggregates': [
+            {'quantity': 'quantity_one', 'metrics': ['count']},
+        ],
+        'groups': ['entity_id'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }]
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        features_schema_name = 'features'
+
+        table_tasks = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name
+        ).generate_all_table_tasks(
+            feature_dates=['2013-09-30', '2014-09-30'],
+            feature_aggregation_config=aggregate_config,
+        )
+        for task in table_tasks.values():
+            assert 'DROP TABLE' in task['prepare'][0]
+            assert 'CREATE TABLE' in str(task['prepare'][1])
+            assert 'CREATE INDEX' in task['finalize'][0]
+            assert isinstance(task['inserts'], list)

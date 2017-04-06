@@ -67,11 +67,13 @@ class PipelineBase(object):
             features_schema_name=self.features_schema_name,
         )
 
-        self.feature_group_creator = FeatureGroupCreator(
+        self.feature_group_creator_factory = partial(
+            FeatureGroupCreator,
             self.config.get('feature_group_definition', {'all': [True]})
         )
 
-        self.feature_group_mixer = FeatureGroupMixer(
+        self.feature_group_mixer_factory = partial(
+            FeatureGroupMixer,
             self.config.get('feature_group_strategies', ['all'])
         )
 
@@ -112,6 +114,8 @@ class PipelineBase(object):
         self.label_generator = self.label_generator_factory(db_engine=self.db_engine)
         self.feature_generator = self.feature_generator_factory(db_engine=self.db_engine)
         self.feature_dictionary_creator = self.feature_dictionary_creator_factory(db_engine=self.db_engine)
+        self.feature_group_creator = self.feature_group_creator_factory()
+        self.feature_group_mixer = self.feature_group_mixer_factory()
         self.architect = self.architect_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)

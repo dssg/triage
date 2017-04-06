@@ -2,8 +2,9 @@ from triage.storage import MettaCSVMatrixStore
 from sqlalchemy import create_engine
 from triage.pipelines import PipelineBase
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool
 from functools import partial
+from triage.utils import Batch
 import os
 
 
@@ -43,13 +44,25 @@ class LocalParallelPipeline(PipelineBase):
             'Generating features for %s as_of_times',
             len(all_as_of_times)
         )
-        feature_tables = self.feature_generator.generate(
-            feature_aggregations=self.config['feature_aggregations'],
+        feature_table_tasks = self.feature_generator.generate_all_table_tasks(
+            feature_aggregation_config=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
         )
 
+        for table_name, tasks in feature_table_tasks.items():
+            logging.info('Generating %s features', table_name)
+            self.feature_generator.run_commands(tasks['prepare'])
+            partial_insert = partial(
+                insert_into_table,
+                feature_generator_factory=self.feature_generator_factory,
+                db_connection_string=self.db_engine.url
+            )
+            self.parallelize(partial_insert, tasks['inserts'], chunksize=25)
+            self.feature_generator.run_commands(tasks['finalize'])
+            logging.info('%s completed', table_name)
+
         master_feature_dict = self.feature_dictionary_creator\
-            .feature_dictionary(feature_tables)
+            .feature_dictionary(feature_table_tasks.keys())
 
         feature_dicts = self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(master_feature_dict)
@@ -76,23 +89,7 @@ class LocalParallelPipeline(PipelineBase):
             len(build_tasks.keys()),
             self.n_processes
         )
-
-        with ProcessPoolExecutor(max_workers=self.n_processes) as pool:
-            num_successes = 0
-            num_failures = 0
-            for successful in pool.map(
-                partial_build_matrix,
-                build_tasks.values()
-            ):
-                if successful:
-                    num_successes += 1
-                else:
-                    num_failures += 1
-            logging.info(
-                'Done building. successes: %s, failures: %s',
-                num_successes,
-                num_failures
-            )
+        self.parallelize(partial_build_matrix, build_tasks.values())
 
         for split in updated_split_definitions:
             logging.info('Starting split')
@@ -169,36 +166,56 @@ class LocalParallelPipeline(PipelineBase):
                     'Starting parallel testing with %s processes',
                     self.n_processes
                 )
-                with ProcessPoolExecutor(max_workers=self.n_processes) as pool:
-                    num_successes = 0
-                    num_failures = 0
-                    for successful in pool.map(
-                        partial_test_and_score,
-                        model_ids
-                    ):
-                        if successful:
-                            num_successes += 1
-                        else:
-                            num_failures += 1
-                    logging.info(
-                        'Done testing. successes: %s, failures: %s',
-                        num_successes,
-                        num_failures
-                    )
+                self.parallelize(partial_test_and_score, model_ids)
                 logging.info('Cleaned up concurrent pool')
             logging.info('Done with test matrix')
         logging.info('Done with split')
 
+    def parallelize(self, partially_bound_function, tasks, chunksize=1):
+        with Pool(self.n_processes) as pool:
+            num_successes = 0
+            num_failures = 0
+            for successful in pool.map(
+                partially_bound_function,
+                [list(task_batch) for task_batch in Batch(tasks, chunksize)]
+            ):
+                if successful:
+                    num_successes += 1
+                else:
+                    num_failures += 1
+            logging.info(
+                'Done. successes: %s, failures: %s',
+                num_successes,
+                num_failures
+            )
+
+
+def insert_into_table(
+    insert_statements,
+    feature_generator_factory,
+    db_connection_string
+):
+    try:
+        logging.info('Beginning insert batch')
+        db_engine = create_engine(db_connection_string)
+        feature_generator = feature_generator_factory(db_engine)
+        feature_generator.run_commands(insert_statements)
+        return True
+    except Exception as e:
+        logging.error('Child error: %s', e)
+        return False
+
 
 def build_matrix(
-    build_task,
+    build_tasks,
     architect_factory,
     db_connection_string,
 ):
     try:
         db_engine = create_engine(db_connection_string)
         architect = architect_factory(engine=db_engine)
-        architect.build_matrix(**build_task)
+        for build_task in build_tasks:
+            architect.build_matrix(**build_task)
         return True
     except Exception as e:
         logging.error('Child error: %s', e)
@@ -206,7 +223,7 @@ def build_matrix(
 
 
 def test_and_score(
-    model_id,
+    model_ids,
     predictor_factory,
     model_scorer_factory,
     test_store,
@@ -216,25 +233,26 @@ def test_and_score(
 ):
     try:
         db_engine = create_engine(db_connection_string)
-        logging.info('Generating predictions for model id %s', model_id)
-        predictor = predictor_factory(db_engine=db_engine)
-        model_scorer = model_scorer_factory(db_engine=db_engine)
+        for model_id in model_ids:
+            logging.info('Generating predictions for model id %s', model_id)
+            predictor = predictor_factory(db_engine=db_engine)
+            model_scorer = model_scorer_factory(db_engine=db_engine)
 
-        predictions, predictions_proba = predictor.predict(
-            model_id,
-            test_store,
-            misc_db_parameters=dict()
-        )
-        logging.info('Generating evaluations for model id %s', model_id)
-        model_scorer.score(
-            predictions_proba=predictions_proba,
-            predictions_binary=predictions,
-            labels=test_store.labels(),
-            model_id=model_id,
-            evaluation_start_time=split_def['matrix_start_time'],
-            evaluation_end_time=split_def['matrix_end_time'],
-            prediction_frequency=config['temporal_config']['prediction_frequency']
-        )
+            predictions, predictions_proba = predictor.predict(
+                model_id,
+                test_store,
+                misc_db_parameters=dict()
+            )
+            logging.info('Generating evaluations for model id %s', model_id)
+            model_scorer.score(
+                predictions_proba=predictions_proba,
+                predictions_binary=predictions,
+                labels=test_store.labels(),
+                model_id=model_id,
+                evaluation_start_time=split_def['matrix_start_time'],
+                evaluation_end_time=split_def['matrix_end_time'],
+                prediction_frequency=config['temporal_config']['prediction_frequency']
+            )
         return True
     except Exception as e:
         logging.error('Child error: %s', e)

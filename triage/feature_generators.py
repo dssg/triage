@@ -34,7 +34,7 @@ class FeatureGenerator(object):
             for categorical in categorical_config
         ]
 
-    def aggregation(self, aggregation_config, feature_dates):
+    def _aggregation(self, aggregation_config, feature_dates):
         aggregates = [
             Aggregate(aggregate['quantity'], aggregate['metrics'])
             for aggregate in aggregation_config.get('aggregates', [])
@@ -56,53 +56,116 @@ class FeatureGenerator(object):
             prefix=aggregation_config['prefix']
         )
 
-    def generate(self, feature_aggregations, feature_dates):
-        aggregations = [
-            self.aggregation(aggregation_config, feature_dates)
-            for aggregation_config in feature_aggregations
+    def aggregations(self, feature_aggregation_config, feature_dates):
+        """Creates collate.SpacetimeAggregations from the given arguments
+
+        Args:
+            feature_aggregation_config (list) all values, except for feature
+                date, necessary to instantiate a collate.SpacetimeAggregation
+            feature_dates (list) dates to generate features as of
+
+        Returns: (list) collate.SpacetimeAggregations
+        """
+        return [
+            self._aggregation(aggregation_config, feature_dates)
+            for aggregation_config in feature_aggregation_config
         ]
+
+    def generate_all_table_tasks(self, feature_aggregation_config, feature_dates):
+        """Generates SQL commands for creating, populating, and indexing
+        feature group tables
+
+        Args:
+            feature_aggregation_config (list) all values, except for feature
+                date, necessary to instantiate a collate.SpacetimeAggregation
+            feature_dates (list) dates to generate features as of
+
+        Returns: (dict) keys are group table names, values are themselves dicts,
+            each with keys for different stages of table creation (prepare, inserts, finalize)
+            and with values being lists of SQL commands
+        """
         logging.debug('---------------------')
         logging.debug('---------FEATURE GENERATION------------')
         logging.debug('---------------------')
-        tables = []
+        table_tasks = {}
+        aggregations = self.aggregations(feature_aggregation_config, feature_dates)
+        self._explain_selects(aggregations)
+        for aggregation in aggregations:
+            table_tasks.update(self._generate_table_tasks_for(aggregation))
+        logging.info('Created %s tables', len(table_tasks.keys()))
+        return table_tasks
+
+    def create_all_tables(self, feature_aggregation_config, feature_dates):
+        """Creates all feature tables.
+
+        Args:
+            feature_aggregation_config (list) all values, except for feature
+                date, necessary to instantiate a collate.SpacetimeAggregation
+            feature_dates (list) dates to generate features as of
+
+        Returns: (list) table names
+        """
+        table_tasks = self.generate_all_table_tasks(
+            feature_aggregation_config,
+            feature_dates
+        )
+        for table_name, task in table_tasks.items():
+            self.run_commands(task['prepare'])
+            self.run_commands(task['inserts'])
+            self.run_commands(task['finalize'])
+        return table_tasks.keys()
+
+    def _explain_selects(self, aggregations):
+        conn = self.db_engine.connect()
         for aggregation in aggregations:
             for selectlist in aggregation.get_selects().values():
                 for select in selectlist:
-                    logging.debug(select)
-            tables += self._create_aggregation_tables(aggregation)
-        logging.info('Created %s tables', len(tables))
-        return tables
+                    result = [row for row in conn.execute('explain ' + str(select))]
+                    logging.debug(str(select))
+                    logging.debug(result)
 
     def _clean_table_name(self, table_name):
         # remove the schema and quotes from the name
         return table_name.split('.')[1].replace('"', "")
 
-    def _create_aggregation_tables(self, aggregation):
-        """Create feature table for aggregation
-        Remove when collate exposes this as an interface"""
+    def run_commands(self, command_list):
         conn = self.db_engine.connect()
+        trans = conn.begin()
+        for command in command_list:
+            conn.execute(command)
+        trans.commit()
+
+    def _generate_table_tasks_for(self, aggregation):
+        """Generates SQL commands for preparing, populating, and finalizing
+        each feature group table in the given aggregation
+
+        Args:
+            aggregation (collate.SpacetimeAggregation)
+
+        Returns: (dict) of structure {
+            'prepare': list of commands to prepare table for population
+            'inserts': list of commands to populate table
+            'finalize': list of commands to finalize table after population
+        }
+        """
         create_schema = aggregation.get_create_schema()
         creates = aggregation.get_creates()
         drops = aggregation.get_drops()
         indexes = aggregation.get_indexes()
         inserts = aggregation.get_inserts()
 
-        trans = conn.begin()
         if create_schema is not None:
-            conn.execute(create_schema)
+            self.db_engine.execute(create_schema)
 
-        tables = []
+        table_tasks = {}
         for group in aggregation.groups:
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
             )
-            logging.info('Processing group table %s', group_table)
-            conn.execute(drops[group])
-            conn.execute(creates[group])
-            for insert in inserts[group]:
-                conn.execute(insert)
-            conn.execute(indexes[group])
-            tables.append(group_table)
+            table_tasks[group_table] = {
+                'prepare': [drops[group], creates[group]],
+                'inserts': inserts[group],
+                'finalize': [indexes[group]],
+            }
 
-        trans.commit()
-        return tables
+        return table_tasks
