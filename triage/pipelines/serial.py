@@ -34,8 +34,8 @@ class SerialPipeline(PipelineBase):
 
         # 3. generate features
         logging.info('Generating features for %s', all_as_of_times)
-        feature_tables = self.feature_generator.generate(
-            feature_aggregations=self.config['feature_aggregations'],
+        feature_tables = self.feature_generator.create_all_tables(
+            feature_aggregation_config=self.config['feature_aggregations'],
             feature_dates=all_as_of_times,
         )
 
