@@ -8,7 +8,9 @@ import datetime
 import copy
 import pandas
 import warnings
+from timechop.utils import convert_str_to_relativedelta
 from triage.utils import filename_friendly_hash
+
 
 def get_feature_importances(model):
     """
@@ -41,6 +43,7 @@ class ModelTrainer(object):
     Args:
         project_path (string) path to project folder,
             under which to cache model pickles
+        experiment_hash (string) foreign key to the results.experiments table
         model_storage_engine (triage.storage.ModelStorageEngine)
         matrix_storage (triage.storage.MatrixStore)
         db_engine (sqlalchemy.engine)
@@ -48,11 +51,13 @@ class ModelTrainer(object):
     def __init__(
         self,
         project_path,
+        experiment_hash,
         model_storage_engine,
         matrix_store,
         db_engine
     ):
         self.project_path = project_path
+        self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
         self.matrix_store = matrix_store
         self.db_engine = db_engine
@@ -151,6 +156,7 @@ class ModelTrainer(object):
             model_type=class_path,
             model_parameters=parameters,
             model_group_id=model_group_id,
+            experiment_hash=self.experiment_hash,
             **misc_db_parameters
         )
         session.add(model)
@@ -302,6 +308,10 @@ class ModelTrainer(object):
         matrix_store = matrix_store or self.matrix_store
         misc_db_parameters = copy.deepcopy(misc_db_parameters)
         misc_db_parameters['batch_run_time'] = datetime.datetime.now().isoformat()
+        misc_db_parameters['train_end_time'] = \
+            matrix_store.metadata['end_time'] + \
+            convert_str_to_relativedelta(matrix_store.metadata['prediction_window'])
+
         for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
             model_store = self.model_storage_engine.get_store(model_hash)

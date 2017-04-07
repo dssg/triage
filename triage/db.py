@@ -47,6 +47,12 @@ event.listen(
 )
 
 
+class Experiment(Base):
+    __tablename__ = 'experiments'
+    experiment_hash = Column(String, primary_key=True)
+    config = Column(JSONB)
+
+
 class ModelGroup(Base):
     __tablename__ = 'model_groups'
     model_group_id = Column(Integer, primary_key=True)
@@ -68,6 +74,8 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
+    experiment_hash = Column(String, ForeignKey('experiments.experiment_hash'))
+    train_end_time = Column(DateTime)
     test = Column(Boolean)
     train_matrix_uuid = Column(Text)
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from sqlalchemy import create_engine
 from tempfile import TemporaryDirectory
@@ -177,6 +178,26 @@ def generic_pipeline_test(pipeline_class):
             ''')
         ])
         assert num_evaluations > 0
+
+        # 5. experiment
+        num_experiments = len([
+            row for row in db_engine.execute('select * from results.experiments')
+        ])
+        assert num_experiments == 1
+
+        # 6. that models are linked to experiments
+        num_models_with_experiment = len([
+            row for row in db_engine.execute('''
+                select * from results.experiments
+                join results.models using (experiment_hash)
+            ''')
+        ])
+        assert num_models == num_models_with_experiment
+
+        # 7. that models have the train end date, including prediction window
+        models = db_engine.execute('select * from results.models')
+        for model in models:
+            assert model['train_end_time'] == datetime(2012, 7, 1)
 
 
 def test_serial_pipeline():

@@ -51,6 +51,7 @@ def test_model_trainer_oldsig():
             model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
+                experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 matrix_store=InMemoryMatrixStore(matrix, metadata),
                 db_engine=engine,
@@ -178,6 +179,7 @@ def test_model_trainer():
             model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
+                experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 db_engine=engine,
                 matrix_store=None,

@@ -8,7 +8,7 @@ from datetime import datetime
 class SerialPipeline(PipelineBase):
     def run(self):
         # 1. generate temporal splits
-        split_definitions = self.chopper.chop_time()
+        split_definitions = self.chop_time()
 
         # 2. create labels
         logging.debug('---------------------')
