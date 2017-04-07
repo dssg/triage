@@ -27,6 +27,7 @@ setup(
     packages=[
         'triage',
         'triage.pipelines',
+        'triage.db',
     ],
     package_dir={'triage':
                  'triage'},
