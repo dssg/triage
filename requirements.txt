@@ -5,7 +5,7 @@ psycopg2
 python-dateutil
 scipy
 sklearn
-tables
+tables==3.3.0
 pandas
 boto3
 collate
