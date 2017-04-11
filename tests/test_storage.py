@@ -1,5 +1,6 @@
 from triage.storage import S3Store, FSStore, MemoryStore
 from moto import mock_s3
+import tempfile
 import boto3
 import os
 
@@ -24,16 +25,16 @@ def test_S3Store():
 
 
 def test_FSStore():
-    if os.path.isfile('tmpfile'):
-        os.remove('tmpfile')
-    store = FSStore('tmpfile')
-    assert not store.exists()
-    store.write(SomeClass('val'))
-    assert store.exists()
-    newVal = store.load()
-    assert newVal.val == 'val'
-    store.delete()
-    assert not store.exists()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpfile = os.path.join(tmpdir, 'tmpfile')
+        store = FSStore(tmpfile)
+        assert not store.exists()
+        store.write(SomeClass('val'))
+        assert store.exists()
+        newVal = store.load()
+        assert newVal.val == 'val'
+        store.delete()
+        assert not store.exists()
 
 
 def test_MemoryStore():

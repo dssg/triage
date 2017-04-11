@@ -71,7 +71,6 @@ def test_integration():
                 project_path=project_path,
                 experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
-                matrix_store=None,
                 db_engine=db_engine,
             )
             predictor = Predictor(

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import testing.postgresql
 
 from triage.db import ensure_db
-from triage.storage import InMemoryModelStorageEngine
+from triage.storage import FSModelStorageEngine
 
 from triage.pipelines import LocalParallelPipeline, SerialPipeline
 
@@ -136,7 +136,7 @@ def generic_pipeline_test(pipeline_class):
             pipeline_class(
                 config=experiment_config,
                 db_engine=db_engine,
-                model_storage_class=InMemoryModelStorageEngine,
+                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections')
             ).run()
 

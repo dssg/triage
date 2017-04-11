@@ -45,29 +45,23 @@ class ModelTrainer(object):
             under which to cache model pickles
         experiment_hash (string) foreign key to the results.experiments table
         model_storage_engine (triage.storage.ModelStorageEngine)
-        matrix_storage (triage.storage.MatrixStore)
         db_engine (sqlalchemy.engine)
+        replace (bool) whether or not to replace existing versions of models
     """
     def __init__(
         self,
         project_path,
         experiment_hash,
         model_storage_engine,
-        matrix_store,
-        db_engine
+        db_engine,
+        replace=False
     ):
         self.project_path = project_path
         self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
-        self.matrix_store = matrix_store
         self.db_engine = db_engine
+        self.replace = replace
         self.sessionmaker = sessionmaker(bind=self.db_engine)
-
-        if self.matrix_store is not None:
-            warnings.warn('''Passing a matrix_store in the constructor
-            is deprecated and will be removed in a future version.
-            Please pass it in .train_models or .generate_trained_models instead
-            ''', DeprecationWarning)
 
     def _model_hash(self, matrix_metadata, class_path, parameters):
         """Generates a unique identifier for a trained model
@@ -145,9 +139,9 @@ class ModelTrainer(object):
             .filter_by(model_hash=model_hash)\
             .one_or_none()
         if existing_model:
-            #logging.warning('deleting existing model %s', existing_model.model_id)
-            #existing_model.delete(session)
-            #session.commit()
+            # logging.warning('deleting existing model %s', existing_model.model_id)
+            # existing_model.delete(session)
+            # session.commit()
             logging.warning('model meta data already stored %s', existing_model.model_id)
             return existing_model.model_id
 
@@ -194,6 +188,7 @@ class ModelTrainer(object):
         """Train a model, cache it, and write metadata to a database
 
         Args:
+            matrix_store(triage.storage.MatrixStore) a matrix and metadata
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
             model_hash (string) a unique id for the model
@@ -287,7 +282,107 @@ class ModelTrainer(object):
         self,
         grid_config,
         misc_db_parameters,
-        replace=False,
+        matrix_store
+    ):
+        """Train and store configured models, yielding the ids one by one
+
+        Args:
+            grid_config (dict) of format {classpath: hyperparameter dicts}
+                example: { 'sklearn.ensemble.RandomForestClassifier': {
+                    'n_estimators': [1,10,100,1000,10000],
+                    'max_depth': [1,5,10,20,50,100],
+                    'max_features': ['sqrt','log2'],
+                    'min_samples_split': [2,5,10]
+                } }
+            misc_db_parameters (dict) params to pass through to the database
+            matrix_store(triage.storage.MatrixStore) a matrix and metadata
+
+        Yields: (int) model ids
+        """
+        for train_task in self.generate_train_tasks(
+            grid_config,
+            misc_db_parameters,
+            matrix_store
+        ):
+            yield self.process_train_task(**train_task)
+
+    def train_models(
+        self,
+        grid_config,
+        misc_db_parameters,
+        matrix_store
+    ):
+        """Train and store configured models
+
+        Args:
+            grid_config (dict) of format {classpath: hyperparameter dicts}
+                example: { 'sklearn.ensemble.RandomForestClassifier': {
+                    'n_estimators': [1,10,100,1000,10000],
+                    'max_depth': [1,5,10,20,50,100],
+                    'max_features': ['sqrt','log2'],
+                    'min_samples_split': [2,5,10]
+                } }
+            misc_db_parameters (dict) params to pass through to the database
+            matrix_store(triage.storage.MatrixStore) a matrix and metadata
+
+        Returns:
+            (list) of model ids
+        """
+        return [
+            model_id for model_id in self.generate_trained_models(
+                grid_config,
+                misc_db_parameters,
+                matrix_store
+            )
+        ]
+
+    def process_train_task(
+        self,
+        matrix_store,
+        class_path,
+        parameters,
+        model_hash,
+        misc_db_parameters
+    ):
+        """Trains and stores a model, or skips it and returns the existing id
+
+        Args:
+            matrix_store (triage.storage.MatrixStore) a matrix and metadata
+            class_path (string): a full class path for the classifier
+            parameters (dict): all hyperparameters to be passed to the classifier
+            model_hash (string) a unique id for the model
+            misc_db_parameters (dict) params to pass through to the database
+        Returns: (int) model id
+        """
+        model_store = self.model_storage_engine.get_store(model_hash)
+        session = self.sessionmaker()
+        saved = session.query(Model)\
+            .filter_by(model_hash=model_hash)\
+            .one_or_none()
+        session.close()
+        if not self.replace and model_store.exists() and saved:
+            logging.warning('Skipping %s/%s', class_path, parameters)
+            return saved.model_id
+        if self.replace:
+            logging.warning('Training because replace flag has been set')
+        elif not model_store.exists():
+            logging.warning('Training because model pickle not found in store')
+        elif not saved:
+            logging.warning('Training because model metadata not found')
+        model_id = self._train_and_store_model(
+            matrix_store,
+            class_path,
+            parameters,
+            model_hash,
+            model_store,
+            misc_db_parameters
+        )
+        return model_id
+
+    def generate_train_tasks(
+        self,
+        grid_config,
+        misc_db_parameters,
         matrix_store=None
     ):
         """Train and store configured models, yielding the ids one by one
@@ -301,9 +396,8 @@ class ModelTrainer(object):
                     'min_samples_split': [2,5,10]
                 } }
             misc_db_parameters (dict) params to pass through to the database
-            replace (optional, False): whether to replace already cached models
 
-        Yields: (int) model ids
+        Returns: (list) training task definitions, suitable for process_train_task kwargs
         """
         matrix_store = matrix_store or self.matrix_store
         misc_db_parameters = copy.deepcopy(misc_db_parameters)
@@ -312,74 +406,15 @@ class ModelTrainer(object):
             matrix_store.metadata['end_time'] + \
             convert_str_to_relativedelta(matrix_store.metadata['prediction_window'])
 
+        tasks = []
+
         for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
-            model_store = self.model_storage_engine.get_store(model_hash)
-            if replace or not model_store.exists():
-                logging.info('Training %s/%s', class_path, parameters)
-                model_id = self._train_and_store_model(
-                    matrix_store,
-                    class_path,
-                    parameters,
-                    model_hash,
-                    model_store,
-                    misc_db_parameters
-                )
-                yield model_id
-            else:
-                logging.info('Skipping %s/%s', class_path, parameters)
-                session = self.sessionmaker()
-                saved = session.query(Model)\
-                    .filter_by(model_hash=model_hash)\
-                    .one_or_none()
-                session.close()
-                if not saved:
-                    logging.warning(
-                        '%s/%s cache found but metadata not found, retraining',
-                        class_path,
-                        parameters
-                    )
-                    model_id = self._train_and_store_model(
-                        matrix_store,
-                        class_path,
-                        parameters,
-                        model_hash,
-                        model_store,
-                        misc_db_parameters
-                    )
-                else:
-                    model_id = saved.model_id
-                yield model_id
-
-    def train_models(
-        self,
-        grid_config,
-        misc_db_parameters,
-        replace=False,
-        matrix_store=None
-    ):
-        """Train and store configured models
-
-        Args:
-            grid_config (dict) of format {classpath: hyperparameter dicts}
-                example: { 'sklearn.ensemble.RandomForestClassifier': {
-                    'n_estimators': [1,10,100,1000,10000],
-                    'max_depth': [1,5,10,20,50,100],
-                    'max_features': ['sqrt','log2'],
-                    'min_samples_split': [2,5,10]
-                } }
-            misc_db_parameters (dict) params to pass through to the database
-            replace (optional, False): whether to replace already cached models
-
-        Returns:
-            (list) of model ids
-        """
-        return [
-            model_id for model_id in self.generate_trained_models(
-                grid_config,
-                misc_db_parameters,
-                replace,
-                matrix_store or self.matrix_store
-            )
-        ]
-
+            tasks.append({
+                'matrix_store': matrix_store,
+                'class_path': class_path,
+                'parameters': parameters,
+                'model_hash': model_hash,
+                'misc_db_parameters': misc_db_parameters,
+            })
+        return tasks

@@ -1,4 +1,4 @@
-from triage.storage import MettaCSVMatrixStore
+from triage.storage import MettaCSVMatrixStore, InMemoryModelStorageEngine
 from sqlalchemy import create_engine
 from triage.pipelines import PipelineBase
 import logging
@@ -12,6 +12,8 @@ class LocalParallelPipeline(PipelineBase):
     def __init__(self, n_processes=1, *args, **kwargs):
         super(LocalParallelPipeline, self).__init__(*args, **kwargs)
         self.n_processes = n_processes
+        if kwargs['model_storage_class'] == InMemoryModelStorageEngine:
+            raise ValueError('InMemoryModelStorageEngine not compatible with LocalParallelPipeline')
 
     def run(self):
         # 1. generate temporal splits
@@ -57,7 +59,7 @@ class LocalParallelPipeline(PipelineBase):
                 feature_generator_factory=self.feature_generator_factory,
                 db_connection_string=self.db_engine.url
             )
-            self.parallelize(partial_insert, tasks['inserts'], chunksize=25)
+            self.parallelize_with_success_count(partial_insert, tasks['inserts'], chunksize=25)
             self.feature_generator.run_commands(tasks['finalize'])
             logging.info('%s completed', table_name)
 
@@ -89,7 +91,7 @@ class LocalParallelPipeline(PipelineBase):
             len(build_tasks.keys()),
             self.n_processes
         )
-        self.parallelize(partial_build_matrix, build_tasks.values())
+        self.parallelize_with_success_count(partial_build_matrix, build_tasks.values())
 
         for split in updated_split_definitions:
             logging.info('Starting split')
@@ -117,7 +119,7 @@ class LocalParallelPipeline(PipelineBase):
                 continue
 
             logging.info('Training models')
-            model_ids = self.trainer.train_models(
+            trainer_tasks = self.trainer.generate_train_tasks(
                 grid_config=self.config['grid_config'],
                 misc_db_parameters=dict(
                     test=False,
@@ -125,6 +127,19 @@ class LocalParallelPipeline(PipelineBase):
                 ),
                 matrix_store=train_store
             )
+            partial_train_models = partial(
+                train_model,
+                trainer_factory=self.trainer_factory,
+                db_connection_string=self.db_engine.url
+            )
+            logging.info(
+                'Starting parallel training: %s tasks, %s processes',
+                len(trainer_tasks),
+                self.n_processes
+            )
+            model_ids = []
+            for batch_model_ids in self.parallelize(partial_train_models, trainer_tasks):
+                model_ids += batch_model_ids
             logging.info('Done training models')
 
             for split_def, test_uuid in zip(
@@ -166,28 +181,34 @@ class LocalParallelPipeline(PipelineBase):
                     'Starting parallel testing with %s processes',
                     self.n_processes
                 )
-                self.parallelize(partial_test_and_score, model_ids)
+                self.parallelize_with_success_count(partial_test_and_score, model_ids)
                 logging.info('Cleaned up concurrent pool')
             logging.info('Done with test matrix')
         logging.info('Done with split')
 
+    def parallelize_with_success_count(self, partially_bound_function, tasks, chunksize=1):
+        num_successes = 0
+        num_failures = 0
+        for successful in self.parallelize(partially_bound_function, tasks, chunksize):
+            if successful:
+                num_successes += 1
+            else:
+                num_failures += 1
+        logging.info(
+            'Done. successes: %s, failures: %s',
+            num_successes,
+            num_failures
+        )
+
+
     def parallelize(self, partially_bound_function, tasks, chunksize=1):
         with Pool(self.n_processes) as pool:
-            num_successes = 0
-            num_failures = 0
-            for successful in pool.map(
+            all_results = []
+            for result in pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)]
             ):
-                if successful:
-                    num_successes += 1
-                else:
-                    num_failures += 1
-            logging.info(
-                'Done. successes: %s, failures: %s',
-                num_successes,
-                num_failures
-            )
+                yield result
 
 
 def insert_into_table(
@@ -220,6 +241,23 @@ def build_matrix(
     except Exception as e:
         logging.error('Child error: %s', e)
         return False
+
+
+def train_model(
+    train_tasks,
+    trainer_factory,
+    db_connection_string,
+):
+    try:
+        db_engine = create_engine(db_connection_string)
+        trainer = trainer_factory(db_engine=db_engine)
+        return [
+            trainer.process_train_task(**train_task)
+            for train_task in train_tasks
+        ]
+    except Exception as e:
+        logging.error('Child error: %s', e)
+        return []
 
 
 def test_and_score(
