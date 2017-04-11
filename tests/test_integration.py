@@ -1,6 +1,7 @@
 from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
+from triage.utils import save_experiment_and_get_hash
 
 import boto3
 import testing.postgresql
@@ -64,9 +65,11 @@ def test_integration():
 
             model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
 
+            experiment_hash = save_experiment_and_get_hash({}, db_engine)
             # instantiate pipeline objects
             trainer = ModelTrainer(
                 project_path=project_path,
+                experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
                 matrix_store=None,
                 db_engine=db_engine,

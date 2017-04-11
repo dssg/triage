@@ -7,6 +7,8 @@ import botocore
 import pandas
 import yaml
 import json
+from triage.db import Experiment
+from sqlalchemy.orm import sessionmaker
 
 
 def split_s3_path(path):
@@ -137,6 +139,17 @@ def filename_friendly_hash(inputs):
         json.dumps(inputs, default=dt_handler, sort_keys=True)
             .encode('utf-8')
     ).hexdigest()
+
+
+def save_experiment_and_get_hash(config, db_engine):
+    experiment_hash = filename_friendly_hash(config)
+    session = sessionmaker(bind=db_engine)()
+    session.add(Experiment(
+        experiment_hash=experiment_hash,
+        config=config
+    ))
+    session.commit()
+    return experiment_hash
 
 
 class Batch:

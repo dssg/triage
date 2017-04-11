@@ -8,6 +8,7 @@ from triage.features import \
 from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
+from triage.utils import save_experiment_and_get_hash
 from timechop.timechop import Inspections
 from timechop.architect import Architect
 import os
@@ -23,19 +24,25 @@ def dt_from_str(dt_str):
 class PipelineBase(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, config, db_engine, model_storage_class, project_path):
+    def __init__(self, config, db_engine, model_storage_class=None, project_path=None):
         self.config = config
         self.db_engine = db_engine
-        self.model_storage_engine =\
-            model_storage_class(project_path=project_path)
+        if model_storage_class:
+            self.model_storage_engine =\
+                model_storage_class(project_path=project_path)
         self.project_path = project_path
         ensure_db(self.db_engine)
 
         self.labels_table_name = 'labels'
         self.features_schema_name = 'features'
-        self.matrices_directory = os.path.join(self.project_path, 'matrices')
-        if not os.path.exists(self.matrices_directory):
-            os.makedirs(self.matrices_directory)
+        if project_path:
+            self.matrices_directory = os.path.join(self.project_path, 'matrices')
+            if not os.path.exists(self.matrices_directory):
+                os.makedirs(self.matrices_directory)
+        self.experiment_hash = save_experiment_and_get_hash(
+            self.config,
+            self.db_engine
+        )
         self.initialize_factories()
         self.initialize_components()
 
@@ -94,6 +101,7 @@ class PipelineBase(object):
         self.trainer_factory = partial(
             ModelTrainer,
             project_path=self.project_path,
+            experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
             matrix_store=None
         )
@@ -120,6 +128,17 @@ class PipelineBase(object):
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
         self.model_scorer = self.model_scorer_factory(db_engine=self.db_engine)
+
+    def chop_time(self):
+        # TODO: timechop should take care of this. remove when
+        # https://github.com/dssg/timechop/issues/26 is resolved
+        prediction_window = self.config['temporal_config']['prediction_window']
+        split_definitions = self.chopper.chop_time()
+        for split_definition in split_definitions:
+            split_definition['train_matrix']['prediction_window'] = prediction_window
+            for test_matrix in split_definition['test_matrices']:
+                test_matrix['prediction_window'] = prediction_window
+        return split_definitions
 
     @abstractmethod
     def run(self):
