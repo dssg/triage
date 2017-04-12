@@ -25,7 +25,8 @@ def test_engine():
 
 def test_st_explicit_execute():
     agg = Aggregate("results='Fail'",["count"])
-    st = SpacetimeAggregation([agg, agg+agg],
+    mode = Aggregate("", "mode", order="zip")
+    st = SpacetimeAggregation([agg, agg+agg, mode],
         from_obj = ex.table('food_inspections'),
         groups = {'license':ex.column('license_no'), 
             'zip':ex.column('zip')},

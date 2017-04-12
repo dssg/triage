@@ -164,22 +164,23 @@ class Aggregate(AggregateExpression):
             format_kwargs = {}
 
         name_template = "{prefix}{quantity_name}_{function}"
-        column_template = "{function}({distinct}{args})"
+        column_template = "{function}({distinct}{args}){order_clause}{filter}"
         arg_template = "{quantity}"
         order_template = ""
+        filter_template = ""
 
         if self.orders != [None]:
-            column_template += " WITHIN GROUP (ORDER BY {order_clause})"
-            order_template = "CASE WHEN {when} THEN {order} END" if when else "{order}"
-        elif when:
-            arg_template = "CASE WHEN {when} THEN {quantity} END"
+            order_template += " WITHIN GROUP (ORDER BY {order})"
+        if when:
+            filter_template = " FILTER (WHERE {when})"
 
         for function, (quantity_name, quantity), order in product(
                 self.functions, self.quantities.items(), self.orders):
             distinct, quantity = split_distinct(quantity)
-            args = str.join(", ", (arg_template.format(when=when, quantity=q)
+            args = str.join(", ", (arg_template.format(quantity=q)
                                    for q in quantity))
-            order_clause = order_template.format(when=when, order=order)
+            order_clause = order_template.format(order=order)
+            filter = filter_template.format(when=when)
 
             if order is not None:
                 if len(quantity_name) > 0:
@@ -188,7 +189,7 @@ class Aggregate(AggregateExpression):
 
             kwargs = dict(function=function, args=args, prefix=prefix,
                           distinct=distinct, order_clause=order_clause,
-                          quantity_name=quantity_name, **format_kwargs)
+                          quantity_name=quantity_name, filter=filter, **format_kwargs)
 
             column = column_template.format(**kwargs).format(**format_kwargs)
             name = name_template.format(**kwargs)
