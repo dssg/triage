@@ -8,7 +8,8 @@ from .collate import Aggregation
 
 class SpacetimeAggregation(Aggregation):
     def __init__(self, aggregates, groups, intervals, from_obj, dates,
-                 prefix=None, suffix=None, schema=None, date_column=None, output_date_column=None):
+                 prefix=None, suffix=None, schema=None, date_column=None,
+                 output_date_column=None, input_min_date=None):
         """
         Args:
             intervals: the intervals to aggregate over. either a list of
@@ -20,6 +21,8 @@ class SpacetimeAggregation(Aggregation):
                 e.g. ["2012-01-01", "2013-01-01"]
             date_column: name of date column in from_obj, defaults to "date"
             output_date_column: name of date column in aggregated output, defaults to "date"
+            input_min_date: minimum date for which rows shall be included, defaults
+                to no absolute time restrictions on the minimum date of included rows
 
         For all other arguments see collate.Aggregation
         """
@@ -38,6 +41,7 @@ class SpacetimeAggregation(Aggregation):
         self.dates = dates
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
+        self.input_min_date = input_min_date
 
     def _get_aggregates_sql(self, interval, date, group):
         """
@@ -105,14 +109,16 @@ class SpacetimeAggregation(Aggregation):
         w = "{date_column} < '{date}'".format(
                             date_column=self.date_column, date=date)
 
-        # lower bound
+        # lower bound (if possible)
         if 'all' not in intervals:
             greatest = "greatest(%s)" % str.join(
                     ",", ["interval '%s'" % i for i in intervals])
-            w += "AND {date_column} >= '{date}'::date - {greatest}".format(
-                    date_column=self.date_column, date=date,
-                    greatest=greatest)
-
+            min_date = "'{date}'::date - {greatest}".format(date=date, greatest=greatest)
+            w += "AND {date_column} >= {min_date}".format(
+                    date_column=self.date_column, min_date=min_date)
+        if self.input_min_date is not None:
+            w += "AND {date_column} >= '{bot}'::date".format(
+                    date_column=self.date_column, bot=self.input_min_date)
         return ex.text(w)
 
     def get_indexes(self):
@@ -159,3 +165,23 @@ class SpacetimeAggregation(Aggregation):
                     self.get_table_name(group), groupby, self.output_date_column)
 
         return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
+
+    def validate(self, conn):
+        """
+        SpacetimeAggregations ensure that no intervals extend beyond the absolute
+        minimum time.
+        """
+        if self.input_min_date is not None:
+            all_intervals = set(*self.intervals.values())
+            for date in self.dates:
+                for interval in all_intervals:
+                    if interval == "all":
+                        continue
+                    # This could be done more efficiently all at once, but doing
+                    # it this way allows for nicer error messages.
+                    r = conn.execute("select ('%s'::date - '%s'::interval) < '%s'::date" %
+                                     (date, interval, self.input_min_date))
+                    if r.fetchone()[0]:
+                        raise ValueError(
+                            "date '%s' - '%s' is before input_min_date ('%s')" %
+                            (date, interval, self.input_min_date))
