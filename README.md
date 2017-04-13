@@ -1,14 +1,17 @@
 # metta-data
 Train Matrix and Test Matrix Storage
+
 [![Build Status](https://travis-ci.org/dssg/metta-data.svg?branch=master)](https://travis-ci.org/dssg/metta-data)
 [![codecov](https://codecov.io/gh/dssg/metta-data/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/metta-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 ## Short Description
 Store and recall matrices.
 
 ## Long Description
 
-Python library for storing meta data, pandas of training and
+Python library for storing meta data, and DataFrames of training and
 testing sets.
 
 ## Installation
@@ -118,6 +121,3 @@ metta.upload_to_s3(access_key_id=dict_config['AWSAccessKey'],
                    directory='./old_matrices')
 
 ```
-
-## License
-Licensed under MIT License
