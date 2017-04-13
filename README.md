@@ -6,12 +6,9 @@ Train Matrix and Test Matrix Storage
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-## Short Description
-Store and recall matrices.
+##  Description
 
-## Long Description
-
-Python library for storing meta data, and DataFrames of training and
+Python library for storing and recalling meta data, and DataFrames of training and
 testing sets.
 
 ## Installation
