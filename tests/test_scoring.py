@@ -1,4 +1,4 @@
-from triage.scoring import ModelScorer
+from triage.scoring import ModelScorer, generate_binary_at_x
 import testing.postgresql
 
 from sqlalchemy import create_engine
@@ -17,8 +17,8 @@ def test_model_scoring_early_warning():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         metric_groups = [{
-            'metrics': ['precision@', 
-                        'recall@', 
+            'metrics': ['precision@',
+                        'recall@',
                         'true positives@',
                         'true negatives@',
                         'false positives@',
@@ -28,10 +28,10 @@ def test_model_scoring_early_warning():
                 'top_n': [5, 10]
             }
         }, {
-            'metrics': ['f1', 
-                        'mediocre', 
-                        'accuracy', 
-                        'roc_auc', 
+            'metrics': ['f1',
+                        'mediocre',
+                        'accuracy',
+                        'roc_auc',
                         'average precision score'],
         }, {
             'metrics': ['fbeta@'],
@@ -51,7 +51,7 @@ def test_model_scoring_early_warning():
         labels = fake_labels(5)
         as_of_date = datetime.date(2016, 5, 5)
         model_scorer.score(
-            trained_model.predict_proba(labels)[:,1],
+            trained_model.predict_proba(labels)[:, 1],
             trained_model.predict(labels),
             labels,
             model_id,
@@ -65,8 +65,10 @@ def test_model_scoring_early_warning():
         records = [
             row[0] for row in
             db_engine.execute(
-                '''select distinct(metric || parameter) from results.evaluations
-                where model_id = %s and evaluation_start_time = %s order by 1''',
+                '''select distinct(metric || parameter)
+                from results.evaluations
+                where model_id = %s and
+                evaluation_start_time = %s order by 1''',
                 (model_id, as_of_date)
             )
         ]
@@ -104,6 +106,7 @@ def test_model_scoring_early_warning():
             'true positives@5_abs'
         ]
 
+
 def test_model_scoring_inspections():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
@@ -125,12 +128,11 @@ def test_model_scoring_inspections():
         )
 
         labels = fake_labels(5)
-        as_of_date = datetime.date(2016, 5, 5)
-        evaluation_start = datetime.datetime(2016,4,1)
-        evaluation_end = datetime.datetime(2016,7,1)
+        evaluation_start = datetime.datetime(2016, 4, 1)
+        evaluation_end = datetime.datetime(2016, 7, 1)
         prediction_frequency = '1d'
         model_scorer.score(
-            trained_model.predict_proba(labels)[:,1],
+            trained_model.predict_proba(labels)[:, 1],
             trained_model.predict(labels),
             labels,
             model_id,
@@ -142,10 +144,10 @@ def test_model_scoring_inspections():
         # assert
         # that all of the records are there
         results = db_engine.execute(
-                '''select distinct(metric || parameter) from results.evaluations
-                where model_id = %s and evaluation_start_time = %s order by 1''',
-                (model_id, evaluation_start)
-            )
+            '''select distinct(metric || parameter) from results.evaluations
+            where model_id = %s and evaluation_start_time = %s order by 1''',
+            (model_id, evaluation_start)
+        )
         records = [
             row[0] for row in results
         ]
@@ -159,3 +161,14 @@ def test_model_scoring_inspections():
             'recall@5.0_pct',
             'recall@5_abs',
         ]
+
+
+def test_generate_binary_at_x():
+    input_list = [0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6]
+
+    # bug can arise when the same value spans both sides of threshold
+    assert generate_binary_at_x(input_list, 50, 'percentile') == \
+        [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+
+    assert generate_binary_at_x(input_list, 2) == \
+        [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
