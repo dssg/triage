@@ -11,7 +11,7 @@ import pandas as pd
 import os
 from sqlalchemy import create_engine
 from unittest import TestCase
-from unittest.mock import Mock
+from mock import Mock
 
 
 # make some fake features data
