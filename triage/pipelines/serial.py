@@ -6,58 +6,18 @@ from datetime import datetime
 
 
 class SerialPipeline(PipelineBase):
-    def run(self):
-        # 1. generate temporal splits
-        split_definitions = self.chop_time()
+    def build_matrices(self):
+        self.generate_labels()
+        logging.info('Creating feature tables')
+        self.feature_generator.process_table_tasks(self.feature_table_tasks)
+        logging.info('Building all matrices')
+        self.architect.build_all_matrices(self.matrix_build_tasks)
 
-        # 2. create labels
-        logging.debug('---------------------')
-        logging.debug('---------LABEL GENERATION------------')
-        logging.debug('---------------------')
-
-        all_as_of_times = []
-        for split in split_definitions:
-            all_as_of_times.extend(split['train_matrix']['as_of_times'])
-            for test_matrix in split['test_matrices']:
-                all_as_of_times.extend(test_matrix['as_of_times'])
-        all_as_of_times = list(set(all_as_of_times))
-
-        logging.info(
-            'Found %s distinct as_of_times for label and feature generation',
-            len(all_as_of_times)
+    def catwalk(self):
+        updated_split_definitions, _ = self.architect.generate_plans(
+            self.split_definitions,
+            self.feature_dicts
         )
-        self.label_generator.generate_all_labels(
-            self.labels_table_name,
-            all_as_of_times,
-            self.config['temporal_config']['prediction_window']
-        )
-
-        # 3. generate features
-        logging.info('Generating features for %s', all_as_of_times)
-        feature_tables = self.feature_generator.create_all_tables(
-            feature_aggregation_config=self.config['feature_aggregations'],
-            feature_dates=all_as_of_times,
-        )
-
-        master_feature_dict = self.feature_dictionary_creator\
-            .feature_dictionary(feature_tables)
-
-        feature_dicts = self.feature_group_mixer.generate(
-            self.feature_group_creator.subsets(master_feature_dict)
-        )
-
-        # 4. create training and test sets
-        logging.info('Creating matrices')
-        logging.debug('---------------------')
-        logging.debug('---------MATRIX GENERATION------------')
-        logging.debug('---------------------')
-
-        updated_split_definitions, build_tasks = self.architect.generate_plans(
-            split_definitions,
-            feature_dicts
-        )
-        self.architect.build_all_matrices(build_tasks)
-
         for split in updated_split_definitions:
             train_store = MettaCSVMatrixStore(
                 matrix_path=os.path.join(
@@ -69,7 +29,7 @@ class SerialPipeline(PipelineBase):
                     '{}.yaml'.format(split['train_uuid'])
                 )
             )
-            if train_store.matrix.empty:
+            if train_store.empty:
                 logging.warning('''Train matrix for split %s was empty,
                 no point in training this model. Skipping
                 ''', split['train_uuid'])
@@ -112,14 +72,14 @@ class SerialPipeline(PipelineBase):
                         '{}.yaml'.format(test_uuid)
                     )
                 )
-                if test_store.matrix.empty:
+                if test_store.empty:
                     logging.warning('''Test matrix for train uuid %s
                     was empty, no point in training this model. Skipping
                     ''', split['train_uuid'])
                     continue
                 for model_id in model_ids:
                     logging.info('Testing model id %s', model_id)
-                    predictions, predictions_proba = self.predictor.predict(
+                    predictions_proba = self.predictor.predict(
                         model_id,
                         test_store,
                         misc_db_parameters=dict()
@@ -127,7 +87,6 @@ class SerialPipeline(PipelineBase):
 
                     self.model_scorer.score(
                         predictions_proba=predictions_proba,
-                        predictions_binary=predictions,
                         labels=test_store.labels(),
                         model_id=model_id,
                         evaluation_start_time=split_def['matrix_start_time'],

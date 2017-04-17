@@ -9,7 +9,7 @@ import copy
 import pandas
 import warnings
 from timechop.utils import convert_str_to_relativedelta
-from triage.utils import filename_friendly_hash
+from triage.utils import filename_friendly_hash, retrieve_model_id_from_hash
 
 
 def get_feature_importances(model):
@@ -54,7 +54,7 @@ class ModelTrainer(object):
         experiment_hash,
         model_storage_engine,
         db_engine,
-        replace=False
+        replace=True
     ):
         self.project_path = project_path
         self.experiment_hash = experiment_hash
@@ -62,6 +62,7 @@ class ModelTrainer(object):
         self.db_engine = db_engine
         self.replace = replace
         self.sessionmaker = sessionmaker(bind=self.db_engine)
+        self.replace = replace
 
     def _model_hash(self, matrix_metadata, class_path, parameters):
         """Generates a unique identifier for a trained model
@@ -134,17 +135,15 @@ class ModelTrainer(object):
             trained_model (object) a trained model object
             misc_db_parameters (dict) params to pass through to the database
         """
-        session = self.sessionmaker()
-        existing_model = session.query(Model)\
-            .filter_by(model_hash=model_hash)\
-            .one_or_none()
-        if existing_model:
+        saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
+        if saved_model_id:
             # logging.warning('deleting existing model %s', existing_model.model_id)
             # existing_model.delete(session)
             # session.commit()
-            logging.warning('model meta data already stored %s', existing_model.model_id)
-            return existing_model.model_id
+            logging.warning('model meta data already stored %s', saved_model_id)
+            return saved_model_id
 
+        session = self.sessionmaker()
         model = Model(
             model_hash=model_hash,
             model_type=class_path,
@@ -297,7 +296,7 @@ class ModelTrainer(object):
                     'min_samples_split': [2,5,10]
                 } }
             misc_db_parameters (dict) params to pass through to the database
-            matrix_store(triage.storage.MatrixStore) a matrix and metadata
+            matrix_store (triage.storage.MatrixStore) a matrix and metadata
 
         Yields: (int) model ids
         """
@@ -357,19 +356,15 @@ class ModelTrainer(object):
         Returns: (int) model id
         """
         model_store = self.model_storage_engine.get_store(model_hash)
-        session = self.sessionmaker()
-        saved = session.query(Model)\
-            .filter_by(model_hash=model_hash)\
-            .one_or_none()
-        session.close()
-        if not self.replace and model_store.exists() and saved:
+        saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
+        if not self.replace and model_store.exists() and saved_model_id:
             logging.warning('Skipping %s/%s', class_path, parameters)
-            return saved.model_id
+            return saved_model_id
         if self.replace:
             logging.warning('Training because replace flag has been set')
         elif not model_store.exists():
             logging.warning('Training because model pickle not found in store')
-        elif not saved:
+        elif not saved_model_id:
             logging.warning('Training because model metadata not found')
         model_id = self._train_and_store_model(
             matrix_store,
@@ -379,7 +374,6 @@ class ModelTrainer(object):
             model_store,
             misc_db_parameters
         )
-        session.close()
         return model_id
 
     def generate_train_tasks(

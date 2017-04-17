@@ -7,7 +7,7 @@ import botocore
 import pandas
 import yaml
 import json
-from triage.db import Experiment
+from triage.db import Experiment, Model
 from sqlalchemy.orm import sessionmaker
 
 
@@ -149,6 +149,7 @@ def save_experiment_and_get_hash(config, db_engine):
         config=config
     ))
     session.commit()
+    session.close()
     return experiment_hash
 
 
@@ -179,3 +180,13 @@ class Batch:
     def __iter__(self):
         while self.on_going:
             yield self.group()
+
+def retrieve_model_id_from_hash(db_engine, model_hash):
+    session = sessionmaker(bind=db_engine)()
+    try:
+        saved = session.query(Model)\
+            .filter_by(model_hash=model_hash)\
+            .one_or_none()
+        return saved.model_id if saved else None
+    finally:
+        session.close()

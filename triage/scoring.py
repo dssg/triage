@@ -220,7 +220,6 @@ class ModelScorer(object):
     def score(
         self,
         predictions_proba,
-        predictions_binary,
         labels,
         model_id,
         evaluation_start_time,
@@ -231,7 +230,6 @@ class ModelScorer(object):
 
         Args:
             predictions_proba (numpy.array) List of prediction probabilities
-            predictions_binary (numpy.array) List of binarized predictions
             labels (numpy.array) The true labels for the prediction set
             model_id (int) The database identifier of the model
             evaluation_start_time (datetime.datetime) The time of the first prediction being evaluated
@@ -240,7 +238,6 @@ class ModelScorer(object):
         """
         nan_mask = numpy.isfinite(labels)
         predictions_proba = (predictions_proba[nan_mask]).tolist()
-        predictions_binary = (predictions_binary[nan_mask]).tolist()
         labels = (labels[nan_mask]).tolist()
 
         predictions_proba_sorted, labels_sorted = \
@@ -254,7 +251,11 @@ class ModelScorer(object):
                     parameters,
                     {},
                     predictions_proba,
-                    predictions_binary,
+                    generate_binary_at_x(
+                        predictions_proba_sorted,
+                        100,
+                        unit='percentile'
+                    ),
                     labels,
                 )
 
@@ -330,3 +331,4 @@ class ModelScorer(object):
             evaluation.prediction_frequency = prediction_frequency
             session.add(evaluation)
         session.commit()
+        session.close()
