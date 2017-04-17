@@ -174,7 +174,9 @@ class ModelTrainer(object):
             )
             session.add(feature_importance)
         session.commit()
-        return model.model_id
+        model_id = model.model_id
+        session.close()
+        return model_id
 
     def _train_and_store_model(
         self,
@@ -377,6 +379,7 @@ class ModelTrainer(object):
             model_store,
             misc_db_parameters
         )
+        session.close()
         return model_id
 
     def generate_train_tasks(
