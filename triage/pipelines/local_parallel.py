@@ -197,7 +197,6 @@ def insert_into_table(
         logging.info('Beginning insert batch')
         db_engine = create_engine(db_connection_string)
         feature_generator = feature_generator_factory(db_engine)
-        logging.info(insert_statements)
         feature_generator.run_commands(insert_statements)
         return True
     except Exception as e:

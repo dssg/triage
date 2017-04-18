@@ -205,8 +205,6 @@ def test_serial_pipeline():
 
 
 def test_local_parallel_pipeline():
-    import logging
-    logging.basicConfig(level=logging.INFO)
     simple_pipeline_test(LocalParallelPipeline)
 
 
