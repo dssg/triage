@@ -35,6 +35,7 @@ class Predictor(object):
             A python object which implements .predict()
         """
         model_hash = self.sessionmaker().query(Model).get(model_id).model_hash
+        logging.info('Checking for model_hash %s in store', model_hash)
         model_store = self.model_storage_engine.get_store(model_hash)
         if model_store.exists():
             return model_store.load()

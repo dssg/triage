@@ -39,6 +39,7 @@ class FSStore(Store):
         return os.path.isfile(self.path)
 
     def write(self, obj):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, 'w+b') as f:
             pickle.dump(obj, f)
 
