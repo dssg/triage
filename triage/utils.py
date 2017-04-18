@@ -144,7 +144,7 @@ def filename_friendly_hash(inputs):
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.add(Experiment(
+    session.merge(Experiment(
         experiment_hash=experiment_hash,
         config=config
     ))

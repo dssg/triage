@@ -1,4 +1,9 @@
-from triage.utils import temporal_splits, filename_friendly_hash
+from triage.utils import temporal_splits, \
+    filename_friendly_hash, \
+    save_experiment_and_get_hash
+from triage.db import ensure_db
+from sqlalchemy import create_engine
+import testing.postgresql
 import datetime
 import logging
 import re
@@ -107,3 +112,15 @@ def test_filename_friendly_hash_stability():
     }
     new_output = filename_friendly_hash(other_nested_data)
     assert output == new_output
+
+
+def test_save_experiment_and_get_hash():
+    # no reason to make assertions on the config itself, use a basic dict
+    experiment_config = {'one': 'two'}
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        ensure_db(engine)
+        exp_hash = save_experiment_and_get_hash(experiment_config, engine)
+        assert isinstance(exp_hash, str)
+        new_hash = save_experiment_and_get_hash(experiment_config, engine)
+        assert new_hash == exp_hash
