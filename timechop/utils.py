@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta
 import functools
 import operator
 import warnings
+import re
 
 def convert_str_to_relativedelta(delta_string):
     """ Given a string in a postgres interval format (e.g., '1 month'),
@@ -25,21 +26,21 @@ def convert_str_to_relativedelta(delta_string):
 
     if units in ['year', 'years', 'y', 'Y']:
         delta = relativedelta(years = value)
-    elif units in ['month', 'months', 'm', 'M']:
+    elif units in ['month', 'months']:
         delta = relativedelta(months = value)
-        if units in ['m', 'M']:
-            warnings.warn(
-                'Time delta units "{}" converted to months.'.format(units),
-                RuntimeWarning
-            )
     elif units in ['day', 'days', 'd', 'D']:
         delta = relativedelta(days = value)
     elif units in ['week', 'weeks', 'w', 'W']:
         delta = relativedelta(weeks = value)
     elif units in ['hour', 'hours', 'h', 'H']:
         delta = relativedelta(hours = value)
-    elif units in ['minute', 'minutes']:
+    elif units in ['minute', 'minutes', 'm', 'M']:
         delta = relativedelta(minutes = value)
+        if units in ['m', 'M']:
+            warnings.warn(
+                'Time delta units "{}" converted to minutes.'.format(units),
+                RuntimeWarning
+            )
     elif units in ['second', 'seconds', 's', 'S']:
         delta = relativedelta(seconds = value)
     elif units == 'microsecond' or units == 'microseconds':
@@ -60,19 +61,15 @@ def parse_delta_string(delta_string):
             raise ValueError('''
                 Could not parse value from time delta string: {}
             '''.format(delta_string))
-    elif len(delta_string) == 2:
-        units = delta_string[1]
+    else:
+        delta_parts = re.split('([a-zA-Z]*)', delta_string)
+        units = delta_parts[1]
         try:
-            value = int(delta_string[0])
+            value = int(delta_parts[0])
         except:
             raise ValueError('''
                 Could not parse value from time delta string: {}
             '''.format(delta_string))
-    else:
-        raise ValueError(
-            'Could not parse time delta string: {}'.format(delta_string)
-        )
-
     return(units, value)
 
 
