@@ -11,6 +11,7 @@ import pandas as pd
 import os
 from sqlalchemy import create_engine
 from unittest import TestCase
+from mock import Mock
 
 
 # make some fake features data
@@ -635,3 +636,82 @@ class TestBuildMatrix(object):
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
                     assert(len([row for row in reader]) == 13)
+
+    def test_replace(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            create_features_and_labels_schemas(engine, features_tables, labels)
+
+            dates = [datetime.datetime(2016, 1, 1, 0, 0),
+                     datetime.datetime(2016, 2, 1, 0, 0),
+                     datetime.datetime(2016, 3, 1, 0, 0)]
+
+            with TemporaryDirectory() as temp_dir:
+                matrix_maker = Architect(
+                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    label_names = ['booking'],
+                    label_types = ['binary'],
+                    db_config = db_config,
+                    matrix_directory = temp_dir,
+                    user_metadata = {},
+                    engine = engine,
+                    replace=False
+                )
+
+                matrix_dates = {
+                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'as_of_times': dates
+                }
+                feature_dictionary = {
+                    'features0': ['f1', 'f2'],
+                    'features1': ['f1', 'f2'],
+                }
+
+                uuid = '1234'
+                matrix_maker.build_matrix(
+                    as_of_times = dates,
+                    label_name = 'booking',
+                    label_type = 'binary',
+                    feature_dictionary = feature_dictionary,
+                    matrix_directory = temp_dir,
+                    matrix_metadata = {
+                        'matrix_id': 'hi',
+                        'label_name': 'booking',
+                        'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                        'start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                        'prediction_window': '1d'
+                    },
+                    matrix_uuid = uuid,
+                    matrix_type = 'test'
+                )
+
+                matrix_filename = os.path.join(
+                    temp_dir,
+                    '{}.csv'.format(uuid)
+                )
+
+                with open(matrix_filename, 'r') as f:
+                    reader = csv.reader(f)
+                    assert(len([row for row in reader]) == 13)
+
+                # rerun
+                matrix_maker.make_entity_date_table = Mock()
+                matrix_maker.build_matrix(
+                    as_of_times = dates,
+                    label_name = 'booking',
+                    label_type = 'binary',
+                    feature_dictionary = feature_dictionary,
+                    matrix_directory = temp_dir,
+                    matrix_metadata = {
+                        'matrix_id': 'hi',
+                        'label_name': 'booking',
+                        'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                        'start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                        'prediction_window': '1d'
+                    },
+                    matrix_uuid = uuid,
+                    matrix_type = 'test'
+                )
+                assert not matrix_maker.make_entity_date_table.called

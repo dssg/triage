@@ -6,3 +6,4 @@ git+git://github.com/dssg/metta-data.git
 testing.postgresql
 SQLAlchemy
 psycopg2
+mock

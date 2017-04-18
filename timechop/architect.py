@@ -9,7 +9,7 @@ from . import utils
 class Architect(object):
 
     def __init__(self, beginning_of_time, label_names, label_types, db_config,
-                 matrix_directory, user_metadata, engine):
+                 matrix_directory, user_metadata, engine, replace=True):
         self.beginning_of_time = beginning_of_time # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
@@ -17,6 +17,7 @@ class Architect(object):
         self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata
         self.engine = engine
+        self.replace = replace
 
     def _generate_build_task(
         self,
@@ -135,6 +136,10 @@ class Architect(object):
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
         )
+        if not self.replace and os.path.exists(matrix_filename):
+            logging.info('Skipping %s because matrix already exists', matrix_filename)
+            return
+
         logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
         logging.info('Making entity date table')
