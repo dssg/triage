@@ -182,6 +182,14 @@ class Batch:
             yield self.group()
 
 def retrieve_model_id_from_hash(db_engine, model_hash):
+    """Retrieves a model id from the database that matches the given hash
+
+    Args:
+        db_engine (sqlalchemy.engine) A database engine
+        model_hash (str) The model hash to lookup
+
+    Returns: (int) The model id (if found in DB), None (if not)
+    """
     session = sessionmaker(bind=db_engine)()
     try:
         saved = session.query(Model)\

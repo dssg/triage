@@ -158,12 +158,35 @@ class PipelineBase(object):
 
     @property
     def split_definitions(self):
+        """Temporal splits based on the pipeline's configuration
+
+        Returns (dict) temporal splits
+
+        Example:
+        {
+            'beginning_of_time': {datetime},
+            'modeling_start_time': {datetime},
+            'modeling_end_time': {datetime},
+            'train_matrix': {
+                'matrix_start_time': {datetime},
+                'matrix_end_time': {datetime},
+                'as_of_times': [list of {datetime}s]
+            },
+            'test_matrices': [list of matrix defs similar to train_matrix]
+        }
+        """
         if not self._split_definitions:
             self._split_definitions = self.chop_time()
         return self._split_definitions
 
     @property
     def all_as_of_times(self):
+        """All 'as of times' in pipeline config
+
+        Used for label and feature generation.
+
+        Returns: (list) of datetimes
+        """
         if not self._all_as_of_times:
             all_as_of_times = []
             for split in self.split_definitions:
@@ -180,6 +203,12 @@ class PipelineBase(object):
 
     @property
     def feature_table_tasks(self):
+        """All feature table query tasks specified by this Pipeline
+
+        Returns: (dict) keys are group table names, values are themselves dicts,
+            each with keys for different stages of table creation (prepare, inserts, finalize)
+            and with values being lists of SQL commands
+        """
         if not self._feature_table_tasks:
             logging.info(
                 'Calculating feature tasks for %s as_of_times',
@@ -193,6 +222,12 @@ class PipelineBase(object):
 
     @property
     def feature_dicts(self):
+        """Feature dictionaries, representing the feature tables and columns
+            configured in this pipeline after computing feature groups.
+
+        Returns: (list) of dicts, keys being feature table names and values
+            being lists of feature names
+        """
         master_feature_dict = self.feature_dictionary_creator\
             .feature_dictionary(self.feature_table_tasks.keys())
 
@@ -202,6 +237,12 @@ class PipelineBase(object):
 
     @property
     def matrix_build_tasks(self):
+        """Matrix build tasks.
+
+        Each task contains arguments understood by Architect.build_matrix
+
+        Returns: (list) of dicts
+        """
         if not self._matrix_build_tasks:
             updated_split_definitions, self._matrix_build_tasks =\
                 self.architect.generate_plans(
@@ -212,6 +253,10 @@ class PipelineBase(object):
         return self._matrix_build_tasks
 
     def generate_labels(self):
+        """Generate labels based on pipeline configuration
+
+        Results are stored in the database, not returned
+        """
         self.label_generator.generate_all_labels(
             self.labels_table_name,
             self.all_as_of_times,
@@ -219,14 +264,20 @@ class PipelineBase(object):
         )
 
     def update_split_definitions(self, new_split_definitions):
+        """Update split definitions
+
+        Args: (dict) split definitions (should have matrix uuids)
+        """
         self._split_definitions = new_split_definitions
 
     @abstractmethod
     def build_matrices(self):
+        """Generate labels, features, and matrices"""
         pass
 
     @abstractmethod
     def catwalk(self):
+        """Train, test, and evaluate models"""
         pass
 
     def run(self):
