@@ -52,7 +52,6 @@ def test_model_scoring_early_warning():
         as_of_date = datetime.date(2016, 5, 5)
         model_scorer.score(
             trained_model.predict_proba(labels)[:, 1],
-            trained_model.predict(labels),
             labels,
             model_id,
             as_of_date,
@@ -133,7 +132,6 @@ def test_model_scoring_inspections():
         prediction_frequency = '1d'
         model_scorer.score(
             trained_model.predict_proba(labels)[:, 1],
-            trained_model.predict(labels),
             labels,
             model_id,
             evaluation_start,

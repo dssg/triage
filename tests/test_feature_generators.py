@@ -225,3 +225,50 @@ def test_generate_table_tasks():
             assert 'CREATE TABLE' in str(task['prepare'][1])
             assert 'CREATE INDEX' in task['finalize'][0]
             assert isinstance(task['inserts'], list)
+
+
+def test_replace():
+    aggregate_config = [{
+        'prefix': 'aprefix',
+        'aggregates': [
+            {'quantity': 'quantity_one', 'metrics': ['sum', 'count']},
+        ],
+        'categoricals': [
+            {
+                'column': 'cat_one',
+                'choices': ['good', 'bad'],
+                'metrics': ['sum']
+            },
+        ],
+        'groups': ['entity_id'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }]
+
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        features_schema_name = 'features'
+        feature_tables = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name,
+            replace=False
+        ).create_all_tables(
+            feature_dates=['2013-09-30', '2014-09-30'],
+            feature_aggregation_config=aggregate_config,
+        )
+
+        assert len(feature_tables) == 1
+
+        table_tasks = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name,
+            replace=False
+        ).generate_all_table_tasks(
+            feature_dates=['2013-09-30', '2014-09-30'],
+            feature_aggregation_config=aggregate_config,
+        )
+
+        assert len(table_tasks['aprefix_entity_id'].keys()) == 0

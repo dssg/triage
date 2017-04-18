@@ -45,8 +45,8 @@ class BinaryLabelGenerator(object):
 
     def generate_all_labels(self, labels_table, as_of_times, prediction_window):
         self._create_labels_table(labels_table)
+        logging.info('Creating labels for %s as of times', len(as_of_times))
         for as_of_time in as_of_times:
-            logging.info('Creating labels for %s', as_of_time)
             self.generate(
                 start_date=as_of_time,
                 prediction_window=prediction_window,

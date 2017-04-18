@@ -13,85 +13,15 @@ class LocalParallelPipeline(PipelineBase):
         super(LocalParallelPipeline, self).__init__(*args, **kwargs)
         self.n_processes = n_processes
         if kwargs['model_storage_class'] == InMemoryModelStorageEngine:
-            raise ValueError('InMemoryModelStorageEngine not compatible with LocalParallelPipeline')
+            raise ValueError('''
+                InMemoryModelStorageEngine not compatible with LocalParallelPipeline
+            ''')
 
-    def run(self):
-        # 1. generate temporal splits
-        split_definitions = self.chop_time()
-
-        # 2. create labels
-        logging.debug('---------------------')
-        logging.debug('---------LABEL GENERATION------------')
-        logging.debug('---------------------')
-
-        all_as_of_times = []
-        for split in split_definitions:
-            all_as_of_times.extend(split['train_matrix']['as_of_times'])
-            for test_matrix in split['test_matrices']:
-                all_as_of_times.extend(test_matrix['as_of_times'])
-        all_as_of_times = list(set(all_as_of_times))
-
-        logging.info(
-            'Found %s distinct as_of_times for label and feature generation',
-            len(all_as_of_times)
+    def catwalk(self):
+        updated_split_definitions, _ = self.architect.generate_plans(
+            self.split_definitions,
+            self.feature_dicts
         )
-        self.label_generator.generate_all_labels(
-            self.labels_table_name,
-            all_as_of_times,
-            self.config['temporal_config']['prediction_window']
-        )
-
-        # 3. generate features
-        logging.info(
-            'Generating features for %s as_of_times',
-            len(all_as_of_times)
-        )
-        feature_table_tasks = self.feature_generator.generate_all_table_tasks(
-            feature_aggregation_config=self.config['feature_aggregations'],
-            feature_dates=all_as_of_times,
-        )
-
-        for table_name, tasks in feature_table_tasks.items():
-            logging.info('Generating %s features', table_name)
-            self.feature_generator.run_commands(tasks['prepare'])
-            partial_insert = partial(
-                insert_into_table,
-                feature_generator_factory=self.feature_generator_factory,
-                db_connection_string=self.db_engine.url
-            )
-            self.parallelize_with_success_count(partial_insert, tasks['inserts'], chunksize=25)
-            self.feature_generator.run_commands(tasks['finalize'])
-            logging.info('%s completed', table_name)
-
-        master_feature_dict = self.feature_dictionary_creator\
-            .feature_dictionary(feature_table_tasks.keys())
-
-        feature_dicts = self.feature_group_mixer.generate(
-            self.feature_group_creator.subsets(master_feature_dict)
-        )
-
-        # 4. create training and test sets
-        logging.info('Creating matrices')
-        logging.debug('---------------------')
-        logging.debug('---------MATRIX GENERATION------------')
-        logging.debug('---------------------')
-
-        updated_split_definitions, build_tasks = self.architect.generate_plans(
-            split_definitions,
-            feature_dicts
-        )
-
-        partial_build_matrix = partial(
-            build_matrix,
-            architect_factory=self.architect_factory,
-            db_connection_string=self.db_engine.url
-        )
-        logging.info(
-            'Starting parallel matrix building: %s matrices, %s processes',
-            len(build_tasks.keys()),
-            self.n_processes
-        )
-        self.parallelize_with_success_count(partial_build_matrix, build_tasks.values())
 
         for split in updated_split_definitions:
             logging.info('Starting split')
@@ -106,7 +36,7 @@ class LocalParallelPipeline(PipelineBase):
                 )
             )
             logging.info('Checking out train matrix')
-            if train_store.matrix.empty:
+            if train_store.empty:
                 logging.warning('''Train matrix for split %s was empty,
                 no point in training this model. Skipping
                 ''', split['train_uuid'])
@@ -138,7 +68,10 @@ class LocalParallelPipeline(PipelineBase):
                 self.n_processes
             )
             model_ids = []
-            for batch_model_ids in self.parallelize(partial_train_models, trainer_tasks):
+            for batch_model_ids in self.parallelize(
+                partial_train_models,
+                trainer_tasks
+            ):
                 model_ids += batch_model_ids
             logging.info('Done training models')
 
@@ -163,7 +96,7 @@ class LocalParallelPipeline(PipelineBase):
                         '{}.yaml'.format(test_uuid)
                     )
                 )
-                if test_store.matrix.empty:
+                if test_store.empty:
                     logging.warning('''Test matrix for train uuid %s
                     was empty, no point in training this model. Skipping
                     ''', split['train_uuid'])
@@ -181,15 +114,27 @@ class LocalParallelPipeline(PipelineBase):
                     'Starting parallel testing with %s processes',
                     self.n_processes
                 )
-                self.parallelize_with_success_count(partial_test_and_score, model_ids)
+                self.parallelize_with_success_count(
+                    partial_test_and_score,
+                    model_ids
+                )
                 logging.info('Cleaned up concurrent pool')
             logging.info('Done with test matrix')
         logging.info('Done with split')
 
-    def parallelize_with_success_count(self, partially_bound_function, tasks, chunksize=1):
+    def parallelize_with_success_count(
+        self,
+        partially_bound_function,
+        tasks,
+        chunksize=1
+    ):
         num_successes = 0
         num_failures = 0
-        for successful in self.parallelize(partially_bound_function, tasks, chunksize):
+        for successful in self.parallelize(
+            partially_bound_function,
+            tasks,
+            chunksize
+        ):
             if successful:
                 num_successes += 1
             else:
@@ -200,10 +145,42 @@ class LocalParallelPipeline(PipelineBase):
             num_failures
         )
 
+    def build_matrices(self):
+        self.generate_labels()
+        logging.info('Creating feature tables')
+        for table_name, tasks in self.feature_table_tasks.items():
+            logging.info('Processing features for %s', table_name)
+            self.feature_generator.run_commands(tasks.get('prepare', []))
+            partial_insert = partial(
+                insert_into_table,
+                feature_generator_factory=self.feature_generator_factory,
+                db_connection_string=self.db_engine.url
+            )
+            self.parallelize_with_success_count(
+                partial_insert,
+                tasks.get('inserts', []),
+                chunksize=25
+            )
+            self.feature_generator.run_commands(tasks.get('finalize', []))
+            logging.info('%s completed', table_name)
+
+        partial_build_matrix = partial(
+            build_matrix,
+            architect_factory=self.architect_factory,
+            db_connection_string=self.db_engine.url
+        )
+        logging.info(
+            'Starting parallel matrix building: %s matrices, %s processes',
+            len(self.matrix_build_tasks.keys()),
+            self.n_processes
+        )
+        self.parallelize_with_success_count(
+            partial_build_matrix,
+            self.matrix_build_tasks.values()
+        )
 
     def parallelize(self, partially_bound_function, tasks, chunksize=1):
         with Pool(self.n_processes) as pool:
-            all_results = []
             for result in pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)]
@@ -276,7 +253,7 @@ def test_and_score(
             predictor = predictor_factory(db_engine=db_engine)
             model_scorer = model_scorer_factory(db_engine=db_engine)
 
-            predictions, predictions_proba = predictor.predict(
+            predictions_proba = predictor.predict(
                 model_id,
                 test_store,
                 misc_db_parameters=dict()
@@ -284,7 +261,6 @@ def test_and_score(
             logging.info('Generating evaluations for model id %s', model_id)
             model_scorer.score(
                 predictions_proba=predictions_proba,
-                predictions_binary=predictions,
                 labels=test_store.labels(),
                 model_id=model_id,
                 evaluation_start_time=split_def['matrix_start_time'],

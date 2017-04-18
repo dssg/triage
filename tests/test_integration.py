@@ -99,7 +99,7 @@ def test_integration():
 
             for model_id in model_ids:
                 for as_of_date, test_store in zip(as_of_dates, test_stores):
-                    predictions, predictions_proba = predictor.predict(
+                    predictions_proba = predictor.predict(
                         model_id,
                         test_store,
                         misc_db_parameters=dict()
@@ -107,7 +107,6 @@ def test_integration():
 
                     model_scorer.score(
                         predictions_proba,
-                        predictions,
                         test_store.labels(),
                         model_id,
                         as_of_date,

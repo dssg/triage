@@ -86,7 +86,7 @@ def populate_source_data(db_engine):
         )
 
 
-def generic_pipeline_test(pipeline_class):
+def simple_pipeline_test(pipeline_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -201,8 +201,85 @@ def generic_pipeline_test(pipeline_class):
 
 
 def test_serial_pipeline():
-    generic_pipeline_test(SerialPipeline)
+    simple_pipeline_test(SerialPipeline)
 
 
 def test_local_parallel_pipeline():
-    generic_pipeline_test(LocalParallelPipeline)
+    simple_pipeline_test(LocalParallelPipeline)
+
+
+def reuse_pipeline_test(pipeline_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        populate_source_data(db_engine)
+        temporal_config = {
+            'beginning_of_time': '2010-01-01',
+            'modeling_start_time': '2011-01-01',
+            'modeling_end_time': '2014-01-01',
+            'update_window': '1y',
+            'prediction_window': '6m',
+            'look_back_durations': ['6m'],
+            'test_durations': ['1m'],
+            'prediction_frequency': '1d'
+        }
+        scoring_config = [
+            {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+        ]
+        grid_config = {
+            'sklearn.linear_model.LogisticRegression': {
+                'C': [0.00001, 0.0001],
+                'penalty': ['l1', 'l2'],
+                'random_state': [2193]
+            }
+        }
+        feature_config = [{
+            'prefix': 'test_features',
+            'from_obj': 'cat_complaints',
+            'knowledge_date_column': 'as_of_date',
+            'aggregates': [{
+                'quantity': 'cat_sightings',
+                'metrics': ['count', 'avg'],
+            }],
+            'intervals': ['1y'],
+            'groups': ['entity_id']
+        }]
+        experiment_config = {
+            'events_table': 'events',
+            'entity_column_name': 'entity_id',
+            'model_comment': 'test2-final-final',
+            'feature_aggregations': feature_config,
+            'temporal_config': temporal_config,
+            'grid_config': grid_config,
+            'scoring': scoring_config,
+        }
+
+        temp_dir = TemporaryDirectory()
+        try:
+            pipeline = pipeline_class(
+                config=experiment_config,
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir.name, 'inspections'),
+                replace=False
+            )
+
+            pipeline.run()
+
+            # if the second run tries to write any new
+            # matrices or models, it will get permission denied!
+            os.chmod(temp_dir.name, 0o500)
+
+            pipeline.run()
+
+        finally:
+            os.chmod(temp_dir.name, 0o700)
+            temp_dir.cleanup()
+
+
+def test_serial_pipeline_reuse():
+    reuse_pipeline_test(SerialPipeline)
+
+
+def test_localparallel_pipeline_reuse():
+    reuse_pipeline_test(LocalParallelPipeline)

@@ -89,6 +89,10 @@ class S3ModelStorageEngine(ModelStorageEngine):
 
 
 class FSModelStorageEngine(ModelStorageEngine):
+    def __init__(self, *args, **kwargs):
+        super(FSModelStorageEngine, self).__init__(*args, **kwargs)
+        os.makedirs(os.path.join(self.project_path, 'trained_models'), exist_ok=True)
+
     def get_store(self, model_hash):
         return FSStore('/'.join([
             self.project_path,
@@ -146,6 +150,13 @@ class MettaCSVMatrixStore(MatrixStore):
         if self._metadata is None:
             self._load()
         return self._metadata
+
+    @property
+    def empty(self):
+        if not os.path.isfile(self.matrix_path):
+            return True
+        else:
+            return pandas.read_csv(self.matrix_path, nrows=1).empty
 
     def _load(self):
         self._matrix = pandas.read_csv(self.matrix_path)

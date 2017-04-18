@@ -1,13 +1,20 @@
 from collate.collate import Aggregate, Categorical
 from collate.spacetime import SpacetimeAggregation
+import sqlalchemy
 import logging
 
 
 class FeatureGenerator(object):
-    def __init__(self, db_engine, features_schema_name):
+    def __init__(
+        self,
+        db_engine,
+        features_schema_name,
+        replace=True
+    ):
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
         self.categorical_cache = {}
+        self.replace = replace
 
     def _compute_choices(self, choice_query):
         if choice_query not in self.categorical_cache:
@@ -109,10 +116,14 @@ class FeatureGenerator(object):
             feature_aggregation_config,
             feature_dates
         )
+
+        return self.process_table_tasks(table_tasks)
+
+    def process_table_tasks(self, table_tasks):
         for table_name, task in table_tasks.items():
-            self.run_commands(task['prepare'])
-            self.run_commands(task['inserts'])
-            self.run_commands(task['finalize'])
+            self.run_commands(task.get('prepare', []))
+            self.run_commands(task.get('inserts', []))
+            self.run_commands(task.get('finalize', []))
         return table_tasks.keys()
 
     def _explain_selects(self, aggregations):
@@ -127,6 +138,18 @@ class FeatureGenerator(object):
     def _clean_table_name(self, table_name):
         # remove the schema and quotes from the name
         return table_name.split('.')[1].replace('"', "")
+
+    def _table_exists(self, table_name):
+        try:
+            self.db_engine.execute(
+                'select * from {}.{} limit 1'.format(
+                    self.features_schema_name,
+                    table_name
+                )
+            )
+            return True
+        except sqlalchemy.exc.ProgrammingError:
+            return False
 
     def run_commands(self, command_list):
         conn = self.db_engine.connect()
@@ -162,10 +185,17 @@ class FeatureGenerator(object):
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
             )
-            table_tasks[group_table] = {
-                'prepare': [drops[group], creates[group]],
-                'inserts': inserts[group],
-                'finalize': [indexes[group]],
-            }
+            if self.replace or not self._table_exists(group_table):
+                table_tasks[group_table] = {
+                    'prepare': [drops[group], creates[group]],
+                    'inserts': inserts[group],
+                    'finalize': [indexes[group]],
+                }
+            else:
+                logging.info(
+                    'Skipping feature table creation for %s',
+                    group_table
+                )
+                table_tasks[group_table] = {}
 
         return table_tasks
