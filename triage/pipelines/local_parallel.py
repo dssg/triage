@@ -9,9 +9,10 @@ import os
 
 
 class LocalParallelPipeline(PipelineBase):
-    def __init__(self, n_processes=1, *args, **kwargs):
+    def __init__(self, n_processes=1, n_db_processes=1, *args, **kwargs):
         super(LocalParallelPipeline, self).__init__(*args, **kwargs)
         self.n_processes = n_processes
+        self.n_db_processes = n_db_processes
         if kwargs['model_storage_class'] == InMemoryModelStorageEngine:
             raise ValueError('''
                 InMemoryModelStorageEngine not compatible with LocalParallelPipeline
@@ -70,7 +71,8 @@ class LocalParallelPipeline(PipelineBase):
             model_ids = []
             for batch_model_ids in self.parallelize(
                 partial_train_models,
-                trainer_tasks
+                trainer_tasks,
+                self.n_processes
             ):
                 model_ids += batch_model_ids
             logging.info('Done training models')
@@ -112,11 +114,12 @@ class LocalParallelPipeline(PipelineBase):
                 )
                 logging.info(
                     'Starting parallel testing with %s processes',
-                    self.n_processes
+                    self.n_db_processes
                 )
                 self.parallelize_with_success_count(
                     partial_test_and_score,
-                    model_ids
+                    model_ids,
+                    self.n_db_processes
                 )
                 logging.info('Cleaned up concurrent pool')
             logging.info('Done with test matrix')
@@ -126,6 +129,7 @@ class LocalParallelPipeline(PipelineBase):
         self,
         partially_bound_function,
         tasks,
+        n_processes,
         chunksize=1
     ):
         num_successes = 0
@@ -133,6 +137,7 @@ class LocalParallelPipeline(PipelineBase):
         for successful in self.parallelize(
             partially_bound_function,
             tasks,
+            n_processes,
             chunksize
         ):
             if successful:
@@ -147,7 +152,10 @@ class LocalParallelPipeline(PipelineBase):
 
     def build_matrices(self):
         self.generate_labels()
-        logging.info('Creating feature tables')
+        logging.info(
+            'Creating feature tables with %s processes',
+            self.n_db_processes
+        )
         for table_name, tasks in self.feature_table_tasks.items():
             logging.info('Processing features for %s', table_name)
             self.feature_generator.run_commands(tasks.get('prepare', []))
@@ -159,6 +167,7 @@ class LocalParallelPipeline(PipelineBase):
             self.parallelize_with_success_count(
                 partial_insert,
                 tasks.get('inserts', []),
+                n_processes=self.n_db_processes,
                 chunksize=25
             )
             self.feature_generator.run_commands(tasks.get('finalize', []))
@@ -176,11 +185,18 @@ class LocalParallelPipeline(PipelineBase):
         )
         self.parallelize_with_success_count(
             partial_build_matrix,
-            self.matrix_build_tasks.values()
+            self.matrix_build_tasks.values(),
+            self.n_processes
         )
 
-    def parallelize(self, partially_bound_function, tasks, chunksize=1):
-        with Pool(self.n_processes) as pool:
+    def parallelize(
+        self,
+        partially_bound_function,
+        tasks,
+        n_processes,
+        chunksize=1,
+    ):
+        with Pool(n_processes) as pool:
             for result in pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)]
