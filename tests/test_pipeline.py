@@ -96,9 +96,9 @@ def simple_pipeline_test(pipeline_class):
             'modeling_start_time': '2011-01-01',
             'modeling_end_time': '2014-01-01',
             'update_window': '1y',
-            'prediction_window': '6m',
-            'look_back_durations': ['6m'],
-            'test_durations': ['1m'],
+            'prediction_window': '6months',
+            'look_back_durations': ['6months'],
+            'test_durations': ['1months'],
             'prediction_frequency': '1d'
         }
         scoring_config = [
@@ -195,9 +195,11 @@ def simple_pipeline_test(pipeline_class):
         assert num_models == num_models_with_experiment
 
         # 7. that models have the train end date, including prediction window
-        models = db_engine.execute('select * from results.models')
-        for model in models:
-            assert model['train_end_time'] == datetime(2012, 7, 1)
+        train_end_times = [
+            model['train_end_time']
+            for model in db_engine.execute('select * from results.models')
+        ]
+        assert sorted(set(train_end_times)) == [datetime(2012, 7, 1), datetime(2013, 7, 1)]
 
 
 def test_serial_pipeline():
