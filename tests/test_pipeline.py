@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 from sqlalchemy import create_engine
+from functools import partial
 from tempfile import TemporaryDirectory
 import testing.postgresql
 
@@ -207,7 +208,9 @@ def test_serial_pipeline():
 
 
 def test_local_parallel_pipeline():
-    simple_pipeline_test(LocalParallelPipeline)
+    simple_pipeline_test(
+        partial(LocalParallelPipeline, n_processes=2, n_db_processes=2)
+    )
 
 
 def reuse_pipeline_test(pipeline_class):
@@ -284,4 +287,6 @@ def test_serial_pipeline_reuse():
 
 
 def test_localparallel_pipeline_reuse():
-    reuse_pipeline_test(LocalParallelPipeline)
+    reuse_pipeline_test(
+        partial(LocalParallelPipeline, n_processes=2, n_db_processes=2)
+    )
