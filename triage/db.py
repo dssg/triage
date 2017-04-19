@@ -124,6 +124,9 @@ class Evaluation(Base):
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     value = Column(Numeric)
+    num_labeled_examples = Column(Integer)
+    num_labeled_above_threshold = Column(Integer)
+    num_positive_labels = Column(Integer)
 
 
 def ensure_db(engine):

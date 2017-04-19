@@ -64,7 +64,7 @@ def false_positives(_, predictions_binary, labels, parameters):
 
 
 def true_negatives(_, predictions_binary, labels, parameters):
-    tn = [1 if x == 0 and y == 0 else 0 
+    tn = [1 if x == 0 and y == 0 else 0
             for (x, y) in zip(predictions_binary, labels)]
     return int(numpy.sum(tn))
 
@@ -73,6 +73,11 @@ def false_negatives(_, predictions_binary, labels, parameters):
     fn = [1 if x == 0 and y == 1 else 0
             for (x, y) in zip(predictions_binary, labels)]
     return int(numpy.sum(fn))
+
+
+def fpr(_, predictions_binary, labels, parameters):
+    fp = false_positives(_, predictions_binary, labels, parameters)
+    return float(fp / labels.count(0))
 
 
 class UnknownMetricError(ValueError):
@@ -86,7 +91,8 @@ def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
     """Generate subset of predictions based on top% or absolute
 
     Args:
-        test_predictions (list) The whole list of predictions
+        test_predictions (list) A list of predictions, sorted by risk desc
+        test_labels (list) A list of labels, sorted by risk desc
         x_value (int) The percentile or absolute value desired
         unit (string, default 'top_n') The subsetting method desired,
             either percentile or top_n
@@ -124,7 +130,8 @@ class ModelScorer(object):
         'true positives@': true_positives,
         'true negatives@': true_negatives,
         'false positives@': false_positives,
-        'false negatives@': false_negatives
+        'false negatives@': false_negatives,
+        'fpr@': fpr,
     }
 
     def __init__(self, metric_groups, db_engine, custom_metrics=None):
@@ -192,6 +199,9 @@ class ModelScorer(object):
             self.available_metrics
         """
         evaluations = []
+        num_labeled_examples = len(labels)
+        num_labeled_above_threshold = predictions_binary.count(1)
+        num_positive_labels = labels.count(1)
         for metric in metrics:
             if metric in self.available_metrics:
                 for parameter_combination in parameters:
@@ -211,7 +221,10 @@ class ModelScorer(object):
                     evaluations.append(Evaluation(
                         metric=metric,
                         parameter=parameter_string,
-                        value=value
+                        value=value,
+                        num_labeled_examples=num_labeled_examples,
+                        num_labeled_above_threshold=num_labeled_above_threshold,
+                        num_positive_labels=num_positive_labels
                     ))
             else:
                 raise UnknownMetricError()
@@ -236,12 +249,10 @@ class ModelScorer(object):
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             prediction_frequency (string) How frequently predictions were generated
         """
-        nan_mask = numpy.isfinite(labels)
-        predictions_proba = (predictions_proba[nan_mask]).tolist()
-        labels = (labels[nan_mask]).tolist()
-
         predictions_proba_sorted, labels_sorted = \
             zip(*sorted(zip(predictions_proba, labels), reverse=True))
+        labels_sorted = numpy.array(labels_sorted)
+
         evaluations = []
         for group in self.metric_groups:
             parameters = group.get('parameters', [{}])
@@ -256,39 +267,47 @@ class ModelScorer(object):
                         100,
                         unit='percentile'
                     ),
-                    labels,
+                    labels_sorted.tolist(),
                 )
 
+            logging.info('thresholding predictions for group')
             for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
-                binary_subset = generate_binary_at_x(
+                predicted_classes = numpy.array(generate_binary_at_x(
                     predictions_proba_sorted,
                     pct_thresh,
                     unit='percentile'
-                )
+                ))
+                nan_mask = numpy.isfinite(labels_sorted)
+                predicted_classes = (predicted_classes[nan_mask]).tolist()
+                present_labels_sorted = (labels_sorted[nan_mask]).tolist()
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
                     parameters,
                     {'pct': pct_thresh},
                     None,
-                    binary_subset,
-                    labels_sorted,
+                    predicted_classes,
+                    present_labels_sorted,
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
-                binary_subset = generate_binary_at_x(
+                predicted_classes = numpy.array(generate_binary_at_x(
                     predictions_proba_sorted,
                     abs_thresh,
                     unit='top_n'
-                )
+                ))
+                nan_mask = numpy.isfinite(labels_sorted)
+                predicted_classes = (predicted_classes[nan_mask]).tolist()
+                present_labels_sorted = (labels_sorted[nan_mask]).tolist()
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
                     parameters,
                     {'abs': abs_thresh},
                     None,
-                    binary_subset,
-                    labels_sorted,
+                    predicted_classes,
+                    present_labels_sorted,
                 )
 
+        logging.info('Writing metrics to db')
         self._write_to_db(
             model_id,
             evaluation_start_time,
@@ -296,6 +315,7 @@ class ModelScorer(object):
             prediction_frequency,
             evaluations
         )
+        logging.info('Done writing metrics to db')
 
     def _write_to_db(
         self,

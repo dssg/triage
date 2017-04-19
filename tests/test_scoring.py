@@ -1,6 +1,7 @@
-from triage.scoring import ModelScorer, generate_binary_at_x
+from triage.scoring import ModelScorer, generate_binary_at_x, fpr
 import testing.postgresql
 
+import numpy
 from sqlalchemy import create_engine
 from triage.db import ensure_db
 from tests.utils import fake_labels, fake_trained_model
@@ -111,27 +112,25 @@ def test_model_scoring_inspections():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         metric_groups = [{
-            'metrics': ['precision@', 'recall@'],
-            'thresholds': {
-                'percentiles': [5.0, 10.0],
-                'top_n': [5, 10]
-            }
+            'metrics': ['precision@', 'recall@', 'fpr@'],
+            'thresholds': {'percentiles': [50.0], 'top_n': [3]}
         }]
 
         model_scorer = ModelScorer(metric_groups, db_engine)
 
-        trained_model, model_id = fake_trained_model(
+        _, model_id = fake_trained_model(
             'myproject',
             InMemoryModelStorageEngine('myproject'),
             db_engine
         )
 
-        labels = fake_labels(5)
+        labels = numpy.array([True, False, numpy.nan, True, False])
+        prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
         evaluation_start = datetime.datetime(2016, 4, 1)
         evaluation_end = datetime.datetime(2016, 7, 1)
         prediction_frequency = '1d'
         model_scorer.score(
-            trained_model.predict_proba(labels)[:, 1],
+            prediction_probas,
             labels,
             model_id,
             evaluation_start,
@@ -139,26 +138,17 @@ def test_model_scoring_inspections():
             prediction_frequency
         )
 
-        # assert
-        # that all of the records are there
-        results = db_engine.execute(
-            '''select distinct(metric || parameter) from results.evaluations
+        for record in db_engine.execute(
+            '''select * from results.evaluations
             where model_id = %s and evaluation_start_time = %s order by 1''',
             (model_id, evaluation_start)
-        )
-        records = [
-            row[0] for row in results
-        ]
-        assert records == [
-            'precision@10.0_pct',
-            'precision@10_abs',
-            'precision@5.0_pct',
-            'precision@5_abs',
-            'recall@10.0_pct',
-            'recall@10_abs',
-            'recall@5.0_pct',
-            'recall@5_abs',
-        ]
+        ):
+            assert record['num_labeled_examples'] == 4
+            assert record['num_positive_labels'] == 2
+            if 'pct' in record['parameter']:
+                assert record['num_labeled_above_threshold'] == 1
+            else:
+                assert record['num_labeled_above_threshold'] == 2
 
 
 def test_generate_binary_at_x():
@@ -170,3 +160,15 @@ def test_generate_binary_at_x():
 
     assert generate_binary_at_x(input_list, 2) == \
         [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+
+
+def test_fpr():
+    predictions_binary = \
+        [1, 1, 1, 0, 0, 0, 0, 0]
+    labels = \
+        [1, 1, 0, 1, 0, 0, 0, 1]
+
+    result = fpr([], predictions_binary, labels, [])
+    # false positives = 1
+    # total negatives = 4
+    assert result == 0.25
