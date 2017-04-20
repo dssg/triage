@@ -8,7 +8,6 @@ sklearn
 tables==3.3.0
 pandas
 boto3
-collate
 click
 inflection
 numpy>=1.12
