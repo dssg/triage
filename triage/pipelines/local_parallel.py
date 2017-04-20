@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from functools import partial
 from triage.utils import Batch
 import os
+from sqlalchemy.pool import NullPool
 
 
 class LocalParallelPipeline(PipelineBase):
@@ -211,13 +212,15 @@ def insert_into_table(
 ):
     try:
         logging.info('Beginning insert batch')
-        db_engine = create_engine(db_connection_string)
+        db_engine = create_engine(db_connection_string, poolclass=NullPool)
         feature_generator = feature_generator_factory(db_engine)
         feature_generator.run_commands(insert_statements)
         return True
     except Exception as e:
         logging.error('Child error: %s', e)
         return False
+    finally:
+        db_engine.dispose()
 
 
 def build_matrix(
@@ -226,7 +229,7 @@ def build_matrix(
     db_connection_string,
 ):
     try:
-        db_engine = create_engine(db_connection_string)
+        db_engine = create_engine(db_connection_string, poolclass=NullPool)
         architect = architect_factory(engine=db_engine)
         for build_task in build_tasks:
             architect.build_matrix(**build_task)
@@ -234,6 +237,8 @@ def build_matrix(
     except Exception as e:
         logging.error('Child error: %s', e)
         return False
+    finally:
+        db_engine.dispose()
 
 
 def train_model(
@@ -242,7 +247,7 @@ def train_model(
     db_connection_string,
 ):
     try:
-        db_engine = create_engine(db_connection_string)
+        db_engine = create_engine(db_connection_string, poolclass=NullPool)
         trainer = trainer_factory(db_engine=db_engine)
         return [
             trainer.process_train_task(**train_task)
@@ -251,6 +256,8 @@ def train_model(
     except Exception as e:
         logging.error('Child error: %s', e)
         return []
+    finally:
+        db_engine.dispose()
 
 
 def test_and_score(
@@ -263,7 +270,7 @@ def test_and_score(
     config
 ):
     try:
-        db_engine = create_engine(db_connection_string)
+        db_engine = create_engine(db_connection_string, poolclass=NullPool)
         for model_id in model_ids:
             logging.info('Generating predictions for model id %s', model_id)
             predictor = predictor_factory(db_engine=db_engine)
@@ -287,3 +294,5 @@ def test_and_score(
     except Exception as e:
         logging.error('Child error: %s', e)
         return False
+    finally:
+        db_engine.dispose()
