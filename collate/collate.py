@@ -197,12 +197,20 @@ class Aggregate(AggregateExpression):
             yield ex.literal_column(column).label(to_sql_name(name))
 
 
-def maybequote(elt, quote_choices):
+def maybequote(elt, quote_override=None):
     "Quote for passing to SQL if necessary, based upon the python type"
-    if quote_choices is False or (quote_choices is None and isinstance(elt, Number)):
-        return elt
+    def quote_string(string):
+        return "'{}'".format(string)
+
+    if quote_override is None:
+        if isinstance(elt, Number):
+            return elt
+        else:
+            return quote_string(elt)
+    elif quote_override:
+        return quote_string(elt)
     else:
-        return "'{}'".format(elt)
+        return elt
 
 
 class Compare(Aggregate):
