@@ -262,7 +262,7 @@ class Compare(Aggregate):
         if include_null:
             d['{}_{}'.format(col, include_null)] = '({} is NULL)::INT'.format(col)
         if maxlen is not None and any(len(k) > maxlen for k in d.keys()):
-            for i, k in enumerate(d.keys()):
+            for i, k in enumerate(list(d.keys())):
                 d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
 
         Aggregate.__init__(self, d, function, order)
