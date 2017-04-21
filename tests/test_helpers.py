@@ -46,6 +46,20 @@ def test_compare_lists():
     assert_contains(d.values(), "really_long_column_name = 'really long string value that is quite alike to others'")
     assert_contains(d.values(), "really_long_column_name = 'really long string value that is also like everything else'")
 
+
+def test_compare_override_quoting():
+    d = collate.Compare(
+        'col',
+        '@>',
+        {'one': "array['one'::varchar]", 'two': "array['two'::varchar]"},
+        [],
+        quote_choices=False
+    ).quantities
+    assert len(d) == 2
+    assert_contains(d.values(), "col @> array['one'::varchar]")
+    assert_contains(d.values(), "col @> array['two'::varchar]")
+
+
 def test_compare_dicts():
     d = collate.Compare('col','=',{'vala': 'a','valb': 'b','valc': 'c'}, [], include_null=True).quantities
     assert len(d) == 4
