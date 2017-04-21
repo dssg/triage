@@ -197,9 +197,9 @@ class Aggregate(AggregateExpression):
             yield ex.literal_column(column).label(to_sql_name(name))
 
 
-def maybequote(elt):
+def maybequote(elt, quote_choices):
     "Quote for passing to SQL if necessary, based upon the python type"
-    if isinstance(elt, Number):
+    if quote_choices is False or (quote_choices is None and isinstance(elt, Number)):
         return elt
     else:
         return "'{}'".format(elt)
@@ -210,7 +210,8 @@ class Compare(Aggregate):
     A simple shorthand to automatically create many comparisons against one column
     """
     def __init__(self, col, op, choices, function,
-                 order=None, include_null=False, maxlen=None, op_in_name=True):
+                 order=None, include_null=False, maxlen=None, op_in_name=True,
+                 quote_choices=None):
         """
         Args:
             col: the column name (or equivalent SQL expression)
@@ -225,6 +226,7 @@ class Compare(Aggregate):
             maxlen: The maximum length of aggregate quantity names, if specified.
                 Names longer than this will be truncated.
             op_in_name: Include the operator in aggregate names (default False)
+            quote_choices: Override smart quoting if present (default None)
 
         A simple helper method to easily create many comparison columns from
         one source column by comparing it against many values. It effectively
@@ -245,7 +247,7 @@ class Compare(Aggregate):
             choices = {k: k for k in choices}
         opname = '_{}_'.format(op) if op_in_name else '_'
         d = {'{}{}{}'.format(col, opname, nickname):
-             "({} {} {})::INT".format(col, op, maybequote(choice))
+             "({} {} {})::INT".format(col, op, maybequote(choice, quote_choices))
              for nickname, choice in choices.items()}
         if include_null is True:
             include_null = '_NULL'
