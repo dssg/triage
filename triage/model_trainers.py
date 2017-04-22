@@ -76,6 +76,12 @@ class ModelTrainer(object):
 
         Returns: (string) a unique identifier
         """
+
+        parameters = {
+            key: parameters[key]
+            for key in parameters.keys()
+            if key != 'n_jobs'
+        }
         unique = {
             'className': class_path,
             'parameters': parameters,
@@ -407,6 +413,13 @@ class ModelTrainer(object):
 
         for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
+
+            if any(task['model_hash'] == model_hash for task in tasks):
+                logging.warning('Skipping model_hash %s because another' \
+                                'equivalent one found in this batch.' \
+                                'Classpath: %s -- Hyperparameters: %s',
+                                model_hash, class_path, parameters)
+                continue
             tasks.append({
                 'matrix_store': matrix_store,
                 'class_path': class_path,

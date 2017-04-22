@@ -156,3 +156,38 @@ def test_model_trainer():
             )
             assert expected_model_ids == \
                 sorted([model_id for model_id in new_model_ids])
+
+def test_n_jobs_not_new_model():
+    grid_config = {
+        'sklearn.ensemble.AdaBoostClassifier': {
+            'n_estimators': [10, 100, 1000]
+        },
+        'sklearn.ensemble.RandomForestClassifier': {
+            'n_estimators': [10, 100, 1000],
+            'max_features': ['sqrt', 'log2'],
+            'max_depth': [5, 10, 15, 20],
+            'criterion': ['gini', 'entropy'],
+            'n_jobs': [12, 24],
+        }
+    }
+
+    trainer = ModelTrainer(
+        project_path='',
+        experiment_hash=None,
+        model_storage_engine=S3ModelStorageEngine(None, ''),
+        db_engine=None,
+    )
+
+    train_tasks = trainer.generate_train_tasks(
+        grid_config,
+        dict(),
+        InMemoryMatrixStore(None, {
+            'prediction_window': '1d',
+            'end_time': datetime.datetime.now()
+        })
+    )
+    assert len(train_tasks) == 51 # 48+3, would be (48*2)+3 if we didn't remove
+    assert len([
+        task for task in train_tasks
+        if 'n_jobs' in task['parameters']
+    ]) == 48
