@@ -1,7 +1,5 @@
 language: python
 python:
-  - "3.3"
-  - "3.4"
   - "3.5"
 notifications:
   email: false
@@ -16,4 +14,4 @@ install:
   - pip install -e .
 
 script:
-    - python -m pytest --pep8 --cov=metta/
+    - tox
