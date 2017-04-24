@@ -4,8 +4,14 @@ python:
 notifications:
   email: false
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran libhdf5-serial-dev
+
 install:
-    - pip install tox
+
+  - pip install -r requirements-dev.txt
+  - pip install -e .
 
 script:
     - tox

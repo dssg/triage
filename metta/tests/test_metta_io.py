@@ -14,7 +14,7 @@ from metta.datafiles import (example_uuid_fname,
 from tempfile import mkdtemp
 from shutil import rmtree
 import copy
-import time
+
 
 dict_test_config = {'start_time': datetime.date(2016, 1, 1),
                     'end_time': datetime.date(2016, 12, 31),
@@ -74,7 +74,6 @@ class TestMettaIO(unittest.TestCase):
         assert os.path.isfile(self.temp_file('test_titanich5.h5'))
         assert os.path.isfile(self.temp_file('test_titanic.yaml'))
         assert os.path.isfile(self.temp_file('test_titanich5.yaml'))
-        assert os.path.isfile(self.temp_file('.matrix_uuids'))
 
     def test_archive_matrix(self):
         df_data = pd.read_csv(example_data_csv)
@@ -110,13 +109,10 @@ class TestMettaIO(unittest.TestCase):
             )
 
         test_uuids = [store_new_split(years) for years in range(1, 5)]
-        with open(self.temp_file('matrix_pairs.txt')) as f:
-            matrix_pairs = f.readlines()
 
         for test_uuid in test_uuids:
             assert os.path.isfile(self.temp_file('{}.csv'.format(test_uuid)))
             assert os.path.isfile(self.temp_file('{}.yaml'.format(test_uuid)))
-            assert '{},{}\n'.format(train_uuid, test_uuid) in matrix_pairs
 
     def test_archive_train_test(self):
         df_data = pd.read_csv(example_data_csv)
@@ -162,7 +158,7 @@ class TestMettaIO(unittest.TestCase):
 
         assert (later_creation_time - prior_creation_time) > 0
 
-        assert len(os.listdir(self.temp_dir)) == 4
+        assert len(os.listdir(self.temp_dir)) == 2
 
     def test_recover(self):
         df_data = pd.read_csv(example_data_csv)

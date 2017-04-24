@@ -9,10 +9,8 @@ import os
 import pandas as pd
 import warnings
 import datetime
-import uuid
 import json
 import hashlib
-from flufl.lock import Lock
 
 warnings.filterwarnings("ignore")
 
@@ -130,29 +128,21 @@ def archive_matrix(
     if not os.path.exists(abs_path_dir):
         os.makedirs(abs_path_dir)
 
-    uuid_fname = directory + '/' + '.matrix_uuids'
+    check_config_types(matrix_config)
 
-    with Lock(uuid_fname + '.lock', lifetime=datetime.timedelta(minutes=20)):
+    matrix_uuid = generate_uuid(matrix_config)
 
-        set_uuids = load_uuids(uuid_fname)
+    matrix_config = copy.deepcopy(matrix_config)
+    matrix_config['metta-uuid'] = matrix_uuid
 
-        check_config_types(matrix_config)
+    fname = directory + '/' + matrix_uuid
 
-        matrix_uuid = generate_uuid(matrix_config)
+    write_matrix = (overwrite) or not(os.path.isfile(fname + format))
+    if write_matrix:
+        _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
+                      format=format)
 
-        matrix_config = copy.deepcopy(matrix_config)
-        matrix_config['metta-uuid'] = matrix_uuid
-
-        write_matrix = (overwrite) or (not (matrix_uuid in set_uuids))
-        if write_matrix:
-            _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
-                          format=format)
-
-        if train_uuid:
-            with open(abs_path_dir + '/' + 'matrix_pairs.txt', 'a') as outfile:
-                outfile.write(','.join([train_uuid, matrix_uuid]) + '\n')
-
-        return matrix_uuid
+    return matrix_uuid
 
 
 def _store_matrix(metadata, df_data, title, directory, format='hd5'):
@@ -214,9 +204,6 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
             df_data.to_csv(fpath, index=False)
         else:
             df_data.to_csv(fpath)
-
-    with open(directory + '/' + '.matrix_uuids', 'a') as uuid_file:
-        uuid_file.write(title + '\n')
 
 
 def check_config_types(dict_config):
@@ -325,12 +312,13 @@ def recover_matrix(config, directory='.'):
     else:
         uuid = config
 
-    uuid_fname = directory + '/' + '.matrix_uuids'
-    set_uuids = load_uuids(uuid_fname)
+    fname = directory + '/' + uuid
 
-    if uuid in set_uuids:
-        fname = directory + '/' + uuid + '.h5'
-        df_matrix = pd.read_hdf(fname)
+    if os.path.isfile(fname + '.h5'):
+        df_matrix = pd.read_hdf(fname + '.h5')
+        return df_matrix
+    elif os.path.isfile(fname + '.csv'):
+        df_matrix = pd.read_csv(fname + '.csv')
         return df_matrix
     else:
         return None
