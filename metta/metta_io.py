@@ -11,6 +11,8 @@ import warnings
 import datetime
 import json
 import hashlib
+import shutil
+
 
 warnings.filterwarnings("ignore")
 
@@ -115,14 +117,14 @@ def archive_matrix(
             raise IOError('Not a file: {}'.format(abs_path_file))
 
         if abs_path_file[-3:] == 'csv':
-            df_matrix = pd.read_csv(abs_path_file)
+            pass
         elif abs_path_file[-2:] == 'h5':
             df_matrix = pd.read_hdf(abs_path_file)
         else:
             raise IOError('Not a csv or h5 file: {}'.format(abs_path_file))
     else:
         raise IOError(
-            'Not a dataframe of path to a dataframe: {}'.type(df_matrix))
+            'Not a dataframe or path to a dataframe: {}'.type(df_matrix))
 
     abs_path_dir = os.path.abspath(directory)
     if not os.path.exists(abs_path_dir):
@@ -177,9 +179,16 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
     IOError:
         label name is not the last column name
     """
-
     # check last column is the label
-    last_col = df_data.columns.tolist()[-1]
+    if isinstance(df_data, pd.DataFrame):
+        last_col = df_data.columns.tolist()[-1]
+    elif type(df_data) == str:
+        abs_path_file = os.path.abspath(df_data)
+        if not (os.path.isfile(abs_path_file)):
+            raise IOError('Not a file: {}'.format(abs_path_file))
+        if abs_path_file[-3:] == 'csv':
+            headers = pd.read_csv(abs_path_file, nrows=1)
+            last_col = headers.columns.tolist()[-1]
 
     if not (metadata['label_name'] == last_col):
         raise IOError('label_name is not last column')
@@ -200,10 +209,14 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
     elif format == 'csv':
         fpath = '{directory}/{title}.csv'.format(directory=directory,
                                                  title=title)
-        if df_data.index.name:
-            df_data.to_csv(fpath, index=False)
-        else:
-            df_data.to_csv(fpath)
+        if isinstance(df_data, pd.DataFrame):
+            if df_data.index.name:
+                df_data.to_csv(fpath, index=False)
+            else:
+                df_data.to_csv(fpath)
+        elif type(df_data) == str:
+            if abs_path_file[-3:] == 'csv':
+                shutil.copyfile(abs_path_file, fpath)
 
 
 def check_config_types(dict_config):
