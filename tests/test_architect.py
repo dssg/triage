@@ -325,7 +325,7 @@ def test_build_outer_join_query():
                 assert(test.all().all())
 
 class TestMergeFeatureCSVs(TestCase):
-    def test_merge_feature_csvs(self):
+    def test_merge_feature_csvs_lowmem(self):
         with TemporaryDirectory() as temp_dir:
             architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
@@ -374,11 +374,12 @@ class TestMergeFeatureCSVs(TestCase):
                     writer.writerow(row)
                 f.seek(0)
             try:
-                with NamedTempFile() as outfile:
-                    architect.builder.merge_feature_csvs(
-                        [f.name for f in sourcefiles],
-                        outfile.name
-                    )
+                outfilename = architect.builder.merge_feature_csvs(
+                    [f.name for f in sourcefiles],
+                    matrix_directory=temp_dir,
+                    matrix_uuid='1234'
+                )
+                with open(outfilename) as outfile:
                     reader = csv.reader(outfile)
                     result = [row for row in reader]
                     self.assertEquals(result, [
@@ -434,12 +435,12 @@ class TestMergeFeatureCSVs(TestCase):
                     writer.writerow(row)
                 f.seek(0)
             try:
-                with NamedTempFile() as outfile:
-                    with self.assertRaises(ValueError):
-                        architect.builder.merge_feature_csvs(
-                            [f.name for f in sourcefiles],
-                            outfile.name
-                        )
+                with self.assertRaises(ValueError):
+                    architect.builder.merge_feature_csvs(
+                        [f.name for f in sourcefiles],
+                        matrix_directory=temp_dir,
+                        matrix_uuid='1234'
+                    )
             finally:
                 for sourcefile in sourcefiles:
                     sourcefile.close()
@@ -555,7 +556,7 @@ class TestBuildMatrix(object):
                 )
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
@@ -612,7 +613,7 @@ class TestBuildMatrix(object):
                 }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
@@ -671,7 +672,7 @@ class TestBuildMatrix(object):
                 }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',

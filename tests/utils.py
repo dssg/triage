@@ -46,9 +46,9 @@ def create_features_table(table_number, table, engine):
     engine.execute(
         """
             create table features.features{} (
-                entity_id int, as_of_date date, f1 int, f2 int
+                entity_id int, as_of_date date, f{} int, f{} int
             )
-        """.format(table_number)
+        """.format(table_number, (table_number*2)+1, (table_number*2)+2)
     )
     for row in table:
         engine.execute(

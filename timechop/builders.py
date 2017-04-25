@@ -1,5 +1,6 @@
 import io
 import logging
+import pandas
 from metta import metta_io as metta
 import os
 import csv
@@ -215,10 +216,6 @@ class CSVBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        temp_matrix_filename = os.path.join(
-            matrix_directory,
-            'tmp_{}.csv'.format(matrix_uuid)
-        )
         matrix_filename = os.path.join(
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
@@ -238,48 +235,57 @@ class CSVBuilder(BuilderBase):
             matrix_type,
             matrix_uuid
         )
-        logging.info('Writing feature group data')
-        features_csv_names = self.write_features_data(
-            as_of_times,
-            feature_dictionary,
-            entity_date_table_name,
-            matrix_uuid
-        )
-        logging.info('Writing label data')
-        labels_csv_name = self.write_labels_data(
-            as_of_times,
-            label_name,
-            label_type,
-            matrix_type,
-            entity_date_table_name,
-            matrix_uuid
-        )
-        features_csv_names.insert(0, labels_csv_name)
-
-        # stitch together the csvs
-        logging.info('Merging features data')
-        self.merge_feature_csvs(features_csv_names, temp_matrix_filename)
-
-        # store the matrix
-        logging.info('Archiving matrix with metta')
-        metta.archive_matrix(
-            matrix_config=matrix_metadata,
-            df_matrix=temp_matrix_filename,
-            overwrite=True,
-            directory=self.matrix_directory,
-            format='csv'
-        )
-
-        # clean up files and database before finishing
-        for csv_name in features_csv_names:
-            self.remove_file(csv_name)
-        os.remove(temp_matrix_filename)
-        self.engine.execute(
-            'drop table "{}"."{}";'.format(
-                self.db_config['features_schema_name'],
-                entity_date_table_name
+        try:
+            logging.info('Writing feature group data')
+            features_csv_names = self.write_features_data(
+                as_of_times,
+                feature_dictionary,
+                entity_date_table_name,
+                matrix_uuid
             )
-        )
+            try:
+                logging.info('Writing label data')
+                labels_csv_name = self.write_labels_data(
+                    as_of_times,
+                    label_name,
+                    label_type,
+                    matrix_type,
+                    entity_date_table_name,
+                    matrix_uuid
+                )
+                features_csv_names.insert(0, labels_csv_name)
+
+                # stitch together the csvs
+                logging.info('Merging features data')
+                output = self.merge_feature_csvs(
+                    features_csv_names,
+                    matrix_directory,
+                    matrix_uuid
+                )
+            finally:
+                # clean up files and database before finishing
+                for csv_name in features_csv_names:
+                    self.remove_file(csv_name)
+            try:
+                # store the matrix
+                logging.info('Archiving matrix with metta')
+                metta.archive_matrix(
+                    matrix_config=matrix_metadata,
+                    df_matrix=output,
+                    overwrite=True,
+                    directory=self.matrix_directory,
+                    format='csv'
+                )
+            finally:
+                if isinstance(output, str):
+                    os.remove(output)
+        finally:
+            self.engine.execute(
+                'drop table "{}"."{}";'.format(
+                    self.db_config['features_schema_name'],
+                    entity_date_table_name
+                )
+            )
 
 
     def write_labels_data(self, as_of_times, label_name, label_type,
@@ -387,7 +393,31 @@ class CSVBuilder(BuilderBase):
         finally:
             self.close_filehandle(file_name)
 
-    def merge_feature_csvs(self, source_filenames, out_filename):
+
+class LowMemoryCSVBuilder(CSVBuilder):
+    def __init__(self, *args, **kwargs):
+        super(LowMemoryCSVBuilder, self).__init__(*args, **kwargs)
+        self.filehandles = {}
+
+    def open_fh_for_writing(self, filename):
+        self.filehandles[filename] = open(filename, 'wb')
+        return self.filehandles[filename]
+
+    def open_fh_for_reading(self, filename):
+        return open(filename)
+
+    def close_filehandles(self):
+        for fh in self.filehandles.values():
+            fh.close()
+
+    def close_filehandle(self, filename):
+        self.filehandles[filename].close()
+
+    def remove_file(self, filename):
+        del self.filehandles[filename]
+        os.remove(filename)
+
+    def merge_feature_csvs(self, source_filenames, matrix_directory, matrix_uuid):
         """Horizontally merge a list of feature CSVs
         Assumptions:
         - The first and second columns of each CSV are
@@ -401,16 +431,22 @@ class CSVBuilder(BuilderBase):
         - The label will be in the *last* column of the merged CSV
 
         :param source_filenames: the filenames of each feature csv
-        :param out_filename: the desired filename of the merged csv
+        :param matrix_directory: the directory that the final CSV will reside in
+        :param matrix_uuid: the uuid of the final matrix
         :type source_filenames: list
-        :type out_filename: str
+        :type matrix_directory: str
+        :type matrix_uuid: str
 
         :return: none
         :rtype: none
 
         :raises: ValueError if the first two columns in every CSV don't match
         """
-        with open(out_filename, 'w') as outfile:
+        temp_matrix_filename = os.path.join(
+            matrix_directory,
+            'tmp_{}.csv'.format(matrix_uuid)
+        )
+        with open(temp_matrix_filename, 'w') as outfile:
             writer = csv.writer(outfile)
             source_filehandles = [self.open_fh_for_reading(fname) for fname in source_filenames]
             source_readers = [csv.reader(fh) for fh in source_filehandles]
@@ -465,29 +501,8 @@ class CSVBuilder(BuilderBase):
                     writer.writerow(entity_ids + dates + all_features + [label])
             finally:
                 self.close_filehandles()
+        return temp_matrix_filename
 
-class LowMemoryCSVBuilder(CSVBuilder):
-    def __init__(self, *args, **kwargs):
-        super(LowMemoryCSVBuilder, self).__init__(*args, **kwargs)
-        self.filehandles = {}
-
-    def open_fh_for_writing(self, filename):
-        self.filehandles[filename] = open(filename, 'wb')
-        return self.filehandles[filename]
-
-    def open_fh_for_reading(self, filename):
-        return open(filename)
-
-    def close_filehandles(self):
-        for fh in self.filehandles.values():
-            fh.close()
-
-    def close_filehandle(self, filename):
-        self.filehandles[filename].close()
-
-    def remove_file(self, filename):
-        del self.filehandles[filename]
-        os.remove(filename)
 
 class HighMemoryCSVBuilder(CSVBuilder):
     def __init__(self, *args, **kwargs):
@@ -510,3 +525,37 @@ class HighMemoryCSVBuilder(CSVBuilder):
 
     def remove_file(self, filename):
         del self.filehandles[filename]
+
+    def merge_feature_csvs(self, source_filenames, matrix_directory, matrix_uuid):
+        """Horizontally merge a list of feature CSVs
+        Assumptions:
+        - The first and second columns of each CSV are
+          the entity_id and date
+        - That the CSVs have the same list of entity_id/date combinations
+          in the same order.
+        - The first CSV is expected to be labels, and only have
+          entity_id, date, and label.
+        - All other CSVs do not have any labels (all non entity_id/date columns
+          will be treated as features)
+        - The label will be in the *last* column of the merged CSV
+
+        :param source_filenames: the filenames of each feature csv
+        :param out_filename: the desired filename of the merged csv
+        :type source_filenames: list
+        :type out_filename: str
+
+        :return: none
+        :rtype: none
+
+        :raises: ValueError if the first two columns in every CSV don't match
+        """
+
+        source_filehandles = [self.open_fh_for_reading(fname) for fname in source_filenames]
+        dataframes = []
+        for filehandle in source_filehandles:
+            df = pandas.read_csv(filehandle)
+            df.set_index(['entity_id', 'as_of_date'], inplace=True)
+            dataframes.append(df)
+
+        big_df = dataframes[1].join(dataframes[2:] + dataframes[0])
+        return big_df
