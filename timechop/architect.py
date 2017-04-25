@@ -132,11 +132,20 @@ class Architect(object):
         :return: none
         :rtype: none
         """
+        temp_matrix_filename = os.path.join(
+            matrix_directory,
+            'tmp_{}.csv'.format(matrix_uuid)
+        )
         matrix_filename = os.path.join(
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
         )
-        if not self.replace and os.path.exists(matrix_filename):
+        if not self.replace and os.path.exists(
+            os.path.join(
+                matrix_directory,
+                '{}.csv'.format(matrix_uuid)
+            )
+        ):
             logging.info('Skipping %s because matrix already exists', matrix_filename)
             return
 
@@ -171,13 +180,13 @@ class Architect(object):
 
         # stitch together the csvs
         logging.info('Merging features data')
-        self.merge_feature_csvs(features_csv_names, matrix_filename)
+        self.merge_feature_csvs(features_csv_names, temp_matrix_filename)
 
         # store the matrix
         logging.info('Archiving matrix with metta')
         metta.archive_matrix(
             matrix_config=matrix_metadata,
-            df_matrix=matrix_filename,
+            df_matrix=temp_matrix_filename,
             overwrite=True,
             directory=self.matrix_directory,
             format='csv'
@@ -186,13 +195,13 @@ class Architect(object):
         # clean up files and database before finishing
         for csv_name in features_csv_names:
             os.remove(csv_name)
+        os.remove(temp_matrix_filename)
         self.engine.execute(
             'drop table "{}"."{}";'.format(
                 self.db_config['features_schema_name'],
                 entity_date_table_name
             )
         )
-
 
     def write_labels_data(self, as_of_times, label_name, label_type,
                           matrix_type, entity_date_table_name, matrix_uuid):
