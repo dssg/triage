@@ -265,13 +265,15 @@ def test_build_outer_join_query():
 
     # make dataframe for entity ids and dates
     ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
-    
+
+    features = [['f1', 'f2'], ['f3', 'f4']]
     # make dataframes of features to test against
     features_dfs = []
-    for table in features_tables:
+    for i, table in enumerate(features_tables):
+        cols = ['entity_id', 'as_of_date'] + features[i]
         temp_df = pd.DataFrame(
             table,
-            columns = ['entity_id', 'as_of_date', 'f1', 'f2']
+            columns = cols
         )
         temp_df['as_of_date'] = convert_string_column_to_date(temp_df['as_of_date'])
         features_dfs.append(
@@ -317,7 +319,7 @@ def test_build_outer_join_query():
                     right_table_name = 'features.{}'.format(table_name),
                     entity_date_table_name = 'features.{}'.format(entity_date_table_name),
                     right_column_selections = architect.builder._format_imputations(
-                        ['f1', 'f2']
+                        features[table_number]
                     )
                 )
                 result = pd.read_sql(query, engine)
