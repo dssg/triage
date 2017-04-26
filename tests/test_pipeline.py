@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from functools import partial
 from tempfile import TemporaryDirectory
 import testing.postgresql
+from unittest.mock import Mock
 
 from triage.db import ensure_db
 from triage.storage import FSModelStorageEngine
@@ -85,6 +86,19 @@ def populate_source_data(db_engine):
             "insert into events values (%s, %s, %s)",
             event
         )
+
+def num_linked_evaluations(db_engine):
+    num_evaluations = len([
+        row for row in db_engine.execute('''
+            select * from results.evaluations e
+            join results.models using (model_id)
+            join results.predictions p on (
+                e.model_id = p.model_id and
+                e.evaluation_start_time <= p.as_of_date and
+                e.evaluation_end_time > p.as_of_date)
+        ''')
+    ])
+    return num_evaluations
 
 
 def simple_pipeline_test(pipeline_class):
@@ -225,9 +239,9 @@ def reuse_pipeline_test(pipeline_class):
             'modeling_start_time': '2011-01-01',
             'modeling_end_time': '2014-01-01',
             'update_window': '1y',
-            'prediction_window': '6m',
-            'look_back_durations': ['6m'],
-            'test_durations': ['1m'],
+            'prediction_window': '6months',
+            'look_back_durations': ['6months'],
+            'test_durations': ['1months'],
             'prediction_frequency': '1d'
         }
         scoring_config = {
@@ -271,19 +285,24 @@ def reuse_pipeline_test(pipeline_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir.name, 'inspections'),
-                replace=False
             )
 
             pipeline.run()
 
-            # if the second run tries to write any new
-            # matrices or models, it will get permission denied!
-            os.chmod(temp_dir.name, 0o500)
+            evaluations = num_linked_evaluations(db_engine)
+            assert evaluations > 0
 
+            pipeline = pipeline_class(
+                config=experiment_config,
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir.name, 'inspections'),
+                replace=False
+            )
+            pipeline.make_entity_date_table = Mock()
             pipeline.run()
-
+            assert not pipeline.make_entity_date_table.called
         finally:
-            os.chmod(temp_dir.name, 0o700)
             temp_dir.cleanup()
 
 
