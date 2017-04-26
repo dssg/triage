@@ -557,5 +557,5 @@ class HighMemoryCSVBuilder(CSVBuilder):
             df.set_index(['entity_id', 'as_of_date'], inplace=True)
             dataframes.append(df)
 
-        big_df = dataframes[1].join(dataframes[2:] + dataframes[0])
+        big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
         return big_df
