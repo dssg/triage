@@ -100,8 +100,8 @@ class Predictor(object):
                 ))
         else:
             temp_df = pandas.DataFrame({'score': predictions})
-            rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
-            rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
+            rankings_abs = temp_df['score'].rank(method='first', ascending=False)
+            rankings_pct = temp_df['score'].rank(method='first', ascending=False, pct=True)
             for entity_id, score, label, rank_abs, rank_pct in zip(
                 matrix.index,
                 predictions,
