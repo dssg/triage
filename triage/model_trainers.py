@@ -64,6 +64,13 @@ class ModelTrainer(object):
         self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.replace = replace
 
+    def unique_parameters(self, parameters):
+        return {
+            key: parameters[key]
+            for key in parameters.keys()
+            if key != 'n_jobs'
+        }
+
     def _model_hash(self, matrix_metadata, class_path, parameters):
         """Generates a unique identifier for a trained model
         based on attributes of the model that together define
@@ -77,14 +84,9 @@ class ModelTrainer(object):
         Returns: (string) a unique identifier
         """
 
-        parameters = {
-            key: parameters[key]
-            for key in parameters.keys()
-            if key != 'n_jobs'
-        }
         unique = {
             'className': class_path,
-            'parameters': parameters,
+            'parameters': self.unique_parameters(parameters),
             'project_path': self.project_path,
             'training_metadata': matrix_metadata
         }
@@ -211,9 +213,11 @@ class ModelTrainer(object):
             parameters,
         )
 
+        unique_parameters = self.unique_parameters(parameters)
+
         model_group_id = self._get_model_group_id(
              class_path,
-             parameters,
+             unique_parameters,
              matrix_store.metadata['feature_names'],
              matrix_store.metadata.get('model_config', dict())
         )
@@ -222,7 +226,7 @@ class ModelTrainer(object):
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
-            parameters,
+            unique_parameters,
             feature_names,
             model_hash,
             trained_model,

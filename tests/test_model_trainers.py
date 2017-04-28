@@ -163,7 +163,7 @@ def test_n_jobs_not_new_model():
             'n_estimators': [10, 100, 1000]
         },
         'sklearn.ensemble.RandomForestClassifier': {
-            'n_estimators': [10, 100, 1000],
+            'n_estimators': [10, 100],
             'max_features': ['sqrt', 'log2'],
             'max_depth': [5, 10, 15, 20],
             'criterion': ['gini', 'entropy'],
@@ -171,23 +171,46 @@ def test_n_jobs_not_new_model():
         }
     }
 
-    trainer = ModelTrainer(
-        project_path='',
-        experiment_hash=None,
-        model_storage_engine=S3ModelStorageEngine(None, ''),
-        db_engine=None,
-    )
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        ensure_db(engine)
+        with mock_s3():
+            s3_conn = boto3.resource('s3')
+            s3_conn.create_bucket(Bucket='econ-dev')
+            trainer = ModelTrainer(
+                project_path='econ-dev/inspections',
+                experiment_hash=None,
+                model_storage_engine=S3ModelStorageEngine(s3_conn, 'econ-dev/inspections'),
+                db_engine=engine,
+            )
 
-    train_tasks = trainer.generate_train_tasks(
-        grid_config,
-        dict(),
-        InMemoryMatrixStore(None, {
-            'prediction_window': '1d',
-            'end_time': datetime.datetime.now()
-        })
-    )
-    assert len(train_tasks) == 51 # 48+3, would be (48*2)+3 if we didn't remove
-    assert len([
-        task for task in train_tasks
-        if 'n_jobs' in task['parameters']
-    ]) == 48
+            matrix = pandas.DataFrame.from_dict({
+                'entity_id': [1, 2],
+                'feature_one': [3, 4],
+                'feature_two': [5, 6],
+                'label': ['good', 'bad']
+            })
+            train_tasks = trainer.generate_train_tasks(
+                grid_config,
+                dict(),
+                InMemoryMatrixStore(matrix, {
+                    'prediction_window': '1d',
+                    'end_time': datetime.datetime.now(),
+                    'start_time': datetime.date(2012, 12, 20),
+                    'label_name': 'label',
+                    'feature_names': ['ft1', 'ft2']
+                })
+            )
+            assert len(train_tasks) == 35 # 32+3, would be (32*2)+3 if we didn't remove
+            assert len([
+                task for task in train_tasks
+                if 'n_jobs' in task['parameters']
+            ]) == 32
+
+            for train_task in train_tasks:
+                trainer.process_train_task(**train_task)
+
+            for row in engine.execute(
+                'select model_parameters from results.model_groups'
+            ):
+                assert 'n_jobs' not in row[0]
