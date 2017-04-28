@@ -1,6 +1,7 @@
 import numpy
 from sklearn import metrics
 from triage.db import Evaluation
+from triage.utils import sort_predictions_and_labels
 from sqlalchemy.orm import sessionmaker
 import logging
 
@@ -249,8 +250,10 @@ class ModelScorer(object):
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             prediction_frequency (string) How frequently predictions were generated
         """
-        predictions_proba_sorted, labels_sorted = \
-            zip(*sorted(zip(predictions_proba, labels), reverse=True))
+        predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
+            predictions_proba,
+            labels
+        )
         labels_sorted = numpy.array(labels_sorted)
 
         evaluations = []

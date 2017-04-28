@@ -198,3 +198,11 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
         return saved.model_id if saved else None
     finally:
         session.close()
+
+
+def sort_predictions_and_labels(predictions_proba, labels):
+    predictions_proba_sorted, labels_sorted = zip(*sorted(
+        zip(predictions_proba, labels),
+        key=lambda pair: pair[0], reverse=True)
+    )
+    return predictions_proba_sorted, labels_sorted
