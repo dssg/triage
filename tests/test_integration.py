@@ -37,7 +37,8 @@ def test_integration():
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
                 'prediction_window': '1y',
-                'feature_names': ['ft1', 'ft2']
+                'feature_names': ['ft1', 'ft2'],
+                'metta-uuid': '1234',
             }
 
             train_store = InMemoryMatrixStore(train_matrix, train_metadata)
@@ -57,7 +58,8 @@ def test_integration():
                     }).set_index('entity_id'),
                     {
                         'label_name': 'label',
-                        'end_time': as_of_date
+                        'end_time': as_of_date,
+                        'metta-uuid': '1234',
                     }
                 )
                 for as_of_date in as_of_dates

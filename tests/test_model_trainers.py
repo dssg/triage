@@ -42,6 +42,7 @@ def test_model_trainer():
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
                 'prediction_window': '1y',
+                'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2']
             }
             project_path = 'econ-dev/inspections'
@@ -183,7 +184,8 @@ def test_n_jobs_not_new_model():
         dict(),
         InMemoryMatrixStore(None, {
             'prediction_window': '1d',
-            'end_time': datetime.datetime.now()
+            'end_time': datetime.datetime.now(),
+            'metta-uuid': '1234',
         })
     )
     assert len(train_tasks) == 51 # 48+3, would be (48*2)+3 if we didn't remove
