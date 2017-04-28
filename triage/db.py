@@ -127,6 +127,7 @@ class Evaluation(Base):
     num_labeled_examples = Column(Integer)
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
+    sort_seed = Column(Integer)
 
 
 def ensure_db(engine):

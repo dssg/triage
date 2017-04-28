@@ -1,8 +1,10 @@
 import numpy
 from sklearn import metrics
 from triage.db import Evaluation
+from triage.utils import sort_predictions_and_labels
 from sqlalchemy.orm import sessionmaker
 import logging
+import time
 
 
 """Metric definitions
@@ -134,7 +136,7 @@ class ModelScorer(object):
         'fpr@': fpr,
     }
 
-    def __init__(self, metric_groups, db_engine, custom_metrics=None):
+    def __init__(self, metric_groups, db_engine, sort_seed=None, custom_metrics=None):
         """
         Args:
             metric_groups (list) A list of groups of metric/configurations
@@ -168,6 +170,7 @@ class ModelScorer(object):
         """
         self.metric_groups = metric_groups
         self.db_engine = db_engine
+        self.sort_seed = sort_seed or int(time.time())
         if custom_metrics:
             self.available_metrics.update(custom_metrics)
         if self.db_engine:
@@ -224,7 +227,8 @@ class ModelScorer(object):
                         value=value,
                         num_labeled_examples=num_labeled_examples,
                         num_labeled_above_threshold=num_labeled_above_threshold,
-                        num_positive_labels=num_positive_labels
+                        num_positive_labels=num_positive_labels,
+                        sort_seed=self.sort_seed
                     ))
             else:
                 raise UnknownMetricError()
@@ -249,8 +253,11 @@ class ModelScorer(object):
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             prediction_frequency (string) How frequently predictions were generated
         """
-        predictions_proba_sorted, labels_sorted = \
-            zip(*sorted(zip(predictions_proba, labels), reverse=True))
+        predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
+            predictions_proba,
+            labels,
+            self.sort_seed
+        )
         labels_sorted = numpy.array(labels_sorted)
 
         evaluations = []

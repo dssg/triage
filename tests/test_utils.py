@@ -1,6 +1,7 @@
 from triage.utils import temporal_splits, \
     filename_friendly_hash, \
-    save_experiment_and_get_hash
+    save_experiment_and_get_hash, \
+    sort_predictions_and_labels
 from triage.db import ensure_db
 from sqlalchemy import create_engine
 import testing.postgresql
@@ -124,3 +125,35 @@ def test_save_experiment_and_get_hash():
         assert isinstance(exp_hash, str)
         new_hash = save_experiment_and_get_hash(experiment_config, engine)
         assert new_hash == exp_hash
+
+def test_sort_predictions_and_labels():
+    predictions = [
+        0.5,
+        0.4,
+        0.6,
+        0.5,
+    ]
+
+    labels = [
+        False,
+        False,
+        True,
+        True
+    ]
+
+    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+        predictions,
+        labels,
+        8
+    )
+    assert sorted_predictions == (0.6, 0.5, 0.5, 0.4)
+    assert sorted_labels == (True, True, False, False)
+
+
+    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+        predictions,
+        labels,
+        12345
+    )
+    assert sorted_predictions == (0.6, 0.5, 0.5, 0.4)
+    assert sorted_labels == (True, False, True, False)

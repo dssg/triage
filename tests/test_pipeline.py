@@ -102,9 +102,11 @@ def simple_pipeline_test(pipeline_class):
             'test_durations': ['1months'],
             'prediction_frequency': '1d'
         }
-        scoring_config = [
-            {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
-        ]
+        scoring_config = {
+            'metric_groups': [
+                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+            ]
+        }
         grid_config = {
             'sklearn.linear_model.LogisticRegression': {
                 'C': [0.00001, 0.0001],
@@ -228,9 +230,12 @@ def reuse_pipeline_test(pipeline_class):
             'test_durations': ['1m'],
             'prediction_frequency': '1d'
         }
-        scoring_config = [
-            {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
-        ]
+        scoring_config = {
+            'metric_groups': [
+                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+            ],
+            'sort_seed': 12345
+        }
         grid_config = {
             'sklearn.linear_model.LogisticRegression': {
                 'C': [0.00001, 0.0001],
