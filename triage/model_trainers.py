@@ -217,9 +217,9 @@ class ModelTrainer(object):
              matrix_store.metadata['feature_names'],
              matrix_store.metadata.get('model_config', dict())
         )
-        logging.debug('Trained model')
+        logging.info('Trained model: %s', model_hash)
         model_store.write(trained_model)
-        logging.debug('Cached model')
+        logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
             parameters,
@@ -229,7 +229,7 @@ class ModelTrainer(object):
             model_group_id,
             misc_db_parameters
         )
-        logging.info('Wrote model to db')
+        logging.info('Wrote model to db: %s', model_hash)
         return model_id
 
     def _get_model_group_id(
