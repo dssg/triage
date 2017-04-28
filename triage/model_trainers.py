@@ -217,9 +217,9 @@ class ModelTrainer(object):
              matrix_store.metadata['feature_names'],
              matrix_store.metadata.get('model_config', dict())
         )
-        logging.debug('Trained model')
+        logging.info('Trained model: %s', model_hash)
         model_store.write(trained_model)
-        logging.debug('Cached model')
+        logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
             parameters,
@@ -229,7 +229,7 @@ class ModelTrainer(object):
             model_group_id,
             misc_db_parameters
         )
-        logging.info('Wrote model to db')
+        logging.info('Wrote model to db: %s', model_hash)
         return model_id
 
     def _get_model_group_id(
@@ -364,14 +364,17 @@ class ModelTrainer(object):
         model_store = self.model_storage_engine.get_store(model_hash)
         saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
         if not self.replace and model_store.exists() and saved_model_id:
-            logging.warning('Skipping %s/%s', class_path, parameters)
+            logging.info('Skipping %s/%s', class_path, parameters)
             return saved_model_id
+
         if self.replace:
-            logging.warning('Training because replace flag has been set')
+            reason = 'replace flag has been set'
         elif not model_store.exists():
-            logging.warning('Training because model pickle not found in store')
+            reason = 'model pickle not found in store'
         elif not saved_model_id:
-            logging.warning('Training because model metadata not found')
+            reason = 'model metadata not found'
+
+        logging.info('Training %s/%s: %s', class_path, parameters, reason)
         model_id = self._train_and_store_model(
             matrix_store,
             class_path,

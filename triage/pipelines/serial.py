@@ -18,7 +18,8 @@ class SerialPipeline(PipelineBase):
             self.split_definitions,
             self.feature_dicts
         )
-        for split in updated_split_definitions:
+        for split_num, split in enumerate(updated_split_definitions):
+            self.log_split(split_num, split)
             train_store = MettaCSVMatrixStore(
                 matrix_path=os.path.join(
                     self.matrices_directory,
