@@ -415,6 +415,7 @@ class ModelTrainer(object):
         misc_db_parameters['train_end_time'] = \
             matrix_store.metadata['end_time'] + \
             convert_str_to_relativedelta(matrix_store.metadata['prediction_window'])
+        misc_db_parameters['train_matrix_uuid'] = matrix_store.uuid
 
         tasks = []
 

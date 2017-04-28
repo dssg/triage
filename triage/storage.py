@@ -124,6 +124,10 @@ class MatrixStore(object):
             self._labels = self.matrix.pop(self.metadata['label_name'])
             return self._labels
 
+    @property
+    def uuid(self):
+        return self.metadata['metta-uuid']
+
 
 class MettaMatrixStore(MatrixStore):
     def __init__(self, matrix_path, metadata_path):

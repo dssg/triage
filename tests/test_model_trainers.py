@@ -42,6 +42,7 @@ def test_model_trainer():
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
                 'prediction_window': '1y',
+                'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2']
             }
             project_path = 'econ-dev/inspections'
@@ -198,6 +199,7 @@ def test_n_jobs_not_new_model():
                     'end_time': datetime.datetime.now(),
                     'start_time': datetime.date(2012, 12, 20),
                     'label_name': 'label',
+                    'metta-uuid': '1234',
                     'feature_names': ['ft1', 'ft2']
                 })
             )
