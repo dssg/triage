@@ -122,7 +122,7 @@ grid_config:
 # MODEL SCORING
 # How each trained model is scored
 #
-# Each entry needs a list of one of the metrics defined in
+# Each entry in 'metric_groups' needs a list of one of the metrics defined in
 # triage.scoring.ModelScorer.available_metrics (contributions welcome!)
 # Depending on the metric, either thresholds or parameters
 #
@@ -132,18 +132,24 @@ grid_config:
 #
 # Thresholds are more specific: The list is subset and only the
 # top percentile or top n entities are scored
+#
+# sort_seed, if passed, will seed the random number generator for each model's
+# metric creation phase. This affects how entities with the same probabilities
+# are sorted
 scoring:
-    -
-        metrics: [precision@, recall@]
-        thresholds:
-            percentiles: [5.0, 10.0]
-            top_n: [5, 10]
-    -
-        metrics: [f1]
-    -
-        metrics: [fbeta@]
-        parameters:
-            -
-                beta: 0.75
-            -
-                beta: 1.25
+    sort_seed: 5
+    metric_groups:
+        -
+            metrics: [precision@, recall@]
+            thresholds:
+                percentiles: [5.0, 10.0]
+                top_n: [5, 10]
+        -
+            metrics: [f1]
+        -
+            metrics: [fbeta@]
+            parameters:
+                -
+                    beta: 0.75
+                -
+                    beta: 1.25

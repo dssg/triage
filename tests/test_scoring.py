@@ -41,7 +41,11 @@ def test_model_scoring_early_warning():
 
         custom_metrics = {'mediocre': always_half}
 
-        model_scorer = ModelScorer(metric_groups, db_engine, custom_metrics)
+        model_scorer = ModelScorer(
+            metric_groups,
+            db_engine,
+            custom_metrics=custom_metrics
+        )
 
         trained_model, model_id = fake_trained_model(
             'myproject',

@@ -130,7 +130,8 @@ class PipelineBase(object):
 
         self.model_scorer_factory = partial(
             ModelScorer,
-            metric_groups=self.config['scoring'],
+            sort_seed=self.config['scoring'].get('sort_seed', None),
+            metric_groups=self.config['scoring']['metric_groups'],
         )
 
     def initialize_components(self):

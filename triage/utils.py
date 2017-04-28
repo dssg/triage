@@ -5,6 +5,7 @@ import tempfile
 import hashlib
 import botocore
 import pandas
+import random
 import yaml
 import json
 from triage.db import Experiment, Model
@@ -181,6 +182,7 @@ class Batch:
         while self.on_going:
             yield self.group()
 
+
 def retrieve_model_id_from_hash(db_engine, model_hash):
     """Retrieves a model id from the database that matches the given hash
 
@@ -200,9 +202,10 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
         session.close()
 
 
-def sort_predictions_and_labels(predictions_proba, labels):
+def sort_predictions_and_labels(predictions_proba, labels, sort_seed):
+    random.seed(sort_seed)
     predictions_proba_sorted, labels_sorted = zip(*sorted(
         zip(predictions_proba, labels),
-        key=lambda pair: pair[0], reverse=True)
+        key=lambda pair: (pair[0], random.random()), reverse=True)
     )
     return predictions_proba_sorted, labels_sorted

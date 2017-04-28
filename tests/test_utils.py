@@ -141,6 +141,19 @@ def test_sort_predictions_and_labels():
         True
     ]
 
-    sorted_predictions, sorted_labels =sort_predictions_and_labels(predictions, labels)
+    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+        predictions,
+        labels,
+        8
+    )
+    assert sorted_predictions == (0.6, 0.5, 0.5, 0.4)
+    assert sorted_labels == (True, True, False, False)
+
+
+    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+        predictions,
+        labels,
+        12345
+    )
     assert sorted_predictions == (0.6, 0.5, 0.5, 0.4)
     assert sorted_labels == (True, False, True, False)
