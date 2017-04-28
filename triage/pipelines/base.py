@@ -270,6 +270,15 @@ class PipelineBase(object):
         """
         self._split_definitions = new_split_definitions
 
+    def log_split(self, split_num, split):
+        logging.warning(
+            'Starting split %s out of %s: train range: %s to %s',
+            split_num+1,
+            len(self._split_definitions),
+            split['train_matrix']['matrix_start_time'],
+            split['train_matrix']['matrix_end_time'],
+        )
+
     @abstractmethod
     def build_matrices(self):
         """Generate labels, features, and matrices"""
