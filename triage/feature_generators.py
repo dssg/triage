@@ -78,6 +78,10 @@ class FeatureGenerator(object):
             for aggregation_config in feature_aggregation_config
         ]
 
+    def validate(self, feature_aggregation_config, feature_dates):
+        aggregations = self.aggregations(feature_aggregation_config, feature_dates)
+        self._explain_selects(aggregations)
+
     def generate_all_table_tasks(self, feature_aggregation_config, feature_dates):
         """Generates SQL commands for creating, populating, and indexing
         feature group tables
@@ -96,7 +100,6 @@ class FeatureGenerator(object):
         logging.debug('---------------------')
         table_tasks = {}
         aggregations = self.aggregations(feature_aggregation_config, feature_dates)
-        self._explain_selects(aggregations)
         for aggregation in aggregations:
             table_tasks.update(self._generate_table_tasks_for(aggregation))
         logging.info('Created %s tables', len(table_tasks.keys()))
