@@ -1,4 +1,5 @@
 from timechop.architect import Architect
+from timechop import builders
 from tests.utils import create_features_and_labels_schemas
 from tests.utils import create_entity_date_df
 from tests.utils import convert_string_column_to_date
@@ -126,7 +127,7 @@ def test_build_labels_query():
         engine = create_engine(postgresql.url())
         create_features_and_labels_schemas(engine, features_tables, labels)
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
@@ -153,7 +154,7 @@ def test_build_labels_query():
                     }
                 )
                 df = df.reset_index(drop = True)
-                query = matrix_maker.build_labels_query(
+                query = architect.builder.build_labels_query(
                     as_of_times = [date],
                     label_type = label_type,
                     label_name = label_name,
@@ -173,20 +174,21 @@ def test_write_to_csv():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
-                engine = engine
+                engine = engine,
+                builder_class = builders.LowMemoryCSVBuilder
             )
 
             # for each table, check that corresponding csv has the correct # of rows
             for table in features_tables:
                 with NamedTempFile() as f:
-                    matrix_maker.write_to_csv(
+                    architect.builder.write_to_csv(
                         '''
                             select * 
                             from features.features{}
@@ -215,7 +217,7 @@ def test_make_entity_date_table():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
@@ -228,7 +230,7 @@ def test_make_entity_date_table():
                 'CREATE TABLE features.tmp_entity_date (a int, b date);'
             )
             # call the function to test the creation of the table
-            entity_date_table_name = matrix_maker.make_entity_date_table(
+            entity_date_table_name = architect.builder.make_entity_date_table(
                 as_of_times = dates,
                 label_type = 'binary',
                 label_name = 'booking',
@@ -263,13 +265,15 @@ def test_build_outer_join_query():
 
     # make dataframe for entity ids and dates
     ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
-    
+
+    features = [['f1', 'f2'], ['f3', 'f4']]
     # make dataframes of features to test against
     features_dfs = []
-    for table in features_tables:
+    for i, table in enumerate(features_tables):
+        cols = ['entity_id', 'as_of_date'] + features[i]
         temp_df = pd.DataFrame(
             table,
-            columns = ['entity_id', 'as_of_date', 'f1', 'f2']
+            columns = cols
         )
         temp_df['as_of_date'] = convert_string_column_to_date(temp_df['as_of_date'])
         features_dfs.append(
@@ -286,7 +290,7 @@ def test_build_outer_join_query():
         create_features_and_labels_schemas(engine, features_tables, labels)
 
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
@@ -297,7 +301,7 @@ def test_build_outer_join_query():
             )
 
             # make the entity-date table
-            entity_date_table_name = matrix_maker.make_entity_date_table(
+            entity_date_table_name = architect.builder.make_entity_date_table(
                 as_of_times = dates,
                 label_type = 'binary',
                 label_name = 'booking',
@@ -310,12 +314,12 @@ def test_build_outer_join_query():
             for table_number, df in enumerate(features_dfs):
                 table_name = 'features{}'.format(table_number)
                 df = df.fillna(0)
-                query = matrix_maker.build_outer_join_query(
+                query = architect.builder.build_outer_join_query(
                     as_of_times = dates,
                     right_table_name = 'features.{}'.format(table_name),
                     entity_date_table_name = 'features.{}'.format(entity_date_table_name),
-                    right_column_selections = matrix_maker._format_imputations(
-                        ['f1', 'f2']
+                    right_column_selections = architect.builder._format_imputations(
+                        features[table_number]
                     )
                 )
                 result = pd.read_sql(query, engine)
@@ -323,16 +327,17 @@ def test_build_outer_join_query():
                 assert(test.all().all())
 
 class TestMergeFeatureCSVs(TestCase):
-    def test_merge_feature_csvs(self):
+    def test_merge_feature_csvs_lowmem(self):
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
-                engine = None
+                engine = None,
+                builder_class=builders.LowMemoryCSVBuilder
             )
             rowlists = [
                 [
@@ -371,11 +376,12 @@ class TestMergeFeatureCSVs(TestCase):
                     writer.writerow(row)
                 f.seek(0)
             try:
-                with NamedTempFile() as outfile:
-                    matrix_maker.merge_feature_csvs(
-                        [f.name for f in sourcefiles],
-                        outfile.name
-                    )
+                outfilename = architect.builder.merge_feature_csvs(
+                    [f.name for f in sourcefiles],
+                    matrix_directory=temp_dir,
+                    matrix_uuid='1234'
+                )
+                with open(outfilename) as outfile:
                     reader = csv.reader(outfile)
                     result = [row for row in reader]
                     self.assertEquals(result, [
@@ -391,14 +397,15 @@ class TestMergeFeatureCSVs(TestCase):
 
     def test_badinput(self):
         with TemporaryDirectory() as temp_dir:
-            matrix_maker = Architect(
+            architect = Architect(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
-                engine = None
+                engine = None,
+                builder_class=builders.LowMemoryCSVBuilder
             )
             rowlists = [
                 [
@@ -430,12 +437,12 @@ class TestMergeFeatureCSVs(TestCase):
                     writer.writerow(row)
                 f.seek(0)
             try:
-                with NamedTempFile() as outfile:
-                    with self.assertRaises(ValueError):
-                        matrix_maker.merge_feature_csvs(
-                            [f.name for f in sourcefiles],
-                            outfile.name
-                        )
+                with self.assertRaises(ValueError):
+                    architect.builder.merge_feature_csvs(
+                        [f.name for f in sourcefiles],
+                        matrix_directory=temp_dir,
+                        matrix_uuid='1234'
+                    )
             finally:
                 for sourcefile in sourcefiles:
                     sourcefile.close()
@@ -540,7 +547,7 @@ class TestBuildMatrix(object):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                matrix_maker = Architect(
+                architect = Architect(
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
@@ -551,7 +558,7 @@ class TestBuildMatrix(object):
                 )
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
@@ -561,7 +568,7 @@ class TestBuildMatrix(object):
                     'prediction_window': '1d'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-                matrix_maker.build_matrix(
+                architect.build_matrix(
                     as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
@@ -591,7 +598,7 @@ class TestBuildMatrix(object):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                matrix_maker = Architect(
+                architect = Architect(
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
@@ -608,7 +615,7 @@ class TestBuildMatrix(object):
                 }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
@@ -618,7 +625,7 @@ class TestBuildMatrix(object):
                     'prediction_window': '1d'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-                matrix_maker.build_matrix(
+                architect.build_matrix(
                     as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
@@ -649,7 +656,7 @@ class TestBuildMatrix(object):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                matrix_maker = Architect(
+                architect = Architect(
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
@@ -667,7 +674,7 @@ class TestBuildMatrix(object):
                 }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
-                    'features1': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
@@ -677,7 +684,7 @@ class TestBuildMatrix(object):
                     'prediction_window': '1d'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-                matrix_maker.build_matrix(
+                architect.build_matrix(
                     as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
@@ -698,8 +705,8 @@ class TestBuildMatrix(object):
                     assert(len([row for row in reader]) == 13)
 
                 # rerun
-                matrix_maker.make_entity_date_table = Mock()
-                matrix_maker.build_matrix(
+                architect.builder.make_entity_date_table = Mock()
+                architect.builder.build_matrix(
                     as_of_times = dates,
                     label_name = 'booking',
                     label_type = 'binary',
@@ -709,4 +716,4 @@ class TestBuildMatrix(object):
                     matrix_uuid = uuid,
                     matrix_type = 'test'
                 )
-                assert not matrix_maker.make_entity_date_table.called
+                assert not architect.builder.make_entity_date_table.called
