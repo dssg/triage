@@ -519,10 +519,13 @@ def test_generate_plans():
 
     updated_matrix_definitions, build_tasks = architect.generate_plans(matrix_set_definitions, feature_dicts)
     # test that it added uuids: we don't much care what they are
+    matrix_uuids = []
     for matrix_def in updated_matrix_definitions:
         assert isinstance(matrix_def['train_uuid'], str)
+        matrix_uuids.append(matrix_def['train_uuid'])
         for test_uuid in matrix_def['test_uuids']:
             assert isinstance(test_uuid, str)
+    assert len(set(matrix_uuids)) == 4
 
     # not going to assert anything on the keys (uuids), just get out the values
     build_tasks = build_tasks.values()

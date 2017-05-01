@@ -1,5 +1,11 @@
+import copy
+import os
+import csv
+import logging
 import itertools
+
 from metta import metta_io as metta
+
 from . import builders, utils
 
 
@@ -112,6 +118,7 @@ class Architect(object):
                 self.label_types,
                 feature_dictionaries
             ):
+                matrix_set_clone = copy.deepcopy(matrix_set)
                 # get a uuid
                 train_metadata = self._make_metadata(
                     train_matrix,
@@ -128,11 +135,10 @@ class Architect(object):
                         train_matrix,
                         feature_dictionary
                     )
-
-                matrix_set['train_uuid'] = train_uuid
+                matrix_set_clone['train_uuid'] = train_uuid
 
                 test_uuids = []
-                for test_matrix in matrix_set['test_matrices']:
+                for test_matrix in matrix_set_clone['test_matrices']:
                     test_metadata = self._make_metadata(
                         test_matrix,
                         feature_dictionary,
@@ -150,8 +156,8 @@ class Architect(object):
                         )
 
                     test_uuids.append(test_uuid)
-                matrix_set['test_uuids'] = test_uuids
-                updated_definitions.append(matrix_set)
+                matrix_set_clone['test_uuids'] = test_uuids
+                updated_definitions.append(matrix_set_clone)
 
         return updated_definitions, build_tasks
 
