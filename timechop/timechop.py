@@ -6,13 +6,16 @@ import logging
 class Inspections(object):
     def __init__(self, beginning_of_time, modeling_start_time,
                  modeling_end_time, update_window, look_back_durations,
+                 train_example_frequency, test_example_frequency,
                  test_durations):
         self.beginning_of_time = beginning_of_time # earliest date included in features
         self.modeling_start_time = modeling_start_time # earliest date in any model
         self.modeling_end_time = modeling_end_time # all dates in any model are < this date
         self.update_window = update_window # how frequently to retrain models
-        self.look_back_durations = look_back_durations # length of time included in a model
-        self.test_durations = test_durations
+        self.look_back_durations = look_back_durations # keep creating rows in train matrix for this duration
+        self.train_example_frequency = train_example_frequency # time between rows for same entity in train matrix
+        self.test_example_frequency = test_example_frequency # time between rows for same entity in test matrix
+        self.test_durations = test_durations # keep creating rows in test matrix for this duration
         if beginning_of_time > modeling_start_time:
             raise ValueError('Beginning of time is later than modeling start time.')
 
@@ -50,12 +53,24 @@ class Inspections(object):
 
         return(matrix_end_times)
 
-    def calculate_as_of_times(self, matrix_start_time, matrix_end_time):
+    def calculate_as_of_times(
+        self,
+        matrix_start_time,
+        matrix_end_time,
+        example_frequency
+    ):
+        example_delta = utils.convert_str_to_relativedelta(example_frequency)
+        logging.info(
+            'Calculate as_of_times from %s to %s using example frequency %s',
+            matrix_start_time,
+            matrix_end_time,
+            example_delta
+        )
         as_of_times = []
         as_of_time = matrix_start_time
         while as_of_time < matrix_end_time:
             as_of_times.append(as_of_time)
-            as_of_time += relativedelta(days = 1)
+            as_of_time += example_delta
         return(as_of_times)
 
     def generate_matrix_definition(self, train_matrix_end_time, look_back_duration):
@@ -67,7 +82,8 @@ class Inspections(object):
         print('train start: {}'.format(train_matrix_start_time))
         train_as_of_times = self.calculate_as_of_times(
             train_matrix_start_time,
-            train_matrix_end_time
+            train_matrix_end_time,
+            self.train_example_frequency
         )
         test_matrices = self.define_test_matrices(train_matrix_end_time)
             
@@ -95,7 +111,8 @@ class Inspections(object):
             if test_end_time not in test_end_times:
                 test_as_of_times = self.calculate_as_of_times(
                     train_matrix_end_time,
-                    test_end_time
+                    test_end_time,
+                    self.test_example_frequency
                 )
                 test_definition = {
                     'matrix_start_time': train_matrix_end_time,

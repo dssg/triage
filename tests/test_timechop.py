@@ -15,6 +15,8 @@ class test_calculate_update_times(TestCase):
             modeling_end_time = datetime.datetime(2013, 1, 1, 0, 0),
             update_window = '1 year',
             look_back_durations = ['1 year'],
+            train_example_frequency = '1 day',
+            test_example_frequency = '1 day',
             test_durations = ['1 month']
         )
         result = chopper.calculate_matrix_end_times('1 year')
@@ -27,13 +29,15 @@ class test_calculate_update_times(TestCase):
             modeling_end_time = datetime.datetime(2011, 2, 1, 0, 0),
             update_window = '5 months',
             look_back_durations = ['1 year'],
+            train_example_frequency = '1 day',
+            test_example_frequency = '1 day',
             test_durations = ['1 month']
         )
         with self.assertRaises(ValueError):
             chopper.calculate_matrix_end_times('1 year')
 
 
-def test_calculate_as_of_times():
+def test_calculate_as_of_times_one_day_freq():
     expected_result = [
         datetime.datetime(2011, 1, 1, 0, 0),
         datetime.datetime(2011, 1, 2, 0, 0),
@@ -52,11 +56,39 @@ def test_calculate_as_of_times():
         modeling_end_time = datetime.datetime(2012, 1, 1, 0, 0),
         update_window = '1 year',
         look_back_durations = ['10 days', '1 year'],
+        train_example_frequency = '1 days',
+        test_example_frequency = '7 days',
         test_durations = ['1 month']
     )
     result = chopper.calculate_as_of_times(
         matrix_start_time = datetime.datetime(2011, 1, 1, 0, 0),
-        matrix_end_time = datetime.datetime(2011, 1, 11, 0, 0)
+        matrix_end_time = datetime.datetime(2011, 1, 11, 0, 0),
+        example_frequency = '1 days',
+    )
+    assert(result == expected_result)
+
+
+def test_calculate_as_of_times_three_day_freq():
+    expected_result = [
+        datetime.datetime(2011, 1, 1, 0, 0),
+        datetime.datetime(2011, 1, 4, 0, 0),
+        datetime.datetime(2011, 1, 7, 0, 0),
+        datetime.datetime(2011, 1, 10, 0, 0),
+    ]
+    chopper = Inspections(
+        beginning_of_time = datetime.datetime(1990, 1, 1, 0, 0),
+        modeling_start_time = datetime.datetime(2010, 1, 1, 0, 0),
+        modeling_end_time = datetime.datetime(2012, 1, 1, 0, 0),
+        update_window = '1 year',
+        look_back_durations = ['10 days', '1 year'],
+        train_example_frequency = '1 days',
+        test_example_frequency = '7 days',
+        test_durations = ['1 month']
+    )
+    result = chopper.calculate_as_of_times(
+        matrix_start_time = datetime.datetime(2011, 1, 1, 0, 0),
+        matrix_end_time = datetime.datetime(2011, 1, 11, 0, 0),
+        example_frequency = '3 days',
     )
     assert(result == expected_result)
 
@@ -83,10 +115,7 @@ class test_generate_matrix_definition(TestCase):
                 'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                 'as_of_times': [
                     datetime.datetime(2010, 1, 6, 0, 0),
-                    datetime.datetime(2010, 1, 7, 0, 0),
-                    datetime.datetime(2010, 1, 8, 0, 0),
                     datetime.datetime(2010, 1, 9, 0, 0),
-                    datetime.datetime(2010, 1, 10, 0, 0)
                 ]
             }]
         }
@@ -96,6 +125,8 @@ class test_generate_matrix_definition(TestCase):
             modeling_end_time = datetime.datetime(2010, 1, 11, 0, 0),
             update_window = '5 days',
             look_back_durations = ['5 days'],
+            train_example_frequency = '1 days',
+            test_example_frequency = '3 days',
             test_durations = ['5 days']
         )
         result = chopper.generate_matrix_definition(
@@ -126,10 +157,6 @@ class test_generate_matrix_definition(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
-                        datetime.datetime(2010, 1, 7, 0, 0),
-                        datetime.datetime(2010, 1, 8, 0, 0),
-                        datetime.datetime(2010, 1, 9, 0, 0),
-                        datetime.datetime(2010, 1, 10, 0, 0)
                     ]
                 },
                 {
@@ -137,15 +164,7 @@ class test_generate_matrix_definition(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
-                        datetime.datetime(2010, 1, 7, 0, 0),
-                        datetime.datetime(2010, 1, 8, 0, 0),
-                        datetime.datetime(2010, 1, 9, 0, 0),
-                        datetime.datetime(2010, 1, 10, 0, 0),
-                        datetime.datetime(2010, 1, 11, 0, 0),
-                        datetime.datetime(2010, 1, 12, 0, 0),
                         datetime.datetime(2010, 1, 13, 0, 0),
-                        datetime.datetime(2010, 1, 14, 0, 0),
-                        datetime.datetime(2010, 1, 15, 0, 0)
                     ]
                 }
             ]
@@ -160,6 +179,8 @@ class test_generate_matrix_definition(TestCase):
             modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
             update_window = '5 days',
             look_back_durations = ['10 days'],
+            train_example_frequency = '1 days',
+            test_example_frequency = '7 days',
             test_durations = ['5 days', '10 days', '15 days']
         )
         result = chopper.generate_matrix_definition(
@@ -192,13 +213,9 @@ class test_chop_time(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
-                        datetime.datetime(2010, 1, 7, 0, 0),
-                        datetime.datetime(2010, 1, 8, 0, 0),
                         datetime.datetime(2010, 1, 9, 0, 0),
-                        datetime.datetime(2010, 1, 10, 0, 0)
                     ]
                 }]
-                
             },
             {
                 'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
@@ -220,10 +237,7 @@ class test_chop_time(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 11, 0, 0),
-                        datetime.datetime(2010, 1, 12, 0, 0),
-                        datetime.datetime(2010, 1, 13, 0, 0),
-                        datetime.datetime(2010, 1, 14, 0, 0),
-                        datetime.datetime(2010, 1, 15, 0, 0)
+                        datetime.datetime(2010, 1, 14, 0, 0)
                     ]
                 }]
             }
@@ -234,6 +248,8 @@ class test_chop_time(TestCase):
             modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
             update_window = '5 days',
             look_back_durations = ['5 days'],
+            train_example_frequency = '1 days',
+            test_example_frequency = '3 days',
             test_durations = ['5 days']
         )
         result = chopper.chop_time()
@@ -261,10 +277,6 @@ class test_chop_time(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
-                        datetime.datetime(2010, 1, 7, 0, 0),
-                        datetime.datetime(2010, 1, 8, 0, 0),
-                        datetime.datetime(2010, 1, 9, 0, 0),
-                        datetime.datetime(2010, 1, 10, 0, 0)
                     ]
                 }]
             },
@@ -290,10 +302,6 @@ class test_chop_time(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 11, 0, 0),
-                        datetime.datetime(2010, 1, 12, 0, 0),
-                        datetime.datetime(2010, 1, 13, 0, 0),
-                        datetime.datetime(2010, 1, 14, 0, 0),
-                        datetime.datetime(2010, 1, 15, 0, 0)
                     ]
                 }]
             }
@@ -305,6 +313,8 @@ class test_chop_time(TestCase):
             modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
             update_window = '5 days',
             look_back_durations = ['7 days'],
+            train_example_frequency = '1 days',
+            test_example_frequency = '7 days',
             test_durations = ['5 days']
         )
         
@@ -336,9 +346,6 @@ class test_chop_time(TestCase):
                     'matrix_end_time': datetime.datetime(2010, 1, 13, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 8, 0, 0),
-                        datetime.datetime(2010, 1, 9, 0, 0),
-                        datetime.datetime(2010, 1, 10, 0, 0),
-                        datetime.datetime(2010, 1, 11, 0, 0),
                         datetime.datetime(2010, 1, 12, 0, 0)
                     ]
                 }]
@@ -351,6 +358,8 @@ class test_chop_time(TestCase):
             modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
             update_window = '8 days',
             look_back_durations = ['5 days'],
+            train_example_frequency = '1 days',
+            test_example_frequency = '4 days',
             test_durations = ['5 days']
         )
         
@@ -372,5 +381,7 @@ class test__init__(TestCase):
                 modeling_end_time = datetime.datetime(2010, 1, 16, 0, 0),
                 update_window = '6 days',
                 look_back_durations = ['5 days'],
+                train_example_frequency = '1 days',
+                test_example_frequency = '7 days',
                 test_durations = ['5 days']
             )
