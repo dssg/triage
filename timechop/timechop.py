@@ -12,10 +12,10 @@ class Inspections(object):
         self.modeling_start_time = modeling_start_time # earliest date in any model
         self.modeling_end_time = modeling_end_time # all dates in any model are < this date
         self.update_window = update_window # how frequently to retrain models
-        self.look_back_durations = look_back_durations # length of time included in a model
-        self.train_example_frequency = train_example_frequency # pls write this erikat
-        self.test_example_frequency = test_example_frequency # ^, but more about testing
-        self.test_durations = test_durations
+        self.look_back_durations = look_back_durations # keep creating rows in train matrix for this duration
+        self.train_example_frequency = train_example_frequency # time between rows for same entity in train matrix
+        self.test_example_frequency = test_example_frequency # time between rows for same entity in test matrix
+        self.test_durations = test_durations # keep creating rows in test matrix for this duration
         if beginning_of_time > modeling_start_time:
             raise ValueError('Beginning of time is later than modeling start time.')
 
