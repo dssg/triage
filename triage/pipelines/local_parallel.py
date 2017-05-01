@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from functools import partial
 from triage.utils import Batch
 import os
+import traceback
 
 
 class LocalParallelPipeline(PipelineBase):
@@ -215,8 +216,8 @@ def insert_into_table(
         feature_generator = feature_generator_factory(db_engine)
         feature_generator.run_commands(insert_statements)
         return True
-    except Exception as e:
-        logging.error('Child error: %s', e)
+    except Exception:
+        logging.error('Child error: %s', traceback.format_exc())
         return False
 
 
@@ -231,8 +232,8 @@ def build_matrix(
         for build_task in build_tasks:
             architect.build_matrix(**build_task)
         return True
-    except Exception as e:
-        logging.error('Child error: %s', e)
+    except Exception:
+        logging.error('Child error: %s', traceback.format_exc())
         return False
 
 
@@ -248,8 +249,8 @@ def train_model(
             trainer.process_train_task(**train_task)
             for train_task in train_tasks
         ]
-    except Exception as e:
-        logging.error('Child error: %s', e)
+    except Exception:
+        logging.error('Child error: %s', traceback.format_exc())
         return []
 
 
@@ -284,6 +285,6 @@ def test_and_score(
                 prediction_frequency=config['temporal_config']['prediction_frequency']
             )
         return True
-    except Exception as e:
-        logging.error('Child error: %s', e)
+    except Exception:
+        logging.error('Child error: %s', traceback.format_exc())
         return False
