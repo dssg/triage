@@ -14,11 +14,7 @@ class SerialPipeline(PipelineBase):
         self.architect.build_all_matrices(self.matrix_build_tasks)
 
     def catwalk(self):
-        updated_split_definitions, _ = self.architect.generate_plans(
-            self.split_definitions,
-            self.feature_dicts
-        )
-        for split_num, split in enumerate(updated_split_definitions):
+        for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
             train_store = MettaCSVMatrixStore(
                 matrix_path=os.path.join(

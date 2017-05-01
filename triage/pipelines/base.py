@@ -245,13 +245,30 @@ class PipelineBase(object):
         Returns: (list) of dicts
         """
         if not self._matrix_build_tasks:
-            updated_split_definitions, self._matrix_build_tasks =\
+            updated_split_definitions, matrix_build_tasks =\
                 self.architect.generate_plans(
                     self.split_definitions,
                     self.feature_dicts
                 )
-            self.update_split_definitions(updated_split_definitions)
+            self._full_matrix_definitions = updated_split_definitions
+            self._matrix_build_tasks = matrix_build_tasks
         return self._matrix_build_tasks
+
+    @property
+    def full_matrix_definitions(self):
+        """Full matrix definitions
+
+        Returns: (list) temporal and feature information for each matrix
+        """
+        if not self._full_matrix_definitions:
+            updated_split_definitions, matrix_build_tasks =\
+                self.architect.generate_plans(
+                    self.split_definitions,
+                    self.feature_dicts
+                )
+            self._full_matrix_definitions = updated_split_definitions
+            self._matrix_build_tasks = matrix_build_tasks
+        return self._full_matrix_definitions
 
     def generate_labels(self):
         """Generate labels based on pipeline configuration
@@ -273,9 +290,9 @@ class PipelineBase(object):
 
     def log_split(self, split_num, split):
         logging.warning(
-            'Starting split %s out of %s: train range: %s to %s',
+            'Starting train/test for %s out of %s: train range: %s to %s',
             split_num+1,
-            len(self._split_definitions),
+            len(self.full_matrix_definitions),
             split['train_matrix']['matrix_start_time'],
             split['train_matrix']['matrix_end_time'],
         )
