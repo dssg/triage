@@ -38,8 +38,14 @@ class BuilderBase(object):
         ]
         return(imputations)
 
-    def build_labels_query(self, as_of_times, final_column, label_name,
-                           label_type):
+    def build_labels_query(
+            self,
+            as_of_times,
+            final_column,
+            label_name,
+            label_type,
+            prediction_window
+        ):
         """ Given a table, schema, and list of dates, write a query to get the
         list of valid as_of_date-entity pairs, and, if requested, the labels.
 
@@ -60,7 +66,8 @@ class BuilderBase(object):
             FROM {labels_schema_name}.{labels_table_name}
             WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))) AND
                   label_name = '{l_name}' AND
-                  label_type = '{l_type}'
+                  label_type = '{l_type}' AND
+                  prediction_window = '{window}'
             ORDER BY entity_id,
                      as_of_date
         """.format(
@@ -69,7 +76,8 @@ class BuilderBase(object):
             labels_table_name = self.db_config['labels_table_name'],
             times = as_of_time_strings,
             l_name = label_name,
-            l_type = label_type
+            l_type = label_type,
+            window = prediction_window
         )
         return(query)
 
@@ -125,8 +133,16 @@ class BuilderBase(object):
         return(query)
 
 
-    def make_entity_date_table(self, as_of_times, label_name, label_type,
-                                feature_table_names, matrix_type, matrix_uuid):
+    def make_entity_date_table(
+        self,
+        as_of_times,
+        label_name,
+        label_type,
+        feature_table_names,
+        matrix_type,
+        matrix_uuid,
+        prediction_window
+    ):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
 
@@ -140,15 +156,16 @@ class BuilderBase(object):
         """
         if matrix_type == 'train':
             indices_query = self.build_labels_query(
-                as_of_times = as_of_times,
-                final_column = '',
-                label_name = label_name,
-                label_type = label_type
+                as_of_times=as_of_times,
+                final_column='',
+                label_name=label_name,
+                label_type=label_type,
+                prediction_window=prediction_window
             )
         elif matrix_type == 'test':
             indices_query = self.get_all_valid_entity_date_combos(
-                as_of_times = as_of_times,
-                feature_table_names = feature_table_names
+                as_of_times=as_of_times,
+                feature_table_names=feature_table_names
             )
         else:
             raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
@@ -159,9 +176,9 @@ class BuilderBase(object):
             CREATE TABLE {features_schema_name}."{table_name}"
             AS ({index_query})
         """.format(
-            features_schema_name = self.db_config['features_schema_name'],
-            table_name = table_name,
-            index_query = indices_query
+            features_schema_name=self.db_config['features_schema_name'],
+            table_name=table_name,
+            index_query=indices_query
         )
         self.engine.execute(query)
 
@@ -190,9 +207,17 @@ class BuilderBase(object):
 
 
 class CSVBuilder(BuilderBase):
-    def build_matrix(self, as_of_times, label_name, label_type,
-                     feature_dictionary, matrix_directory, matrix_metadata,
-                     matrix_uuid, matrix_type):
+    def build_matrix(
+        self,
+        as_of_times,
+        label_name,
+        label_type,
+        feature_dictionary,
+        matrix_directory,
+        matrix_metadata,
+        matrix_uuid,
+        matrix_type
+    ):
         """ Write a design matrix to disk with the specified paramters.
 
         :param as_of_times: datetimes to be included in the matrix
@@ -233,7 +258,8 @@ class CSVBuilder(BuilderBase):
             label_type,
             feature_dictionary.keys(),
             matrix_type,
-            matrix_uuid
+            matrix_uuid,
+            matrix_metadata['prediction_window']
         )
         try:
             logging.info('Writing feature group data')
@@ -251,7 +277,8 @@ class CSVBuilder(BuilderBase):
                     label_type,
                     matrix_type,
                     entity_date_table_name,
-                    matrix_uuid
+                    matrix_uuid,
+                    matrix_metadata['prediction_window']
                 )
                 features_csv_names.insert(0, labels_csv_name)
 
@@ -288,8 +315,16 @@ class CSVBuilder(BuilderBase):
             )
 
 
-    def write_labels_data(self, as_of_times, label_name, label_type,
-                          matrix_type, entity_date_table_name, matrix_uuid):
+    def write_labels_data(
+        self,
+        as_of_times,
+        label_name,
+        label_type,
+        matrix_type,
+        entity_date_table_name,
+        matrix_uuid,
+        prediction_window
+    ):
         """ Query the labels table and write the data to disk in csv format.
         
         :return: name of csv containing labels
@@ -302,29 +337,32 @@ class CSVBuilder(BuilderBase):
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == 'train':
             labels_query = self.build_labels_query(
-                as_of_times = as_of_times,
-                final_column = ', label as {}'.format(label_name),
-                label_name = label_name,
-                label_type = label_type
+                as_of_times=as_of_times,
+                final_column=', label as {}'.format(label_name),
+                label_name=label_name,
+                label_type=label_type,
+                prediction_window=prediction_window
             )
         elif matrix_type == 'test':
-            labels_query = self.build_outer_join_query(
-                as_of_times = as_of_times,
-                right_table_name = '{schema}.{table}'.format(
-                    schema = self.db_config['labels_schema_name'],
-                    table = self.db_config['labels_table_name']
+            labels_query=self.build_outer_join_query(
+                as_of_times=as_of_times,
+                right_table_name='{schema}.{table}'.format(
+                    schema=self.db_config['labels_schema_name'],
+                    table=self.db_config['labels_table_name']
                 ),
                 entity_date_table_name='"{schema}"."{table}"'.format(
-                    schema = self.db_config['features_schema_name'],
-                    table = entity_date_table_name
+                    schema=self.db_config['features_schema_name'],
+                    table=entity_date_table_name
                 ),
-                right_column_selections = ', r.label as {}'.format(label_name),
-                additional_conditions = '''AND
+                right_column_selections=', r.label as {}'.format(label_name),
+                additional_conditions='''AND
                     r.label_name = '{name}' AND
-                    r.label_type = '{type}'
+                    r.label_type = '{type}' AND
+                    r.prediction_window = '{window}'
                 '''.format(
-                    name = label_name,
-                    type = label_type
+                    name=label_name,
+                    type=label_type,
+                    window=prediction_window
                 )
             )
         else:

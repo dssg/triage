@@ -84,6 +84,45 @@ labels = [
     [3, '2016-03-01', '1 month', 'ems',     'binary', 0],
     [3, '2016-04-01', '1 month', 'ems',     'binary', 1],
     [3, '2016-05-01', '1 month', 'ems',     'binary', 0],
+    [0, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [0, '2016-03-01', '3 month', 'booking', 'binary', 0],
+    [0, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [0, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [0, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [0, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [0, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [0, '2016-04-01', '3 month', 'ems',     'binary', 0],
+    [0, '2016-05-01', '3 month', 'ems',     'binary', 0],
+    [1, '2016-01-01', '3 month', 'booking', 'binary', 0],
+    [1, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [1, '2016-03-01', '3 month', 'booking', 'binary', 0],
+    [1, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [1, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [1, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [1, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [1, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [1, '2016-04-01', '3 month', 'ems',     'binary', 0],
+    [1, '2016-05-01', '3 month', 'ems',     'binary', 0],
+    [2, '2016-01-01', '3 month', 'booking', 'binary', 0],
+    [2, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [2, '2016-03-01', '3 month', 'booking', 'binary', 1],
+    [2, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [2, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [2, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [2, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [2, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [2, '2016-04-01', '3 month', 'ems',     'binary', 0],
+    [2, '2016-05-01', '3 month', 'ems',     'binary', 1],
+    [3, '2016-01-01', '3 month', 'booking', 'binary', 0],
+    [3, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [3, '2016-03-01', '3 month', 'booking', 'binary', 1],
+    [3, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [3, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [3, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [3, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [3, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [3, '2016-04-01', '3 month', 'ems',     'binary', 1],
+    [3, '2016-05-01', '3 month', 'ems',     'binary', 0]
 ]
 
 label_name = 'booking'
@@ -155,10 +194,11 @@ def test_build_labels_query():
                 )
                 df = df.reset_index(drop = True)
                 query = architect.builder.build_labels_query(
-                    as_of_times = [date],
-                    label_type = label_type,
-                    label_name = label_name,
-                    final_column = ', label as {}'.format(label_name)
+                    as_of_times=[date],
+                    label_type=label_type,
+                    label_name=label_name,
+                    final_column=', label as {}'.format(label_name),
+                    prediction_window='1 month'
                 )
                 result = pd.read_sql(query, engine)
                 test = (result == df)
@@ -209,7 +249,14 @@ def test_make_entity_date_table():
              datetime.datetime(2016, 3, 1, 0, 0)]
 
     # make a dataframe of entity ids and dates to test against
-    ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
+    ids_dates = create_entity_date_df(
+        dates,
+        labels,
+        dates,
+        'booking',
+        'binary',
+        '1 month'
+    )
 
     with testing.postgresql.Postgresql() as postgresql:
         # create an engine and generate a table with fake feature data
@@ -231,12 +278,13 @@ def test_make_entity_date_table():
             )
             # call the function to test the creation of the table
             entity_date_table_name = architect.builder.make_entity_date_table(
-                as_of_times = dates,
-                label_type = 'binary',
-                label_name = 'booking',
-                feature_table_names = ['features0', 'features1'],
-                matrix_uuid = 'my_uuid',
-                matrix_type = 'train'
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                feature_table_names=['features0', 'features1'],
+                matrix_uuid='my_uuid',
+                matrix_type='train',
+                prediction_window='1 month'
             )
 
             # read in the table
@@ -264,7 +312,14 @@ def test_build_outer_join_query():
              datetime.datetime(2016, 2, 1, 0, 0)]
 
     # make dataframe for entity ids and dates
-    ids_dates = create_entity_date_df(dates, labels, dates, 'booking', 'binary')
+    ids_dates = create_entity_date_df(
+        dates,
+        labels,
+        dates,
+        'booking',
+        'binary',
+        '1 month'
+    )
 
     features = [['f1', 'f2'], ['f3', 'f4']]
     # make dataframes of features to test against
@@ -302,12 +357,13 @@ def test_build_outer_join_query():
 
             # make the entity-date table
             entity_date_table_name = architect.builder.make_entity_date_table(
-                as_of_times = dates,
-                label_type = 'binary',
-                label_name = 'booking',
-                feature_table_names = ['features0', 'features1'],
-                matrix_type = 'train',
-                matrix_uuid = 'my_uuid',
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                feature_table_names=['features0', 'features1'],
+                matrix_type='train',
+                matrix_uuid='my_uuid',
+                prediction_window='1 month'
             )
 
             # get the queries and test them
@@ -568,7 +624,7 @@ class TestBuildMatrix(object):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1d'
+                    'prediction_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(
@@ -625,7 +681,7 @@ class TestBuildMatrix(object):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1d'
+                    'prediction_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(
@@ -684,7 +740,7 @@ class TestBuildMatrix(object):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1d'
+                    'prediction_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(

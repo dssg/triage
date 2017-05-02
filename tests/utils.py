@@ -58,8 +58,14 @@ def create_features_table(table_number, table, engine):
             row
         )
 
-def create_entity_date_df(dates, labels, as_of_dates, label_name,
-                          label_type):
+def create_entity_date_df(
+    dates,
+    labels,
+    as_of_dates,
+    label_name,
+    label_type,
+    prediction_window
+):
     """ This function makes a pandas DataFrame that mimics the entity-date table
     for testing against.
     """
@@ -75,6 +81,7 @@ def create_entity_date_df(dates, labels, as_of_dates, label_name,
     dates = [date.date() for date in dates]
     labels_table = labels_table[labels_table['label_name'] == label_name]
     labels_table = labels_table[labels_table['label_type'] == label_type]
+    labels_table = labels_table[labels_table['prediction_window'] == prediction_window]
     ids_dates = labels_table[['entity_id', 'as_of_date']]
     ids_dates = ids_dates.sort_values(['entity_id', 'as_of_date'])
     ids_dates['as_of_date'] = [datetime.datetime.strptime(
