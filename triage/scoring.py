@@ -241,7 +241,7 @@ class ModelScorer(object):
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        prediction_frequency
+        example_frequency
     ):
         """Score a model based on predictions, and save the results
 
@@ -251,7 +251,7 @@ class ModelScorer(object):
             model_id (int) The database identifier of the model
             evaluation_start_time (datetime.datetime) The time of the first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
-            prediction_frequency (string) How frequently predictions were generated
+            example_frequency (string) How frequently predictions were generated
         """
         predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
             predictions_proba,
@@ -319,7 +319,7 @@ class ModelScorer(object):
             model_id,
             evaluation_start_time,
             evaluation_end_time,
-            prediction_frequency,
+            example_frequency,
             evaluations
         )
         logging.info('Done writing metrics to db')
@@ -329,7 +329,7 @@ class ModelScorer(object):
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        prediction_frequency,
+        example_frequency,
         evaluations
     ):
         """Write evaluation objects to the database
@@ -348,14 +348,14 @@ class ModelScorer(object):
                 model_id=model_id,
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
-                prediction_frequency=prediction_frequency
+                example_frequency=example_frequency
             ).delete()
 
         for evaluation in evaluations:
             evaluation.model_id = model_id
             evaluation.evaluation_start_time = evaluation_start_time
             evaluation.evaluation_end_time = evaluation_end_time
-            evaluation.prediction_frequency = prediction_frequency
+            evaluation.example_frequency = example_frequency
             session.add(evaluation)
         session.commit()
         session.close()

@@ -9,7 +9,7 @@ from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
 from triage.utils import save_experiment_and_get_hash
-from timechop.timechop import Inspections
+from timechop.timechop import Timechop
 from timechop.architect import Architect
 import os
 from datetime import datetime
@@ -63,14 +63,16 @@ class PipelineBase(object):
         split_config = self.config['temporal_config']
 
         self.chopper_factory = partial(
-            Inspections,
+            Timechop,
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             modeling_start_time=dt_from_str(split_config['modeling_start_time']),
             modeling_end_time=dt_from_str(split_config['modeling_end_time']),
             update_window=split_config['update_window'],
-            look_back_durations=split_config['look_back_durations'],
+            train_label_windows=split_config['train_label_windows'],
+            test_label_windows=split_config['test_label_windows'],
             train_example_frequency=split_config['train_example_frequency'],
             test_example_frequency=split_config['test_example_frequency'],
+            train_durations=split_config['train_durations'],
             test_durations=split_config['test_durations'],
         )
 
@@ -148,17 +150,6 @@ class PipelineBase(object):
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
         self.model_scorer = self.model_scorer_factory(db_engine=self.db_engine)
 
-    def chop_time(self):
-        # TODO: timechop should take care of this. remove when
-        # https://github.com/dssg/timechop/issues/26 is resolved
-        prediction_window = self.config['temporal_config']['prediction_window']
-        split_definitions = self.chopper.chop_time()
-        for split_definition in split_definitions:
-            split_definition['train_matrix']['prediction_window'] = prediction_window
-            for test_matrix in split_definition['test_matrices']:
-                test_matrix['prediction_window'] = prediction_window
-        return split_definitions
-
     @property
     def split_definitions(self):
         """Temporal splits based on the pipeline's configuration
@@ -179,7 +170,7 @@ class PipelineBase(object):
         }
         """
         if not self._split_definitions:
-            self._split_definitions = self.chop_time()
+            self._split_definitions = self.chopper.chop_time()
         return self._split_definitions
 
     @property
@@ -272,16 +263,24 @@ class PipelineBase(object):
             self._matrix_build_tasks = matrix_build_tasks
         return self._full_matrix_definitions
 
+    @property
+    def all_label_windows(self):
+        return list(set(
+            self.config['temporal_config']['train_label_windows'] + \
+            self.config['temporal_config']['test_label_windows']
+        ))
+
     def generate_labels(self):
         """Generate labels based on pipeline configuration
 
         Results are stored in the database, not returned
         """
-        self.label_generator.generate_all_labels(
-            self.labels_table_name,
-            self.all_as_of_times,
-            self.config['temporal_config']['prediction_window']
-        )
+        for label_window in self.all_label_windows:
+            self.label_generator.generate_all_labels(
+                self.labels_table_name,
+                self.all_as_of_times,
+                label_window
+            )
 
     def update_split_definitions(self, new_split_definitions):
         """Update split definitions

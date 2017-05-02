@@ -8,7 +8,6 @@ import datetime
 import copy
 import pandas
 import warnings
-from timechop.utils import convert_str_to_relativedelta
 from triage.utils import filename_friendly_hash, retrieve_model_id_from_hash
 
 
@@ -246,7 +245,7 @@ class ModelTrainer(object):
         """
         Returns model group id using store procedure 'get_model_group_id' which will 
         return the same value for models with the same class_path, parameters, 
-        prediction_window and features
+        features, and model_config
 
         Args:
             class_path (string) A full classpath to the model class
@@ -412,9 +411,8 @@ class ModelTrainer(object):
         matrix_store = matrix_store or self.matrix_store
         misc_db_parameters = copy.deepcopy(misc_db_parameters)
         misc_db_parameters['batch_run_time'] = datetime.datetime.now().isoformat()
-        misc_db_parameters['train_end_time'] = \
-            matrix_store.metadata['end_time'] + \
-            convert_str_to_relativedelta(matrix_store.metadata['prediction_window'])
+        misc_db_parameters['train_end_time'] = matrix_store.metadata['end_time']
+        misc_db_parameters['train_label_window'] = matrix_store.metadata['label_window']
         misc_db_parameters['train_matrix_uuid'] = matrix_store.uuid
 
         tasks = []

@@ -21,7 +21,7 @@ events_data = [
 ]
 
 expected = [
-    # entity_id, as_of_date, prediction_window, name, type, label
+    # entity_id, as_of_date, label_window, name, type, label
     (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
     (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
     (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
@@ -49,7 +49,7 @@ def test_training_label_generation():
         label_generator._create_labels_table(labels_table_name)
         label_generator.generate(
             start_date='2014-09-30',
-            prediction_window='6month',
+            label_window='6month',
             labels_table=labels_table_name
         )
 

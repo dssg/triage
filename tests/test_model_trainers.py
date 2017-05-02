@@ -38,10 +38,10 @@ def test_model_trainer():
                 'label': ['good', 'bad']
             })
             metadata = {
-                'start_time': datetime.date(2012, 12, 20),
+                'beginning_of_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
-                'prediction_window': '1y',
+                'label_window': '1y',
                 'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2']
             }
@@ -195,9 +195,9 @@ def test_n_jobs_not_new_model():
                 grid_config,
                 dict(),
                 InMemoryMatrixStore(matrix, {
-                    'prediction_window': '1d',
+                    'label_window': '1d',
                     'end_time': datetime.datetime.now(),
-                    'start_time': datetime.date(2012, 12, 20),
+                    'beginning_of_time': datetime.date(2012, 12, 20),
                     'label_name': 'label',
                     'metta-uuid': '1234',
                     'feature_names': ['ft1', 'ft2']
