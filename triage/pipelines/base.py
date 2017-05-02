@@ -69,6 +69,8 @@ class PipelineBase(object):
             modeling_end_time=dt_from_str(split_config['modeling_end_time']),
             update_window=split_config['update_window'],
             look_back_durations=split_config['look_back_durations'],
+            train_example_frequency=split_config['train_example_frequency'],
+            test_example_frequency=split_config['test_example_frequency'],
             test_durations=split_config['test_durations'],
         )
 
