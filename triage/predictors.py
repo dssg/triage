@@ -148,6 +148,7 @@ class Predictor(object):
                         as_of_date=as_of_date,
                         score=float(score),
                         label_value=int(label) if not math.isnan(label) else None,
+                        matrix_uuid=matrix_store.uuid,
                         **misc_db_parameters
                     )
                     writer.writerow([
@@ -181,6 +182,7 @@ class Predictor(object):
                     label_value=int(label) if not math.isnan(label) else None,
                     rank_abs=int(rank_abs),
                     rank_pct=round(float(rank_pct), 10),
+                    matrix_uuid=matrix_store.uuid,
                     **misc_db_parameters
                 ))
 
