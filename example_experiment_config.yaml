@@ -11,12 +11,14 @@ temporal_config:
     beginning_of_time: '1995-01-01' # earliest date included in features
     modeling_start_time: '2012-01-01' # earliest date in any model
     modeling_end_time: '2015-01-01' # all dates in any model are < this date
-    update_window: '6m' # how frequently to retrain models
+    update_window: '6month' # how frequently to retrain models
     look_back_durations: # length of time included in a model
-        - '6m'
-        - '3m'
-    test_durations: ['1m', '2m']
-    prediction_frequency: '1d' # per test set how often to generate predictions
+        - '6month'
+        - '3month'
+    train_example_frequency: '1day' # time between rows for same entity in train matrix
+    test_example_frequency: '3month' # time between rows for same entity in test matrix
+    test_durations: ['1month', '2month']
+    prediction_frequency: '1day' # per test set how often to generate predictions
 
 # LABEL GENERATION
 # Information needed to generate labels

@@ -113,6 +113,8 @@ def simple_pipeline_test(pipeline_class):
             'update_window': '1y',
             'prediction_window': '6months',
             'look_back_durations': ['6months'],
+            'train_example_frequency': '1day',
+            'test_example_frequency': '3months',
             'test_durations': ['1months'],
             'prediction_frequency': '1d'
         }
@@ -241,6 +243,8 @@ def reuse_pipeline_test(pipeline_class):
             'update_window': '1y',
             'prediction_window': '6months',
             'look_back_durations': ['6months'],
+            'train_example_frequency': '1day',
+            'test_example_frequency': '3months',
             'test_durations': ['1months'],
             'prediction_frequency': '1d'
         }
