@@ -44,7 +44,8 @@ def test_predictor():
             }).set_index('entity_id')
             metadata = {
                 'label_name': 'label',
-                'end_time': AS_OF_DATE
+                'end_time': AS_OF_DATE,
+                'metta-uuid': '1234',
             }
 
             matrix_store = InMemoryMatrixStore(matrix, metadata)
@@ -82,7 +83,8 @@ def test_predictor():
             }).set_index('entity_id')
             new_metadata = {
                 'label_name': 'label',
-                'end_time': AS_OF_DATE + datetime.timedelta(days=1)
+                'end_time': AS_OF_DATE + datetime.timedelta(days=1),
+                'metta-uuid': '1234',
             }
             new_matrix_store = InMemoryMatrixStore(new_matrix, new_metadata)
             predictor.predict(model_id, new_matrix_store, misc_db_parameters=dict())
@@ -122,6 +124,7 @@ def test_predictor_composite_index():
         metadata = {
             'label_name': 'label',
             'end_time': AS_OF_DATE,
+            'metta-uuid': '1234',
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
         predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
@@ -164,6 +167,7 @@ def test_predictor_retrieve():
         metadata = {
             'label_name': 'label',
             'end_time': AS_OF_DATE,
+            'metta-uuid': '1234',
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
         predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
