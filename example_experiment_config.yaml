@@ -102,6 +102,16 @@ feature_group_definition:
 # available: all, leave-one-out, leave-one-in
 feature_group_strategies: ['all']
 
+# MODEL GROUPING
+# Model groups are aimed at defining models which are equivalent across time splits.
+# By default, the classifier module name, hyperparameters, and feature names are used.
+#
+# model_group_keys defines a list of *additional* matrix metadata keys that
+# should be considered when creating a model group
+model_group_keys:
+    - 'train_duration'
+    - 'train_label_window'
+    - 'train_example_frequency'
 
 # GRID CONFIGURATION
 # The classifier/hyperparameter combinations that should be trained

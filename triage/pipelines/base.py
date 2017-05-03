@@ -122,6 +122,7 @@ class PipelineBase(object):
             project_path=self.project_path,
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
+            model_group_keys=self.config['model_group_keys'],
             replace=self.replace
         )
 
