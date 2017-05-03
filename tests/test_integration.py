@@ -75,6 +75,7 @@ def test_integration():
                 experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
                 db_engine=db_engine,
+                model_group_keys=['label_name', 'label_window']
             )
             predictor = Predictor(
                 project_path,

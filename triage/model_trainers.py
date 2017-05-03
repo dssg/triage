@@ -53,14 +53,15 @@ class ModelTrainer(object):
         experiment_hash,
         model_storage_engine,
         db_engine,
+        model_group_keys,
         replace=True
     ):
         self.project_path = project_path
         self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
-        self.replace = replace
         self.sessionmaker = sessionmaker(bind=self.db_engine)
+        self.model_group_keys = model_group_keys
         self.replace = replace
 
     def unique_parameters(self, parameters):
@@ -217,8 +218,7 @@ class ModelTrainer(object):
         model_group_id = self._get_model_group_id(
              class_path,
              unique_parameters,
-             matrix_store.metadata['feature_names'],
-             matrix_store.metadata.get('model_config', dict())
+             matrix_store.metadata,
         )
         logging.info('Trained model: %s', model_hash)
         model_store.write(trained_model)
@@ -239,8 +239,7 @@ class ModelTrainer(object):
         self,
         class_path,
         parameters,
-        feature_names,
-        model_config
+        matrix_metadata,
     ):
         """
         Returns model group id using store procedure 'get_model_group_id' which will 
@@ -250,11 +249,14 @@ class ModelTrainer(object):
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
-            features_names (list) Features used for train/test
-            model_config (dict) Dictionary of the classes for comparing groups
+            matrix_metadata (dict) stored metadata about the train matrix
 
         Returns: (int) a database id for the model group id
         """
+        feature_names = matrix_metadata['feature_names']
+        model_config = {}
+        for model_group_key in self.model_group_keys:
+            model_config[model_group_key] = matrix_metadata[model_group_key]
         db_conn = self.db_engine.raw_connection()
         cur = db_conn.cursor()
         cur.execute( "SELECT EXISTS ( "

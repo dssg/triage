@@ -52,6 +52,7 @@ def test_model_trainer():
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 db_engine=engine,
+                model_group_keys=['label_name', 'label_window']
             )
             matrix_store = InMemoryMatrixStore(matrix, metadata)
             model_ids = trainer.train_models(
@@ -183,6 +184,7 @@ def test_n_jobs_not_new_model():
                 experiment_hash=None,
                 model_storage_engine=S3ModelStorageEngine(s3_conn, 'econ-dev/inspections'),
                 db_engine=engine,
+                model_group_keys=['label_name', 'label_window']
             )
 
             matrix = pandas.DataFrame.from_dict({
