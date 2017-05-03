@@ -8,6 +8,8 @@ import tempfile
 import csv
 import postgres_copy
 
+from timechop.utils import convert_str_to_relativedelta
+
 
 class ModelNotFoundError(ValueError):
     pass
@@ -130,6 +132,8 @@ class Predictor(object):
             .delete(synchronize_session=False)
         session.expire_all()
         db_objects = []
+        test_label_window = matrix_store.metadata['label_window']
+        logging.warning(test_label_window)
 
         if 'as_of_date' in matrix_store.matrix.index.names:
             session.commit()
@@ -149,6 +153,7 @@ class Predictor(object):
                         score=float(score),
                         label_value=int(label) if not math.isnan(label) else None,
                         matrix_uuid=matrix_store.uuid,
+                        test_label_window=test_label_window,
                         **misc_db_parameters
                     )
                     writer.writerow([
@@ -159,7 +164,8 @@ class Predictor(object):
                         prediction.label_value,
                         prediction.rank_abs,
                         prediction.rank_pct,
-                        prediction.matrix_uuid
+                        prediction.matrix_uuid,
+                        prediction.test_label_window
                     ])
                 f.seek(0)
                 postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
@@ -183,6 +189,7 @@ class Predictor(object):
                     rank_abs=int(rank_abs),
                     rank_pct=round(float(rank_pct), 10),
                     matrix_uuid=matrix_store.uuid,
+                    test_label_window=test_label_window,
                     **misc_db_parameters
                 ))
 

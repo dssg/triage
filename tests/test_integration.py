@@ -33,10 +33,10 @@ def test_integration():
                 'label': [7, 8]
             }).set_index('entity_id')
             train_metadata = {
-                'start_time': datetime.date(2012, 12, 20),
+                'beginning_of_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
-                'prediction_window': '1y',
+                'label_window': '1y',
                 'feature_names': ['ft1', 'ft2'],
                 'metta-uuid': '1234',
             }
@@ -58,6 +58,7 @@ def test_integration():
                     }).set_index('entity_id'),
                     {
                         'label_name': 'label',
+                        'label_window': '1y',
                         'end_time': as_of_date,
                         'metta-uuid': '1234',
                     }

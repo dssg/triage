@@ -132,14 +132,14 @@ def test_model_scoring_inspections():
         prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
         evaluation_start = datetime.datetime(2016, 4, 1)
         evaluation_end = datetime.datetime(2016, 7, 1)
-        prediction_frequency = '1d'
+        example_frequency = '1d'
         model_scorer.score(
             prediction_probas,
             labels,
             model_id,
             evaluation_start,
             evaluation_end,
-            prediction_frequency
+            example_frequency
         )
 
         for record in db_engine.execute(

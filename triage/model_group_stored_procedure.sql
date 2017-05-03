@@ -6,8 +6,8 @@ CREATE TABLE results.model_groups
   model_group_id    SERIAL PRIMARY KEY,
   model_type        TEXT,
   model_parameters  JSONB,
-  prediction_window TEXT,
   feature_list      TEXT []
+  model_config		JSONB
 );
 -----------
 populates the table and returns the IDs

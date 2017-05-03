@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from sqlalchemy import create_engine
 from functools import partial
@@ -111,12 +111,12 @@ def simple_pipeline_test(pipeline_class):
             'modeling_start_time': '2011-01-01',
             'modeling_end_time': '2014-01-01',
             'update_window': '1y',
-            'prediction_window': '6months',
-            'look_back_durations': ['6months'],
+            'train_label_windows': ['6months'],
+            'test_label_windows': ['6months'],
             'train_example_frequency': '1day',
             'test_example_frequency': '3months',
+            'train_durations': ['6months'],
             'test_durations': ['1months'],
-            'prediction_frequency': '1d'
         }
         scoring_config = {
             'metric_groups': [
@@ -213,12 +213,15 @@ def simple_pipeline_test(pipeline_class):
         ])
         assert num_models == num_models_with_experiment
 
-        # 7. that models have the train end date, including prediction window
-        train_end_times = [
-            model['train_end_time']
+        # 7. that models have the train end date and label window
+        results = [
+            (model['train_end_time'], model['train_label_window'])
             for model in db_engine.execute('select * from results.models')
         ]
-        assert sorted(set(train_end_times)) == [datetime(2012, 7, 1), datetime(2013, 7, 1)]
+        assert sorted(set(results)) == [
+            (datetime(2012, 1, 1), timedelta(180)),
+            (datetime(2013, 1, 1), timedelta(180))
+        ]
 
 
 def test_serial_pipeline():
@@ -241,12 +244,12 @@ def reuse_pipeline_test(pipeline_class):
             'modeling_start_time': '2011-01-01',
             'modeling_end_time': '2014-01-01',
             'update_window': '1y',
-            'prediction_window': '6months',
-            'look_back_durations': ['6months'],
+            'train_label_windows': ['6months'],
+            'test_label_windows': ['6months'],
             'train_example_frequency': '1day',
             'test_example_frequency': '3months',
+            'train_durations': ['6months'],
             'test_durations': ['1months'],
-            'prediction_frequency': '1d'
         }
         scoring_config = {
             'metric_groups': [

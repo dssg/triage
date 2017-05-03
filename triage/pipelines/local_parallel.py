@@ -277,7 +277,7 @@ def test_and_score(
                 model_id=model_id,
                 evaluation_start_time=split_def['matrix_start_time'],
                 evaluation_end_time=split_def['matrix_end_time'],
-                prediction_frequency=config['temporal_config']['prediction_frequency']
+                example_frequency=split_def['example_frequency']
             )
         return True
     except Exception:
