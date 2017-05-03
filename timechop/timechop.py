@@ -15,8 +15,8 @@ class Timechop(object):
         test_example_frequency,
         train_durations,
         test_durations,
-        train_prediction_windows,
-        test_prediction_windows
+        train_label_windows,
+        test_label_windows
     ):
         self.beginning_of_time = beginning_of_time # earliest date included in features
         self.modeling_start_time = modeling_start_time # earliest date in any model
@@ -26,30 +26,30 @@ class Timechop(object):
         self.test_example_frequency = test_example_frequency # time between rows for same entity in test matrix
         self.train_durations = train_durations # keep creating rows in train matrix for this duration
         self.test_durations = test_durations # keep creating rows in test matrix for this duration
-        self.train_prediction_windows = train_prediction_windows # how much time is included in a label in the train matrix
-        self.test_prediction_windows = test_prediction_windows # how much time is included in a label in the test matrix
+        self.train_label_windows = train_label_windows # how much time is included in a label in the train matrix
+        self.test_label_windows = test_label_windows # how much time is included in a label in the test matrix
         if beginning_of_time > modeling_start_time:
             raise ValueError('Beginning of time is later than modeling start time.')
 
     def chop_time(self):
         matrix_set_definitions = []
-        for train_duration, train_prediction_window, test_prediction_window in itertools.product(
+        for train_duration, train_label_window, test_label_window in itertools.product(
                 self.train_durations,
-                self.train_prediction_windows,
-                self.test_prediction_windows
+                self.train_label_windows,
+                self.test_label_windows
             ):
             matrix_end_times = self.calculate_matrix_end_times(
                 train_duration,
-                train_prediction_window,
-                test_prediction_window
+                train_label_window,
+                test_label_window
             )
             for matrix_end_time in matrix_end_times:
                 matrix_set_definitions.append(
                     self.generate_matrix_definition(
                         matrix_end_time,
                         train_duration,
-                        train_prediction_window,
-                        test_prediction_window
+                        train_label_window,
+                        test_label_window
                     )
                 )
         return(matrix_set_definitions)
@@ -57,8 +57,8 @@ class Timechop(object):
     def calculate_matrix_end_times(
             self,
             train_duration,
-            train_prediction_window,
-            test_prediction_window
+            train_label_window,
+            test_label_window
         ):
         update_delta = utils.convert_str_to_relativedelta(self.update_window)
         train_delta = utils.convert_str_to_relativedelta(train_duration)
@@ -104,8 +104,8 @@ class Timechop(object):
             self,
             train_matrix_end_time,
             train_duration,
-            train_prediction_window,
-            test_prediction_window
+            train_label_window,
+            test_label_window
         ):
         train_delta = utils.convert_str_to_relativedelta(train_duration)
         train_matrix_start_time = train_matrix_end_time - train_delta
@@ -120,7 +120,7 @@ class Timechop(object):
         )
         test_matrices = self.define_test_matrices(
             train_matrix_end_time,
-            test_prediction_window
+            test_label_window
         )
             
         matrix_definition = {
@@ -131,7 +131,8 @@ class Timechop(object):
                 'matrix_start_time': train_matrix_start_time,
                 'matrix_end_time': train_matrix_end_time,
                 'as_of_times': train_as_of_times,
-                'prediction_window': train_prediction_window
+                'label_window': train_label_window,
+                'example_frequency': self.train_example_frequency
             },
             'test_matrices': test_matrices
         }
@@ -140,7 +141,7 @@ class Timechop(object):
     def define_test_matrices(
         self,
         train_matrix_end_time,
-        test_prediction_window
+        test_label_window
     ):
         test_definitions = []
         test_end_times = []
@@ -159,7 +160,8 @@ class Timechop(object):
                     'matrix_start_time': train_matrix_end_time,
                     'matrix_end_time': test_end_time,
                     'as_of_times': test_as_of_times,
-                    'prediction_window': test_prediction_window
+                    'label_window': test_label_window,
+                    'example_frequency': self.test_example_frequency
                 }
                 test_definitions.append(test_definition)
                 test_end_times.append(test_end_time)

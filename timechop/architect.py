@@ -76,7 +76,7 @@ class Architect(object):
         matrix_metadata = {
 
             # temporal information
-            'start_time': self.beginning_of_time,
+            'beginning_of_time': self.beginning_of_time,
             'end_time': matrix_definition['matrix_end_time'],
 
             # columns

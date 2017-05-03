@@ -153,7 +153,7 @@ def test_build_labels_query():
         columns = [
             'entity_id',
             'as_of_date',
-            'prediction_window',
+            'label_window',
             'label_name',
             'label_type',
             'label'
@@ -181,7 +181,7 @@ def test_build_labels_query():
                 date = date.date()
                 df = labels_df[labels_df['label_name'] == label_name]
                 df = df[labels_df['label_type'] == label_type]
-                df = df[labels_df['prediction_window'] == '1 month']
+                df = df[labels_df['label_window'] == '1 month']
                 print(date)
                 df = df[labels_df['as_of_date'] == date]
                 df = df[['entity_id', 'as_of_date', 'label']]
@@ -198,7 +198,7 @@ def test_build_labels_query():
                     label_type=label_type,
                     label_name=label_name,
                     final_column=', label as {}'.format(label_name),
-                    prediction_window='1 month'
+                    label_window='1 month'
                 )
                 result = pd.read_sql(query, engine)
                 test = (result == df)
@@ -284,7 +284,7 @@ def test_make_entity_date_table():
                 feature_table_names=['features0', 'features1'],
                 matrix_uuid='my_uuid',
                 matrix_type='train',
-                prediction_window='1 month'
+                label_window='1 month'
             )
 
             # read in the table
@@ -363,7 +363,7 @@ def test_build_outer_join_query():
                 feature_table_names=['features0', 'features1'],
                 matrix_type='train',
                 matrix_uuid='my_uuid',
-                prediction_window='1 month'
+                label_window='1 month'
             )
 
             # get the queries and test them
@@ -623,8 +623,8 @@ class TestBuildMatrix(object):
                     'matrix_id': 'hi',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1 month'
+                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'label_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(
@@ -680,8 +680,8 @@ class TestBuildMatrix(object):
                     'matrix_id': 'hi',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1 month'
+                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'label_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(
@@ -739,8 +739,8 @@ class TestBuildMatrix(object):
                     'matrix_id': 'hi',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'prediction_window': '1 month'
+                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'label_window': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 architect.build_matrix(

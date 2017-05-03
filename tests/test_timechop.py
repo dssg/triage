@@ -18,13 +18,13 @@ class test_calculate_update_times(TestCase):
             test_example_frequency='1 day',
             train_durations=['1 year'],
             test_durations=['1 month'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         result = chopper.calculate_matrix_end_times(
             train_duration='1 year',
-            train_prediction_window='1 day',
-            test_prediction_window='3 months'
+            train_label_window='1 day',
+            test_label_window='3 months'
         )
         assert(result == expected_result)
 
@@ -38,14 +38,14 @@ class test_calculate_update_times(TestCase):
             test_example_frequency = '1 day',
             train_durations = ['1 year'],
             test_durations = ['1 month'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         with self.assertRaises(ValueError):
             chopper.calculate_matrix_end_times(
                 train_duration='1 year',
-                train_prediction_window='1 day',
-                test_prediction_window='3 months'
+                train_label_window='1 day',
+                test_label_window='3 months'
             )
 
 
@@ -71,8 +71,8 @@ def test_calculate_as_of_times_one_day_freq():
         test_example_frequency = '7 days',
         train_durations = ['10 days', '1 year'],
         test_durations = ['1 month'],
-        train_prediction_windows=['1 day'],
-        test_prediction_windows=['3 months']
+        train_label_windows=['1 day'],
+        test_label_windows=['3 months']
     )
     result = chopper.calculate_as_of_times(
         matrix_start_time = datetime.datetime(2011, 1, 1, 0, 0),
@@ -98,8 +98,8 @@ def test_calculate_as_of_times_three_day_freq():
         test_example_frequency = '7 days',
         train_durations = ['10 days', '1 year'],
         test_durations = ['1 month'],
-        train_prediction_windows=['1 day'],
-        test_prediction_windows=['3 months']
+        train_label_windows=['1 day'],
+        test_label_windows=['3 months']
     )
     result = chopper.calculate_as_of_times(
         matrix_start_time = datetime.datetime(2011, 1, 1, 0, 0),
@@ -125,7 +125,8 @@ class test_generate_matrix_definition(TestCase):
                     datetime.datetime(2010, 1, 4, 0, 0),
                     datetime.datetime(2010, 1, 5, 0, 0)
                 ],
-                'prediction_window': '1 day'
+                'label_window': '1 day',
+                'example_frequency': '1 days'
             },
             'test_matrices': [{
                 'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -134,7 +135,8 @@ class test_generate_matrix_definition(TestCase):
                     datetime.datetime(2010, 1, 6, 0, 0),
                     datetime.datetime(2010, 1, 9, 0, 0),
                 ],
-                'prediction_window': '3 months'
+                'label_window': '3 months',
+                'example_frequency': '3 days'
             }]
         }
         chopper = Timechop(
@@ -146,14 +148,14 @@ class test_generate_matrix_definition(TestCase):
             test_example_frequency = '3 days',
             train_durations = ['5 days'],
             test_durations = ['5 days'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         result = chopper.generate_matrix_definition(
             train_matrix_end_time = datetime.datetime(2010, 1, 6, 0, 0),
             train_duration = '5 days',
-            train_prediction_window='1 day',
-            test_prediction_window='3 months'
+            train_label_window='1 day',
+            test_label_window='3 months'
         )
         assert result == expected_result
 
@@ -172,7 +174,8 @@ class test_generate_matrix_definition(TestCase):
                     datetime.datetime(2010, 1, 4, 0, 0),
                     datetime.datetime(2010, 1, 5, 0, 0)
                 ],
-            'prediction_window': '1 day'
+                'label_window': '1 day',
+                'example_frequency': '1 days'
             },
             'test_matrices': [
                 {
@@ -181,7 +184,8 @@ class test_generate_matrix_definition(TestCase):
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '7 days'
                 },
                 {
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -190,7 +194,8 @@ class test_generate_matrix_definition(TestCase):
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 13, 0, 0),
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '7 days'
                 }
             ]
         }
@@ -207,14 +212,14 @@ class test_generate_matrix_definition(TestCase):
             test_example_frequency = '7 days',
             train_durations = ['10 days'],
             test_durations = ['5 days', '10 days', '15 days'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         result = chopper.generate_matrix_definition(
             train_matrix_end_time = datetime.datetime(2010, 1, 6, 0, 0),
             train_duration = '10 days',
-            train_prediction_window='1 day',
-            test_prediction_window='3 months'
+            train_label_window='1 day',
+            test_label_window='3 months'
         )
         assert result == expected_result
 
@@ -236,7 +241,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 4, 0, 0),
                         datetime.datetime(2010, 1, 5, 0, 0)
                     ],
-                'prediction_window': '1 day'
+                    'label_window': '1 day',
+                    'example_frequency': '1 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -245,7 +251,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 9, 0, 0),
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '3 days'
                 }]
             },
             {
@@ -262,7 +269,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 9, 0, 0),
                         datetime.datetime(2010, 1, 10, 0, 0)
                     ],
-                'prediction_window': '1 day'
+                    'label_window': '1 day',
+                    'example_frequency': '1 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
@@ -271,7 +279,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 11, 0, 0),
                         datetime.datetime(2010, 1, 14, 0, 0)
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '3 days'
                 }]
             }
         ]
@@ -284,8 +293,8 @@ class test_chop_time(TestCase):
             test_example_frequency = '3 days',
             train_durations = ['5 days'],
             test_durations = ['5 days'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         result = chopper.chop_time()
         assert(result == expected_result)
@@ -306,7 +315,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 4, 0, 0),
                         datetime.datetime(2010, 1, 5, 0, 0)
                     ],
-                    'prediction_window': '1 day'
+                    'label_window': '1 day',
+                    'example_frequency': '1 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -314,7 +324,8 @@ class test_chop_time(TestCase):
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '7 days'
                 }]
             },
             {
@@ -333,7 +344,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 9, 0, 0),
                         datetime.datetime(2010, 1, 10, 0, 0)
                     ],
-                    'prediction_window': '1 day'
+                    'label_window': '1 day',
+                    'example_frequency': '1 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
@@ -341,7 +353,8 @@ class test_chop_time(TestCase):
                     'as_of_times': [
                         datetime.datetime(2010, 1, 11, 0, 0),
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '7 days'
                 }]
             }
         ]
@@ -355,8 +368,8 @@ class test_chop_time(TestCase):
             test_example_frequency = '7 days',
             train_durations = ['7 days'],
             test_durations = ['5 days'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         
         with warnings.catch_warnings(record = True) as w:
@@ -381,7 +394,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 7, 0, 0)
                     ],
-                    'prediction_window': '1 day'
+                    'label_window': '1 day',
+                    'example_frequency': '1 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 8, 0, 0),
@@ -390,7 +404,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 8, 0, 0),
                         datetime.datetime(2010, 1, 12, 0, 0)
                     ],
-                    'prediction_window': '3 months'
+                    'label_window': '3 months',
+                    'example_frequency': '4 days'
                 }]
             }
         ]
@@ -404,8 +419,8 @@ class test_chop_time(TestCase):
             test_example_frequency = '4 days',
             train_durations = ['5 days'],
             test_durations = ['5 days'],
-            train_prediction_windows=['1 day'],
-            test_prediction_windows=['3 months']
+            train_label_windows=['1 day'],
+            test_label_windows=['3 months']
         )
         
         with warnings.catch_warnings(record = True) as w:
@@ -429,6 +444,6 @@ class test__init__(TestCase):
                 test_example_frequency = '7 days',
                 train_durations = ['5 days'],
                 test_durations = ['5 days'],
-                train_prediction_windows=['1 day'],
-                test_prediction_windows=['3 months']
+                train_label_windows=['1 day'],
+                test_label_windows=['3 months']
             )

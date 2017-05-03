@@ -44,7 +44,7 @@ class BuilderBase(object):
             final_column,
             label_name,
             label_type,
-            prediction_window
+            label_window
         ):
         """ Given a table, schema, and list of dates, write a query to get the
         list of valid as_of_date-entity pairs, and, if requested, the labels.
@@ -67,7 +67,7 @@ class BuilderBase(object):
             WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))) AND
                   label_name = '{l_name}' AND
                   label_type = '{l_type}' AND
-                  prediction_window = '{window}'
+                  label_window = '{window}'
             ORDER BY entity_id,
                      as_of_date
         """.format(
@@ -77,7 +77,7 @@ class BuilderBase(object):
             times = as_of_time_strings,
             l_name = label_name,
             l_type = label_type,
-            window = prediction_window
+            window = label_window
         )
         return(query)
 
@@ -141,7 +141,7 @@ class BuilderBase(object):
         feature_table_names,
         matrix_type,
         matrix_uuid,
-        prediction_window
+        label_window
     ):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
@@ -160,7 +160,7 @@ class BuilderBase(object):
                 final_column='',
                 label_name=label_name,
                 label_type=label_type,
-                prediction_window=prediction_window
+                label_window=label_window
             )
         elif matrix_type == 'test':
             indices_query = self.get_all_valid_entity_date_combos(
@@ -259,7 +259,7 @@ class CSVBuilder(BuilderBase):
             feature_dictionary.keys(),
             matrix_type,
             matrix_uuid,
-            matrix_metadata['prediction_window']
+            matrix_metadata['label_window']
         )
         try:
             logging.info('Writing feature group data')
@@ -278,7 +278,7 @@ class CSVBuilder(BuilderBase):
                     matrix_type,
                     entity_date_table_name,
                     matrix_uuid,
-                    matrix_metadata['prediction_window']
+                    matrix_metadata['label_window']
                 )
                 features_csv_names.insert(0, labels_csv_name)
 
@@ -323,7 +323,7 @@ class CSVBuilder(BuilderBase):
         matrix_type,
         entity_date_table_name,
         matrix_uuid,
-        prediction_window
+        label_window
     ):
         """ Query the labels table and write the data to disk in csv format.
         
@@ -341,7 +341,7 @@ class CSVBuilder(BuilderBase):
                 final_column=', label as {}'.format(label_name),
                 label_name=label_name,
                 label_type=label_type,
-                prediction_window=prediction_window
+                label_window=label_window
             )
         elif matrix_type == 'test':
             labels_query=self.build_outer_join_query(
@@ -358,11 +358,11 @@ class CSVBuilder(BuilderBase):
                 additional_conditions='''AND
                     r.label_name = '{name}' AND
                     r.label_type = '{type}' AND
-                    r.prediction_window = '{window}'
+                    r.label_window = '{window}'
                 '''.format(
                     name=label_name,
                     type=label_type,
-                    window=prediction_window
+                    window=label_window
                 )
             )
         else:
