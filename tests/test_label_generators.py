@@ -20,13 +20,6 @@ events_data = [
     [4, date(2015, 12, 13), False],
 ]
 
-expected = [
-    # entity_id, as_of_date, label_window, name, type, label
-    (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
-    (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
-    (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
-]
-
 
 def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
@@ -57,4 +50,57 @@ def test_training_label_generation():
             'select * from {} order by entity_id, as_of_date'.format(labels_table_name)
         )
         records = [row for row in result]
+
+        expected = [
+            # entity_id, as_of_date, label_window, name, type, label
+            (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+            (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
+            (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+        ]
+
+        assert records == expected
+
+
+def test_generate_all_labels():
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        engine.execute(
+            'create table events (entity_id int, outcome_date date, outcome bool)'
+        )
+        for event in events_data:
+            engine.execute(
+                'insert into events values (%s, %s, %s::bool)',
+                event
+            )
+
+        labels_table_name = 'labels'
+
+        label_generator = BinaryLabelGenerator(
+            events_table='events',
+            db_engine=engine,
+        )
+        label_generator.generate_all_labels(
+            labels_table=labels_table_name,
+            as_of_times=['2014-09-30', '2015-03-30'],
+            label_windows=['6month', '3month'],
+        )
+
+        result = engine.execute('''
+            select * from {}
+            order by entity_id, as_of_date, label_window desc
+        '''.format(labels_table_name)
+        )
+        records = [row for row in result]
+
+        expected = [
+            # entity_id, as_of_date, label_window, name, type, label
+            (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+            (1, date(2014, 9, 30), timedelta(90), 'outcome', 'binary', False),
+            (2, date(2015, 3, 30), timedelta(180), 'outcome', 'binary', False),
+            (2, date(2015, 3, 30), timedelta(90), 'outcome', 'binary', False),
+            (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
+            (3, date(2015, 3, 30), timedelta(180), 'outcome', 'binary', False),
+            (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+            (4, date(2014, 9, 30), timedelta(90), 'outcome', 'binary', False),
+        ]
         assert records == expected

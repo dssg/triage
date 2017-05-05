@@ -276,12 +276,11 @@ class PipelineBase(object):
 
         Results are stored in the database, not returned
         """
-        for label_window in self.all_label_windows:
-            self.label_generator.generate_all_labels(
-                self.labels_table_name,
-                self.all_as_of_times,
-                label_window
-            )
+        self.label_generator.generate_all_labels(
+            self.labels_table_name,
+            self.all_as_of_times,
+            self.all_label_windows
+        )
 
     def update_split_definitions(self, new_split_definitions):
         """Update split definitions

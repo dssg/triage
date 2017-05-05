@@ -43,12 +43,15 @@ class BinaryLabelGenerator(object):
             label int
         )'''.format(labels_table_name))
 
-    def generate_all_labels(self, labels_table, as_of_times, label_window):
+    def generate_all_labels(self, labels_table, as_of_times, label_windows):
         self._create_labels_table(labels_table)
-        logging.info('Creating labels for %s as of times', len(as_of_times))
+        logging.info('Creating labels for %s as of times and %s label windows',
+                     len(as_of_times),
+                     len(label_windows))
         for as_of_time in as_of_times:
-            self.generate(
-                start_date=as_of_time,
-                label_window=label_window,
-                labels_table=labels_table
-            )
+            for label_window in label_windows:
+                self.generate(
+                    start_date=as_of_time,
+                    label_window=label_window,
+                    labels_table=labels_table
+                )
