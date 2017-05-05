@@ -1,7 +1,7 @@
 import numpy
 from sklearn import metrics
 from triage.db import Evaluation
-from triage.utils import sort_predictions_and_labels
+from triage.utils import db_retry, sort_predictions_and_labels
 from sqlalchemy.orm import sessionmaker
 import logging
 import time
@@ -324,6 +324,7 @@ class ModelScorer(object):
         )
         logging.info('Done writing metrics to db')
 
+    @db_retry
     def _write_to_db(
         self,
         model_id,

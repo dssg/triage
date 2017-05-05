@@ -13,3 +13,4 @@ click
 inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
+retrying

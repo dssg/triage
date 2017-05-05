@@ -8,7 +8,10 @@ import datetime
 import copy
 import pandas
 import warnings
-from triage.utils import filename_friendly_hash, retrieve_model_id_from_hash
+from triage.utils import \
+    filename_friendly_hash, \
+    retrieve_model_id_from_hash, \
+    db_retry
 
 
 def get_feature_importances(model):
@@ -121,6 +124,7 @@ class ModelTrainer(object):
 
         return instance.fit(matrix_store.matrix, y), matrix_store.matrix.columns
 
+    @db_retry
     def _write_model_to_db(
         self,
         class_path,
