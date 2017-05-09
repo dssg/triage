@@ -6,15 +6,12 @@ Library for storing train-test sets.
 import copy
 import yaml
 import os
-import pandas as pd
-import warnings
 import datetime
 import json
 import hashlib
 import shutil
-
-
-warnings.filterwarnings("ignore")
+import pandas as pd
+import numpy as np
 
 
 def archive_train_test(train_config,
@@ -199,11 +196,18 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         yaml.dump(metadata, stream)
 
     if format == 'hd5':
-        print(directory + '/' + title + '.h5')
+
+        for col in df_data.columns:
+            if isinstance(df_data[col].dtype, object):
+                df_data[col] = df_data[col].astype(float)
+            elif (df_data[col].dtype == np.dtype('datetime64[ns]')):
+                df_data[col] = df_data[col].map(lambda x: x.timestamp())
+
         hdf = pd.HDFStore(directory + '/' + title + '.h5',
                           mode='w',
                           complevel=5,
-                          complib="zlib")
+                          complib="zlib",
+                          format='table')
         hdf.put(title, df_data, data_columns=True)
         hdf.close()
     elif format == 'csv':
@@ -255,31 +259,6 @@ def check_config_types(dict_config):
     assert isinstance(dict_config['end_time'], datetime.date)
     assert isinstance(dict_config['label_window'], str)
     assert isinstance(dict_config['matrix_id'], str)
-
-
-def load_uuids(uuid_fname):
-    """
-    Return a list of existing uuids.
-
-    Parameters
-    ---------
-    directory: str
-        path to working directory
-
-    Returns
-    -------
-    uuids: set
-       set of uuids. empty set of there is
-       no .matrix_uuids file
-
-    """
-
-    if os.path.isfile(uuid_fname):
-        with open(uuid_fname, 'r') as uuid_file:
-            uuids = set([str_uuid.strip('\n') for str_uuid in uuid_file])
-        return uuids
-    else:
-        return set([])
 
 
 def generate_uuid(metadata):

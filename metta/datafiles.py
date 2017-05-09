@@ -1,6 +1,5 @@
 from pkg_resources import resource_filename
 
-example_uuid_fname = resource_filename(__name__, '/data/.matrix_uuids')
 example_directory = resource_filename(__name__, '/data/')
 example_data_csv = resource_filename(__name__, '/data/titanic.csv')
 example_data_h5 = resource_filename(__name__, '/data/titanic.h5')

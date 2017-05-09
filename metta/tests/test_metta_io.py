@@ -7,8 +7,7 @@ import metta.metta_io
 import pandas as pd
 import os
 import unittest
-from metta.datafiles import (example_uuid_fname,
-                             example_data_csv,
+from metta.datafiles import (example_data_csv,
                              example_data_h5)
 
 from tempfile import mkdtemp
@@ -20,7 +19,7 @@ dict_test_config = {'beginning_of_time': datetime.date(2016, 1, 1),
                     'end_time': datetime.date(2016, 12, 31),
                     'matrix_id': 'testing_matrix',
                     'label': 'testing_data',
-                    'label_name': 'SexCode',
+                    'label_name': 'Survived',
                     'label_window': '1yr',
                     'feature_names': ['break_last_3y', 'soil',
                                       'pressure_zone']}
@@ -43,13 +42,10 @@ class TestMettaIO(unittest.TestCase):
         metta.metta_io.check_config_types(dict_test_config)
 
     def test_uuid(self):
-        fake_uuid = 'da160ed1c62cb51e87e96f08543d73ea'
+        fake_uuid = '4453abd4f6bf023bd235c45f0f04d39d'
+
         assert fake_uuid == metta.metta_io.generate_uuid(
             dict_test_config)
-
-    def test_load_uuids(self):
-        assert len(metta.metta_io.load_uuids(example_uuid_fname)) > 8
-        assert len(metta.metta_io.load_uuids('notafile')) == 0
 
     def test_store_matrix(self):
         df_data = pd.read_csv(example_data_csv)
@@ -135,15 +131,15 @@ class TestMettaIO(unittest.TestCase):
                                           overwrite=False)
 
         assert os.path.isfile(
-            self.temp_file('da160ed1c62cb51e87e96f08543d73ea.h5')
+            self.temp_file('4453abd4f6bf023bd235c45f0f04d39d.h5')
         )
 
         assert os.path.isfile(
-            self.temp_file('da160ed1c62cb51e87e96f08543d73ea.yaml')
+            self.temp_file('4453abd4f6bf023bd235c45f0f04d39d.yaml')
         )
 
         prior_creation_time = os.path.getmtime(
-            self.temp_file('da160ed1c62cb51e87e96f08543d73ea.h5'))
+            self.temp_file('4453abd4f6bf023bd235c45f0f04d39d.h5'))
 
         metta.metta_io.archive_train_test(dict_test_config,
                                           df_data,
@@ -154,7 +150,7 @@ class TestMettaIO(unittest.TestCase):
                                           overwrite=True)
 
         later_creation_time = os.path.getmtime(
-            self.temp_file('da160ed1c62cb51e87e96f08543d73ea.h5'))
+            self.temp_file('4453abd4f6bf023bd235c45f0f04d39d.h5'))
 
         assert (later_creation_time - prior_creation_time) > 0
 
@@ -162,7 +158,7 @@ class TestMettaIO(unittest.TestCase):
 
     def test_recover(self):
         df_data = pd.read_csv(example_data_csv)
-        fake_uuid = 'da160ed1c62cb51e87e96f08543d73ea'
+        fake_uuid = '4453abd4f6bf023bd235c45f0f04d39d'
         metta.metta_io.archive_train_test(dict_test_config, df_data,
                                           dict_test_config, df_data,
                                           directory=self.temp_dir)
