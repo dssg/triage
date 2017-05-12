@@ -14,5 +14,8 @@ deploy:
   password:
     secure: ALWVprHS74OEpe8Bb+NbPqrdaA7wx5xBXcFpE00QWu1YKe+EtJ27ic+fdHYObskWQVdgxygSZgcG+v59YnIQrxjYN/vlSOmHbHpZ8bpG4nyFgNmYZW1R9vAD7PvP5wgMkqIrq0T2+5N9fnPZnZbmSBUqkrXQzIO/A6QbCM73BHKiF2ufs+3bnWxzyT2q4Q7QewS34zSgERGDLA2NTgJsbNAGet8vYWpfr+TGonlpahhAf0FRUM3gCahoXsxlTO0sr7c7Wpy36QN1i/m7tazmrndFMcygqWocheujup8HyCKXfhc9qXjKkscSDesUaa0bfRl0m8+3hxzVh2hZ+rj5LTgkKX2DWghm+fW/foGTa1X34yxdPMWMeffy77DD+KQi7lX/jyclfx5zu6i0JFMT2uXtTAMRS8mPn8+Lboc55WHlj9ZaJO4YArHq3BSgRsDB6TBO8IOyycJ8+yqMR1FdoMHKrTbqc4teZQRoVl0bLW9NgKH0pFdjVpkaJEa2dOJvrptlbnrqEibDp3wq4OiIyj8ufR7QxLSO8iBvypAltpxm7gFs2PENi3eNXrX5Qfs7h5F6FutEZUyru40Jwja8X7eSNTU8LNLWlMrai5gvLk9edN1MxYnRBGrR24TRTMi2diKvyg8mbXOtxvDB+I4ivx4efKvHxdrfdjDtP+/W+jY=
   provider: pypi
+  true:
+    tags: true
+    repo: dssg/results-schema
   distributions: sdist bdist_wheel
   user: dssg
