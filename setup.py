@@ -12,9 +12,8 @@ with open('LICENSE') as license_file:
 with open('requirements.txt') as requirements_file:
     requirements = requirements_file.readlines()
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+with open('requirements_dev.txt') as requirements_dev_file:
+    test_requirements = requirements + requirements_dev_file.readlines()
 
 setup(
     name='results_schema',
@@ -31,6 +30,7 @@ setup(
     ],
     include_package_data=True,
     install_requires=requirements,
+    tests_require=test_requirements,
     license=license,
     zip_safe=False,
     keywords='analytics datascience modeling modelevaluation',
