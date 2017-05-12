@@ -26,6 +26,8 @@ setup(
     url='https://github.com/dssg/results-schema',
     packages=[
         'results_schema',
+        'results_schema.alembic',
+        'results_schema.alembic.versions',
     ],
     include_package_data=True,
     install_requires=requirements,

@@ -1,1 +1,4 @@
 sqlalchemy
+alembic
+psycopg2
+pyyaml
