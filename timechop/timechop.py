@@ -132,7 +132,8 @@ class Timechop(object):
                 'matrix_end_time': train_matrix_end_time,
                 'as_of_times': train_as_of_times,
                 'label_window': train_label_window,
-                'example_frequency': self.train_example_frequency
+                'example_frequency': self.train_example_frequency,
+                'train_duration': train_duration
             },
             'test_matrices': test_matrices
         }
