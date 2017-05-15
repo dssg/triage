@@ -126,7 +126,8 @@ class test_generate_matrix_definition(TestCase):
                     datetime.datetime(2010, 1, 5, 0, 0)
                 ],
                 'label_window': '1 day',
-                'example_frequency': '1 days'
+                'example_frequency': '1 days',
+                'train_duration': '5 days'
             },
             'test_matrices': [{
                 'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -175,7 +176,8 @@ class test_generate_matrix_definition(TestCase):
                     datetime.datetime(2010, 1, 5, 0, 0)
                 ],
                 'label_window': '1 day',
-                'example_frequency': '1 days'
+                'example_frequency': '1 days',
+                'train_duration': '10 days'
             },
             'test_matrices': [
                 {
@@ -242,7 +244,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 5, 0, 0)
                     ],
                     'label_window': '1 day',
-                    'example_frequency': '1 days'
+                    'example_frequency': '1 days',
+                    'train_duration': '5 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -270,7 +273,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 10, 0, 0)
                     ],
                     'label_window': '1 day',
-                    'example_frequency': '1 days'
+                    'example_frequency': '1 days',
+                    'train_duration': '5 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
@@ -316,7 +320,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 5, 0, 0)
                     ],
                     'label_window': '1 day',
-                    'example_frequency': '1 days'
+                    'example_frequency': '1 days',
+                    'train_duration': '7 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
@@ -345,7 +350,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 10, 0, 0)
                     ],
                     'label_window': '1 day',
-                    'example_frequency': '1 days'
+                    'example_frequency': '1 days',
+                    'train_duration': '7 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
@@ -395,7 +401,8 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 7, 0, 0)
                     ],
                     'label_window': '1 day',
-                    'example_frequency': '1 days'
+                    'example_frequency': '1 days',
+                    'train_duration': '5 days'
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 8, 0, 0),
