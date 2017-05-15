@@ -8,7 +8,9 @@ import random
 import yaml
 import json
 from triage.db import Experiment, Model
+from retrying import retry
 from sqlalchemy.orm import sessionmaker
+import sqlalchemy
 
 
 def split_s3_path(path):
@@ -91,6 +93,23 @@ def filename_friendly_hash(inputs):
     ).hexdigest()
 
 
+def retry_if_db_error(exception):
+    return isinstance(exception, sqlalchemy.exc.OperationalError)
+
+
+DEFAULT_RETRY_KWARGS = {
+    'retry_on_exception': retry_if_db_error,
+    'wait_exponential_multiplier': 1000, # wait 2^x*1000ms between each retry
+    'stop_max_attempt_number': 14,
+    # with this configuration, last wait will be ~2 hours
+    # for a total of ~4.5 hours waiting
+}
+
+
+db_retry = retry(**DEFAULT_RETRY_KWARGS)
+
+
+@db_retry
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
@@ -132,6 +151,16 @@ class Batch:
             yield self.group()
 
 
+def sort_predictions_and_labels(predictions_proba, labels, sort_seed):
+    random.seed(sort_seed)
+    predictions_proba_sorted, labels_sorted = zip(*sorted(
+        zip(predictions_proba, labels),
+        key=lambda pair: (pair[0], random.random()), reverse=True)
+    )
+    return predictions_proba_sorted, labels_sorted
+
+
+@db_retry
 def retrieve_model_id_from_hash(db_engine, model_hash):
     """Retrieves a model id from the database that matches the given hash
 
@@ -149,12 +178,3 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
         return saved.model_id if saved else None
     finally:
         session.close()
-
-
-def sort_predictions_and_labels(predictions_proba, labels, sort_seed):
-    random.seed(sort_seed)
-    predictions_proba_sorted, labels_sorted = zip(*sorted(
-        zip(predictions_proba, labels),
-        key=lambda pair: (pair[0], random.random()), reverse=True)
-    )
-    return predictions_proba_sorted, labels_sorted

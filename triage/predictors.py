@@ -7,8 +7,8 @@ import numpy
 import tempfile
 import csv
 import postgres_copy
-
 from timechop.utils import convert_str_to_relativedelta
+from triage.utils import db_retry
 
 
 class ModelNotFoundError(ValueError):
@@ -38,6 +38,7 @@ class Predictor(object):
             self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.replace = replace
 
+    @db_retry
     def _retrieve_model_hash(self, model_id):
         """Retrieves the model hash associated with a given model id
 
@@ -53,6 +54,7 @@ class Predictor(object):
             session.close()
         return model_hash
 
+    @db_retry
     def load_model(self, model_id):
         """Downloads the cached model associated with a given model id
 
@@ -69,6 +71,7 @@ class Predictor(object):
         if model_store.exists():
             return model_store.load()
 
+    @db_retry
     def delete_model(self, model_id):
         """Deletes the cached model associated with a given model id
 
@@ -79,6 +82,7 @@ class Predictor(object):
         model_store = self.model_storage_engine.get_store(model_hash)
         model_store.delete()
 
+    @db_retry
     def _existing_predictions(self, session, model_id, matrix_store):
         return session.query(Prediction)\
             .filter_by(model_id=model_id)\
@@ -93,6 +97,7 @@ class Predictor(object):
         else:
             return [matrix_store.metadata['end_time']]
 
+    @db_retry
     def _load_saved_predictions(self, existing_predictions, matrix_store):
         index = matrix_store.matrix.index
         score_lookup = {}
@@ -108,6 +113,7 @@ class Predictor(object):
             score_iterator = (score_lookup[(row, as_of_date)] for row in index)
         return numpy.fromiter(score_iterator, float)
 
+    @db_retry
     def _write_to_db(
         self,
         model_id,

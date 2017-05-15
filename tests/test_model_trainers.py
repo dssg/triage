@@ -3,6 +3,10 @@ import pandas
 import pickle
 import testing.postgresql
 import datetime
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+import unittest
+from unittest.mock import patch
 
 from moto import mock_s3
 from sqlalchemy import create_engine
@@ -10,7 +14,8 @@ from triage.db import ensure_db
 from triage.utils import model_cache_key
 
 from triage.model_trainers import ModelTrainer
-from triage.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from triage.storage import InMemoryModelStorageEngine,\
+    S3ModelStorageEngine, InMemoryMatrixStore
 
 
 def test_model_trainer():
@@ -218,3 +223,105 @@ def test_n_jobs_not_new_model():
                 'select model_parameters from results.model_groups'
             ):
                 assert 'n_jobs' not in row[0]
+
+
+class RetryTest(unittest.TestCase):
+    def test_retry_max(self):
+        grid_config = {
+            'sklearn.ensemble.AdaBoostClassifier': {
+                'n_estimators': [10]
+            },
+        }
+
+        engine = None
+        trainer = None
+        # set up a basic model training run
+        # TODO abstract the setup of a basic model training run where
+        # we don't worry about the specific values used? it would make 
+        # tests like this require a bit less noise to read past
+        with testing.postgresql.Postgresql() as postgresql:
+            engine = create_engine(postgresql.url())
+            ensure_db(engine)
+            trainer = ModelTrainer(
+                project_path='econ-dev/inspections',
+                experiment_hash=None,
+                model_storage_engine=InMemoryModelStorageEngine(project_path=''),
+                db_engine=engine,
+                model_group_keys=['label_name', 'label_window']
+            )
+
+            matrix = pandas.DataFrame.from_dict({
+                'entity_id': [1, 2],
+                'feature_one': [3, 4],
+                'feature_two': [5, 6],
+                'label': ['good', 'bad']
+            })
+            matrix_store = InMemoryMatrixStore(matrix, {
+                'label_window': '1d',
+                'end_time': datetime.datetime.now(),
+                'beginning_of_time': datetime.date(2012, 12, 20),
+                'label_name': 'label',
+                'metta-uuid': '1234',
+                'feature_names': ['ft1', 'ft2']
+            })
+        # the postgres server goes out of scope here and thus no longer exists
+        with patch('time.sleep') as time_mock:
+            with self.assertRaises(sqlalchemy.exc.OperationalError):
+                trainer.train_models(grid_config, dict(), matrix_store)
+            # we want to make sure that we are using the retrying module sanely
+            # as opposed to matching the exact # of calls specified by the code
+            assert len(time_mock.mock_calls) > 5
+
+    def test_retry_recovery(self):
+        grid_config = {
+            'sklearn.ensemble.AdaBoostClassifier': {
+                'n_estimators': [10]
+            },
+        }
+
+        engine = None
+        trainer = None
+        port = None
+        with testing.postgresql.Postgresql() as postgresql:
+            port = postgresql.settings['port']
+            engine = create_engine(postgresql.url())
+            ensure_db(engine)
+            trainer = ModelTrainer(
+                project_path='econ-dev/inspections',
+                experiment_hash=None,
+                model_storage_engine=InMemoryModelStorageEngine(project_path=''),
+                db_engine=engine,
+                model_group_keys=['label_name', 'label_window']
+            )
+
+            matrix = pandas.DataFrame.from_dict({
+                'entity_id': [1, 2],
+                'feature_one': [3, 4],
+                'feature_two': [5, 6],
+                'label': ['good', 'bad']
+            })
+            matrix_store = InMemoryMatrixStore(matrix, {
+                'label_window': '1d',
+                'end_time': datetime.datetime.now(),
+                'beginning_of_time': datetime.date(2012, 12, 20),
+                'label_name': 'label',
+                'metta-uuid': '1234',
+                'feature_names': ['ft1', 'ft2']
+            })
+
+        # start without a database server
+        # then bring it back up after the first sleep
+        # use self so it doesn't go out of scope too early and shut down
+        self.new_server = None
+        def replace_db(arg):
+            self.new_server = testing.postgresql.Postgresql(port=port)
+            engine = create_engine(self.new_server.url())
+            ensure_db(engine)
+        with patch('time.sleep') as time_mock:
+            time_mock.side_effect = replace_db
+            try:
+                trainer.train_models(grid_config, dict(), matrix_store)
+            finally:
+                if self.new_server is not None:
+                    self.new_server.stop()
+            assert len(time_mock.mock_calls) == 1
