@@ -7,7 +7,7 @@ import pandas
 import random
 import yaml
 import json
-from triage.db import Experiment, Model
+from results_schema import Experiment, Model
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy

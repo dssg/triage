@@ -1,6 +1,6 @@
 from sklearn.grid_search import ParameterGrid
 from sqlalchemy.orm import sessionmaker
-from .db import Model, FeatureImportance
+from results_schema import Model, FeatureImportance
 import importlib
 import json
 import logging

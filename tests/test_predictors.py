@@ -5,7 +5,8 @@ from moto import mock_s3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
-from triage.db import ensure_db, Prediction
+from results_schema import Prediction
+from triage.db import ensure_db
 import pandas
 
 from triage.predictors import Predictor
