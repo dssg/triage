@@ -1,4 +1,4 @@
-from collate.collate import Aggregate, Categorical
+from collate.collate import Aggregate, Categorical, Compare
 from collate.spacetime import SpacetimeAggregation
 import sqlalchemy
 import logging
@@ -41,6 +41,23 @@ class FeatureGenerator(object):
             for categorical in categorical_config
         ]
 
+    def _build_array_categoricals(self, categorical_config):
+        return [
+            Compare(
+                col=categorical['column'],
+                op='@>',
+                choices={
+                    choice: "array['{}'::varchar]".format(choice)
+                    for choice in
+                    self._build_choices(categorical)
+                },
+                function=categorical['metrics'],
+                op_in_name=False,
+                quote_choices=False,
+            )
+            for categorical in categorical_config
+        ]
+
     def _aggregation(self, aggregation_config, feature_dates):
         aggregates = [
             Aggregate(aggregate['quantity'], aggregate['metrics'])
@@ -51,8 +68,12 @@ class FeatureGenerator(object):
             aggregation_config.get('categoricals', [])
         )
         logging.info('Found %s categorical aggregates', len(categoricals))
+        array_categoricals = self._build_array_categoricals(
+            aggregation_config.get('array_categoricals', [])
+        )
+        logging.info('Found %s array categorical aggregates', len(array_categoricals))
         return SpacetimeAggregation(
-            aggregates + categoricals,
+            aggregates + categoricals + array_categoricals,
             from_obj=aggregation_config['from_obj'],
             intervals=aggregation_config['intervals'],
             groups=aggregation_config['groups'],
