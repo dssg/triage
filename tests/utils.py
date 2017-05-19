@@ -4,7 +4,7 @@ import tempfile
 import yaml
 import numpy
 import random
-from triage.db import Model
+from results_schema import Model
 from sqlalchemy.orm import sessionmaker
 
 

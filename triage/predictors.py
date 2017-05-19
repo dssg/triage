@@ -1,4 +1,4 @@
-from .db import Model, Prediction
+from results_schema import Model, Prediction
 from sqlalchemy.orm import sessionmaker
 import pandas
 import logging

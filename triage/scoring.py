@@ -1,6 +1,6 @@
 import numpy
 from sklearn import metrics
-from triage.db import Evaluation
+from results_schema import Evaluation
 from triage.utils import db_retry, sort_predictions_and_labels
 from sqlalchemy.orm import sessionmaker
 import logging
@@ -197,7 +197,7 @@ class ModelScorer(object):
             predictions_binary (list) Binary predictions
             labels (list) True labels
 
-        Returns: (list) triage.db.Evaluation objects
+        Returns: (list) results_schema.Evaluation objects
         Raises: UnknownMetricError if a given metric is not present in
             self.available_metrics
         """
@@ -341,7 +341,7 @@ class ModelScorer(object):
         Args:
             model_id (int) primary key of the model
             as_of_date (datetime.date) Date the predictions were made as of
-            evaluations (list) triage.db.Evaluation objects
+            evaluations (list) results_schema.Evaluation objects
         """
         session = self.sessionmaker()
         session.query(Evaluation)\
