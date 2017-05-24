@@ -32,6 +32,9 @@ docs/_build
 
 .webassets-cache
 
+# Pytest cache
+.cache
+
 # Virtualenvs
 env/
 venv/
