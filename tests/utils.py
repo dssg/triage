@@ -4,12 +4,18 @@ import shutil
 import sys
 import tempfile
 from contextlib import contextmanager
+import yaml
+import numpy
+import random
+from sqlalchemy.orm import sessionmaker
+from results_schema import Model
 
 
 def convert_string_column_to_date(column):
     return(
         [datetime.datetime.strptime(date, '%Y-%m-%d').date() for date in column]
     )
+
 
 def create_features_and_labels_schemas(engine, features_tables, labels):
     """ This function makes a features schema and populates it with the fake
@@ -42,6 +48,7 @@ def create_features_and_labels_schemas(engine, features_tables, labels):
             row
         )
 
+
 def create_features_table(table_number, table, engine):
     engine.execute(
         """
@@ -58,6 +65,7 @@ def create_features_table(table_number, table, engine):
             row
         )
 
+
 def create_entity_date_df(
     dates,
     labels,
@@ -70,7 +78,7 @@ def create_entity_date_df(
     for testing against.
     """
     0, '2016-02-01', '1 month', 'booking', 'binary', 0
-    labels_table = pd.DataFrame(labels, columns = [
+    labels_table = pd.DataFrame(labels, columns=[
         'entity_id',
         'as_of_date',
         'label_window',
@@ -92,14 +100,15 @@ def create_entity_date_df(
     print(ids_dates)
     print(dates)
 
-    return(ids_dates.reset_index(drop = True))
+    return(ids_dates.reset_index(drop=True))
 
 
 def NamedTempFile():
-    if sys.version_info >= (3,0,0):
+    if sys.version_info >= (3, 0, 0):
         return tempfile.NamedTemporaryFile(mode='w+', newline='')
     else:
         return tempfile.NamedTemporaryFile()
+
 
 @contextmanager
 def TemporaryDirectory():
@@ -108,3 +117,101 @@ def TemporaryDirectory():
         yield name
     finally:
         shutil.rmtree(name)
+
+
+@contextmanager
+def fake_metta(matrix_dict, metadata):
+    """Stores matrix and metadata in a metta-data-like form
+
+    Args:
+    matrix_dict (dict) of form { columns: values }.
+        Expects an entity_id to be present which it will use as the index
+    metadata (dict). Any metadata that should be set
+
+    Yields:
+        tuple of filenames for matrix and metadata
+    """
+    matrix = pd.DataFrame.from_dict(matrix_dict).set_index('entity_id')
+    with tempfile.NamedTemporaryFile() as matrix_file:
+        with tempfile.NamedTemporaryFile('w') as metadata_file:
+            hdf = pd.HDFStore(matrix_file.name)
+            hdf.put('title', matrix, data_columns=True)
+            matrix_file.seek(0)
+
+            yaml.dump(metadata, metadata_file)
+            metadata_file.seek(0)
+            yield (matrix_file.name, metadata_file.name)
+
+
+def fake_labels(length):
+    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+
+
+class MockTrainedModel(object):
+    def predict_proba(self, dataset):
+        return numpy.random.rand(len(dataset), len(dataset))
+
+
+def fake_trained_model(project_path, model_storage_engine, db_engine):
+    """Creates and stores a trivial trained model
+
+    Args:
+        project_path (string) a desired fs/s3 project path
+        model_storage_engine (triage.storage.ModelStorageEngine)
+        db_engine (sqlalchemy.engine)
+
+    Returns:
+        (int) model id for database retrieval
+    """
+    trained_model = MockTrainedModel()
+    model_storage_engine.get_store('abcd').write(trained_model)
+    session = sessionmaker(db_engine)()
+    db_model = Model(model_hash='abcd')
+    session.add(db_model)
+    session.commit()
+    return trained_model, db_model.model_id
+
+
+def assert_index(engine, table, column):
+    """Assert that a table has an index on a given column
+
+    Does not care which position the column is in the index
+    Modified from https://www.gab.lc/articles/index_on_id_with_postgresql
+
+    Args:
+        engine (sqlalchemy.engine) a database engine
+        table (string) the name of a table
+        column (string) the name of a column
+    """
+    query = """
+        SELECT 1
+        FROM pg_class t
+             JOIN pg_index ix ON t.oid = ix.indrelid
+             JOIN pg_class i ON i.oid = ix.indexrelid
+             JOIN pg_attribute a ON a.attrelid = t.oid
+        WHERE
+             a.attnum = ANY(ix.indkey) AND
+             t.relkind = 'r' AND
+             t.relname = '{table_name}' AND
+             a.attname = '{column_name}'
+    """.format(
+        table_name=table,
+        column_name=column
+    )
+    num_results = len([row for row in engine.execute(query)])
+    assert num_results >= 1
+
+
+def create_dense_state_table(db_engine, table_name, data):
+    db_engine.execute('''create table {} (
+        entity_id int,
+        state text,
+        start_time timestamp,
+        end_time timestamp
+    )'''.format(table_name))
+
+    for row in data:
+        db_engine.execute(
+            'insert into {} values (%s, %s, %s, %s)'.format(table_name),
+            row
+        )

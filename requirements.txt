@@ -1,1 +1,3 @@
+results-schema==1.0.3
+git+git://github.com/dssg/collate.git@master
 git+git://github.com/dssg/metta-data.git
