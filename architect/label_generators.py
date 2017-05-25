@@ -11,13 +11,7 @@ class BinaryLabelGenerator(object):
         start_date,
         label_window,
         labels_table,
-        state_filter=None,
     ):
-        if state_filter:
-            state_join_sql = state_filter.join_sql(self.events_table, start_date)
-        else:
-            state_join_sql = ''
-
         query = """insert into {labels_table} (
             select
                 {events_table}.entity_id,
@@ -27,7 +21,6 @@ class BinaryLabelGenerator(object):
                 'binary' as label_type,
                 bool_or(outcome::bool)::int as label
             from {events_table}
-            {state_join_sql}
             where '{start_date}' <= outcome_date
             and outcome_date < '{start_date}'::timestamp + interval '{label_window}'
             group by 1, 2, 3, 4, 5
@@ -36,7 +29,6 @@ class BinaryLabelGenerator(object):
             labels_table=labels_table,
             start_date=start_date,
             label_window=label_window,
-            state_join_sql=state_join_sql
         )
         logging.debug(query)
         self.db_engine.execute(query)
@@ -61,7 +53,6 @@ class BinaryLabelGenerator(object):
         labels_table,
         as_of_times,
         label_windows,
-        state_filter=None
     ):
         self._create_labels_table(labels_table)
         logging.info('Creating labels for %s as of times and %s label windows',
@@ -73,7 +64,6 @@ class BinaryLabelGenerator(object):
                     start_date=as_of_time,
                     label_window=label_window,
                     labels_table=labels_table,
-                    state_filter=state_filter
                 )
         nrows = [
             row[0] for row in
