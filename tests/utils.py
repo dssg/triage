@@ -17,7 +17,7 @@ def convert_string_column_to_date(column):
     )
 
 
-def create_features_and_labels_schemas(engine, features_tables, labels):
+def create_schemas(engine, features_tables, labels, states):
     """ This function makes a features schema and populates it with the fake
     data from above.
 
@@ -48,6 +48,25 @@ def create_features_and_labels_schemas(engine, features_tables, labels):
             row
         )
 
+    # create sparse state table
+    engine.execute('drop schema if exists staging cascade; create schema staging;')
+    engine.execute(
+        """
+            create table staging.sparse_states (
+                entity_id int,
+                as_of_date date,
+                state_one bool,
+                state_two bool
+            )
+        """
+    )
+    for row in states:
+        engine.execute(
+            'insert into staging.sparse_states values (%s, %s, %s, %s)',
+            row
+        )
+
+
 
 def create_features_table(table_number, table, engine):
     engine.execute(
@@ -67,9 +86,11 @@ def create_features_table(table_number, table, engine):
 
 
 def create_entity_date_df(
-    dates,
     labels,
+    states,
     as_of_dates,
+    state_one,
+    state_two,
     label_name,
     label_type,
     label_window
@@ -86,19 +107,29 @@ def create_entity_date_df(
         'label_type',
         'label'
     ])
-    dates = [date.date() for date in dates]
+    states_table = pd.DataFrame(states, columns = [
+        'entity_id',
+        'as_of_date',
+        'state_one',
+        'state_two'
+    ]).set_index(['entity_id', 'as_of_date'])
+    as_of_dates = [date.date() for date in as_of_dates]
     labels_table = labels_table[labels_table['label_name'] == label_name]
     labels_table = labels_table[labels_table['label_type'] == label_type]
     labels_table = labels_table[labels_table['label_window'] == label_window]
+    labels_table = labels_table.join(
+        other=states_table,
+        on=('entity_id', 'as_of_date'),
+    )
+    labels_table = labels_table[labels_table['state_one'] & labels_table['state_two']]
     ids_dates = labels_table[['entity_id', 'as_of_date']]
     ids_dates = ids_dates.sort_values(['entity_id', 'as_of_date'])
     ids_dates['as_of_date'] = [datetime.datetime.strptime(
         date,
         '%Y-%m-%d'
     ).date() for date in ids_dates['as_of_date']]
-    ids_dates = ids_dates[ids_dates['as_of_date'].isin(dates)]
+    ids_dates = ids_dates[ids_dates['as_of_date'].isin(as_of_dates)]
     print(ids_dates)
-    print(dates)
 
     return(ids_dates.reset_index(drop=True))
 

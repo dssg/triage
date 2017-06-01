@@ -1,5 +1,5 @@
 from architect import Planner, builders
-from tests.utils import create_features_and_labels_schemas
+from tests.utils import create_schemas
 from tests.utils import create_entity_date_df
 from tests.utils import convert_string_column_to_date
 from tests.utils import NamedTempFile
@@ -16,6 +16,39 @@ from mock import Mock
 
 
 # make some fake features data
+
+states = [
+    [0, '2016-02-01', False, True],
+    [0, '2016-02-01', False, True],
+    [0, '2016-03-01', False, True],
+    [0, '2016-04-01', False, True],
+    [0, '2016-05-01', False, True],
+    [1, '2016-01-01', True, False],
+    [1, '2016-02-01', True, False],
+    [1, '2016-03-01', True, False],
+    [1, '2016-04-01', True, False],
+    [1, '2016-05-01', True, False],
+    [2, '2016-01-01', True, False],
+    [2, '2016-02-01', True, True],
+    [2, '2016-03-01', True, False],
+    [2, '2016-04-01', True, True],
+    [2, '2016-05-01', True, False],
+    [3, '2016-01-01', False, True],
+    [3, '2016-02-01', True, True],
+    [3, '2016-03-01', False, True],
+    [3, '2016-04-01', True, True],
+    [3, '2016-05-01', False, True],
+    [4, '2016-01-01', True, True],
+    [4, '2016-02-01', True, True],
+    [4, '2016-03-01', True, True],
+    [4, '2016-04-01', True, True],
+    [4, '2016-05-01', True, True],
+    [5, '2016-01-01', False, False],
+    [5, '2016-02-01', False, False],
+    [5, '2016-03-01', False, False],
+    [5, '2016-04-01', False, False],
+    [5, '2016-05-01', False, False]
+]
 
 features0 = [
     [0, '2016-01-01', 2, 0],
@@ -36,7 +69,11 @@ features1 = [
     [0, '2016-03-01', 3, 3],
     [1, '2016-03-01', 3, 4],
     [2, '2016-03-01', 3, 3],
-    [3, '2016-03-01', 3, 4]
+    [3, '2016-03-01', 3, 4],
+    [3, '2016-03-01', 3, 4],
+    [0, '2016-03-01', 3, 3],
+    [4, '2016-03-01', 1, 4],
+    [5, '2016-03-01', 2, 4]
 ] 
 
 features_tables = [features0, features1]
@@ -83,6 +120,26 @@ labels = [
     [3, '2016-03-01', '1 month', 'ems',     'binary', 0],
     [3, '2016-04-01', '1 month', 'ems',     'binary', 1],
     [3, '2016-05-01', '1 month', 'ems',     'binary', 0],
+    [4, '2016-01-01', '1 month', 'booking', 'binary', 1],
+    [4, '2016-02-01', '1 month', 'booking', 'binary', 0],
+    [4, '2016-03-01', '1 month', 'booking', 'binary', 0],
+    [4, '2016-04-01', '1 month', 'booking', 'binary', 0],
+    [4, '2016-05-01', '1 month', 'booking', 'binary', 0],
+    [4, '2016-01-01', '1 month', 'ems',     'binary', 0],
+    [4, '2016-02-01', '1 month', 'ems',     'binary', 1],
+    [4, '2016-03-01', '1 month', 'ems',     'binary', 0],
+    [4, '2016-04-01', '1 month', 'ems',     'binary', 1],
+    [4, '2016-05-01', '1 month', 'ems',     'binary', 1],
+    [5, '2016-01-01', '1 month', 'booking', 'binary', 1],
+    [5, '2016-02-01', '1 month', 'booking', 'binary', 0],
+    [5, '2016-03-01', '1 month', 'booking', 'binary', 0],
+    [5, '2016-04-01', '1 month', 'booking', 'binary', 0],
+    [5, '2016-05-01', '1 month', 'booking', 'binary', 0],
+    [5, '2016-01-01', '1 month', 'ems',     'binary', 0],
+    [5, '2016-02-01', '1 month', 'ems',     'binary', 1],
+    [5, '2016-03-01', '1 month', 'ems',     'binary', 0],
+    [5, '2016-04-01', '1 month', 'ems',     'binary', 0],
+    [5, '2016-05-01', '1 month', 'ems',     'binary', 0],
     [0, '2016-02-01', '3 month', 'booking', 'binary', 0],
     [0, '2016-03-01', '3 month', 'booking', 'binary', 0],
     [0, '2016-04-01', '3 month', 'booking', 'binary', 0],
@@ -121,7 +178,28 @@ labels = [
     [3, '2016-02-01', '3 month', 'ems',     'binary', 0],
     [3, '2016-03-01', '3 month', 'ems',     'binary', 0],
     [3, '2016-04-01', '3 month', 'ems',     'binary', 1],
-    [3, '2016-05-01', '3 month', 'ems',     'binary', 0]
+    [3, '2016-05-01', '3 month', 'ems',     'binary', 0],
+    [3, '2016-05-01', '3 month', 'ems',     'binary', 0],
+    [4, '2016-01-01', '3 month', 'booking', 'binary', 0],
+    [4, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [4, '2016-03-01', '3 month', 'booking', 'binary', 1],
+    [4, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [4, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [4, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [4, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [4, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [4, '2016-04-01', '3 month', 'ems',     'binary', 0],
+    [4, '2016-05-01', '3 month', 'ems',     'binary', 1],
+    [5, '2016-01-01', '3 month', 'booking', 'binary', 0],
+    [5, '2016-02-01', '3 month', 'booking', 'binary', 0],
+    [5, '2016-03-01', '3 month', 'booking', 'binary', 1],
+    [5, '2016-04-01', '3 month', 'booking', 'binary', 0],
+    [5, '2016-05-01', '3 month', 'booking', 'binary', 1],
+    [5, '2016-01-01', '3 month', 'ems',     'binary', 0],
+    [5, '2016-02-01', '3 month', 'ems',     'binary', 0],
+    [5, '2016-03-01', '3 month', 'ems',     'binary', 0],
+    [5, '2016-04-01', '3 month', 'ems',     'binary', 1],
+    [5, '2016-05-01', '3 month', 'ems',     'binary', 0]
 ]
 
 label_name = 'booking'
@@ -131,77 +209,9 @@ db_config = {
     'features_schema_name': 'features',
     'labels_schema_name': 'labels',
     'labels_table_name': 'labels',
+    'sparse_state_table_name': 'staging.sparse_states',
 }
 
-def test_build_labels_query():
-    """ Test the generate_labels_query function by checking whether the query
-    produces the correct labels
-    """
-    # set up labeling config variables
-    dates = [datetime.datetime(2016, 1, 1, 0, 0),
-             datetime.datetime(2016, 2, 1, 0, 0)]
-
-    with testing.postgresql.Postgresql() as postgresql:
-        # create an engine and generate a table with fake feature data
-        engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
-
-    # make a dataframe of labels to test against
-    labels_df = pd.DataFrame(
-        labels,
-        columns = [
-            'entity_id',
-            'as_of_date',
-            'label_window',
-            'label_name',
-            'label_type',
-            'label'
-        ]
-    )
-    labels_df['as_of_date'] = convert_string_column_to_date(labels_df['as_of_date'])
-
-    # create an engine and generate a table with fake feature data
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
-        with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = engine
-            )       
-
-            # get the queries and test them
-            for date in dates:
-                date = date.date()
-                df = labels_df[labels_df['label_name'] == label_name]
-                df = df[labels_df['label_type'] == label_type]
-                df = df[labels_df['label_window'] == '1 month']
-                print(date)
-                df = df[labels_df['as_of_date'] == date]
-                df = df[['entity_id', 'as_of_date', 'label']]
-                df = df.rename(
-                    columns = {
-                        "entity_id": "entity_id",
-                        "as_of_date": "as_of_date",
-                        "label": label_name
-                    }
-                )
-                df = df.reset_index(drop = True)
-                query = planner.builder.build_labels_query(
-                    as_of_times=[date],
-                    label_type=label_type,
-                    label_name=label_name,
-                    final_column=', label as {}'.format(label_name),
-                    label_window='1 month'
-                )
-                result = pd.read_sql(query, engine)
-                test = (result == df)
-                assert(test.all().all())
 
 def test_write_to_csv():
     """ Test the write_to_csv function by checking whether the csv contains the
@@ -210,13 +220,19 @@ def test_write_to_csv():
     with testing.postgresql.Postgresql() as postgresql:
         # create an engine and generate a table with fake feature data
         engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
+        create_schemas(
+            engine=engine,
+            features_tables=features_tables,
+            labels=labels,
+            states=states
+        )
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
+                states = ['state_one AND state_two'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
@@ -249,24 +265,32 @@ def test_make_entity_date_table():
 
     # make a dataframe of entity ids and dates to test against
     ids_dates = create_entity_date_df(
-        dates,
-        labels,
-        dates,
-        'booking',
-        'binary',
-        '1 month'
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        state_one=True,
+        state_two=True,
+        label_name='booking',
+        label_type='binary',
+        label_window='1 month'
     )
 
     with testing.postgresql.Postgresql() as postgresql:
         # create an engine and generate a table with fake feature data
         engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
+        create_schemas(
+            engine=engine,
+            features_tables=features_tables,
+            labels=labels,
+            states=states
+        )
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
+                states = ['state_one AND state_two'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
@@ -280,7 +304,7 @@ def test_make_entity_date_table():
                 as_of_times=dates,
                 label_type='binary',
                 label_name='booking',
-                feature_table_names=['features0', 'features1'],
+                state='state_one AND state_two',
                 matrix_uuid='my_uuid',
                 matrix_type='train',
                 label_window='1 month'
@@ -304,20 +328,20 @@ def test_make_entity_date_table():
             print(test)
             assert(test.all().all())
 
-def test_build_outer_join_query():
-    """ 
-    """
+def test_write_features_data():
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
              datetime.datetime(2016, 2, 1, 0, 0)]
 
     # make dataframe for entity ids and dates
     ids_dates = create_entity_date_df(
-        dates,
-        labels,
-        dates,
-        'booking',
-        'binary',
-        '1 month'
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        state_one=True,
+        state_two=True,
+        label_name='booking',
+        label_type='binary',
+        label_window='1 month'
     )
 
     features = [['f1', 'f2'], ['f3', 'f4']]
@@ -341,17 +365,24 @@ def test_build_outer_join_query():
     # create an engine and generate a table with fake feature data
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        create_features_and_labels_schemas(engine, features_tables, labels)
+        create_schemas(
+            engine=engine,
+            features_tables=features_tables,
+            labels=labels,
+            states=states
+        )
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
+                states = ['state_one AND state_two'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
-                engine = engine
+                engine = engine,
+                builder_class=builders.LowMemoryCSVBuilder
             )
 
             # make the entity-date table
@@ -359,27 +390,110 @@ def test_build_outer_join_query():
                 as_of_times=dates,
                 label_type='binary',
                 label_name='booking',
-                feature_table_names=['features0', 'features1'],
+                state = 'state_one AND state_two',
                 matrix_type='train',
                 matrix_uuid='my_uuid',
                 label_window='1 month'
             )
 
+            feature_dictionary = dict(
+                ('features{}'.format(i), feature_list) for i, feature_list in enumerate(features)
+            )
+
+            print(feature_dictionary)
+            features_csv_names = planner.builder.write_features_data(
+                as_of_times=dates,
+                feature_dictionary=feature_dictionary,
+                entity_date_table_name=entity_date_table_name,
+                matrix_uuid='my_uuid'
+            )
+
             # get the queries and test them
-            for table_number, df in enumerate(features_dfs):
-                table_name = 'features{}'.format(table_number)
+            for feature_csv_name, df in zip(sorted(features_csv_names), features_dfs):
                 df = df.fillna(0)
-                query = planner.builder.build_outer_join_query(
-                    as_of_times = dates,
-                    right_table_name = 'features.{}'.format(table_name),
-                    entity_date_table_name = 'features.{}'.format(entity_date_table_name),
-                    right_column_selections = planner.builder._format_imputations(
-                        features[table_number]
-                    )
-                )
-                result = pd.read_sql(query, engine)
+                df = df.reset_index()
+
+                result = pd.read_csv(feature_csv_name).reset_index()
+                result['as_of_date'] = convert_string_column_to_date(result['as_of_date'])
                 test = (result == df)
                 assert(test.all().all())
+
+
+def test_write_labels_data():
+    """ Test the write_labels_data function by checking whether the query
+    produces the correct labels
+    """
+    # set up labeling config variables
+    dates = [datetime.datetime(2016, 1, 1, 0, 0),
+             datetime.datetime(2016, 2, 1, 0, 0)]
+
+
+    # make a dataframe of labels to test against
+    labels_df = pd.DataFrame(
+        labels,
+        columns = [
+            'entity_id',
+            'as_of_date',
+            'label_window',
+            'label_name',
+            'label_type',
+            'label'
+        ]
+    )
+
+    labels_df['as_of_date'] = convert_string_column_to_date(labels_df['as_of_date'])
+    labels_df.set_index(['entity_id', 'as_of_date'])
+
+    # create an engine and generate a table with fake feature data
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine,
+            features_tables,
+            labels,
+            states
+        )
+        with TemporaryDirectory() as temp_dir:
+            planner = Planner(
+                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                label_names = ['booking'],
+                label_types = ['binary'],
+                states = ['state_one AND state_two'],
+                db_config = db_config,
+                matrix_directory = temp_dir,
+                user_metadata = {},
+                engine = engine,
+                builder_class=builders.LowMemoryCSVBuilder
+            )       
+
+            # make the entity-date table
+            entity_date_table_name = planner.builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                state = 'state_one AND state_two',
+                matrix_type='train',
+                matrix_uuid='my_uuid',
+                label_window='1 month'
+            )
+
+            csv_filename = planner.builder.write_labels_data(
+                label_name=label_name,
+                label_type=label_type,
+                label_window='1 month',
+                matrix_uuid='my_uuid',
+                entity_date_table_name=entity_date_table_name,
+            )
+            df = pd.DataFrame.from_dict({
+                'entity_id': [2, 3, 4, 4],
+                'as_of_date': ['2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
+                'booking': [0, 0, 1, 0],
+            }).set_index(['entity_id', 'as_of_date'])
+
+            result = pd.read_csv(csv_filename).set_index(['entity_id', 'as_of_date'])
+            test = (result == df)
+            assert(test.all().all())
+
 
 class TestMergeFeatureCSVs(TestCase):
     def test_merge_feature_csvs_lowmem(self):
@@ -388,6 +502,7 @@ class TestMergeFeatureCSVs(TestCase):
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
+                states = ['state_one AND state_two'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
@@ -456,6 +571,7 @@ class TestMergeFeatureCSVs(TestCase):
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
+                states = ['state_one AND state_two'],
                 db_config = db_config,
                 matrix_directory = temp_dir,
                 user_metadata = {},
@@ -566,6 +682,7 @@ def test_generate_plans():
         beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
         label_names = ['booking'],
         label_types = ['binary'],
+        states = ['state_one AND state_two'],
         db_config = db_config,
         user_metadata = {},
         matrix_directory = '', # this test won't write anything
@@ -598,7 +715,12 @@ class TestBuildMatrix(object):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
-            create_features_and_labels_schemas(engine, features_tables, labels)
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
 
             dates = [datetime.datetime(2016, 1, 1, 0, 0),
                      datetime.datetime(2016, 2, 1, 0, 0),
@@ -609,6 +731,7 @@ class TestBuildMatrix(object):
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
+                    states = ['state_one AND state_two'],
                     db_config = db_config,
                     matrix_directory = temp_dir,
                     user_metadata = {},
@@ -620,6 +743,7 @@ class TestBuildMatrix(object):
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
+                    'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
@@ -643,13 +767,18 @@ class TestBuildMatrix(object):
                 )
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 12)
+                    assert(len([row for row in reader]) == 6)
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
-            create_features_and_labels_schemas(engine, features_tables, labels)
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
 
             dates = [datetime.datetime(2016, 1, 1, 0, 0),
                      datetime.datetime(2016, 2, 1, 0, 0),
@@ -660,6 +789,7 @@ class TestBuildMatrix(object):
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
+                    states = ['state_one AND state_two'],
                     db_config = db_config,
                     matrix_directory = temp_dir,
                     user_metadata = {},
@@ -677,6 +807,7 @@ class TestBuildMatrix(object):
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
+                    'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
@@ -701,13 +832,18 @@ class TestBuildMatrix(object):
 
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 13)
+                    assert(len([row for row in reader]) == 6)
 
     def test_replace(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
-            create_features_and_labels_schemas(engine, features_tables, labels)
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
 
             dates = [datetime.datetime(2016, 1, 1, 0, 0),
                      datetime.datetime(2016, 2, 1, 0, 0),
@@ -718,6 +854,7 @@ class TestBuildMatrix(object):
                     beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
+                    states = ['state_one AND state_two'],
                     db_config = db_config,
                     matrix_directory = temp_dir,
                     user_metadata = {},
@@ -736,6 +873,7 @@ class TestBuildMatrix(object):
                 }
                 matrix_metadata = {
                     'matrix_id': 'hi',
+                    'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
@@ -757,10 +895,11 @@ class TestBuildMatrix(object):
                     temp_dir,
                     '{}.csv'.format(uuid)
                 )
+                print(matrix_filename)
 
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 13)
+                    assert(len([row for row in reader]) == 6)
 
                 # rerun
                 planner.builder.make_entity_date_table = Mock()

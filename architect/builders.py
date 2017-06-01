@@ -34,72 +34,26 @@ class BuilderBase(object):
                     CASE
                         WHEN "{0}" IS NULL THEN 0
                         ELSE "{0}"
-                    END as "{0}" """.format(feature_names) for feature_names in feature_names
+                    END as "{0}" """.format(feature_name) for feature_name in feature_names
         ]
         return(imputations)
 
-    def build_labels_query(
-            self,
-            as_of_times,
-            final_column,
-            label_name,
-            label_type,
-            label_window
-        ):
-        """ Given a table, schema, and list of dates, write a query to get the
-        list of valid as_of_date-entity pairs, and, if requested, the labels.
-
-        :param final_column: string to add to the end of select clause; empty if
-                             only entity_ids and as_of_dates are desired; comma
-                             plus name of label values column if labels are
-                             desired
-        :type labels_table_name: list
-        :type final_column: str
-
-        :return: query for labels table
-        :rtype: str
-        """
-        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
-        query = """
-            SELECT entity_id,
-                   as_of_date{labels}
-            FROM {labels_schema_name}.{labels_table_name}
-            WHERE as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))) AND
-                  label_name = '{l_name}' AND
-                  label_type = '{l_type}' AND
-                  label_window = '{window}'
-            ORDER BY entity_id,
-                     as_of_date
-        """.format(
-            labels = final_column,
-            labels_schema_name = self.db_config['labels_schema_name'],
-            labels_table_name = self.db_config['labels_table_name'],
-            times = as_of_time_strings,
-            l_name = label_name,
-            l_type = label_type,
-            window = label_window
-        )
-        return(query)
-
-    def build_outer_join_query(
+    def _outer_join_query(
         self,
-        as_of_times,
         right_table_name,
         right_column_selections,
         entity_date_table_name,
-        additional_conditions = ''
+        additional_conditions=''
     ):
         """ Given a (features or labels) table, a list of times, columns to
         select, and (optionally) a set of join conditions, perform an outer
         join to the entity date table.
 
-        :param as_of_times: the times to include in the join
         :param right_table_name: the name of the right (feature/label) table
         :param right_column_selections: formatted text for the columns to select
         :param entity_date_table_name: name of table containing all valid entity ids and dates
         :param additional_conditions: formatted text for additional join
                                       conditions
-        :type as_of_times: list
         :type right_table_name: str
         :type right_column_selections: str
         :type entity_date_table_name: str
@@ -108,8 +62,6 @@ class BuilderBase(object):
         :return: postgresql query for the outer join to the entity-dates table
         :rtype: str
         """
-        # format inputs for adding to query
-        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
 
         # put everything into the query
         query = """
@@ -118,27 +70,25 @@ class BuilderBase(object):
             FROM {entity_date_table_name} ed
             LEFT OUTER JOIN {right_table} r
             ON ed.entity_id = r.entity_id AND
-               ed.as_of_date = r.as_of_date AND
-               ed.as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[]))){more}
+               ed.as_of_date = r.as_of_date
+               {more}
             ORDER BY ed.entity_id,
                      ed.as_of_date
         """.format(
-            columns = ''.join(right_column_selections),
-            feature_schema = self.db_config['features_schema_name'],
-            entity_date_table_name = entity_date_table_name,
-            right_table = right_table_name,
-            times = as_of_time_strings,
-            more = additional_conditions
+            columns=''.join(right_column_selections),
+            feature_schema=self.db_config['features_schema_name'],
+            entity_date_table_name=entity_date_table_name,
+            right_table=right_table_name,
+            more=additional_conditions
         )
         return(query)
-
 
     def make_entity_date_table(
         self,
         as_of_times,
         label_name,
         label_type,
-        feature_table_names,
+        state,
         matrix_type,
         matrix_uuid,
         label_window
@@ -146,31 +96,43 @@ class BuilderBase(object):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
 
-        :param feature_tables: the tables to be used for the current matrix
-        :param schema: the name of the features schema
-        :type feature_tables: list
-        :type schema: str
+        :param as_of_times: the times to be used for the current matrix
+        :param label_name: name of the label to be used
+        :param label_type: the type of label to be used
+        :param state: the entity state to be used in the matrix
+        :param matrix_type: the type (train/test) of matrix
+        :param matrix_uuid: a unique id for the matrix
+        :param label_window: the time window that labels in matrix will include
+        :type as_of_times: list
+        :type label_name: str
+        :type label_type: str
+        :type state: str
+        :type matrix_type: str
+        :type matrix_uuid: str
+        :type label_window: str
 
         :return: table name
         :rtype: str
         """
+
+        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == 'train':
-            indices_query = self.build_labels_query(
-                as_of_times=as_of_times,
-                final_column='',
+            indices_query = self._all_labeled_entity_dates_query(
+                as_of_time_strings=as_of_time_strings,
+                state=state,
                 label_name=label_name,
                 label_type=label_type,
                 label_window=label_window
             )
         elif matrix_type == 'test':
-            indices_query = self.get_all_valid_entity_date_combos(
-                as_of_times=as_of_times,
-                feature_table_names=feature_table_names
+            indices_query = self._all_valid_entity_dates_query(
+                as_of_time_strings=as_of_time_strings,
+                state=state
             )
         else:
             raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
 
-        table_name = '_'.join([matrix_uuid, 'tmp_entity_date'])
+        table_name = '_'.join([matrix_uuid, 'matrix_entity_date'])
         query = """
             DROP TABLE IF EXISTS {features_schema_name}."{table_name}";
             CREATE TABLE {features_schema_name}."{table_name}"
@@ -184,26 +146,51 @@ class BuilderBase(object):
 
         return table_name
 
-    def get_all_valid_entity_date_combos(self, as_of_times, feature_table_names):
-        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]     
-        query_list = []       
-        for index, table in enumerate(feature_table_names):
-            union = ''        
-            if index != 0:      
-                union = 'UNION'       
-            subquery = """ {u}        
-                SELECT DISTINCT entity_id, as_of_date     
-                FROM {schema_name}.{table_name}       
-                WHERE as_of_date IN (SELECT (UNNEST (ARRAY{dates}::timestamp[])))       
-            """.format(       
-                u = union,        
-                table_name = table,       
-                dates = as_of_time_strings,      
-                schema_name = self.db_config['features_schema_name']      
-            )     
-            query_list.append(subquery)
-        
-        return(''.join(query_list))
+    def _all_labeled_entity_dates_query(
+        self,
+        as_of_time_strings,
+        state,
+        label_name,
+        label_type,
+        label_window
+    ):
+        query = """
+            SELECT entity_id, as_of_date
+            FROM {states_table}
+            JOIN {labels_schema_name}.{labels_table_name} using (entity_id, as_of_date)
+            WHERE {state_string}
+            AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
+            AND label_name = '{l_name}'
+            AND label_type = '{l_type}'
+            AND label_window = '{window}'
+            AND label is not null
+            ORDER BY entity_id, as_of_date
+        """.format(
+            states_table=self.db_config['sparse_state_table_name'],
+            state_string=state,
+            labels_schema_name=self.db_config['labels_schema_name'],
+            labels_table_name=self.db_config['labels_table_name'],
+            l_name=label_name,
+            l_type=label_type,
+            window=label_window,
+            times=as_of_time_strings
+        )
+
+        return query
+
+    def _all_valid_entity_dates_query(self, state, as_of_time_strings):
+        query = """
+            SELECT entity_id, as_of_date
+            FROM {states_table}
+            WHERE {state_string}
+            AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
+            ORDER BY entity_id, as_of_date
+        """.format(
+            states_table=self.db_config['sparse_state_table_name'],
+            state_string=state,
+            times=as_of_time_strings
+        )
+        return query
 
 
 class CSVBuilder(BuilderBase):
@@ -256,77 +243,76 @@ class CSVBuilder(BuilderBase):
             as_of_times,
             label_name,
             label_type,
-            feature_dictionary.keys(),
+            matrix_metadata['state'],
             matrix_type,
             matrix_uuid,
             matrix_metadata['label_window']
         )
+        logging.info('Writing feature group data')
+        features_csv_names = self.write_features_data(
+            as_of_times,
+            feature_dictionary,
+            entity_date_table_name,
+            matrix_uuid
+        )
         try:
-            logging.info('Writing feature group data')
-            features_csv_names = self.write_features_data(
-                as_of_times,
-                feature_dictionary,
+            logging.info('Writing label data')
+            labels_csv_name = self.write_labels_data(
+                label_name,
+                label_type,
                 entity_date_table_name,
+                matrix_uuid,
+                matrix_metadata['label_window']
+            )
+            features_csv_names.insert(0, labels_csv_name)
+
+            # stitch together the csvs
+            logging.info('Merging features data')
+            output = self.merge_feature_csvs(
+                features_csv_names,
+                matrix_directory,
                 matrix_uuid
             )
-            try:
-                logging.info('Writing label data')
-                labels_csv_name = self.write_labels_data(
-                    as_of_times,
-                    label_name,
-                    label_type,
-                    matrix_type,
-                    entity_date_table_name,
-                    matrix_uuid,
-                    matrix_metadata['label_window']
-                )
-                features_csv_names.insert(0, labels_csv_name)
-
-                # stitch together the csvs
-                logging.info('Merging features data')
-                output = self.merge_feature_csvs(
-                    features_csv_names,
-                    matrix_directory,
-                    matrix_uuid
-                )
-            finally:
-                # clean up files and database before finishing
-                for csv_name in features_csv_names:
-                    self.remove_file(csv_name)
-            try:
-                # store the matrix
-                logging.info('Archiving matrix with metta')
-                metta.archive_matrix(
-                    matrix_config=matrix_metadata,
-                    df_matrix=output,
-                    overwrite=True,
-                    directory=self.matrix_directory,
-                    format='csv'
-                )
-            finally:
-                if isinstance(output, str):
-                    os.remove(output)
         finally:
-            self.engine.execute(
-                'drop table "{}"."{}";'.format(
-                    self.db_config['features_schema_name'],
-                    entity_date_table_name
-                )
+            # clean up files and database before finishing
+            for csv_name in features_csv_names:
+                self.remove_file(csv_name)
+        try:
+            # store the matrix
+            logging.info('Archiving matrix with metta')
+            metta.archive_matrix(
+                matrix_config=matrix_metadata,
+                df_matrix=output,
+                overwrite=True,
+                directory=self.matrix_directory,
+                format='csv'
             )
-
+        finally:
+            if isinstance(output, str):
+                os.remove(output)
 
     def write_labels_data(
         self,
-        as_of_times,
         label_name,
         label_type,
-        matrix_type,
         entity_date_table_name,
         matrix_uuid,
         label_window
     ):
         """ Query the labels table and write the data to disk in csv format.
-        
+
+        :param as_of_times: the times to be used for the current matrix
+        :param label_name: name of the label to be used
+        :param label_type: the type of label to be used
+        :param entity_date_table_name: the name of the entity date table
+        :param matrix_uuid: a unique id for the matrix
+        :param label_window: the time window that labels in matrix will include
+        :type label_name: str
+        :type label_type: str
+        :type entity_date_table_name: str
+        :type matrix_uuid: str
+        :type label_window: str
+
         :return: name of csv containing labels
         :rtype: str
         """
@@ -334,48 +320,51 @@ class CSVBuilder(BuilderBase):
             self.matrix_directory,
             '{}-{}.csv'.format(matrix_uuid, self.db_config['labels_table_name'])
         )
-        as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
-        if matrix_type == 'train':
-            labels_query = self.build_labels_query(
-                as_of_times=as_of_times,
-                final_column=', label as {}'.format(label_name),
-                label_name=label_name,
-                label_type=label_type,
-                label_window=label_window
+        labels_query = self._outer_join_query(
+            right_table_name='{schema}.{table}'.format(
+                schema=self.db_config['labels_schema_name'],
+                table=self.db_config['labels_table_name']
+            ),
+            entity_date_table_name='"{schema}"."{table}"'.format(
+                schema=self.db_config['features_schema_name'],
+                table=entity_date_table_name
+            ),
+            right_column_selections=', r.label as {}'.format(label_name),
+            additional_conditions='''AND
+                r.label_name = '{name}' AND
+                r.label_type = '{type}' AND
+                r.label_window = '{window}'
+            '''.format(
+                name=label_name,
+                type=label_type,
+                window=label_window
             )
-        elif matrix_type == 'test':
-            labels_query=self.build_outer_join_query(
-                as_of_times=as_of_times,
-                right_table_name='{schema}.{table}'.format(
-                    schema=self.db_config['labels_schema_name'],
-                    table=self.db_config['labels_table_name']
-                ),
-                entity_date_table_name='"{schema}"."{table}"'.format(
-                    schema=self.db_config['features_schema_name'],
-                    table=entity_date_table_name
-                ),
-                right_column_selections=', r.label as {}'.format(label_name),
-                additional_conditions='''AND
-                    r.label_name = '{name}' AND
-                    r.label_type = '{type}' AND
-                    r.label_window = '{window}'
-                '''.format(
-                    name=label_name,
-                    type=label_type,
-                    window=label_window
-                )
-            )
-        else:
-            raise ValueError(
-                'Did not recognize matrix type: {}'.format(matrix_type)
-            )
+        )
+
         self.write_to_csv(labels_query, csv_name)
         return(csv_name)
 
-    def write_features_data(self, as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid):
+    def write_features_data(
+        self,
+        as_of_times,
+        feature_dictionary,
+        entity_date_table_name,
+        matrix_uuid
+    ):
         """ Loop over tables in features schema, writing the data from each to a
         csv. Return the full list of feature csv names and the list of all
         features.
+
+        :param as_of_times: the times to be included in the matrix
+        :param feature_dictionary: a dictionary of feature tables and features
+            to be included in the matrix
+        :param entity_date_table_name: the name of the entity date table
+            for the matrix
+        :param matrix_uuid: a human-readable id for the matrix
+        :type as_of_times: list
+        :type feature_dictionary: dict
+        :type entity_date_table_name: str
+        :type matrix_uuid: str
 
         :return: list of csvs containing feature data
         :rtype: tuple
@@ -388,24 +377,23 @@ class CSVBuilder(BuilderBase):
                 self.matrix_directory,
                 '{}-{}.csv'.format(matrix_uuid, feature_table_name)
             )
-            features_query = self.build_outer_join_query(
-                as_of_times = as_of_times,
-                right_table_name = '{schema}.{table}'.format(
-                    schema = self.db_config['features_schema_name'],
-                    table = feature_table_name
+            features_query = self._outer_join_query(
+                right_table_name='{schema}.{table}'.format(
+                    schema=self.db_config['features_schema_name'],
+                    table=feature_table_name
                 ),
-                entity_date_table_name = '{schema}."{table}"'.format(
-                    schema = self.db_config['features_schema_name'],
-                    table = entity_date_table_name
+                entity_date_table_name='{schema}."{table}"'.format(
+                    schema=self.db_config['features_schema_name'],
+                    table=entity_date_table_name
                 ),
-                right_column_selections = self._format_imputations(feature_names)
+                right_column_selections=self._format_imputations(feature_names)
             )
             self.write_to_csv(features_query, csv_name)
             features_csv_names.append(csv_name)
 
         return(features_csv_names)
 
-    def write_to_csv(self, query_string, file_name, header = 'HEADER'):
+    def write_to_csv(self, query_string, file_name, header='HEADER'):
         """ Given a query, write the requested data to csv.
 
         :param query_string: query to send
@@ -422,8 +410,8 @@ class CSVBuilder(BuilderBase):
         matrix_csv = self.open_fh_for_writing(file_name)
         try:
             copy_sql = 'COPY ({query}) TO STDOUT WITH CSV {head}'.format(
-                query = query_string,
-                head = header
+                query=query_string,
+                head=header
             )
             conn = self.engine.raw_connection()
             cur = conn.cursor()
@@ -518,7 +506,7 @@ class LowMemoryCSVBuilder(CSVBuilder):
                                 label = None
                             else:
                                 raise ValueError('''
-                                    Unexpected number of values observed in 
+                                    Unexpected number of values observed in
                                     labels: {}
                                 '''.format(row))
                             label_observed = True

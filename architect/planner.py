@@ -8,12 +8,23 @@ from . import builders, utils
 
 class Planner(object):
 
-    def __init__(self, beginning_of_time, label_names, label_types, db_config,
-                 matrix_directory, user_metadata, engine,
-                 builder_class=builders.HighMemoryCSVBuilder, replace=True):
+    def __init__(
+        self,
+        beginning_of_time,
+        label_names,
+        label_types,
+        states,
+        db_config,
+        matrix_directory,
+        user_metadata,
+        engine,
+        builder_class=builders.HighMemoryCSVBuilder,
+        replace=True
+    ):
         self.beginning_of_time = beginning_of_time  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
+        self.states = states
         self.db_config = db_config
         self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata
@@ -45,18 +56,20 @@ class Planner(object):
         }
 
     def _make_metadata(self, matrix_definition, feature_dictionary, label_name,
-                       label_type, matrix_type):
+                       label_type, state, matrix_type):
         """ Generate dictionary of matrix metadata.
 
         :param matrix_definition: temporal definition of matrix
         :param feature dictionary: feature tables and the columns within them to use as features
         :param label_name: name of label column
         :param label_type: type of label
+        :param state: the entity state to be included in the matrix
         :param matrix_type: type (train/test) of matrix
         :type matrix_definition: dict
         :type feature dictionary: dict
         :type label_name: str
         :type label_type: str
+        :type state: str
         :type matrix_type: str
 
         :return: metadata needed for matrix identification and modeling
@@ -83,6 +96,7 @@ class Planner(object):
 
             # other information
             'label_type': label_type,
+            'state': state,
             'matrix_id': matrix_id,
             'matrix_type': matrix_type
 
@@ -110,9 +124,10 @@ class Planner(object):
         build_tasks = dict()
         for matrix_set in matrix_set_definitions:
             train_matrix = matrix_set['train_matrix']
-            for label_name, label_type, feature_dictionary in itertools.product(
+            for label_name, label_type, state, feature_dictionary in itertools.product(
                 self.label_names,
                 self.label_types,
+                self.states,
                 feature_dictionaries
             ):
                 matrix_set_clone = copy.deepcopy(matrix_set)
@@ -122,8 +137,10 @@ class Planner(object):
                     feature_dictionary,
                     label_name,
                     label_type,
+                    state,
                     'train',
                 )
+                print(train_metadata)
                 train_uuid = metta.generate_uuid(train_metadata)
                 if train_uuid not in build_tasks:
                     build_tasks[train_uuid] = self._generate_build_task(
@@ -141,6 +158,7 @@ class Planner(object):
                         feature_dictionary,
                         label_name,
                         label_type,
+                        state,
                         'test',
                     )
                     test_uuid = metta.generate_uuid(test_metadata)
