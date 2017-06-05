@@ -51,17 +51,17 @@ class BinaryLabelGenerator(object):
     def generate_all_labels(
         self,
         labels_table,
-        as_of_times,
+        as_of_dates,
         label_windows,
     ):
         self._create_labels_table(labels_table)
-        logging.info('Creating labels for %s as of times and %s label windows',
-                     len(as_of_times),
+        logging.info('Creating labels for %s as of dates and %s label windows',
+                     len(as_of_dates),
                      len(label_windows))
-        for as_of_time in as_of_times:
+        for as_of_date in as_of_dates:
             for label_window in label_windows:
                 self.generate(
-                    start_date=as_of_time,
+                    start_date=as_of_date,
                     label_window=label_window,
                     labels_table=labels_table,
                 )

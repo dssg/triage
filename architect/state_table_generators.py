@@ -10,7 +10,7 @@ class StateFilter(object):
         return '''
             join {state_table} on (
                 {state_table}.entity_id = {join_table}.entity_id and
-                {state_table}.as_of_time = '{join_date}'::timestamp and
+                {state_table}.as_of_date = '{join_date}'::timestamp and
                 ({state_filter_logic})
             )
         '''.format(
@@ -41,7 +41,7 @@ class StateTableGenerator(object):
         logging.info('Distinct states found: %s', all_states)
         return all_states
 
-    def _sparse_table_query(self, dense_state_table, as_of_times):
+    def _sparse_table_query(self, dense_state_table, as_of_dates):
         state_columns = [
             'bool_or(state = \'{desired_state}\') as {desired_state}'
             .format(desired_state=state)
@@ -49,37 +49,37 @@ class StateTableGenerator(object):
         ]
         query = '''
             create table {sparse_state_table} as (
-            select d.entity_id, a.as_of_time::timestamp, {state_column_string}
+            select d.entity_id, a.as_of_date::timestamp, {state_column_string}
                 from {dense_state_table} d
-                join (select unnest(ARRAY{as_of_times}) as as_of_time) a
+                join (select unnest(ARRAY{as_of_dates}) as as_of_date) a
                 on (
-                    d.start_time <= a.as_of_time::timestamp and
-                    d.end_time > a.as_of_time::timestamp
+                    d.start_time <= a.as_of_date::timestamp and
+                    d.end_time > a.as_of_date::timestamp
                 )
-                group by d.entity_id, a.as_of_time
+                group by d.entity_id, a.as_of_date
             )
         '''.format(
             sparse_state_table=self.sparse_table_name,
             dense_state_table=dense_state_table,
-            as_of_times=[date.isoformat() for date in as_of_times],
+            as_of_dates=[date.isoformat() for date in as_of_dates],
             state_column_string=', '.join(state_columns)
         )
         return query
 
-    def generate_sparse_table(self, dense_state_table, as_of_times):
+    def generate_sparse_table(self, dense_state_table, as_of_dates):
         """
         input table:
         entity_id, state, start_date, end_date
 
         output table:
-        entity_id, as_of_time, state_one, state_two
+        entity_id, as_of_date, state_one, state_two
         """
         self.db_engine.execute(
-            self._sparse_table_query(dense_state_table, as_of_times)
+            self._sparse_table_query(dense_state_table, as_of_dates)
         )
         logging.info('Sparse state table generated')
         self.db_engine.execute(
-            'create index on {} (entity_id, as_of_time)'
+            'create index on {} (entity_id, as_of_date)'
             .format(self.sparse_table_name)
         )
         logging.info('Indices created for sparse state table')
