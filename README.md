@@ -10,7 +10,7 @@ Risk modeling and prediction
 
 ## Basic Usage
 
-The simplest usage of triage is to use a pipeline. Triage pipelines are aimed at handling label generation, generating features (using [collate](github.com/dssg/collate)), creating training/test splits (using [timechop](https://github.com/dssg/timechop)), training models, testing models, and calculating metrics. Triage pipelines are generally run after data is loaded into a Postgres database and cleaned. The model metadata, feature importances, predictions, and model metrics are saved to the `results` schema in the given database.  Different pipelines are available, which control execution in different ways.  The SerialPipeline, for instance, is the simplest but slowest, while the LocalParallelPipeline makes use of multiple cores on the local machine.
+The simplest usage of triage is to use a pipeline. Triage pipelines are aimed at handling label generation, generating features (using [collate](https://github.com/dssg/collate)), creating training/test splits (using [timechop](https://github.com/dssg/timechop)), training models, testing models, and calculating metrics. Triage pipelines are generally run after data is loaded into a Postgres database and cleaned. The model metadata, feature importances, predictions, and model metrics are saved to the `results` schema in the given database.  Different pipelines are available, which control execution in different ways.  The SerialPipeline, for instance, is the simplest but slowest, while the LocalParallelPipeline makes use of multiple cores on the local machine.
 
 
 ### Construct a Pipeline
