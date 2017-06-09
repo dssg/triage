@@ -77,7 +77,7 @@ def test_generate_all_labels():
         )
         label_generator.generate_all_labels(
             labels_table=labels_table_name,
-            as_of_times=['2014-09-30', '2015-03-30'],
+            as_of_dates=['2014-09-30', '2015-03-30'],
             label_windows=['6month', '3month'],
         )
 
