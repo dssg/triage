@@ -1,16 +1,17 @@
 from triage.db import ensure_db
-from triage.label_generators import BinaryLabelGenerator
-from triage.features import \
+from timechop.timechop import Timechop
+from architect.label_generators import BinaryLabelGenerator
+from architect.features import \
     FeatureGenerator,\
     FeatureDictionaryCreator,\
     FeatureGroupCreator,\
     FeatureGroupMixer
+from architect.state_table_generators import StateTableGenerator
+from architect.planner import Planner
 from triage.model_trainers import ModelTrainer
 from triage.predictors import Predictor
 from triage.scoring import ModelScorer
 from triage.utils import save_experiment_and_get_hash
-from timechop.timechop import Timechop
-from timechop.architect import Architect
 import os
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
@@ -76,6 +77,11 @@ class PipelineBase(object):
             test_durations=split_config['test_durations'],
         )
 
+        self.state_table_generator_factory = partial(
+            StateTableGenerator,
+            experiment_hash=self.experiment_hash
+        )
+
         self.label_generator_factory = partial(
             BinaryLabelGenerator,
             events_table=self.config['events_table'],
@@ -102,8 +108,8 @@ class PipelineBase(object):
             self.config.get('feature_group_strategies', ['all'])
         )
 
-        self.architect_factory = partial(
-            Architect,
+        self.planner_factory = partial(
+            Planner,
             beginning_of_time=dt_from_str(split_config['beginning_of_time']),
             label_names=['outcome'],
             label_types=['binary'],
@@ -111,8 +117,13 @@ class PipelineBase(object):
                 'features_schema_name': self.features_schema_name,
                 'labels_schema_name': 'public',
                 'labels_table_name': self.labels_table_name,
+                # TODO: have planner/builder take state table later on, so we
+                # can grab it from the StateTableGenerator instead of
+                # duplicating it here
+                'sparse_state_table_name': 'tmp_sparse_states_{}'.format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
+            states=self.config['state_config']['state_filters'],
             user_metadata={},
             replace=self.replace
         )
@@ -142,11 +153,12 @@ class PipelineBase(object):
     def initialize_components(self):
         self.chopper = self.chopper_factory()
         self.label_generator = self.label_generator_factory(db_engine=self.db_engine)
+        self.state_table_generator = self.state_table_generator_factory(db_engine=self.db_engine)
         self.feature_generator = self.feature_generator_factory(db_engine=self.db_engine)
         self.feature_dictionary_creator = self.feature_dictionary_creator_factory(db_engine=self.db_engine)
         self.feature_group_creator = self.feature_group_creator_factory()
         self.feature_group_mixer = self.feature_group_mixer_factory()
-        self.architect = self.architect_factory(engine=self.db_engine)
+        self.planner = self.planner_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
         self.model_scorer = self.model_scorer_factory(db_engine=self.db_engine)
@@ -240,7 +252,7 @@ class PipelineBase(object):
         """
         if not self._matrix_build_tasks:
             updated_split_definitions, matrix_build_tasks =\
-                self.architect.generate_plans(
+                self.planner.generate_plans(
                     self.split_definitions,
                     self.feature_dicts
                 )
@@ -256,7 +268,7 @@ class PipelineBase(object):
         """
         if not self._full_matrix_definitions:
             updated_split_definitions, matrix_build_tasks =\
-                self.architect.generate_plans(
+                self.planner.generate_plans(
                     self.split_definitions,
                     self.feature_dicts
                 )
@@ -280,6 +292,12 @@ class PipelineBase(object):
             self.labels_table_name,
             self.all_as_of_times,
             self.all_label_windows
+        )
+
+    def generate_sparse_states(self):
+        self.state_table_generator.generate_sparse_table(
+            dense_state_table=self.config['state_config']['table_name'],
+            as_of_dates=self.all_as_of_times
         )
 
     def update_split_definitions(self, new_split_definitions):
