@@ -2,3 +2,4 @@ sqlalchemy
 alembic
 psycopg2
 pyyaml
+factory_boy

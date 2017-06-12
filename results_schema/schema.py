@@ -76,6 +76,9 @@ class Model(Base):
     train_matrix_uuid = Column(Text)
     train_label_window = Column(Interval)
 
+    model_group_rel = relationship('ModelGroup')
+    experiment_rel = relationship('Experiment')
+
     def delete(self, session):
         # basically implement a cascade, in case cascade is not implemented
         session.query(FeatureImportance)\
@@ -99,6 +102,7 @@ class FeatureImportance(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
 
+    model_rel = relationship('Model')
 
 class Prediction(Base):
     __tablename__ = 'predictions'
@@ -112,6 +116,7 @@ class Prediction(Base):
     matrix_uuid = Column(Text)
     test_label_window = Column(Interval)
 
+    model_rel = relationship('Model')
 
 class Evaluation(Base):
     __tablename__ = 'evaluations'
@@ -126,3 +131,5 @@ class Evaluation(Base):
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
+
+    model_rel = relationship('Model')
