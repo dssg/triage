@@ -156,8 +156,8 @@ def test_predictor_retrieve():
         _, model_id = \
             fake_trained_model(project_path, model_storage_engine, db_engine)
         predictor = Predictor(project_path, model_storage_engine, db_engine, replace=False)
-        dayone = datetime.date(2011, 1, 1).isoformat()
-        daytwo = datetime.date(2011, 1, 2).isoformat()
+        dayone = datetime.date(2011, 1, 1).strftime(predictor.expected_matrix_ts_format)
+        daytwo = datetime.date(2011, 1, 2).strftime(predictor.expected_matrix_ts_format)
         # create prediction set
         matrix_data = {
             'entity_id': [1, 2, 1, 2],

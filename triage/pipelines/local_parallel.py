@@ -147,6 +147,9 @@ class LocalParallelPipeline(PipelineBase):
         )
 
     def build_matrices(self):
+        logging.info('Creating sparse states')
+        self.generate_sparse_states()
+        logging.info('Creating labels')
         self.generate_labels()
         logging.info(
             'Creating feature tables with %s processes',
@@ -171,7 +174,7 @@ class LocalParallelPipeline(PipelineBase):
 
         partial_build_matrix = partial(
             build_matrix,
-            architect_factory=self.architect_factory,
+            planner_factory=self.planner_factory,
             db_connection_string=self.db_engine.url
         )
         logging.info(
@@ -184,6 +187,7 @@ class LocalParallelPipeline(PipelineBase):
             self.matrix_build_tasks.values(),
             self.n_processes
         )
+        self.state_table_generator.clean_up()
 
     def parallelize(
         self,
@@ -218,14 +222,14 @@ def insert_into_table(
 
 def build_matrix(
     build_tasks,
-    architect_factory,
+    planner_factory,
     db_connection_string,
 ):
     try:
         db_engine = create_engine(db_connection_string)
-        architect = architect_factory(engine=db_engine)
+        planner = planner_factory(engine=db_engine)
         for build_task in build_tasks:
-            architect.build_matrix(**build_task)
+            planner.build_matrix(**build_task)
         return True
     except Exception:
         logging.error('Child error: %s', traceback.format_exc())

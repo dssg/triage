@@ -29,6 +29,7 @@ temporal_config:
 # These are used to generate appropriate labels for each train/test split
 events_table: 'events'
 
+
 # FEATURE GENERATION
 # The aggregate features to generate for each train/test split
 #
@@ -101,6 +102,21 @@ feature_group_definition:
 # strategies for generating combinations of groups
 # available: all, leave-one-out, leave-one-in
 feature_group_strategies: ['all']
+
+# STATE MANAGEMENT
+# If you want to only include rows in your matrices in a specific state,
+# provide:
+# 1. a dense state table that defines when entities were in specific states
+#   should have columns entity_id/state/start/end
+# 2. a list of state filtering SQL clauses to iterate through. Assuming the
+#   states are boolean columns (the pipeline will convert the one you pass in
+#   to this format), write a SQL expression for each state
+#   configuration you want, ie '(permitted OR suspended) AND licensed'
+state_config:
+    table_name: 'states'
+    state_filters:
+        - 'state_one AND state_two'
+        - '(state_one OR state_two) AND state_three'
 
 # MODEL GROUPING
 # Model groups are aimed at defining models which are equivalent across time splits.

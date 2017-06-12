@@ -1,5 +1,6 @@
 from results_schema import Model, Prediction
 from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 import pandas
 import logging
 import math
@@ -7,7 +8,6 @@ import numpy
 import tempfile
 import csv
 import postgres_copy
-from timechop.utils import convert_str_to_relativedelta
 from triage.utils import db_retry
 
 
@@ -16,6 +16,8 @@ class ModelNotFoundError(ValueError):
 
 
 class Predictor(object):
+    expected_matrix_ts_format = '%Y-%m-%d %H:%M:%S'
+
     def __init__(
         self,
         project_path,
@@ -107,7 +109,7 @@ class Predictor(object):
                 prediction.as_of_date.date().isoformat()
             )] = prediction.score
         if 'as_of_date' in index.names:
-            score_iterator = (score_lookup[row] for row in index)
+            score_iterator = (score_lookup[(entity_id, datetime.strptime(dt, self.expected_matrix_ts_format).date().isoformat())] for entity_id, dt in index)
         else:
             as_of_date = matrix_store.metadata['end_time'].date().isoformat()
             score_iterator = (score_lookup[(row, as_of_date)] for row in index)

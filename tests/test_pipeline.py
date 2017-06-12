@@ -63,6 +63,15 @@ def populate_source_data(db_engine):
         (3, 0, '2015-01-01'),
     ]
 
+    states = [
+        (1, 'state_one', '2012-01-01', '2016-01-01'),
+        (1, 'state_two', '2013-01-01', '2016-01-01'),
+        (2, 'state_one', '2012-01-01', '2016-01-01'),
+        (2, 'state_two', '2013-01-01', '2016-01-01'),
+        (3, 'state_one', '2012-01-01', '2016-01-01'),
+        (3, 'state_two', '2013-01-01', '2016-01-01'),
+    ]
+
     db_engine.execute('''create table cat_complaints (
         entity_id int,
         as_of_date date,
@@ -86,6 +95,20 @@ def populate_source_data(db_engine):
             "insert into events values (%s, %s, %s)",
             event
         )
+
+    db_engine.execute('''create table states (
+        entity_id int,
+        state text,
+        start_time timestamp,
+        end_time timestamp
+    )''')
+
+    for state in states:
+        db_engine.execute(
+            'insert into states values (%s, %s, %s, %s)',
+            state
+        )
+
 
 def num_linked_evaluations(db_engine):
     num_evaluations = len([
@@ -141,12 +164,17 @@ def simple_pipeline_test(pipeline_class):
             'intervals': ['1y'],
             'groups': ['entity_id']
         }]
+        state_config = {
+            'table_name': 'states',
+            'state_filters': ['state_one or state_two'],
+        }
         experiment_config = {
             'events_table': 'events',
             'entity_column_name': 'entity_id',
             'model_comment': 'test2-final-final',
             'model_group_keys': ['label_name', 'label_type'],
             'feature_aggregations': feature_config,
+            'state_config': state_config,
             'temporal_config': temporal_config,
             'grid_config': grid_config,
             'scoring': scoring_config,
@@ -276,12 +304,17 @@ def reuse_pipeline_test(pipeline_class):
             'intervals': ['1y'],
             'groups': ['entity_id']
         }]
+        state_config = {
+            'table_name': 'states',
+            'state_filters': ['state_one or state_two'],
+        }
         experiment_config = {
             'events_table': 'events',
             'entity_column_name': 'entity_id',
             'model_comment': 'test2-final-final',
             'model_group_keys': ['label_name', 'label_type'],
             'feature_aggregations': feature_config,
+            'state_config': state_config,
             'temporal_config': temporal_config,
             'grid_config': grid_config,
             'scoring': scoring_config,
