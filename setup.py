@@ -17,7 +17,7 @@ with open('requirements_dev.txt') as requirements_dev_file:
 
 setup(
     name='results_schema',
-    version='1.0.3',
+    version='1.1.0',
     description="Store results of modeling runs",
     long_description=readme,
     author="Center for Data Science and Public Policy",
