@@ -1,6 +1,7 @@
 from sklearn.grid_search import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 from results_schema import Model, FeatureImportance
+import sklearn
 import importlib
 import json
 import logging
@@ -14,6 +15,24 @@ from triage.utils import \
     db_retry
 
 
+def _ad_hoc_feature_importances(model):
+    """
+    Get the "ad-hoc feature importances" for
+
+    Args:
+        model: A trained model that has not a `feature_importances_` attribute
+
+    Returns:
+        At this moment, this method only returns the unstandarized coefficients
+        given by sklearn's implementation of the LogisticRegression
+    """
+    feature_importances = None
+
+    if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
+        feature_importances = model.coef_
+
+    return feature_importances
+
 def get_feature_importances(model):
     """
     Get feature importances (from scikit-learn) of trained model.
@@ -25,20 +44,21 @@ def get_feature_importances(model):
         Feature importances, or failing that, None
     """
 
-    try:
-        return model.feature_importances_
-    except:
-        pass
-    try:
-        # Must be 1D for feature importance plot
-        if len(model.coef_) <= 1:
-            return model.coef_[0]
-        else:
-            return model.coef_
-    except:
-        pass
-    return None
+    feature_importances = None
 
+    if hasattr(model, 'feature_importances_'):
+        feature_importances = model.feature_importances_
+    else:
+        logging.warning(
+            "\nThe selected algorithm, doesn't support a standard way"
+            "\nof calculate the importance of each feature used."
+            "\nFalling back to ad-hoc methods."
+        )
+
+
+        feature_importances = _ad_hoc_feature_importances(model)
+
+    return feature_importances
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
@@ -246,8 +266,8 @@ class ModelTrainer(object):
         matrix_metadata,
     ):
         """
-        Returns model group id using store procedure 'get_model_group_id' which will 
-        return the same value for models with the same class_path, parameters, 
+        Returns model group id using store procedure 'get_model_group_id' which will
+        return the same value for models with the same class_path, parameters,
         features, and model_config
 
         Args:
