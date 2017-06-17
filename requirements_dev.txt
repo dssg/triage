@@ -20,3 +20,4 @@ Sphinx==1.4.8
 pytest==2.9.2
 pytest-cov
 codecov
+ipython
