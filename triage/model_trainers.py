@@ -1,4 +1,4 @@
-from sklearn.grid_search import ParameterGrid
+from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 from results_schema import Model, FeatureImportance
 import sklearn
