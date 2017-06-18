@@ -23,13 +23,18 @@ def _ad_hoc_feature_importances(model):
         model: A trained model that has not a `feature_importances_` attribute
 
     Returns:
-        At this moment, this method only returns the unstandarized coefficients
-        given by sklearn's implementation of the LogisticRegression
+        At this moment, this method only returns the odds ratio of both the
+        intercept and the coefficients given by sklearn's implementation of
+        the LogisticRegression.
+        The order of the odds ratio list is the standard
+        of the statistical packages (like R, SAS, etc) i.e. (intercept, coefficients)
     """
     feature_importances = None
 
     if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
-        feature_importances = model.coef_
+        coef_odds_ratio = np.exp(model.coef_)
+        intercept_odds_ratio = np.exp(model.intercept_)
+        feature_importances = np.hstack((intercept_odds_ratio, coef_odds_ratio))
 
     return feature_importances
 
