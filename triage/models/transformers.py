@@ -2,7 +2,7 @@
 
 import warnings
 
-from sklearn.base import TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
 from sklearn.utils.validation import FLOAT_DTYPES
 
@@ -13,7 +13,7 @@ DEPRECATION_MSG_1D = (
     "X.reshape(1, -1) if it contains a single sample."
 )
 
-class DsappCutOff(TransformerMixin):
+class DsappCutOff(BaseEstimator, TransformerMixin):
     """
     Transforms features cutting values out of established range
 
