@@ -1,437 +1,570 @@
 * DsappCutOff
+  :PROPERTIES:
+  :header-args: :session
+  :END:
+
 
 ** The problem
 
 
-#+BEGIN_SRC ipython :session
-import pandas as pd
-import numpy as np
-from sklearn import preprocessing
-from sklearn import datasets
-#+END_SRC
+   #+BEGIN_SRC ipython
+     import pandas as pd
+     import numpy as np
+     from sklearn import preprocessing
+     from sklearn import datasets
+   #+END_SRC
 
-#+RESULTS:
+   #+RESULTS:
 
-#+BEGIN_SRC ipython :session
-dataset = datasets.load_breast_cancer()
+   #+BEGIN_SRC ipython
+     dataset = datasets.load_breast_cancer()
 
-X = dataset.data
+     X = dataset.data
 
-y = dataset.target
-#+END_SRC
+     y = dataset.target
+   #+END_SRC
 
-#+RESULTS:
-
-
-#+BEGIN_SRC ipython :session
-from sklearn.model_selection import train_test_split
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state=12345)
-
-#+END_SRC
-
-#+RESULTS:
+   #+RESULTS:
 
 
-#+BEGIN_SRC ipython :session
-minmax_scaler = preprocessing.MinMaxScaler().fit(X_train)
+   #+BEGIN_SRC ipython
+     from sklearn.model_selection import train_test_split
 
-X_train_minmax = minmax_scaler.transform(X_train)
-#+END_SRC
+     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state=12345)
 
-#+RESULTS:
+   #+END_SRC
 
-#+BEGIN_SRC ipython :session
-np.amin(X_train_minmax, axis=0)
-#+END_SRC
-
-#+RESULTS:
-: array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-:         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-:         0.,  0.,  0.,  0.])
+   #+RESULTS:
 
 
-#+BEGIN_SRC ipython :session
-np.amax(X_train_minmax, axis=0)
-#+END_SRC
+   #+BEGIN_SRC ipython
+     minmax_scaler = preprocessing.MinMaxScaler().fit(X_train)
 
-#+RESULTS:
-: array([ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,
-:         1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,
-:         1.,  1.,  1.,  1.])
+     X_train_minmax = minmax_scaler.transform(X_train)
+   #+END_SRC
 
+   #+RESULTS:
 
-#+BEGIN_SRC ipython :session
-X_test_minmax = minmax_scaler.transform(X_test)
+   #+BEGIN_SRC ipython
+     np.amin(X_train_minmax, axis=0)
+   #+END_SRC
 
-np.amin(X_test_minmax, axis=0)
-#+END_SRC
-
-#+RESULTS:
-: array([-0.0382801 ,  0.04605809, -0.02937829, -0.01616379,  0.08919383,
-:        -0.01261026,  0.        ,  0.        ,  0.0540404 ,  0.00643586,
-:         0.00137606,  0.01617751, -0.00067897,  0.00262048,  0.04413193,
-:        -0.00778784,  0.        ,  0.        ,  0.03388304,  0.00349414,
-:        -0.03772888,  0.07462687, -0.03207402, -0.01367747,  0.06846431,
-:         0.0077201 ,  0.        ,  0.        ,  0.00902827,  0.03623343])
+   #+RESULTS:
+   : array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+   :         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+   :         0.,  0.,  0.,  0.])
 
 
+   #+BEGIN_SRC ipython
+     np.amax(X_train_minmax, axis=0)
+   #+END_SRC
 
-#+BEGIN_SRC ipython :session
-np.amax(X_test_minmax, axis=0)
-#+END_SRC
+   #+RESULTS:
+   : array([ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,
+   :         1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,
+   :         1.,  1.,  1.,  1.])
 
-#+RESULTS:
-: array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
-:         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
-:         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
-:         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
-:         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
-:         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
+
+   #+BEGIN_SRC ipython
+     X_test_minmax = minmax_scaler.transform(X_test)
+
+     np.amin(X_test_minmax, axis=0)
+   #+END_SRC
+
+   #+RESULTS:
+   : array([-0.0382801 ,  0.04605809, -0.02937829, -0.01616379,  0.08919383,
+   :        -0.01261026,  0.        ,  0.        ,  0.0540404 ,  0.00643586,
+   :         0.00137606,  0.01617751, -0.00067897,  0.00262048,  0.04413193,
+   :        -0.00778784,  0.        ,  0.        ,  0.03388304,  0.00349414,
+   :        -0.03772888,  0.07462687, -0.03207402, -0.01367747,  0.06846431,
+   :         0.0077201 ,  0.        ,  0.        ,  0.00902827,  0.03623343])
+
+
+
+   #+BEGIN_SRC ipython
+     np.amax(X_test_minmax, axis=0)
+   #+END_SRC
+
+   #+RESULTS:
+   : array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
+   :         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
+   :         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
+   :         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
+   :         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
+   :         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
+
 
 ** Proposed solution
 
-Implement a /transformer/
+   Implement a /transformer/
 
-#+BEGIN_SRC ipython :session :tangle transformers.py
-  # coding: utf-8
+   #+BEGIN_SRC ipython  :tangle transformers.py
+     # coding: utf-8
 
-  import warnings
+     import warnings
 
-  from sklearn.base import BaseEstimator, TransformerMixin
-  from sklearn.utils import check_array
-  from sklearn.utils.validation import FLOAT_DTYPES
+     import numpy as np
 
-  DEPRECATION_MSG_1D = (
-      "Passing 1d arrays as data is deprecated in 0.17 and will "
-      "raise ValueError in 0.19. Reshape your data either using "
-      "X.reshape(-1, 1) if your data has a single feature or "
-      "X.reshape(1, -1) if it contains a single sample."
-  )
+     from sklearn.base import BaseEstimator, TransformerMixin
+     from sklearn.utils import check_array
+     from sklearn.utils.validation import FLOAT_DTYPES
 
-  class DsappCutOff(BaseEstimator, TransformerMixin):
-      """
-      Transforms features cutting values out of established range
+     DEPRECATION_MSG_1D = (
+         "Passing 1d arrays as data is deprecated in 0.17 and will "
+         "raise ValueError in 0.19. Reshape your data either using "
+         "X.reshape(-1, 1) if your data has a single feature or "
+         "X.reshape(1, -1) if it contains a single sample."
+     )
 
-
-      Args:
-         feature_range: Range of allowed values, default=`(0,1)`
-
-      Usage:
-         The recommended way of using this is::
-
-             from sklearn.pipeline import Pipeline
-
-             minmax_scaler = preprocessing.MinMaxScaler()
-             dsapp_cutoff = DsappCutOff()
-             lr  = linear_model.LogisticRegression()
-
-             pipeline =Pipeline([
-                   ('minmax_scaler',minmax_scaler),
-                   ('dsapp_cutoff', dsapp_cutoff),
-                   ('lr', lr)
-             ])
-
-             pipeline.fit(X_train, y_train)
-             pipeline.predict(X_test)
-
-      """
-      def __init__(self, feature_range=(0,1), copy=True):
-          self.feature_range = feature_range
-          self.copy = copy
-
-      def fit(self, X, y = None):
-          return self
-
-      def transform(self, X):
-          feature_range = self.feature_range
-
-          X = check_array(X, copy=self.copy, ensure_2d=False, dtype=FLOAT_DTYPES)
-
-          if X.ndim == 1:
-              warnings.warn(DEPRECATION_MSG_1D, DeprecationWarning)
+     class DsappCutOff(BaseEstimator, TransformerMixin):
+         """
+         Transforms features cutting values out of established range
 
 
-          if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
-              warnings.warn(f"You got data that are out of the range:{feature_range}")
+         Args:
+            feature_range: Range of allowed values, default=`(0,1)`
 
-          X[X > feature_range[1]] = feature_range[1]
-          X[X < feature_range[0]] = feature_range[0]
+         Usage:
+            The recommended way of using this is::
 
-          return X
-#+END_SRC
-#+RESULTS:
+                from sklearn.pipeline import Pipeline
+
+                minmax_scaler = preprocessing.MinMaxScaler()
+                dsapp_cutoff = DsappCutOff()
+                lr  = linear_model.LogisticRegression()
+
+                pipeline =Pipeline([
+                      ('minmax_scaler',minmax_scaler),
+                      ('dsapp_cutoff', dsapp_cutoff),
+                      ('lr', lr)
+                ])
+
+                pipeline.fit(X_train, y_train)
+                pipeline.predict(X_test)
+
+         """
+         def __init__(self, feature_range=(0,1), copy=True):
+             self.feature_range = feature_range
+             self.copy = copy
+
+         def fit(self, X, y = None):
+             return self
+
+         def transform(self, X):
+             feature_range = self.feature_range
+
+             X = check_array(X, copy=self.copy, ensure_2d=False, dtype=FLOAT_DTYPES)
+
+             if X.ndim == 1:
+                 warnings.warn(DEPRECATION_MSG_1D, DeprecationWarning)
 
 
-#+BEGIN_SRC ipython :session
-  from sklearn.pipeline import Pipeline
-  from sklearn import linear_model
+             if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
+                 warnings.warn(f"You got data that are out of the range:{feature_range}")
 
-  minmax_scaler = preprocessing.MinMaxScaler()
-  dsapp_cutoff = DsappCutOff()
+             X[X > feature_range[1]] = feature_range[1]
+             X[X < feature_range[0]] = feature_range[0]
 
-  pipeline =Pipeline([
-      ('minmax_scaler',minmax_scaler),
-      ('dsapp_cutoff', dsapp_cutoff)
-      ])
-#+END_SRC
-
-#+RESULTS:
+             return X
+   #+END_SRC
+   #+RESULTS:
 
 
-#+BEGIN_SRC ipython :session
-pipeline.fit(X_train, y_train)
-#+END_SRC
+   #+BEGIN_SRC ipython
+     from sklearn.pipeline import Pipeline
+     from sklearn import linear_model
 
-#+RESULTS:
-: Pipeline(steps=[('minmax_scaler', MinMaxScaler(copy=True, feature_range=(0, 1))), ('dsapp_cutoff', <__main__.DsappCutOff object at 0x7fab9e8a46a0>)])
+     minmax_scaler = preprocessing.MinMaxScaler()
+     dsapp_cutoff = DsappCutOff()
+
+     pipeline =Pipeline([
+         ('minmax_scaler',minmax_scaler),
+         ('dsapp_cutoff', dsapp_cutoff)
+     ])
+   #+END_SRC
+
+   #+RESULTS:
 
 
-#+BEGIN_SRC ipython :session
-X_fake_new_data = X_test[-1,:] + 0.5
-X_fake_new_data
-#+END_SRC
+   #+BEGIN_SRC ipython
+     pipeline.fit(X_train, y_train)
+   #+END_SRC
 
-#+RESULTS:
-#+begin_example
-array([  1.34500000e+01,   1.65200000e+01,   8.36400000e+01,
-         5.14200000e+02,   6.00500000e-01,   5.79430000e-01,
-         5.61550000e-01,   5.33700000e-01,   6.73000000e-01,
-         5.64700000e-01,   7.09400000e-01,   1.26360000e+00,
-         1.73100000e+00,   1.81700000e+01,   5.08725000e-01,
-         5.20030000e-01,   5.23350000e-01,   5.11320000e-01,
-         5.26250000e-01,   5.04726000e-01,   1.42400000e+01,
-         2.04300000e+01,   8.93100000e+01,   5.85900000e+02,
-         6.48300000e-01,   7.06800000e-01,   7.24100000e-01,
-         6.05600000e-01,   8.38000000e-01,   5.95840000e-01])
+   #+RESULTS:
+   : Pipeline(steps=[('minmax_scaler', MinMaxScaler(copy=True, feature_range=(0, 1))), ('dsapp_cutoff', DsappCutOff(copy=True, feature_range=(0, 1)))])
+
+
+   #+BEGIN_SRC ipython
+     X_fake_new_data = X_test[-1,:] + 0.5
+     X_fake_new_data
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   array([  1.34500000e+01,   1.65200000e+01,   8.36400000e+01,
+            5.14200000e+02,   6.00500000e-01,   5.79430000e-01,
+            5.61550000e-01,   5.33700000e-01,   6.73000000e-01,
+            5.64700000e-01,   7.09400000e-01,   1.26360000e+00,
+            1.73100000e+00,   1.81700000e+01,   5.08725000e-01,
+            5.20030000e-01,   5.23350000e-01,   5.11320000e-01,
+            5.26250000e-01,   5.04726000e-01,   1.42400000e+01,
+            2.04300000e+01,   8.93100000e+01,   5.85900000e+02,
+            6.48300000e-01,   7.06800000e-01,   7.24100000e-01,
+            6.05600000e-01,   8.38000000e-01,   5.95840000e-01])
 #+end_example
 
 
-#+BEGIN_SRC ipython :session
-pipeline.transform(X_fake_new_data)
-#+END_SRC
+   #+BEGIN_SRC ipython
+     pipeline.transform(X_fake_new_data)
+   #+END_SRC
 
-#+RESULTS:
-: array([ 0.27960688,  0.28257261,  0.2540902 ,  0.14362069,  1.        ,
-:         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-:         0.21651276,  0.19965523,  0.0452458 ,  0.0212328 ,  1.        ,
-:         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-:         0.19521559,  0.22414712,  0.16787458,  0.08615063,  1.        ,
-:         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
+   #+RESULTS:
+   : array([ 0.27960688,  0.28257261,  0.2540902 ,  0.14362069,  1.        ,
+   :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+   :         0.21651276,  0.19965523,  0.0452458 ,  0.0212328 ,  1.        ,
+   :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+   :         0.19521559,  0.22414712,  0.16787458,  0.08615063,  1.        ,
+   :         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
 
 
-#+BEGIN_SRC ipython :session
-mms = preprocessing.MinMaxScaler().fit(X_train)
-mms.transform(X_fake_new_data)
-#+END_SRC
+   #+BEGIN_SRC ipython
+     mms = preprocessing.MinMaxScaler().fit(X_train)
+     mms.transform(X_fake_new_data)
+   #+END_SRC
 
-#+RESULTS:
-#+begin_example
-array([  2.79606880e-01,   2.82572614e-01,   2.54090198e-01,
-         1.43620690e-01,   4.94601426e+00,   1.72689154e+00,
-         1.31572165e+00,   2.65258449e+00,   2.86363636e+00,
-         1.14234354e+01,   2.16512765e-01,   1.99655233e-01,
-         4.52457965e-02,   2.12328025e-02,   2.34543184e+01,
-         5.29796696e+00,   3.40944625e+00,   1.25017115e+01,
-         7.29397197e+00,   2.39518141e+01,   1.95215594e-01,
-         2.24147122e-01,   1.67874582e-01,   8.61506266e-02,
-         3.91992121e+00,   7.46214076e-01,   7.53642798e-01,
-         2.08109966e+00,   1.61914944e+00,   5.78024797e+00])
+   #+RESULTS:
+   #+begin_example
+   array([  2.79606880e-01,   2.82572614e-01,   2.54090198e-01,
+            1.43620690e-01,   4.94601426e+00,   1.72689154e+00,
+            1.31572165e+00,   2.65258449e+00,   2.86363636e+00,
+            1.14234354e+01,   2.16512765e-01,   1.99655233e-01,
+            4.52457965e-02,   2.12328025e-02,   2.34543184e+01,
+            5.29796696e+00,   3.40944625e+00,   1.25017115e+01,
+            7.29397197e+00,   2.39518141e+01,   1.95215594e-01,
+            2.24147122e-01,   1.67874582e-01,   8.61506266e-02,
+            3.91992121e+00,   7.46214076e-01,   7.53642798e-01,
+            2.08109966e+00,   1.61914944e+00,   5.78024797e+00])
 #+end_example
 
 
-#+BEGIN_SRC ipython :session
-assert np.all(( mms.transform(X_fake_new_data) > 1  ) == (pipeline.transform(X_fake_new_data) == 1))
-#+END_SRC
+   #+BEGIN_SRC ipython
+     assert np.all(( mms.transform(X_fake_new_data) > 1  ) == (pipeline.transform(X_fake_new_data) == 1))
+   #+END_SRC
 
-#+RESULTS:
+   #+RESULTS:
 
 
 *** Using in a full pipeline
 
-  #+BEGIN_SRC ipython :session
-    from sklearn.pipeline import Pipeline
-    from sklearn import linear_model
+    #+BEGIN_SRC ipython
+      from sklearn.pipeline import Pipeline
+      from sklearn import linear_model
 
-    minmax_scaler = preprocessing.MinMaxScaler()
-    dsapp_cutoff = DsappCutOff()
-    lr = linear_model.LogisticRegression()
+      minmax_scaler = preprocessing.MinMaxScaler()
+      dsapp_cutoff = DsappCutOff()
+      lr = linear_model.LogisticRegression()
 
-    pipeline =Pipeline([
-        ('minmax_scaler',minmax_scaler),
-        ('dsapp_cutoff', dsapp_cutoff),
-        ('lr', lr)
-        ])
-  #+END_SRC
+      pipeline =Pipeline([
+          ('minmax_scaler',minmax_scaler),
+          ('dsapp_cutoff', dsapp_cutoff),
+          ('lr', lr)
+      ])
+    #+END_SRC
 
-  #+RESULTS:
+    #+RESULTS:
 
-  #+BEGIN_SRC ipython :session
-  pipeline.fit(X_train, y_train)
-  #+END_SRC
+    #+BEGIN_SRC ipython
+      pipeline.fit(X_train, y_train)
+    #+END_SRC
 
-  #+RESULTS:
-  : Pipeline(steps=[('minmax_scaler', MinMaxScaler(copy=True, feature_range=(0, 1))), ('dsapp_cutoff', <__main__.DsappCutOff object at 0x7fab9e806ac8>), ('lr', LogisticRegression(C=1.0, class_weight=None, dual=False, fit_intercept=True,
-  :           intercept_scaling=1, max_iter=100, multi_class='ovr', n_jobs=1,
-  :           penalty='l2', random_state=None, solver='liblinear', tol=0.0001,
-  :           verbose=0, warm_start=False))])
-
-
-  #+BEGIN_SRC ipython :session
-  pipeline.predict(X_test)
-  #+END_SRC
-
-  #+RESULTS:
-  : array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0,
-  :        1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
-  :        1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0,
-  :        0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0,
-  :        0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0,
-  :        1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1,
-  :        1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1,
-  :        0, 1, 1, 1, 0, 1, 1, 1, 0, 1])
+    #+RESULTS:
+    : Pipeline(steps=[('minmax_scaler', MinMaxScaler(copy=True, feature_range=(0, 1))), ('dsapp_cutoff', DsappCutOff(copy=True, feature_range=(0, 1))), ('lr', LogisticRegression(C=1.0, class_weight=None, dual=False, fit_intercept=True,
+    :           intercept_scaling=1, max_iter=100, multi_class='ovr', n_jobs=1,
+    :           penalty='l2', random_state=None, solver='liblinear', tol=0.0001,
+    :           verbose=0, warm_start=False))])
 
 
-  #+BEGIN_SRC ipython :session
-  pipeline.score(X_test, y_test)
-  #+END_SRC
+    #+BEGIN_SRC ipython
+      pipeline.predict(X_test)
+    #+END_SRC
 
-  #+RESULTS:
-  : 0.9590643274853801
+    #+RESULTS:
+    : array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0,
+    :        1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+    :        1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0,
+    :        0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0,
+    :        0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0,
+    :        1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1,
+    :        1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1,
+    :        0, 1, 1, 1, 0, 1, 1, 1, 0, 1])
 
-  #+BEGIN_SRC ipython :session
-    pipeline.predict(X_test[-1,:])
-  #+END_SRC
 
-  #+RESULTS:
-  : array([1])
+    #+BEGIN_SRC ipython
+      pipeline.score(X_test, y_test)
+    #+END_SRC
+
+    #+RESULTS:
+    : 0.9590643274853801
+
+    #+BEGIN_SRC ipython
+      pipeline.predict(X_test[-1,:])
+    #+END_SRC
+
+    #+RESULTS:
+    : array([1])
 
 *** Storing the pipeline
 
 
-  #+BEGIN_SRC ipython :session
-  from sklearn.externals import joblib
-  joblib.dump(pipeline, 'dsapp_pipeline.plk')
-  #+END_SRC
+    #+BEGIN_SRC ipython
+      from sklearn.externals import joblib
+      joblib.dump(pipeline, 'dsapp_pipeline.plk')
+    #+END_SRC
 
-  #+RESULTS:
-  | dsapp_pipeline.plk |
+    #+RESULTS:
+    | dsapp_pipeline.plk |
 
 
-  #+BEGIN_SRC ipython :session
-  pipeline_reloaded =joblib.load('dsapp_pipeline.plk')
-  pipeline_reloaded.transform(X_fake_new_data + 0.5)
-  #+END_SRC
+    #+BEGIN_SRC ipython
+      pipeline_reloaded =joblib.load('dsapp_pipeline.plk')
+      pipeline_reloaded.transform(X_fake_new_data + 0.5)
+    #+END_SRC
 
-  #+RESULTS:
-  : array([ 0.27960688,  0.28257261,  0.2540902 ,  0.14362069,  1.        ,
-  :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-  :         0.21651276,  0.19965523,  0.0452458 ,  0.0212328 ,  1.        ,
-  :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-  :         0.19521559,  0.22414712,  0.16787458,  0.08615063,  1.        ,
-  :         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
+    #+RESULTS:
+    : array([ 0.27960688,  0.28257261,  0.2540902 ,  0.14362069,  1.        ,
+    :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+    :         0.21651276,  0.19965523,  0.0452458 ,  0.0212328 ,  1.        ,
+    :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+    :         0.19521559,  0.22414712,  0.16787458,  0.08615063,  1.        ,
+    :         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
 
+
+** Encapsulating the pipeline
+
+We could encapsulate the functionality of the previous pipeline in a
+class, so, we can forget about all this details and just use it as a
+inplace replacemente for =scikit-learn= =Logisticregression= class.
+
+   #+BEGIN_SRC ipython :tangle estimators.py
+     # coding: utf-8
+
+     from sklearn.base import BaseEstimator, ClassifierMixin
+     from sklearn.pipeline import Pipeline
+     from sklearn.preprocessing import MinMaxScaler
+     from sklearn.linear_model import LogisticRegression
+
+     from triage.models.transformers import DsappCutOff
+
+     class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
+         """
+         An in-place replacement for the scikit-learn's LogisticRegression.
+
+         It incorporates the MaxMinScaler, and the DsappCutOff as preparations
+         for the  logistic regression.
+         """
+         def __init__(self, penalty='l2', dual=False, tol=1e-4, C=1.0,
+                      fit_intercept=True, intercept_scaling=1, class_weight=None,
+                      random_state=None, solver='liblinear', max_iter=100,
+                      multi_class='ovr', verbose=0, warm_start=False, n_jobs=1):
+
+
+             self.penalty = penalty
+             self.dual = dual
+             self.tol = tol
+             self.C = C
+             self.fit_intercept = fit_intercept
+             self.intercept_scaling = intercept_scaling
+             self.class_weight = class_weight
+             self.random_state = random_state
+             self.solver = solver
+             self.max_iter = max_iter
+             self.multi_class = multi_class
+             self.verbose = verbose
+             self.warm_start = warm_start
+             self.n_jobs = n_jobs
+
+             self.minmax_scaler = MinMaxScaler()
+             self.dsapp_cutoff = DsappCutOff()
+             self.lr = LogisticRegression(penalty=penalty, dual=dual, tol=tol, C=C,
+                                          fit_intercept=fit_intercept, intercept_scaling=intercept_scaling, class_weight=class_weight,
+                                          random_state=random_state, solver=solver, max_iter=max_iter,
+                                          multi_class=multi_class, verbose=verbose, warm_start=warm_start, n_jobs=n_jobs)
+
+             self.pipeline =Pipeline([
+                 ('minmax_scaler', self.minmax_scaler),
+                 ('dsapp_cutoff', self.dsapp_cutoff),
+                 ('lr', self.lr)
+             ])
+
+
+         def fit(self, X, y = None):
+             self.pipeline.fit(X, y)
+
+             self.min_ = self.pipeline['minmax_scaler'].min_
+             self.scale_ = self.pipeline['minmax_scaler'].scale_
+             self.data_min_ = self.pipeline['minmax_scaler'].data_min_
+             self.data_max_ = self.pipeline['minmax_scaler'].data_max_
+             self.data_range_ = self.pipeline['minmax_scaler'].data_range_
+
+             self.coef_ = self.lr.coef_
+             self.intercept_ = self.lr.intercept_
+
+             self.classes_ = self.lr.classes_
+
+             return self
+
+         def predict_proba(self, X):
+             return self.pipeline.predict_proba(X)
+
+         def predict_log_proba(self, X):
+             return self.pipeline.predict_log_proba(X)
+
+
+         def predict(self, X):
+             return self.pipeline.predict(X)
+
+         def score(self, X, y):
+             return self.pipeline.score(X,y)
+   #+END_SRC
+
+   #+RESULTS:
+
+
+We can see that, this class reproduces the behaviour that the =pipeline=
+of the last section.
+
+
+   #+BEGIN_SRC ipython
+     from sklearn import preprocessing
+     from sklearn import datasets
+     from sklearn.model_selection import train_test_split
+
+     from triage.models.estimators import DsappLogisticRegression
+
+     dataset = datasets.load_breast_cancer()
+     X = dataset.data
+     y = dataset.target
+
+     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state=12345)
+
+     dsapp_lr = DsappLogisticRegression()
+
+     dsapp_lr.fit(X_train, y_train)
+     dsapp_lr.predict(X_test)
+     dsapp_lr.score(X_test, y_test)
+   #+END_SRC
+
+   #+RESULTS:
+   : 0.9590643274853801
+
+
+
+#+BEGIN_SRC ipython
+     assert np.all(dsapp_lr.predict(X_test) == pipeline.predict(X_test))
+#+END_SRC
+
+#+RESULTS:
 
 ** Another approach (abandoned)
 
-#+BEGIN_SRC ipython :session
-  class DsappMinMaxScaler(preprocessing.MinMaxScaler):
-      def transform(self, X):
-          X_bad = super(DsappMinMaxScaler, self).transform(X)
-          X_bad[X_bad > 1] = 1
-          X_bad[X_bad < 0] = 0
-          return X_bad
-#+END_SRC
+   #+BEGIN_SRC ipython
+     class DsappMinMaxScaler(preprocessing.MinMaxScaler):
+         def transform(self, X):
+             X_bad = super(DsappMinMaxScaler, self).transform(X)
+             X_bad[X_bad > 1] = 1
+             X_bad[X_bad < 0] = 0
+             return X_bad
+   #+END_SRC
 
 
-#+BEGIN_SRC ipython :session
-dsapp_scaler = DsappMinMaxScaler().fit(X_train)
-X_train_dsapp = dsapp_scaler.transform(X_train)
-np.amin(X_train_dsapp, axis=0)
-#+END_SRC
+   #+BEGIN_SRC ipython
+     dsapp_scaler = DsappMinMaxScaler().fit(X_train)
+     X_train_dsapp = dsapp_scaler.transform(X_train)
+     np.amin(X_train_dsapp, axis=0)
+   #+END_SRC
 
-#+RESULTS:
-: array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-:         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
-:         0.,  0.,  0.,  0.])
+   #+RESULTS:
+   : array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+   :         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
+   :         0.,  0.,  0.,  0.])
 
-#+BEGIN_SRC ipython :session
-X_test_dsapp = dsapp_scaler.transform(X_test)
-np.amin(X_test_dsapp, axis=0)
-#+END_SRC
-
-
-#+RESULTS:
-: array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
-:         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
-:         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
-:         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
-:         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
-:         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
-
-#+RESULTS:
-: array([ 0.        ,  0.04605809,  0.        ,  0.        ,  0.08919383,
-:         0.        ,  0.        ,  0.        ,  0.0540404 ,  0.00643586,
-:         0.00137606,  0.01617751,  0.        ,  0.00262048,  0.04413193,
-:         0.        ,  0.        ,  0.        ,  0.03388304,  0.00349414,
-:         0.        ,  0.07462687,  0.        ,  0.        ,  0.06846431,
-:         0.0077201 ,  0.        ,  0.        ,  0.00902827,  0.03623343])
+   #+BEGIN_SRC ipython
+     X_test_dsapp = dsapp_scaler.transform(X_test)
+     np.amin(X_test_dsapp, axis=0)
+   #+END_SRC
 
 
-#+BEGIN_SRC ipython :session
-np.amax(X_test_dsapp, axis=0)
-#+END_SRC
+   #+RESULTS:
+   : array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
+   :         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
+   :         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
+   :         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
+   :         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
+   :         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
 
-#+RESULTS:
-: array([ 0.95626536,  1.        ,  0.95447432,  0.89181034,  0.81132075,
-:         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.        ,
-:         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.        ,
-:         1.        ,  1.        ,  1.        ,  0.72814769,  1.        ,
-:         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.        ,
-:         1.        ,  1.        ,  0.94707904,  1.        ,  1.        ])
-
-#+BEGIN_SRC ipython :session
-np.amax(X_test_minmax, axis=0)
-#+END_SRC
-
-#+RESULTS:
-: array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
-:         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
-:         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
-:         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
-:         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
-:         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
+   #+RESULTS:
+   : array([ 0.        ,  0.04605809,  0.        ,  0.        ,  0.08919383,
+   :         0.        ,  0.        ,  0.        ,  0.0540404 ,  0.00643586,
+   :         0.00137606,  0.01617751,  0.        ,  0.00262048,  0.04413193,
+   :         0.        ,  0.        ,  0.        ,  0.03388304,  0.00349414,
+   :         0.        ,  0.07462687,  0.        ,  0.        ,  0.06846431,
+   :         0.0077201 ,  0.        ,  0.        ,  0.00902827,  0.03623343])
 
 
+   #+BEGIN_SRC ipython
+     np.amax(X_test_dsapp, axis=0)
+   #+END_SRC
 
-#+BEGIN_SRC ipython :session
-X_fake_new_data = X_test[-1,:] + 0.5
-X_fake_new_data
-#+END_SRC
+   #+RESULTS:
+   : array([ 0.95626536,  1.        ,  0.95447432,  0.89181034,  0.81132075,
+   :         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.        ,
+   :         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.        ,
+   :         1.        ,  1.        ,  1.        ,  0.72814769,  1.        ,
+   :         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.        ,
+   :         1.        ,  1.        ,  0.94707904,  1.        ,  1.        ])
 
-#+RESULTS:
-#+begin_example
-array([  1.34500000e+01,   1.65200000e+01,   8.36400000e+01,
-         5.14200000e+02,   6.00500000e-01,   5.79430000e-01,
-         5.61550000e-01,   5.33700000e-01,   6.73000000e-01,
-         5.64700000e-01,   7.09400000e-01,   1.26360000e+00,
-         1.73100000e+00,   1.81700000e+01,   5.08725000e-01,
-         5.20030000e-01,   5.23350000e-01,   5.11320000e-01,
-         5.26250000e-01,   5.04726000e-01,   1.42400000e+01,
-         2.04300000e+01,   8.93100000e+01,   5.85900000e+02,
-         6.48300000e-01,   7.06800000e-01,   7.24100000e-01,
-         6.05600000e-01,   8.38000000e-01,   5.95840000e-01])
-#+end_example
+   #+BEGIN_SRC ipython
+     np.amax(X_test_minmax, axis=0)
+   #+END_SRC
+
+   #+RESULTS:
+   : array([ 0.95626536,  1.22697095,  0.95447432,  0.89181034,  0.81132075,
+   :         0.80898248,  0.96251172,  0.95079523,  0.77626263,  1.05370617,
+   :         0.39670469,  0.56219059,  0.38171308,  0.40586255,  1.36082713,
+   :         1.35660122,  2.57980456,  1.29070905,  0.72814769,  1.37603636,
+   :         0.89257236,  0.87553305,  0.88743254,  0.74588306,  1.02852679,
+   :         1.13188961,  1.30308077,  0.94707904,  1.20527441,  1.62954254])
 
 
-#+BEGIN_SRC ipython :session
- dsapp_scaler.transform(X_fake_new_data)
-#+END_SRC
 
-#+RESULTS:
-: array([ 0.25503686,  0.26182573,  0.2505335 ,  0.14340517,  0.43215672,
-:         0.17390359,  0.14421275,  0.16749503,  0.33838384,  0.3271194 ,
-:         0.03545175,  0.08915311,  0.02167045,  0.02029892,  0.32437434,
-:         0.1743862 ,  0.15211726,  0.27677262,  0.25845669,  0.18213281,
-:         0.17675724,  0.2108209 ,  0.16530455,  0.08602606,  0.52387421,
-:         0.19713159,  0.23324313,  0.3628866 ,  0.43121882,  0.4360838 ])
+   #+BEGIN_SRC ipython
+     X_fake_new_data = X_test[-1,:] + 0.5
+     X_fake_new_data
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   array([  1.34500000e+01,   1.65200000e+01,   8.36400000e+01,
+            5.14200000e+02,   6.00500000e-01,   5.79430000e-01,
+            5.61550000e-01,   5.33700000e-01,   6.73000000e-01,
+            5.64700000e-01,   7.09400000e-01,   1.26360000e+00,
+            1.73100000e+00,   1.81700000e+01,   5.08725000e-01,
+            5.20030000e-01,   5.23350000e-01,   5.11320000e-01,
+            5.26250000e-01,   5.04726000e-01,   1.42400000e+01,
+            2.04300000e+01,   8.93100000e+01,   5.85900000e+02,
+            6.48300000e-01,   7.06800000e-01,   7.24100000e-01,
+            6.05600000e-01,   8.38000000e-01,   5.95840000e-01])
+   #+end_example
+
+
+   #+BEGIN_SRC ipython
+     dsapp_scaler.transform(X_fake_new_data)
+   #+END_SRC
+
+   #+RESULTS:
+   : array([ 0.25503686,  0.26182573,  0.2505335 ,  0.14340517,  0.43215672,
+   :         0.17390359,  0.14421275,  0.16749503,  0.33838384,  0.3271194 ,
+   :         0.03545175,  0.08915311,  0.02167045,  0.02029892,  0.32437434,
+   :         0.1743862 ,  0.15211726,  0.27677262,  0.25845669,  0.18213281,
+   :         0.17675724,  0.2108209 ,  0.16530455,  0.08602606,  0.52387421,
+   :         0.19713159,  0.23324313,  0.3628866 ,  0.43121882,  0.4360838 ])

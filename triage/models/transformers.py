@@ -2,6 +2,8 @@
 
 import warnings
 
+import numpy as np
+
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
 from sklearn.utils.validation import FLOAT_DTYPES
