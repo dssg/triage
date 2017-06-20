@@ -15,7 +15,7 @@ DEPRECATION_MSG_1D = (
     "X.reshape(1, -1) if it contains a single sample."
 )
 
-class DsappCutOff(BaseEstimator, TransformerMixin):
+class CutOff(BaseEstimator, TransformerMixin):
     """
     Transforms features cutting values out of established range
 
@@ -29,7 +29,7 @@ class DsappCutOff(BaseEstimator, TransformerMixin):
            from sklearn.pipeline import Pipeline
 
            minmax_scaler = preprocessing.MinMaxScaler()
-           dsapp_cutoff = DsappCutOff()
+           dsapp_cutoff = CutOff()
            lr  = linear_model.LogisticRegression()
 
            pipeline =Pipeline([

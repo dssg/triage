@@ -5,13 +5,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 
-from triage.models.transformers import DsappCutOff
+from triage.models.transformers import CutOff
 
 class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
     """
     An in-place replacement for the scikit-learn's LogisticRegression.
 
-    It incorporates the MaxMinScaler, and the DsappCutOff as preparations
+    It incorporates the MaxMinScaler, and the CutOff as preparations
     for the  logistic regression.
     """
     def __init__(self, penalty='l2', dual=False, tol=1e-4, C=1.0,
@@ -36,7 +36,7 @@ class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
         self.n_jobs = n_jobs
 
         self.minmax_scaler = MinMaxScaler()
-        self.dsapp_cutoff = DsappCutOff()
+        self.dsapp_cutoff = CutOff()
         self.lr = LogisticRegression(penalty=penalty, dual=dual, tol=tol, C=C,
                                      fit_intercept=fit_intercept, intercept_scaling=intercept_scaling, class_weight=class_weight,
                                      random_state=random_state, solver=solver, max_iter=max_iter,
