@@ -1,0 +1,56 @@
+import warnings
+
+import numpy as np
+
+import sklearn
+
+def _ad_hoc_feature_importances(model):
+    """
+    Get the "ad-hoc feature importances" for scikit-learn's models
+    lacking the `feature_importances_` attribute
+
+    Args:
+        model: A trained model that has not a `feature_importances_` attribute
+
+    Returns:
+        At this moment, this method only returns the odds ratio of both the
+        intercept and the coefficients given by sklearn's implementation of
+        the LogisticRegression.
+        The order of the odds ratio list is the standard
+        of the statistical packages (like R, SAS, etc) i.e. (intercept, coefficients)
+    """
+    feature_importances = None
+
+    if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
+        coef_odds_ratio = np.exp(model.coef_)
+        intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
+        feature_importances = np.hstack((intercept_odds_ratio, coef_odds_ratio))
+
+    return feature_importances
+
+def get_feature_importances(model):
+    """
+    Get feature importances (from scikit-learn) of a trained model.
+
+    Args:
+        model: Trained model
+
+    Returns:
+        Feature importances, or failing that, None
+    """
+
+    feature_importances = None
+
+    if hasattr(model, 'feature_importances_'):
+        feature_importances = model.feature_importances_
+    else:
+        warnings.warn(
+            "\nThe selected algorithm, doesn't support a standard way"
+            "\nof calculate the importance of each feature used."
+            "\nFalling back to ad-hoc methods."
+        )
+
+
+        feature_importances = _ad_hoc_feature_importances(model)
+
+    return feature_importances

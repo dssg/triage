@@ -4,7 +4,7 @@ import warnings
 
 import pytest
 
-from triage.model_trainers import _ad_hoc_feature_importances, get_feature_importances
+from triage.feature_importances import _ad_hoc_feature_importances, get_feature_importances
 
 from sklearn import datasets
 from sklearn.linear_model import LogisticRegression, LinearRegression
