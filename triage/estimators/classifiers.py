@@ -5,9 +5,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 
-from triage.models.transformers import CutOff
+from triage.estimators.transformers import CutOff
 
-class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
+class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
     """
     An in-place replacement for the scikit-learn's LogisticRegression.
 
@@ -52,16 +52,16 @@ class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
     def fit(self, X, y = None):
         self.pipeline.fit(X, y)
 
-        self.min_ = self.pipeline['minmax_scaler'].min_
-        self.scale_ = self.pipeline['minmax_scaler'].scale_
-        self.data_min_ = self.pipeline['minmax_scaler'].data_min_
-        self.data_max_ = self.pipeline['minmax_scaler'].data_max_
-        self.data_range_ = self.pipeline['minmax_scaler'].data_range_
+        self.min_ = self.pipeline.named_steps['minmax_scaler'].min_
+        self.scale_ = self.pipeline.named_steps['minmax_scaler'].scale_
+        self.data_min_ = self.pipeline.named_steps['minmax_scaler'].data_min_
+        self.data_max_ = self.pipeline.named_steps['minmax_scaler'].data_max_
+        self.data_range_ = self.pipeline.named_steps['minmax_scaler'].data_range_
 
-        self.coef_ = self.lr.coef_
-        self.intercept_ = self.lr.intercept_
+        self.coef_ = self.pipeline.named_steps['lr'].coef_
+        self.intercept_ = self.pipeline.named_steps['lr'].intercept_
 
-        self.classes_ = self.lr.classes_
+        self.classes_ = self.pipeline.named_steps['lr'].classes_
 
         return self
 
@@ -70,7 +70,6 @@ class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
 
     def predict_log_proba(self, X):
         return self.pipeline.predict_log_proba(X)
-
 
     def predict(self, X):
         return self.pipeline.predict(X)

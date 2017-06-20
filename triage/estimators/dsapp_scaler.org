@@ -169,90 +169,81 @@
    #+END_SRC
    #+RESULTS:
 
+*** Tests
 
-   #+BEGIN_SRC ipython
-     from sklearn.pipeline import Pipeline
-     from sklearn import linear_model
+    #+BEGIN_SRC ipython :tangle ../../tests/test_estimators.py
+        import numpy as np
 
-     minmax_scaler = preprocessing.MinMaxScaler()
-     dsapp_cutoff = CutOff()
+        import warnings
 
-     pipeline =Pipeline([
-         ('minmax_scaler',minmax_scaler),
-         ('dsapp_cutoff', dsapp_cutoff)
-     ])
-   #+END_SRC
+        import pytest
 
-   #+RESULTS:
+        from triage.estimators.transformers import CutOff
+        from triage.estimators.classifiers import ScaledLogisticRegression
 
+        from sklearn import linear_model
 
-   #+BEGIN_SRC ipython
-     pipeline.fit(X_train, y_train)
-   #+END_SRC
+        from sklearn import datasets
+        from sklearn import preprocessing
+        from sklearn.pipeline import Pipeline
+        from sklearn.model_selection import train_test_split
 
-   #+RESULTS:
-   : Pipeline(steps=[('minmax_scaler', MinMaxScaler(copy=True, feature_range=(0, 1))), ('dsapp_cutoff', CutOff(copy=True, feature_range=(0, 1)))])
+        @pytest.fixture
+        def data():
+            dataset = datasets.load_breast_cancer()
+            X = dataset.data
+            y = dataset.target
 
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state=12345)
 
-   #+BEGIN_SRC ipython
-     X_fake_new_data = X_test[-1,:] + 0.5
-     X_fake_new_data
-   #+END_SRC
+            return {'X_train':X_train, 'X_test':X_test, 'y_train':y_train, 'y_test':y_test}
 
-   #+RESULTS:
-   #+begin_example
-   array([  1.34500000e+01,   1.65200000e+01,   8.36400000e+01,
-            5.14200000e+02,   6.00500000e-01,   5.79430000e-01,
-            5.61550000e-01,   5.33700000e-01,   6.73000000e-01,
-            5.64700000e-01,   7.09400000e-01,   1.26360000e+00,
-            1.73100000e+00,   1.81700000e+01,   5.08725000e-01,
-            5.20030000e-01,   5.23350000e-01,   5.11320000e-01,
-            5.26250000e-01,   5.04726000e-01,   1.42400000e+01,
-            2.04300000e+01,   8.93100000e+01,   5.85900000e+02,
-            6.48300000e-01,   7.06800000e-01,   7.24100000e-01,
-            6.05600000e-01,   8.38000000e-01,   5.95840000e-01])
-#+end_example
+        def test_cutoff_warning():
+            X_data = [1, 2, 0.5, 0.7, 100, -1, -23, 0]
+
+            cutoff = CutOff()
+
+            with pytest.warns(UserWarning):
+               cutoff.fit_transform(X_data)
 
 
-   #+BEGIN_SRC ipython
-     pipeline.transform(X_fake_new_data)
-   #+END_SRC
+        def test_cutoff_transformer():
+            cutoff = CutOff()
 
-   #+RESULTS:
-   : array([ 0.27960688,  0.28257261,  0.2540902 ,  0.14362069,  1.        ,
-   :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-   :         0.21651276,  0.19965523,  0.0452458 ,  0.0212328 ,  1.        ,
-   :         1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-   :         0.19521559,  0.22414712,  0.16787458,  0.08615063,  1.        ,
-   :         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
+            X_data = [1, 2, 0.5, 0.7, 100, -1, -23, 0]
 
+            assert np.all(cutoff.fit_transform(X_data) == [1, 1, 0.5, 0.7, 1, 0, 0, 0])
 
-   #+BEGIN_SRC ipython
-     mms = preprocessing.MinMaxScaler().fit(X_train)
-     mms.transform(X_fake_new_data)
-   #+END_SRC
+        def test_cutoff_inside_a_pipeline(data):
+            minmax_scaler = preprocessing.MinMaxScaler()
+            dsapp_cutoff = CutOff()
 
-   #+RESULTS:
-   #+begin_example
-   array([  2.79606880e-01,   2.82572614e-01,   2.54090198e-01,
-            1.43620690e-01,   4.94601426e+00,   1.72689154e+00,
-            1.31572165e+00,   2.65258449e+00,   2.86363636e+00,
-            1.14234354e+01,   2.16512765e-01,   1.99655233e-01,
-            4.52457965e-02,   2.12328025e-02,   2.34543184e+01,
-            5.29796696e+00,   3.40944625e+00,   1.25017115e+01,
-            7.29397197e+00,   2.39518141e+01,   1.95215594e-01,
-            2.24147122e-01,   1.67874582e-01,   8.61506266e-02,
-            3.91992121e+00,   7.46214076e-01,   7.53642798e-01,
-            2.08109966e+00,   1.61914944e+00,   5.78024797e+00])
-#+end_example
+            pipeline =Pipeline([
+                ('minmax_scaler',minmax_scaler),
+                ('dsapp_cutoff', dsapp_cutoff)
+            ])
 
+            pipeline.fit(data['X_train'], data['y_train'])
 
-   #+BEGIN_SRC ipython
-     assert np.all(( mms.transform(X_fake_new_data) > 1  ) == (pipeline.transform(X_fake_new_data) == 1))
-   #+END_SRC
+            X_fake_new_data = data['X_test'][-1,:] + 0.5
 
-   #+RESULTS:
+            mms = preprocessing.MinMaxScaler().fit(data['X_train'])
 
+            assert np.all(( mms.transform(X_fake_new_data) > 1  ) == (pipeline.transform(X_fake_new_data) == 1))
+    #+END_SRC
+
+    #+BEGIN_SRC ipython
+      from sklearn.pipeline import Pipeline
+      from sklearn import linear_model
+
+      minmax_scaler = preprocessing.MinMaxScaler()
+      dsapp_cutoff = CutOff()
+
+      pipeline =Pipeline([
+          ('minmax_scaler',minmax_scaler),
+          ('dsapp_cutoff', dsapp_cutoff)
+      ])
+    #+END_SRC
 
 *** Using in a full pipeline
 
@@ -339,11 +330,14 @@
     :         0.74621408,  0.7536428 ,  1.        ,  1.        ,  1.        ])
 
 
-** Encapsulating the pipeline
+* "ScaledLogisticRegression" model
+  :PROPERTIES:
+  :header-args: :session
+  :END:
 
-We could encapsulate the functionality of the previous pipeline in a
-class, so, we can forget about all this details and just use it as a
-inplace replacemente for =scikit-learn= =Logisticregression= class.
+   We could encapsulate the functionality of the previous pipeline in a
+   class, so, we can forget about all this details and just use it as a
+   inplace replacemente for =scikit-learn= =Logisticregression= class.
 
    #+BEGIN_SRC ipython :tangle classifiers.py
      # coding: utf-8
@@ -353,9 +347,9 @@ inplace replacemente for =scikit-learn= =Logisticregression= class.
      from sklearn.preprocessing import MinMaxScaler
      from sklearn.linear_model import LogisticRegression
 
-     from triage.models.transformers import CutOff
+     from triage.estimators.transformers import CutOff
 
-     class DsappLogisticRegression(BaseEstimator, ClassifierMixin):
+     class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
          """
          An in-place replacement for the scikit-learn's LogisticRegression.
 
@@ -400,16 +394,16 @@ inplace replacemente for =scikit-learn= =Logisticregression= class.
          def fit(self, X, y = None):
              self.pipeline.fit(X, y)
 
-             self.min_ = self.pipeline['minmax_scaler'].min_
-             self.scale_ = self.pipeline['minmax_scaler'].scale_
-             self.data_min_ = self.pipeline['minmax_scaler'].data_min_
-             self.data_max_ = self.pipeline['minmax_scaler'].data_max_
-             self.data_range_ = self.pipeline['minmax_scaler'].data_range_
+             self.min_ = self.pipeline.named_steps['minmax_scaler'].min_
+             self.scale_ = self.pipeline.named_steps['minmax_scaler'].scale_
+             self.data_min_ = self.pipeline.named_steps['minmax_scaler'].data_min_
+             self.data_max_ = self.pipeline.named_steps['minmax_scaler'].data_max_
+             self.data_range_ = self.pipeline.named_steps['minmax_scaler'].data_range_
 
-             self.coef_ = self.lr.coef_
-             self.intercept_ = self.lr.intercept_
+             self.coef_ = self.pipeline.named_steps['lr'].coef_
+             self.intercept_ = self.pipeline.named_steps['lr'].intercept_
 
-             self.classes_ = self.lr.classes_
+             self.classes_ = self.pipeline.named_steps['lr'].classes_
 
              return self
 
@@ -418,7 +412,6 @@ inplace replacemente for =scikit-learn= =Logisticregression= class.
 
          def predict_log_proba(self, X):
              return self.pipeline.predict_log_proba(X)
-
 
          def predict(self, X):
              return self.pipeline.predict(X)
@@ -430,42 +423,35 @@ inplace replacemente for =scikit-learn= =Logisticregression= class.
    #+RESULTS:
 
 
-We can see that, this class reproduces the behaviour that the =pipeline=
-of the last section.
+   We can see that, this class reproduces the behaviour that the =pipeline=
+   of the last section.
 
 
-   #+BEGIN_SRC ipython
-     from sklearn import preprocessing
-     from sklearn import datasets
-     from sklearn.model_selection import train_test_split
+   #+BEGIN_SRC ipython :tangle ../../tests/test_estimators.py
+     def test_dsapp_lr(data):
+         dsapp_lr = ScaledLogisticRegression()
+         dsapp_lr.fit(data['X_train'], data['y_train'])
 
-     from triage.models.estimators import DsappLogisticRegression
+         minmax_scaler = preprocessing.MinMaxScaler()
+         dsapp_cutoff = CutOff()
+         lr = linear_model.LogisticRegression()
 
-     dataset = datasets.load_breast_cancer()
-     X = dataset.data
-     y = dataset.target
+         pipeline =Pipeline([
+             ('minmax_scaler',minmax_scaler),
+             ('dsapp_cutoff', dsapp_cutoff),
+             ('lr', lr)
+         ])
 
-     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state=12345)
+         pipeline.fit(data['X_train'], data['y_train'])
 
-     dsapp_lr = DsappLogisticRegression()
-
-     dsapp_lr.fit(X_train, y_train)
-     dsapp_lr.predict(X_test)
-     dsapp_lr.score(X_test, y_test)
+         assert np.all(dsapp_lr.predict(data['X_test']) == pipeline.predict(data['X_test']))
    #+END_SRC
 
    #+RESULTS:
-   : 0.9590643274853801
 
 
 
-#+BEGIN_SRC ipython
-     assert np.all(dsapp_lr.predict(X_test) == pipeline.predict(X_test))
-#+END_SRC
-
-#+RESULTS:
-
-** Another approach (abandoned)
+* Another approach (abandoned)
 
    #+BEGIN_SRC ipython
      class DsappMinMaxScaler(preprocessing.MinMaxScaler):
