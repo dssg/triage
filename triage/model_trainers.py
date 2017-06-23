@@ -19,9 +19,9 @@ from triage.utils import \
 
 from results_schema import Model, FeatureImportance
 
-from feature_importances import \
+from triage.feature_importances import \
     _ad_hoc_feature_importances, \
-     get_feature_importances
+    get_feature_importances
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
