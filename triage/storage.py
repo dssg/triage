@@ -128,6 +128,24 @@ class MatrixStore(object):
     def uuid(self):
         return self.metadata['metta-uuid']
 
+    def columns(self, include_label=False):
+        columns = self.matrix.columns.tolist()
+        if include_label:
+            return columns
+        else:
+            return [
+                col for col in columns
+                if col != self.metadata['label_name']
+            ]
+
+    def matrix_with_sorted_columns(self, columns):
+        if self.columns() != columns:
+            logging.warning('Column orders not the same, re-ordering')
+        return self.matrix[columns]
+
+    def find_related_matrix(self, related_matrix_uuid):
+        raise NotImplementedError()
+
 
 class MettaMatrixStore(MatrixStore):
     def __init__(self, matrix_path, metadata_path):
@@ -161,6 +179,36 @@ class MettaCSVMatrixStore(MatrixStore):
             return True
         else:
             return pandas.read_csv(self.matrix_path, nrows=1).empty
+
+    def columns(self, include_label=False):
+        head_of_matrix = pandas.read_csv(self.matrix_path, nrows=1)
+        head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+        columns = head_of_matrix.columns.tolist()
+        if include_label:
+            return columns
+        else:
+            return [
+                col for col in columns
+                if col != self.metadata['label_name']
+            ]
+
+    def find_related_matrix(self, related_matrix_uuid):
+        related_matrix_path = self.matrix_path.replace(
+            self.uuid,
+            related_matrix_uuid
+        )
+
+        related_metadata_path = self.metadata_path.replace(
+            self.uuid,
+            related_matrix_uuid
+        )
+
+        related_matrix_store = type(self)(
+            matrix_path=related_matrix_path,
+            metadata_path=related_metadata_path
+        )
+
+        return related_matrix_store
 
     def _load(self):
         self._matrix = pandas.read_csv(self.matrix_path)

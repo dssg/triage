@@ -3,6 +3,7 @@ from moto import mock_s3
 import tempfile
 import boto3
 import os
+from tests.utils import sample_metta_csv_train_test
 
 
 class SomeClass(object):
@@ -46,3 +47,10 @@ def test_MemoryStore():
     assert newVal.val == 'val'
     store.delete()
     assert not store.exists()
+
+
+def test_matrix_store_find_related():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        train_store, test_store = sample_metta_csv_train_test(temp_dir)
+        assert test_store.find_related_matrix(train_store.uuid).columns() ==\
+            train_store.columns()

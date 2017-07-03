@@ -10,7 +10,7 @@ from triage.db import ensure_db
 import pandas
 
 from triage.predictors import Predictor
-from tests.utils import fake_trained_model
+from tests.utils import fake_trained_model, sample_metta_csv_train_test
 from triage.storage import \
     InMemoryModelStorageEngine,\
     S3ModelStorageEngine,\
@@ -19,6 +19,7 @@ import datetime
 
 from unittest.mock import Mock
 from numpy.testing import assert_array_equal
+import tempfile
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
 
@@ -51,7 +52,13 @@ def test_predictor():
             }
 
             matrix_store = InMemoryMatrixStore(matrix, metadata)
-            predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+            train_matrix_columns = ['feature_one', 'feature_two']
+            predict_proba = predictor.predict(
+                model_id,
+                matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns
+            )
 
             # assert
             # 1. that the returned predictions are of the desired length
@@ -90,8 +97,18 @@ def test_predictor():
                 'metta-uuid': '1234',
             }
             new_matrix_store = InMemoryMatrixStore(new_matrix, new_metadata)
-            predictor.predict(model_id, new_matrix_store, misc_db_parameters=dict())
-            predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+            predictor.predict(
+                model_id,
+                new_matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns
+            )
+            predictor.predict(
+                model_id,
+                matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns
+            )
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, as_of_date
@@ -131,7 +148,12 @@ def test_predictor_composite_index():
             'metta-uuid': '1234',
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
-        predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+        predict_proba = predictor.predict(
+            model_id,
+            matrix_store,
+            misc_db_parameters=dict(),
+            train_matrix_columns=['feature_one', 'feature_two']
+        )
 
         # assert
         # 1. that the returned predictions are of the desired length
@@ -146,6 +168,45 @@ def test_predictor_composite_index():
             join results.models using (model_id)''')
         ]
         assert len(records) == 4
+
+
+def test_predictor_get_train_columns():
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        project_path = 'econ-dev/inspections'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            train_store, test_store = sample_metta_csv_train_test(temp_dir)
+
+            model_storage_engine = InMemoryModelStorageEngine(project_path)
+            _, model_id = \
+                fake_trained_model(
+                    project_path,
+                    model_storage_engine,
+                    db_engine,
+                    train_matrix_uuid=train_store.uuid
+                )
+            predictor = Predictor(project_path, model_storage_engine, db_engine)
+
+            predict_proba = predictor.predict(
+                model_id,
+                test_store,
+                misc_db_parameters=dict(),
+            )
+            # assert
+            # 1. that we calculated predictions
+            assert len(predict_proba) > 0
+
+            # 2. that the predictions table entries are present and
+            # can be linked to the original models
+            records = [
+                row for row in
+                db_engine.execute('''select entity_id, as_of_date
+                from results.predictions
+                join results.models using (model_id)''')
+            ]
+            assert len(records) > 0
+
 
 def test_predictor_retrieve():
     with testing.postgresql.Postgresql() as postgresql:
@@ -175,7 +236,12 @@ def test_predictor_retrieve():
             'metta-uuid': '1234',
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
-        predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+        predict_proba = predictor.predict(
+            model_id,
+            matrix_store,
+            misc_db_parameters=dict(),
+            train_matrix_columns=['feature_one', 'feature_two']
+        )
 
         # When run again, the predictions retrieved from the database
         # should match.
@@ -208,6 +274,11 @@ def test_predictor_retrieve():
         session.commit()
 
         predictor.load_model = Mock()
-        new_predict_proba = predictor.predict(model_id, matrix_store, misc_db_parameters=dict())
+        new_predict_proba = predictor.predict(
+            model_id,
+            matrix_store,
+            misc_db_parameters=dict(),
+            train_matrix_columns=['feature_one', 'feature_two']
+        )
         assert_array_equal(new_predict_proba, predict_proba)
         assert not predictor.load_model.called

@@ -178,3 +178,13 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
         return saved.model_id if saved else None
     finally:
         session.close()
+
+
+@db_retry
+def retrieve_train_matrix_uuid(db_engine, model_id):
+    session = sessionmaker(bind=db_engine)()
+    try:
+        matrix_uuid = session.query(Model).get(model_id).train_matrix_uuid
+    finally:
+        session.close()
+    return matrix_uuid
