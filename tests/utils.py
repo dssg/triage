@@ -66,8 +66,10 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     return trained_model, db_model.model_id
 
 
-def sample_metta_csv_train_test(directory):
+def sample_metta_csv_diff_order(directory):
     """Stores matrix and metadata in a metta-data-like form
+
+    The train and test matrices will have different column orders
 
     Args:
         directory (str)
@@ -90,8 +92,8 @@ def sample_metta_csv_train_test(directory):
 
     test_dict = OrderedDict([
         ('entity_id', [3, 4]),
-        ('k_feature', [0.5, 0.4]),
         ('m_feature', [0.4, 0.5]),
+        ('k_feature', [0.5, 0.4]),
         ('label', [0, 1])
     ])
 

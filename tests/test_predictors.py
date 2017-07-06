@@ -10,7 +10,7 @@ from triage.db import ensure_db
 import pandas
 
 from triage.predictors import Predictor
-from tests.utils import fake_trained_model, sample_metta_csv_train_test
+from tests.utils import fake_trained_model, sample_metta_csv_diff_order
 from triage.storage import \
     InMemoryModelStorageEngine,\
     S3ModelStorageEngine,\
@@ -176,7 +176,7 @@ def test_predictor_get_train_columns():
         ensure_db(db_engine)
         project_path = 'econ-dev/inspections'
         with tempfile.TemporaryDirectory() as temp_dir:
-            train_store, test_store = sample_metta_csv_train_test(temp_dir)
+            train_store, test_store = sample_metta_csv_diff_order(temp_dir)
 
             model_storage_engine = InMemoryModelStorageEngine(project_path)
             _, model_id = \
