@@ -143,9 +143,6 @@ class MatrixStore(object):
             logging.warning('Column orders not the same, re-ordering')
         return self.matrix[columns]
 
-    def find_related_matrix(self, related_matrix_uuid):
-        raise NotImplementedError()
-
 
 class MettaMatrixStore(MatrixStore):
     def __init__(self, matrix_path, metadata_path):
@@ -191,24 +188,6 @@ class MettaCSVMatrixStore(MatrixStore):
                 col for col in columns
                 if col != self.metadata['label_name']
             ]
-
-    def find_related_matrix(self, related_matrix_uuid):
-        related_matrix_path = self.matrix_path.replace(
-            self.uuid,
-            related_matrix_uuid
-        )
-
-        related_metadata_path = self.metadata_path.replace(
-            self.uuid,
-            related_matrix_uuid
-        )
-
-        related_matrix_store = type(self)(
-            matrix_path=related_matrix_path,
-            metadata_path=related_metadata_path
-        )
-
-        return related_matrix_store
 
     def _load(self):
         self._matrix = pandas.read_csv(self.matrix_path)

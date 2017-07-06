@@ -8,7 +8,7 @@ import numpy
 import tempfile
 import csv
 import postgres_copy
-from triage.utils import db_retry, retrieve_train_matrix_uuid
+from triage.utils import db_retry
 
 
 class ModelNotFoundError(ValueError):
@@ -206,13 +206,17 @@ class Predictor(object):
             session.close()
 
 
-    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns=None):
+    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
 
         Args:
             model_id (int) the id of the trained model to predict based off of
             matrix_store (triage.storage.MatrixStore) a wrapper for the
                 prediction matrix and metadata
+            misc_db_parameters (dict): attributes and values to add to each
+                Prediction object in the results schema
+            train_matrix_columns (list): The order of columns that the model
+                was trained on
 
         Returns:
             (numpy.Array) the generated prediction values
@@ -235,17 +239,6 @@ class Predictor(object):
         model = self.load_model(model_id)
         if not model:
             raise ModelNotFoundError('Model id {} not found'.format(model_id))
-
-        if not train_matrix_columns:
-            train_matrix_uuid = retrieve_train_matrix_uuid(
-                self.db_engine,
-                model_id
-            )
-            train_matrix_columns = [
-                col for col in 
-                matrix_store.find_related_matrix(train_matrix_uuid).columns()
-                if col != matrix_store.metadata['label_name']
-            ]
 
         labels = matrix_store.labels()
         predictions_proba = model.predict_proba(

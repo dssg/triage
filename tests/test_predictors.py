@@ -192,6 +192,7 @@ def test_predictor_get_train_columns():
                 model_id,
                 test_store,
                 misc_db_parameters=dict(),
+                train_matrix_columns=train_store.columns()
             )
             # assert
             # 1. that we calculated predictions
