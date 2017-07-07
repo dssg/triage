@@ -28,7 +28,6 @@ def trained_models():
 
     return {'RF':rf, 'LR':lr}
 
-
 def test_throwing_warning_if_lr(trained_models):
     with pytest.warns(UserWarning):
         get_feature_importances(trained_models['LR'])
@@ -40,7 +39,7 @@ def test_correct_feature_importances_for_lr(trained_models):
     ## It returns the intercept, too
     assert feature_importances.shape == (31,)
 
-def test_correct_feature_importances_for_lr(trained_models):
+def test_correct_feature_importances_for_rf(trained_models):
     feature_importances = get_feature_importances(trained_models['RF'])
 
     assert feature_importances.shape == (30,)
