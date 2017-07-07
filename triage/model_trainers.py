@@ -1,44 +1,27 @@
-from sklearn.grid_search import ParameterGrid
+import sklearn
+from sklearn.model_selection import ParameterGrid
+
 from sqlalchemy.orm import sessionmaker
-from results_schema import Model, FeatureImportance
+
 import importlib
 import json
 import logging
 import datetime
 import copy
 import pandas
+import numpy as np
 import warnings
+
 from triage.utils import \
     filename_friendly_hash, \
     retrieve_model_id_from_hash, \
     db_retry
 
+from results_schema import Model, FeatureImportance
 
-def get_feature_importances(model):
-    """
-    Get feature importances (from scikit-learn) of trained model.
-
-    Args:
-        model: Trained model
-
-    Returns:
-        Feature importances, or failing that, None
-    """
-
-    try:
-        return model.feature_importances_
-    except:
-        pass
-    try:
-        # Must be 1D for feature importance plot
-        if len(model.coef_) <= 1:
-            return model.coef_[0]
-        else:
-            return model.coef_
-    except:
-        pass
-    return None
-
+from triage.feature_importances import \
+    _ad_hoc_feature_importances, \
+    get_feature_importances
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
@@ -246,8 +229,8 @@ class ModelTrainer(object):
         matrix_metadata,
     ):
         """
-        Returns model group id using store procedure 'get_model_group_id' which will 
-        return the same value for models with the same class_path, parameters, 
+        Returns model group id using store procedure 'get_model_group_id' which will
+        return the same value for models with the same class_path, parameters,
         features, and model_config
 
         Args:
