@@ -23,8 +23,11 @@ def _ad_hoc_feature_importances(model):
 
     if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
         coef_odds_ratio = np.exp(model.coef_)
-        intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
-        feature_importances = np.append(intercept_odds_ratio, coef_odds_ratio)
+        #intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
+        ## We are ignoring the intercept
+
+        ## NOTE: We need to squeeze this array so it have the correct dimensions
+        feature_importances = coef_odds_ratio.squeeze()
 
     return feature_importances
 
@@ -47,9 +50,9 @@ def get_feature_importances(model):
         warnings.warn(
             "\nThe selected algorithm, doesn't support a standard way"
             "\nof calculate the importance of each feature used."
-            "\nFalling back to ad-hoc methods."
+            "\nFalling back to ad-hoc methods"
+            "\n(e.g. in LogisticRegression we will return Odd Ratios instead coefficients)"
         )
-
 
         feature_importances = _ad_hoc_feature_importances(model)
 

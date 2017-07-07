@@ -37,7 +37,7 @@ def test_correct_feature_importances_for_lr(trained_models):
     feature_importances = get_feature_importances(trained_models['LR'])
 
     ## It returns the intercept, too
-    assert feature_importances.shape == (31,)
+    assert feature_importances.shape == (30,)
 
 def test_correct_feature_importances_for_rf(trained_models):
     feature_importances = get_feature_importances(trained_models['RF'])
