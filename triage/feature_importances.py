@@ -24,7 +24,7 @@ def _ad_hoc_feature_importances(model):
     if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
         coef_odds_ratio = np.exp(model.coef_)
         intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
-        feature_importances = np.hstack((intercept_odds_ratio, coef_odds_ratio))
+        feature_importances = np.append(intercept_odds_ratio, coef_odds_ratio)
 
     return feature_importances
 
