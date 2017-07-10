@@ -139,9 +139,25 @@ class MatrixStore(object):
             ]
 
     def matrix_with_sorted_columns(self, columns):
-        if self.columns() != columns:
-            logging.warning('Column orders not the same, re-ordering')
-        return self.matrix[columns]
+        columnset = set(self.columns())
+        desired_columnset = set(columns)
+        if columnset == desired_columnset:
+            if self.columns() != columns:
+                logging.warning('Column orders not the same, re-ordering')
+            return self.matrix[columns]
+        else:
+            if columnset.issuperset(desired_columnset):
+                raise ValueError('''
+                    Columnset is superset of desired columnset. Extra items: %s
+                ''', columnset - desired_columnset)
+            elif columnset.issubset(desired_columnset):
+                raise ValueError('''
+                    Columnset is subset of desired columnset. Extra items: %s
+                ''', desired_columnset - columnset)
+            else:
+                raise ValueError('''
+                    Columnset and desired columnset mismatch. Unique items: %s
+                ''', columnset ^ desired_columnset)
 
 
 class MettaMatrixStore(MatrixStore):

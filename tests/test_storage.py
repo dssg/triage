@@ -1,8 +1,11 @@
-from triage.storage import S3Store, FSStore, MemoryStore
+from triage.storage import S3Store, FSStore, MemoryStore, InMemoryMatrixStore
 from moto import mock_s3
 import tempfile
 import boto3
 import os
+import pandas
+from collections import OrderedDict
+import unittest
 
 
 class SomeClass(object):
@@ -46,3 +49,71 @@ def test_MemoryStore():
     assert newVal.val == 'val'
     store.delete()
     assert not store.exists()
+
+
+class MatrixStoreTest(unittest.TestCase):
+    def matrix_store(self):
+        data_dict = OrderedDict([
+            ('entity_id', [1, 2]),
+            ('k_feature', [0.5, 0.4]),
+            ('m_feature', [0.4, 0.5]),
+            ('label', [0, 1])
+        ])
+        df = pandas.DataFrame.from_dict(data_dict)
+        metadata = {
+            'label_name': 'label',
+            'indices': ['entity_id'],
+        }
+        matrix_store = InMemoryMatrixStore(matrix=df, metadata=metadata)
+        return matrix_store
+
+    def test_MatrixStore_resort_columns(self):
+        result = self.matrix_store().\
+            matrix_with_sorted_columns(
+                ['entity_id', 'm_feature', 'k_feature']
+            )\
+            .values\
+            .tolist()
+        expected = [
+            [1, 0.4, 0.5],
+            [2, 0.5, 0.4]
+        ]
+        self.assertEqual(expected, result)
+
+    def test_MatrixStore_already_sorted_columns(self):
+        result = self.matrix_store().\
+            matrix_with_sorted_columns(
+                ['entity_id', 'k_feature', 'm_feature']
+            )\
+            .values\
+            .tolist()
+        expected = [
+            [1, 0.5, 0.4],
+            [2, 0.4, 0.5]
+        ]
+        self.assertEqual(expected, result)
+
+    def test_MatrixStore_sorted_columns_subset(self):
+        with self.assertRaises(ValueError):
+            self.matrix_store().\
+                matrix_with_sorted_columns(['entity_id', 'm_feature'])\
+                .values\
+                .tolist()
+
+    def test_MatrixStore_sorted_columns_superset(self):
+        with self.assertRaises(ValueError):
+            self.matrix_store().\
+                matrix_with_sorted_columns(
+                    ['entity_id', 'k_feature', 'l_feature', 'm_feature']
+                )\
+                .values\
+                .tolist()
+
+    def test_MatrixStore_sorted_columns_mismatch(self):
+        with self.assertRaises(ValueError):
+            self.matrix_store().\
+                matrix_with_sorted_columns(
+                    ['entity_id', 'k_feature', 'l_feature']
+                )\
+                .values\
+                .tolist()
