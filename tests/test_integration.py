@@ -106,7 +106,8 @@ def test_integration():
                     predictions_proba = predictor.predict(
                         model_id,
                         test_store,
-                        misc_db_parameters=dict()
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=['feature_one', 'feature_two']
                     )
 
                     model_scorer.score(

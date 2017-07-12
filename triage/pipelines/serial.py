@@ -83,7 +83,8 @@ class SerialPipeline(PipelineBase):
                     predictions_proba = self.predictor.predict(
                         model_id,
                         test_store,
-                        misc_db_parameters=dict()
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=train_store.columns(),
                     )
 
                     self.model_scorer.score(

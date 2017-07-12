@@ -106,6 +106,7 @@ class LocalParallelPipeline(PipelineBase):
                     test_store=test_store,
                     db_connection_string=self.db_engine.url,
                     split_def=split_def,
+                    train_matrix_columns=train_store.columns(),
                     config=self.config
                 )
                 logging.info(
@@ -260,6 +261,7 @@ def test_and_score(
     test_store,
     db_connection_string,
     split_def,
+    train_matrix_columns,
     config
 ):
     try:
@@ -272,7 +274,8 @@ def test_and_score(
             predictions_proba = predictor.predict(
                 model_id,
                 test_store,
-                misc_db_parameters=dict()
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns
             )
             logging.info('Generating evaluations for model id %s', model_id)
             model_scorer.score(
