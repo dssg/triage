@@ -26,6 +26,7 @@ setup(
     url='https://github.com/dssg/catwalk',
     packages=[
         'catwalk',
+        'catwalk.estimators'
     ],
     include_package_data=True,
     install_requires=requirements,
@@ -36,6 +37,7 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
     tests_require=test_requirements

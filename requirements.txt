@@ -1,0 +1,14 @@
+SQLAlchemy
+PyYAML
+psycopg2
+python-dateutil
+scipy
+sklearn
+tables==3.3.0
+pandas
+boto3
+inflection
+numpy>=1.12
+sqlalchemy-postgres-copy
+retrying
+results-schema
