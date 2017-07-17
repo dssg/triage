@@ -2,6 +2,8 @@ language: python
 python: 3.4
 notifications:
   email: false
+env:
+- BOTO_CONFIG=/tmp/nowhere
 before_install:
 - sudo apt-get update
 - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
