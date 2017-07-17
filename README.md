@@ -1,4 +1,4 @@
-#Catwalk 
+# Catwalk
 
 Training, testing, and evaluating machine learning classifier models
 
