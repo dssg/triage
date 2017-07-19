@@ -30,11 +30,6 @@ setup(
     ],
     package_dir={'triage':
                  'triage'},
-    entry_points={
-        'console_scripts': [
-            'triage=triage.cli:main'
-        ]
-    },
     include_package_data=True,
     install_requires=requirements,
     license="MIT license",

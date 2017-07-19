@@ -1,8 +1,9 @@
-from triage.storage import MettaCSVMatrixStore
-from triage.pipelines import PipelineBase
 import logging
 import os
-from datetime import datetime
+
+from catwalk.storage import MettaCSVMatrixStore
+
+from triage.pipelines import PipelineBase
 
 
 class SerialPipeline(PipelineBase):
@@ -87,7 +88,7 @@ class SerialPipeline(PipelineBase):
                         train_matrix_columns=train_store.columns(),
                     )
 
-                    self.model_scorer.score(
+                    self.evaluator.evaluate(
                         predictions_proba=predictions_proba,
                         labels=test_store.labels(),
                         model_id=model_id,

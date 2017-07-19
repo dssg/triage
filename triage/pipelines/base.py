@@ -1,4 +1,4 @@
-from triage.db import ensure_db
+from catwalk.db import ensure_db
 from timechop.timechop import Timechop
 from architect.label_generators import BinaryLabelGenerator
 from architect.features import \
@@ -8,10 +8,10 @@ from architect.features import \
     FeatureGroupMixer
 from architect.state_table_generators import StateTableGenerator
 from architect.planner import Planner
-from triage.model_trainers import ModelTrainer
-from triage.predictors import Predictor
-from triage.scoring import ModelScorer
-from triage.utils import save_experiment_and_get_hash
+from catwalk.model_trainers import ModelTrainer
+from catwalk.predictors import Predictor
+from catwalk.evaluation import ModelEvaluator
+from catwalk.utils import save_experiment_and_get_hash
 import os
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
@@ -144,8 +144,8 @@ class PipelineBase(object):
             replace=self.replace
         )
 
-        self.model_scorer_factory = partial(
-            ModelScorer,
+        self.evaluator_factory = partial(
+            ModelEvaluator,
             sort_seed=self.config['scoring'].get('sort_seed', None),
             metric_groups=self.config['scoring']['metric_groups'],
         )
@@ -161,7 +161,7 @@ class PipelineBase(object):
         self.planner = self.planner_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
-        self.model_scorer = self.model_scorer_factory(db_engine=self.db_engine)
+        self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
 
     @property
     def split_definitions(self):

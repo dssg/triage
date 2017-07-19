@@ -6,8 +6,8 @@ from tempfile import TemporaryDirectory
 import testing.postgresql
 from unittest.mock import Mock
 
-from triage.db import ensure_db
-from triage.storage import FSModelStorageEngine
+from catwalk.db import ensure_db
+from catwalk.storage import FSModelStorageEngine
 
 from triage.pipelines import LocalParallelPipeline, SerialPipeline
 
