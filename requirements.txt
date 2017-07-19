@@ -12,3 +12,4 @@ numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
 results-schema
+git+git://github.com/dssg/metta-data.git

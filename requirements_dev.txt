@@ -1,7 +1,5 @@
 -r requirements.txt
 
-git+git://github.com/dssg/metta-data.git
-
 pip==9.0.1
 bumpversion==0.5.3
 flake8==3.3.0

@@ -10,10 +10,16 @@ with open('LICENSE') as license_file:
     license = license_file.read()
 
 with open('requirements.txt') as requirements_file:
-    requirements = requirements_file.readlines()
+    requirements = [
+        line for line in requirements_file.readlines()
+        if 'git+git://' not in line
+    ]
 
 with open('requirements_dev.txt') as dev_requirements_file:
-    test_requirements = dev_requirements_file.readlines()
+    test_requirements = [
+        line for line in dev_requirements_file.readlines()
+        if '-r requirements' not in line
+    ]
 
 
 setup(
