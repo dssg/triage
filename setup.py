@@ -24,7 +24,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 
 setup(
     name='catwalk',
-    version='0.0.0',
+    version='0.1.0',
     description="Training, testing, and evaluating machine learning classifier models",
     long_description=readme,
     author="Center for Data Science and Public Policy",
