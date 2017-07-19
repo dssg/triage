@@ -1,10 +1,10 @@
-from triage.storage import MettaCSVMatrixStore, InMemoryModelStorageEngine
+from catwalk.storage import MettaCSVMatrixStore, InMemoryModelStorageEngine
 from sqlalchemy import create_engine
 from triage.pipelines import PipelineBase
 import logging
 from multiprocessing import Pool
 from functools import partial
-from triage.utils import Batch
+from catwalk.utils import Batch
 import os
 import traceback
 
@@ -99,10 +99,10 @@ class LocalParallelPipeline(PipelineBase):
                     was empty, no point in training this model. Skipping
                     ''', split['train_uuid'])
                     continue
-                partial_test_and_score = partial(
-                    test_and_score,
+                partial_test_and_evaluate = partial(
+                    test_and_evaluate,
                     predictor_factory=self.predictor_factory,
-                    model_scorer_factory=self.model_scorer_factory,
+                    evaluator_factory=self.evaluator_factory,
                     test_store=test_store,
                     db_connection_string=self.db_engine.url,
                     split_def=split_def,
@@ -114,7 +114,7 @@ class LocalParallelPipeline(PipelineBase):
                     self.n_db_processes
                 )
                 self.parallelize_with_success_count(
-                    partial_test_and_score,
+                    partial_test_and_evaluate,
                     model_ids,
                     self.n_db_processes
                 )
@@ -254,10 +254,10 @@ def train_model(
         return []
 
 
-def test_and_score(
+def test_and_evaluate(
     model_ids,
     predictor_factory,
-    model_scorer_factory,
+    evaluator_factory,
     test_store,
     db_connection_string,
     split_def,
@@ -269,7 +269,7 @@ def test_and_score(
         for model_id in model_ids:
             logging.info('Generating predictions for model id %s', model_id)
             predictor = predictor_factory(db_engine=db_engine)
-            model_scorer = model_scorer_factory(db_engine=db_engine)
+            evaluator = evaluator_factory(db_engine=db_engine)
 
             predictions_proba = predictor.predict(
                 model_id,
@@ -278,7 +278,7 @@ def test_and_score(
                 train_matrix_columns=train_matrix_columns
             )
             logging.info('Generating evaluations for model id %s', model_id)
-            model_scorer.score(
+            evaluator.evaluate(
                 predictions_proba=predictions_proba,
                 labels=test_store.labels(),
                 model_id=model_id,

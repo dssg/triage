@@ -3,6 +3,7 @@
 git+git://github.com/dssg/timechop.git@master
 git+git://github.com/dssg/collate.git@master
 git+git://github.com/dssg/architect.git@master
+git+git://github.com/dssg/catwalk.git@master
 git+git://github.com/dssg/metta-data.git
 
 testing.postgresql

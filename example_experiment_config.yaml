@@ -150,7 +150,7 @@ grid_config:
 # How each trained model is scored
 #
 # Each entry in 'metric_groups' needs a list of one of the metrics defined in
-# triage.scoring.ModelScorer.available_metrics (contributions welcome!)
+# catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!)
 # Depending on the metric, either thresholds or parameters
 #
 # Parameters specify any hyperparameters needed. For most metrics,
