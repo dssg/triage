@@ -23,7 +23,7 @@ def dt_from_str(dt_str):
     return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
-class PipelineBase(object):
+class ExperimentBase(object):
     __metaclass__ = ABCMeta
 
     def __init__(
@@ -165,7 +165,7 @@ class PipelineBase(object):
 
     @property
     def split_definitions(self):
-        """Temporal splits based on the pipeline's configuration
+        """Temporal splits based on the experiment's configuration
 
         Returns (dict) temporal splits
 
@@ -188,7 +188,7 @@ class PipelineBase(object):
 
     @property
     def all_as_of_times(self):
-        """All 'as of times' in pipeline config
+        """All 'as of times' in experiment config
 
         Used for label and feature generation.
 
@@ -210,7 +210,7 @@ class PipelineBase(object):
 
     @property
     def feature_table_tasks(self):
-        """All feature table query tasks specified by this Pipeline
+        """All feature table query tasks specified by this Experiment
 
         Returns: (dict) keys are group table names, values are themselves dicts,
             each with keys for different stages of table creation (prepare, inserts, finalize)
@@ -230,7 +230,7 @@ class PipelineBase(object):
     @property
     def feature_dicts(self):
         """Feature dictionaries, representing the feature tables and columns
-            configured in this pipeline after computing feature groups.
+            configured in this experiment after computing feature groups.
 
         Returns: (list) of dicts, keys being feature table names and values
             being lists of feature names
@@ -284,7 +284,7 @@ class PipelineBase(object):
         ))
 
     def generate_labels(self):
-        """Generate labels based on pipeline configuration
+        """Generate labels based on experiment configuration
 
         Results are stored in the database, not returned
         """

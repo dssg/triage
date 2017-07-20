@@ -1,6 +1,6 @@
 from catwalk.storage import MettaCSVMatrixStore, InMemoryModelStorageEngine
 from sqlalchemy import create_engine
-from triage.pipelines import PipelineBase
+from triage.experiments import ExperimentBase
 import logging
 from multiprocessing import Pool
 from functools import partial
@@ -9,14 +9,14 @@ import os
 import traceback
 
 
-class LocalParallelPipeline(PipelineBase):
+class MultiCoreExperiment(ExperimentBase):
     def __init__(self, n_processes=1, n_db_processes=1, *args, **kwargs):
-        super(LocalParallelPipeline, self).__init__(*args, **kwargs)
+        super(MultiCoreExperiment, self).__init__(*args, **kwargs)
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
         if kwargs['model_storage_class'] == InMemoryModelStorageEngine:
             raise ValueError('''
-                InMemoryModelStorageEngine not compatible with LocalParallelPipeline
+                InMemoryModelStorageEngine not compatible with MultiCoreExperiment
             ''')
 
     def catwalk(self):
