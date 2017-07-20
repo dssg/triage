@@ -25,7 +25,7 @@ collate
 Aggregated feature generation made easy.
 
 
-* Free software: MIT license
+* Free software for noncommercial use: `UChicago open source license <https://github.com/dssg/collate/blob/master/LICENSE>`_.
 * Documentation: https://collate.readthedocs.io.
 
 Overview
