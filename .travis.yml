@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.5"
+  - '3.5'
 notifications:
   email: false
 
@@ -9,9 +9,18 @@ before_install:
   - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran libhdf5-serial-dev
 
 install:
-
   - pip install -r requirements-dev.txt
   - pip install -e .
 
 script:
-    - tox
+  - tox
+
+deploy:
+  true:
+    repo: dssg/metta-data
+    tags: true
+  distributions: sdist bdist_wheel
+  password:
+    secure: vcvOyRMZgFufx4fCG0JWWjnscfBVgMczL4ryrw/eDLj5+XpwLgIUmeMeqM3X2dva8aAO6zVpEnwgTJuSeOnFoy4ybCuEc9TFFUAOrWoQMtDVjfbt5I8Z5PeEzt9adJcxkELvMhMCWeFLVY7Jnv1TsnCNMTJosrUu2nJkujqPd/BtwYP5AzNFfHeFUUoE44pWUz4Am7L6D99G0mXi34qvAHq+PY/71+7K+uJSvLyM86SOjKKa1H+Oah+sZSQZFa6vBRbJAvcLbq9reLxkXjS8REA0Cwy0sM0NUFVCh9PLrnTKp3eaPIQ/8E8EeAAlVLHBDZQprMJ7VFcSreieMtOPjoOl+8XRKtsNAQutta+6/tssItGiHwLfAUeQziEwIt3QI1GUruROOefNi3siQY4apQ/GDUyifySHsA/DdMNIEn3XnNtIYTy9XKpAZ2px60s1uIYveOKP/mf+a27mkOTPVTRxrfNuXwpqiCqMkfRG0Gt5ec5RB6fkSGnmxmt2OpbLiTIW7uC73YI9sZNFUEanapkKr1Ja/02YIonyLrAYmjeu4yh05fnRIUvR35SZoVleJJzaqDZthKwP74tEYO3HooPO3tCFMrNqQWNh2a+zYTWNN1Axu/MhZyZEQG1zRHa7Dkf7VYM/fOZ2qj9JJ9UVBPQnyQonTP24EqY1d0uWWlU=
+  provider: pypi
+  user: dssg
