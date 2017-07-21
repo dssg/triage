@@ -1,5 +1,4 @@
 SQLAlchemy
-GeoAlchemy2
 PyYAML
 psycopg2
 python-dateutil
