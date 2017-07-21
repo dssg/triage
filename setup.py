@@ -6,6 +6,9 @@ from setuptools import setup
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
+with open('LICENSE') as license_file:
+    license = license_file.read()
+
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
@@ -32,7 +35,7 @@ setup(
                  'triage'},
     include_package_data=True,
     install_requires=requirements,
-    license="MIT license",
+    license=license,
     zip_safe=False,
     keywords='triage',
     classifiers=[
