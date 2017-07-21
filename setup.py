@@ -6,6 +6,9 @@ from setuptools import setup
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
+with open('LICENSE') as license_file:
+    license = license_file.read()
+
 
 def parse_requirements(fname):
     """
@@ -33,7 +36,7 @@ setup(
     version='0.1.0',
     description="Store/Read train and test matrices",
     long_description=readme + '\n\n',
-    author="DSaPP Researchers",
+    author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
     url='https://github.com/dssg/metta-data',
     packages=[
@@ -43,13 +46,12 @@ setup(
                  'metta'},
     include_package_data=True,
     install_requires=parse_requirements('requirements.txt'),
-    license="MIT license",
+    license=license,
     zip_safe=False,
     keywords='metta',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.6',

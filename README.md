@@ -3,7 +3,6 @@ Train Matrix and Test Matrix Storage
 
 [![Build Status](https://travis-ci.org/dssg/metta-data.svg?branch=master)](https://travis-ci.org/dssg/metta-data)
 [![codecov](https://codecov.io/gh/dssg/metta-data/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/metta-data)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 ##  Description
@@ -12,6 +11,12 @@ Python library for storing and recalling meta data, and DataFrames of training a
 testing sets.
 
 ## Installation
+To get the latest stable version:
+```
+pip install metta-data
+```
+
+To get the current master branch:
 ```
 pip install git+git://github.com/dssg/metta-data.git
 ```
