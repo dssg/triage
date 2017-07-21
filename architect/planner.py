@@ -3,7 +3,7 @@ import itertools
 
 from metta import metta_io as metta
 
-from . import builders, utils
+from . import builders, utils, state_table_generators
 
 
 class Planner(object):
@@ -24,7 +24,7 @@ class Planner(object):
         self.beginning_of_time = beginning_of_time  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
-        self.states = states
+        self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
         self.db_config = db_config
         self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata

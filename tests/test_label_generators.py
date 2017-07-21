@@ -2,6 +2,7 @@ from architect.label_generators import BinaryLabelGenerator
 import testing.postgresql
 from sqlalchemy import create_engine
 from datetime import date, timedelta
+from tests.utils import create_binary_outcome_events
 
 events_data = [
     # entity id, event_date, outcome
@@ -20,21 +21,10 @@ events_data = [
 ]
 
 
-def create_events(engine):
-    engine.execute(
-        'create table events (entity_id int, outcome_date date, outcome bool)'
-    )
-    for event in events_data:
-        engine.execute(
-            'insert into events values (%s, %s, %s::bool)',
-            event
-        )
-
-
 def test_training_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        create_events(engine)
+        create_binary_outcome_events(engine, 'events', events_data)
 
         labels_table_name = 'labels'
 
@@ -67,7 +57,7 @@ def test_training_label_generation():
 def test_generate_all_labels():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        create_events(engine)
+        create_binary_outcome_events(engine, 'events', events_data)
 
         labels_table_name = 'labels'
 
