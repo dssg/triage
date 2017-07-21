@@ -3,10 +3,10 @@ import os
 
 from catwalk.storage import MettaCSVMatrixStore
 
-from triage.pipelines import PipelineBase
+from triage.experiments import ExperimentBase
 
 
-class SerialPipeline(PipelineBase):
+class SingleThreadedExperiment(ExperimentBase):
     def build_matrices(self):
         logging.info('Creating sparse states')
         self.generate_sparse_states()

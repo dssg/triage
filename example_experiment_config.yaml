@@ -109,7 +109,7 @@ feature_group_strategies: ['all']
 # 1. a dense state table that defines when entities were in specific states
 #   should have columns entity_id/state/start/end
 # 2. a list of state filtering SQL clauses to iterate through. Assuming the
-#   states are boolean columns (the pipeline will convert the one you pass in
+#   states are boolean columns (the experiment will convert the one you pass in
 #   to this format), write a SQL expression for each state
 #   configuration you want, ie '(permitted OR suspended) AND licensed'
 state_config:

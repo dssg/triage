@@ -29,7 +29,7 @@ setup(
     url='https://github.com/dssg/triage',
     packages=[
         'triage',
-        'triage.pipelines',
+        'triage.experiments',
     ],
     package_dir={'triage':
                  'triage'},

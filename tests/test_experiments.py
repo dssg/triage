@@ -9,7 +9,7 @@ from unittest.mock import Mock
 from catwalk.db import ensure_db
 from catwalk.storage import FSModelStorageEngine
 
-from triage.pipelines import LocalParallelPipeline, SerialPipeline
+from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
 
 
 def populate_source_data(db_engine):
@@ -124,7 +124,7 @@ def num_linked_evaluations(db_engine):
     return num_evaluations
 
 
-def simple_pipeline_test(pipeline_class):
+def simple_experiment_test(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -181,7 +181,7 @@ def simple_pipeline_test(pipeline_class):
         }
 
         with TemporaryDirectory() as temp_dir:
-            pipeline_class(
+            experiment_class(
                 config=experiment_config,
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
@@ -253,17 +253,17 @@ def simple_pipeline_test(pipeline_class):
         ]
 
 
-def test_serial_pipeline():
-    simple_pipeline_test(SerialPipeline)
+def test_singlethreaded_experiment():
+    simple_experiment_test(SingleThreadedExperiment)
 
 
-def test_local_parallel_pipeline():
-    simple_pipeline_test(
-        partial(LocalParallelPipeline, n_processes=2, n_db_processes=2)
+def test_multicore_experiment():
+    simple_experiment_test(
+        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
     )
 
 
-def reuse_pipeline_test(pipeline_class):
+def restart_experiment_test(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -322,37 +322,37 @@ def reuse_pipeline_test(pipeline_class):
 
         temp_dir = TemporaryDirectory()
         try:
-            pipeline = pipeline_class(
+            experiment = experiment_class(
                 config=experiment_config,
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir.name, 'inspections'),
             )
 
-            pipeline.run()
+            experiment.run()
 
             evaluations = num_linked_evaluations(db_engine)
             assert evaluations > 0
 
-            pipeline = pipeline_class(
+            experiment = experiment_class(
                 config=experiment_config,
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir.name, 'inspections'),
                 replace=False
             )
-            pipeline.make_entity_date_table = Mock()
-            pipeline.run()
-            assert not pipeline.make_entity_date_table.called
+            experiment.make_entity_date_table = Mock()
+            experiment.run()
+            assert not experiment.make_entity_date_table.called
         finally:
             temp_dir.cleanup()
 
 
-def test_serial_pipeline_reuse():
-    reuse_pipeline_test(SerialPipeline)
+def test_restart_singlethreaded_experiment():
+    restart_experiment_test(SingleThreadedExperiment)
 
 
-def test_localparallel_pipeline_reuse():
-    reuse_pipeline_test(
-        partial(LocalParallelPipeline, n_processes=2, n_db_processes=2)
+def test_restart_multicore_experiment():
+    restart_experiment_test(
+        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
     )
