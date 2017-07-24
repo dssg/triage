@@ -52,32 +52,59 @@ There are two spatial levels in the data: the specific restaurant (by its licens
 
 An example of an aggregate feature is the number of failed inspections. In raw SQL this could be calculated, for each restaurant, as so::
 
-    SELECT license, sum((results = 'Fail')::int) as fail_count
-    FROM food_inspections;
+    SELECT license_no, sum((results = 'Fail')::int) as failed_sum
+    FROM food_inspections GROUP BY license_no;
 	
-In collate, this aggregate would be defined as::
+In collate, this aggregated column would be defined as::
 
-	Aggregate({"fail_count": "(results = Fail)::int"}, "sum")
+	Aggregate({"failed": "(results = 'Fail')::int"}, "sum")
+
+Note that the SQL query is split into two parts: the first argument to ``Aggregate``
+is the computation to be performed and gives it a name (as a dictionary key), and
+the second argument is the reduction function to perform. Splitting the SQL like
+this makes it easy to generate lots of composable features as the outer product
+of these two lists.  For example, you may also be interested in the proportion
+of inspections that resulted in a failure in addition to the total number. This is
+easy to specify with the average value of the `failed` computation::
+
+    Aggregate({"failed": "(results = 'Fail')::int"}, ["sum","avg"])
 
 
 Aggregations in collate easily aggregate this single feature across different spatiotemporal groups, e.g.::
 
-    fail = Aggregate({"fail_count": "(results = Fail)::int"}, "sum")
-    st = SpacetimeAggregation([fail], 'food_inspections',
-                               group_intervals={"license_no":["2 year", "3 year"], "zip": ["1 year"]},
+    Aggregate({"failed": "(results = 'Fail')::int"}, ["sum","avg"])
+    st = SpacetimeAggregation([fail],
+	                           from_obj='food_inspections',
+                               groups=['license_no','zip'],
+                               intervals={"license_no":["2 year", "3 year"], "zip": ["1 year"]},
                                dates=["2016-01-01", "2015-01-01"],
-                               date_column="inspection_date")
+                               date_column="inspection_date",
+                               schema='test_collate')
 
+The ``SpacetimeAggregation`` object encapsulates the ``FROM`` section of the query
+(in this case it's simply the inspections table), as well as the ``GROUP BY``
+columns.  Not only will this create information about the individual restaurants
+(grouping by ``license_no``), it also creates "neighborhood" columns that add
+information about the region in which the restaurant is operating (by grouping by
+``zip``).
 
-will aggregate this feat
+Even more powerful is the sophisticated date range partitioning that the
+``SpacetimeAggregation`` object provides.  It will create multiple queries in
+order to create the summary statistics over the past 1, 2, or 3 years, looking
+back from either Jan 1, 2015 or Jan 1 2016. Executing this set of queries with::
 
+    st.execute(engine.connect()) # with a SQLAlchemy engine object
 
-Another advantage of collate is quickly defining many aggregations. For example to add another feature which is the proportion of inspections which failed in the given group we can simply pass a list of functions to Aggregate.
-
-::
-
-    Aggregate({"fail_count": "(results = Fail)::int"}, ["sum", "avg"])
-
+will create three new tables in the ``test_collate`` schema. The table
+``food_inspections_license_no`` will contain four feature columns for each
+license that describe the total number and proportion of failures over the past
+two or three years, with a date column that states whether it was looking
+before 2016 or 2015. Similarly, a ``food_inspections_zip`` table will have two
+feature columns for every zip code in the database, looking at the total and
+average number of failures in that neighborhood over the year prior to the date
+in the date column. Finally, the ``food_inspections_aggregate`` table joins
+these results together to make it easier to look at both neighborhood and
+restaurant-level effects for any given restaurant.
 
 Outputs
 =======
