@@ -103,7 +103,7 @@ feature_group_definition:
 # available: all, leave-one-out, leave-one-in
 feature_group_strategies: ['all']
 
-# STATE MANAGEMENT
+# STATE MANAGEMENT (optional)
 # If you want to only include rows in your matrices in a specific state,
 # provide:
 # 1. a dense state table that defines when entities were in specific states
