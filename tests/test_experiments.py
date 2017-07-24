@@ -356,3 +356,137 @@ def test_restart_multicore_experiment():
     restart_experiment_test(
         partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
     )
+
+
+def nostate_experiment_test(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        populate_source_data(db_engine)
+        temporal_config = {
+            'beginning_of_time': '2010-01-01',
+            'modeling_start_time': '2011-01-01',
+            'modeling_end_time': '2014-01-01',
+            'update_window': '1y',
+            'train_label_windows': ['6months'],
+            'test_label_windows': ['6months'],
+            'train_example_frequency': '1day',
+            'test_example_frequency': '3months',
+            'train_durations': ['6months'],
+            'test_durations': ['1months'],
+        }
+        scoring_config = {
+            'metric_groups': [
+                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+            ]
+        }
+        grid_config = {
+            'sklearn.linear_model.LogisticRegression': {
+                'C': [0.00001, 0.0001],
+                'penalty': ['l1', 'l2'],
+                'random_state': [2193]
+            }
+        }
+        feature_config = [{
+            'prefix': 'test_features',
+            'from_obj': 'cat_complaints',
+            'knowledge_date_column': 'as_of_date',
+            'aggregates': [{
+                'quantity': 'cat_sightings',
+                'metrics': ['count', 'avg'],
+            }],
+            'intervals': ['1y'],
+            'groups': ['entity_id']
+        }]
+        experiment_config = {
+            'events_table': 'events',
+            'entity_column_name': 'entity_id',
+            'model_comment': 'test2-final-final',
+            'model_group_keys': ['label_name', 'label_type'],
+            'feature_aggregations': feature_config,
+            'temporal_config': temporal_config,
+            'grid_config': grid_config,
+            'scoring': scoring_config,
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            experiment_class(
+                config=experiment_config,
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir, 'inspections')
+            ).run()
+
+        # assert
+        # 1. that model groups entries are present
+        num_mgs = len([
+            row for row in
+            db_engine.execute('select * from results.model_groups')
+        ])
+        assert num_mgs > 0
+
+        # 2. that model entries are present, and linked to model groups
+        num_models = len([
+            row for row in db_engine.execute('''
+                select * from results.model_groups
+                join results.models using (model_group_id)
+                where model_comment = 'test2-final-final'
+            ''')
+        ])
+        assert num_models > 0
+
+        # 3. predictions, linked to models
+        num_predictions = len([
+            row for row in db_engine.execute('''
+                select * from results.predictions
+                join results.models using (model_id)''')
+        ])
+        assert num_predictions > 0
+
+        # 4. evaluations linked to predictions linked to models
+        num_evaluations = len([
+            row for row in db_engine.execute('''
+                select * from results.evaluations e
+                join results.models using (model_id)
+                join results.predictions p on (
+                    e.model_id = p.model_id and
+                    e.evaluation_start_time <= p.as_of_date and
+                    e.evaluation_end_time > p.as_of_date)
+            ''')
+        ])
+        assert num_evaluations > 0
+
+        # 5. experiment
+        num_experiments = len([
+            row for row in db_engine.execute('select * from results.experiments')
+        ])
+        assert num_experiments == 1
+
+        # 6. that models are linked to experiments
+        num_models_with_experiment = len([
+            row for row in db_engine.execute('''
+                select * from results.experiments
+                join results.models using (experiment_hash)
+            ''')
+        ])
+        assert num_models == num_models_with_experiment
+
+        # 7. that models have the train end date and label window
+        results = [
+            (model['train_end_time'], model['train_label_window'])
+            for model in db_engine.execute('select * from results.models')
+        ]
+        assert sorted(set(results)) == [
+            (datetime(2012, 1, 1), timedelta(180)),
+            (datetime(2013, 1, 1), timedelta(180))
+        ]
+
+
+def test_nostate_singlethreaded_experiment():
+    nostate_experiment_test(SingleThreadedExperiment)
+
+
+def test_nostate_multicore_experiment():
+    nostate_experiment_test(
+        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
+    )

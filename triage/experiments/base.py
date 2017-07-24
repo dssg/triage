@@ -79,7 +79,10 @@ class ExperimentBase(object):
 
         self.state_table_generator_factory = partial(
             StateTableGenerator,
-            experiment_hash=self.experiment_hash
+            experiment_hash=self.experiment_hash,
+            dense_state_table=self.config.get('state_config', {})
+            .get('table_name', None),
+            events_table=self.config['events_table']
         )
 
         self.label_generator_factory = partial(
@@ -123,7 +126,7 @@ class ExperimentBase(object):
                 'sparse_state_table_name': 'tmp_sparse_states_{}'.format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
-            states=self.config['state_config']['state_filters'],
+            states=self.config.get('state_config', {}).get('state_filters', []),
             user_metadata={},
             replace=self.replace
         )
@@ -296,7 +299,6 @@ class ExperimentBase(object):
 
     def generate_sparse_states(self):
         self.state_table_generator.generate_sparse_table(
-            dense_state_table=self.config['state_config']['table_name'],
             as_of_dates=self.all_as_of_times
         )
 
