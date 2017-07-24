@@ -176,7 +176,8 @@ def basic_integration_test(
 
             state_table_generator = StateTableGenerator(
                 db_engine=db_engine,
-                experiment_hash='abcd'
+                experiment_hash='abcd',
+                dense_state_table='states',
             )
 
             label_generator = BinaryLabelGenerator(
@@ -229,7 +230,6 @@ def basic_integration_test(
 
             # generate sparse state table
             state_table_generator.generate_sparse_table(
-                dense_state_table='states',
                 as_of_dates=all_as_of_times
             )
 

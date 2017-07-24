@@ -246,3 +246,14 @@ def create_dense_state_table(db_engine, table_name, data):
             'insert into {} values (%s, %s, %s, %s)'.format(table_name),
             row
         )
+
+
+def create_binary_outcome_events(db_engine, table_name, events_data):
+    db_engine.execute(
+        'create table events (entity_id int, outcome_date date, outcome bool)'
+    )
+    for event in events_data:
+        db_engine.execute(
+            'insert into {} values (%s, %s, %s::bool)'.format(table_name),
+            event
+        )
