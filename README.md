@@ -8,7 +8,7 @@ Generate temporal cross-validation time windows for matrix creation
 
 [![codeclimate](https://codeclimate.com/github/dssg/timechop.png)](https://codeclimate.com/github/dssg/timechop)
 
-In predictive analytics, temporal cross-validation can be complicated. There are a variety of questions to balance: How frequently to retrain model? Should the time between rows for the same entity in the train and test matrices be different? Keeping track of how to create matrix time windows that successfully answer all of these questions is difficult. 
+In predictive analytics, temporal validation can be complicated. There are a variety of questions to balance: How frequently to retrain model? Should the time between rows for the same entity in the train and test matrices be different? Keeping track of how to create matrix time windows that successfully answer all of these questions is difficult. 
 
 That's why we created timechop. Timechop takes in high-level time configuration (e.g. lists of train label windows, update windows) and returns all matrix time definitions. Here's an example:
 
@@ -94,7 +94,7 @@ print(result)
 
 Timechop currently works with the following:
 
-- `beginning_of_time` - earliest date included in features
+- `beginning_of_time` - earliest date at which features are calculated
 - `modeling_start_time` - earliest date in any model
 - `modeling_end_time` - all dates in any model are < this date
 - `update_window` - how frequently to retrain models

@@ -18,7 +18,7 @@ class Timechop(object):
         train_label_windows,
         test_label_windows
     ):
-        self.beginning_of_time = beginning_of_time # earliest date included in features
+        self.beginning_of_time = beginning_of_time # earliest date at which features are calculated
         self.modeling_start_time = modeling_start_time # earliest date in any model
         self.modeling_end_time = modeling_end_time # all dates in any model are < this date
         self.update_window = update_window # how frequently to retrain models
