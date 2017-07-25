@@ -1,4 +1,5 @@
-from catwalk.evaluation import ModelEvaluator, generate_binary_at_x, fpr
+from catwalk.evaluation import ModelEvaluator, generate_binary_at_x
+from catwalk.metrics import Metric
 import testing.postgresql
 
 import numpy
@@ -9,6 +10,7 @@ from catwalk.storage import InMemoryModelStorageEngine
 import datetime
 
 
+@Metric(greater_is_better=True)
 def always_half(predictions_proba, predictions_binary, labels, parameters):
     return 0.5
 
@@ -166,13 +168,3 @@ def test_generate_binary_at_x():
         [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
 
-def test_fpr():
-    predictions_binary = \
-        [1, 1, 1, 0, 0, 0, 0, 0]
-    labels = \
-        [1, 1, 0, 1, 0, 0, 0, 1]
-
-    result = fpr([], predictions_binary, labels, [])
-    # false positives = 1
-    # total negatives = 4
-    assert result == 0.25

@@ -1,92 +1,11 @@
 import numpy
-from sklearn import metrics
 from results_schema import Evaluation
 from catwalk.utils import db_retry, sort_predictions_and_labels
+from catwalk.metrics import *
 from sqlalchemy.orm import sessionmaker
 import logging
 import time
 
-
-"""Metric definitions
-
-Mostly just wrappers around sklearn.metrics functions, these functions
-implement a generalized interface to metric calculations that can be stored
-as a scalar in the database.
-
-All functions should take four parameters:
-predictions_proba (1d array-like) Prediction probabilities
-predictions_binary (1d array-like) Binarized predictions
-labels (1d array-like) Ground truth target values
-parameters (dict) Any needed hyperparameters in the implementation
-
-All functions should return: (float) the resulting score
-
-Functions defined here are meant to be used in ModelEvaluator.available_metrics
-"""
-
-
-def precision(_, predictions_binary, labels, parameters):
-    return metrics.precision_score(labels, predictions_binary, **parameters)
-
-
-def recall(_, predictions_binary, labels, parameters):
-    return metrics.recall_score(labels, predictions_binary, **parameters)
-
-
-def fbeta(_, predictions_binary, labels, parameters):
-    return metrics.fbeta_score(labels, predictions_binary, **parameters)
-
-
-def f1(_, predictions_binary, labels, parameters):
-    return metrics.f1_score(labels, predictions_binary, **parameters)
-
-
-def accuracy(_, predictions_binary, labels, parameters):
-    return metrics.accuracy_score(labels, predictions_binary, **parameters)
-
-
-def roc_auc(predictions_proba, _, labels, parameters):
-    return metrics.roc_auc_score(labels, predictions_proba)
-
-
-def avg_precision(predictions_proba, _, labels, parameters):
-    return metrics.average_precision_score(labels, predictions_proba)
-
-
-def true_positives(_, predictions_binary, labels, parameters):
-     tp = [1 if x == 1 and y == 1 else 0 
-             for (x, y) in zip(predictions_binary, labels)]
-     return int(numpy.sum(tp))
-
-
-def false_positives(_, predictions_binary, labels, parameters):
-    fp = [1 if x == 1 and y == 0 else 0
-            for (x, y) in zip(predictions_binary, labels)]
-    return int(numpy.sum(fp))
-
-
-def true_negatives(_, predictions_binary, labels, parameters):
-    tn = [1 if x == 0 and y == 0 else 0
-            for (x, y) in zip(predictions_binary, labels)]
-    return int(numpy.sum(tn))
-
-
-def false_negatives(_, predictions_binary, labels, parameters):
-    fn = [1 if x == 0 and y == 1 else 0
-            for (x, y) in zip(predictions_binary, labels)]
-    return int(numpy.sum(fn))
-
-
-def fpr(_, predictions_binary, labels, parameters):
-    fp = false_positives(_, predictions_binary, labels, parameters)
-    return float(fp / labels.count(0))
-
-
-class UnknownMetricError(ValueError):
-    """Signifies that a metric name was passed, but no matching computation
-    function is available
-    """
-    pass
 
 
 def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
@@ -172,9 +91,20 @@ class ModelEvaluator(object):
         self.db_engine = db_engine
         self.sort_seed = sort_seed or int(time.time())
         if custom_metrics:
+            self._validate_metrics(custom_metrics)
             self.available_metrics.update(custom_metrics)
         if self.db_engine:
             self.sessionmaker = sessionmaker(bind=self.db_engine)
+
+    def _validate_metrics(
+        self,
+        custom_metrics
+    ):
+        for name, met in custom_metrics.items():
+            if not hasattr(met, 'greater_is_better'):
+                raise ValueError("Custom metric {} missing greater_is_better attribute".format(name))
+            elif not met.greater_is_better in (True, False):
+                raise ValueError("For custom metric {} greater_is_better must be boolean True or False".format(name))
 
     def _generate_evaluations(
         self,
