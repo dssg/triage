@@ -1,9 +1,9 @@
 from timechop.utils import convert_str_to_relativedelta
 from timechop.utils import parse_delta_string
-from timechop.utils import feature_list
 import datetime
 import unittest
 import warnings
+
 
 class test_convert_str_to_relativedelta(unittest.TestCase):
     def test_valid_input(self):
@@ -90,7 +90,7 @@ class test_parse_delta_string(unittest.TestCase):
             ('s', 3),
             ('y', 2),
             ('m', 10)
-        ]        
+        ]
         for index, delta_string in enumerate(delta_strings):
             result = parse_delta_string(delta_string)
             assert(result == expected_results[index])
@@ -100,17 +100,3 @@ class test_parse_delta_string(unittest.TestCase):
         for delta_string in delta_strings:
             with self.assertRaises(ValueError):
                 parse_delta_string(delta_string)
-
-
-def test_feature_list():
-    feature_dict = {
-        'test_features_things': ['feature_1yr_thing_avg', 'feature_1yr_thing_sum'],
-        'test_features_others': ['feature_2yr_other_min', 'feature_2yr_other_max'],
-    }
-
-    assert feature_list(feature_dict) == [
-        'feature_1yr_thing_avg',
-        'feature_1yr_thing_sum',
-        'feature_2yr_other_max',
-        'feature_2yr_other_min',
-    ]
