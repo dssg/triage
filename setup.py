@@ -6,20 +6,27 @@ from setuptools import setup
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
+with open('LICENSE') as license_file:
+    license = license_file.read()
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+with open('requirements.txt') as requirements_file:
+    requirements = [
+        line for line in requirements_file.readlines()
+        if 'git+git://' not in line
+    ]
+
+with open('requirements_dev.txt') as dev_requirements_file:
+    test_requirements = [
+        line for line in dev_requirements_file.readlines()
+        if '-r requirements' not in line
+    ]
 
 setup(
     name='timechop',
-    version='0.0.0',
+    version='0.1.0',
     description="Implements temporal cross validation for machine learning/",
     long_description=readme,
-    author="DSaPP Researchers",
+    author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
     url='https://github.com/dssg/timechop',
     packages=[
@@ -29,7 +36,7 @@ setup(
                  'timechop'},
     include_package_data=True,
     install_requires=requirements,
-    license="MIT license",
+    license=license,
     zip_safe=False,
     keywords='timechop',
     classifiers=[
