@@ -2,6 +2,10 @@ language: python
 python: 3.4
 notifications:
   email: false
+services:
+  - postgresql
+addons:
+  postgresql: "9.4"
 install:
 - pip install -r requirements_dev.txt
 script: py.test --cov=audition
