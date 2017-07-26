@@ -1,30 +1,5 @@
 import copy
-
-
-def highest_metric_value(df, metric, param):
-    """Pick the model group with the highest metric value
-
-    Arguments:
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
-            such as '300_abs'
-        df (pandas.DataFrame) -- dataframe that is keyed on model group id,
-            containing the columns:
-                model_id,
-                train_end_time,
-                metric,
-                parameter,
-                raw_value,
-                below_best,
-                below_best_next_time
-    Returns: (int) the model group id to select, with highest raw metric value
-    """
-    return df[df['raw_value'] == df['raw_value'].max()].index.tolist()[0]
-
-
-SELECTION_RULES = {
-    'highest_metric_value': highest_metric_value,
-}
+from audition.selection_rules import *
 
 
 class RegretCalculator(object):
@@ -80,7 +55,7 @@ class RegretCalculator(object):
             )
             del localized_df['below_best_next_time']
 
-            choice = selection_rule(localized_df, **selection_rule_args)
+            choice = selection_rule(localized_df, train_end_time, **selection_rule_args)
             regret_result = df[
                 (df['model_group_id'] == choice) &
                 (df['train_end_time'] == train_end_time) &
