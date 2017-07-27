@@ -10,10 +10,7 @@ with open('LICENSE') as license_file:
     license = license_file.read()
 
 with open('requirements.txt') as requirements_file:
-    requirements = [
-        line for line in requirements_file.readlines()
-        if 'git+git://' not in line
-    ]
+    requirements = requirements_file.readlines()
 
 with open('requirements_dev.txt') as dev_requirements_file:
     test_requirements = [
@@ -24,7 +21,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 setup(
     name='timechop',
     version='0.1.1',
-    description="Implements temporal cross validation for machine learning/",
+    description="Implements temporal validation for machine learning/",
     long_description=readme,
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
