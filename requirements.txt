@@ -1,4 +1,4 @@
 results-schema==1.0.3
-git+git://github.com/dssg/collate.git@master
-git+git://github.com/dssg/metta-data.git
-git+git://github.com/dssg/timechop.git
+collate==0.2.1
+metta-data
+timechop
