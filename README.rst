@@ -1,6 +1,6 @@
-===============================
+=======
 collate
-===============================
+=======
 
 
 .. image:: https://img.shields.io/pypi/v/collate.svg
@@ -18,8 +18,8 @@ collate
      :alt: Updates
 
 .. image:: https://codecov.io/gh/dssg/collate/branch/master/graph/badge.svg
-	 :target: https://codecov.io/gh/dssg/collate
-	 :alt: Code Coverage
+    :target: https://codecov.io/gh/dssg/collate
+    :alt: Code Coverage
 
 
 Aggregated feature generation made easy.
@@ -41,12 +41,12 @@ Take for example `food inspections data from the City of Chicago <https://data.c
 
 ============= =========== ===== =============== ========== =========== ===
 inspection_id license_no  zip   inspection_date results    violations  ...
-============= =========== ===== =============== ========== =========== ===                                                                                 
+============= =========== ===== =============== ========== =========== ===
 1966765       80273       60636 2016-10-18      No Entry               ...
 1966314       2092894     60640 2016-10-11      Pass       …CORRECTED… ...
 1966286       2215628     60661 2016-10-11      Pass w/ C… …HAZARDOUS… ...
 1966220       2424039     60620 2016-10-07      Pass                   ...
-============= =========== ===== =============== ========== =========== ===                                                                                 
+============= =========== ===== =============== ========== =========== ===
 
 There are two spatial levels in the data: the specific restaurant (by its license number) and the zip code. And there is a date.
 
@@ -54,10 +54,10 @@ An example of an aggregate feature is the number of failed inspections. In raw S
 
     SELECT license_no, sum((results = 'Fail')::int) as failed_sum
     FROM food_inspections GROUP BY license_no;
-	
+
 In collate, this aggregated column would be defined as::
 
-	Aggregate({"failed": "(results = 'Fail')::int"}, "sum")
+    Aggregate({"failed": "(results = 'Fail')::int"}, "sum")
 
 Note that the SQL query is split into two parts: the first argument to ``Aggregate``
 is the computation to be performed and gives it a name (as a dictionary key), and
@@ -143,7 +143,7 @@ Naming of features
 TODO
 
 More complicated from_obj
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 TODO
 
 Technical details
