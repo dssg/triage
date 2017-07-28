@@ -9,21 +9,20 @@ with open('README.md') as readme_file:
 with open('LICENSE') as license_file:
     license = license_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 with open('requirements.txt') as requirements_file:
     requirements = requirements_file.readlines()
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+with open('requirements_dev.txt') as dev_requirements_file:
+    test_requirements = requirements + [
+        line for line in dev_requirements_file.readlines()
+        if '-r requirements' not in line
+    ]
 
 setup(
     name='triage',
     version='0.3.0',
     description="Risk modeling and prediction",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
     url='https://github.com/dssg/triage',

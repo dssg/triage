@@ -12,4 +12,9 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-results-schema
+results-schema==1.1.0
+timechop==0.1.3
+collate==0.2.1
+matrix-architect==0.2.0
+model-catwalk==0.2.1
+metta-data==0.3.0
