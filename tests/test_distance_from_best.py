@@ -92,9 +92,9 @@ def test_DistanceFromBestTable():
 
         # get an ordered list of the models/groups for a particular metric/time
         query = '''
-            select model_id, raw_value, below_best, below_best_next_time
+            select model_id, raw_value, dist_from_best_case, dist_from_best_case_next_time
             from dist_table where metric = %s and parameter = %s and train_end_time = %s
-            order by below_best
+            order by dist_from_best_case
         '''
 
         prec_3y_ago = engine.execute(query, ('precision@', '100_abs', '2014-01-01'))
@@ -112,6 +112,11 @@ def test_DistanceFromBestTable():
             (models['bad_2y_ago'].model_id, 0.34, 0.46, 0.19),
 
         ]
+
+        assert distance_table.observed_bounds == {
+            ('precision@', '100_abs'): (0.39, 0.8),
+            ('recall@', '100_abs'): (0.34, 0.8),
+        }
 
 
 def test_BestDistancePlotter():
@@ -131,13 +136,13 @@ def test_BestDistancePlotter():
 
         # all of the model groups are within .22 of the best, so pick
         # a number higher than that and all should qualify
-        for value in df_dist[df_dist['pct_diff'] == 0.23]['pct_of_time'].values:
+        for value in df_dist[df_dist['distance'] == 0.23]['pct_of_time'].values:
             assert numpy.isclose(value, 1.0)
 
         # model group 1 (stable) should be within 0.11 1/2 of the time
         # if we included 2016 in the train_end_times, this would be 1/3!
         for value in df_dist[
-            (df_dist['pct_diff'] == 0.11) &
+            (df_dist['distance'] == 0.11) &
             (df_dist['model_group_id'] == 1)
         ]['pct_of_time'].values:
             assert numpy.isclose(value, 0.5)
@@ -156,7 +161,23 @@ def test_BestDistancePlotter_plot():
             )
         assert plot_patch.called
         args, kwargs = plot_patch.call_args
-        assert 'pct_diff' in kwargs['frame']
+        assert 'distance' in kwargs['frame']
         assert 'pct_of_time' in kwargs['frame']
-        assert kwargs['x_col'] == 'pct_diff'
+        assert kwargs['x_col'] == 'distance'
         assert kwargs['y_col'] == 'pct_of_time'
+
+
+def test_BestDistancePlotter_plot_bounds():
+    class FakeDistanceTable(object):
+        @property
+        def observed_bounds(self):
+            return {
+                ('precision@', '100_abs'): (0.02, 0.87),
+                ('recall@', '100_abs'): (0.0, 1.0),
+                ('false positives@', '300_abs'): (2, 162)
+            }
+
+    plotter = BestDistancePlotter(FakeDistanceTable())
+    assert plotter.plot_bounds('precision@', '100_abs') == (0.0, 1.0)
+    assert plotter.plot_bounds('recall@', '100_abs') == (0.0, 1.0)
+    assert plotter.plot_bounds('false positives@', '300_abs') == (2, 178)

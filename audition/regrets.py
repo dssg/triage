@@ -53,7 +53,7 @@ class RegretCalculator(object):
             localized_df = copy.deepcopy(
                 df[df['train_end_time'] <= train_end_time]
             )
-            del localized_df['below_best_next_time']
+            del localized_df['dist_from_best_case_next_time']
 
             choice = selection_rule(localized_df, train_end_time, **selection_rule_args)
             regret_result = df[
@@ -63,5 +63,5 @@ class RegretCalculator(object):
                 (df['parameter'] == parameter)
             ]
             assert len(regret_result) == 1
-            regrets.append(regret_result['below_best_next_time'].values[0])
+            regrets.append(regret_result['dist_from_best_case_next_time'].values[0])
         return regrets
