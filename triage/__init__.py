@@ -2,4 +2,4 @@
 
 __author__ = """Center for Data Science and Public Policy"""
 __email__ = 'datascifellows@gmail.com'
-__version__ = '0.3.1'
+__version__ = '0.4.0'

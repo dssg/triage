@@ -20,7 +20,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 
 setup(
     name='triage',
-    version='0.3.1',
+    version='0.4.0',
     description="Risk modeling and prediction",
     long_description=readme,
     author="Center for Data Science and Public Policy",
