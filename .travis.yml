@@ -15,3 +15,12 @@ install:
 - pip install -r requirements_dev.txt
 script: py.test --cov=catwalk
 after_success: codecov
+deploy:
+  true:
+    repo: dssg/catwalk
+    tags: true
+  distributions: sdist bdist_wheel
+  password:
+    secure: C/80D4gJ9egLAKlW9FEGak/fDaPChE/NCD+Mhf6MMNnzaK8n+N6zqrGDKGHkPSti7YW4fzV02ONcy2A/KbpBzYm9cRidVxTw6IDZDhkix4/4cKbsIgEFHdR16PnmttECf0yjN1dwURfiJIHz155lbNlmtsnEfiDlGfptA0oRNWmhatLH/5NI1Rzcl+aODWaZBlDn3Ejl78cq0T1kg95Gl4YN6h5l046YD+MMiXRfzu7HP5BAEJjXQd1rkC1CKG5SHe3OriDaaYZG/UwdqAHNdA+kPj7ez87AOGRvGjjdMIU7aBK6+KI+bQCo+b6Fb2lQmSz7QN0t1FQYR/Z1BQpmbTPCQoenPcg7WsJjqgiZrp73hNcqPNNl+odIGCJdfP8tNL7Wq45RjoEsMbibxmkOUwgnp5/2KdwqVxoH57u3LbPEdVEN0hiTIpqz++Jra16/s1Zl3/kjcXTy9mNEYeAXirLtbj0pc2iQ18lG/LVNQdFj2TV0oc9LQmeaSWzSkShi583Ffrd/2Mm1+m9RTZVckDqS09qzqwd4FusDuuVazZ/jAstwf47SFRk/W2mKqr/W/eqwEPUvLuiNb5HIJZthrCGHden3nmC6Q3QqZTFKR8JjNxlHfYoMLp9fMj2hqTMEqx6Z7fWojziRI7S2EHcYtP+PdMqn2tamZCrsAWsAbU0=
+  provider: pypi
+  user: dssg

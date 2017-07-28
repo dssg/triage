@@ -10,10 +10,7 @@ with open('LICENSE') as license_file:
     license = license_file.read()
 
 with open('requirements.txt') as requirements_file:
-    requirements = [
-        line for line in requirements_file.readlines()
-        if 'git+git://' not in line
-    ]
+    requirements = requirements_file.readlines()
 
 with open('requirements_dev.txt') as dev_requirements_file:
     test_requirements = [
@@ -23,7 +20,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 
 
 setup(
-    name='catwalk',
+    name='model-catwalk',
     version='0.1.0',
     description="Training, testing, and evaluating machine learning classifier models",
     long_description=readme,
