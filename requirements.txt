@@ -1,4 +1,4 @@
 matplotlib
 pandas
 results-schema
-git+git://github.com/dssg/catwalk.git@master
+model-catwalk>=0.2

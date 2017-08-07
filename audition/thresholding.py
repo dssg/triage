@@ -1,12 +1,16 @@
 import logging
+from audition.metric_directionality import is_better_operator
 
 
-def _above_min(df, metric_filter):
-    return df[df['raw_value'] >= metric_filter['min_value']]
+def _past_threshold(df, metric_filter):
+    return df[is_better_operator(metric_filter['metric'])(
+        df['raw_value'],
+        metric_filter['threshold_value']
+    )]
 
 
-def _close_to_best(df, metric_filter):
-    return df[df['below_best'] < metric_filter['max_below_best']]
+def _close_to_best_case(df, metric_filter):
+    return df[df['dist_from_best_case'] < metric_filter['max_from_best']]
 
 
 def _of_metric(df, metric_filter):
@@ -61,7 +65,7 @@ class ModelGroupThresholder(object):
             )['model_group_id'])
         return passing
 
-    def model_groups_above_min(self, df):
+    def model_groups_past_threshold(self, df):
         """Return the model groups in the dataframe that are above the
             currently-configured minimum value
 
@@ -70,9 +74,9 @@ class ModelGroupThresholder(object):
                 audition.DistanceFromBestTable.as_dataframe
         Returns: (set) The model group ids above the minimum value for each metric
         """
-        return self._filter_model_groups(df, _above_min)
+        return self._filter_model_groups(df, _past_threshold)
 
-    def model_groups_close_to_best(self, df):
+    def model_groups_close_to_best_case(self, df):
         """Return the model groups in the dataframe that are close enough to
             the best value according to current metric filter configuration
 
@@ -81,7 +85,7 @@ class ModelGroupThresholder(object):
                 audition.DistanceFromBestTable.as_dataframe
         Returns: (set) The model group ids close to the best value for each metric
         """
-        return self._filter_model_groups(df, _close_to_best)
+        return self._filter_model_groups(df, _close_to_best_case)
 
     def model_groups_passing_rules(self):
         """Return the model groups passing both the close-to-best and
@@ -94,14 +98,14 @@ class ModelGroupThresholder(object):
 
         Returns: (set) The passing model group ids
         """
-        above_min_model_groups = set(self._initial_model_group_ids)
+        past_threshold_model_groups = set(self._initial_model_group_ids)
         close_to_best_model_groups = set()
         for train_end_time in self.train_end_times:
             df_as_of = self.distance_from_best_table.dataframe_as_of(
                 model_group_ids=self._initial_model_group_ids,
                 train_end_time=train_end_time,
             )
-            close_to_best = self.model_groups_close_to_best(df_as_of)
+            close_to_best = self.model_groups_close_to_best_case(df_as_of)
             logging.info(
                 'Found %s model groups close to best for %s',
                 len(close_to_best),
@@ -109,15 +113,15 @@ class ModelGroupThresholder(object):
             )
             close_to_best_model_groups |= close_to_best
 
-            above_min = self.model_groups_above_min(df_as_of)
+            past_threshold = self.model_groups_past_threshold(df_as_of)
             logging.info(
                 'Found %s model groups above min for %s',
-                len(above_min),
+                len(past_threshold),
                 train_end_time
             )
-            above_min_model_groups &= above_min
+            past_threshold_model_groups &= past_threshold
 
-        total_model_groups = close_to_best_model_groups & above_min_model_groups
+        total_model_groups = close_to_best_model_groups & past_threshold_model_groups
         logging.info(
             'Found %s total model groups past threshold',
             len(total_model_groups)
