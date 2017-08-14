@@ -1,4 +1,23 @@
+import logging
+from numpy import exp, log, average
 from audition.metric_directionality import greater_is_better, best_in_series, idxbest
+
+def random_model_group(df, train_end_time):
+    """Pick a random model group (as a baseline)
+
+    Arguments:
+        train_end_time (Timestamp) -- current train end time
+        df (pandas.DataFrame) -- dataframe containing the columns:
+                model_group_id,
+                model_id,
+                train_end_time,
+                metric,
+                parameter,
+                raw_value,
+                below_best
+    Returns: (int) the model group id to select, with highest current raw metric value
+    """
+    return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
 
 
 def _mg_best_avg_by(df, value_col, metric):
@@ -72,6 +91,51 @@ def best_average_value(df, train_end_time, metric, param):
             ]
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
     return _mg_best_avg_by(met_df, 'raw_value', metric)
+  
+  
+def lowest_metric_variance(df, train_end_time, metric, param):
+    """Pick the model with the lowest metric variance so far
+
+    Arguments:
+        metric (string) -- model evaluation metric, such as 'precision@'
+        param (string) -- model evaluation metric parameter,
+            such as '300_abs'
+        train_end_time (Timestamp) -- current train end time
+        df (pandas.DataFrame) -- dataframe containing the columns:
+                model_group_id,
+                model_id,
+                train_end_time,
+                metric,
+                parameter,
+                raw_value,
+                below_best
+    Returns: (int) the model group id to select, with highest mean raw metric value
+    """
+
+    met_df = df.loc[
+                (df['metric'] == metric) &
+                (df['parameter'] == param)
+            ]\
+            .groupby(['model_group_id'])['raw_value']\
+            .std()
+
+    if met_df.isnull().sum() == met_df.shape[0]:
+        # variance will be undefined in first time window since we only have one obseravtion
+        # per model group
+        logging.info("Null metric variances for {} {} at {}; picking at random"\
+            .format(metric, param, train_end_time)
+            )
+        return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
+    elif met_df.isnull().sum() > 0:
+        # the variances should be all null or no nulls, a mix shouldn't be possible
+        # since we should have the same number of observations for every model group
+        raise ValueError(
+            "Mix of null and non-null metric variances for or {} {} at {}"\
+            .format(metric, param, train_end_time)
+            )
+
+    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+    return met_df.sample(frac=1).idxmin()
 
 
 def most_frequent_best_dist(df, train_end_time, metric, param, dist_from_best_case):
@@ -177,9 +241,137 @@ def best_average_two_metrics(
     return _mg_best_avg_by(met_df_wt, 'weighted_raw', metric1)
 
 
+def best_avg_var_penalized(df, train_end_time, metric, param, stdev_penalty):
+    """Pick the model with the highest average metric value so far, penalized
+    for relative variance as:
+        avg_value - (stdev_penalty) * (stdev - min_stdev)
+    where min_stdev is the minimum standard deviation of the metric across all
+    model groups
+
+    Arguments:
+        stdev_penalty (float) -- penalty for instability
+        metric (string) -- model evaluation metric, such as 'precision@'
+        param (string) -- model evaluation metric parameter,
+            such as '300_abs'
+        train_end_time (Timestamp) -- current train end time
+        df (pandas.DataFrame) -- dataframe containing the columns:
+                model_group_id,
+                model_id,
+                train_end_time,
+                metric,
+                parameter,
+                raw_value,
+                below_best
+    Returns: (int) the model group id to select, with highest mean raw metric value
+    """
+
+    # for metrics where smaller values are better, the penalty for instability should
+    # add to the mean, so introduce a factor of -1
+    stdev_penalty = stdev_penalty if greater_is_better(metric) else -1.0*stdev_penalty
+
+    met_df = df.loc[
+                (df['metric'] == metric) &
+                (df['parameter'] == param)
+            ]
+    met_df_grp = met_df.groupby(['model_group_id']).aggregate({'raw_value': {'raw_avg': 'mean', 'raw_stdev': 'std'}})
+    met_df_grp.columns = met_df_grp.columns.droplevel(0)
+
+    if met_df_grp['raw_stdev'].isnull().sum() == met_df_grp.shape[0]:
+        # variance will be undefined in first time window since we only have one obseravtion
+        # per model group
+        logging.info("Null metric variances for {} {} at {}; just using mean"\
+            .format(metric, param, train_end_time)
+            )
+        return getattr(
+          met_df_grp['raw_avg'].sample(frac=1),
+          idxbest(metric)
+        )()
+    elif met_df_grp['raw_stdev'].isnull().sum() > 0:
+        # the variances should be all null or no nulls, a mix shouldn't be possible
+        # since we should have the same number of observations for every model group
+        raise ValueError(
+            "Mix of null and non-null metric variances for or {} {} at {}"\
+            .format(metric, param, train_end_time)
+            )
+
+    min_stdev = met_df_grp['raw_stdev'].min()
+    met_df_grp['penalized_avg'] = met_df_grp['raw_avg'] - stdev_penalty * (met_df_grp['raw_stdev'] - min_stdev)
+
+    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+    return getattr(
+        met_df_grp['penalized_avg'].sample(frac=1),
+        idxbest(metric)
+    )() 
+
+
+def best_avg_recency_weight(df, train_end_time, metric, param, curr_weight, decay_type):
+    """Pick the model with the highest average metric value so far, penalized
+    for relative variance as:
+        avg_value - (stdev_penalty) * (stdev - min_stdev)
+    where min_stdev is the minimum standard deviation of the metric across all
+    model groqups
+
+    Arguments:
+        decay_type (string) -- either 'linear' or 'exponential'; the shape of
+            how the weights fall off between the current and first point
+        curr_weight (float) -- amount of weight to put on the most recent point,
+            relative to the first point (e.g., a value of 5.0 would mean the
+            current data is weighted 5 times as much as the first one)
+        metric (string) -- model evaluation metric, such as 'precision@'
+        param (string) -- model evaluation metric parameter,
+            such as '300_abs'
+        train_end_time (Timestamp) -- current train end time
+        df (pandas.DataFrame) -- dataframe containing the columns:
+                model_group_id,
+                model_id,
+                train_end_time,
+                metric,
+                parameter,
+                raw_value,
+                below_best
+    Returns: (int) the model group id to select, with highest mean raw metric value
+    """
+
+    # curr_weight is amount of weight to put on current point, relative to the first point
+    # (e.g., if the first point has a weight of 1.0)
+    # decay type is linear or exponetial
+
+    first_date = df['train_end_time'].min()
+    df['days_out'] = (df['train_end_time'] - first_date).apply(lambda x: float(x.days))
+    tmax = df['days_out'].max()
+
+    if tmax == 0:
+        # only one date (must be on first time point), so everything gets a weight of 1
+        df['weight'] = 1.0
+    elif decay_type == 'linear':
+        # weight = (curr_weight - 1.0) * (t/tmax) + 1.0
+        df['weight'] = (curr_weight - 1.0) * (df['days_out']/tmax) + 1.0
+    elif decay_type == 'exponential':
+        # weight = exp(ln(curr_weight)*t/tmax)
+        df['weight'] = exp(log(curr_weight)*df['days_out']/tmax)
+    else:
+        raise ValueError('Must specify linear or exponential decay type')
+
+    wm = lambda x: average(x, weights=df.loc[x.index, 'weight'])
+
+    met_df = df.loc[
+                (df['metric'] == metric) &
+                (df['parameter'] == param)
+            ]
+    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+    return getattr(
+        met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}).sample(frac=1),
+        idxbest(metric)
+    )()[0]
+
+
 SELECTION_RULES = {
+    'random_model_group': random_model_group,
     'best_current_value': best_current_value,
     'best_average_value': best_average_value,
+    'lowest_metric_variance': lowest_metric_variance,
     'most_frequent_best_dist': most_frequent_best_dist,
     'best_average_two_metrics': best_average_two_metrics,
+    'best_avg_var_penalized': best_avg_var_penalized,
+    'best_avg_recency_weight': best_avg_recency_weight    
 }

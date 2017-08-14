@@ -1,3 +1,5 @@
+from catwalk.evaluation import ModelEvaluator
+import logging
 
 
 def str_in_sql(values):
