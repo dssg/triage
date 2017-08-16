@@ -98,7 +98,8 @@ class ExperimentBase(object):
         self.feature_generator_factory = partial(
             FeatureGenerator,
             features_schema_name=self.features_schema_name,
-            replace=self.replace
+            replace=self.replace,
+            beginning_of_time=split_config['beginning_of_time']
         )
 
         self.feature_group_creator_factory = partial(
