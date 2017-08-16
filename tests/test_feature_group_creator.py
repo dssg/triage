@@ -1,4 +1,5 @@
 from architect.features import FeatureGroupCreator
+from unittest import TestCase
 
 
 def test_table_group():
@@ -51,3 +52,32 @@ def test_multiple_criteria():
         {'one': ['minor_a', 'minor_b', 'minor_c']},
         {'two': ['severe_a', 'severe_b', 'severe_c']},
     ]
+
+
+class TestValidations(TestCase):
+    def test_not_a_dict(self):
+        creator = FeatureGroupCreator(definition='prefix')
+        with self.assertRaises(ValueError):
+            creator.validate()
+
+    def test_badsubsetter(self):
+        creator = FeatureGroupCreator(definition={
+            'prefix': ['major', 'severe'],
+            'other': ['other'],
+        })
+        with self.assertRaises(ValueError):
+            creator.validate()
+
+    def test_stringvalue(self):
+        creator = FeatureGroupCreator(definition={
+            'prefix': 'major',
+        })
+        with self.assertRaises(ValueError):
+            creator.validate()
+
+    def test_goodconfig(self):
+        creator = FeatureGroupCreator(definition={
+            'prefix': ['major', 'severe'],
+            'tables': ['one', 'two'],
+        })
+        creator.validate()

@@ -5,6 +5,7 @@ import operator
 import warnings
 import re
 
+
 def convert_str_to_relativedelta(delta_string):
     """ Given a string in a postgres interval format (e.g., '1 month'),
     convert it to a dateutil.relativedelta.relativedelta.

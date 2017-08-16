@@ -36,9 +36,18 @@ class FeatureGroupCreator(object):
         """
         self.definition = definition
 
-        for subsetter in self.definition.keys():
-            if subsetter not in self.subsetters:
-                raise KeyError('Unknown subsetter %s received', subsetter)
+    def validate(self):
+        """Validate the object's configuration
+
+        """
+        if not isinstance(self.definition, dict):
+            raise ValueError('Feature Group Definition must be a dictionary')
+
+        for subsetter_name, value in self.definition.items():
+            if subsetter_name not in self.subsetters:
+                raise ValueError('Unknown subsetter %s received', subsetter_name)
+            if not hasattr(value, '__iter__') or isinstance(value, (str, bytes)):
+                raise ValueError('Each value in FeatureGroupCreator must be iterable and not a string')
 
     def subsets(self, feature_dictionary):
         """Generate subsets of a feature dict

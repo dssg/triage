@@ -1,5 +1,6 @@
 from collate.collate import Aggregate, Categorical, Compare
 from collate.spacetime import SpacetimeAggregation
+from architect.utils import convert_str_to_relativedelta
 import sqlalchemy
 import logging
 
@@ -28,6 +29,82 @@ class FeatureGenerator(object):
         self.categorical_cache = {}
         self.replace = replace
         self.beginning_of_time = beginning_of_time
+
+    def _validate_keys(self, aggregation_config):
+        for key in ['from_obj', 'intervals', 'groups', 'knowledge_date_column', 'prefix']:
+            if key not in aggregation_config:
+                raise ValueError(
+                    '{} required as key: aggregation config: {}'
+                    .format(key, aggregation_config)
+                )
+
+    def _validate_aggregates(self, aggregation_config):
+        if 'aggregates' not in aggregation_config \
+                and 'categoricals' not in aggregation_config \
+                and 'array_categoricals' not in aggregation_config:
+            raise ValueError(
+                'Need either aggregates, categoricals, or array_categoricals' +
+                ' in {}'.format(aggregation_config)
+            )
+
+    def _validate_categoricals(self, categoricals):
+        conn = self.db_engine.connect()
+        for categorical in categoricals:
+            if 'choice_query' in categorical:
+                logging.info('Validating choice query')
+                try:
+                    conn.execute('explain {}'.format(categorical['choice_query']))
+                except Exception as e:
+                    raise ValueError(
+                        'choice query does not run. \nchoice query: "{}"\nFull error: {}'
+                        .format(categorical['choice_query'], e)
+                    )
+
+    def _validate_from_obj(self, from_obj):
+        conn = self.db_engine.connect()
+        logging.info('Validating from_obj')
+        try:
+            conn.execute('explain select * from {}'.format(from_obj))
+        except Exception as e:
+            raise ValueError(
+                'from_obj query does not run. \nfrom_obj: "{}"\nFull error: {}'
+                .format(from_obj, e)
+            )
+
+    def _validate_time_intervals(self, intervals):
+        logging.info('Validating time intervals')
+        for interval in intervals:
+            if interval != 'all':
+                _ = convert_str_to_relativedelta(interval)
+
+    def _validate_groups(self, groups):
+        for group in groups:
+            if group != 'entity_id':
+                raise ValueError('Only entity_id is allowed as a group at this time')
+
+    def _validate_aggregation(self, aggregation_config):
+        logging.info('Validating aggregation config %s', aggregation_config)
+        self._validate_keys(aggregation_config)
+        self._validate_aggregates(aggregation_config)
+        self._validate_categoricals(aggregation_config.get('categoricals', []))
+        self._validate_from_obj(aggregation_config['from_obj'])
+        self._validate_time_intervals(aggregation_config['intervals'])
+        self._validate_groups(aggregation_config['groups'])
+
+    def validate(self, feature_aggregation_config):
+        """Validate a feature aggregation config applied to this object
+
+        The validations range from basic type checks, key presence checks,
+        as well as validating the sql in from objects.
+
+        Args:
+            feature_aggregation_config (list) all values, except for feature
+                date, necessary to instantiate a collate.SpacetimeAggregation
+
+        Raises: ValueError if any part of the config is found to be invalid
+        """
+        for aggregation in feature_aggregation_config:
+            self._validate_aggregation(aggregation)
 
     def _compute_choices(self, choice_query):
         if choice_query not in self.categorical_cache:
@@ -112,10 +189,6 @@ class FeatureGenerator(object):
             self._aggregation(aggregation_config, feature_dates)
             for aggregation_config in feature_aggregation_config
         ]
-
-    def validate(self, feature_aggregation_config, feature_dates):
-        aggregations = self.aggregations(feature_aggregation_config, feature_dates)
-        self._explain_selects(aggregations)
 
     def generate_all_table_tasks(self, feature_aggregation_config, feature_dates):
         """Generates SQL commands for creating, populating, and indexing
