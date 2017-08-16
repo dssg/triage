@@ -9,12 +9,25 @@ class FeatureGenerator(object):
         self,
         db_engine,
         features_schema_name,
-        replace=True
+        replace=True,
+        beginning_of_time=None
     ):
+        """Generates aggregate features using collate
+
+        Args:
+            db_engine (sqlalchemy.db.engine)
+            features_schema_name (string) Name of schema where feature
+                tables should be written to
+            replace (boolean, optional) Whether or not existing features
+                should be replaced
+            beginning_of_time (string/datetime, optional) point in time before which
+                should not be included in features
+        """
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
         self.categorical_cache = {}
         self.replace = replace
+        self.beginning_of_time = beginning_of_time
 
     def _compute_choices(self, choice_query):
         if choice_query not in self.categorical_cache:
@@ -80,6 +93,7 @@ class FeatureGenerator(object):
             dates=feature_dates,
             date_column=aggregation_config['knowledge_date_column'],
             output_date_column='as_of_date',
+            input_min_date=self.beginning_of_time,
             schema=self.features_schema_name,
             prefix=aggregation_config['prefix']
         )
