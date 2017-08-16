@@ -110,6 +110,62 @@ def test_feature_generation():
             assert records == expected_output[output_table]
 
 
+def test_feature_generation_beginning_of_time():
+    aggregate_config = [{
+        'prefix': 'aprefix',
+        'aggregates': [
+            {'quantity': 'quantity_one', 'metrics': ['sum']},
+        ],
+        'groups': ['entity_id'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }]
+
+    expected_output = {
+        'aprefix_entity_id': [
+            {
+                'entity_id': 1,
+                'as_of_date': date(2015, 1, 1),
+                'aprefix_entity_id_all_quantity_one_sum': 10000,
+            },
+            {
+                'entity_id': 3,
+                'as_of_date': date(2015, 1, 1),
+                'aprefix_entity_id_all_quantity_one_sum': 600,
+            },
+            {
+                'entity_id': 4,
+                'as_of_date': date(2015, 1, 1),
+                'aprefix_entity_id_all_quantity_one_sum': 1236,
+            },
+        ]
+
+    }
+
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        features_schema_name = 'features'
+        output_tables = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name,
+            beginning_of_time='2013-01-01',
+        ).create_all_tables(
+            feature_dates=['2015-01-01'],
+            feature_aggregation_config=aggregate_config,
+        )
+
+        for output_table in output_tables:
+            records = pandas.read_sql(
+                'select * from {}.{} order by as_of_date, entity_id'
+                .format(features_schema_name, output_table),
+                engine
+            ).to_dict('records')
+            assert records == expected_output[output_table]
+
+
 def test_dynamic_categoricals():
     aggregate_config = [{
         'prefix': 'aprefix',
