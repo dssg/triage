@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-import sklearn
+import sklearn.linear_model
 
 def _ad_hoc_feature_importances(model):
     """
