@@ -1,6 +1,6 @@
 from audition.utils import str_in_sql
 from audition.metric_directionality import sql_rank_order
-from audition.plotting import plot_cats
+from audition.plotting import plot_cats, plot_bounds
 import pandas as pd
 import numpy as np
 
@@ -201,17 +201,9 @@ class BestDistancePlotter(object):
         self.distance_from_best_table = distance_from_best_table
 
     def plot_bounds(self, metric, parameter):
-        observed_min, observed_max = self.distance_from_best_table\
-            .observed_bounds[(metric, parameter)]
-        if observed_min >= 0.0 and observed_max <= 1.0:
-            plot_min, plot_max = (0.0, 1.0)
-        else:
-            # 10% padding on the high end
-            padding = 0.1*(observed_max - float(observed_min))
-            plot_min = observed_min
-            plot_max = observed_max + padding
-
-        return plot_min, plot_max
+        observed_min, observed_max = \
+            self.distance_from_best_table.observed_bounds[(metric, parameter)]
+        return plot_bounds(observed_min, observed_max)
 
     def plot_tick_dist(self, plot_min, plot_max):
         dist = plot_max - plot_min
@@ -349,7 +341,7 @@ def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):
         y_col='pct_of_time',
         cat_col=cat_col,
         title=plt_title,
-        x_label='decrease in {} from best model'.format(metric),
+        x_label='distance from best {}'.format(metric),
         y_label='fraction of models',
         x_ticks=np.arange(0, 1.1, 0.1),
         **plt_format_args

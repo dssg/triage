@@ -6,6 +6,26 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
+def plot_bounds(observed_min, observed_max):
+    """Compute the plot bounds for observed data
+
+    Args:
+        observed_min (number) -- Lowest number found in data
+        observed_max (number) -- Highest number found in data
+
+    Returns: (number, number) A minimum and maximum x value for the plot
+    """
+    if observed_min >= 0.0 and observed_max <= 1.0:
+        plot_min, plot_max = (0.0, 1.0)
+    else:
+        # 10% padding on the high end
+        padding = 0.1*(observed_max - float(observed_min))
+        plot_min = observed_min
+        plot_max = observed_max + padding
+
+    return plot_min, plot_max
+
+
 def category_colordict(cmap_name, categories, highlight_grp=None):
     # want to step through the discrete color map rather than sampling
     # across the entire range, so create an even spacing from 0 to 1
@@ -65,6 +85,8 @@ def _config_axes(
     ax,
     x_ticks,
     y_ticks,
+    x_lim,
+    y_lim,
     title,
     title_fontsize,
     x_label,
@@ -73,9 +95,17 @@ def _config_axes(
 ):
     if x_ticks is not None:
         ax.set_xticks(x_ticks)
+    elif x_lim is not None:
+        ax.set_xlim(x_lim)
+    else:
+        ax.set_xlim([0, 1.1])
+
     if y_ticks is not None:
         ax.set_yticks(y_ticks)
-    ax.set_ylim([0, 1.1])
+    elif y_lim is not None:
+        ax.set_ylim(y_lim)
+    else:
+        ax.set_ylim([0, 1.1])
     ax.set_title(title, fontsize=title_fontsize)
     ax.set_ylabel(y_label, fontsize=label_fontsize)
     ax.set_xlabel(x_label, fontsize=label_fontsize)
@@ -83,7 +113,7 @@ def _config_axes(
 
 def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id', highlight_grp=None,
               title='', x_label='', y_label='', cmap_name='Vega10',
-              figsize=[12, 6], x_ticks=None, y_ticks=None,
+              figsize=[12, 6], x_ticks=None, y_ticks=None, x_lim=None, y_lim=None,
               legend_loc=None, legend_fontsize=12,
               label_fontsize=12, title_fontsize=16,
               label_fcn=None):
@@ -104,6 +134,8 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
         figsize (tuple) -- figure size to pass to matplotlib
         x_ticks (sequence) -- optional ticks to use for x-axis
         y_ticks (sequence) -- optional ticks to use for y-axis
+        x_lim (tuple) -- optional min-max to use for x-axis
+        y_lim (tuple) -- optional min-max to use for y-axis
         legend_loc (string) -- allows specifying location of plot legend
         legend_fontsize (int) -- allows specifying font size for legend
         label_fontsize (int) -- allows specifying font size for axis labels
@@ -143,6 +175,8 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
         ax=ax,
         x_ticks=x_ticks,
         y_ticks=y_ticks,
+        x_lim=x_lim,
+        y_lim=y_lim,
         title=title,
         title_fontsize=title_fontsize,
         x_label=x_label,
