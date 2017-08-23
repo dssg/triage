@@ -35,6 +35,7 @@ class DistanceFromBestTable(object):
             metric text,
             parameter text,
             raw_value float,
+            best_case float,
             dist_from_best_case float,
             dist_from_best_case_next_time float
         )'''.format(self.distance_table))
@@ -90,6 +91,7 @@ class DistanceFromBestTable(object):
                         '{metric}',
                         '{parameter}',
                         value as raw_value,
+                        best_val as best_case,
                         abs(value - best_val) dist_from_best_case
                     FROM model_tols
                 )
@@ -308,6 +310,7 @@ class BestDistancePlotter(object):
                 parameter=metric_filter['parameter'],
                 df_best_dist=df
             )
+
 
 
 def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):

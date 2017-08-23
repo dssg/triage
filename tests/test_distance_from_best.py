@@ -134,9 +134,9 @@ def test_BestDistancePlotter():
         # 202 row because 101 percentiles (0-100 inclusive), 2 model groups
         assert df_dist.shape == (101 * 2, 5)
 
-        # all of the model groups are within .22 of the best, so pick
+        # all of the model groups are within .34 of the best, so pick
         # a number higher than that and all should qualify
-        for value in df_dist[df_dist['distance'] == 0.23]['pct_of_time'].values:
+        for value in df_dist[df_dist['distance'] == 0.35]['pct_of_time'].values:
             assert numpy.isclose(value, 1.0)
 
         # model group 1 (stable) should be within 0.11 1/2 of the time

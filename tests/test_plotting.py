@@ -1,4 +1,4 @@
-from audition.plotting import generate_plot_lines, category_colordict, plot_cats
+from audition.plotting import generate_plot_lines, category_colordict, category_styledict, plot_cats
 import matplotlib.lines as mlines
 import pandas
 from unittest.mock import patch
@@ -10,13 +10,21 @@ def test_generate_plot_lines():
         'cat2': '#112233',
         'cat3': '#223344',
     }
+    styledict = {
+        'cat1': '-',
+        'cat2': '--',
+        'cat3': '-',
+    }
     label_fcn = lambda x: 'Cat {}'.format(x)
 
-    plot_lines = generate_plot_lines(colordict, label_fcn)
+    plot_lines = generate_plot_lines(colordict, label_fcn, styledict)
     assert len(plot_lines) == 3
     for line in plot_lines:
         assert type(line) == mlines.Line2D
         assert 'Cat ' in line._label
+        assert '-' in line._linestyle
+        if line._label == 'Cat 2':
+            assert line._linestyle == '--'
 
 
 def test_category_colordict():
@@ -24,6 +32,35 @@ def test_category_colordict():
     categories = ['Cat1', 'Cat2', 'Cat3', 'Cat4']
     colordict = category_colordict(cmap_name, categories)
     assert len(colordict.keys()) == 4
+
+
+def test_category_colordict_with_highlight():
+    cmap_name = 'Vega10'
+    colordict_with_highlight = category_colordict(
+        cmap_name,
+        ['Cat1', 'Cat2', 'Cat3', 'Cat4'],
+        'Cat2'
+    )
+    colordict_without_highlight = category_colordict(
+        cmap_name,
+        ['Cat1', 'Cat3', 'Cat4']
+    )
+    for cat in ['Cat1', 'Cat3', 'Cat4']:
+        assert colordict_with_highlight[cat] == colordict_without_highlight[cat]
+    assert colordict_with_highlight['Cat2'] == '#000000'
+
+
+def test_category_styledict():
+    colordict = {
+        'cat1': '#001122',
+        'cat2': '#112233',
+        'cat3': '#223344',
+    }
+    assert category_styledict(colordict, 'cat3') == {
+        'cat1': '-',
+        'cat2': '-',
+        'cat3': '--',
+    }
 
 
 def test_plot_cats():
