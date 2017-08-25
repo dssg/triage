@@ -8,7 +8,7 @@ def test_feature_dictionary_creator():
         engine = create_engine(postgresql.url())
         engine.execute('create schema features')
         engine.execute('''
-            create table features.feature_table_one (
+            create table features.prefix1_entity_id (
                 entity_id int,
                 as_of_date date,
                 feature_one float,
@@ -16,9 +16,20 @@ def test_feature_dictionary_creator():
             )
         ''')
         engine.execute('''
-            create table features.feature_table_two (
+            create table features.prefix1_zipcode (
+                zipcode text,
+                as_of_date date,
+                feature_three float,
+                feature_four float
+            )
+        ''')
+        engine.execute('''
+            create table features.prefix1_aggregation (
                 entity_id int,
                 as_of_date date,
+                zipcode text,
+                feature_one float,
+                feature_two float,
                 feature_three float,
                 feature_four float
             )
@@ -34,9 +45,11 @@ def test_feature_dictionary_creator():
             db_engine=engine
         )
         feature_dictionary = creator.feature_dictionary(
-            ['feature_table_one', 'feature_table_two']
+            feature_table_names=['prefix1_entity_id', 'prefix1_zip_code', 'prefix1_aggregation'],
+            index_column_lookup={
+                'prefix1_aggregation': ['entity_id', 'zipcode', 'as_of_date']
+            }
         )
         assert feature_dictionary == {
-            'feature_table_one': ['feature_one', 'feature_two'],
-            'feature_table_two': ['feature_three', 'feature_four'],
+            'prefix1_aggregation': ['feature_one', 'feature_two', 'feature_three', 'feature_four'],
         }

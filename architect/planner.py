@@ -142,7 +142,6 @@ class Planner(object):
                     state,
                     'train',
                 )
-                print(train_metadata)
                 train_uuid = metta.generate_uuid(train_metadata)
                 if train_uuid not in build_tasks:
                     build_tasks[train_uuid] = self._generate_build_task(

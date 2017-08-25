@@ -5,15 +5,17 @@ from datetime import date
 import pandas
 from unittest import TestCase
 import copy
+from collate.spacetime import SpacetimeAggregation
+from collate.collate import Aggregate, Categorical
 
 
 INPUT_DATA = [
-    # entity_id, knowledge_date, cat_one, quantity_one
-    (1, date(2014, 1, 1), 'good', 10000),
-    (1, date(2014, 10, 11), 'good', None),
-    (3, date(2012, 6, 8), 'bad', 342),
-    (3, date(2014, 12, 21), 'inbetween', 600),
-    (4, date(2014, 4, 4), 'bad', 1236)
+    # entity_id, knowledge_date, zip_code, cat_one, quantity_one
+    (1, date(2014, 1, 1), '60120', 'good', 10000),
+    (1, date(2014, 10, 11), '60120', 'good', None),
+    (3, date(2012, 6, 8), '60653', 'bad', 342),
+    (3, date(2014, 12, 21), '60653', 'inbetween', 600),
+    (4, date(2014, 4, 4), '60653', 'bad', 1236)
 ]
 
 
@@ -22,13 +24,14 @@ def setup_db(engine):
         create table data (
             entity_id int,
             knowledge_date date,
+            zip_code text,
             cat_one varchar,
             quantity_one float
         )
     """)
     for row in INPUT_DATA:
         engine.execute(
-            'insert into data values (%s, %s, %s, %s)',
+            'insert into data values (%s, %s, %s, %s, %s)',
             row
         )
 
@@ -46,7 +49,7 @@ def test_feature_generation():
                 'metrics': ['sum']
             },
         ],
-        'groups': ['entity_id'],
+        'groups': ['entity_id', 'zip_code'],
         'intervals': ['all'],
         'knowledge_date_column': 'knowledge_date',
         'from_obj': 'data'
@@ -55,20 +58,20 @@ def test_feature_generation():
     expected_output = {
         'aprefix_entity_id': [
             {
-                'entity_id': 3,
-                'as_of_date': date(2013, 9, 30),
-                'aprefix_entity_id_all_quantity_one_sum': 342,
-                'aprefix_entity_id_all_quantity_one_count': 1,
-                'aprefix_entity_id_all_cat_one_good_sum': 0,
-                'aprefix_entity_id_all_cat_one_bad_sum': 1
-            },
-            {
                 'entity_id': 1,
                 'as_of_date': date(2014, 9, 30),
                 'aprefix_entity_id_all_quantity_one_sum': 10000,
                 'aprefix_entity_id_all_quantity_one_count': 1,
                 'aprefix_entity_id_all_cat_one_good_sum': 1,
                 'aprefix_entity_id_all_cat_one_bad_sum': 0
+            },
+            {
+                'entity_id': 3,
+                'as_of_date': date(2013, 9, 30),
+                'aprefix_entity_id_all_quantity_one_sum': 342,
+                'aprefix_entity_id_all_quantity_one_count': 1,
+                'aprefix_entity_id_all_cat_one_good_sum': 0,
+                'aprefix_entity_id_all_cat_one_bad_sum': 1
             },
             {
                 'entity_id': 3,
@@ -86,8 +89,87 @@ def test_feature_generation():
                 'aprefix_entity_id_all_cat_one_good_sum': 0,
                 'aprefix_entity_id_all_cat_one_bad_sum': 1
             },
+        ],
+        'aprefix_zip_code': [
+            {
+                'zip_code': '60120',
+                'as_of_date': date(2014, 9, 30),
+                'aprefix_zip_code_all_quantity_one_sum': 10000,
+                'aprefix_zip_code_all_quantity_one_count': 1,
+                'aprefix_zip_code_all_cat_one_good_sum': 1,
+                'aprefix_zip_code_all_cat_one_bad_sum': 0
+            },
+            {
+                'zip_code': '60653',
+                'as_of_date': date(2013, 9, 30),
+                'aprefix_zip_code_all_quantity_one_sum': 342,
+                'aprefix_zip_code_all_quantity_one_count': 1,
+                'aprefix_zip_code_all_cat_one_good_sum': 0,
+                'aprefix_zip_code_all_cat_one_bad_sum': 1
+            },
+            {
+                'zip_code': '60653',
+                'as_of_date': date(2014, 9, 30),
+                'aprefix_zip_code_all_quantity_one_sum': 1578,
+                'aprefix_zip_code_all_quantity_one_count': 2,
+                'aprefix_zip_code_all_cat_one_good_sum': 0,
+                'aprefix_zip_code_all_cat_one_bad_sum': 2
+            }
+        ],
+        'aprefix_aggregation': [
+            {
+                'entity_id': 1,
+                'as_of_date': date(2014, 9, 30),
+                'zip_code': '60120',
+                'aprefix_entity_id_all_quantity_one_sum': 10000,
+                'aprefix_entity_id_all_quantity_one_count': 1,
+                'aprefix_entity_id_all_cat_one_good_sum': 1,
+                'aprefix_entity_id_all_cat_one_bad_sum': 0,
+                'aprefix_zip_code_all_quantity_one_sum': 10000,
+                'aprefix_zip_code_all_quantity_one_count': 1,
+                'aprefix_zip_code_all_cat_one_good_sum': 1,
+                'aprefix_zip_code_all_cat_one_bad_sum': 0
+            },
+            {
+                'entity_id': 3,
+                'as_of_date': date(2013, 9, 30),
+                'zip_code': '60653',
+                'aprefix_entity_id_all_quantity_one_sum': 342,
+                'aprefix_entity_id_all_quantity_one_count': 1,
+                'aprefix_entity_id_all_cat_one_good_sum': 0,
+                'aprefix_entity_id_all_cat_one_bad_sum': 1,
+                'aprefix_zip_code_all_quantity_one_sum': 342,
+                'aprefix_zip_code_all_quantity_one_count': 1,
+                'aprefix_zip_code_all_cat_one_good_sum': 0,
+                'aprefix_zip_code_all_cat_one_bad_sum': 1
+            },
+            {
+                'entity_id': 3,
+                'as_of_date': date(2014, 9, 30),
+                'zip_code': '60653',
+                'aprefix_entity_id_all_quantity_one_sum': 342,
+                'aprefix_entity_id_all_quantity_one_count': 1,
+                'aprefix_entity_id_all_cat_one_good_sum': 0,
+                'aprefix_entity_id_all_cat_one_bad_sum': 1,
+                'aprefix_zip_code_all_quantity_one_sum': 1578,
+                'aprefix_zip_code_all_quantity_one_count': 2,
+                'aprefix_zip_code_all_cat_one_good_sum': 0,
+                'aprefix_zip_code_all_cat_one_bad_sum': 2
+            },
+            {
+                'entity_id': 4,
+                'as_of_date': date(2014, 9, 30),
+                'zip_code': '60653',
+                'aprefix_entity_id_all_quantity_one_sum': 1236,
+                'aprefix_entity_id_all_quantity_one_count': 1,
+                'aprefix_entity_id_all_cat_one_good_sum': 0,
+                'aprefix_entity_id_all_cat_one_bad_sum': 1,
+                'aprefix_zip_code_all_quantity_one_sum': 1578,
+                'aprefix_zip_code_all_quantity_one_count': 2,
+                'aprefix_zip_code_all_cat_one_good_sum': 0,
+                'aprefix_zip_code_all_cat_one_bad_sum': 2
+            },
         ]
-
     }
 
     with testing.postgresql.Postgresql() as postgresql:
@@ -105,11 +187,53 @@ def test_feature_generation():
 
         for output_table in output_tables:
             records = pandas.read_sql(
-                'select * from {}.{} order by as_of_date, entity_id'
+                'select * from {}.{} order by 1, 2'
                 .format(features_schema_name, output_table),
                 engine
             ).to_dict('records')
-            assert records == expected_output[output_table]
+            for record, expected_record in zip(records, expected_output[output_table]):
+                assert record == expected_record
+
+
+def test_index_column_lookup():
+    aggregations = [
+        SpacetimeAggregation(
+            prefix='prefix1',
+            aggregates=[Categorical(col='cat_one', function='sum', choices=['good', 'bad', 'inbetween'])],
+            groups=['entity_id'],
+            intervals=['all'],
+            date_column='knowledge_date',
+            output_date_column='as_of_date',
+            dates=['2013-09-30', '2014-09-30'],
+            schema='features',
+            from_obj='data'
+        ),
+        SpacetimeAggregation(
+            prefix='prefix2',
+            aggregates=[Aggregate(quantity='quantity_one', function='count')],
+            groups=['entity_id', 'zip_code'],
+            intervals=['all'],
+            date_column='knowledge_date',
+            output_date_column='as_of_date',
+            dates=['2013-09-30', '2014-09-30'],
+            schema='features',
+            from_obj='data'
+        )
+    ]
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        features_schema_name = 'features'
+        feature_generator = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name
+        )
+        lookup = feature_generator.index_column_lookup(aggregations)
+        assert lookup == {
+            'prefix1_aggregation': ['as_of_date', 'entity_id',],
+            'prefix2_aggregation': ['as_of_date', 'entity_id', 'zip_code']
+        }
 
 
 def test_feature_generation_beginning_of_time():
@@ -142,8 +266,8 @@ def test_feature_generation_beginning_of_time():
                 'aprefix_entity_id_all_quantity_one_sum': 1236,
             },
         ]
-
     }
+    expected_output['aprefix_aggregation'] = expected_output['aprefix_entity_id']
 
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -214,8 +338,8 @@ def test_dynamic_categoricals():
                 'aprefix_entity_id_all_cat_one_bad_sum': 1
             },
         ]
-
     }
+    expected_output['aprefix_aggregation'] = expected_output['aprefix_entity_id']
 
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -287,8 +411,8 @@ def test_array_categoricals():
                 'aprefix_entity_id_all_cat_one_bad_sum': 1
             },
         ]
-
     }
+    expected_output['aprefix_aggregation'] = expected_output['aprefix_entity_id']
 
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -336,6 +460,48 @@ def test_array_categoricals():
 
 
 def test_generate_table_tasks():
+    aggregations = [
+        SpacetimeAggregation(
+            prefix='prefix1',
+            aggregates=[Categorical(col='cat_one', function='sum', choices=['good', 'bad', 'inbetween'])],
+            groups=['entity_id'],
+            intervals=['all'],
+            date_column='knowledge_date',
+            output_date_column='as_of_date',
+            dates=['2013-09-30', '2014-09-30'],
+            schema='features',
+            from_obj='data'
+        ),
+        SpacetimeAggregation(
+            prefix='prefix2',
+            aggregates=[Aggregate(quantity='quantity_one', function='count')],
+            groups=['entity_id'],
+            intervals=['all'],
+            date_column='knowledge_date',
+            output_date_column='as_of_date',
+            dates=['2013-09-30', '2014-09-30'],
+            schema='features',
+            from_obj='data'
+        )
+    ]
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        features_schema_name = 'features'
+
+        table_tasks = FeatureGenerator(
+            db_engine=engine,
+            features_schema_name=features_schema_name
+        ).generate_all_table_tasks(aggregations)
+        for table_name, task in table_tasks.items():
+            assert 'DROP TABLE' in task['prepare'][0]
+            assert 'CREATE TABLE' in str(task['prepare'][1])
+            assert 'CREATE INDEX' in task['finalize'][0]
+            assert isinstance(task['inserts'], list)
+
+
+def test_aggregations():
     aggregate_config = [{
         'prefix': 'prefix1',
         'categoricals': [
@@ -365,19 +531,15 @@ def test_generate_table_tasks():
 
         features_schema_name = 'features'
 
-        table_tasks = FeatureGenerator(
+        aggregations = FeatureGenerator(
             db_engine=engine,
             features_schema_name=features_schema_name
-        ).generate_all_table_tasks(
+        ).aggregations(
             feature_dates=['2013-09-30', '2014-09-30'],
             feature_aggregation_config=aggregate_config,
         )
-        for task in table_tasks.values():
-            assert 'DROP TABLE' in task['prepare'][0]
-            assert 'CREATE TABLE' in str(task['prepare'][1])
-            assert 'CREATE INDEX' in task['finalize'][0]
-            assert isinstance(task['inserts'], list)
-
+        for aggregation in aggregations:
+            assert isinstance(aggregation, SpacetimeAggregation)
 
 def test_replace():
     aggregate_config = [{
@@ -412,16 +574,18 @@ def test_replace():
             feature_aggregation_config=aggregate_config,
         )
 
-        assert len(feature_tables) == 1
+        assert len(feature_tables) == 2
 
-        table_tasks = FeatureGenerator(
+        feature_generator = FeatureGenerator(
             db_engine=engine,
             features_schema_name=features_schema_name,
             replace=False
-        ).generate_all_table_tasks(
+        )
+        aggregations = feature_generator.aggregations(
             feature_dates=['2013-09-30', '2014-09-30'],
             feature_aggregation_config=aggregate_config,
         )
+        table_tasks = feature_generator.generate_all_table_tasks(aggregations)
 
         assert len(table_tasks['aprefix_entity_id'].keys()) == 0
 

@@ -272,18 +272,41 @@ def basic_integration_test(
             # create feature table tasks
             # we would use FeatureGenerator#create_all_tables but want to use
             # the tasks dict directly to create a feature dict
-            feature_table_tasks = feature_generator.generate_all_table_tasks(
-                feature_aggregation_config=feature_aggregation_config,
+            aggregations = feature_generator.aggregations(
+                feature_aggregation_config=[{
+                    'prefix': 'cat',
+                    'from_obj': 'cat_complaints',
+                    'knowledge_date_column': 'as_of_date',
+                    'aggregates': [{
+                        'quantity': 'cat_sightings',
+                        'metrics': ['count', 'avg'],
+                    }],
+                    'intervals': ['1y'],
+                    'groups': ['entity_id']
+                }, {
+                    'prefix': 'dog',
+                    'from_obj': 'dog_complaints',
+                    'knowledge_date_column': 'as_of_date',
+                    'aggregates': [{
+                        'quantity': 'dog_sightings',
+                        'metrics': ['count', 'avg'],
+                    }],
+                    'intervals': ['1y'],
+                    'groups': ['entity_id']
+                }],
                 feature_dates=all_as_of_times,
             )
+            feature_table_tasks = feature_generator.generate_all_table_tasks(aggregations)
 
             # create feature tables
             feature_generator.process_table_tasks(feature_table_tasks)
 
             # build feature dictionaries from feature tables and
             # subsetting config
-            master_feature_dict = feature_dictionary_creator\
-                .feature_dictionary(feature_table_tasks.keys())
+            master_feature_dict = feature_dictionary_creator.feature_dictionary(
+                feature_table_names=feature_table_tasks.keys(),
+                index_column_lookup=feature_generator.index_column_lookup(aggregations)
+            )
 
             feature_dicts = feature_group_mixer.generate(
                 feature_group_creator.subsets(master_feature_dict)
