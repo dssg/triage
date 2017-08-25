@@ -311,7 +311,7 @@ class ExperimentBase(object):
         self._split_definitions = new_split_definitions
 
     def log_split(self, split_num, split):
-        logging.warning(
+        logging.info(
             'Starting train/test for %s out of %s: train range: %s to %s',
             split_num+1,
             len(self.full_matrix_definitions),
