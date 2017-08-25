@@ -1,4 +1,3 @@
-import sklearn
 from sklearn.model_selection import ParameterGrid
 
 from sqlalchemy.orm import sessionmaker
@@ -9,8 +8,6 @@ import logging
 import datetime
 import copy
 import pandas
-import numpy as np
-import warnings
 
 from catwalk.utils import \
     filename_friendly_hash, \
@@ -19,9 +16,8 @@ from catwalk.utils import \
 
 from results_schema import Model, FeatureImportance
 
-from catwalk.feature_importances import \
-    _ad_hoc_feature_importances, \
-    get_feature_importances
+from catwalk.feature_importances import get_feature_importances
+
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
@@ -135,7 +131,10 @@ class ModelTrainer(object):
             # logging.warning('deleting existing model %s', existing_model.model_id)
             # existing_model.delete(session)
             # session.commit()
-            logging.warning('model meta data already stored %s', saved_model_id)
+            logging.info(
+                'Metadata for model_id %s found in database. Reusing model metadata.',
+                saved_model_id
+            )
             return saved_model_id
 
         session = self.sessionmaker()
@@ -158,7 +157,8 @@ class ModelTrainer(object):
             features_index,
             feature_importance,
             rankings_abs,
-            rankings_pct):
+            rankings_pct
+        ):
             feature_importance = FeatureImportance(
                 model=model,
                 feature_importance=round(float(importance), 10),
@@ -246,12 +246,11 @@ class ModelTrainer(object):
             model_config[model_group_key] = matrix_metadata[model_group_key]
         db_conn = self.db_engine.raw_connection()
         cur = db_conn.cursor()
-        cur.execute( "SELECT EXISTS ( "
-                     "       SELECT * "
-                     "       FROM pg_catalog.pg_proc "
-                     "       WHERE proname = 'get_model_group_id' ) ")
+        cur.execute("SELECT EXISTS ( "
+                    "       SELECT * "
+                    "       FROM pg_catalog.pg_proc "
+                    "       WHERE proname = 'get_model_group_id' ) ")
         condition = cur.fetchone()
-        confition = condition[0]
 
         if condition:
             query = ("SELECT get_model_group_id( "
@@ -410,10 +409,10 @@ class ModelTrainer(object):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
 
             if any(task['model_hash'] == model_hash for task in tasks):
-                logging.warning('Skipping model_hash %s because another' \
-                                'equivalent one found in this batch.' \
-                                'Classpath: %s -- Hyperparameters: %s',
-                                model_hash, class_path, parameters)
+                logging.info('Skipping model_hash %s because another'
+                             'equivalent one found in this batch.'
+                             'Classpath: %s -- Hyperparameters: %s',
+                             model_hash, class_path, parameters)
                 continue
             tasks.append({
                 'matrix_store': matrix_store,
