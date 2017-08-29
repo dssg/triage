@@ -57,6 +57,7 @@ class ExperimentBase(object):
         )
         self._split_definitions = None
         self._matrix_build_tasks = None
+        self._collate_aggregations = None
         self._feature_table_tasks = None
         self._all_as_of_times = None
         self.initialize_factories()
@@ -229,6 +230,17 @@ class ExperimentBase(object):
         return self._all_as_of_times
 
     @property
+    def collate_aggregations(self):
+        if not self._collate_aggregations:
+            logging.info('Creating collate aggregations')
+            self._collate_aggregations = self.feature_generator.aggregations(
+                feature_aggregation_config=self.config['feature_aggregations'],
+                feature_dates=self.all_as_of_times,
+            )
+        return self._collate_aggregations
+
+
+    @property
     def feature_table_tasks(self):
         """All feature table query tasks specified by this Experiment
 
@@ -241,10 +253,8 @@ class ExperimentBase(object):
                 'Calculating feature tasks for %s as_of_times',
                 len(self.all_as_of_times)
             )
-            self._feature_table_tasks = self.feature_generator.generate_all_table_tasks(
-                feature_aggregation_config=self.config['feature_aggregations'],
-                feature_dates=self.all_as_of_times,
-            )
+            self._feature_table_tasks = self.feature_generator\
+                .generate_all_table_tasks(self.collate_aggregations)
         return self._feature_table_tasks
 
     @property
@@ -256,7 +266,10 @@ class ExperimentBase(object):
             being lists of feature names
         """
         master_feature_dict = self.feature_dictionary_creator\
-            .feature_dictionary(self.feature_table_tasks.keys())
+            .feature_dictionary(
+                feature_table_names=self.feature_table_tasks.keys(),
+                index_column_lookup=self.feature_generator.index_column_lookup(self.collate_aggregations)
+            )
 
         return self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(master_feature_dict)
