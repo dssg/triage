@@ -17,6 +17,7 @@ from datetime import datetime
 from abc import ABCMeta, abstractmethod
 from functools import partial
 import logging
+from triage.experiments import CONFIG_VERSION
 
 
 def dt_from_str(dt_str):
@@ -34,6 +35,7 @@ class ExperimentBase(object):
         project_path=None,
         replace=True
     ):
+        self._check_config_version(config)
         self.config = config
         self.db_engine = db_engine
         if model_storage_class:
@@ -59,6 +61,20 @@ class ExperimentBase(object):
         self._all_as_of_times = None
         self.initialize_factories()
         self.initialize_components()
+
+    def _check_config_version(self, config):
+        if 'config_version' in config:
+            config_version = config['config_version']
+        else:
+            logging.warning('config_version key not found in experiment config. Assuming v1, which may not be correct')
+            config_version = 'v1'
+        if config_version != CONFIG_VERSION:
+            raise ValueError(
+                '''Experiment config '{}'
+                does not match current version '{}'.
+                Will not run experiment.'''\
+                .format(config_version, CONFIG_VERSION)
+            )
 
     def initialize_factories(self):
         split_config = self.config['temporal_config']
