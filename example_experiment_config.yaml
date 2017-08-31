@@ -1,4 +1,12 @@
 ---
+# CONFIG_VERSION
+# The experiment configuration changes from time to time, and we upgrade the
+# triage.experiments.CONFIG_VERSION variable whenever drastic changes that break
+# old configuration files are released. Be sure to assign the config version
+# that matches the triage.experiments.CONFIG_VERSION in the triage release 
+# you are developing against!
+config_version: 'v1'
+
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
 # models table for each model created in this experiment

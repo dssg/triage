@@ -5,11 +5,15 @@ from functools import partial
 from tempfile import TemporaryDirectory
 import testing.postgresql
 from unittest.mock import Mock
+from unittest import TestCase
 
 from catwalk.db import ensure_db
 from catwalk.storage import FSModelStorageEngine
 
-from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
+from triage.experiments import\
+    MultiCoreExperiment,\
+    SingleThreadedExperiment,\
+    CONFIG_VERSION
 
 
 def populate_source_data(db_engine):
@@ -124,65 +128,74 @@ def num_linked_evaluations(db_engine):
     return num_evaluations
 
 
+def sample_config():
+    temporal_config = {
+        'beginning_of_time': '2010-01-01',
+        'modeling_start_time': '2011-01-01',
+        'modeling_end_time': '2014-01-01',
+        'update_window': '1y',
+        'train_label_windows': ['6months'],
+        'test_label_windows': ['6months'],
+        'train_example_frequency': '1day',
+        'test_example_frequency': '3months',
+        'train_durations': ['6months'],
+        'test_durations': ['1months'],
+    }
+
+    scoring_config = {
+        'metric_groups': [
+            {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+        ]
+    }
+
+    grid_config = {
+        'sklearn.linear_model.LogisticRegression': {
+            'C': [0.00001, 0.0001],
+            'penalty': ['l1', 'l2'],
+            'random_state': [2193]
+        }
+    }
+
+    feature_config = [{
+        'prefix': 'test_features',
+        'from_obj': 'cat_complaints',
+        'knowledge_date_column': 'as_of_date',
+        'aggregates': [{
+            'quantity': 'cat_sightings',
+            'metrics': ['count', 'avg'],
+        }],
+        'intervals': ['1y'],
+        'groups': ['entity_id']
+    }]
+
+    state_config = {
+        'table_name': 'states',
+        'state_filters': ['state_one or state_two'],
+    }
+
+    return {
+        'config_version': 'v1',
+        'events_table': 'events',
+        'entity_column_name': 'entity_id',
+        'model_comment': 'test2-final-final',
+        'model_group_keys': ['label_name', 'label_type'],
+        'feature_aggregations': feature_config,
+        'state_config': state_config,
+        'temporal_config': temporal_config,
+        'grid_config': grid_config,
+        'scoring': scoring_config,
+    }
+
+
 def simple_experiment_test(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        temporal_config = {
-            'beginning_of_time': '2010-01-01',
-            'modeling_start_time': '2011-01-01',
-            'modeling_end_time': '2014-01-01',
-            'update_window': '1y',
-            'train_label_windows': ['6months'],
-            'test_label_windows': ['6months'],
-            'train_example_frequency': '1day',
-            'test_example_frequency': '3months',
-            'train_durations': ['6months'],
-            'test_durations': ['1months'],
-        }
-        scoring_config = {
-            'metric_groups': [
-                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
-            ]
-        }
-        grid_config = {
-            'sklearn.linear_model.LogisticRegression': {
-                'C': [0.00001, 0.0001],
-                'penalty': ['l1', 'l2'],
-                'random_state': [2193]
-            }
-        }
-        feature_config = [{
-            'prefix': 'test_features',
-            'from_obj': 'cat_complaints',
-            'knowledge_date_column': 'as_of_date',
-            'aggregates': [{
-                'quantity': 'cat_sightings',
-                'metrics': ['count', 'avg'],
-            }],
-            'intervals': ['1y'],
-            'groups': ['entity_id']
-        }]
-        state_config = {
-            'table_name': 'states',
-            'state_filters': ['state_one or state_two'],
-        }
-        experiment_config = {
-            'events_table': 'events',
-            'entity_column_name': 'entity_id',
-            'model_comment': 'test2-final-final',
-            'model_group_keys': ['label_name', 'label_type'],
-            'feature_aggregations': feature_config,
-            'state_config': state_config,
-            'temporal_config': temporal_config,
-            'grid_config': grid_config,
-            'scoring': scoring_config,
-        }
 
         with TemporaryDirectory() as temp_dir:
             experiment_class(
-                config=experiment_config,
+                config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections')
@@ -268,62 +281,10 @@ def restart_experiment_test(experiment_class):
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        temporal_config = {
-            'beginning_of_time': '2010-01-01',
-            'modeling_start_time': '2011-01-01',
-            'modeling_end_time': '2014-01-01',
-            'update_window': '1y',
-            'train_label_windows': ['6months'],
-            'test_label_windows': ['6months'],
-            'train_example_frequency': '1day',
-            'test_example_frequency': '3months',
-            'train_durations': ['6months'],
-            'test_durations': ['1months'],
-        }
-        scoring_config = {
-            'metric_groups': [
-                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
-            ],
-            'sort_seed': 12345
-        }
-        grid_config = {
-            'sklearn.linear_model.LogisticRegression': {
-                'C': [0.00001, 0.0001],
-                'penalty': ['l1', 'l2'],
-                'random_state': [2193]
-            }
-        }
-        feature_config = [{
-            'prefix': 'test_features',
-            'from_obj': 'cat_complaints',
-            'knowledge_date_column': 'as_of_date',
-            'aggregates': [{
-                'quantity': 'cat_sightings',
-                'metrics': ['count', 'avg'],
-            }],
-            'intervals': ['1y'],
-            'groups': ['entity_id']
-        }]
-        state_config = {
-            'table_name': 'states',
-            'state_filters': ['state_one or state_two'],
-        }
-        experiment_config = {
-            'events_table': 'events',
-            'entity_column_name': 'entity_id',
-            'model_comment': 'test2-final-final',
-            'model_group_keys': ['label_name', 'label_type'],
-            'feature_aggregations': feature_config,
-            'state_config': state_config,
-            'temporal_config': temporal_config,
-            'grid_config': grid_config,
-            'scoring': scoring_config,
-        }
-
         temp_dir = TemporaryDirectory()
         try:
             experiment = experiment_class(
-                config=experiment_config,
+                config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir.name, 'inspections'),
@@ -335,7 +296,7 @@ def restart_experiment_test(experiment_class):
             assert evaluations > 0
 
             experiment = experiment_class(
-                config=experiment_config,
+                config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir.name, 'inspections'),
@@ -363,52 +324,8 @@ def nostate_experiment_test(experiment_class):
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        temporal_config = {
-            'beginning_of_time': '2010-01-01',
-            'modeling_start_time': '2011-01-01',
-            'modeling_end_time': '2014-01-01',
-            'update_window': '1y',
-            'train_label_windows': ['6months'],
-            'test_label_windows': ['6months'],
-            'train_example_frequency': '1day',
-            'test_example_frequency': '3months',
-            'train_durations': ['6months'],
-            'test_durations': ['1months'],
-        }
-        scoring_config = {
-            'metric_groups': [
-                {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
-            ]
-        }
-        grid_config = {
-            'sklearn.linear_model.LogisticRegression': {
-                'C': [0.00001, 0.0001],
-                'penalty': ['l1', 'l2'],
-                'random_state': [2193]
-            }
-        }
-        feature_config = [{
-            'prefix': 'test_features',
-            'from_obj': 'cat_complaints',
-            'knowledge_date_column': 'as_of_date',
-            'aggregates': [{
-                'quantity': 'cat_sightings',
-                'metrics': ['count', 'avg'],
-            }],
-            'intervals': ['1y'],
-            'groups': ['entity_id']
-        }]
-        experiment_config = {
-            'events_table': 'events',
-            'entity_column_name': 'entity_id',
-            'model_comment': 'test2-final-final',
-            'model_group_keys': ['label_name', 'label_type'],
-            'feature_aggregations': feature_config,
-            'temporal_config': temporal_config,
-            'grid_config': grid_config,
-            'scoring': scoring_config,
-        }
-
+        experiment_config = sample_config()
+        del experiment_config['state_config']
         with TemporaryDirectory() as temp_dir:
             experiment_class(
                 config=experiment_config,
@@ -490,3 +407,31 @@ def test_nostate_multicore_experiment():
     nostate_experiment_test(
         partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
     )
+
+
+class TestConfigVersion(TestCase):
+    def test_load_if_right_version(self):
+        experiment_config = sample_config()
+        experiment_config['config_version'] = CONFIG_VERSION
+        with testing.postgresql.Postgresql() as postgresql:
+            db_engine = create_engine(postgresql.url())
+            ensure_db(db_engine)
+            experiment = SingleThreadedExperiment(
+                config=experiment_config,
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path='inspections'
+            )
+
+        assert isinstance(experiment, SingleThreadedExperiment)
+
+    def test_noload_if_wrong_version(self):
+        experiment_config = sample_config()
+        experiment_config['config_version'] = 'v0'
+        with self.assertRaises(ValueError):
+            SingleThreadedExperiment(
+                config=experiment_config,
+                db_engine=None,
+                model_storage_class=FSModelStorageEngine,
+                project_path='inspections'
+            )
