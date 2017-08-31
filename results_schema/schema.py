@@ -104,6 +104,7 @@ class FeatureImportance(Base):
 
     model_rel = relationship('Model')
 
+
 class Prediction(Base):
     __tablename__ = 'predictions'
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
@@ -117,6 +118,33 @@ class Prediction(Base):
     test_label_window = Column(Interval)
 
     model_rel = relationship('Model')
+
+
+class ListPrediction(Base):
+    __tablename__ = 'list_predictions'
+    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    entity_id = Column(BigInteger, primary_key=True)
+    as_of_date = Column(DateTime, primary_key=True)
+    score = Column(Numeric)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
+    matrix_uuid = Column(Text)
+    test_label_window = Column(Interval)
+
+    model_rel = relationship('Model')
+
+
+class IndividualImportance(Base):
+    __tablename__ = 'individual_importances'
+    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    entity_id = Column(BigInteger, primary_key=True)
+    as_of_date = Column(DateTime, primary_key=True)
+    feature = Column(String, primary_key=True)
+    method = Column(String, primary_key=True)
+    importance_score = Column(Text)
+
+    model_rel = relationship('Model')
+
 
 class Evaluation(Base):
     __tablename__ = 'evaluations'

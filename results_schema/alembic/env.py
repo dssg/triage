@@ -88,8 +88,10 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table='results_schema_versions'
+            version_table='results_schema_versions',
+            include_schemas=True,
         )
+        connection.execute('set search_path to "{}", public'.format('results'))
 
         with context.begin_transaction():
             context.run_migrations()

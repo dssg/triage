@@ -88,6 +88,33 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     test_label_window = '3m'
 
 
+class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.ListPrediction
+        sqlalchemy_session = session
+
+    model_rel = factory.SubFactory(ModelFactory)
+    entity_id = factory.fuzzy.FuzzyInteger(0)
+    as_of_date = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    score = factory.fuzzy.FuzzyDecimal(0, 1)
+    rank_abs = 1
+    rank_pct = 1.0
+    matrix_uuid = factory.fuzzy.FuzzyText()
+    test_label_window = '3m'
+
+
+class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.IndividualImportance
+        sqlalchemy_session = session
+    model_rel = factory.SubFactory(ModelFactory)
+    entity_id = factory.fuzzy.FuzzyInteger(0)
+    as_of_date = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    feature = factory.fuzzy.FuzzyText()
+    method = factory.fuzzy.FuzzyText()
+    importance_score = factory.fuzzy.FuzzyDecimal(0, 1)
+
+
 class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Evaluation
