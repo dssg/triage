@@ -111,6 +111,7 @@ class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     entity_id = factory.fuzzy.FuzzyInteger(0)
     as_of_date = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     feature = factory.fuzzy.FuzzyText()
+    feature_value = factory.fuzzy.FuzzyDecimal(0, 100)
     method = factory.fuzzy.FuzzyText()
     importance_score = factory.fuzzy.FuzzyDecimal(0, 1)
 

@@ -141,7 +141,8 @@ class IndividualImportance(Base):
     as_of_date = Column(DateTime, primary_key=True)
     feature = Column(String, primary_key=True)
     method = Column(String, primary_key=True)
-    importance_score = Column(Text)
+    feature_value = Column(Float)
+    importance_score = Column(Float)
 
     model_rel = relationship('Model')
 
