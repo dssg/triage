@@ -3,9 +3,9 @@ from audition.plotting import plot_cats
 import pandas as pd
 
 
-class MetricOverTimePlotter(object):
+class ModelGroupPerformancePlotter(object):
     def __init__(self, distance_from_best_table):
-        """Generate a plot illustrating the value of a metric over time
+        """Generate a plot illustrating the performance of a model group over time
 
         Args:
             distance_from_best_table (audition.DistanceFromBestTable)

@@ -37,6 +37,7 @@ class DistanceFromBestTable(object):
             raw_value float,
             best_case float,
             dist_from_best_case float,
+            raw_value_next_time float,
             dist_from_best_case_next_time float
         )'''.format(self.distance_table))
 
@@ -97,6 +98,11 @@ class DistanceFromBestTable(object):
                 )
                 select
                     current_best_vals.*,
+                    first_value(raw_value) over (
+                        partition by model_group_id
+                        order by train_end_time asc
+                        rows between 1 following and unbounded following
+                    ) raw_value_next_time,
                     first_value(dist_from_best_case) over (
                         partition by model_group_id
                         order by train_end_time asc

@@ -1,4 +1,4 @@
-from audition.metrics_over_time import MetricOverTimePlotter
+from audition.model_group_performance import ModelGroupPerformancePlotter
 import testing.postgresql
 from sqlalchemy import create_engine
 import numpy
@@ -6,11 +6,11 @@ from tests.utils import create_sample_distance_table
 from unittest.mock import patch
 
 
-def test_MetricOverTimePlotter_generate_plot_data():
+def test_ModelGroupPerformancePlotter_generate_plot_data():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         distance_table, model_groups = create_sample_distance_table(engine)
-        plotter = MetricOverTimePlotter(distance_table)
+        plotter = ModelGroupPerformancePlotter(distance_table)
         df = plotter.generate_plot_data(
             metric='precision@',
             parameter='100_abs',
@@ -22,12 +22,12 @@ def test_MetricOverTimePlotter_generate_plot_data():
             assert numpy.isclose(value, 0.5)
 
 
-def test_MetricOverTimePlotter_plot_all():
-    with patch('audition.metrics_over_time.plot_cats') as plot_patch:
+def test_ModelGroupPerformancePlotter_plot_all():
+    with patch('audition.model_group_performance.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)
-            plotter = MetricOverTimePlotter(distance_table)
+            plotter = ModelGroupPerformancePlotter(distance_table)
             plotter.plot_all(
                 [{'metric': 'precision@', 'parameter': '100_abs'}],
                 model_group_ids=[1, 2],

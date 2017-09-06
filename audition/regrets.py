@@ -5,9 +5,12 @@ import pandas
 from audition.plotting import plot_cats, plot_bounds
 
 
-class RegretCalculator(object):
+class SelectionRulePicker(object):
     def __init__(self, distance_from_best_table):
-        """Calculates 'regrets' for different model group selection rules
+        """Runs simulations of different model group selection rules
+
+        Can look at different results of selection rules, like 'regrets'
+        or raw metric values.
 
         A regret refers to the difference in performance between a model group
         and the best model group for the next testing window
@@ -19,13 +22,13 @@ class RegretCalculator(object):
         """
         self.distance_from_best_table = distance_from_best_table
 
-    def regrets_for_rule(
+    def results_for_rule(
         self,
         bound_selection_rule,
         model_group_ids,
         train_end_times,
         regret_metric,
-        regret_parameter,
+        regret_parameter
     ):
         """Calculate the regrets, or distance between the chosen model and
             the maximum value next test time
@@ -44,12 +47,19 @@ class RegretCalculator(object):
             selection_rule_args (dict) Arguments that the given selection rule
                 will accept as keyword arguments
 
-        Returns: (list) for each train end time, the distance between the
-            model group chosen by the selection rule and the potential
-            maximum for the next train end time
+        Returns: (list) for each train end time, a dictionary representing the
+            model group chosen by the selection rule and its performance
+
+            Should have all keys from the DistanceFromBestTable, most
+            importantly
+            'distance_from_best_case_next_time'
+            'distance_from_best_case',
+            'raw_value',
+            'raw_value_next_time'
         """
-        regrets = []
+
         df = self.distance_from_best_table.as_dataframe(model_group_ids)
+        choices = []
 
         for train_end_time in train_end_times:
             localized_df = copy.deepcopy(
@@ -57,26 +67,26 @@ class RegretCalculator(object):
             )
             del localized_df['dist_from_best_case_next_time']
 
-            choice = bound_selection_rule.pick(localized_df, train_end_time)
-            regret_result = df[
-                (df['model_group_id'] == choice) &
+            model_group_id = bound_selection_rule.pick(localized_df, train_end_time)
+            choice = df[
+                (df['model_group_id'] == model_group_id) &
                 (df['train_end_time'] == train_end_time) &
                 (df['metric'] == regret_metric) &
                 (df['parameter'] == regret_parameter)
             ]
-            assert len(regret_result) == 1
-            regrets.append(regret_result['dist_from_best_case_next_time'].values[0])
-        return regrets
+            assert len(choice) == 1
+            choices.append(choice.squeeze().to_dict())
+        return choices
 
 
 class SelectionRulePlotter(object):
     """Plot selection rules
 
     Args:
-        regret_calculator (.RegretCalculator)
+        selection_rule_picker (.SelectionRulePicker)
     """
-    def __init__(self, regret_calculator):
-        self.regret_calculator = regret_calculator
+    def __init__(self, selection_rule_picker):
+        self.selection_rule_picker = selection_rule_picker
 
     def plot_bounds(self, metric, parameter):
         """Compute the plot bounds for a given metric and parameter
@@ -89,7 +99,7 @@ class SelectionRulePlotter(object):
         Returns: (number, number) A minimum and maximum x value for the plot
         """
 
-        observed_min, observed_max = self.regret_calculator\
+        observed_min, observed_max = self.selection_rule_picker\
             .distance_from_best_table\
             .observed_bounds[(metric, parameter)]
         return plot_bounds(observed_min, observed_max)
@@ -130,13 +140,16 @@ class SelectionRulePlotter(object):
         """
         accumulator = list()
         for selection_rule in bound_selection_rules:
-            regrets = self.regret_calculator.regrets_for_rule(
-                selection_rule,
-                model_group_ids,
-                train_end_times,
-                regret_metric,
-                regret_parameter
-            )
+            regrets = [
+                result['dist_from_best_case_next_time'] for result in
+                self.selection_rule_picker.results_for_rule(
+                    selection_rule,
+                    model_group_ids,
+                    train_end_times,
+                    regret_metric,
+                    regret_parameter
+                )
+            ]
             for regret_threshold in self.regret_thresholds(regret_metric, regret_parameter):
                 pct_of_time = numpy.mean([1 if regret < regret_threshold else 0 for regret in regrets])
                 accumulator.append({

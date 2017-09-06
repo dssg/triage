@@ -47,22 +47,22 @@ def create_sample_distance_table(engine):
     spiky_1y_id = models['spiky_1y_ago'].model_id
     spiky_1y_end = models['spiky_1y_ago'].train_end_time
     distance_rows = [
-        (stable_grp, stable_3y_id, stable_3y_end, 'precision@', '100_abs', 0.5, 0.6, 0.1, 0.15),
-        (stable_grp, stable_2y_id, stable_2y_end, 'precision@', '100_abs', 0.5, 0.84, 0.34, 0.18),
-        (stable_grp, stable_1y_id, stable_1y_end, 'precision@', '100_abs', 0.46, 0.67, 0.21, 0.11),
-        (spiky_grp, spiky_3y_id, spiky_3y_end, 'precision@', '100_abs', 0.45, 0.6, 0.15, 0.19),
-        (spiky_grp, spiky_2y_id, spiky_2y_end, 'precision@', '100_abs', 0.84, 0.84, 0.0, 0.3),
-        (spiky_grp, spiky_1y_id, spiky_1y_end, 'precision@', '100_abs', 0.45, 0.67, 0.22, 0.12),
-        (stable_grp, stable_3y_id, stable_3y_end, 'recall@', '100_abs', 0.4, 0.4, 0.0, 0.0),
-        (stable_grp, stable_2y_id, stable_2y_end, 'recall@', '100_abs', 0.5, 0.5, 0.0, 0.0),
-        (stable_grp, stable_1y_id, stable_1y_end, 'recall@', '100_abs', 0.6, 0.6, 0.0, 0.0),
-        (spiky_grp, spiky_3y_id, spiky_3y_end, 'recall@', '100_abs', 0.65, 0.65, 0.0, 0.0),
-        (spiky_grp, spiky_2y_id, spiky_2y_end, 'recall@', '100_abs', 0.55, 0.55, 0.0, 0.0),
-        (spiky_grp, spiky_1y_id, spiky_1y_end, 'recall@', '100_abs', 0.45, 0.45, 0.0, 0.0),
+        (stable_grp, stable_3y_id, stable_3y_end, 'precision@', '100_abs', 0.5, 0.6, 0.1, 0.5, 0.15),
+        (stable_grp, stable_2y_id, stable_2y_end, 'precision@', '100_abs', 0.5, 0.84, 0.34, 0.5, 0.18),
+        (stable_grp, stable_1y_id, stable_1y_end, 'precision@', '100_abs', 0.46, 0.67, 0.21, 0.5, 0.11),
+        (spiky_grp, spiky_3y_id, spiky_3y_end, 'precision@', '100_abs', 0.45, 0.6, 0.15, 0.5, 0.19),
+        (spiky_grp, spiky_2y_id, spiky_2y_end, 'precision@', '100_abs', 0.84, 0.84, 0.0, 0.5, 0.3),
+        (spiky_grp, spiky_1y_id, spiky_1y_end, 'precision@', '100_abs', 0.45, 0.67, 0.22, 0.5, 0.12),
+        (stable_grp, stable_3y_id, stable_3y_end, 'recall@', '100_abs', 0.4, 0.4, 0.0, 0.4, 0.0),
+        (stable_grp, stable_2y_id, stable_2y_end, 'recall@', '100_abs', 0.5, 0.5, 0.0, 0.5, 0.0),
+        (stable_grp, stable_1y_id, stable_1y_end, 'recall@', '100_abs', 0.6, 0.6, 0.0, 0.6, 0.0),
+        (spiky_grp, spiky_3y_id, spiky_3y_end, 'recall@', '100_abs', 0.65, 0.65, 0.0, 0.65, 0.0),
+        (spiky_grp, spiky_2y_id, spiky_2y_end, 'recall@', '100_abs', 0.55, 0.55, 0.0, 0.55, 0.0),
+        (spiky_grp, spiky_1y_id, spiky_1y_end, 'recall@', '100_abs', 0.45, 0.45, 0.0, 0.45, 0.0),
     ]
     for dist_row in distance_rows:
         engine.execute(
-            'insert into dist_table values (%s, %s, %s, %s, %s, %s, %s, %s, %s)',
+            'insert into dist_table values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
             dist_row
         )
     return distance_table, model_groups

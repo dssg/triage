@@ -1,4 +1,4 @@
-from audition.regrets import RegretCalculator, SelectionRulePlotter, BoundSelectionRule
+from audition.regrets import SelectionRulePicker, SelectionRulePlotter, BoundSelectionRule
 import testing.postgresql
 from sqlalchemy import create_engine
 from tests.utils import create_sample_distance_table
@@ -7,7 +7,7 @@ import numpy
 from unittest.mock import patch
 
 
-def test_regret_calculator():
+def test_selection_rule_picker():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         distance_table, model_groups = create_sample_distance_table(engine)
@@ -15,11 +15,11 @@ def test_regret_calculator():
         def pick_spiky(df, train_end_time):
             return model_groups['spiky'].model_group_id
 
-        regret_calculator = RegretCalculator(
+        selection_rule_picker = SelectionRulePicker(
             distance_from_best_table=distance_table
         )
 
-        regrets = regret_calculator.regrets_for_rule(
+        results = selection_rule_picker.results_for_rule(
             bound_selection_rule=BoundSelectionRule(
                 descriptive_name='spiky',
                 function=pick_spiky,
@@ -30,10 +30,11 @@ def test_regret_calculator():
             regret_metric='precision@',
             regret_parameter='100_abs',
         )
-        assert regrets == [0.19, 0.3, 0.12]
+        assert [result['dist_from_best_case_next_time'] for result in results] == [0.19, 0.3, 0.12]
+        assert [result['raw_value'] for result in results] == [0.45, 0.84, 0.45]
 
 
-def test_regret_calculator_with_args():
+def test_selection_rule_picker_with_args():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         distance_table, model_groups = create_sample_distance_table(engine)
@@ -44,20 +45,23 @@ def test_regret_calculator_with_args():
             mean = subsetted.groupby(['model_group_id'])['raw_value'].mean()
             return mean.nlargest(1).index[0]
 
-        regret_calculator = RegretCalculator(
+        selection_rule_picker = SelectionRulePicker(
             distance_from_best_table=distance_table
         )
-        regrets = regret_calculator.regrets_for_rule(
-            bound_selection_rule=BoundSelectionRule(
-                descriptive_name='pick_highest_avg',
-                function=pick_highest_avg,
-                args={'metric': 'recall@', 'parameter': '100_abs'},
-            ),
-            model_group_ids=[mg.model_group_id for mg in model_groups.values()],
-            train_end_times=['2015-01-01'],
-            regret_metric='precision@',
-            regret_parameter='100_abs',
-        )
+        regrets = [
+            result['dist_from_best_case_next_time'] for result in
+            selection_rule_picker.results_for_rule(
+                bound_selection_rule=BoundSelectionRule(
+                    descriptive_name='pick_highest_avg',
+                    function=pick_highest_avg,
+                    args={'metric': 'recall@', 'parameter': '100_abs'},
+                ),
+                model_group_ids=[mg.model_group_id for mg in model_groups.values()],
+                train_end_times=['2015-01-01'],
+                regret_metric='precision@',
+                regret_parameter='100_abs',
+            )
+        ]
         # picking the highest avg recall will pick 'spiky' for this time
         assert regrets == [0.3]
 
@@ -67,7 +71,7 @@ def test_SelectionPlotter_create_plot_dataframe():
         engine = create_engine(postgresql.url())
         distance_table, model_groups = create_sample_distance_table(engine)
         plotter = SelectionRulePlotter(
-            regret_calculator=RegretCalculator(distance_table)
+            selection_rule_picker=SelectionRulePicker(distance_table)
         )
         plot_df = plotter.create_plot_dataframe(
             bound_selection_rules=[
@@ -108,7 +112,7 @@ def test_SelectionPlotter_plot():
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)
             plotter = SelectionRulePlotter(
-                regret_calculator=RegretCalculator(distance_table)
+                selection_rule_picker=SelectionRulePicker(distance_table)
             )
             plotter.plot_all_selection_rules(
                 bound_selection_rules=[
