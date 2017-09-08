@@ -1,11 +1,10 @@
-from catwalk.storage import MettaCSVMatrixStore, InMemoryModelStorageEngine
+from catwalk.storage import InMemoryModelStorageEngine
 from sqlalchemy import create_engine
 from triage.experiments import ExperimentBase
 import logging
 from multiprocessing import Pool
 from functools import partial
 from catwalk.utils import Batch
-import os
 import traceback
 
 
@@ -22,16 +21,7 @@ class MultiCoreExperiment(ExperimentBase):
     def catwalk(self):
         for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
-            train_store = MettaCSVMatrixStore(
-                matrix_path=os.path.join(
-                    self.matrices_directory,
-                    '{}.csv'.format(split['train_uuid'])
-                ),
-                metadata_path=os.path.join(
-                    self.matrices_directory,
-                    '{}.yaml'.format(split['train_uuid'])
-                )
-            )
+            train_store = self.matrix_store(split['train_uuid'])
             logging.info('Checking out train matrix')
             if train_store.empty:
                 logging.warning('''Train matrix for split %s was empty,
@@ -84,16 +74,7 @@ class MultiCoreExperiment(ExperimentBase):
                     max(as_of_times),
                     len(as_of_times)
                 )
-                test_store = MettaCSVMatrixStore(
-                    matrix_path=os.path.join(
-                        self.matrices_directory,
-                        '{}.csv'.format(test_uuid)
-                    ),
-                    metadata_path=os.path.join(
-                        self.matrices_directory,
-                        '{}.yaml'.format(test_uuid)
-                    )
-                )
+                test_store = self.matrix_store(test_uuid)
                 if test_store.empty:
                     logging.warning('''Test matrix for train uuid %s
                     was empty, no point in training this model. Skipping
@@ -103,6 +84,7 @@ class MultiCoreExperiment(ExperimentBase):
                     test_and_evaluate,
                     predictor_factory=self.predictor_factory,
                     evaluator_factory=self.evaluator_factory,
+                    indiv_importance_factory=self.indiv_importance_factory,
                     test_store=test_store,
                     db_connection_string=self.db_engine.url,
                     split_def=split_def,
@@ -258,6 +240,7 @@ def test_and_evaluate(
     model_ids,
     predictor_factory,
     evaluator_factory,
+    indiv_importance_factory,
     test_store,
     db_connection_string,
     split_def,
@@ -270,12 +253,18 @@ def test_and_evaluate(
             logging.info('Generating predictions for model id %s', model_id)
             predictor = predictor_factory(db_engine=db_engine)
             evaluator = evaluator_factory(db_engine=db_engine)
+            individual_importance = indiv_importance_factory(db_engine=db_engine)
 
             predictions_proba = predictor.predict(
                 model_id,
                 test_store,
                 misc_db_parameters=dict(),
                 train_matrix_columns=train_matrix_columns
+            )
+            logging.info('Generating individual importances for model id %s', model_id)
+            individual_importance.calculate_and_save_all_methods_and_dates(
+                model_id,
+                test_store
             )
             logging.info('Generating evaluations for model id %s', model_id)
             evaluator.evaluate(

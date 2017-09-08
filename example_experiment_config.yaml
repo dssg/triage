@@ -161,6 +161,8 @@ grid_config:
         max_depth: [1,5,10,20,50]
         max_features: [sqrt,log2]
         min_samples_split: [2,5,10]
+
+
 # MODEL SCORING
 # How each trained model is scored
 #
@@ -195,3 +197,22 @@ scoring:
                     beta: 0.75
                 -
                     beta: 1.25
+
+
+# INDIVIDUAL IMPORTANCES
+# How feature importances for individuals should be computed
+# There are two variables here:
+# methods: Refer to *how to compute* individual importances.
+#   Each entry in this list should represent a different method.
+#   Available methods are in the catwalk library's:
+#   `catwalk.individual_importance.CALCULATE_STRATEGIES` list
+#   Will default to 'uniform', or just the global importances.
+#
+# n_ranks: The number of top features per individual to compute importances for
+#   Will default to 5
+#
+# This entire section can be left blank,
+# in which case the defaults will be used.
+individual_importance:
+    methods: ['uniform']
+    n_ranks: 5

@@ -1,7 +1,4 @@
 import logging
-import os
-
-from catwalk.storage import MettaCSVMatrixStore
 
 from triage.experiments import ExperimentBase
 
@@ -21,16 +18,7 @@ class SingleThreadedExperiment(ExperimentBase):
     def catwalk(self):
         for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
-            train_store = MettaCSVMatrixStore(
-                matrix_path=os.path.join(
-                    self.matrices_directory,
-                    '{}.csv'.format(split['train_uuid'])
-                ),
-                metadata_path=os.path.join(
-                    self.matrices_directory,
-                    '{}.yaml'.format(split['train_uuid'])
-                )
-            )
+            train_store = self.matrix_store(split['train_uuid'])
             if train_store.empty:
                 logging.warning('''Train matrix for split %s was empty,
                 no point in training this model. Skipping
@@ -64,20 +52,11 @@ class SingleThreadedExperiment(ExperimentBase):
                     max(as_of_times),
                     len(as_of_times)
                 )
-                test_store = MettaCSVMatrixStore(
-                    matrix_path=os.path.join(
-                        self.matrices_directory,
-                        '{}.csv'.format(test_uuid)
-                    ),
-                    metadata_path=os.path.join(
-                        self.matrices_directory,
-                        '{}.yaml'.format(test_uuid)
-                    )
-                )
+                test_store = self.matrix_store(test_uuid)
                 if test_store.empty:
-                    logging.warning('''Test matrix for train uuid %s
-                    was empty, no point in training this model. Skipping
-                    ''', split['train_uuid'])
+                    logging.warning('''Test matrix for uuid %s
+                    was empty, no point in generating predictions. Skipping.
+                    ''', test_uuid)
                     continue
                 for model_id in model_ids:
                     logging.info('Testing model id %s', model_id)
@@ -87,6 +66,12 @@ class SingleThreadedExperiment(ExperimentBase):
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
                     )
+
+                    self.individual_importance_calculator\
+                        .calculate_and_save_all_methods_and_dates(
+                            model_id,
+                            test_store
+                        )
 
                     self.evaluator.evaluate(
                         predictions_proba=predictions_proba,

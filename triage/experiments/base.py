@@ -10,8 +10,10 @@ from architect.state_table_generators import StateTableGenerator
 from architect.planner import Planner
 from catwalk.model_trainers import ModelTrainer
 from catwalk.predictors import Predictor
+from catwalk.individual_importance import IndividualImportanceCalculator
 from catwalk.evaluation import ModelEvaluator
 from catwalk.utils import save_experiment_and_get_hash
+from catwalk.storage import CSVMatrixStore
 import os
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
@@ -33,7 +35,7 @@ class ExperimentBase(object):
         db_engine,
         model_storage_class=None,
         project_path=None,
-        replace=True
+        replace=True,
     ):
         self._check_config_version(config)
         self.config = config
@@ -41,6 +43,7 @@ class ExperimentBase(object):
         if model_storage_class:
             self.model_storage_engine =\
                 model_storage_class(project_path=project_path)
+        self.matrix_store_class = CSVMatrixStore # can't make this configurable yet until the Architect obeys
         self.project_path = project_path
         self.replace = replace
         ensure_db(self.db_engine)
@@ -166,6 +169,13 @@ class ExperimentBase(object):
             replace=self.replace
         )
 
+        self.indiv_importance_factory = partial(
+            IndividualImportanceCalculator,
+            n_ranks=self.config.get('individual_importance', {}).get('n_ranks', 5),
+            methods=self.config.get('individual_importance', {}).get('methods', ['uniform']),
+            replace=self.replace
+        )
+
         self.evaluator_factory = partial(
             ModelEvaluator,
             sort_seed=self.config['scoring'].get('sort_seed', None),
@@ -183,6 +193,7 @@ class ExperimentBase(object):
         self.planner = self.planner_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
+        self.individual_importance_calculator = self.indiv_importance_factory(db_engine=self.db_engine)
         self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
 
     @property
@@ -380,6 +391,19 @@ class ExperimentBase(object):
             split['train_matrix']['matrix_start_time'],
             split['train_matrix']['matrix_end_time'],
         )
+
+    def matrix_store(self, matrix_uuid):
+        matrix_store = self.matrix_store_class(
+            matrix_path=os.path.join(
+                self.matrices_directory,
+                '{}.csv'.format(matrix_uuid)
+            ),
+            metadata_path=os.path.join(
+                self.matrices_directory,
+                '{}.yaml'.format(matrix_uuid)
+            )
+        )
+        return matrix_store
 
     @abstractmethod
     def build_matrices(self):
