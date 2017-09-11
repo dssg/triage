@@ -80,9 +80,8 @@ class FeatureGenerator(object):
                 _ = convert_str_to_relativedelta(interval)
 
     def _validate_groups(self, groups):
-        for group in groups:
-            if group != 'entity_id':
-                raise ValueError('Only entity_id is allowed as a group at this time')
+        if 'entity_id' not in groups:
+            raise ValueError('One of the aggregation groups is required to be entity_id')
 
     def _validate_aggregation(self, aggregation_config):
         logging.info('Validating aggregation config %s', aggregation_config)

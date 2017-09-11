@@ -606,7 +606,7 @@ class TestValidations(TestCase):
                     'metrics': ['sum']
                 },
             ],
-            'groups': ['entity_id'],
+            'groups': ['entity_id', 'zip_code'],
             'intervals': ['all'],
             'knowledge_date_column': 'knowledge_date',
             'from_obj': 'data'
@@ -657,7 +657,7 @@ class TestValidations(TestCase):
 
     def test_bad_group(self):
         bad_group = copy.deepcopy(self.base_config)
-        bad_group['groups'] = ['entity_id', 'otherthing']
+        bad_group['groups'] = ['zip_code', 'otherthing']
         with self.assertRaises(ValueError):
             self.feature_generator.validate([bad_group])
 
