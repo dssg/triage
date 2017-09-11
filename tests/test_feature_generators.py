@@ -3,6 +3,8 @@ import testing.postgresql
 from sqlalchemy import create_engine
 from datetime import date
 import pandas
+from unittest import TestCase
+import copy
 
 
 INPUT_DATA = [
@@ -422,3 +424,82 @@ def test_replace():
         )
 
         assert len(table_tasks['aprefix_entity_id'].keys()) == 0
+
+
+class TestValidations(TestCase):
+    def setUp(self):
+        self.postgresql = testing.postgresql.Postgresql()
+        engine = create_engine(self.postgresql.url())
+        setup_db(engine)
+        self.feature_generator = FeatureGenerator(engine, 'features')
+
+        self.base_config = {
+            'prefix': 'aprefix',
+            'categoricals': [
+                {
+                    'column': 'cat_one',
+                    'choices': ['good', 'bad'],
+                    'metrics': ['sum']
+                },
+            ],
+            'groups': ['entity_id'],
+            'intervals': ['all'],
+            'knowledge_date_column': 'knowledge_date',
+            'from_obj': 'data'
+        }
+
+    def tearDown(self):
+        self.postgresql.stop()
+
+    def test_correct_keys(self):
+        self.feature_generator.validate([self.base_config])
+
+        with self.assertRaises(ValueError):
+            no_group = copy.deepcopy(self.base_config)
+            del no_group['groups']
+            self.feature_generator.validate([no_group])
+
+        with self.assertRaises(ValueError):
+            no_intervals = copy.deepcopy(self.base_config)
+            del no_intervals['intervals']
+            self.feature_generator.validate([no_intervals])
+
+        with self.assertRaises(ValueError):
+            no_kdate = copy.deepcopy(self.base_config)
+            del no_kdate['knowledge_date_column']
+            self.feature_generator.validate([no_kdate])
+
+        with self.assertRaises(ValueError):
+            no_from_obj = copy.deepcopy(self.base_config)
+            del no_from_obj['from_obj']
+            self.feature_generator.validate([no_from_obj])
+
+        with self.assertRaises(ValueError):
+            no_aggs = copy.deepcopy(self.base_config)
+            del no_aggs['categoricals']
+            self.feature_generator.validate([no_aggs])
+
+    def test_bad_from_obj(self):
+        bad_from_obj = copy.deepcopy(self.base_config)
+        bad_from_obj['from_obj'] = 'where thing is other_thing'
+        with self.assertRaises(ValueError):
+            self.feature_generator.validate([bad_from_obj])
+
+    def test_bad_interval(self):
+        bad_interval = copy.deepcopy(self.base_config)
+        bad_interval['intervals'] = ['1y', '1fortnight']
+        with self.assertRaises(ValueError):
+            self.feature_generator.validate([bad_interval])
+
+    def test_bad_group(self):
+        bad_group = copy.deepcopy(self.base_config)
+        bad_group['groups'] = ['entity_id', 'otherthing']
+        with self.assertRaises(ValueError):
+            self.feature_generator.validate([bad_group])
+
+    def test_bad_choice_query(self):
+        bad_choice_query = copy.deepcopy(self.base_config)
+        del bad_choice_query['categoricals'][0]['choices']
+        bad_choice_query['categoricals'][0]['choice_query'] = 'select distinct cat_two from data'
+        with self.assertRaises(ValueError):
+            self.feature_generator.validate([bad_choice_query])

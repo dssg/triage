@@ -1,10 +1,20 @@
 import logging
+from architect.validations import table_should_have_data,\
+    column_should_be_intlike,\
+    column_should_be_booleanlike,\
+    column_should_be_timelike
 
 
 class BinaryLabelGenerator(object):
     def __init__(self, events_table, db_engine):
         self.events_table = events_table
         self.db_engine = db_engine
+
+    def validate(self):
+        table_should_have_data(self.events_table, self.db_engine)
+        column_should_be_intlike(self.events_table, 'entity_id', self.db_engine)
+        column_should_be_timelike(self.events_table, 'outcome_date', self.db_engine)
+        column_should_be_booleanlike(self.events_table, 'outcome', self.db_engine)
 
     def generate(
         self,

@@ -1,4 +1,9 @@
 import logging
+from architect.validations import table_should_have_data,\
+    column_should_be_intlike,\
+    column_should_be_booleanlike,\
+    column_should_be_timelike,\
+    column_should_be_stringlike
 
 
 class StateFilter(object):
@@ -23,6 +28,7 @@ class StateFilter(object):
 
 DEFAULT_ACTIVE_STATE = 'active'
 
+
 class StateTableGenerator(object):
     """Create a table containing the state of entities on different dates
 
@@ -30,8 +36,8 @@ class StateTableGenerator(object):
         'dense' and 'sparse'.
 
     dense: A table containing entities and *time ranges* for different states
-        
-        An example of this would be a building permits table, with 
+
+        An example of this would be a building permits table, with
         time ranges that buildings are permitted.
 
         The expected format would be entity id/state/start/end
@@ -69,6 +75,28 @@ class StateTableGenerator(object):
         self.experiment_hash = experiment_hash
         self.dense_state_table = dense_state_table
         self.events_table = events_table
+
+    def validate(self):
+        if not self.dense_state_table and not self.events_table:
+            raise ValueError('Need to specify either dense_state_table or events_table')
+        if self.events_table:
+            self._event_validations()
+        if self.dense_state_table:
+            self._dense_state_validations()
+
+    def _dense_state_validations(self):
+        table_should_have_data(self.dense_state_table, self.db_engine)
+
+        column_should_be_intlike(self.dense_state_table, 'entity_id', self.db_engine)
+        column_should_be_stringlike(self.dense_state_table, 'state', self.db_engine)
+        column_should_be_timelike(self.dense_state_table, 'start_time', self.db_engine)
+        column_should_be_timelike(self.dense_state_table, 'end_time', self.db_engine)
+
+    def _event_validations(self):
+        table_should_have_data(self.events_table, self.db_engine)
+        column_should_be_intlike(self.events_table, 'entity_id', self.db_engine)
+        column_should_be_timelike(self.events_table, 'outcome_date', self.db_engine)
+        column_should_be_booleanlike(self.events_table, 'outcome', self.db_engine)
 
     @property
     def sparse_table_name(self):
@@ -147,7 +175,7 @@ class StateTableGenerator(object):
             sparse_state_table=self.sparse_table_name,
             events_table=self.events_table,
             as_of_dates=[date.isoformat() for date in as_of_dates],
-            active_state=DEFAULT_ACTIVE_STATE 
+            active_state=DEFAULT_ACTIVE_STATE
         )
         return query
 

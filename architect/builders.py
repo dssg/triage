@@ -13,6 +13,16 @@ class BuilderBase(object):
         self.engine = engine
         self.replace = replace
 
+    def validate(self):
+        for expected_db_config_val in [
+            'features_schema_name',
+            'sparse_state_table_name',
+            'labels_schema_name',
+            'labels_table_name'
+        ]:
+            if expected_db_config_val not in self.db_config:
+                raise ValueError('{} needed in db_config'.format(expected_db_config_val))
+
     def build_all_matrices(self, build_tasks):
         logging.info('Building %s matrices', len(build_tasks.keys()))
         for matrix_uuid, task_arguments in build_tasks.items():

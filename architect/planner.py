@@ -7,7 +7,6 @@ from . import builders, utils, state_table_generators
 
 
 class Planner(object):
-
     def __init__(
         self,
         beginning_of_time,
@@ -36,6 +35,9 @@ class Planner(object):
             engine,
             replace
         )
+
+    def validate(self):
+        self.builder.validate()
 
     def _generate_build_task(
         self,
