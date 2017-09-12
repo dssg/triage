@@ -178,12 +178,13 @@ def sample_config():
         'events_table': 'events',
         'entity_column_name': 'entity_id',
         'model_comment': 'test2-final-final',
-        'model_group_keys': ['label_name', 'label_type'],
+        'model_group_keys': ['label_name', 'label_type', 'custom_key'],
         'feature_aggregations': feature_config,
         'state_config': state_config,
         'temporal_config': temporal_config,
         'grid_config': grid_config,
         'scoring': scoring_config,
+        'user_metadata': { 'custom_key': 'custom_value' }
     }
 
 

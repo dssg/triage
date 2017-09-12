@@ -144,7 +144,7 @@ class ExperimentBase(object):
             },
             matrix_directory=self.matrices_directory,
             states=self.config.get('state_config', {}).get('state_filters', []),
-            user_metadata={},
+            user_metadata=self.config.get('user_metadata', {}),
             replace=self.replace
         )
 
