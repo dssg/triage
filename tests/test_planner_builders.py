@@ -13,12 +13,12 @@ from sqlalchemy import create_engine
 from unittest import TestCase
 from metta import metta_io as metta
 from mock import Mock
-
+import uuid
 
 # make some fake features data
 
 states = [
-    [0, '2016-02-01', False, True],
+    [0, '2016-01-01', False, True],
     [0, '2016-02-01', False, True],
     [0, '2016-03-01', False, True],
     [0, '2016-04-01', False, True],
@@ -50,8 +50,8 @@ states = [
     [5, '2016-05-01', False, False]
 ]
 
-features0 = [
-    [0, '2016-01-01', 2, 0],
+features0_pre = [
+    [0, '2016-01-01', 2, 1],
     [1, '2016-01-01', 1, 2],
     [0, '2016-02-01', 2, 3],
     [1, '2016-02-01', 2, 4],
@@ -61,7 +61,7 @@ features0 = [
     [1, '2016-05-01', 5, 4]
 ] 
 
-features1 = [
+features1_pre = [
     [2, '2016-01-01', 1, 1],
     [3, '2016-01-01', 1, 2],
     [2, '2016-02-01', 2, 3],
@@ -75,6 +75,20 @@ features1 = [
     [4, '2016-03-01', 1, 4],
     [5, '2016-03-01', 2, 4]
 ] 
+
+# collate will ensure every entity/date combination in the state
+# table have an imputed value in the features table, so ensure
+# this is true for our test (filling with 9's):
+f0_dict = {(r[0], r[1]) : r for r in features0_pre}
+f1_dict = {(r[0], r[1]) : r for r in features1_pre}
+
+for rec in states:
+    ent_dt = (rec[0], rec[1])
+    f0_dict[ent_dt] = f0_dict.get(ent_dt, list(ent_dt + (9, 9)))
+    f1_dict[ent_dt] = f1_dict.get(ent_dt, list(ent_dt + (9, 9)))
+
+features0 = sorted(f0_dict.values(), key=lambda x: (x[1], x[0]))
+features1 = sorted(f1_dict.values(), key=lambda x: (x[1], x[0]))
 
 features_tables = [features0, features1]
 
@@ -237,22 +251,20 @@ def test_write_to_csv():
                 matrix_directory = temp_dir,
                 user_metadata = {},
                 engine = engine,
-                builder_class = builders.LowMemoryCSVBuilder
+                builder_class = builders.HighMemoryCSVBuilder
             )
 
             # for each table, check that corresponding csv has the correct # of rows
             for table in features_tables:
-                with NamedTempFile() as f:
-                    planner.builder.write_to_csv(
-                        '''
-                            select * 
-                            from features.features{}
-                        '''.format(features_tables.index(table)),
-                        f.name
-                    )
-                    f.seek(0)
-                    reader = csv.reader(f)
-                    assert(len([row for row in reader]) == len(table) + 1)
+                planner.builder.write_to_csv(
+                    '''
+                        select * 
+                        from features.features{}
+                    '''.format(features_tables.index(table)),
+                    'test_csv.csv'
+                )
+                reader = csv.reader(planner.builder.open_fh_for_reading('test_csv.csv'))
+                assert(len([row for row in reader]) == len(table) + 1)
 
 
 def test_make_entity_date_table():
@@ -375,7 +387,6 @@ def test_write_features_data():
                 matrix_directory = temp_dir,
                 user_metadata = {},
                 engine = engine,
-                builder_class=builders.LowMemoryCSVBuilder
             )
 
             # make the entity-date table
@@ -402,10 +413,10 @@ def test_write_features_data():
 
             # get the queries and test them
             for feature_csv_name, df in zip(sorted(features_csv_names), features_dfs):
-                df = df.fillna(0)
                 df = df.reset_index()
 
-                result = pd.read_csv(feature_csv_name).reset_index()
+                result = pd.read_csv(planner.builder.open_fh_for_reading(feature_csv_name))\
+                    .reset_index()
                 result['as_of_date'] = convert_string_column_to_date(result['as_of_date'])
                 test = (result == df)
                 assert(test.all().all())
@@ -455,7 +466,6 @@ def test_write_labels_data():
                 matrix_directory = temp_dir,
                 user_metadata = {},
                 engine = engine,
-                builder_class=builders.LowMemoryCSVBuilder
             )       
 
             # make the entity-date table
@@ -482,82 +492,16 @@ def test_write_labels_data():
                 'booking': [0, 0, 1, 0],
             }).set_index(['entity_id', 'as_of_date'])
 
-            result = pd.read_csv(csv_filename).set_index(['entity_id', 'as_of_date'])
+            result = pd.read_csv(planner.builder.open_fh_for_reading(csv_filename))\
+                .set_index(['entity_id', 'as_of_date'])
             test = (result == df)
             assert(test.all().all())
 
 
 class TestMergeFeatureCSVs(TestCase):
-    def test_merge_feature_csvs_lowmem(self):
-        with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = None,
-                builder_class=builders.LowMemoryCSVBuilder
-            )
-            rowlists = [
-                [
-                    ('entity_id', 'date', 'label'),
-                    (1, 2, True),
-                    (4, 5, False),
-                    (7, 8, True),
-                ],
-                [
-                    ('entity_id', 'date', 'f1'),
-                    (1, 2, 3),
-                    (4, 5, 6),
-                    (7, 8, 9),
-                ],
-                [
-                    ('entity_id', 'date', 'f2'),
-                    (1, 2, 3),
-                    (4, 5, 9),
-                    (7, 8, 15),
-                ],
-                [
-                    ('entity_id', 'date', 'f3'),
-                    (1, 2, 2),
-                    (4, 5, 20),
-                    (7, 8, 56),
-                ],
-            ]
-
-            sourcefiles = []
-            for rows in rowlists:
-
-                f = NamedTempFile()
-                sourcefiles.append(f)
-                writer = csv.writer(f)
-                for row in rows:
-                    writer.writerow(row)
-                f.seek(0)
-            try:
-                outfilename = planner.builder.merge_feature_csvs(
-                    [f.name for f in sourcefiles],
-                    matrix_directory=temp_dir,
-                    matrix_uuid='1234'
-                )
-                with open(outfilename) as outfile:
-                    reader = csv.reader(outfile)
-                    result = [row for row in reader]
-                    self.assertEquals(result, [
-                        ['entity_id', 'date', 'f1', 'f2', 'f3','label'],
-                        ['1', '2', '3', '3', '2', 'True'],
-                        ['4', '5', '6', '9', '20', 'False'],
-                        ['7', '8', '9', '15', '56', 'True']
-                    ])
-            finally:
-                for sourcefile in sourcefiles:
-                    sourcefile.close()
-
-
     def test_badinput(self):
+        """We assert column names, so replacing 'date' with 'as_of_date'
+        should result in an error"""
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
                 beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
@@ -568,7 +512,6 @@ class TestMergeFeatureCSVs(TestCase):
                 matrix_directory = temp_dir,
                 user_metadata = {},
                 engine = None,
-                builder_class=builders.LowMemoryCSVBuilder
             )
             rowlists = [
                 [
@@ -591,24 +534,20 @@ class TestMergeFeatureCSVs(TestCase):
                 ],
             ]
 
-            sourcefiles = []
+            filekeys = []
             for rows in rowlists:
-                f = NamedTempFile()
-                sourcefiles.append(f)
-                writer = csv.writer(f)
+                filekey = uuid.uuid4()
+                planner.builder.open_fh_for_writing(filekey)
+                filekeys.append(filekey)
+                writer = csv.writer(planner.builder.filehandles[filekey])
                 for row in rows:
                     writer.writerow(row)
-                f.seek(0)
-            try:
-                with self.assertRaises(ValueError):
-                    planner.builder.merge_feature_csvs(
-                        [f.name for f in sourcefiles],
-                        matrix_directory=temp_dir,
-                        matrix_uuid='1234'
-                    )
-            finally:
-                for sourcefile in sourcefiles:
-                    sourcefile.close()
+            with self.assertRaises(KeyError):
+                planner.builder.merge_feature_csvs(
+                    filekeys,
+                    matrix_directory=temp_dir,
+                    matrix_uuid='1234'
+                )
 
 def test_generate_plans():
     matrix_set_definitions = [
@@ -702,7 +641,7 @@ def test_generate_plans():
     assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_two) == 4
 
 
-class TestBuildMatrix(object):
+class TestBuildMatrix(TestCase):
     def test_train_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
@@ -824,6 +763,72 @@ class TestBuildMatrix(object):
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)
                     assert(len([row for row in reader]) == 6)
+
+    def test_nullcheck(self):
+        f0_dict = {(r[0], r[1]) : r for r in features0_pre}
+        f1_dict = {(r[0], r[1]) : r for r in features1_pre}
+
+
+        features0 = sorted(f0_dict.values(), key=lambda x: (x[1], x[0]))
+        features1 = sorted(f1_dict.values(), key=lambda x: (x[1], x[0]))
+
+        features_tables = [features0, features1]
+
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
+
+            dates = [datetime.datetime(2016, 1, 1, 0, 0),
+                     datetime.datetime(2016, 2, 1, 0, 0),
+                     datetime.datetime(2016, 3, 1, 0, 0)]
+
+            with TemporaryDirectory() as temp_dir:
+                planner = Planner(
+                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    label_names = ['booking'],
+                    label_types = ['binary'],
+                    states = ['state_one AND state_two'],
+                    db_config = db_config,
+                    matrix_directory = temp_dir,
+                    user_metadata = {},
+                    engine = engine
+                )
+
+                matrix_dates = {
+                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'as_of_times': dates
+                }
+                feature_dictionary = {
+                    'features0': ['f1', 'f2'],
+                    'features1': ['f3', 'f4'],
+                }
+                matrix_metadata = {
+                    'matrix_id': 'hi',
+                    'state': 'state_one AND state_two',
+                    'label_name': 'booking',
+                    'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'label_window': '1 month'
+                }
+                uuid = metta.generate_uuid(matrix_metadata)
+                with self.assertRaises(ValueError):
+                    planner.build_matrix(
+                        as_of_times = dates,
+                        label_name = 'booking',
+                        label_type = 'binary',
+                        feature_dictionary = feature_dictionary,
+                        matrix_directory = temp_dir,
+                        matrix_metadata = matrix_metadata,
+                        matrix_uuid = uuid,
+                        matrix_type = 'test'
+                    )
 
     def test_replace(self):
         with testing.postgresql.Postgresql() as postgresql:

@@ -10,7 +10,7 @@ class FeatureDictionaryCreator(object):
     def _tables_to_include(self, feature_table_names):
         return [
             feature_table for feature_table in feature_table_names
-            if 'aggregation' in feature_table
+            if 'aggregation_imputed' in feature_table
         ]
 
     def feature_dictionary(self, feature_table_names, index_column_lookup):

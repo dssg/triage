@@ -3,7 +3,6 @@ import logging
 import pandas
 from metta import metta_io as metta
 import os
-import csv
 
 
 class BuilderBase(object):
@@ -27,26 +26,6 @@ class BuilderBase(object):
         logging.info('Building %s matrices', len(build_tasks.keys()))
         for matrix_uuid, task_arguments in build_tasks.items():
             self.build_matrix(**task_arguments)
-
-    def _format_imputations(self, feature_names):
-        """ For a list of feature columns, format them for a SQL query, imputing
-        0 for missing values.
-
-        :param feature_names: names of feature columns in a single table
-        :type feature_names: list
-
-        :return: strings to add to feature query to select features and make
-                 imputations
-        :rtype: list
-        """
-        imputations = [
-            """,
-                    CASE
-                        WHEN "{0}" IS NULL THEN 0
-                        ELSE "{0}"
-                    END as "{0}" """.format(feature_name) for feature_name in feature_names
-        ]
-        return(imputations)
 
     def _outer_join_query(
         self,
@@ -397,7 +376,11 @@ class CSVBuilder(BuilderBase):
                     schema=self.db_config['features_schema_name'],
                     table=entity_date_table_name
                 ),
-                right_column_selections=self._format_imputations(feature_names)
+                # collate imputation shouldn't leave any nulls and we double-check
+                # the imputed table in FeatureGenerator.create_all_tables() but as
+                # a final check, raise a divide by zero error on export if the
+                # database encounters any during the outer join
+                right_column_selections=[', "{0}"'.format(fn) for fn in feature_names]
             )
             self.write_to_csv(features_query, csv_name)
             features_csv_names.append(csv_name)
@@ -430,116 +413,6 @@ class CSVBuilder(BuilderBase):
             cur.copy_expert(copy_sql, matrix_csv)
         finally:
             self.close_filehandle(file_name)
-
-
-class LowMemoryCSVBuilder(CSVBuilder):
-    def __init__(self, *args, **kwargs):
-        super(LowMemoryCSVBuilder, self).__init__(*args, **kwargs)
-        self.filehandles = {}
-
-    def open_fh_for_writing(self, filename):
-        self.filehandles[filename] = open(filename, 'wb')
-        return self.filehandles[filename]
-
-    def open_fh_for_reading(self, filename):
-        return open(filename)
-
-    def close_filehandles(self):
-        for fh in self.filehandles.values():
-            fh.close()
-
-    def close_filehandle(self, filename):
-        self.filehandles[filename].close()
-
-    def remove_file(self, filename):
-        del self.filehandles[filename]
-        os.remove(filename)
-
-    def merge_feature_csvs(self, source_filenames, matrix_directory, matrix_uuid):
-        """Horizontally merge a list of feature CSVs
-        Assumptions:
-        - The first and second columns of each CSV are
-          the entity_id and date
-        - That the CSVs have the same list of entity_id/date combinations
-          in the same order.
-        - The first CSV is expected to be labels, and only have
-          entity_id, date, and label.
-        - All other CSVs do not have any labels (all non entity_id/date columns
-          will be treated as features)
-        - The label will be in the *last* column of the merged CSV
-
-        :param source_filenames: the filenames of each feature csv
-        :param matrix_directory: the directory that the final CSV will reside in
-        :param matrix_uuid: the uuid of the final matrix
-        :type source_filenames: list
-        :type matrix_directory: str
-        :type matrix_uuid: str
-
-        :return: none
-        :rtype: none
-
-        :raises: ValueError if the first two columns in every CSV don't match
-        """
-        temp_matrix_filename = os.path.join(
-            matrix_directory,
-            'tmp_{}.csv'.format(matrix_uuid)
-        )
-        with open(temp_matrix_filename, 'w') as outfile:
-            writer = csv.writer(outfile)
-            source_filehandles = [self.open_fh_for_reading(fname) for fname in source_filenames]
-            source_readers = [csv.reader(fh) for fh in source_filehandles]
-            try:
-                headers = None
-                for rows in zip(*source_readers):
-                    if not headers:
-                        labels_table_header, other_table_headers = rows[0], rows[1:]
-                        entity_id, date, label = labels_table_header
-                        headers = [entity_id, date] + [
-                            column
-                            for sublist in other_table_headers
-                            for column in sublist[2:]
-                            if column not in labels_table_header
-                        ] + [label]
-                        writer.writerow(headers)
-                        logging.debug('Found headers: %s', headers)
-                        logging.info('Found {} headers'.format(len(headers)))
-                        continue
-                    entity_ids = []
-                    dates = []
-                    all_features = []
-                    label_observed = None
-                    features = []
-                    for row in rows:
-                        if not label_observed:
-                            if len(row) == 3:
-                                entity_id, date, label = row
-                            elif len(row) == 2:
-                                entity_id, date = row
-                                label = None
-                            else:
-                                raise ValueError('''
-                                    Unexpected number of values observed in
-                                    labels: {}
-                                '''.format(row))
-                            label_observed = True
-                        else:
-                            entity_id, date, features = row[0], row[1], row[2:]
-                        entity_ids.append(entity_id)
-                        dates.append(date)
-                        if not isinstance(features, list):
-                            features = [features]
-                        all_features += features
-                    entity_ids = list(set(entity_ids))
-                    dates = list(set(dates))
-                    if len(entity_ids) > 1 or len(dates) > 1:
-                        raise ValueError('''
-                        Either multiple entity ids or dates
-                        found in parallel rows. entity_ids: %s dates: %s
-                        ''', entity_ids, dates)
-                    writer.writerow(entity_ids + dates + all_features + [label])
-            finally:
-                self.close_filehandles()
-        return temp_matrix_filename
 
 
 class HighMemoryCSVBuilder(CSVBuilder):
@@ -590,10 +463,25 @@ class HighMemoryCSVBuilder(CSVBuilder):
 
         source_filehandles = [self.open_fh_for_reading(fname) for fname in source_filenames]
         dataframes = []
-        for filehandle in source_filehandles:
+        for i, filehandle in enumerate(source_filehandles):
             df = pandas.read_csv(filehandle)
             df.set_index(['entity_id', 'as_of_date'], inplace=True)
             dataframes.append(df)
+
+            # check for any nulls. the labels, understood to be the first file,
+            # can have nulls but no features should. therefore, skip the first dataframe
+            if i > 0:
+                columns_with_nulls = [
+                    column
+                    for column in df.columns
+                    if df[column].isnull().values.any()
+                ]
+                if len(columns_with_nulls) > 0:
+                    raise ValueError(
+                        "Imputation failed for the following features: %s" %
+                        columns_with_nulls
+                    )
+            i += 1
 
         big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
         return big_df
