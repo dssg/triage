@@ -126,6 +126,13 @@ state_config:
         - 'state_one AND state_two'
         - '(state_one OR state_two) AND state_three'
 
+# USER METADATA
+# These are arbitrary keys/values that you can have Triage apply to the
+# metadata for each matrix in the experiment. Any keys you include here can
+# be used in the 'model_group_keys' below.
+user_metadata:
+    label_definition: 'severe_violations'
+
 # MODEL GROUPING
 # Model groups are aimed at defining models which are equivalent across time splits.
 # By default, the classifier module name, hyperparameters, and feature names are used.
