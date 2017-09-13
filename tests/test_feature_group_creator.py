@@ -18,18 +18,19 @@ def test_table_group():
 
 
 def test_prefix_group():
+    # ensure we test prefixes with underscores
     group = FeatureGroupCreator(
-        definition={'prefix': ['major', 'severe']}
+        definition={'prefix': ['major_viol', 'severe_viol']}
     )
 
     assert group.subsets({
-        'one': ['minor_a', 'minor_b', 'minor_c'],
-        'two': ['severe_a', 'severe_b', 'severe_c'],
-        'three': ['major_a', 'major_b', 'major_c'],
-        'four': ['minor_a', 'minor_b', 'minor_c'],
+        'one': ['minor_viol_a', 'minor_viol_b', 'minor_viol_c'],
+        'two': ['severe_viol_a', 'severe_viol_b', 'severe_viol_c'],
+        'three': ['major_viol_a', 'major_viol_b', 'major_viol_c'],
+        'four': ['minor_viol_a', 'minor_viol_b', 'minor_viol_c'],
     }) == [
-        {'three': ['major_a', 'major_b', 'major_c']},
-        {'two': ['severe_a', 'severe_b', 'severe_c']},
+        {'three': ['major_viol_a', 'major_viol_b', 'major_viol_c']},
+        {'two': ['severe_viol_a', 'severe_viol_b', 'severe_viol_c']},
     ]
 
 

@@ -11,7 +11,7 @@ def prefix_subsetter(config_item, table, features):
     return [
         feature
         for feature in features
-        if feature.split('_')[0] == config_item
+        if feature.startswith(config_item)
     ]
 
 
