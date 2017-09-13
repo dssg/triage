@@ -45,9 +45,11 @@ Then, to run tests:
 
 The first phase implemented in Triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
 
-### Experiment Run Example
+### Instantiating an Experiment
 
-The basic execution of an experiment looks something like the following:
+An `Experiment` class, once instantiated, provides access to a variety of useful pieces of information about the experiment, as well as the ability to run it and get results. 
+
+First, we'll look at how to instantiate the Experiment.
 
 ```
 	SingleThreadedExperiment(
@@ -55,7 +57,7 @@ The basic execution of an experiment looks something like the following:
 		db_engine=sqlalchemy.create_engine(...),
 		model_storage_class=FSModelStorageEngine,
 		project_path='/path/to/directory/to/save/data'
-	).run()
+	)
 ```
 
 These lines are a bit dense: what is happening here?
@@ -66,11 +68,12 @@ These lines are a bit dense: what is happening here?
 - `model_storage_class=FSModelStorageEngine`: The path to a model storage engine class. The library that Triage uses for model training and evaluation, [catwalk](https://github.com/dssg/catwalk), provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the `catwalk.storage.FSModelStorageEngine` to save models on the local filesystem.
 - `project_path='/path/to/directory/to/save/data'`: The path to where you would like to store design matrices and trained models.
 
-With that in mind, a more full version of the experiment run script might look like this:
+With that in mind, a more full version of the experiment instantiation might look like this:
 
 ```
 import sqlalchemy
 import yaml
+import logging
 
 from catwalk.storage import FSModelStorageEngine
 from triage.experiments import SingleThreadedExperiment
@@ -80,16 +83,44 @@ with open('my_experiment_config.yaml') as f:
 with open('my_database_creds') as f:
 	db_connection_string = yaml.load(f)['db_connection_string']
 
+logging.basicConfig(level=logging.INFO)
+
 experiment = SingleThreadedExperiment(
 	config=experiment_config,
 	db_engine=sqlalchemy.create_engine(db_connection_string),
 	model_storage_class=FSModelStorageEngine,
 	project_path='/home/research/myproject'
 )
-
-experiment.run()
 ```
 
+### Validating an Experiment
+
+Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So we recommend running the `.validate()` method on the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
+
+
+```
+experiment.validate()
+
+(Pdb) experiment.validate()
+*** ValueError: from_obj query does not run. 
+from_obj: "cat_complaints"
+Full error: (psycopg2.ProgrammingError) relation "cat_complaints" does not exist
+LINE 1: explain select * from cat_complaints
+                              ^
+ [SQL: 'explain select * from cat_complaints']
+```
+
+If the validation runs without any errors, you should see a success message (either in your log or console). At this point, the Experiment should be ready to run.
+
+We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](triage/experiments/validate.py) and submitting a pull request !
+
+### Running an Experiment
+
+Once you're at this point, running the experiment is simple.
+
+`experiment.run()`
+
+This will run the entire experiment. This could take a while, so we recommend checking logging messages (INFO level will catch a lot of useful information) and keeping an eye on its progress.
 
 ### Evaluating results of an Experiment
 

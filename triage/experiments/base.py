@@ -20,6 +20,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 import logging
 from triage.experiments import CONFIG_VERSION
+from triage.experiments.validate import ExperimentValidator
 
 
 def dt_from_str(dt_str):
@@ -457,3 +458,6 @@ class ExperimentBase(object):
             logging.info('Matrix build done or errored, cleaning up state table')
             self.state_table_generator.clean_up()
         self.catwalk()
+
+    def validate(self):
+        ExperimentValidator(self.db_engine).run(self.config)
