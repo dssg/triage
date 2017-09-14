@@ -146,13 +146,20 @@ user_metadata:
 # MODEL GROUPING
 # Model groups are aimed at defining models which are equivalent across time splits.
 # By default, the classifier module name, hyperparameters, and feature names are used.
+# Any other parameters that distinguish models *other than the beginning end dates of
+# their data.*
 #
 # model_group_keys defines a list of *additional* matrix metadata keys that
-# should be considered when creating a model group
+# should be considered when creating a model group. For example, if the models are
+# built on matrices with different history lengths (train durations), different
+# in the next month, next year, or next two years), the frequency of rows for each
+# labeling windows (e.g., inspection violations entity (train example frequency), or
+# the definition of a positive label.
 model_group_keys:
     - 'train_duration'
     - 'train_label_window'
     - 'train_example_frequency'
+    - 'label_definition'
 
 # GRID CONFIGURATION
 # The classifier/hyperparameter combinations that should be trained
