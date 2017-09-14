@@ -41,6 +41,17 @@ def populate_source_data(db_engine):
         (3, '2013-10-01', 4),
     ]
 
+    entity_zip_codes = [
+        (1, '60120'),
+        (2, '60123'),
+        (3, '60123'),
+    ]
+
+    zip_code_events = [
+        ('60120', '2012-10-01', 1),
+        ('60123', '2012-10-01', 10),
+    ]
+
     events = [
         (1, 1, '2011-01-01'),
         (1, 1, '2011-06-01'),
@@ -81,6 +92,26 @@ def populate_source_data(db_engine):
         as_of_date date,
         cat_sightings int
         )''')
+
+    db_engine.execute('''create table entity_zip_codes (
+        entity_id int,
+        zip_code text
+        )''')
+
+    for entity_zip_code in entity_zip_codes:
+        db_engine.execute(
+            "insert into entity_zip_codes values (%s, %s)", entity_zip_code
+        )
+
+    db_engine.execute('''create table zip_code_events (
+        zip_code text,
+        as_of_date date,
+        num_events int
+    )''')
+    for zip_code_event in zip_code_events:
+        db_engine.execute(
+            "insert into zip_code_events values (%s, %s, %s)", zip_code_event
+        )
 
     for complaint in complaints:
         db_engine.execute(
@@ -157,7 +188,7 @@ def sample_config():
     }
 
     feature_config = [{
-        'prefix': 'test_features',
+        'prefix': 'entity_features',
         'from_obj': 'cat_complaints',
         'knowledge_date_column': 'as_of_date',
         'aggregates': [{
@@ -166,6 +197,16 @@ def sample_config():
         }],
         'intervals': ['1y'],
         'groups': ['entity_id']
+    }, {
+        'prefix': 'zip_code_features',
+        'from_obj': 'entity_zip_codes join zip_code_events using (zip_code)',
+        'knowledge_date_column': 'as_of_date',
+        'aggregates': [{
+            'quantity': 'num_events',
+            'metrics': ['max', 'min'],
+        }],
+        'intervals': ['1y'],
+        'groups': ['entity_id', 'zip_code']
     }]
 
     state_config = {
@@ -193,7 +234,6 @@ def simple_experiment_test(experiment_class):
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-
         with TemporaryDirectory() as temp_dir:
             experiment_class(
                 config=sample_config(),
