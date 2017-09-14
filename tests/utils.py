@@ -8,7 +8,7 @@ from results_schema import Model
 from sqlalchemy.orm import sessionmaker
 import datetime
 import os
-from catwalk.storage import MettaCSVMatrixStore
+from catwalk.storage import CSVMatrixStore, HDFMatrixStore
 from metta import metta_io as metta
 from collections import OrderedDict
 
@@ -116,12 +116,73 @@ def sample_metta_csv_diff_order(directory):
         format='csv'
     )
 
-    train_store = MettaCSVMatrixStore(
+    train_store = CSVMatrixStore(
         matrix_path=os.path.join(directory, '{}.csv'.format(train_uuid)),
         metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
     )
-    test_store = MettaCSVMatrixStore(
+    test_store = CSVMatrixStore(
         matrix_path=os.path.join(directory, '{}.csv'.format(test_uuid)),
+        metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
+    )
+    return train_store, test_store
+
+
+def sample_metta_hdf_diff_order(directory):
+    """Stores matrix and metadata in a metta-data-like form
+
+    The train and test matrices will have different column orders
+
+    Args:
+        directory (str)
+    """
+    train_dict = OrderedDict([
+        ('entity_id', [1, 2]),
+        ('k_feature', [0.5, 0.4]),
+        ('m_feature', [0.4, 0.5]),
+        ('label', [0, 1])
+    ])
+    train_matrix = pandas.DataFrame.from_dict(train_dict)
+    train_metadata = {
+        'beginning_of_time': datetime.date(2014, 1, 1),
+        'end_time': datetime.date(2015, 1, 1),
+        'matrix_id': 'train_matrix',
+        'label_name': 'label',
+        'label_window': '3month',
+        'indices': ['entity_id'],
+    }
+
+    test_dict = OrderedDict([
+        ('entity_id', [3, 4]),
+        ('m_feature', [0.4, 0.5]),
+        ('k_feature', [0.5, 0.4]),
+        ('label', [0, 1])
+    ])
+
+    test_matrix = pandas.DataFrame.from_dict(test_dict)
+    test_metadata = {
+        'beginning_of_time': datetime.date(2015, 1, 1),
+        'end_time': datetime.date(2016, 1, 1),
+        'matrix_id': 'test_matrix',
+        'label_name': 'label',
+        'label_window': '3month',
+        'indices': ['entity_id'],
+    }
+
+    train_uuid, test_uuid = metta.archive_train_test(
+        train_config=train_metadata,
+        df_train=train_matrix,
+        test_config=test_metadata,
+        df_test=test_matrix,
+        directory=directory,
+        format='hdf'
+    )
+
+    train_store = HDFMatrixStore(
+        matrix_path=os.path.join(directory, '{}.h5'.format(train_uuid)),
+        metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
+    )
+    test_store = HDFMatrixStore(
+        matrix_path=os.path.join(directory, '{}.h5'.format(test_uuid)),
         metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
     )
     return train_store, test_store

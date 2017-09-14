@@ -48,7 +48,8 @@ def test_model_trainer():
                 'label_name': 'label',
                 'label_window': '1y',
                 'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2']
+                'feature_names': ['ft1', 'ft2'],
+                'indices': ['entity_id'],
             }
             project_path = 'econ-dev/inspections'
             model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
@@ -72,7 +73,7 @@ def test_model_trainer():
                 row for row in
                 engine.execute('select * from results.feature_importances')
             ]
-            assert len(records) == 4 * 3  # maybe exclude entity_id?
+            assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
             records = [
                 row for row in
@@ -106,6 +107,9 @@ def test_model_trainer():
                 'feature_one': [4, 4],
                 'feature_two': [6, 5],
             })
+
+            test_matrix = InMemoryMatrixStore(matrix=test_matrix, metadata=metadata).matrix
+
             for model_pickle in model_pickles:
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
@@ -142,7 +146,7 @@ def test_model_trainer():
                 row for row in
                 engine.execute('select * from results.feature_importances')
             ]
-            assert len(records) == 4 * 3  # maybe exclude entity_id?
+            assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
             # 7. if the cache is missing but the metadata is still there, reuse the metadata
             for row in engine.execute('select model_hash from results.models'):
@@ -207,7 +211,8 @@ def test_n_jobs_not_new_model():
                     'beginning_of_time': datetime.date(2012, 12, 20),
                     'label_name': 'label',
                     'metta-uuid': '1234',
-                    'feature_names': ['ft1', 'ft2']
+                    'feature_names': ['ft1', 'ft2'],
+                    'indices': ['entity_id'],
                 })
             )
             assert len(train_tasks) == 35 # 32+3, would be (32*2)+3 if we didn't remove
@@ -237,7 +242,7 @@ class RetryTest(unittest.TestCase):
         trainer = None
         # set up a basic model training run
         # TODO abstract the setup of a basic model training run where
-        # we don't worry about the specific values used? it would make 
+        # we don't worry about the specific values used? it would make
         # tests like this require a bit less noise to read past
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
@@ -262,7 +267,8 @@ class RetryTest(unittest.TestCase):
                 'beginning_of_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',
                 'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2']
+                'feature_names': ['ft1', 'ft2'],
+                'indices': ['entity_id'],
             })
         # the postgres server goes out of scope here and thus no longer exists
         with patch('time.sleep') as time_mock:
@@ -306,7 +312,8 @@ class RetryTest(unittest.TestCase):
                 'beginning_of_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',
                 'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2']
+                'feature_names': ['ft1', 'ft2'],
+                'indices': ['entity_id'],
             })
 
         # start without a database server

@@ -111,9 +111,51 @@ class InMemoryModelStorageEngine(ModelStorageEngine):
 
 
 class MatrixStore(object):
-    matrix = None
-    metadata = None
     _labels = None
+
+    def __init__(self, matrix_path=None, metadata_path=None):
+        self.matrix_path = matrix_path
+        self.metadata_path = metadata_path
+        self._matrix = None
+        self._metadata = None
+        self._head_of_matrix = None
+
+    @property
+    def matrix(self):
+        if self._matrix is None:
+            self._load()
+        return self._matrix
+
+    @property
+    def metadata(self):
+        if self._metadata is None:
+            self._load()
+        return self._metadata
+
+    @property
+    def head_of_matrix(self):
+        if self._head_of_matrix is None:
+            self._get_head_of_matrix()
+        return self._head_of_matrix
+
+    @property
+    def empty(self):
+        if not os.path.isfile(self.matrix_path):
+            return True
+        else:
+            head_of_matrix = self.head_of_matrix
+            return head_of_matrix.empty
+
+    def columns(self, include_label=False):
+        head_of_matrix = self.head_of_matrix
+        columns = head_of_matrix.columns.tolist()
+        if include_label:
+            return columns
+        else:
+            return [
+                col for col in columns
+                if col != self.metadata['label_name']
+            ]
 
     def labels(self):
         if self._labels is not None:
@@ -128,15 +170,6 @@ class MatrixStore(object):
     def uuid(self):
         return self.metadata['metta-uuid']
 
-    def columns(self, include_label=False):
-        columns = self.matrix.columns.tolist()
-        if include_label:
-            return columns
-        else:
-            return [
-                col for col in columns
-                if col != self.metadata['label_name']
-            ]
 
     def matrix_with_sorted_columns(self, columns):
         columnset = set(self.columns())
@@ -160,50 +193,33 @@ class MatrixStore(object):
                 ''', columnset ^ desired_columnset)
 
 
-class MettaMatrixStore(MatrixStore):
-    def __init__(self, matrix_path, metadata_path):
-        self.matrix = pandas.read_hdf(matrix_path)
-        with open(metadata_path) as f:
-            self.metadata = yaml.load(f)
+class HDFMatrixStore(MatrixStore):
+    def _get_head_of_matrix(self):
+        try:
+            hdf = pandas.HDFStore(self.matrix_path)
+            key = hdf.keys()[0]
+            head_of_matrix = hdf.select(key, start=0, stop=1)
+            head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+            self._head_of_matrix = head_of_matrix
+        except pandas.error.EmptyDataError:
+            self._head_of_matrix = None
 
 
-class MettaCSVMatrixStore(MatrixStore):
-    def __init__(self, matrix_path, metadata_path):
-        self.matrix_path = matrix_path
-        self.metadata_path = metadata_path
-        self._matrix = None
-        self._metadata = None
+    def _load(self):
+        self._matrix = pandas.read_hdf(self.matrix_path, mode='r+')
+        with open(self.metadata_path) as f:
+            self._metadata = yaml.load(f)
+        self._matrix.set_index(self.metadata['indices'], inplace=True)
 
-    @property
-    def matrix(self):
-        if self._matrix is None:
-            self._load()
-        return self._matrix
 
-    @property
-    def metadata(self):
-        if self._metadata is None:
-            self._load()
-        return self._metadata
-
-    @property
-    def empty(self):
-        if not os.path.isfile(self.matrix_path):
-            return True
-        else:
-            return pandas.read_csv(self.matrix_path, nrows=1).empty
-
-    def columns(self, include_label=False):
-        head_of_matrix = pandas.read_csv(self.matrix_path, nrows=1)
-        head_of_matrix.set_index(self.metadata['indices'], inplace=True)
-        columns = head_of_matrix.columns.tolist()
-        if include_label:
-            return columns
-        else:
-            return [
-                col for col in columns
-                if col != self.metadata['label_name']
-            ]
+class CSVMatrixStore(MatrixStore):
+    def _get_head_of_matrix(self):
+        try:
+            head_of_matrix = pandas.read_csv(self.matrix_path, nrows=1)
+            head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+            self._head_of_matrix = head_of_matrix
+        except pandas.error.EmptyDataError:
+            self._head_of_matrix = None
 
     def _load(self):
         self._matrix = pandas.read_csv(self.matrix_path)
@@ -214,6 +230,21 @@ class MettaCSVMatrixStore(MatrixStore):
 
 class InMemoryMatrixStore(MatrixStore):
     def __init__(self, matrix, metadata, labels=None):
-        self.matrix = matrix
-        self.metadata = metadata
+        self._matrix = matrix
+        self._metadata = metadata
         self._labels = labels
+        self._head_of_matrix = None
+
+    def _get_head_of_matrix(self):
+        self._head_of_matrix = self.matrix.head(n=1)
+
+    @property
+    def empty(self):
+        head_of_matrix = self.head_of_matrix
+        return head_of_matrix.empty
+
+    @property
+    def matrix(self):
+        if self._metadata['indices'][0] in self._matrix.columns:
+            self._matrix.set_index(self._metadata['indices'], inplace=True)
+        return self._matrix
