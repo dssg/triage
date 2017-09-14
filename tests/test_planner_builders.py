@@ -318,14 +318,7 @@ def test_make_entity_date_table():
             labels_df = pd.read_sql('select * from labels.labels', engine)
 
             # compare the table to the test dataframe
-            print("ids_dates")
-            for i, row in ids_dates.iterrows():
-                print(row.values)
-            print("result")
-            for i, row in result.iterrows():
-                print(row.values)
             test = (result == ids_dates)
-            print(test)
             assert(test.all().all())
 
 def test_write_features_data():
@@ -400,7 +393,6 @@ def test_write_features_data():
                 ('features{}'.format(i), feature_list) for i, feature_list in enumerate(features)
             )
 
-            print(feature_dictionary)
             features_csv_names = planner.builder.write_features_data(
                 as_of_times=dates,
                 feature_dictionary=feature_dictionary,
@@ -824,7 +816,6 @@ class TestBuildMatrix(object):
                     matrix_uuid = uuid,
                     matrix_type = 'test'
                 )
-                print(os.listdir(temp_dir))
                 matrix_filename = os.path.join(
                     temp_dir,
                     '{}.csv'.format(uuid)
@@ -895,7 +886,6 @@ class TestBuildMatrix(object):
                     temp_dir,
                     '{}.csv'.format(uuid)
                 )
-                print(matrix_filename)
 
                 with open(matrix_filename, 'r') as f:
                     reader = csv.reader(f)

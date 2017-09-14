@@ -1,10 +1,18 @@
+from architect.utils import str_in_sql
+
 
 class FeatureDictionaryCreator(object):
     def __init__(self, features_schema_name, db_engine):
         self.features_schema_name = features_schema_name
         self.db_engine = db_engine
 
-    def feature_dictionary(self, feature_table_names):
+    def _tables_to_include(self, feature_table_names):
+        return [
+            feature_table for feature_table in feature_table_names
+            if 'aggregation' in feature_table
+        ]
+
+    def feature_dictionary(self, feature_table_names, index_column_lookup):
         """ Create a dictionary of feature names, where keys are feature tables
         and values are lists of feature names.
 
@@ -14,17 +22,20 @@ class FeatureDictionaryCreator(object):
         feature_dictionary = {}
 
         # iterate! store each table name + features names as key-value pair
-        for feature_table_name in feature_table_names:
+        for feature_table_name in self._tables_to_include(feature_table_names):
             feature_names = [
                 row[0] for row in
                 self.db_engine.execute(
-                    self._build_feature_names_query(feature_table_name)
+                    self._build_feature_names_query(
+                        feature_table_name,
+                        index_column_lookup[feature_table_name]
+                    )
                 )
             ]
             feature_dictionary[feature_table_name] = feature_names
         return(feature_dictionary)
 
-    def _build_feature_names_query(self, table_name):
+    def _build_feature_names_query(self, table_name, index_columns):
         """ For a given feature table, get the names of the feature columns.
 
         :param table_name: name of the feature table
@@ -40,10 +51,11 @@ class FeatureDictionaryCreator(object):
             FROM information_schema.columns
             WHERE table_name = '{table}' AND
                   table_schema = '{schema}' AND
-                  column_name NOT IN ('entity_id', 'as_of_date')
+                  column_name NOT IN ({index_columns})
         """.format(
             table=table_name,
-            schema=self.features_schema_name
+            schema=self.features_schema_name,
+            index_columns=str_in_sql(index_columns)
         )
 
         return(feature_names_query)

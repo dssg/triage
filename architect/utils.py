@@ -85,3 +85,7 @@ def feature_list(feature_dictionary):
         operator.concat,
         [feature_dictionary[key] for key in feature_dictionary.keys()]
     ))
+
+
+def str_in_sql(values):
+    return ','.join(map(lambda x: "'{}'".format(x), values))

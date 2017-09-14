@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from collate.collate import Aggregate, Categorical, Compare
 from collate.spacetime import SpacetimeAggregation
 from architect.utils import convert_str_to_relativedelta
@@ -29,6 +30,7 @@ class FeatureGenerator(object):
         self.categorical_cache = {}
         self.replace = replace
         self.beginning_of_time = beginning_of_time
+        self.entity_id_column = 'entity_id'
 
     def _validate_keys(self, aggregation_config):
         for key in ['from_obj', 'intervals', 'groups', 'knowledge_date_column', 'prefix']:
@@ -78,9 +80,8 @@ class FeatureGenerator(object):
                 _ = convert_str_to_relativedelta(interval)
 
     def _validate_groups(self, groups):
-        for group in groups:
-            if group != 'entity_id':
-                raise ValueError('Only entity_id is allowed as a group at this time')
+        if 'entity_id' not in groups:
+            raise ValueError('One of the aggregation groups is required to be entity_id')
 
     def _validate_aggregation(self, aggregation_config):
         logging.info('Validating aggregation config %s', aggregation_config)
@@ -190,14 +191,12 @@ class FeatureGenerator(object):
             for aggregation_config in feature_aggregation_config
         ]
 
-    def generate_all_table_tasks(self, feature_aggregation_config, feature_dates):
+    def generate_all_table_tasks(self, aggregations):
         """Generates SQL commands for creating, populating, and indexing
         feature group tables
 
         Args:
-            feature_aggregation_config (list) all values, except for feature
-                date, necessary to instantiate a collate.SpacetimeAggregation
-            feature_dates (list) dates to generate features as of
+            aggregations (list) collate.SpacetimeAggregation objects
 
         Returns: (dict) keys are group table names, values are themselves dicts,
             each with keys for different stages of table creation (prepare, inserts, finalize)
@@ -206,8 +205,7 @@ class FeatureGenerator(object):
         logging.debug('---------------------')
         logging.debug('---------FEATURE GENERATION------------')
         logging.debug('---------------------')
-        table_tasks = {}
-        aggregations = self.aggregations(feature_aggregation_config, feature_dates)
+        table_tasks = OrderedDict()
         for aggregation in aggregations:
             table_tasks.update(self._generate_table_tasks_for(aggregation))
         logging.info('Created %s tables', len(table_tasks.keys()))
@@ -224,14 +222,17 @@ class FeatureGenerator(object):
         Returns: (list) table names
         """
         table_tasks = self.generate_all_table_tasks(
-            feature_aggregation_config,
-            feature_dates
+            self.aggregations(
+                feature_aggregation_config,
+                feature_dates
+            )
         )
 
         return self.process_table_tasks(table_tasks)
 
     def process_table_tasks(self, table_tasks):
         for table_name, task in table_tasks.items():
+            logging.info('Running feature table queries for %s', table_name)
             self.run_commands(task.get('prepare', []))
             self.run_commands(task.get('inserts', []))
             self.run_commands(task.get('finalize', []))
@@ -269,6 +270,23 @@ class FeatureGenerator(object):
             conn.execute(command)
         trans.commit()
 
+
+    def _aggregation_index_query(self, aggregation):
+        return 'CREATE INDEX ON {} ({}, {})'.format(
+            aggregation.get_table_name(),
+            self.entity_id_column,
+            aggregation.output_date_column
+        )
+
+    def _aggregation_index_columns(self, aggregation):
+        return sorted([group for group in aggregation.groups.keys()] + [aggregation.output_date_column])
+
+    def index_column_lookup(self, aggregations):
+        return dict((
+            self._clean_table_name(aggregation.get_table_name()),
+            self._aggregation_index_columns(aggregation)
+        ) for aggregation in aggregations)
+
     def _generate_table_tasks_for(self, aggregation):
         """Generates SQL commands for preparing, populating, and finalizing
         each feature group table in the given aggregation
@@ -291,7 +309,7 @@ class FeatureGenerator(object):
         if create_schema is not None:
             self.db_engine.execute(create_schema)
 
-        table_tasks = {}
+        table_tasks = OrderedDict()
         for group in aggregation.groups:
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
@@ -302,11 +320,18 @@ class FeatureGenerator(object):
                     'inserts': inserts[group],
                     'finalize': [indexes[group]],
                 }
+                logging.info('Created table tasks for %s', group_table)
             else:
                 logging.info(
                     'Skipping feature table creation for %s',
                     group_table
                 )
                 table_tasks[group_table] = {}
+        logging.info('Created table tasks for aggregation')
+        table_tasks[self._clean_table_name(aggregation.get_table_name())] = {
+            'prepare': [aggregation.get_drop(), aggregation.get_create()],
+            'inserts': [],
+            'finalize': [self._aggregation_index_query(aggregation)],
+        }
 
         return table_tasks
