@@ -152,6 +152,7 @@ class BuilderBase(object):
             table_name=table_name,
             index_query=indices_query
         )
+        logging.info('Creating matrix-specific entity-date table for matrix %s with query %s', matrix_uuid, query)
         self.engine.execute(query)
 
         return table_name
@@ -248,7 +249,7 @@ class CSVBuilder(BuilderBase):
 
         logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
-        logging.info('Making entity date table')
+        logging.info('Making entity date table for matrix %s', matrix_uuid)
         entity_date_table_name = self.make_entity_date_table(
             as_of_times,
             label_name,
@@ -258,7 +259,7 @@ class CSVBuilder(BuilderBase):
             matrix_uuid,
             matrix_metadata['label_window']
         )
-        logging.info('Writing feature group data')
+        logging.info('Extracting feature group data from database into file for matrix %s', matrix_uuid)
         features_csv_names = self.write_features_data(
             as_of_times,
             feature_dictionary,
@@ -266,7 +267,7 @@ class CSVBuilder(BuilderBase):
             matrix_uuid
         )
         try:
-            logging.info('Writing label data')
+            logging.info('Extracting label data frmo database into file for matrix %s', matrix_uuid)
             labels_csv_name = self.write_labels_data(
                 label_name,
                 label_type,
@@ -277,7 +278,7 @@ class CSVBuilder(BuilderBase):
             features_csv_names.insert(0, labels_csv_name)
 
             # stitch together the csvs
-            logging.info('Merging features data')
+            logging.info('Merging feature files for matrix %s', matrix_uuid)
             output = self.merge_feature_csvs(
                 features_csv_names,
                 matrix_directory,
@@ -289,7 +290,7 @@ class CSVBuilder(BuilderBase):
                 self.remove_file(csv_name)
         try:
             # store the matrix
-            logging.info('Archiving matrix with metta')
+            logging.info('Archiving matrix %s with metta', matrix_uuid)
             metta.archive_matrix(
                 matrix_config=matrix_metadata,
                 df_matrix=output,
@@ -418,6 +419,7 @@ class CSVBuilder(BuilderBase):
         :rtype: none
         """
         matrix_csv = self.open_fh_for_writing(file_name)
+        logging.debug('Copying to CSV query %s', query_string)
         try:
             copy_sql = 'COPY ({query}) TO STDOUT WITH CSV {head}'.format(
                 query=query_string,

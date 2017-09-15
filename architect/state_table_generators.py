@@ -105,8 +105,10 @@ class StateTableGenerator(object):
     @property
     def sparse_table_query_func(self):
         if self.dense_state_table:
+            logging.info('Dense state table passed to StateTableGenerator, so computing sparse table using it')
             return self._sparse_table_query_from_dense
         else:
+            logging.info('Dense state table not passed to StateTableGenerator, so computing sparse table using events table')
             return self._sparse_table_query_from_events
 
     def _all_known_states(self, dense_state_table):
@@ -150,6 +152,7 @@ class StateTableGenerator(object):
             as_of_dates=[date.isoformat() for date in as_of_dates],
             state_column_string=', '.join(state_columns)
         )
+        logging.debug('Assembled sparse state table query: %s', query)
         return query
 
     def _sparse_table_query_from_events(self, as_of_dates):
@@ -177,6 +180,7 @@ class StateTableGenerator(object):
             as_of_dates=[date.isoformat() for date in as_of_dates],
             active_state=DEFAULT_ACTIVE_STATE
         )
+        logging.debug('Assembled sparse state table query: %s', query)
         return query
 
     def generate_sparse_table(self, as_of_dates):
@@ -187,6 +191,7 @@ class StateTableGenerator(object):
             as_of_dates (list of datetime.dates) Dates to include in the sparse
                 state table
         """
+        logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
         self._generate_sparse_table(self.sparse_table_query_func(as_of_dates))
 
     def _generate_sparse_table(self, generate_query):
@@ -201,7 +206,7 @@ class StateTableGenerator(object):
             'create index on {} (entity_id, as_of_date)'
             .format(self.sparse_table_name)
         )
-        logging.info('Indices created for sparse state table')
+        logging.info('Indices created on entity_id and as_of_date for sparse state table')
 
     def clean_up(self):
         self.db_engine.execute(

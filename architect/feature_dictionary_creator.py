@@ -1,3 +1,4 @@
+import logging
 from architect.utils import str_in_sql
 
 
@@ -32,6 +33,11 @@ class FeatureDictionaryCreator(object):
                     )
                 )
             ]
+            logging.info(
+                'Feature names found for table %s: %s',
+                feature_table_name,
+                feature_names
+            )
             feature_dictionary[feature_table_name] = feature_names
         return(feature_dictionary)
 
@@ -56,6 +62,11 @@ class FeatureDictionaryCreator(object):
             table=table_name,
             schema=self.features_schema_name,
             index_columns=str_in_sql(index_columns)
+        )
+        logging.info(
+            'Extracting all possible feature names for table %s with query %s',
+            table_name,
+            feature_names_query
         )
 
         return(feature_names_query)
