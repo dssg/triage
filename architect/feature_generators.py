@@ -114,10 +114,21 @@ class FeatureGenerator(object):
                 for row
                 in self.db_engine.execute(choice_query)
             ]
+            logging.info(
+                'Computed list of categoricals: %s for choice query: %s',
+                self.categorical_cache[choice_query],
+                choice_query
+            )
         return self.categorical_cache[choice_query]
 
     def _build_choices(self, categorical):
+        logging.info(
+            'Building categorical choices for column %s, metrics %s',
+            categorical['column'],
+            categorical['metrics']
+        )
         if 'choices' in categorical:
+            logging.info('Found list of configured choices: %s', categorical['choices'])
             return categorical['choices']
         else:
             return self._compute_choices(categorical['choice_query'])
@@ -150,6 +161,11 @@ class FeatureGenerator(object):
         ]
 
     def _aggregation(self, aggregation_config, feature_dates):
+        logging.info(
+            'Building collate.SpacetimeAggregation for config %s and as_of_dates %s',
+            aggregation_config,
+            feature_dates
+        )
         aggregates = [
             Aggregate(aggregate['quantity'], aggregate['metrics'])
             for aggregate in aggregation_config.get('aggregates', [])
@@ -267,6 +283,7 @@ class FeatureGenerator(object):
         conn = self.db_engine.connect()
         trans = conn.begin()
         for command in command_list:
+            logging.debug('Executing feature generation query: %s', command)
             conn.execute(command)
         trans.commit()
 

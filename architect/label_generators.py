@@ -40,7 +40,7 @@ class BinaryLabelGenerator(object):
             start_date=start_date,
             label_window=label_window,
         )
-        logging.debug(query)
+        logging.debug('Running label generation query: %s', query)
         self.db_engine.execute(query)
         return labels_table
 
@@ -70,6 +70,7 @@ class BinaryLabelGenerator(object):
                      len(label_windows))
         for as_of_date in as_of_dates:
             for label_window in label_windows:
+                logging.info('Generating labels for as of date %s and label window %s', as_of_date, label_window)
                 self.generate(
                     start_date=as_of_date,
                     label_window=label_window,

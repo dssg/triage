@@ -1,3 +1,6 @@
+import logging
+
+
 def leave_one_in(feature_groups):
     """For each group, return a copy of just that group
 
@@ -65,7 +68,11 @@ class FeatureGroupMixer(object):
                 each representing a group
         Returns: (list) of feature dicts
         """
-        results = []
+        final_results = []
         for strategy in self.strategies:
-            results += self.strategy_lookup[strategy](feature_groups)
-        return results
+            logging.info('Mixing feature groups %s using strategy %s', feature_groups, strategy)
+            results = self.strategy_lookup[strategy](feature_groups)
+            logging.info('Mixing found new feature groups %s', results)
+            final_results += results
+
+        return final_results

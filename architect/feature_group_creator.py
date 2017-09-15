@@ -1,3 +1,6 @@
+import logging
+
+
 def table_subsetter(config_item, table, features):
     "Return features matching a given table"
     if table == config_item:
@@ -65,6 +68,11 @@ class FeatureGroupCreator(object):
         Returns: (list) subsets of the feature dictionary, in the same
             table-based structure
         """
+        logging.info(
+            'Creating feature groups. config: %s, Master feature dictionary: %s',
+            self.definition,
+            feature_dictionary
+        )
         subsets = []
         for name, config in sorted(self.definition.items()):
             for config_item in config:
@@ -72,9 +80,24 @@ class FeatureGroupCreator(object):
                 for table, features in feature_dictionary.items():
                     matching_features =\
                         self.subsetters[name](config_item, table, features)
+                    logging.info(
+                        'Matching features for config item %s, table %s: %s',
+                        config_item,
+                        table,
+                        matching_features
+                    )
                     if len(matching_features) > 0:
                         subset[table] = matching_features
+                    else:
+                        logging.warning(
+                            'No matching features found for config item %s, table %s, master features %s',
+                            config_item,
+                            table,
+                            features
+                        )
+
                 subsets.append(subset)
         if not any(subset for subset in subsets if any(subset)):
-            raise Exception('No matching feature subsets found!')
+            raise Exception('No matching feature groups found!')
+        logging.info('Found %s total feature subsets', len(subsets))
         return subsets

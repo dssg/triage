@@ -1,5 +1,6 @@
 import copy
 import itertools
+import logging
 
 from metta import metta_io as metta
 
@@ -125,6 +126,14 @@ class Planner(object):
         updated_definitions = []
         build_tasks = dict()
         for matrix_set in matrix_set_definitions:
+            logging.info('Making plans for matrix set %s', matrix_set)
+            logging.info(
+                'Iterating over %s label names, %s label_types, %s states, %s feature dictionaries',
+                len(self.label_names),
+                len(self.label_types),
+                len(self.states),
+                len(feature_dictionaries)
+            )
             train_matrix = matrix_set['train_matrix']
             for label_name, label_type, state, feature_dictionary in itertools.product(
                 self.label_names,
@@ -143,6 +152,7 @@ class Planner(object):
                     'train',
                 )
                 train_uuid = metta.generate_uuid(train_metadata)
+                logging.info('Matrix UUID %s found for train metadata %s', train_uuid, train_metadata)
                 if train_uuid not in build_tasks:
                     build_tasks[train_uuid] = self._generate_build_task(
                         train_metadata,
@@ -150,6 +160,9 @@ class Planner(object):
                         train_matrix,
                         feature_dictionary
                     )
+                    logging.info('Train uuid %s not found in build tasks yet, so added', train_uuid)
+                else:
+                    logging.info('Train uuid %s already found in build tasks', train_uuid)
                 matrix_set_clone['train_uuid'] = train_uuid
 
                 test_uuids = []
@@ -163,6 +176,7 @@ class Planner(object):
                         'test',
                     )
                     test_uuid = metta.generate_uuid(test_metadata)
+                    logging.info('Matrix UUID %s found for test metadata %s', test_uuid, test_metadata)
                     if test_uuid not in build_tasks:
                         build_tasks[test_uuid] = self._generate_build_task(
                             test_metadata,
@@ -170,15 +184,24 @@ class Planner(object):
                             test_matrix,
                             feature_dictionary
                         )
+                        logging.info('Test uuid %s not found in build tasks yet, so added', test_uuid)
+                    else:
+                        logging.info('Test uuid %s already found in build tasks', test_uuid)
 
                     test_uuids.append(test_uuid)
                 matrix_set_clone['test_uuids'] = test_uuids
                 updated_definitions.append(matrix_set_clone)
 
+        logging.info(
+            'Planner is finished generating matrix plans. %s matrix definitions and %s unique build tasks found', 
+            len(updated_definitions),
+            len(build_tasks.keys())
+        )
         return updated_definitions, build_tasks
 
     def build_all_matrices(self, *args, **kwargs):
         self.builder.build_all_matrices(*args, **kwargs)
 
     def build_matrix(self, *args, **kwargs):
+        logging.info('Building matrix with args %s', args)
         self.builder.build_matrix(*args, **kwargs)
