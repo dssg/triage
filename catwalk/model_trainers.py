@@ -73,6 +73,7 @@ class ModelTrainer(object):
             'project_path': self.project_path,
             'training_metadata': matrix_metadata
         }
+        logging.info('Creating model hash from unique data %s', unique)
         return filename_friendly_hash(unique)
 
     def _generate_model_configs(self, grid_config):
@@ -208,6 +209,7 @@ class ModelTrainer(object):
         Returns: (int) a database id for the model
         """
         misc_db_parameters['run_time'] = datetime.datetime.now().isoformat()
+        logging.info('Training and storing model for matrix uuid %s', matrix_store.uuid)
         trained_model, feature_names = self._train(
             matrix_store,
             class_path,
@@ -221,7 +223,7 @@ class ModelTrainer(object):
              unique_parameters,
              matrix_store.metadata,
         )
-        logging.info('Trained model: %s', model_hash)
+        logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
         model_store.write(trained_model)
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
@@ -233,7 +235,7 @@ class ModelTrainer(object):
             model_group_id,
             misc_db_parameters
         )
-        logging.info('Wrote model to db: %s', model_hash)
+        logging.info('Wrote model to db: hash %s, got id %s', model_hash, model_id)
         return model_id
 
     def _get_model_group_id(
@@ -276,14 +278,14 @@ class ModelTrainer(object):
                              parameters=json.dumps(parameters),
                              feature_names=feature_names,
                              model_config=json.dumps(model_config, sort_keys=True)))
-
+            logging.info('Getting model group from query %s', query)
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()
             model_group_id = model_group_id[0]
 
         else:
-            logging.info("Could not found store procedure public.pivot_table")
+            logging.info("Could not found stored procedure public.model_group_id")
             model_group_id = None
         db_conn.close()
 
@@ -421,6 +423,7 @@ class ModelTrainer(object):
 
         for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
+            logging.info('Computed model hash %s', model_hash)
 
             if any(task['model_hash'] == model_hash for task in tasks):
                 logging.info('Skipping model_hash %s because another'
@@ -435,4 +438,5 @@ class ModelTrainer(object):
                 'model_hash': model_hash,
                 'misc_db_parameters': misc_db_parameters,
             })
+        logging.info('Found %s unique model training tasks', len(tasks))
         return tasks

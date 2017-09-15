@@ -144,6 +144,7 @@ class Predictor(object):
         logging.warning(test_label_window)
 
         if 'as_of_date' in matrix_store.matrix.index.names:
+            logging.info('as_of_date found as part of matrix index, using index for table as_of_dates')
             session.commit()
             session.close()
             with tempfile.TemporaryFile(mode='w+') as f:
@@ -178,6 +179,7 @@ class Predictor(object):
                 f.seek(0)
                 postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
         else:
+            logging.info('as_of_date not found as part of matrix index, using matrix metadata end_time as as_of_date')
             temp_df = pandas.DataFrame({'score': predictions})
             rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
             rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
@@ -223,6 +225,11 @@ class Predictor(object):
         """
         session = self.sessionmaker()
         if not self.replace:
+            logging.info(
+                'replace flag not set for model id %s, matrix %s, looking for old predictions',
+                model_id,
+                matrix_store.uuid
+            )
             existing_predictions = self._existing_predictions(
                 session,
                 model_id,
@@ -230,13 +237,18 @@ class Predictor(object):
             )
             index = matrix_store.matrix.index
             if existing_predictions.count() == len(index):
-                logging.info('Found predictions, returning saved versions')
+                logging.info(
+                    'Found predictions for model id %s, matrix %s, returning saved versions',
+                    model_id,
+                    matrix_store.uuid
+                )
                 return self._load_saved_predictions(
                     existing_predictions,
                     matrix_store
                 )
 
         model = self.load_model(model_id)
+        logging.info('Loaded model %s', model_id)
         if not model:
             raise ModelNotFoundError('Model id {} not found'.format(model_id))
 
@@ -245,11 +257,17 @@ class Predictor(object):
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
 
+        logging.info('Generated predictions for model %s, matrix %s', model_id, matrix_store.uuid)
         self._write_to_db(
             model_id,
             matrix_store,
             predictions_proba[:,1],
             labels,
             misc_db_parameters
+        )
+        logging.info(
+            'Wrote predictions for model %s, matrix %s to database',
+            model_id,\
+            matrix_store.uuid
         )
         return predictions_proba[:,1]

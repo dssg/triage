@@ -151,6 +151,15 @@ class ModelEvaluator(object):
                         '{}_{}'.format(val, key)
                         for key, val in full_params.items()
                     ])
+                    logging.info(
+                        'Evaluations for %s%s, labeled examples %s, above threshold %s, positive labels %s, value %s',
+                        metric,
+                        parameter_string,
+                        num_labeled_examples,
+                        num_labeled_above_threshold,
+                        num_positive_labels,
+                        value
+                    )
                     evaluations.append(Evaluation(
                         metric=metric,
                         parameter=parameter_string,
@@ -183,6 +192,13 @@ class ModelEvaluator(object):
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             example_frequency (string) How frequently predictions were generated
         """
+        logging.info(
+            'Generating evaluations for model id %s, evaluation range %s-%s, example frequency %s',
+            model_id,
+            evaluation_start_time,
+            evaluation_end_time,
+            example_frequency
+        )
         predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
             predictions_proba,
             labels,
@@ -192,8 +208,10 @@ class ModelEvaluator(object):
 
         evaluations = []
         for group in self.metric_groups:
+            logging.info('Creating evaluations for metric group %s', group)
             parameters = group.get('parameters', [{}])
             if 'thresholds' not in group:
+                logging.info('Not a thresholded group, generating evaluation based on all predictions')
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
                     parameters,
@@ -207,8 +225,8 @@ class ModelEvaluator(object):
                     labels_sorted.tolist(),
                 )
 
-            logging.info('thresholding predictions for group')
             for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
+                logging.info('Processing percent threshold %s', pct_thresh)
                 predicted_classes = numpy.array(generate_binary_at_x(
                     predictions_proba_sorted,
                     pct_thresh,
@@ -227,6 +245,7 @@ class ModelEvaluator(object):
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
+                logging.info('Processing absolute threshold %s', abs_thresh)
                 predicted_classes = numpy.array(generate_binary_at_x(
                     predictions_proba_sorted,
                     abs_thresh,
