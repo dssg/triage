@@ -60,6 +60,7 @@ class ExperimentBase(object):
         self._collate_aggregations = None
         self._feature_table_tasks = None
         self._all_as_of_times = None
+        self._master_feature_dictionary = None
         self.initialize_factories()
         self.initialize_components()
 
@@ -205,6 +206,10 @@ class ExperimentBase(object):
         """
         if not self._split_definitions:
             self._split_definitions = self.chopper.chop_time()
+            logging.info(
+                'Computed and saved split definitions: %s',
+                self._split_definitions
+            )
         return self._split_definitions
 
     @property
@@ -219,14 +224,26 @@ class ExperimentBase(object):
             all_as_of_times = []
             for split in self.split_definitions:
                 all_as_of_times.extend(split['train_matrix']['as_of_times'])
+                logging.info(
+                    'Adding as_of_times from train matrix: %s',
+                    split['train_matrix']['as_of_times']
+                )
                 for test_matrix in split['test_matrices']:
+                    logging.info(
+                        'Adding as_of_times from test matrix: %s',
+                        test_matrix['as_of_times']
+                    )
                     all_as_of_times.extend(test_matrix['as_of_times'])
 
             logging.info(
-                'Found %s distinct as_of_times for label and feature generation',
+                'Computed %s total as_of_times for label and feature generation',
                 len(all_as_of_times)
             )
             self._all_as_of_times = list(set(all_as_of_times))
+            logging.info(
+                'Computed %s distinct as_of_times for label and feature generation',
+                len(self._all_as_of_times)
+            )
         return self._all_as_of_times
 
     @property
@@ -257,6 +274,27 @@ class ExperimentBase(object):
                 .generate_all_table_tasks(self.collate_aggregations)
         return self._feature_table_tasks
 
+
+    @property
+    def master_feature_dictionary(self):
+        """All possible features found in the database. Not all features will necessarily end up in matrices
+
+        Returns: (list) of dicts, keys being feature table names and values
+            being lists of feature names
+        """
+        if not self._master_feature_dictionary:
+            self._master_feature_dictionary = self.feature_dictionary_creator\
+                .feature_dictionary(
+                    feature_table_names=self.feature_table_tasks.keys(),
+                    index_column_lookup=self.feature_generator.index_column_lookup(self.collate_aggregations)
+                )
+            logging.info(
+                'Computed master feature dictionary: %s',
+                self._master_feature_dictionary
+            )
+
+        return self._master_feature_dictionary
+
     @property
     def feature_dicts(self):
         """Feature dictionaries, representing the feature tables and columns
@@ -265,14 +303,9 @@ class ExperimentBase(object):
         Returns: (list) of dicts, keys being feature table names and values
             being lists of feature names
         """
-        master_feature_dict = self.feature_dictionary_creator\
-            .feature_dictionary(
-                feature_table_names=self.feature_table_tasks.keys(),
-                index_column_lookup=self.feature_generator.index_column_lookup(self.collate_aggregations)
-            )
 
         return self.feature_group_mixer.generate(
-            self.feature_group_creator.subsets(master_feature_dict)
+            self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
 
     @property
