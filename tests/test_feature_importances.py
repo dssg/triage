@@ -7,8 +7,10 @@ import pytest
 from catwalk.feature_importances import _ad_hoc_feature_importances, get_feature_importances
 
 from sklearn import datasets
-from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.svm import SVC
+from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, LinearRegression
 
 from sklearn.model_selection import train_test_split
 
@@ -26,12 +28,29 @@ def trained_models():
     lr = LogisticRegression()
     lr.fit(X_train, y_train)
 
-    return {'RF':rf, 'LR':lr}
+    svc_w_linear_kernel = SVC(kernel='linear')
+    svc_w_linear_kernel.fit(X_train, y_train)
+
+    svc_wo_linear_kernel = SVC()
+    svc_wo_linear_kernel.fit(X_train, y_train)
+
+    dummy = DummyClassifier()
+    dummy.fit(X_train, y_train)
+
+    return {'RF':rf, 'LR':lr, 'SVC_w_linear_kernel':svc_w_linear_kernel,
+            'Dummy':dummy, 'SVC_wo_linear_kernel':svc_wo_linear_kernel}
 
 def test_throwing_warning_if_lr(trained_models):
     with pytest.warns(UserWarning):
         get_feature_importances(trained_models['LR'])
 
+def test_throwing_warning_if_dummyclassifier(trained_models):
+    with pytest.warns(UserWarning):
+        get_feature_importances(trained_models['Dummy'])
+
+def test_throwing_warning_if_SVC_wo_linear_kernel(trained_models):
+    with pytest.warns(UserWarning):
+        get_feature_importances(trained_models['SVC_wo_linear_kernel'])
 
 def test_correct_feature_importances_for_lr(trained_models):
     feature_importances = get_feature_importances(trained_models['LR'])
@@ -41,5 +60,16 @@ def test_correct_feature_importances_for_lr(trained_models):
 
 def test_correct_feature_importances_for_rf(trained_models):
     feature_importances = get_feature_importances(trained_models['RF'])
-
     assert feature_importances.shape == (30,)
+
+def test_correct_feature_importances_for_svc_w_linear_kernel(trained_models):
+    feature_importances = get_feature_importances(trained_models['SVC_w_linear_kernel'])
+    assert feature_importances.shape == (30,)
+
+def test_correct_feature_importances_for_svc_wo_linear_kernel(trained_models):
+    feature_importances = get_feature_importances(trained_models['SVC_wo_linear_kernel'])
+    assert feature_importances is None
+
+def test_correct_feature_importances_for_dummy(trained_models):
+    feature_importances = get_feature_importances(trained_models['Dummy'])
+    assert feature_importances is None

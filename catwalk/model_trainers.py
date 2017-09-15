@@ -8,6 +8,7 @@ import logging
 import datetime
 import copy
 import pandas
+import numpy as np
 
 from catwalk.utils import \
     filename_friendly_hash, \
@@ -149,22 +150,35 @@ class ModelTrainer(object):
         session.add(model)
 
         feature_importance = get_feature_importances(trained_model)
-        temp_df = pandas.DataFrame({'feature_importance': feature_importance})
-        features_index = temp_df.index.tolist()
-        rankings_abs = temp_df['feature_importance'].rank(method='dense', ascending=False)
-        rankings_pct = temp_df['feature_importance'].rank(method='dense', ascending=False, pct=True)
-        for feature_index, importance, rank_abs, rank_pct in zip(
-            features_index,
-            feature_importance,
-            rankings_abs,
-            rankings_pct
-        ):
+        if isinstance(feature_importance, np.ndarray):
+            temp_df = pandas.DataFrame({'feature_importance': feature_importance})
+            features_index = temp_df.index.tolist()
+            rankings_abs = temp_df['feature_importance'].rank(method='dense', ascending=False)
+            rankings_pct = temp_df['feature_importance'].rank(method='dense', ascending=False, pct=True)
+            for feature_index, importance, rank_abs, rank_pct in zip(
+                features_index,
+                feature_importance,
+                rankings_abs,
+                rankings_pct
+            ):
+                feature_importance = FeatureImportance(
+                    model=model,
+                    feature_importance=round(float(importance), 10),
+                    feature=feature_names[feature_index],
+                    rank_abs=int(rank_abs),
+                    rank_pct=round(float(rank_pct), 10)
+                )
+                session.add(feature_importance)
+        # get_feature_importances was not able to find
+        # feature importances
+        else:
             feature_importance = FeatureImportance(
                 model=model,
-                feature_importance=round(float(importance), 10),
-                feature=feature_names[feature_index],
-                rank_abs=int(rank_abs),
-                rank_pct=round(float(rank_pct), 10)
+                feature_importance=0,
+                feature='Algorithm does not support a standard way' + \
+                        'to calculate feature importance.',
+                rank_abs=0,
+                rank_pct=0,
             )
             session.add(feature_importance)
         session.commit()
