@@ -392,5 +392,9 @@ class ExperimentBase(object):
         pass
 
     def run(self):
-        self.build_matrices()
+        try:
+            self.build_matrices()
+        finally:
+            logging.info('Matrix build done or errored, cleaning up state table')
+            self.state_table_generator.clean_up()
         self.catwalk()
