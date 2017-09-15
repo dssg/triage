@@ -4,7 +4,6 @@ import pickle
 import testing.postgresql
 import datetime
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
 import unittest
 from unittest.mock import patch
 
@@ -126,21 +125,34 @@ def test_model_trainer():
             ]) == 4
             assert model_ids == new_model_ids
 
-            # 6. if metadata is deleted but the cache is still there,
-            # retrains that one and replaces the feature importance records
-            engine.execute('delete from results.feature_importances where model_id = 3')
-            engine.execute('delete from results.models where model_id = 3')
+            # 6. if replace is set, update non-unique attributes and feature importances
+            max_batch_run_time = [
+                row[0] for row in
+                engine.execute('select max(batch_run_time) from results.models')
+            ][0]
+            trainer = ModelTrainer(
+                project_path=project_path,
+                experiment_hash=None,
+                model_storage_engine=model_storage_engine,
+                db_engine=engine,
+                model_group_keys=['label_name', 'label_window'],
+                replace=True
+            )
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store
+                matrix_store=matrix_store,
             )
-            expected_model_ids = [1, 2, 4, 5]
-            assert expected_model_ids == sorted(new_model_ids)
+            assert model_ids == new_model_ids
             assert [
                 row['model_id'] for row in
                 engine.execute('select model_id from results.models order by 1 asc')
-            ] == expected_model_ids
+            ] == model_ids
+            new_max_batch_run_time = [
+                row[0] for row in
+                engine.execute('select max(batch_run_time) from results.models')
+            ][0]
+            assert new_max_batch_run_time > max_batch_run_time
 
             records = [
                 row for row in
@@ -151,13 +163,12 @@ def test_model_trainer():
             # 7. if the cache is missing but the metadata is still there, reuse the metadata
             for row in engine.execute('select model_hash from results.models'):
                 model_storage_engine.get_store(row[0]).delete()
-            expected_model_ids = [1, 2, 4, 5]
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
                 matrix_store=matrix_store
             )
-            assert expected_model_ids == sorted(new_model_ids)
+            assert model_ids == sorted(new_model_ids)
 
             # 8. that the generator interface works the same way
             new_model_ids = trainer.generate_trained_models(
@@ -165,8 +176,9 @@ def test_model_trainer():
                 misc_db_parameters=dict(),
                 matrix_store=matrix_store
             )
-            assert expected_model_ids == \
+            assert model_ids == \
                 sorted([model_id for model_id in new_model_ids])
+
 
 def test_n_jobs_not_new_model():
     grid_config = {
