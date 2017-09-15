@@ -66,6 +66,17 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     return trained_model, db_model.model_id
 
 
+def sample_metadata():
+    return {
+        'beginning_of_time': datetime.date(2015, 1, 1),
+        'end_time': datetime.date(2016, 1, 1),
+        'matrix_id': 'test_matrix',
+        'label_name': 'label',
+        'label_window': '3month',
+        'indices': ['entity_id'],
+    }
+
+
 def sample_metta_csv_diff_order(directory):
     """Stores matrix and metadata in a metta-data-like form
 

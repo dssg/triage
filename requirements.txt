@@ -11,5 +11,5 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-results-schema
+results-schema>=1.2
 metta-data

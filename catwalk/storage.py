@@ -171,6 +171,20 @@ class MatrixStore(object):
         return self.metadata['metta-uuid']
 
 
+    @property
+    def as_of_dates(self):
+        if 'as_of_date' in self.matrix.index.names:
+            return sorted(list(set([as_of_date for entity_id, as_of_date in self.matrix.index])))
+        else:
+            return [self.metadata['end_time']]
+
+    @property
+    def num_entities(self):
+        if self.matrix.index.names == ['entity_id']:
+            return len(self.matrix.index.values)
+        elif 'entity_id' in self.matrix.index.names:
+            return len(self.matrix.index.levels[self.matrix.index.names.index('entity_id')])
+
     def matrix_with_sorted_columns(self, columns):
         columnset = set(self.columns())
         desired_columnset = set(columns)

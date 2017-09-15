@@ -157,3 +157,30 @@ class MatrixStoreTest(unittest.TestCase):
                     )\
                     .values\
                     .tolist()
+
+    def test_as_of_dates_entity_index(self):
+        data = {
+            'entity_id': [1, 2],
+            'feature_one': [0.5, 0.6],
+            'feature_two': [0.5, 0.6],
+        }
+        matrix = InMemoryMatrixStore(
+            matrix=pandas.DataFrame.from_dict(data),
+            metadata={'end_time': '2016-01-01', 'indices': ['entity_id']}
+        )
+
+        self.assertEqual(matrix.as_of_dates, ['2016-01-01'])
+
+    def test_as_of_dates_entity_date_index(self):
+        data = {
+            'entity_id': [1, 2, 1, 2],
+            'feature_one': [0.5, 0.6, 0.5, 0.6],
+            'feature_two': [0.5, 0.6, 0.5, 0.6],
+            'as_of_date': ['2016-01-01', '2016-01-01', '2017-01-01', '2017-01-01']
+        }
+        matrix = InMemoryMatrixStore(
+            matrix=pandas.DataFrame.from_dict(data),
+            metadata={'indices': ['entity_id', 'as_of_date']}
+        )
+
+        self.assertEqual(matrix.as_of_dates, ['2016-01-01', '2017-01-01'])

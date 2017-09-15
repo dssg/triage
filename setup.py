@@ -29,7 +29,8 @@ setup(
     url='https://github.com/dssg/catwalk',
     packages=[
         'catwalk',
-        'catwalk.estimators'
+        'catwalk.estimators',
+        'catwalk.individual_importance'
     ],
     include_package_data=True,
     install_requires=requirements,

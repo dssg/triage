@@ -11,6 +11,8 @@ from results_schema import Experiment, Model
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy
+import csv
+import postgres_copy
 
 
 def split_s3_path(path):
@@ -178,3 +180,22 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
         return saved.model_id if saved else None
     finally:
         session.close()
+
+
+@db_retry
+def save_db_objects(db_engine, db_objects):
+    """Saves a collection of SQLAlchemy model objects to the database using a COPY command
+
+    Args:
+        db_engine (sqlalchemy.engine)
+        db_objects (list) SQLAlchemy model objects, corresponding to a valid table
+    """
+    with tempfile.TemporaryFile(mode='w+') as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+        for db_object in db_objects:
+            writer.writerow([
+                getattr(db_object, col.name)
+                for col in db_object.__table__.columns
+            ])
+        f.seek(0)
+        postgres_copy.copy_from(f, type(db_objects[0]), db_engine, format='csv')
