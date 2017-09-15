@@ -188,7 +188,6 @@ class MultiCoreExperiment(ExperimentBase):
             self.matrix_build_tasks.values(),
             self.n_processes
         )
-        self.state_table_generator.clean_up()
 
     def parallelize(
         self,
