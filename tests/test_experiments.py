@@ -225,7 +225,8 @@ def sample_config():
         'temporal_config': temporal_config,
         'grid_config': grid_config,
         'scoring': scoring_config,
-        'user_metadata': { 'custom_key': 'custom_value' }
+        'user_metadata': { 'custom_key': 'custom_value' },
+        'individual_importance': {'n_ranks': 2}
     }
 
 
@@ -305,6 +306,13 @@ def simple_experiment_test(experiment_class):
             (datetime(2012, 1, 1), timedelta(180)),
             (datetime(2013, 1, 1), timedelta(180))
         ]
+
+        # 8. that the right number of individual importances are present
+        individual_importances = [row for row in db_engine.execute('''
+            select * from results.individual_importances
+            join results.models using (model_id)
+        ''')]
+        assert len(individual_importances) == num_predictions * 2  # only 2 features
 
 
 def test_singlethreaded_experiment():
