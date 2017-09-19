@@ -13,7 +13,7 @@ numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
 results-schema>=1.2
-git+https://github.com/dssg/timechop.git@v0.1.4
+timechop==0.1.3
 collate==0.2.1
 matrix-architect==0.3
 model-catwalk>=0.3
