@@ -41,7 +41,7 @@ class Timechop(object):
             matrix_end_times = self.calculate_matrix_end_times(
                 train_duration,
                 train_label_window,
-                test_label_window
+                test_label_window,
             )
             for matrix_end_time in matrix_end_times:
                 matrix_set_definitions.append(
@@ -59,11 +59,12 @@ class Timechop(object):
             train_duration,
             train_label_window,
             test_label_window
-        ):
+                    ):
         update_delta = utils.convert_str_to_relativedelta(self.update_window)
         train_delta = utils.convert_str_to_relativedelta(train_duration)
+        test_label_delta = utils.convert_str_to_relativedelta(test_label_window)
         matrix_end_times = []
-        matrix_end_time = self.modeling_end_time - update_delta
+        matrix_end_time = self.modeling_end_time - test_label_delta
         
         print('Initial matrix end time {}'.format(matrix_end_time))
         if matrix_end_time <= self.modeling_start_time:
@@ -80,6 +81,7 @@ class Timechop(object):
 
         return(matrix_end_times)
 
+    # matrix_end_time is now matrix_end_time - label_window
     def calculate_as_of_times(
         self,
         matrix_start_time,
@@ -93,9 +95,11 @@ class Timechop(object):
             matrix_end_time,
             example_delta
         )
+
         as_of_times = []
         as_of_time = matrix_start_time
-        while as_of_time < matrix_end_time:
+        
+        while as_of_time <= matrix_end_time:
             as_of_times.append(as_of_time)
             as_of_time += example_delta
         return(as_of_times)
@@ -108,14 +112,15 @@ class Timechop(object):
             test_label_window
         ):
         train_delta = utils.convert_str_to_relativedelta(train_duration)
-        train_matrix_start_time = train_matrix_end_time - train_delta
+        train_label_delta = utils.convert_str_to_relativedelta(train_label_window)
+        train_matrix_start_time = train_matrix_end_time - train_label_delta - train_delta
         if train_matrix_start_time < self.modeling_start_time:
             train_matrix_start_time = self.modeling_start_time
         print('train end: {}'.format(train_matrix_end_time))
         print('train start: {}'.format(train_matrix_start_time))
         train_as_of_times = self.calculate_as_of_times(
             train_matrix_start_time,
-            train_matrix_end_time,
+            train_matrix_end_time - train_label_delta,
             self.train_example_frequency
         )
         test_matrices = self.define_test_matrices(
@@ -148,9 +153,10 @@ class Timechop(object):
         test_end_times = []
         for test_duration in self.test_durations:
             test_duration_delta = utils.convert_str_to_relativedelta(test_duration)
+            test_label_delta = utils.convert_str_to_relativedelta(test_label_window)
             test_end_time = train_matrix_end_time + test_duration_delta
-            if test_end_time > self.modeling_end_time:
-                test_end_time = self.modeling_end_time
+            if test_end_time > self.modeling_end_time - test_label_delta:
+                test_end_time = max(train_matrix_end_time, self.modeling_end_time - test_label_delta)
             if test_end_time not in test_end_times:
                 test_as_of_times = self.calculate_as_of_times(
                     train_matrix_end_time,
