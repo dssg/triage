@@ -6,6 +6,7 @@ import yaml
 import logging
 import smart_open
 
+
 class Store(object):
     def __init__(self, path):
         self.path = path
@@ -170,7 +171,6 @@ class MatrixStore(object):
     def uuid(self):
         return self.metadata['metta-uuid']
 
-
     @property
     def as_of_dates(self):
         if 'as_of_date' in self.matrix.index.names:
@@ -216,6 +216,17 @@ class MatrixStore(object):
             for line in f:
                 y.append(line.decode())
         return yaml.load("".join(y).encode('utf-8'))
+
+    def __getstate__(self):
+        # when we serialize (say, for multiprocessing),
+        # we don't want the cached members to show up
+        # as they can be enormous
+        self._matrix = None
+        self._labels = None
+        self._metadata = None
+        self._head_of_matrix = None
+        return self.__dict__.copy()
+
 
 class HDFMatrixStore(MatrixStore):
     def _get_head_of_matrix(self):
