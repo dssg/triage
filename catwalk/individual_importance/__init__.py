@@ -67,7 +67,7 @@ class IndividualImportanceCalculator(object):
         )
         logging.debug(
             'matrix_uuid=%s/n_ranks=%s: expect %s importances',
-            matrix_store.uuid, expected_importances
+            matrix_store.uuid, self.n_ranks, expected_importances
         )
         return existing_importances < expected_importances
 
@@ -98,8 +98,7 @@ class IndividualImportanceCalculator(object):
                 Expected to be present in CALCULATE_STRATEGIES
             as_of_date (datetime or string) The date to produce individual importances as of
         """
-        if not self.replace:
-            if not self._needs_new_importances(
+        if not self.replace and not self._needs_new_importances(
                 model_id,
                 as_of_date,
                 method,

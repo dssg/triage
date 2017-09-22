@@ -41,7 +41,7 @@ def test_calculate_and_save():
         with tempfile.TemporaryDirectory() as temp_dir:
             train_store, test_store = sample_metta_csv_diff_order(temp_dir)
             model_storage_engine = InMemoryModelStorageEngine(project_path)
-            calculator = IndividualImportanceCalculator(db_engine, methods=['sample'])
+            calculator = IndividualImportanceCalculator(db_engine, methods=['sample'], replace=False)
             # given a trained model
             # and a test matrix
             _, model_id = \
