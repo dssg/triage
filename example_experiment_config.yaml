@@ -121,12 +121,22 @@ feature_aggregations:
                 metrics:
                     - 'count'
                     - 'sum'
+            - 
+                # since we're specifying `aggregates_imputation` above,
+                # a feature-specific imputation rule can be omitted
+                quantity: 'some_flag'
+                metrics:
+                    - 'max'
+                    - 'sum'
         # Categorical features. The column given can be of any type, but the
         # choices must comparable to that type for equality within SQL
         # The result will be one feature for each choice/metric combination
         categoricals:
             -
                 column: 'color'
+                # note that we haven't specified a top level `categoricals_imputation`
+                # set of rules, so we have to include feature-specific imputation
+                # rules for both of our categoricals here.
                 imputation:
                     sum:
                         type: 'null_category'
