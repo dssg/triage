@@ -1,4 +1,4 @@
-CONFIG_VERSION = 'v1'
+CONFIG_VERSION = 'v2'
 
 from .base import ExperimentBase
 from .multicore import MultiCoreExperiment

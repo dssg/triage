@@ -138,7 +138,7 @@ class MultiCoreExperiment(ExperimentBase):
             'Creating feature tables with %s processes',
             self.n_db_processes
         )
-        for table_name, tasks in self.feature_table_tasks.items():
+        for table_name, tasks in self.feature_aggregation_table_tasks.items():
             logging.info('Processing features for %s', table_name)
             self.feature_generator.run_commands(tasks.get('prepare', []))
             partial_insert = partial(
@@ -154,6 +154,9 @@ class MultiCoreExperiment(ExperimentBase):
             )
             self.feature_generator.run_commands(tasks.get('finalize', []))
             logging.info('%s completed', table_name)
+
+        logging.info('Creating feature imputation tables')
+        self.feature_generator.process_table_tasks(self.feature_imputation_table_tasks)
 
         partial_build_matrix = partial(
             build_matrix,

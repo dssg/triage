@@ -191,6 +191,7 @@ def sample_config():
         'prefix': 'entity_features',
         'from_obj': 'cat_complaints',
         'knowledge_date_column': 'as_of_date',
+        'aggregates_imputation': {'all': {'type': 'constant', 'value': 0}},
         'aggregates': [{
             'quantity': 'cat_sightings',
             'metrics': ['count', 'avg'],
@@ -201,6 +202,7 @@ def sample_config():
         'prefix': 'zip_code_features',
         'from_obj': 'entity_zip_codes join zip_code_events using (zip_code)',
         'knowledge_date_column': 'as_of_date',
+        'aggregates_imputation': {'all': {'type': 'constant', 'value': 0}},
         'aggregates': [{
             'quantity': 'num_events',
             'metrics': ['max', 'min'],
@@ -215,7 +217,7 @@ def sample_config():
     }
 
     return {
-        'config_version': 'v1',
+        'config_version': CONFIG_VERSION,
         'events_table': 'events',
         'entity_column_name': 'entity_id',
         'model_comment': 'test2-final-final',

@@ -61,6 +61,12 @@ feature_aggregations:
         # from the date the event happened.
         knowledge_date_column: 'open_date'
 
+        # a set of rules for how to handle imputation of null values in all resulting fields in the aggregation
+        aggregates_imputation:
+            all:
+                type: 'constant'
+                value: 0
+
         # aggregates and categoricals define the actual features created. So
         # at least one is required
         #
