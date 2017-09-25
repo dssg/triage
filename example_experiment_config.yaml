@@ -5,7 +5,7 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release 
 # you are developing against!
-config_version: 'v1'
+config_version: 'v2'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
@@ -48,6 +48,27 @@ events_table: 'events'
 # arguments needed to create it. Generally, each of these entries controls
 # the features from one source table, though in the case of multiple groups
 # may result in multiple output tables
+#
+# Rules specifying how to handle imputation of null values must be explicitly
+# defined in your config file. These can be specified in two places: either
+# within each feature or overall for each type of feature (aggregates,
+# categoricals, array_categoricals). In either case, a rule must be given for 
+# each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
+# can be specified with `all`. Aggregation function-specific rules will take
+# precedence over the `all` rule and feature-specific rules will take 
+# precedence over the higher-level rules. Several examples are provided below.
+#
+# Available Imputation Rules:
+#   * mean: The average value of the feature (for SpacetimeAggregation the 
+#           mean is taken within-date).
+#   * constant: Fill with a constant value from a required `value` parameter.
+#   * zero: Fill with zero.
+#   * null_category: Only available for categorical features. Just flag null 
+#                    values with the null category column. 
+#   * binary_mode: Only available for aggregate column types. Takes the modal 
+#                  value for a binary feature.
+#   * error: Raise an exception if any null values are encountered for this 
+#            feature.
 feature_aggregations:
     -
         # prefix given to the resultant tables
@@ -61,6 +82,24 @@ feature_aggregations:
         # from the date the event happened.
         knowledge_date_column: 'open_date'
 
+        # top-level imputation rules that will apply to all aggregates functions
+        # can also specify categoricals_imputation or array_categoricals_imputation
+        # 
+        # You must specified at least one of the top-level or feature-level imputation
+        # to cover ever feature being defined.
+        aggregates_imputation:
+            # The `all` rule will apply to all aggregation functions, unless over-
+            # ridden by a more specific one
+            all:
+                # every imputation rule must have a `type` parameter, while some
+                # (like 'constant') have other required parameters (`value` here)
+                type: 'constant'
+                value: 0
+            # specifying `max` here will take precedence over the `all` rule for
+            # aggregations using a MAX() function
+            max:
+                type: 'mean'
+
         # aggregates and categoricals define the actual features created. So
         # at least one is required
         #
@@ -69,8 +108,25 @@ feature_aggregations:
         aggregates:
             -
                 quantity: 'homeless::INT'
+                # Imputation rules specified at the level of specific features
+                # will take precedence over the higer-level rules specified
+                # above. Note that the 'count' and 'sum' metrics will be
+                # imputed differently here.
+                imputation:
+                    count:
+                        type: 'mean'
+                    sum:
+                        type: 'constant'
+                        value: 137
                 metrics:
                     - 'count'
+                    - 'sum'
+            - 
+                # since we're specifying `aggregates_imputation` above,
+                # a feature-specific imputation rule can be omitted
+                quantity: 'some_flag'
+                metrics:
+                    - 'max'
                     - 'sum'
         # Categorical features. The column given can be of any type, but the
         # choices must comparable to that type for equality within SQL
@@ -78,6 +134,14 @@ feature_aggregations:
         categoricals:
             -
                 column: 'color'
+                # note that we haven't specified a top level `categoricals_imputation`
+                # set of rules, so we have to include feature-specific imputation
+                # rules for both of our categoricals here.
+                imputation:
+                    sum:
+                        type: 'null_category'
+                    max:
+                        type: 'mean'
                 choices:
                     - 'red'
                     - 'blue'
@@ -86,6 +150,12 @@ feature_aggregations:
                     - 'sum'
             -
                 column: 'shape'
+                # as with the top-level imputation rules, `all` can be used
+                # for the feature-level rules to specify the same type of
+                # imputation for all aggregation functions
+                imputation:
+                    all:
+                        type: 'zero'
                 choice_query: 'select distinct shape from cool_stuff'
                 metrics:
                     - 'sum'

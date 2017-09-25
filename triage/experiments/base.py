@@ -61,7 +61,8 @@ class ExperimentBase(object):
         self._split_definitions = None
         self._matrix_build_tasks = None
         self._collate_aggregations = None
-        self._feature_table_tasks = None
+        self._feature_aggregation_table_tasks = None
+        self._feature_imputation_table_tasks = None
         self._all_as_of_times = None
         self._master_feature_dictionary = None
         self.initialize_factories()
@@ -264,27 +265,44 @@ class ExperimentBase(object):
             self._collate_aggregations = self.feature_generator.aggregations(
                 feature_aggregation_config=self.config['feature_aggregations'],
                 feature_dates=self.all_as_of_times,
+                state_table=self.state_table_generator.sparse_table_name,
             )
         return self._collate_aggregations
 
 
     @property
-    def feature_table_tasks(self):
+    def feature_aggregation_table_tasks(self):
         """All feature table query tasks specified by this Experiment
 
         Returns: (dict) keys are group table names, values are themselves dicts,
             each with keys for different stages of table creation (prepare, inserts, finalize)
             and with values being lists of SQL commands
         """
-        if not self._feature_table_tasks:
+        if not self._feature_aggregation_table_tasks:
             logging.info(
                 'Calculating feature tasks for %s as_of_times',
                 len(self.all_as_of_times)
             )
-            self._feature_table_tasks = self.feature_generator\
-                .generate_all_table_tasks(self.collate_aggregations)
-        return self._feature_table_tasks
+            self._feature_aggregation_table_tasks = self.feature_generator\
+                .generate_all_table_tasks(self.collate_aggregations, task_type='aggregation')
+        return self._feature_aggregation_table_tasks
 
+    @property
+    def feature_imputation_table_tasks(self):
+        """All feature imputation query tasks specified by this Experiment
+
+        Returns: (dict) keys are group table names, values are themselves dicts,
+            each with keys for different stages of table creation (prepare, inserts, finalize)
+            and with values being lists of SQL commands
+        """
+        if not self._feature_imputation_table_tasks:
+            logging.info(
+                'Calculating feature tasks for %s as_of_times',
+                len(self.all_as_of_times)
+            )
+            self._feature_imputation_table_tasks = self.feature_generator\
+                .generate_all_table_tasks(self.collate_aggregations, task_type='imputation')
+        return self._feature_imputation_table_tasks
 
     @property
     def master_feature_dictionary(self):
@@ -296,7 +314,7 @@ class ExperimentBase(object):
         if not self._master_feature_dictionary:
             self._master_feature_dictionary = self.feature_dictionary_creator\
                 .feature_dictionary(
-                    feature_table_names=self.feature_table_tasks.keys(),
+                    feature_table_names=self.feature_imputation_table_tasks.keys(),
                     index_column_lookup=self.feature_generator.index_column_lookup(self.collate_aggregations)
                 )
             logging.info(
