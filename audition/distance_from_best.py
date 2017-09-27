@@ -3,6 +3,7 @@ from audition.metric_directionality import sql_rank_order
 from audition.plotting import plot_cats, plot_bounds
 import pandas as pd
 import numpy as np
+import logging
 
 
 class DistanceFromBestTable(object):
@@ -297,6 +298,7 @@ class BestDistancePlotter(object):
 
         """
         for metric_filter in metric_filters:
+            logging.info('Building best distance plot for %s and %s', metric_filter, train_end_times)
             df = self.generate_plot_data(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],

@@ -415,6 +415,9 @@ class BoundSelectionRule(object):
 
         return self._descriptive_name
 
+    def __str__(self):
+        return self.descriptive_name
+
     def _build_descriptive_name(self):
         """Build a descriptive name for the bound selection rule
 

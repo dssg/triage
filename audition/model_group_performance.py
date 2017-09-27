@@ -1,6 +1,8 @@
 from audition.utils import str_in_sql
 from audition.plotting import plot_cats
 import pandas as pd
+import numpy as np
+import logging
 
 
 class ModelGroupPerformancePlotter(object):
@@ -28,6 +30,7 @@ class ModelGroupPerformancePlotter(object):
 
         """
         for metric_filter in metric_filters:
+            logging.info('Plotting model group performance for %s, %s', metric_filter, train_end_times)
             df = self.generate_plot_data(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
@@ -37,7 +40,8 @@ class ModelGroupPerformancePlotter(object):
             self.plot(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
-                df_metric=df
+                df_metric=df,
+                train_end_times=train_end_times
             )
 
     def generate_plot_data(self, metric, parameter, model_group_ids, train_end_times):
@@ -88,17 +92,34 @@ group by 1, 2, 3, 4, 5, 6
         ]
         return df
 
-    def plot(self, metric, parameter, df_metric, **plt_format_args):
+    def plot(self, metric, parameter, df_metric, train_end_times, **plt_format_args):
         """Draw the plot representing the given data
 
         Arguments:
             metric (string) -- model evaluation metric, such as 'precision@'
             parameter (string) -- model evaluation metric parameter, such as '300_abs'
             df_metric (pandas.DataFrame)
+            train_end_times (list) - Train end times to use for ticks
             **plt_format_args -- formatting arguments passed through to plot_cats()
         """
         cat_col = 'model_type'
         plt_title = '{} {} over time'.format(metric, parameter)
+
+        # when setting the ticks, matplotlib sometimes has problems with datetimes given
+        # as numpy.datetime64 objects, and converting from them to datetimes is ugly.
+        # to get around this, we use the train_end_times given to the plot call as ticks
+        # But to be defensive, we verify that these two versions of the list are the same
+        for given_time, matrix_time in zip(
+            train_end_times,
+            sorted(df_metric['train_end_time'].unique()),
+        ):
+            given_time_as_numpy = np.datetime64(given_time) 
+            if given_time_as_numpy != matrix_time:
+                raise ValueError(
+                    'Train times given to the plotter do not match up with those extracted from the database. %s (given time) does not equal %s (matrix time)',
+                    given_time_as_numpy,
+                    matrix_time
+                )
 
         plot_cats(
             frame=df_metric,
@@ -109,6 +130,6 @@ group by 1, 2, 3, 4, 5, 6
             title=plt_title,
             x_label='train end time',
             y_label='value of {}'.format(metric),
-            x_ticks=df_metric['train_end_time'].unique(),
+            x_ticks=train_end_times,
             **plt_format_args
         )

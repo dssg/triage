@@ -34,18 +34,16 @@ class SelectionRulePicker(object):
             the maximum value next test time
 
         Arguments:
-            selection_rule (function) A function that returns a model group
+            bound_selection_rule (function) A function that returns a model group
                 given a dataframe of model group performances plus other
                 arguments
             model_group_ids (list) The list of model group ids to include in
                 the regret analysis
             train_end_times (list) The list of train end times to include in
                 the regret analysis
-            metric (string) -- model evaluation metric, such as 'precision@'
-            parameter (string) -- model evaluation metric parameter,
+            regret_metric (string) -- model evaluation metric, such as 'precision@'
+            regret_parameter (string) -- model evaluation metric parameter,
                 such as '300_abs'
-            selection_rule_args (dict) Arguments that the given selection rule
-                will accept as keyword arguments
 
         Returns: (list) for each train end time, a dictionary representing the
             model group chosen by the selection rule and its performance
@@ -62,12 +60,12 @@ class SelectionRulePicker(object):
         choices = []
 
         for train_end_time in train_end_times:
-            localized_df = copy.deepcopy(
-                df[df['train_end_time'] <= train_end_time]
+            model_group_id = self.model_group_from_rule(
+                bound_selection_rule,
+                model_group_ids,
+                train_end_time
             )
-            del localized_df['dist_from_best_case_next_time']
 
-            model_group_id = bound_selection_rule.pick(localized_df, train_end_time)
             choice = df[
                 (df['model_group_id'] == model_group_id) &
                 (df['train_end_time'] == train_end_time) &
@@ -78,6 +76,32 @@ class SelectionRulePicker(object):
             choices.append(choice.squeeze().to_dict())
         return choices
 
+    def model_group_from_rule(self, bound_selection_rule, model_group_ids, train_end_time):
+        """Pick a model group that best selects the given selection rule
+
+        In here, we create a subset of the distance from best table dataframe,
+        with all data after the given train end time removed, both rows representing
+        later time periods but also columns that have access to later data. Calculating and
+        passing this allows the selection rules to be written without specific code
+        to exclude the future
+
+        Arguments:
+            bound_selection_rule (function) A function that returns a model group
+                given a dataframe of model group performances plus other
+                arguments
+            model_group_ids (list) The list of model group ids to consider
+            train_end_time (timestamp) The list of train end times to include in
+                the regret analysis
+
+        Returns: (int) The model group id chosen by the input selection rule
+        """
+        df = self.distance_from_best_table.as_dataframe(model_group_ids)
+        localized_df = copy.deepcopy(
+            df[df['train_end_time'] <= train_end_time]
+        )
+        del localized_df['dist_from_best_case_next_time']
+
+        return bound_selection_rule.pick(localized_df, train_end_time)
 
 class SelectionRulePlotter(object):
     """Plot selection rules
