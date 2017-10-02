@@ -63,6 +63,11 @@ events_table: 'events'
 #           mean is taken within-date).
 #   * constant: Fill with a constant value from a required `value` parameter.
 #   * zero: Fill with zero.
+#   * zero_noflag: Fill with zero without generating an "imputed" flag. This 
+#                  option should be used only for cases where null values are 
+#                  explicitly known to be zero such as absence of an entity 
+#                  from an events table indicating that no such event has 
+#                  occurred.
 #   * null_category: Only available for categorical features. Just flag null 
 #                    values with the null category column. 
 #   * binary_mode: Only available for aggregate column types. Takes the modal 
