@@ -4,7 +4,7 @@ import pickle
 import pandas
 import yaml
 import logging
-
+import smart_open
 
 class Store(object):
     def __init__(self, path):
@@ -206,6 +206,16 @@ class MatrixStore(object):
                     Columnset and desired columnset mismatch. Unique items: %s
                 ''', columnset ^ desired_columnset)
 
+    def save_yaml(self, df, project_path, name):
+        with smart_open.smart_open(os.path.join(project_path, name + ".yaml"), "wb") as f:
+            yaml.dump(df, f, encoding='utf-8')
+
+    def load_yaml(self, metadata_path):
+        with smart_open.smart_open(metadata_path, "rb") as f:
+            y = []
+            for line in f:
+                y.append(line.decode())
+        return yaml.load("".join(y).encode('utf-8'))
 
 class HDFMatrixStore(MatrixStore):
     def _get_head_of_matrix(self):
@@ -218,12 +228,46 @@ class HDFMatrixStore(MatrixStore):
         except pandas.error.EmptyDataError:
             self._head_of_matrix = None
 
-
     def _load(self):
-        self._matrix = pandas.read_hdf(self.matrix_path, mode='r+')
-        with open(self.metadata_path) as f:
-            self._metadata = yaml.load(f)
-        self._matrix.set_index(self.metadata['indices'], inplace=True)
+        with smart_open.smart_open(self.matrix_path, "rb") as f:
+            self._matrix = self._read_hdf_from_buffer(f)
+        self._metadata = self.load_yaml(self.metadata_path)
+        try:
+            self._matrix.set_index(self._metadata['indices'], inplace=True)
+        except:
+            pass
+
+    def _read_hdf_from_buffer(self, buffer):
+        with pandas.HDFStore(
+                "data.h5",
+                mode="r",
+                driver="H5FD_CORE",
+                driver_core_backing_store=0,
+                driver_core_image=buffer.read()) as store:
+
+            if len(store.keys()) > 1:
+                raise Exception('Ambiguous matrix store. More than one dataframe in the hdf file.')
+
+            try:
+                return store["matrix"]
+
+            except KeyError:
+                print("The hdf file should contain one and only key, matrix.")
+                return store[store.keys()[0]]
+
+    def _write_hdf_to_buffer(self, df):
+        with pandas.HDFStore(
+                "data.h5",
+                mode="w",
+                driver="H5FD_CORE",
+                driver_core_backing_store=0) as out:
+            out["matrix"] = df
+            return out._handle.get_file_image()
+
+    def save(self, project_path, name):
+        with smart_open.smart_open(os.path.join(project_path, name + ".h5"), "wb") as f:
+            f.write(self._write_hdf_to_buffer(self.matrix))
+        self.save_yaml(self.metadata, project_path, name)
 
 
 class CSVMatrixStore(MatrixStore):
@@ -236,10 +280,15 @@ class CSVMatrixStore(MatrixStore):
             self._head_of_matrix = None
 
     def _load(self):
-        self._matrix = pandas.read_csv(self.matrix_path)
-        with open(self.metadata_path) as f:
-            self._metadata = yaml.load(f)
+        with smart_open.smart_open(self.matrix_path, "r") as f:
+            self._matrix = pandas.read_csv(f)
+        self._metadata = self.load_yaml(self.metadata_path)
         self._matrix.set_index(self.metadata['indices'], inplace=True)
+
+    def save(self, project_path, name):
+        with smart_open.smart_open(os.path.join(project_path, name + ".csv"), "w") as f:
+            self.matrix.to_csv(f)
+        self.save_yaml(self.metadata, project_path, name)
 
 
 class InMemoryMatrixStore(MatrixStore):
@@ -262,3 +311,6 @@ class InMemoryMatrixStore(MatrixStore):
         if self._metadata['indices'][0] in self._matrix.columns:
             self._matrix.set_index(self._metadata['indices'], inplace=True)
         return self._matrix
+
+    def save(self, project_path, name):
+        return None

@@ -1,12 +1,13 @@
 from catwalk.storage import S3Store, FSStore, MemoryStore, InMemoryMatrixStore, HDFMatrixStore, CSVMatrixStore
-from moto import mock_s3
 import tempfile
-import boto3
 import os
 import pandas
 from collections import OrderedDict
 import unittest
 import yaml
+import boto
+import smart_open
+from moto import mock_s3, mock_s3_deprecated
 
 class SomeClass(object):
     def __init__(self, val):
@@ -14,6 +15,7 @@ class SomeClass(object):
 
 
 def test_S3Store():
+    import boto3
     with mock_s3():
         s3_conn = boto3.resource('s3')
         s3_conn.create_bucket(Bucket='a-bucket')
@@ -74,7 +76,7 @@ class MatrixStoreTest(unittest.TestCase):
             with open(tmpyaml, 'w') as outfile:
                 yaml.dump(metadata, outfile, default_flow_style=False)
                 df.to_csv(tmpcsv, index=False)
-                df.to_hdf(tmphdf, 'test')
+                df.to_hdf(tmphdf, 'matrix')
                 csv = CSVMatrixStore(matrix_path=tmpcsv, metadata_path=tmpyaml)
                 hdf = HDFMatrixStore(matrix_path=tmphdf, metadata_path=tmpyaml)
 
@@ -184,3 +186,25 @@ class MatrixStoreTest(unittest.TestCase):
         )
 
         self.assertEqual(matrix.as_of_dates, ['2016-01-01', '2017-01-01'])
+
+    def test_s3_save(self):
+        with mock_s3_deprecated():
+            s3_conn = boto.connect_s3()
+            bucket_name = 'fake-matrix-bucket'
+            bucket = s3_conn.create_bucket(bucket_name)
+
+
+            matrix_store_list = self.matrix_store()
+
+            for matrix_store in matrix_store_list:
+                matrix_store.save(project_path='s3://fake-matrix-bucket', name='test')
+
+            # HDF
+            hdf = HDFMatrixStore(matrix_path='s3://fake-matrix-bucket/test.h5', metadata_path='s3://fake-matrix-bucket/test.yaml')
+            # CSV
+            csv = CSVMatrixStore(matrix_path='s3://fake-matrix-bucket/test.csv', metadata_path='s3://fake-matrix-bucket/test.yaml')
+
+            assert csv.metadata == matrix_store_list[0].metadata
+            assert csv.matrix.to_dict() == matrix_store_list[0].matrix.to_dict()
+            assert hdf.metadata == matrix_store_list[0].metadata
+            assert hdf.matrix.to_dict() == matrix_store_list[0].matrix.to_dict()
