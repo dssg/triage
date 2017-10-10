@@ -11,7 +11,14 @@ import factory
 import numpy
 from tests.utils import create_sample_distance_table
 from unittest.mock import patch
+from datetime import datetime, timedelta
 
+
+def _sql_add_days(sql_date, days):
+    return datetime.strftime(
+        datetime.strptime(sql_date, '%Y-%m-%d') + timedelta(days=days),
+        '%Y-%m-%d'
+    )
 
 def test_DistanceFromBestTable():
     with testing.postgresql.Postgresql() as postgresql:
@@ -47,8 +54,23 @@ def test_DistanceFromBestTable():
 
         class ImmediateEvalFactory(EvaluationFactory):
             evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)
+            evaluation_end_time = factory.LazyAttribute(
+                lambda o: _sql_add_days(o.model_rel.train_end_time, 1)
+            )
+
+        class MonthOutEvalFactory(EvaluationFactory):
+            evaluation_start_time = factory.LazyAttribute(
+                lambda o: _sql_add_days(o.model_rel.train_end_time, 31)
+            )
+            evaluation_end_time = factory.LazyAttribute(
+                lambda o: _sql_add_days(o.model_rel.train_end_time, 32)
+            )
 
         class Precision100Factory(ImmediateEvalFactory):
+            metric = 'precision@'
+            parameter = '100_abs'
+
+        class Precision100FactoryMonthOut(MonthOutEvalFactory):
             metric = 'precision@'
             parameter = '100_abs'
 
@@ -56,24 +78,32 @@ def test_DistanceFromBestTable():
             metric = 'recall@'
             parameter = '100_abs'
 
-        Precision100Factory(model_rel=models['stable_3y_ago'], value=0.6)
-        Precision100Factory(model_rel=models['stable_2y_ago'], value=0.57)
-        Precision100Factory(model_rel=models['stable_1y_ago'], value=0.59)
-        Precision100Factory(model_rel=models['bad_3y_ago'], value=0.4)
-        Precision100Factory(model_rel=models['bad_2y_ago'], value=0.39)
-        Precision100Factory(model_rel=models['bad_1y_ago'], value=0.43)
-        Precision100Factory(model_rel=models['spiky_3y_ago'], value=0.8)
-        Precision100Factory(model_rel=models['spiky_2y_ago'], value=0.4)
-        Precision100Factory(model_rel=models['spiky_1y_ago'], value=0.4)
-        Recall100Factory(model_rel=models['stable_3y_ago'], value=0.55)
-        Recall100Factory(model_rel=models['stable_2y_ago'], value=0.56)
-        Recall100Factory(model_rel=models['stable_1y_ago'], value=0.55)
-        Recall100Factory(model_rel=models['bad_3y_ago'], value=0.35)
-        Recall100Factory(model_rel=models['bad_2y_ago'], value=0.34)
-        Recall100Factory(model_rel=models['bad_1y_ago'], value=0.36)
-        Recall100Factory(model_rel=models['spiky_3y_ago'], value=0.35)
-        Recall100Factory(model_rel=models['spiky_2y_ago'], value=0.8)
-        Recall100Factory(model_rel=models['spiky_1y_ago'], value=0.36)
+        class Recall100FactoryMonthOut(MonthOutEvalFactory):
+            metric = 'recall@'
+            parameter = '100_abs'
+
+        for add_val, PrecFac, RecFac in [
+            (0, Precision100Factory, Recall100Factory),
+            (-0.15, Precision100FactoryMonthOut, Recall100FactoryMonthOut)
+            ]:
+            PrecFac(model_rel=models['stable_3y_ago'], value=0.6+add_val)
+            PrecFac(model_rel=models['stable_2y_ago'], value=0.57+add_val)
+            PrecFac(model_rel=models['stable_1y_ago'], value=0.59+add_val)
+            PrecFac(model_rel=models['bad_3y_ago'], value=0.4+add_val)
+            PrecFac(model_rel=models['bad_2y_ago'], value=0.39+add_val)
+            PrecFac(model_rel=models['bad_1y_ago'], value=0.43+add_val)
+            PrecFac(model_rel=models['spiky_3y_ago'], value=0.8+add_val)
+            PrecFac(model_rel=models['spiky_2y_ago'], value=0.4+add_val)
+            PrecFac(model_rel=models['spiky_1y_ago'], value=0.4+add_val)
+            RecFac(model_rel=models['stable_3y_ago'], value=0.55+add_val)
+            RecFac(model_rel=models['stable_2y_ago'], value=0.56+add_val)
+            RecFac(model_rel=models['stable_1y_ago'], value=0.55+add_val)
+            RecFac(model_rel=models['bad_3y_ago'], value=0.35+add_val)
+            RecFac(model_rel=models['bad_2y_ago'], value=0.34+add_val)
+            RecFac(model_rel=models['bad_1y_ago'], value=0.36+add_val)
+            RecFac(model_rel=models['spiky_3y_ago'], value=0.35+add_val)
+            RecFac(model_rel=models['spiky_2y_ago'], value=0.8+add_val)
+            RecFac(model_rel=models['spiky_1y_ago'], value=0.36+add_val)
         session.commit()
         distance_table = DistanceFromBestTable(
             db_engine=engine,

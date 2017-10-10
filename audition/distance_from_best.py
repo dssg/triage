@@ -58,7 +58,15 @@ class DistanceFromBestTable(object):
         for metric in metrics:
             self.db_engine.execute('''
                 insert into {new_table}
-                WITH model_ranks AS (
+                WITH first_evals AS (
+                    SELECT *, row_number() OVER (
+                        PARTITION BY model_id 
+                        ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
+                        ) AS eval_rn
+                    FROM results.evaluations
+                    WHERE metric='{metric}' AND parameter='{parameter}'
+                ),
+                model_ranks AS (
                     SELECT
                         m.model_group_id,
                         m.model_id,
@@ -68,12 +76,12 @@ class DistanceFromBestTable(object):
                             PARTITION BY m.train_end_time
                             ORDER BY ev.value {metric_value_order}, RANDOM()
                         ) AS rank
-                  FROM results.evaluations ev
+                  FROM first_evals ev
                   JOIN results.{models_table} m USING(model_id)
                   JOIN results.model_groups mg USING(model_group_id)
-                  WHERE ev.metric='{metric}' AND ev.parameter='{parameter}'
-                        AND m.model_group_id IN ({model_group_ids})
+                  WHERE m.model_group_id IN ({model_group_ids})
                         AND train_end_time in ({train_end_times})
+                        AND ev.eval_rn = 1
                 ),
                 model_tols AS (
                   SELECT train_end_time, model_group_id, model_id,
