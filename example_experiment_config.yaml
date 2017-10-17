@@ -177,10 +177,10 @@ feature_aggregations:
 # define how to group features and generate combinations
 # feature_group_definition allows you to create groups/subset of your features
 # by different criteria.
-# for instance, 'tables' allows you to send a list of collate feature tables (collate builds these by appending 'aggregation' to the prefix)
+# for instance, 'tables' allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
 # 'prefix' allows you to specify a list of feature name prefixes
 feature_group_definition:
-    tables: ['prefix_aggregation']
+    tables: ['prefix_aggregation_imputed']
 
 # strategies for generating combinations of groups
 # available: all, leave-one-out, leave-one-in
