@@ -159,6 +159,7 @@ class ExperimentBase(object):
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
             model_group_keys=self.config['model_group_keys'],
+            feature_config=self.config['feature_aggregations'],
             replace=self.replace
         )
 
