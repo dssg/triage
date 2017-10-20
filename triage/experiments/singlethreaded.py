@@ -9,8 +9,10 @@ class SingleThreadedExperiment(ExperimentBase):
         self.generate_sparse_states()
         logging.info('Creating labels')
         self.generate_labels()
-        logging.info('Creating feature tables')
-        self.feature_generator.process_table_tasks(self.feature_table_tasks)
+        logging.info('Creating feature aggregation tables')
+        self.feature_generator.process_table_tasks(self.feature_aggregation_table_tasks)
+        logging.info('Creating feature imputation tables')
+        self.feature_generator.process_table_tasks(self.feature_imputation_table_tasks)
         logging.info('Building all matrices')
         self.planner.build_all_matrices(self.matrix_build_tasks)
 
