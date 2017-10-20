@@ -12,3 +12,27 @@ with open("config/database.yml") as f:
 system("""psql -c "DROP TABLE IF EXISTS food_inspections;" """)
 system("""csvsql --no-constraints --table food_inspections < food_inspections_subset.csv | psql """)
 system("""psql -c "\copy food_inspections FROM 'food_inspections_subset.csv' WITH CSV HEADER;" """)
+system("""psql -c "CREATE INDEX ON food_inspections(license_no, inspection_date)" """)
+
+# create a state table for license/date
+system("""psql -c "DROP TABLE IF EXISTS inspection_states;" """)
+sql = """CREATE TABLE inspection_states AS (
+SELECT license_no, date
+FROM (SELECT DISTINCT license_no FROM food_inspections) a
+CROSS JOIN (SELECT DISTINCT inspection_date as date FROM food_inspections) b
+)""".replace('\n', ' ')
+system("""psql -c "%s" """ % sql)
+system("""psql -c "CREATE INDEX ON inspection_states(license_no, date)" """)
+
+# create an alternate state table with a different date column
+system("""psql -c "DROP TABLE IF EXISTS inspection_states_diff_colname;" """)
+system("""psql -c "CREATE TABLE inspection_states_diff_colname AS select license_no, date as aggregation_date from inspection_states" """)
+system("""psql -c "CREATE INDEX ON inspection_states_diff_colname(license_no, aggregation_date)" """)
+
+# create a state table for licenseo only
+system("""psql -c "DROP TABLE IF EXISTS all_licenses;" """)
+sql = """CREATE TABLE all_licenses AS (
+SELECT DISTINCT license_no FROM food_inspections
+)""".replace('\n', ' ')
+system("""psql -c "%s" """ % sql)
+system("""psql -c "CREATE INDEX ON all_licenses(license_no)" """)

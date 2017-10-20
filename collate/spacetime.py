@@ -8,6 +8,7 @@ from .collate import Aggregation
 
 class SpacetimeAggregation(Aggregation):
     def __init__(self, aggregates, groups, intervals, from_obj, dates,
+                 state_table, state_group=None,
                  prefix=None, suffix=None, schema=None, date_column=None,
                  output_date_column=None, input_min_date=None):
         """
@@ -19,6 +20,8 @@ class SpacetimeAggregation(Aggregation):
                 of datetime intervals, e.g. {"address_id": ["1 month", "1 year]}
             dates: list of PostgreSQL date strings,
                 e.g. ["2012-01-01", "2013-01-01"]
+            state_table: schema.table to query for valid state_group/date combinations
+            state_group: the group level found in the state table (e.g., "entity_id")
             date_column: name of date column in from_obj, defaults to "date"
             output_date_column: name of date column in aggregated output, defaults to "date"
             input_min_date: minimum date for which rows shall be included, defaults
@@ -30,6 +33,8 @@ class SpacetimeAggregation(Aggregation):
                              aggregates=aggregates,
                              from_obj=from_obj,
                              groups=groups,
+                             state_table=state_table,
+                             state_group=state_group,
                              prefix=prefix,
                              suffix=suffix,
                              schema=schema)
@@ -42,6 +47,25 @@ class SpacetimeAggregation(Aggregation):
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
         self.input_min_date = input_min_date
+
+    def _state_table_sub(self):
+        """Helper function to ensure we only include state table records
+        in our set of input dates and after the input_min_date.
+        """
+        datestr = ', '.join(["'%s'::date" % dt for dt in self.dates])
+        mindtstr = " AND %s >= '%s'::date" %\
+            (self.output_date_column, self.input_min_date)\
+            if self.input_min_date is not None else ""
+        return """(
+        SELECT *
+        FROM {st}
+        WHERE {datecol} IN ({datestr})
+        {mindtstr})""".format(
+            st=self.state_table,
+            datecol=self.output_date_column,
+            datestr=datestr,
+            mindtstr=mindtstr
+        )
 
     def _get_aggregates_sql(self, interval, date, group):
         """
@@ -94,6 +118,23 @@ class SpacetimeAggregation(Aggregation):
                 queries[group].append(query)
 
         return queries
+
+    def get_imputation_rules(self):
+        """
+        Constructs a dictionary to lookup an imputation rule from an associated
+        column name.
+
+        Returns: a dictionary of column : imputation_rule pairs
+        """
+        imprules = {}
+        for group, groupby in self.groups.items():
+            for interval in self.intervals[group]:
+                prefix = "{prefix}_{group}_{interval}_".format(
+                        prefix=self.prefix, interval=interval,
+                        group=group)
+                for a in self.aggregates:
+                    imprules.update(a.column_imputation_lookup(prefix=prefix))
+        return imprules
 
     def where(self, date, intervals):
         """
@@ -185,3 +226,70 @@ class SpacetimeAggregation(Aggregation):
                         raise ValueError(
                             "date '%s' - '%s' is before input_min_date ('%s')" %
                             (date, interval, self.input_min_date))
+                    r.close()
+        for date in self.dates:
+            r = conn.execute("select count(*) from %s where %s = '%s'::date" %
+                             (self.state_table, self.output_date_column, date))
+            if r.fetchone()[0] == 0:
+                raise ValueError(
+                    "date '%s' is not present in states table ('%s')" %
+                    (date, self.state_table))
+            r.close()
+
+    def find_nulls(self, imputed=False):
+        """
+        Generate query to count number of nulls in each column in the aggregation table
+
+        Returns: a SQL SELECT statement
+        """
+        query_template = """
+            SELECT {cols}
+            FROM {state_tbl} t1
+            LEFT JOIN {aggs_tbl} t2 USING({group}, {date_col})
+            """
+        cols_sql = ',\n'.join([
+            """SUM(CASE WHEN "{col}" IS NULL THEN 1 ELSE 0 END) AS "{col}" """.format(col=column)
+            for column in self.get_imputation_rules().keys()
+            ])
+
+        return query_template.format(
+                cols=cols_sql,
+                state_tbl=self._state_table_sub(),
+                aggs_tbl=self.get_table_name(imputed=imputed),
+                group=self.state_group,
+                date_col=self.output_date_column
+            )
+
+    def get_impute_create(self, impute_cols, nonimpute_cols):
+        """
+        Generates the CREATE TABLE query for the aggregation table with imputation.
+
+        Args:
+            impute_cols: a list of column names with null values
+            nonimpute_cols: a list of column names without null values
+
+        Returns: a CREATE TABLE AS query
+        """
+
+        # key columns and date column
+        query = "SELECT %s, %s" % (
+            ', '.join(map(str, self.groups.values())),
+            self.output_date_column
+            )
+
+        # columns with imputation filling as needed
+        query += self._get_impute_select(
+            impute_cols,
+            nonimpute_cols,
+            partitionby=self.output_date_column
+        )
+
+        # imputation starts from the state table and left joins into the aggregation table
+        query += "\nFROM %s t1" % self._state_table_sub()
+        query += "\nLEFT JOIN %s t2 USING(%s, %s)" % (
+            self.get_table_name(),
+            self.state_group,
+            self.output_date_column
+            )
+
+        return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)

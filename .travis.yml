@@ -14,7 +14,6 @@ services:
 addons:
   postgresql: "9.4"
 before_script:
-  - psql -U postgres -c "create extension postgis"
   - createdb test_collate
   - cp tests/config/database.yml{.travis,}
   - python tests/initialize_db.py
@@ -22,7 +21,6 @@ before_script:
 
 env:
   - TOXENV=py35
-  - TOXENV=py27
   - TOXENV=flake8
 
 install: pip install -r requirements_dev.txt
@@ -42,4 +40,4 @@ deploy:
   true:
     tags: true
     repo: dssg/collate
-    condition: $TOXENV == py27
+    condition: $TOXENV == py35
