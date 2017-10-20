@@ -19,7 +19,7 @@ test_requirements = [
 
 setup(
     name='collate',
-    version='0.2.1',
+    version='0.3.0',
     description="Aggregated feature generation made easy.",
     long_description=readme + '\n\n' + history,
     author="DSaPP Researchers",
