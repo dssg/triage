@@ -236,6 +236,9 @@ def basic_integration_test(
                 'aggregates': [{
                     'quantity': 'cat_sightings',
                     'metrics': ['count', 'avg'],
+                    'imputation': {
+                        'all': {'type': 'mean'}
+                    }
                 }],
                 'intervals': ['1y'],
                 'groups': ['entity_id']
@@ -243,6 +246,11 @@ def basic_integration_test(
                 'prefix': 'dog',
                 'from_obj': 'dog_complaints',
                 'knowledge_date_column': 'as_of_date',
+                'aggregates_imputation': {
+                    'count': {'type': 'constant', 'value': 7},
+                    'sum': {'type': 'mean'},
+                    'avg': {'type': 'zero'}
+                },
                 'aggregates': [{
                     'quantity': 'dog_sightings',
                     'metrics': ['count', 'avg'],
@@ -280,6 +288,9 @@ def basic_integration_test(
                     'aggregates': [{
                         'quantity': 'cat_sightings',
                         'metrics': ['count', 'avg'],
+                        'imputation': {
+                            'all': {'type': 'mean'}
+                        }
                     }],
                     'intervals': ['1y'],
                     'groups': ['entity_id']
@@ -287,6 +298,11 @@ def basic_integration_test(
                     'prefix': 'dog',
                     'from_obj': 'dog_complaints',
                     'knowledge_date_column': 'as_of_date',
+                    'aggregates_imputation': {
+                        'count': {'type': 'constant', 'value': 7},
+                        'sum': {'type': 'mean'},
+                        'avg': {'type': 'zero'}
+                    },
                     'aggregates': [{
                         'quantity': 'dog_sightings',
                         'metrics': ['count', 'avg'],
@@ -295,16 +311,22 @@ def basic_integration_test(
                     'groups': ['entity_id']
                 }],
                 feature_dates=all_as_of_times,
+                state_table=state_table_generator.sparse_table_name
             )
-            feature_table_tasks = feature_generator.generate_all_table_tasks(aggregations)
+            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='aggregation')
 
-            # create feature tables
-            feature_generator.process_table_tasks(feature_table_tasks)
+            # create feature aggregation tables
+            feature_generator.process_table_tasks(feature_table_agg_tasks)
+
+            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='imputation')
+
+            # create feature imputation tables
+            feature_generator.process_table_tasks(feature_table_imp_tasks)
 
             # build feature dictionaries from feature tables and
             # subsetting config
             master_feature_dict = feature_dictionary_creator.feature_dictionary(
-                feature_table_names=feature_table_tasks.keys(),
+                feature_table_names=feature_table_imp_tasks.keys(),
                 index_column_lookup=feature_generator.index_column_lookup(aggregations)
             )
 
