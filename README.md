@@ -73,12 +73,13 @@ experiment.run()
 ### Evaluating results of an Experiment
 
 After the experiment run, a results schema will be created and populated in the configured database with the following tables:
-- experiments - The experiment configuration and a hash
-- models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
-- model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
-- feature_importances - The sklearn feature importances results for each trained model
-- predictions - Prediction probabilities for entities generated against trained models
-- evaluations - Metric scores of trained models over given testing windows
+
+* experiments - The experiment configuration and a hash
+* models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
+* model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
+* feature_importances - The sklearn feature importances results for each trained model
+* predictions - Prediction probabilities for entities generated against trained models
+* evaluations - Metric scores of trained models over given testing windows
 
 Here's an example query, which returns the top 10 model groups by precision at the top 100 entities:
 ```
@@ -129,12 +130,12 @@ Triage is developed at the University of Chicago's [Center For Data Science and 
 
 Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if 
 
-- [Architect](https://github.com/dssg/architect): Plan, design and build train and test matrices. Includes feature and label generation.
-- [Collate](https://github.com/dssg/collate): Aggregation SQL Query Builder. This is used by the Architect to build features.
-- [Timechop](https://github.com/dssg/timechop): Generate temporal cross-validation time windows for matrix creation
-- [Metta-Data](https://github.com/dssg/metta-data): Train and test matrix storage
-- [Catwalk](https://github.com/dssg/catwalk): Training, testing, and evaluating machine learning classifier models
-- [Results Schema](https://github.com/dssg/results-schema): Generate a database schema suitable for storing the results of modeling runs
+* [Architect](https://github.com/dssg/architect): Plan, design and build train and test matrices. Includes feature and label generation.
+* [Collate](https://github.com/dssg/collate): Aggregation SQL Query Builder. This is used by the Architect to build features.
+* [Timechop](https://github.com/dssg/timechop): Generate temporal cross-validation time windows for matrix creation
+* [Metta-Data](https://github.com/dssg/metta-data): Train and test matrix storage
+* [Catwalk](https://github.com/dssg/catwalk): Training, testing, and evaluating machine learning classifier models
+* [Results Schema](https://github.com/dssg/results-schema): Generate a database schema suitable for storing the results of modeling runs
 
 
 ## Design Goals

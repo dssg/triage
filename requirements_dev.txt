@@ -11,3 +11,5 @@ coverage==4.1
 pytest==2.9.2
 pytest-cov
 codecov
+mkdocs
+mkdocs-bootstrap

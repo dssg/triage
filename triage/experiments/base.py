@@ -27,6 +27,7 @@ def dt_from_str(dt_str):
 
 
 class ExperimentBase(object):
+    """The Base class for all Experiments."""
     __metaclass__ = ABCMeta
 
     def __init__(
@@ -201,9 +202,10 @@ class ExperimentBase(object):
     def split_definitions(self):
         """Temporal splits based on the experiment's configuration
 
-        Returns (dict) temporal splits
+        Returns: (dict) temporal splits
 
         Example:
+        ```
         {
             'beginning_of_time': {datetime},
             'modeling_start_time': {datetime},
@@ -215,6 +217,7 @@ class ExperimentBase(object):
             },
             'test_matrices': [list of matrix defs similar to train_matrix]
         }
+        ```
         """
         if not self._split_definitions:
             self._split_definitions = self.chopper.chop_time()
@@ -260,6 +263,10 @@ class ExperimentBase(object):
 
     @property
     def collate_aggregations(self):
+        """collate Aggregation objects used by this experiment.
+        
+        Returns: (list) of collate.Aggregation objects
+        """
         if not self._collate_aggregations:
             logging.info('Creating collate aggregations')
             self._collate_aggregations = self.feature_generator.aggregations(
@@ -274,9 +281,7 @@ class ExperimentBase(object):
     def feature_aggregation_table_tasks(self):
         """All feature table query tasks specified by this Experiment
 
-        Returns: (dict) keys are group table names, values are themselves dicts,
-            each with keys for different stages of table creation (prepare, inserts, finalize)
-            and with values being lists of SQL commands
+        Returns: (dict) keys are group table names, values are themselves dicts, each with keys for different stages of table creation (prepare, inserts, finalize) and with values being lists of SQL commands
         """
         if not self._feature_aggregation_table_tasks:
             logging.info(
@@ -308,8 +313,7 @@ class ExperimentBase(object):
     def master_feature_dictionary(self):
         """All possible features found in the database. Not all features will necessarily end up in matrices
 
-        Returns: (list) of dicts, keys being feature table names and values
-            being lists of feature names
+        Returns: (list) of dicts, keys being feature table names and values being lists of feature names
         """
         if not self._master_feature_dictionary:
             self._master_feature_dictionary = self.feature_dictionary_creator\
@@ -326,11 +330,9 @@ class ExperimentBase(object):
 
     @property
     def feature_dicts(self):
-        """Feature dictionaries, representing the feature tables and columns
-            configured in this experiment after computing feature groups.
+        """Feature dictionaries, representing the feature tables and columns configured in this experiment after computing feature groups.
 
-        Returns: (list) of dicts, keys being feature table names and values
-            being lists of feature names
+        Returns: (list) of dicts, keys being feature table names and values being lists of feature names
         """
 
         return self.feature_group_mixer.generate(
@@ -339,7 +341,7 @@ class ExperimentBase(object):
 
     @property
     def matrix_build_tasks(self):
-        """Matrix build tasks.
+        """Tasks for all matrices that need to be built as a part of this Experiment.
 
         Each task contains arguments understood by Architect.build_matrix
 
@@ -373,6 +375,10 @@ class ExperimentBase(object):
 
     @property
     def all_label_windows(self):
+        """All train and test label windows
+        
+        Returns: (list) label windows, in string form as they appeared in the experiment config
+        """
         return list(set(
             self.config['temporal_config']['train_label_windows'] + \
             self.config['temporal_config']['test_label_windows']
@@ -411,6 +417,11 @@ class ExperimentBase(object):
         )
 
     def matrix_store(self, matrix_uuid):
+        """Construct a matrix store for a given matrix uuid, using the Experiment's #matrix_store_class
+
+        Args:
+            matrix_uuid (string) A uuid for a matrix
+        """
         matrix_store = self.matrix_store_class(
             matrix_path=os.path.join(
                 self.matrices_directory,
