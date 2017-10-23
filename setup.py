@@ -20,7 +20,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 
 setup(
     name='timechop',
-    version='0.1.3',
+    version='0.1.4',
     description="Implements temporal validation for machine learning/",
     long_description=readme,
     author="Center for Data Science and Public Policy",
