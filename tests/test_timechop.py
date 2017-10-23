@@ -6,8 +6,9 @@ import warnings
 class test_calculate_update_times(TestCase):
     def test_valid_input(self):
         expected_result = [
-            datetime.datetime(2011, 1, 1, 0, 0),
-            datetime.datetime(2012, 1, 1, 0, 0)
+            datetime.datetime(2010, 10, 1, 0, 0),
+            datetime.datetime(2011, 10, 1, 0, 0),
+            datetime.datetime(2012, 10, 1, 0, 0)
         ]
         chopper = Timechop(
             beginning_of_time=datetime.datetime(1990, 1, 1, 0, 0),
@@ -61,6 +62,7 @@ def test_calculate_as_of_times_one_day_freq():
         datetime.datetime(2011, 1, 8, 0, 0),
         datetime.datetime(2011, 1, 9, 0, 0),
         datetime.datetime(2011, 1, 10, 0, 0),
+        datetime.datetime(2011, 1, 11, 0, 0),
     ]
     chopper = Timechop(
         beginning_of_time = datetime.datetime(1990, 1, 1, 0, 0),
@@ -111,6 +113,9 @@ def test_calculate_as_of_times_three_day_freq():
 
 class test_generate_matrix_definition(TestCase):
     def test_look_back_time_equal_modeling_start(self):
+        # TODO: rework this test since the test label window of 3 months
+        # cannot be satisfied by the 10 day difference between modeling
+        # start and end times, so it's not a very realistic case
         expected_result = {
             'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
@@ -131,10 +136,9 @@ class test_generate_matrix_definition(TestCase):
             },
             'test_matrices': [{
                 'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'matrix_end_time': datetime.datetime(2010, 1, 6, 0, 0),
                 'as_of_times': [
-                    datetime.datetime(2010, 1, 6, 0, 0),
-                    datetime.datetime(2010, 1, 9, 0, 0),
+                    datetime.datetime(2010, 1, 6, 0, 0)
                 ],
                 'label_window': '3 months',
                 'example_frequency': '3 days'
@@ -186,17 +190,17 @@ class test_generate_matrix_definition(TestCase):
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
                     ],
-                    'label_window': '3 months',
+                    'label_window': '2 days',
                     'example_frequency': '7 days'
                 },
                 {
                     'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
-                    'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 14, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 13, 0, 0),
                     ],
-                    'label_window': '3 months',
+                    'label_window': '2 days',
                     'example_frequency': '7 days'
                 }
             ]
@@ -215,13 +219,13 @@ class test_generate_matrix_definition(TestCase):
             train_durations = ['10 days'],
             test_durations = ['5 days', '10 days', '15 days'],
             train_label_windows=['1 day'],
-            test_label_windows=['3 months']
+            test_label_windows=['2 days']
         )
         result = chopper.generate_matrix_definition(
             train_matrix_end_time = datetime.datetime(2010, 1, 6, 0, 0),
             train_duration = '10 days',
             train_label_window='1 day',
-            test_label_window='3 months'
+            test_label_window='2 days'
         )
         assert result == expected_result
 
@@ -254,7 +258,7 @@ class test_chop_time(TestCase):
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 9, 0, 0),
                     ],
-                    'label_window': '3 months',
+                    'label_window': '5 days',
                     'example_frequency': '3 days'
                 }]
             },
@@ -263,9 +267,10 @@ class test_chop_time(TestCase):
                 'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
                 'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'train_matrix': {
-                    'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
+                    'matrix_start_time': datetime.datetime(2010, 1, 5, 0, 0),
                     'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
+                        datetime.datetime(2010, 1, 5, 0, 0),
                         datetime.datetime(2010, 1, 6, 0, 0),
                         datetime.datetime(2010, 1, 7, 0, 0),
                         datetime.datetime(2010, 1, 8, 0, 0),
@@ -278,12 +283,11 @@ class test_chop_time(TestCase):
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
-                    'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
-                        datetime.datetime(2010, 1, 11, 0, 0),
-                        datetime.datetime(2010, 1, 14, 0, 0)
+                        datetime.datetime(2010, 1, 11, 0, 0)
                     ],
-                    'label_window': '3 months',
+                    'label_window': '5 days',
                     'example_frequency': '3 days'
                 }]
             }
@@ -298,7 +302,7 @@ class test_chop_time(TestCase):
             train_durations = ['5 days'],
             test_durations = ['5 days'],
             train_label_windows=['1 day'],
-            test_label_windows=['3 months']
+            test_label_windows=['5 days']
         )
         result = chopper.chop_time()
         assert(result == expected_result)
@@ -329,7 +333,7 @@ class test_chop_time(TestCase):
                     'as_of_times': [
                         datetime.datetime(2010, 1, 6, 0, 0),
                     ],
-                    'label_window': '3 months',
+                    'label_window': '5 days',
                     'example_frequency': '7 days'
                 }]
             },
@@ -338,9 +342,10 @@ class test_chop_time(TestCase):
                 'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
                 'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'train_matrix': {
-                    'matrix_start_time': datetime.datetime(2010, 1, 4, 0, 0),
+                    'matrix_start_time': datetime.datetime(2010, 1, 3, 0, 0),
                     'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
+                        datetime.datetime(2010, 1, 3, 0, 0),
                         datetime.datetime(2010, 1, 4, 0, 0),
                         datetime.datetime(2010, 1, 5, 0, 0),
                         datetime.datetime(2010, 1, 6, 0, 0),
@@ -355,11 +360,11 @@ class test_chop_time(TestCase):
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
-                    'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                     'as_of_times': [
                         datetime.datetime(2010, 1, 11, 0, 0),
                     ],
-                    'label_window': '3 months',
+                    'label_window': '5 days',
                     'example_frequency': '7 days'
                 }]
             }
@@ -375,7 +380,7 @@ class test_chop_time(TestCase):
             train_durations = ['7 days'],
             test_durations = ['5 days'],
             train_label_windows=['1 day'],
-            test_label_windows=['3 months']
+            test_label_windows=['5 days']
         )
         
         with warnings.catch_warnings(record = True) as w:
@@ -391,9 +396,10 @@ class test_chop_time(TestCase):
                 'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
                 'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'train_matrix': {
-                    'matrix_start_time': datetime.datetime(2010, 1, 3, 0, 0),
+                    'matrix_start_time': datetime.datetime(2010, 1, 2, 0, 0),
                     'matrix_end_time': datetime.datetime(2010, 1, 8, 0, 0),
                     'as_of_times': [
+                        datetime.datetime(2010, 1, 2, 0, 0),
                         datetime.datetime(2010, 1, 3, 0, 0),
                         datetime.datetime(2010, 1, 4, 0, 0),
                         datetime.datetime(2010, 1, 5, 0, 0),
@@ -406,12 +412,11 @@ class test_chop_time(TestCase):
                 },
                 'test_matrices': [{
                     'matrix_start_time': datetime.datetime(2010, 1, 8, 0, 0),
-                    'matrix_end_time': datetime.datetime(2010, 1, 13, 0, 0),
+                    'matrix_end_time': datetime.datetime(2010, 1, 8, 0, 0),
                     'as_of_times': [
-                        datetime.datetime(2010, 1, 8, 0, 0),
-                        datetime.datetime(2010, 1, 12, 0, 0)
+                        datetime.datetime(2010, 1, 8, 0, 0)
                     ],
-                    'label_window': '3 months',
+                    'label_window': '8 days',
                     'example_frequency': '4 days'
                 }]
             }
@@ -427,7 +432,7 @@ class test_chop_time(TestCase):
             train_durations = ['5 days'],
             test_durations = ['5 days'],
             train_label_windows=['1 day'],
-            test_label_windows=['3 months']
+            test_label_windows=['8 days']
         )
         
         with warnings.catch_warnings(record = True) as w:
