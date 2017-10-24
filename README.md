@@ -128,7 +128,7 @@ Triage is developed at the University of Chicago's [Center For Data Science and 
 
 ## Major Components Used by Triage
 
-Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if 
+Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if you'd like to be cool like that:
 
 * [Architect](https://github.com/dssg/architect): Plan, design and build train and test matrices. Includes feature and label generation.
 * [Collate](https://github.com/dssg/collate): Aggregation SQL Query Builder. This is used by the Architect to build features.
