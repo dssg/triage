@@ -13,7 +13,7 @@ numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
 results-schema>=1.2
-timechop==0.1.3
+timechop==0.1.5
 matrix-architect==0.4
 model-catwalk>=0.3
 metta-data==0.3.0
