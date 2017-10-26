@@ -153,7 +153,7 @@ def basic_integration_test(
     state_filters,
     feature_group_create_rules,
     feature_group_mix_rules,
-    expected_num_matrices
+    expected_matrix_multiplier
 ):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
@@ -220,6 +220,7 @@ def basic_integration_test(
 
             # chop time
             split_definitions = chopper.chop_time()
+            num_split_matrices = sum(1 + len(split['test_matrices']) for split in split_definitions)
 
             # generate as_of_times for feature/label/state generation
             all_as_of_times = []
@@ -348,8 +349,8 @@ def basic_integration_test(
             matrix_directory = os.path.join(temp_dir, 'matrices')
             matrices = [path for path in os.listdir(matrix_directory) if '.csv' in path]
             metadatas = [path for path in os.listdir(matrix_directory) if '.yaml' in path]
-            assert len(matrices) == expected_num_matrices
-            assert len(metadatas) == expected_num_matrices
+            assert len(matrices) == num_split_matrices * expected_matrix_multiplier
+            assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
 
 
 def test_integration_simple():
@@ -357,7 +358,9 @@ def test_integration_simple():
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
-        expected_num_matrices=4,
+        # only looking at one state, and one feature group.
+        # so we don't multiply timechop's output by anything
+        expected_matrix_multiplier=1, 
     )
 
 
@@ -366,7 +369,8 @@ def test_integration_more_state_filtering():
         state_filters=['state_one OR state_two', 'state_one', 'state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
-        expected_num_matrices=4*3,  # 4 base, 3 state filters
+        # 3 state filters, so the # of matrices should be each train/test split *3
+        expected_matrix_multiplier=3,
     )
 
 
@@ -375,5 +379,6 @@ def test_integration_feature_grouping():
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'prefix': ['cat', 'dog']},
         feature_group_mix_rules=['leave-one-out', 'all'],
-        expected_num_matrices=4*3,  # 4 base, cat/dog/cat+dog
+        # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
+        expected_matrix_multiplier=3,
     )

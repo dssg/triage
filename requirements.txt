@@ -1,4 +1,4 @@
 results-schema==1.0.3
 collate==0.3.0
 metta-data
-timechop
+timechop==0.1.5
