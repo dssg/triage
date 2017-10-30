@@ -7,6 +7,7 @@ import logging
 
 
 class FeatureGenerator(object):
+
     def __init__(
         self,
         db_engine,
@@ -83,7 +84,7 @@ class FeatureGenerator(object):
         logging.info('Validating time intervals')
         for interval in intervals:
             if interval != 'all':
-                _ = convert_str_to_relativedelta(interval)
+                convert_str_to_relativedelta(interval)
 
     def _validate_groups(self, groups):
         if 'entity_id' not in groups:
@@ -117,10 +118,10 @@ class FeatureGenerator(object):
         # no imputation rule was specified
         if 'type' not in impute_rule.keys():
             raise ValueError('Imputation type must be specified')
-        
+
         # a rule was specified, but not valid for this type of aggregate
         if impute_rule['type'] not in valid_types.keys():
-            raise ValueError('Invalid imputation type %s for %s'\
+            raise ValueError('Invalid imputation type %s for %s'
                  % (impute_rule['type'], aggregate_type))
 
         # check that all required parameters exist in the keys of the imputation rule
@@ -217,8 +218,8 @@ class FeatureGenerator(object):
                 choices=self._build_choices(categorical),
                 function=categorical['metrics'],
                 impute_rules=dict(
-                    impute_rules, 
-                    coltype='categorical', 
+                    impute_rules,
+                    coltype='categorical',
                     **categorical.get('imputation', {})
                 ),
                 include_null=True
@@ -239,8 +240,8 @@ class FeatureGenerator(object):
                 },
                 function=categorical['metrics'],
                 impute_rules=dict(
-                    impute_rules, 
-                    coltype='array_categorical', 
+                    impute_rules,
+                    coltype='array_categorical',
                     **categorical.get('imputation', {})
                 ),
                 op_in_name=False,
@@ -265,11 +266,11 @@ class FeatureGenerator(object):
         arrcatimp = aggregation_config.get('array_categoricals_imputation', {})
 
         aggregates = [
-                Aggregate(
-                    aggregate['quantity'], 
-                    aggregate['metrics'], 
-                    dict(agimp, coltype='aggregate', **aggregate.get('imputation', {}))
-                )
+            Aggregate(
+                aggregate['quantity'],
+                aggregate['metrics'],
+                dict(agimp, coltype='aggregate', **aggregate.get('imputation', {}))
+            )
             for aggregate in aggregation_config.get('aggregates', [])
         ]
         logging.info('Found %s quantity aggregates', len(aggregates))
@@ -331,10 +332,10 @@ class FeatureGenerator(object):
 
         # pick the method to use for generating tasks depending on whether we're
         # building the aggregations or imputations
-        if task_type=='aggregation':
+        if task_type == 'aggregation':
             task_generator = self._generate_agg_table_tasks_for
             logging.debug('---------FEATURE GENERATION------------')
-        elif task_type=='imputation':
+        elif task_type == 'imputation':
             task_generator = self._generate_imp_table_tasks_for
             logging.debug('---------FEATURE IMPUTATION------------')
         else:
@@ -364,17 +365,17 @@ class FeatureGenerator(object):
         """
 
         aggs = self.aggregations(
-                    feature_aggregation_config,
-                    feature_dates,
-                    state_table
-                )
+            feature_aggregation_config,
+            feature_dates,
+            state_table
+        )
 
         # first, generate and run table tasks for aggregations
         table_tasks_aggregate = self.generate_all_table_tasks(
             aggs,
             task_type='aggregation'
         )
-        aggregate_keys = self.process_table_tasks(table_tasks_aggregate)
+        self.process_table_tasks(table_tasks_aggregate)
 
         # second, perform the imputations (this will query the tables
         # constructed above to identify features containing nulls)
@@ -397,7 +398,7 @@ class FeatureGenerator(object):
             trans.commit()
         if len(nullcols) > 0:
             raise ValueError(
-                "Imputation failed for {0} columns. Null values remain in: {1}"\
+                "Imputation failed for {0} columns. Null values remain in: {1}"
                 .format(len(nullcols), nullcols)
                 )
 
@@ -430,7 +431,7 @@ class FeatureGenerator(object):
         try:
             conn = self.db_engine.connect()
             trans = conn.begin()
-            res = conn.execute(
+            conn.execute(
                 'select * from {}.{} limit 1'.format(
                     self.features_schema_name,
                     table_name
@@ -449,7 +450,6 @@ class FeatureGenerator(object):
             logging.debug('Executing feature generation query: %s', command)
             conn.execute(command)
         trans.commit()
-
 
     def _aggregation_index_query(self, aggregation, imputed=False):
         return 'CREATE INDEX ON {} ({}, {})'.format(
@@ -501,10 +501,10 @@ class FeatureGenerator(object):
                 aggregation.get_table_name(imputed=True)
             )
             if self.replace or (
-                not self._table_exists(group_table) 
-                and 
+                not self._table_exists(group_table)
+                and
                 not self._table_exists(imputed_table)
-                ):
+            ):
                 table_tasks[group_table] = {
                     'prepare': [drops[group], creates[group]],
                     'inserts': inserts[group],
@@ -521,12 +521,12 @@ class FeatureGenerator(object):
         if self.replace or (
             not self._table_exists(
                 self._clean_table_name(aggregation.get_table_name())
-                )
+            )
             and
             not self._table_exists(
                 self._clean_table_name(aggregation.get_table_name(imputed=True))
-                )
-            ):
+            )
+        ):
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {
                 'prepare': [aggregation.get_drop(), aggregation.get_create()],
                 'inserts': [],
@@ -549,10 +549,11 @@ class FeatureGenerator(object):
             drop_preagg: boolean to specify dropping pre-imputation tables
 
         Returns: (dict) of structure {
-            'prepare': list of commands to prepare table for population
-            'inserts': list of commands to populate table
-            'finalize': list of commands to finalize table after population
-        }
+                'prepare': list of commands to prepare table for population
+                'inserts': list of commands to populate table
+                'finalize': list of commands to finalize table after population
+            }
+
         """
         drops = aggregation.get_drops()
 
@@ -584,9 +585,9 @@ class FeatureGenerator(object):
         # by collate's get_impute_create()
         table_tasks[imp_tbl_name] = {
             'prepare': [
-                aggregation.get_drop(imputed=True), 
+                aggregation.get_drop(imputed=True),
                 aggregation.get_impute_create(
-                    impute_cols=impute_cols, 
+                    impute_cols=impute_cols,
                     nonimpute_cols=nonimpute_cols
                     )
                 ],
