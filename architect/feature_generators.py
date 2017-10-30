@@ -51,33 +51,32 @@ class FeatureGenerator(object):
             )
 
     def _validate_categoricals(self, categoricals):
-        conn = self.db_engine.connect()
-        trans = conn.begin()
         for categorical in categoricals:
             if 'choice_query' in categorical:
                 logging.info('Validating choice query')
+
                 try:
-                    conn.execute('explain {}'.format(categorical['choice_query']))
-                    trans.commit()
-                except Exception as e:
-                    trans.rollback()
+                    with self.db_engine.begin() as conn:
+                        conn.execute('explain {}'.format(categorical['choice_query']))
+                except Exception as exc:
                     raise ValueError(
-                        'choice query does not run. \nchoice query: "{}"\nFull error: {}'
-                        .format(categorical['choice_query'], e)
+                        'choice query does not run. \n'
+                        'choice query: "{}"\n'
+                        'Full error: {}'
+                        .format(categorical['choice_query'], exc)
                     )
 
     def _validate_from_obj(self, from_obj):
-        conn = self.db_engine.connect()
-        trans = conn.begin()
         logging.info('Validating from_obj')
         try:
-            conn.execute('explain select * from {}'.format(from_obj))
-            trans.commit()
-        except Exception as e:
-            trans.rollback()
+            with self.db_engine.begin() as conn:
+                conn.execute('explain select * from {}'.format(from_obj))
+        except Exception as exc:
             raise ValueError(
-                'from_obj query does not run. \nfrom_obj: "{}"\nFull error: {}'
-                .format(from_obj, e)
+                'from_obj query does not run. \n'
+                'from_obj: "{}"\n'
+                'Full error: {}'
+                .format(from_obj, exc)
             )
 
     def _validate_time_intervals(self, intervals):
@@ -91,9 +90,7 @@ class FeatureGenerator(object):
             raise ValueError('One of the aggregation groups is required to be entity_id')
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
-        """Validate the imputation rule for a given aggregation type
-        """
-
+        """Validate the imputation rule for a given aggregation type."""
         # dictionary of imputation type : required parameters
         valid_imputations = {
             'all': {
@@ -183,19 +180,17 @@ class FeatureGenerator(object):
 
     def _compute_choices(self, choice_query):
         if choice_query not in self.categorical_cache:
-            conn = self.db_engine.connect()
-            trans = conn.begin()
-            self.categorical_cache[choice_query] = [
-                row[0]
-                for row
-                in conn.execute(choice_query)
-            ]
+            with self.db_engine.begin() as conn:
+                self.categorical_cache[choice_query] = [
+                    row[0] for row in conn.execute(choice_query)
+                ]
+
             logging.info(
                 'Computed list of categoricals: %s for choice query: %s',
                 self.categorical_cache[choice_query],
                 choice_query
             )
-            trans.commit()
+
         return self.categorical_cache[choice_query]
 
     def _build_choices(self, categorical):
@@ -389,18 +384,16 @@ class FeatureGenerator(object):
         # in the data:
         nullcols = []
         for agg in aggs:
-            conn = self.db_engine.connect()
-            trans = conn.begin()
-            res = conn.execute(agg.find_nulls(imputed=True))
-            null_counts = list(zip(res.keys(), res.fetchone()))
-            nullcols += [col for col, val in null_counts if val > 0]
-            res.close()
-            trans.commit()
+            with self.db_engine.begin() as conn:
+                results = conn.execute(agg.find_nulls(imputed=True))
+                null_counts = results.first().items()
+            nullcols += [col for (col, val) in null_counts if val > 0]
+
         if len(nullcols) > 0:
             raise ValueError(
-                "Imputation failed for {0} columns. Null values remain in: {1}"
+                "Imputation failed for {} columns. Null values remain in: {}"
                 .format(len(nullcols), nullcols)
-                )
+            )
 
         return impute_keys
 
@@ -413,15 +406,14 @@ class FeatureGenerator(object):
         return table_tasks.keys()
 
     def _explain_selects(self, aggregations):
-        conn = self.db_engine.connect()
-        trans = conn.begin()
-        for aggregation in aggregations:
-            for selectlist in aggregation.get_selects().values():
-                for select in selectlist:
-                    result = [row for row in conn.execute('explain ' + str(select))]
-                    logging.debug(str(select))
-                    logging.debug(result)
-        trans.commit()
+        with self.db_engine.begin() as conn:
+            for aggregation in aggregations:
+                for selectlist in aggregation.get_selects().values():
+                    for select in selectlist:
+                        query = 'explain ' + str(select)
+                        results = list(conn.execute(query))
+                        logging.debug(str(select))
+                        logging.debug(results)
 
     def _clean_table_name(self, table_name):
         # remove the schema and quotes from the name
@@ -429,27 +421,21 @@ class FeatureGenerator(object):
 
     def _table_exists(self, table_name):
         try:
-            conn = self.db_engine.connect()
-            trans = conn.begin()
-            conn.execute(
-                'select * from {}.{} limit 1'.format(
-                    self.features_schema_name,
-                    table_name
-                )
-            ).fetchall()
-            trans.commit()
-            return True
+            with self.db_engine.begin() as conn:
+                conn.execute('select 1 from {}.{} limit 1'
+                             .format(self.features_schema_name,
+                                     table_name)
+                             ).first()
         except sqlalchemy.exc.ProgrammingError:
-            trans.rollback()
             return False
+        else:
+            return True
 
     def run_commands(self, command_list):
-        conn = self.db_engine.connect()
-        trans = conn.begin()
-        for command in command_list:
-            logging.debug('Executing feature generation query: %s', command)
-            conn.execute(command)
-        trans.commit()
+        with self.db_engine.begin() as conn:
+            for command in command_list:
+                logging.debug('Executing feature generation query: %s', command)
+                conn.execute(command)
 
     def _aggregation_index_query(self, aggregation, imputed=False):
         return 'CREATE INDEX ON {} ({}, {})'.format(
@@ -487,10 +473,8 @@ class FeatureGenerator(object):
         inserts = aggregation.get_inserts()
 
         if create_schema is not None:
-            conn = self.db_engine.connect()
-            trans = conn.begin()
-            conn.execute(create_schema)
-            trans.commit()
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
 
         table_tasks = OrderedDict()
         for group in aggregation.groups:
