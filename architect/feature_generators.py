@@ -538,15 +538,17 @@ class FeatureGenerator(object):
         return table_tasks
 
     def _generate_imp_table_tasks_for(self, aggregation, drop_preagg=True):
-        """Generates SQL commands for preparing, populating, and finalizing
-        imputations for each feature group table in the given aggregation
+        """Generate SQL statements for preparing, populating, and
+        finalizing imputations, for each feature group table in the
+        given aggregation.
 
         Requires the existance of the underlying feature and aggregation
-        tables defined in _generate_agg_table_tasks_for()
+        tables defined in `_generate_agg_table_tasks_for()`.
 
         Args:
             aggregation (collate.SpacetimeAggregation)
-            drop_preagg: boolean to specify dropping pre-imputation tables
+            drop_preagg: boolean to specify dropping pre-imputation
+                tables
 
         Returns: (dict) of structure {
                 'prepare': list of commands to prepare table for population
@@ -555,18 +557,14 @@ class FeatureGenerator(object):
             }
 
         """
-        drops = aggregation.get_drops()
-
         table_tasks = OrderedDict()
-
         imp_tbl_name = self._clean_table_name(
             aggregation.get_table_name(imputed=True)
         )
-        if (not self.replace) and self._table_exists(imp_tbl_name):
-            logging.info(
-                'Skipping imputation table creation for %s',
-                imp_tbl_name
-            )
+
+        if not self.replace and self._table_exists(imp_tbl_name):
+            logging.info('Skipping imputation table creation for %s',
+                         imp_tbl_name)
             table_tasks[imp_tbl_name] = {}
             return table_tasks
 
@@ -589,21 +587,20 @@ class FeatureGenerator(object):
                 aggregation.get_impute_create(
                     impute_cols=impute_cols,
                     nonimpute_cols=nonimpute_cols
-                    )
-                ],
+                )
+            ],
             'inserts': [],
             'finalize': [self._aggregation_index_query(aggregation, imputed=True)]
         }
-        logging.info('Created table tasks for imputation: %s' % imp_tbl_name)
+        logging.info('Created table tasks for imputation: %s', imp_tbl_name)
 
         # do some cleanup:
         # drop the group-level and aggregation tables, just leaving the
         # imputation table if drop_preagg=True
         if drop_preagg:
-            table_tasks[imp_tbl_name]['finalize'] =\
-                table_tasks[imp_tbl_name]['finalize'] +\
-                list(drops.values()) +\
-                [aggregation.get_drop()]
-            logging.info('Added drop table cleanup tasks: %s' % imp_tbl_name)
+            drops = aggregation.get_drops()
+            table_tasks[imp_tbl_name]['finalize'] += (list(drops.values()) +
+                                                      [aggregation.get_drop()])
+            logging.info('Added drop table cleanup tasks: %s', imp_tbl_name)
 
         return table_tasks
