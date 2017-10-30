@@ -345,20 +345,24 @@ class FeatureGenerator(object):
         return table_tasks
 
     def create_all_tables(self, feature_aggregation_config, feature_dates, state_table):
-        """Creates all feature tables, first building the aggregation tables
-        and then performing imputation on any null values (requires a two-
-        step process to determine which columns contain nulls after the
-        initial aggregation tables are built)
+        """Create all feature tables.
+
+        First builds the aggregation tables, and then performs
+        imputation on any null values, (requiring a two-step process to
+        determine which columns contain nulls after the initial
+        aggregation tables are built).
 
         Args:
-            feature_aggregation_config (list) all values, except for feature
-                date, necessary to instantiate a collate.SpacetimeAggregation
+            feature_aggregation_config (list) all values, except for
+                feature date, necessary to instantiate a
+                `collate.SpacetimeAggregation`
             feature_dates (list) dates to generate features as of
-            state_table (string) schema.table_name for state table with all entity/date pairs
+            state_table (string) schema.table_name for state table with
+                all entity/date pairs
 
         Returns: (list) table names
-        """
 
+        """
         aggs = self.aggregations(
             feature_aggregation_config,
             feature_dates,
@@ -383,11 +387,11 @@ class FeatureGenerator(object):
         # double-check that the imputation worked and no nulls remain
         # in the data:
         nullcols = []
-        for agg in aggs:
-            with self.db_engine.begin() as conn:
+        with self.db_engine.begin() as conn:
+            for agg in aggs:
                 results = conn.execute(agg.find_nulls(imputed=True))
                 null_counts = results.first().items()
-            nullcols += [col for (col, val) in null_counts if val > 0]
+                nullcols += [col for (col, val) in null_counts if val > 0]
 
         if len(nullcols) > 0:
             raise ValueError(
