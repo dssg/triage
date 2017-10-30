@@ -1,12 +1,17 @@
-from architect.feature_generators import FeatureGenerator
+import copy
+from datetime import date
+
+import pandas
+import pytest
+import sqlalchemy
 import testing.postgresql
 from sqlalchemy import create_engine
-from datetime import date
-import pandas
 from unittest import TestCase
-import copy
-from collate.spacetime import SpacetimeAggregation
+
 from collate.collate import Aggregate, Categorical
+from collate.spacetime import SpacetimeAggregation
+
+from architect.feature_generators import FeatureGenerator
 
 
 INPUT_DATA = [
@@ -65,7 +70,7 @@ def test_feature_generation():
         'prefix': 'aprefix',
         'aggregates': [
             {
-            'quantity': 'quantity_one', 
+            'quantity': 'quantity_one',
             'metrics': ['sum', 'count'],
             'imputation': {
                 'sum': {'type': 'constant', 'value': 137},
@@ -218,8 +223,8 @@ def test_index_column_lookup():
         SpacetimeAggregation(
             prefix='prefix1',
             aggregates=[Categorical(
-                col='cat_one', 
-                function='sum', 
+                col='cat_one',
+                function='sum',
                 choices=['good', 'bad', 'inbetween'],
                 impute_rules={
                         'coltype': 'categorical',
@@ -239,7 +244,7 @@ def test_index_column_lookup():
         SpacetimeAggregation(
             prefix='prefix2',
             aggregates=[Aggregate(
-                quantity='quantity_one', 
+                quantity='quantity_one',
                 function='count',
                 impute_rules={
                     'coltype': 'aggregate',
@@ -540,8 +545,8 @@ def test_generate_table_tasks():
         SpacetimeAggregation(
             prefix='prefix1',
             aggregates=[Categorical(
-                col='cat_one', 
-                function='sum', 
+                col='cat_one',
+                function='sum',
                 choices=['good', 'bad', 'inbetween'],
                 impute_rules={
                         'coltype': 'categorical',
@@ -561,7 +566,7 @@ def test_generate_table_tasks():
         SpacetimeAggregation(
             prefix='prefix2',
             aggregates=[Aggregate(
-                quantity='quantity_one', 
+                quantity='quantity_one',
                 function='count',
                 impute_rules={
                     'coltype': 'aggregate',
@@ -715,7 +720,54 @@ def test_replace():
         engine.dispose()
 
 
+def test_transaction_error():
+    """Database connections are cleaned up regardless of in-transaction
+    query errors.
+
+    """
+    aggregate_config = [{
+        'prefix': 'aprefix',
+        'aggregates': [
+            {
+                'quantity': 'quantity_one',
+                'metrics': ['sum'],
+                'imputation': {
+                    'sum': {'type': 'constant', 'value': 137},
+                    'count': {'type': 'zero'}
+                }
+            },
+        ],
+        'groups': ['entity_id'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }]
+
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        setup_db(engine)
+
+        feature_generator = FeatureGenerator(db_engine=engine,
+                                             features_schema_name='features')
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            feature_generator.create_all_tables(
+                feature_dates=['2013-09-30', '2014-09-30'],
+                feature_aggregation_config=aggregate_config,
+                state_table='statez',  # WRONG!
+            )
+
+        (query_count,) = engine.execute('''\
+            select count(*) from pg_stat_activity
+            where query not ilike '%%pg_stat_activity%%'
+        ''').fetchone()
+
+        assert query_count == 0
+
+        engine.dispose()
+
+
 class TestValidations(TestCase):
+
     def setUp(self):
         self.postgresql = testing.postgresql.Postgresql()
         engine = create_engine(self.postgresql.url())
