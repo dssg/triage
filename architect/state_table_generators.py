@@ -7,6 +7,7 @@ from architect.validations import table_should_have_data,\
 
 
 class StateFilter(object):
+
     def __init__(self, sparse_state_table, filter_logic):
         self.sparse_state_table = sparse_state_table
         self.filter_logic = filter_logic
@@ -63,6 +64,7 @@ class StateTableGenerator(object):
             outcome events for entities
         dense_state_table (string, optional) name of SQL table containing
             entities and state time ranges
+
     """
     def __init__(
         self,
@@ -131,10 +133,13 @@ class StateTableGenerator(object):
         Returns: (string) A query to produce a sparse states table
         """
         state_columns = [
-            'bool_or(state = \'{desired_state}\') as {desired_state}'
+            "bool_or(state = '{desired_state}') as {desired_state}"
             .format(desired_state=state)
             for state in self._all_known_states(self.dense_state_table)
         ]
+        if not state_columns:
+            raise ValueError("Unable to identify states from table",
+                             self.dense_state_table)
         query = '''
             create table {sparse_state_table} as (
             select d.entity_id, a.as_of_date::timestamp, {state_column_string}

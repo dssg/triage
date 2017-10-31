@@ -1,8 +1,12 @@
-from architect.state_table_generators import StateTableGenerator
-import testing.postgresql
 from datetime import datetime
+
+import pytest
+import testing.postgresql
 from sqlalchemy.engine import create_engine
-from tests.utils import assert_index, create_dense_state_table, create_binary_outcome_events
+
+from architect.state_table_generators import StateTableGenerator
+
+from tests import utils
 
 
 def test_sparse_state_table_generator():
@@ -15,7 +19,7 @@ def test_sparse_state_table_generator():
 
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        create_dense_state_table(engine, 'states', input_data)
+        utils.create_dense_state_table(engine, 'states', input_data)
 
         table_generator = StateTableGenerator(
             engine,
@@ -48,8 +52,23 @@ def test_sparse_state_table_generator():
             (6, datetime(2016, 5, 1), False, True),
         ]
         assert results == expected_output
-        assert_index(engine, table_generator.sparse_table_name, 'entity_id')
-        assert_index(engine, table_generator.sparse_table_name, 'as_of_date')
+        utils.assert_index(engine, table_generator.sparse_table_name, 'entity_id')
+        utils.assert_index(engine, table_generator.sparse_table_name, 'as_of_date')
+
+
+def test_empty_dense_state_table():
+    """An empty dense (input) state table should produce a useful error."""
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_dense_state_table(engine, 'states', ())
+        table_generator = StateTableGenerator(
+            engine,
+            'exp_hash',
+            dense_state_table='states'
+        )
+        with pytest.raises(ValueError):
+            table_generator.generate_sparse_table((datetime(2016, 1, 1),
+                                                   datetime(2016, 2, 1)))
 
 
 def test_sparse_table_generator_from_events():
@@ -65,7 +84,7 @@ def test_sparse_table_generator_from_events():
     ]
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        create_binary_outcome_events(engine, 'events', input_data)
+        utils.create_binary_outcome_events(engine, 'events', input_data)
         table_generator = StateTableGenerator(
             engine,
             'exp_hash',
@@ -115,5 +134,5 @@ def test_sparse_table_generator_from_events():
             )
         )]
         assert results == expected_output
-        assert_index(engine, table_generator.sparse_table_name, 'entity_id')
-        assert_index(engine, table_generator.sparse_table_name, 'as_of_date')
+        utils.assert_index(engine, table_generator.sparse_table_name, 'entity_id')
+        utils.assert_index(engine, table_generator.sparse_table_name, 'as_of_date')
