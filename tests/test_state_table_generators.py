@@ -57,18 +57,55 @@ def test_sparse_state_table_generator():
 
 
 def test_empty_dense_state_table():
-    """An empty dense (input) state table should produce a useful error."""
+    """An empty dense (input) state table produces a useful error."""
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        utils.create_dense_state_table(engine, 'states', ())
+        utils.create_dense_state_table(engine, 'states', ())  # no data
         table_generator = StateTableGenerator(
             engine,
             'exp_hash',
             dense_state_table='states'
         )
+
         with pytest.raises(ValueError):
-            table_generator.generate_sparse_table((datetime(2016, 1, 1),
-                                                   datetime(2016, 2, 1)))
+            table_generator.generate_sparse_table([datetime(2016, 1, 1)])
+
+        engine.dispose()
+
+
+def test_empty_sparse_state_table():
+    """An empty sparse (generated) state table eagerly produces an
+    error.
+
+    (Rather than allowing execution to proceed.)
+
+    """
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_dense_state_table(engine, 'states', (
+            (5, 'permitted', datetime(2016, 1, 1), datetime(2016, 6, 1)),
+            (6, 'permitted', datetime(2016, 2, 5), datetime(2016, 5, 5)),
+            (1, 'injail', datetime(2014, 7, 7), datetime(2014, 7, 15)),
+            (1, 'injail', datetime(2016, 3, 7), datetime(2016, 4, 2)),
+        ))
+        table_generator = StateTableGenerator(
+            engine,
+            'exp_hash',
+            dense_state_table='states'
+        )
+
+        with pytest.raises(ValueError):
+            # Request time outside of available intervals
+            table_generator.generate_sparse_table([datetime(2015, 12, 31)])
+
+        (state_count,) = engine.execute('''\
+            select count(*) from {generator.sparse_table_name}
+        '''.format(generator=table_generator)
+        ).first()
+
+        assert state_count == 0
+
+        engine.dispose()
 
 
 def test_sparse_table_generator_from_events():

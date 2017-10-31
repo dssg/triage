@@ -1,9 +1,12 @@
 import logging
-from architect.validations import table_should_have_data,\
-    column_should_be_intlike,\
-    column_should_be_booleanlike,\
-    column_should_be_timelike,\
-    column_should_be_stringlike
+
+from architect.validations import (
+    table_should_have_data,
+    column_should_be_intlike,
+    column_should_be_booleanlike,
+    column_should_be_timelike,
+    column_should_be_stringlike,
+)
 
 
 class StateFilter(object):
@@ -198,6 +201,7 @@ class StateTableGenerator(object):
         """
         logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
         self._generate_sparse_table(self.sparse_table_query_func(as_of_dates))
+        table_should_have_data(self.sparse_table_name, self.db_engine)
 
     def _generate_sparse_table(self, generate_query):
         """Generate and index a sparse table from a given query
