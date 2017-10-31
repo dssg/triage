@@ -11,18 +11,39 @@ Predictive analytics projects require the coordination of many different tasks, 
 
 Triage aims to provide interfaces to these different phases of a project, such as an `Experiment`. Each phase is defined by configuration specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.
 
-## Experiment
 
-The first phase implemented in Triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
+## Installation
 
 ### Prerequisites
 
-To use a Triage experiment, you first need:
+To use Triage, you first need:
 
 - Python 3+
 - A PostgreSQL database with your source data (events, geographical data, etc) loaded.
-- Ample space on an available disk (or S3) to store the needed matrices and models for your experiment
+- Ample space on an available disk, (or for example in Amazon Web Services's S3), to store the needed matrices and models for your experiment
 
+### Building
+
+Triage is a Python package distributable via `setuptools`. It may be installed directly using `easy_install` or `pip`, or named as a dependency of another package as `triage`.
+
+To build this package (without installation), its dependencies may alternatively be installed using `pip`:
+
+    pip install -r requirements.txt
+
+### Testing
+
+To include test and development dependencies, instead use **requirements_dev.txt**:
+
+    pip install -r requirements_dev.txt
+
+Then, to run tests:
+
+    pytest
+
+
+## Experiment
+
+The first phase implemented in Triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
 
 ### Experiment Run Example
 
