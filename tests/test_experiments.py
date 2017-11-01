@@ -1,21 +1,23 @@
-from datetime import datetime, timedelta
 import os
-from sqlalchemy import create_engine
+from datetime import datetime, timedelta
 from functools import partial
 from tempfile import TemporaryDirectory
-import testing.postgresql
 from unittest.mock import Mock
 from unittest import TestCase
+
+import testing.postgresql
+from sqlalchemy import create_engine
 
 from catwalk.db import ensure_db
 from catwalk.storage import FSModelStorageEngine
 
 from tests.utils import sample_config, populate_source_data
 
-from triage.experiments import\
-    MultiCoreExperiment,\
-    SingleThreadedExperiment,\
-    CONFIG_VERSION
+from triage.experiments import (
+    MultiCoreExperiment,
+    SingleThreadedExperiment,
+    CONFIG_VERSION,
+)
 
 
 def num_linked_evaluations(db_engine):
@@ -132,15 +134,13 @@ def restart_experiment_test(experiment_class):
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        temp_dir = TemporaryDirectory()
-        try:
+        with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir.name, 'inspections'),
+                project_path=os.path.join(temp_dir, 'inspections'),
             )
-
             experiment.run()
 
             evaluations = num_linked_evaluations(db_engine)
@@ -150,14 +150,12 @@ def restart_experiment_test(experiment_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir.name, 'inspections'),
+                project_path=os.path.join(temp_dir, 'inspections'),
                 replace=False
             )
             experiment.make_entity_date_table = Mock()
             experiment.run()
             assert not experiment.make_entity_date_table.called
-        finally:
-            temp_dir.cleanup()
 
 
 def test_restart_singlethreaded_experiment():
@@ -262,28 +260,31 @@ def test_nostate_multicore_experiment():
 
 
 class TestConfigVersion(TestCase):
+
     def test_load_if_right_version(self):
         experiment_config = sample_config()
         experiment_config['config_version'] = CONFIG_VERSION
         with testing.postgresql.Postgresql() as postgresql:
             db_engine = create_engine(postgresql.url())
             ensure_db(db_engine)
-            experiment = SingleThreadedExperiment(
-                config=experiment_config,
-                db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
-                project_path='inspections'
-            )
+            with TemporaryDirectory() as temp_dir:
+                experiment = SingleThreadedExperiment(
+                    config=experiment_config,
+                    db_engine=db_engine,
+                    model_storage_class=FSModelStorageEngine,
+                    project_path=os.path.join(temp_dir, 'inspections'),
+                )
 
         assert isinstance(experiment, SingleThreadedExperiment)
 
     def test_noload_if_wrong_version(self):
         experiment_config = sample_config()
         experiment_config['config_version'] = 'v0'
-        with self.assertRaises(ValueError):
-            SingleThreadedExperiment(
-                config=experiment_config,
-                db_engine=None,
-                model_storage_class=FSModelStorageEngine,
-                project_path='inspections'
-            )
+        with TemporaryDirectory() as temp_dir:
+            with self.assertRaises(ValueError):
+                SingleThreadedExperiment(
+                    config=experiment_config,
+                    db_engine=None,
+                    model_storage_class=FSModelStorageEngine,
+                    project_path=os.path.join(temp_dir, 'inspections'),
+                )

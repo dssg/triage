@@ -326,6 +326,6 @@ def sample_config():
         'temporal_config': temporal_config,
         'grid_config': grid_config,
         'scoring': scoring_config,
-        'user_metadata': { 'custom_key': 'custom_value' },
+        'user_metadata': {'custom_key': 'custom_value'},
         'individual_importance': {'n_ranks': 2}
     }
