@@ -13,7 +13,7 @@ Triage aims to provide interfaces to these different phases of a project, such a
 
 ## Experiment
 
-The first phase implemented in triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
+The first phase implemented in Triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
 
 ### Prerequisites
 
@@ -42,7 +42,7 @@ These lines are a bit dense: what is happening here?
 - `SingleThreadedExperiment`:  There are different Experiment classes available in `triage.experiments` to use, and they each represent a different way of executing the experiment, which we'll talk about in more detail later. The simplest (but slowest) is the SingleThreadedExperiment.
 - `config=experiment_config`: The bulk of the work needed in designing an experiment will be in creating this experiment configuration. An up-to-date example is at [example_experiment_config.yaml](example_experiment_config.yaml); more detailed instructions on each section are located in the example file. Generally these would be easiest to store as a file (or multiple files that you construct together) like that YAML file, but the configuration is passed in dict format to the Experiment constructor and you can store it however you wish.
 - `db_engine=sqlalchemy.create_engine(...)`: A SQLAlchemy database engine. This will be used both for querying your source tables and writing results metadata.
-- `model_storage_class=FSModelStorageEngine`: The path to a model storage engine class. The library that triage uses for model training and evaluation, [catwalk](https://github.com/dssg/catwalk), provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the `catwalk.storage.FSModelStorageEngine` to save models on the local filesystem.
+- `model_storage_class=FSModelStorageEngine`: The path to a model storage engine class. The library that Triage uses for model training and evaluation, [catwalk](https://github.com/dssg/catwalk), provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the `catwalk.storage.FSModelStorageEngine` to save models on the local filesystem.
 - `project_path='/path/to/directory/to/save/data'`: The path to where you would like to store design matrices and trained models.
 
 With that in mind, a more full version of the experiment run script might look like this:
@@ -128,7 +128,7 @@ Triage is developed at the University of Chicago's [Center For Data Science and 
 
 ## Major Components Used by Triage
 
-Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if 
+Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if you'd like to make use of a subset of Triage's functionality in an existing pipeline:
 
 * [Architect](https://github.com/dssg/architect): Plan, design and build train and test matrices. Includes feature and label generation.
 * [Collate](https://github.com/dssg/collate): Aggregation SQL Query Builder. This is used by the Architect to build features.
