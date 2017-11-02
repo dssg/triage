@@ -38,3 +38,6 @@ docs/_build
 # Virtualenvs
 env/
 venv/
+
+# IPython Stuff
+.ipynb_checkpoints/
