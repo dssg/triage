@@ -219,3 +219,9 @@ class ExperimentValidator(Validator):
         )
         GridConfigValidator(self.db_engine).run(experiment_config.get('grid_config', {}))
         ScoringConfigValidator(self.db_engine).run(experiment_config.get('scoring', {}))
+
+        # show the success message in the console as well as the logger
+        # as we don't really know how they have configured logging
+        success_message = 'Experiment validation ran to completion with no errors'
+        logging.info(success_message)
+        print(success_message)
