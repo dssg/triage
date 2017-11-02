@@ -18,3 +18,17 @@ The Architect addresses these issues with functionality aimed at all tasks betwe
 - [Planner](architect/planner.py), [Builder](architect/builders.py): Build all design matrices needed for an experiment, taking into account different labels, state configurations, and feature groups.
 
 In addition to being usable individually to assist in different aspects of building matrices in your project, the Architect components are integrated in [triage](https://github.com/dssg/triage) as a part of an entire modeling experiment that incorporates later tasks like model training and testing.
+
+## Distributing, Building &amp; Testing
+
+The Architect is a Python package distributable via `setuptools`. It may be installed directly using `easy_install` or `pip`, or listed as a dependency of another package (namely `triage`), under the package name `matrix-architect`.
+
+To build this package for development, its dependencies may be installed using `pip`:
+
+    pip install -r requirements_dev.txt
+
+(or, without test and development dependencies, using **requirements.txt**).
+
+And, having built for development, to run tests:
+
+    pytest
