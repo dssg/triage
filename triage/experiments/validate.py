@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+from timechop.timechop import Timechop
 import architect
 from architect.utils import convert_str_to_relativedelta
 import catwalk
@@ -12,8 +14,44 @@ from sklearn.model_selection import ParameterGrid
 
 
 class Validator(object):
-    def __init__(self, db_engine):
+    def __init__(self, db_engine=None):
         self.db_engine = db_engine
+
+
+class TemporalValidator(Validator):
+    def run(self, temporal_config):
+        def dt_from_str(dt_str):
+            return datetime.strptime(dt_str, '%Y-%m-%d')
+        splits = []
+        try:
+            chopper = Timechop(
+                beginning_of_time=dt_from_str(temporal_config['beginning_of_time']),
+                modeling_start_time=dt_from_str(temporal_config['modeling_start_time']),
+                modeling_end_time=dt_from_str(temporal_config['modeling_end_time']),
+                update_window=temporal_config['update_window'],
+                train_label_windows=temporal_config['train_label_windows'],
+                test_label_windows=temporal_config['test_label_windows'],
+                train_example_frequency=temporal_config['train_example_frequency'],
+                test_example_frequency=temporal_config['test_example_frequency'],
+                train_durations=temporal_config['train_durations'],
+                test_durations=temporal_config['test_durations'],
+            )
+            splits = chopper.chop_time()
+        except Exception as e:
+            raise ValueError('''Section: temporal_config -
+            Timechop could not produce temporal splits from config {}.
+            Error: {}
+            '''.format(temporal_config, e))
+        for split in splits:
+            if len(split['train_matrix']['as_of_times']) == 0:
+                raise ValueError('''Section: temporal_config -
+                Computed split {} has a train matrix with no as_of_times.
+                '''.format(split))
+            for test_matrix in split['test_matrices']:
+                if len(test_matrix['as_of_times']) == 0:
+                    raise ValueError('''Section: temporal_config -
+                    Computed split {} has a test matrix with no as_of_times.
+                    '''.format(split))
 
 
 class FeatureAggregationsValidator(Validator):
@@ -305,26 +343,27 @@ class ScoringConfigValidator(Validator):
 
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
+        TemporalValidator().run(experiment_config.get('temporal_config', {}))
         FeatureAggregationsValidator(self.db_engine)\
             .run(experiment_config.get('feature_aggregations', {}))
         EventsTableValidator(self.db_engine).run(experiment_config.get('events_table', None))
         StateConfigValidator(self.db_engine).run(experiment_config.get('state_config', {}))
-        FeatureGroupDefinitionValidator(self.db_engine).run(
+        FeatureGroupDefinitionValidator().run(
             experiment_config.get('feature_group_definition', {}),
             experiment_config['feature_aggregations']
         )
-        FeatureGroupStrategyValidator(self.db_engine).run(
+        FeatureGroupStrategyValidator().run(
             experiment_config.get('feature_group_strategies', []),
         )
-        UserMetadataValidator(self.db_engine).run(
+        UserMetadataValidator().run(
             experiment_config.get('user_metadata', {})
         )
-        ModelGroupKeysValidator(self.db_engine).run(
+        ModelGroupKeysValidator().run(
             experiment_config.get('model_group_keys', []),
             experiment_config.get('user_metadata', {})
         )
-        GridConfigValidator(self.db_engine).run(experiment_config.get('grid_config', {}))
-        ScoringConfigValidator(self.db_engine).run(experiment_config.get('scoring', {}))
+        GridConfigValidator().run(experiment_config.get('grid_config', {}))
+        ScoringConfigValidator().run(experiment_config.get('scoring', {}))
 
         # show the success message in the console as well as the logger
         # as we don't really know how they have configured logging
