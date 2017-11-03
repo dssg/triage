@@ -76,12 +76,12 @@ def table_has_data(table_name, db_engine):
 
     Returns: (boolean) Whether or not the table has any data
     """
-    results = [
+    result = [
         row for row in
-        db_engine.execute('select * from {} limit 1'.format(table_name))
+        db_engine.execute('select 1 from {} limit 1'.format(table_name))
     ]
 
-    return len(results) > 0
+    return any(result)
 
 
 def table_has_column(table_name, column, db_engine):
