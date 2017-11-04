@@ -556,8 +556,8 @@ def test_generate_plans():
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
             'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
             'train_matrix': {
-                'matrix_start_time': datetime.datetime(2010, 1, 1, 0, 0),
-                'matrix_end_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'first_as_of_time': datetime.datetime(2010, 1, 1, 0, 0),
+                'matrix_info_end_time': datetime.datetime(2010, 1, 6, 0, 0),
                 'as_of_times': [
                     datetime.datetime(2010, 1, 1, 0, 0),
                     datetime.datetime(2010, 1, 2, 0, 0),
@@ -567,8 +567,8 @@ def test_generate_plans():
                 ]
             },
             'test_matrices': [{
-                'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'first_as_of_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'matrix_info_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                 'as_of_times': [
                     datetime.datetime(2010, 1, 6, 0, 0),
                     datetime.datetime(2010, 1, 7, 0, 0),
@@ -583,8 +583,8 @@ def test_generate_plans():
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
             'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
             'train_matrix': {
-                'matrix_start_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'matrix_end_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'first_as_of_time': datetime.datetime(2010, 1, 6, 0, 0),
+                'matrix_info_end_time': datetime.datetime(2010, 1, 11, 0, 0),
                 'as_of_times': [
                     datetime.datetime(2010, 1, 6, 0, 0),
                     datetime.datetime(2010, 1, 7, 0, 0),
@@ -594,8 +594,8 @@ def test_generate_plans():
                 ]
             },
             'test_matrices': [{
-                'matrix_start_time': datetime.datetime(2010, 1, 11, 0, 0),
-                'matrix_end_time': datetime.datetime(2010, 1, 16, 0, 0),
+                'first_as_of_time': datetime.datetime(2010, 1, 11, 0, 0),
+                'matrix_info_end_time': datetime.datetime(2010, 1, 16, 0, 0),
                 'as_of_times': [
                     datetime.datetime(2010, 1, 11, 0, 0),
                     datetime.datetime(2010, 1, 12, 0, 0),
@@ -728,8 +728,8 @@ class TestBuildMatrix(TestCase):
                 )
 
                 matrix_dates = {
-                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'as_of_times': dates
                 }
                 feature_dictionary = {
@@ -801,8 +801,8 @@ class TestBuildMatrix(TestCase):
                 )
 
                 matrix_dates = {
-                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'as_of_times': dates
                 }
                 feature_dictionary = {
@@ -859,8 +859,8 @@ class TestBuildMatrix(TestCase):
                 )
 
                 matrix_dates = {
-                    'matrix_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_end_time': datetime.datetime(2016, 3, 1, 0, 0),
+                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'as_of_times': dates
                 }
                 feature_dictionary = {

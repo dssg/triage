@@ -83,14 +83,14 @@ class Planner(object):
         matrix_id = '_'.join([
             label_name,
             label_type,
-            str(matrix_definition['matrix_start_time']),
-            str(matrix_definition['matrix_end_time'])
+            str(matrix_definition['first_as_of_time']),
+            str(matrix_definition['matrix_info_end_time'])
         ])
         matrix_metadata = {
 
             # temporal information
             'beginning_of_time': self.beginning_of_time,
-            'end_time': matrix_definition['matrix_end_time'],
+            'end_time': matrix_definition['matrix_info_end_time'],
 
             # columns
             'indices': ['entity_id', 'as_of_date'],
