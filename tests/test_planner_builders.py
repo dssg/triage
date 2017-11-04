@@ -243,7 +243,7 @@ def test_write_to_csv():
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 states = ['state_one AND state_two'],
@@ -299,7 +299,7 @@ def test_make_entity_date_table():
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 states = ['state_one AND state_two'],
@@ -379,7 +379,7 @@ def test_write_features_data():
 
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 states = ['state_one AND state_two'],
@@ -458,7 +458,7 @@ def test_write_labels_data():
         )
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 states = ['state_one AND state_two'],
@@ -504,7 +504,7 @@ class TestMergeFeatureCSVs(TestCase):
         should result in an error"""
         with TemporaryDirectory() as temp_dir:
             planner = Planner(
-                beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                 label_names = ['booking'],
                 label_types = ['binary'],
                 states = ['state_one AND state_two'],
@@ -552,7 +552,7 @@ class TestMergeFeatureCSVs(TestCase):
 def test_generate_plans():
     matrix_set_definitions = [
         {
-            'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+            'feature_start_time': datetime.datetime(1990, 1, 1, 0, 0),
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
             'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
             'train_matrix': {
@@ -579,7 +579,7 @@ def test_generate_plans():
             }]
         },
         {
-            'beginning_of_time': datetime.datetime(1990, 1, 1, 0, 0),
+            'feature_start_time': datetime.datetime(1990, 1, 1, 0, 0),
             'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
             'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
             'train_matrix': {
@@ -610,7 +610,7 @@ def test_generate_plans():
     feature_dict_two = {'features2': ['f3', 'f4'], 'features3': ['f5', 'f6']}
     feature_dicts = [feature_dict_one, feature_dict_two]
     planner = Planner(
-        beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+        feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
         label_names = ['booking'],
         label_types = ['binary'],
         states = ['state_one AND state_two'],
@@ -659,7 +659,7 @@ class TestBuildMatrix(TestCase):
 
             with TemporaryDirectory() as temp_dir:
                 planner = Planner(
-                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
                     states = ['state_one AND state_two'],
@@ -677,7 +677,7 @@ class TestBuildMatrix(TestCase):
                     'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
@@ -717,7 +717,7 @@ class TestBuildMatrix(TestCase):
 
             with TemporaryDirectory() as temp_dir:
                 planner = Planner(
-                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
                     states = ['state_one AND state_two'],
@@ -741,7 +741,7 @@ class TestBuildMatrix(TestCase):
                     'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
@@ -790,7 +790,7 @@ class TestBuildMatrix(TestCase):
 
             with TemporaryDirectory() as temp_dir:
                 planner = Planner(
-                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
                     states = ['state_one AND state_two'],
@@ -814,7 +814,7 @@ class TestBuildMatrix(TestCase):
                     'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
@@ -847,7 +847,7 @@ class TestBuildMatrix(TestCase):
 
             with TemporaryDirectory() as temp_dir:
                 planner = Planner(
-                    beginning_of_time = datetime.datetime(2010, 1, 1, 0, 0),
+                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
                     label_names = ['booking'],
                     label_types = ['binary'],
                     states = ['state_one AND state_two'],
@@ -872,7 +872,7 @@ class TestBuildMatrix(TestCase):
                     'state': 'state_one AND state_two',
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
+                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)

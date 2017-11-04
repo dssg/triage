@@ -204,7 +204,7 @@ def basic_integration_test(
 
             planner = Planner(
                 engine=db_engine,
-                beginning_of_time=datetime(2010, 1, 1),
+                feature_start_time=datetime(2010, 1, 1),
                 label_names=['outcome'],
                 label_types=['binary'],
                 db_config={

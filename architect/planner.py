@@ -10,7 +10,7 @@ from . import builders, utils, state_table_generators
 class Planner(object):
     def __init__(
         self,
-        beginning_of_time,
+        feature_start_time,
         label_names,
         label_types,
         states,
@@ -21,7 +21,7 @@ class Planner(object):
         builder_class=builders.HighMemoryCSVBuilder,
         replace=True
     ):
-        self.beginning_of_time = beginning_of_time  # earliest time included in features
+        self.feature_start_time = feature_start_time  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
         self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
@@ -89,7 +89,7 @@ class Planner(object):
         matrix_metadata = {
 
             # temporal information
-            'beginning_of_time': self.beginning_of_time,
+            'feature_start_time': self.feature_start_time,
             'end_time': matrix_definition['matrix_info_end_time'],
             'as_of_date_frequency': matrix_definition.get(
                 'training_as_of_date_frequency',
