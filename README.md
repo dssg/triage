@@ -25,9 +25,9 @@ pip install git+git://github.com/dssg/metta-data.git
 ## How-to
 
 `metta` expects you to hand it a dictionary for each dataframe with the following keys:
-- `beginning_of_time` (date.datetime): The earliest time that enters your covariate calculations.
+- `feature_start_time` (date.datetime): The earliest time that enters your covariate calculations.
 - `end_time` (date.dateime): The last time that enters your covariate calculations.
-- `label_window` (str): The length of the labeling window you are using in this matrix eg: '1y', '6m'
+- `label_timespan` (str): The length of the labeling window you are using in this matrix eg: '1y', '6m'
 - `label_name` (str): The outcome variable's column name. This column must be in the last position in your dataframe.
 - `matrix_id` (str): Human readable id for the dataset
 
@@ -36,9 +36,9 @@ pip install git+git://github.com/dssg/metta-data.git
 import metta
 
 
-train_config = {'beginning_of_time': datetime.date(2012, 12, 20),
+train_config = {'feature_start_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
-                'label_window': '3m',
+                'label_timespan': '3m',
                 'label_name': 'inspection_1yr',
                 'label_type': 'binary',
                 'matrix_id': 'CDPH_2012',
@@ -46,9 +46,9 @@ train_config = {'beginning_of_time': datetime.date(2012, 12, 20),
                 'indices': ['entity_id', 'as_of_date'] }
 
 
-test_config = {'beginning_of_time': datetime.date(2015, 12, 20),
+test_config = {'feature_start_time': datetime.date(2015, 12, 20),
                'end_time': datetime.date(2016, 12, 21),
-               'label_window': '3m',
+               'label_timespan': '3m',
                'label_name': 'inspection_1yr',
                'label_type': 'binary'
                'matrix_id': 'CDPH_2015',
@@ -70,9 +70,9 @@ metta.archive_train_test(train_config,
 import metta
 
 
-train_config = {'beginning_of_time': datetime.date(2012, 12, 20),
+train_config = {'feature_start_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
-                'label_window': '3m',
+                'label_timespan': '3m',
                 'label_name': 'inspection_1yr',
                 'label_type': 'binary',
                 'matrix_id': 'CDPH_2012',
@@ -80,9 +80,9 @@ train_config = {'beginning_of_time': datetime.date(2012, 12, 20),
                 'indices': ['entity_id', 'as_of_date'] }
 
 
-base_test_config = {'beginning_of_time': datetime.date(2015, 12, 20),
+base_test_config = {'feature_start_time': datetime.date(2015, 12, 20),
                'end_time': datetime.date(2016, 12, 21),
-               'label_window': '3m',
+               'label_timespan': '3m',
                'label_name': 'inspection_1yr',
                'label_type': 'binary',
                'matrix_id': 'CDPH_2015',
@@ -95,7 +95,7 @@ test_uuids = []
 
 for years in range(1, 5):
 	test_config = base_test_config.copy()
-	test_config['beginning_of_time'] += relativedelta(years=years)
+	test_config['feature_start_time'] += relativedelta(years=years)
 	test_config['end_time'] += relativedelta(years=years)
 	test_config['matrix_id'] = 'CDPH_{}'.format(test_config['end_time'].year)
 	test_uuids.append(metta.archive_matrix(
