@@ -273,9 +273,10 @@ def test_and_evaluate(
                 predictions_proba=predictions_proba,
                 labels=test_store.labels(),
                 model_id=model_id,
-                evaluation_start_time=split_def['matrix_start_time'],
-                evaluation_end_time=split_def['matrix_end_time'],
-                example_frequency=split_def['example_frequency']
+                # for evaluation range, using first to last as of time:
+                evaluation_start_time=split_def['first_as_of_time'],
+                evaluation_end_time=split_def['last_as_of_time'],
+                as_of_date_frequency=split_def['test_as_of_date_frequency']
             )
         return True
     except Exception:

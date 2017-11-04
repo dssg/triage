@@ -153,7 +153,7 @@ def num_linked_evaluations(db_engine):
             join results.predictions p on (
                 e.model_id = p.model_id and
                 e.evaluation_start_time <= p.as_of_date and
-                e.evaluation_end_time > p.as_of_date)
+                e.evaluation_end_time >= p.as_of_date)
         ''')
     ])
     return num_evaluations
@@ -161,15 +161,16 @@ def num_linked_evaluations(db_engine):
 
 def sample_config():
     temporal_config = {
-        'beginning_of_time': '2010-01-01',
-        'modeling_start_time': '2011-01-01',
-        'modeling_end_time': '2014-01-01',
-        'update_window': '1y',
-        'train_label_windows': ['6months'],
-        'test_label_windows': ['6months'],
-        'train_example_frequency': '1day',
-        'test_example_frequency': '3months',
-        'train_durations': ['6months'],
+        'feature_start_time': '2010-01-01',
+        'feature_end_time': '2014-01-01',
+        'label_start_time': '2011-01-01',
+        'label_end_time': '2014-01-01',
+        'model_update_frequency': '1year',
+        'training_label_timespans': ['6months'],
+        'test_label_timespans': ['6months'],
+        'training_as_of_date_frequencies': '1day',
+        'test_as_of_date_frequencies': '3months',
+        'max_training_histories': ['6months'],
         'test_durations': ['1months'],
     }
 
@@ -196,7 +197,7 @@ def sample_config():
             'quantity': 'cat_sightings',
             'metrics': ['count', 'avg'],
         }],
-        'intervals': ['1y'],
+        'intervals': ['1year'],
         'groups': ['entity_id']
     }, {
         'prefix': 'zip_code_features',
@@ -207,7 +208,7 @@ def sample_config():
             'quantity': 'num_events',
             'metrics': ['max', 'min'],
         }],
-        'intervals': ['1y'],
+        'intervals': ['1year'],
         'groups': ['entity_id', 'zip_code']
     }]
 
@@ -279,7 +280,7 @@ def simple_experiment_test(experiment_class):
                 join results.predictions p on (
                     e.model_id = p.model_id and
                     e.evaluation_start_time <= p.as_of_date and
-                    e.evaluation_end_time > p.as_of_date)
+                    e.evaluation_end_time >= p.as_of_date)
             ''')
         ])
         assert num_evaluations > 0
@@ -299,15 +300,14 @@ def simple_experiment_test(experiment_class):
         ])
         assert num_models == num_models_with_experiment
 
-        # 7. that models have the train end date and label window
+        # 7. that models have the train end date and label timespan
         results = [
-            (model['train_end_time'], model['train_label_window'])
+            (model['train_end_time'], model['training_label_timespan'])
             for model in db_engine.execute('select * from results.models')
         ]
         assert sorted(set(results)) == [
-            (datetime(2011, 7, 1), timedelta(180)),
-            (datetime(2012, 7, 1), timedelta(180)),
-            (datetime(2013, 7, 1), timedelta(180)),
+            (datetime(2012, 6, 1), timedelta(180)),
+            (datetime(2013, 6, 1), timedelta(180)),
         ]
 
         # 8. that the right number of individual importances are present
@@ -379,12 +379,13 @@ def nostate_experiment_test(experiment_class):
         experiment_config = sample_config()
         del experiment_config['state_config']
         with TemporaryDirectory() as temp_dir:
-            experiment_class(
+            exp = experiment_class(
                 config=experiment_config,
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections')
-            ).run()
+            )
+            exp.run()
 
         # assert
         # 1. that model groups entries are present
@@ -420,7 +421,7 @@ def nostate_experiment_test(experiment_class):
                 join results.predictions p on (
                     e.model_id = p.model_id and
                     e.evaluation_start_time <= p.as_of_date and
-                    e.evaluation_end_time > p.as_of_date)
+                    e.evaluation_end_time >= p.as_of_date)
             ''')
         ])
         assert num_evaluations > 0
@@ -440,15 +441,14 @@ def nostate_experiment_test(experiment_class):
         ])
         assert num_models == num_models_with_experiment
 
-        # 7. that models have the train end date and label window
+        # 7. that models have the train end date and label timespan
         results = [
-            (model['train_end_time'], model['train_label_window'])
+            (model['train_end_time'], model['training_label_timespan'])
             for model in db_engine.execute('select * from results.models')
         ]
         assert sorted(set(results)) == [
-            (datetime(2011, 7, 1), timedelta(180)),
-            (datetime(2012, 7, 1), timedelta(180)),
-            (datetime(2013, 7, 1), timedelta(180)),
+            (datetime(2012, 6, 1), timedelta(180)),
+            (datetime(2013, 6, 1), timedelta(180)),
         ]
 
 

@@ -88,15 +88,16 @@ class ExperimentBase(object):
 
         self.chopper_factory = partial(
             Timechop,
-            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
-            modeling_start_time=dt_from_str(split_config['modeling_start_time']),
-            modeling_end_time=dt_from_str(split_config['modeling_end_time']),
-            update_window=split_config['update_window'],
-            train_label_windows=split_config['train_label_windows'],
-            test_label_windows=split_config['test_label_windows'],
-            train_example_frequency=split_config['train_example_frequency'],
-            test_example_frequency=split_config['test_example_frequency'],
-            train_durations=split_config['train_durations'],
+            feature_start_time=dt_from_str(split_config['feature_start_time']),
+            feature_end_time=dt_from_str(split_config['feature_end_time']),
+            label_start_time=dt_from_str(split_config['label_start_time']),
+            label_end_time=dt_from_str(split_config['label_end_time']),
+            model_update_frequency=split_config['model_update_frequency'],
+            training_label_timespans=split_config['training_label_timespans'],
+            test_label_timespans=split_config['test_label_timespans'],
+            training_as_of_date_frequencies=split_config['training_as_of_date_frequencies'],
+            test_as_of_date_frequencies=split_config['test_as_of_date_frequencies'],
+            max_training_histories=split_config['max_training_histories'],
             test_durations=split_config['test_durations'],
         )
 
@@ -122,7 +123,7 @@ class ExperimentBase(object):
             FeatureGenerator,
             features_schema_name=self.features_schema_name,
             replace=self.replace,
-            beginning_of_time=split_config['beginning_of_time']
+            feature_start_time=split_config['feature_start_time']
         )
 
         self.feature_group_creator_factory = partial(
@@ -137,7 +138,7 @@ class ExperimentBase(object):
 
         self.planner_factory = partial(
             Planner,
-            beginning_of_time=dt_from_str(split_config['beginning_of_time']),
+            feature_start_time=dt_from_str(split_config['feature_start_time']),
             label_names=['outcome'],
             label_types=['binary'],
             db_config={
@@ -207,12 +208,17 @@ class ExperimentBase(object):
         Example:
         ```
         {
-            'beginning_of_time': {datetime},
-            'modeling_start_time': {datetime},
-            'modeling_end_time': {datetime},
+            'feature_start_time': {datetime},
+            'feature_end_time': {datetime},
+            'label_start_time': {datetime},
+            'label_end_time': {datetime},
             'train_matrix': {
-                'matrix_start_time': {datetime},
-                'matrix_end_time': {datetime},
+                'first_as_of_time': {datetime},
+                'last_as_of_time': {datetime},
+                'matrix_info_end_time': {datetime},
+                'training_label_timespan': {str},
+                'training_as_of_date_frequency': {str},
+                'max_training_history': {str},
                 'as_of_times': [list of {datetime}s]
             },
             'test_matrices': [list of matrix defs similar to train_matrix]
@@ -374,14 +380,14 @@ class ExperimentBase(object):
         return self._full_matrix_definitions
 
     @property
-    def all_label_windows(self):
-        """All train and test label windows
+    def all_label_timespans(self):
+        """All train and test label timespans
         
-        Returns: (list) label windows, in string form as they appeared in the experiment config
+        Returns: (list) label timespans, in string form as they appeared in the experiment config
         """
         return list(set(
-            self.config['temporal_config']['train_label_windows'] + \
-            self.config['temporal_config']['test_label_windows']
+            self.config['temporal_config']['training_label_timespans'] + \
+            self.config['temporal_config']['test_label_timespans']
         ))
 
     def generate_labels(self):
@@ -392,7 +398,7 @@ class ExperimentBase(object):
         self.label_generator.generate_all_labels(
             self.labels_table_name,
             self.all_as_of_times,
-            self.all_label_windows
+            self.all_label_timespans
         )
 
     def generate_sparse_states(self):
@@ -412,8 +418,8 @@ class ExperimentBase(object):
             'Starting train/test for %s out of %s: train range: %s to %s',
             split_num+1,
             len(self.full_matrix_definitions),
-            split['train_matrix']['matrix_start_time'],
-            split['train_matrix']['matrix_end_time'],
+            split['train_matrix']['first_as_of_time'],
+            split['train_matrix']['matrix_info_end_time'],
         )
 
     def matrix_store(self, matrix_uuid):
