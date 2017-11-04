@@ -35,7 +35,7 @@ def create_schemas(engine, features_tables, labels, states):
             create table labels.labels (
                 entity_id int,
                 as_of_date date,
-                label_window interval,
+                label_timespan interval,
                 label_name char(30),
                 label_type char(30),
                 label int
@@ -93,7 +93,7 @@ def create_entity_date_df(
     state_two,
     label_name,
     label_type,
-    label_window
+    label_timespan
 ):
     """ This function makes a pandas DataFrame that mimics the entity-date table
     for testing against.
@@ -102,7 +102,7 @@ def create_entity_date_df(
     labels_table = pd.DataFrame(labels, columns=[
         'entity_id',
         'as_of_date',
-        'label_window',
+        'label_timespan',
         'label_name',
         'label_type',
         'label'
@@ -116,7 +116,7 @@ def create_entity_date_df(
     as_of_dates = [date.date() for date in as_of_dates]
     labels_table = labels_table[labels_table['label_name'] == label_name]
     labels_table = labels_table[labels_table['label_type'] == label_type]
-    labels_table = labels_table[labels_table['label_window'] == label_window]
+    labels_table = labels_table[labels_table['label_timespan'] == label_timespan]
     labels_table = labels_table.join(
         other=states_table,
         on=('entity_id', 'as_of_date'),

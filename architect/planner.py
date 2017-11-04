@@ -91,6 +91,10 @@ class Planner(object):
             # temporal information
             'beginning_of_time': self.beginning_of_time,
             'end_time': matrix_definition['matrix_info_end_time'],
+            'as_of_date_frequency': matrix_definition.get(
+                'training_as_of_date_frequency',
+                matrix_definition.get('test_as_of_date_frequency')
+            ),
 
             # columns
             'indices': ['entity_id', 'as_of_date'],
@@ -99,6 +103,10 @@ class Planner(object):
 
             # other information
             'label_type': label_type,
+            'label_timespan': matrix_definition.get(
+                'test_label_timespan', 
+                matrix_definition.get('training_label_timespan', '0 days')
+            ),
             'state': state,
             'matrix_id': matrix_id,
             'matrix_type': matrix_type
@@ -106,9 +114,6 @@ class Planner(object):
         }
         matrix_metadata.update(matrix_definition)
         matrix_metadata.update(self.user_metadata)
-
-        if 'prediction_window' not in matrix_definition.keys():
-            matrix_metadata['prediction_window'] = '0d'
 
         return(matrix_metadata)
 

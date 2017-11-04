@@ -284,7 +284,7 @@ def test_make_entity_date_table():
         state_two=True,
         label_name='booking',
         label_type='binary',
-        label_window='1 month'
+        label_timespan='1 month'
     )
 
     with testing.postgresql.Postgresql() as postgresql:
@@ -319,7 +319,7 @@ def test_make_entity_date_table():
                 state='state_one AND state_two',
                 matrix_uuid='my_uuid',
                 matrix_type='train',
-                label_window='1 month'
+                label_timespan='1 month'
             )
 
             # read in the table
@@ -346,7 +346,7 @@ def test_write_features_data():
         state_two=True,
         label_name='booking',
         label_type='binary',
-        label_window='1 month'
+        label_timespan='1 month'
     )
 
     features = [['f1', 'f2'], ['f3', 'f4']]
@@ -397,7 +397,7 @@ def test_write_features_data():
                 state = 'state_one AND state_two',
                 matrix_type='train',
                 matrix_uuid='my_uuid',
-                label_window='1 month'
+                label_timespan='1 month'
             )
 
             feature_dictionary = dict(
@@ -437,7 +437,7 @@ def test_write_labels_data():
         columns = [
             'entity_id',
             'as_of_date',
-            'label_window',
+            'label_timespan',
             'label_name',
             'label_type',
             'label'
@@ -476,13 +476,13 @@ def test_write_labels_data():
                 state = 'state_one AND state_two',
                 matrix_type='train',
                 matrix_uuid='my_uuid',
-                label_window='1 month'
+                label_timespan='1 month'
             )
 
             csv_filename = planner.builder.write_labels_data(
                 label_name=label_name,
                 label_type=label_type,
-                label_window='1 month',
+                label_timespan='1 month',
                 matrix_uuid='my_uuid',
                 entity_date_table_name=entity_date_table_name,
             )
@@ -678,7 +678,7 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_window': '1 month'
+                    'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 planner.build_matrix(
@@ -742,7 +742,7 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_window': '1 month'
+                    'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 planner.build_matrix(
@@ -815,7 +815,7 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_window': '1 month'
+                    'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 with self.assertRaises(ValueError):
@@ -873,7 +873,7 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'beginning_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_window': '1 month'
+                    'label_timespan': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 planner.build_matrix(

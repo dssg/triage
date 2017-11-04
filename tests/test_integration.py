@@ -276,7 +276,7 @@ def basic_integration_test(
             label_generator.generate_all_labels(
                 labels_table='labels',
                 as_of_dates=all_as_of_times,
-                label_windows=['6months']
+                label_timespans=['6months']
             )
 
             # create feature table tasks
