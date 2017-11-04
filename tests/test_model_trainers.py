@@ -42,7 +42,7 @@ def test_model_trainer():
                 'label': ['good', 'bad']
             })
             metadata = {
-                'beginning_of_time': datetime.date(2012, 12, 20),
+                'feature_start_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
                 'label_timespan': '1y',
@@ -220,7 +220,7 @@ def test_n_jobs_not_new_model():
                 InMemoryMatrixStore(matrix, {
                     'label_timespan': '1d',
                     'end_time': datetime.datetime.now(),
-                    'beginning_of_time': datetime.date(2012, 12, 20),
+                    'feature_start_time': datetime.date(2012, 12, 20),
                     'label_name': 'label',
                     'metta-uuid': '1234',
                     'feature_names': ['ft1', 'ft2'],
@@ -276,7 +276,7 @@ class RetryTest(unittest.TestCase):
             matrix_store = InMemoryMatrixStore(matrix, {
                 'label_timespan': '1d',
                 'end_time': datetime.datetime.now(),
-                'beginning_of_time': datetime.date(2012, 12, 20),
+                'feature_start_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',
                 'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2'],
@@ -321,7 +321,7 @@ class RetryTest(unittest.TestCase):
             matrix_store = InMemoryMatrixStore(matrix, {
                 'label_timespan': '1d',
                 'end_time': datetime.datetime.now(),
-                'beginning_of_time': datetime.date(2012, 12, 20),
+                'feature_start_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',
                 'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2'],

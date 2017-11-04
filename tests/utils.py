@@ -68,7 +68,7 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
 
 def sample_metadata():
     return {
-        'beginning_of_time': datetime.date(2015, 1, 1),
+        'feature_start_time': datetime.date(2015, 1, 1),
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',
@@ -93,7 +93,7 @@ def sample_metta_csv_diff_order(directory):
     ])
     train_matrix = pandas.DataFrame.from_dict(train_dict)
     train_metadata = {
-        'beginning_of_time': datetime.date(2014, 1, 1),
+        'feature_start_time': datetime.date(2014, 1, 1),
         'end_time': datetime.date(2015, 1, 1),
         'matrix_id': 'train_matrix',
         'label_name': 'label',
@@ -110,7 +110,7 @@ def sample_metta_csv_diff_order(directory):
 
     test_matrix = pandas.DataFrame.from_dict(test_dict)
     test_metadata = {
-        'beginning_of_time': datetime.date(2015, 1, 1),
+        'feature_start_time': datetime.date(2015, 1, 1),
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',
@@ -154,7 +154,7 @@ def sample_metta_hdf_diff_order(directory):
     ])
     train_matrix = pandas.DataFrame.from_dict(train_dict)
     train_metadata = {
-        'beginning_of_time': datetime.date(2014, 1, 1),
+        'feature_start_time': datetime.date(2014, 1, 1),
         'end_time': datetime.date(2015, 1, 1),
         'matrix_id': 'train_matrix',
         'label_name': 'label',
@@ -171,7 +171,7 @@ def sample_metta_hdf_diff_order(directory):
 
     test_matrix = pandas.DataFrame.from_dict(test_dict)
     test_metadata = {
-        'beginning_of_time': datetime.date(2015, 1, 1),
+        'feature_start_time': datetime.date(2015, 1, 1),
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',

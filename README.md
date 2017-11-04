@@ -62,7 +62,7 @@ train_matrix = pandas.DataFrame.from_dict({
 	'label': [7, 8]
 }).set_index('entity_id')
 train_metadata = {
-	'beginning_of_time': datetime.date(2012, 12, 20),
+	'feature_start_time': datetime.date(2012, 12, 20),
 	'end_time': datetime.date(2016, 12, 20),
 	'label_name': 'label',
 	'label_timespan': '1y',
