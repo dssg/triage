@@ -65,7 +65,7 @@ train_metadata = {
 	'beginning_of_time': datetime.date(2012, 12, 20),
 	'end_time': datetime.date(2016, 12, 20),
 	'label_name': 'label',
-	'label_window': '1y',
+	'label_timespan': '1y',
 	'feature_names': ['ft1', 'ft2'],
 }
 train_matrix_uuid = metta.archive_matrix(train_metadata, train_matrix, format='csv')
@@ -90,7 +90,7 @@ test_matrix = pandas.DataFrame.from_dict({
 
 test_metadata = {
 	'label_name': 'label',
-	'label_window': '1y',
+	'label_timespan': '1y',
 	'end_time': as_of_date,
 }
 test_matrix_uuid = metta.archive_matrix(test_metadata, test_matrix, format='csv')
@@ -123,7 +123,7 @@ trainer = ModelTrainer(
 	experiment_hash=experiment_hash,
 	model_storage_engine=model_storage_engine,
 	db_engine=db_engine,
-	model_group_keys=['label_name', 'label_window']
+	model_group_keys=['label_name', 'label_timespan']
 )
 predictor = Predictor(
 	project_path,
@@ -166,7 +166,7 @@ for model_id in model_ids:
 		model_id=model_id,
 		evaluation_start_time=as_of_date,
 		evaluation_end_time=as_of_date,
-		example_frequency='6month'
+		as_of_date_frequency='6month'
 	)
 
 ```

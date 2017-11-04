@@ -140,8 +140,8 @@ class Predictor(object):
             .delete(synchronize_session=False)
         session.expire_all()
         db_objects = []
-        test_label_window = matrix_store.metadata['label_window']
-        logging.warning(test_label_window)
+        test_label_timespan = matrix_store.metadata['label_timespan']
+        logging.warning(test_label_timespan)
 
         if 'as_of_date' in matrix_store.matrix.index.names:
             logging.info('as_of_date found as part of matrix index, using index for table as_of_dates')
@@ -162,7 +162,7 @@ class Predictor(object):
                         score=float(score),
                         label_value=int(label) if not math.isnan(label) else None,
                         matrix_uuid=matrix_store.uuid,
-                        test_label_window=test_label_window,
+                        test_label_timespan=test_label_timespan,
                         **misc_db_parameters
                     )
                     writer.writerow([
@@ -174,7 +174,7 @@ class Predictor(object):
                         prediction.rank_abs,
                         prediction.rank_pct,
                         prediction.matrix_uuid,
-                        prediction.test_label_window
+                        prediction.test_label_timespan
                     ])
                 f.seek(0)
                 postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
@@ -199,7 +199,7 @@ class Predictor(object):
                     rank_abs=int(rank_abs),
                     rank_pct=round(float(rank_pct), 10),
                     matrix_uuid=matrix_store.uuid,
-                    test_label_window=test_label_window,
+                    test_label_timespan=test_label_timespan,
                     **misc_db_parameters
                 ))
 

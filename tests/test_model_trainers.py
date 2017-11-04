@@ -45,7 +45,7 @@ def test_model_trainer():
                 'beginning_of_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
-                'label_window': '1y',
+                'label_timespan': '1y',
                 'metta-uuid': '1234',
                 'feature_names': ['ft1', 'ft2'],
                 'indices': ['entity_id'],
@@ -57,7 +57,7 @@ def test_model_trainer():
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_window']
+                model_group_keys=['label_name', 'label_timespan']
             )
             matrix_store = InMemoryMatrixStore(matrix, metadata)
             model_ids = trainer.train_models(
@@ -135,7 +135,7 @@ def test_model_trainer():
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_window'],
+                model_group_keys=['label_name', 'label_timespan'],
                 replace=True
             )
             new_model_ids = trainer.train_models(
@@ -205,7 +205,7 @@ def test_n_jobs_not_new_model():
                 experiment_hash=None,
                 model_storage_engine=S3ModelStorageEngine(s3_conn, 'econ-dev/inspections'),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_window']
+                model_group_keys=['label_name', 'label_timespan']
             )
 
             matrix = pandas.DataFrame.from_dict({
@@ -218,7 +218,7 @@ def test_n_jobs_not_new_model():
                 grid_config,
                 dict(),
                 InMemoryMatrixStore(matrix, {
-                    'label_window': '1d',
+                    'label_timespan': '1d',
                     'end_time': datetime.datetime.now(),
                     'beginning_of_time': datetime.date(2012, 12, 20),
                     'label_name': 'label',
@@ -264,7 +264,7 @@ class RetryTest(unittest.TestCase):
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_window']
+                model_group_keys=['label_name', 'label_timespan']
             )
 
             matrix = pandas.DataFrame.from_dict({
@@ -274,7 +274,7 @@ class RetryTest(unittest.TestCase):
                 'label': ['good', 'bad']
             })
             matrix_store = InMemoryMatrixStore(matrix, {
-                'label_window': '1d',
+                'label_timespan': '1d',
                 'end_time': datetime.datetime.now(),
                 'beginning_of_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',
@@ -309,7 +309,7 @@ class RetryTest(unittest.TestCase):
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_window']
+                model_group_keys=['label_name', 'label_timespan']
             )
 
             matrix = pandas.DataFrame.from_dict({
@@ -319,7 +319,7 @@ class RetryTest(unittest.TestCase):
                 'label': ['good', 'bad']
             })
             matrix_store = InMemoryMatrixStore(matrix, {
-                'label_window': '1d',
+                'label_timespan': '1d',
                 'end_time': datetime.datetime.now(),
                 'beginning_of_time': datetime.date(2012, 12, 20),
                 'label_name': 'label',

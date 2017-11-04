@@ -72,7 +72,7 @@ def sample_metadata():
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',
-        'label_window': '3month',
+        'label_timespan': '3month',
         'indices': ['entity_id'],
     }
 
@@ -97,7 +97,7 @@ def sample_metta_csv_diff_order(directory):
         'end_time': datetime.date(2015, 1, 1),
         'matrix_id': 'train_matrix',
         'label_name': 'label',
-        'label_window': '3month',
+        'label_timespan': '3month',
         'indices': ['entity_id'],
     }
 
@@ -114,7 +114,7 @@ def sample_metta_csv_diff_order(directory):
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',
-        'label_window': '3month',
+        'label_timespan': '3month',
         'indices': ['entity_id'],
     }
 
@@ -158,7 +158,7 @@ def sample_metta_hdf_diff_order(directory):
         'end_time': datetime.date(2015, 1, 1),
         'matrix_id': 'train_matrix',
         'label_name': 'label',
-        'label_window': '3month',
+        'label_timespan': '3month',
         'indices': ['entity_id'],
     }
 
@@ -175,7 +175,7 @@ def sample_metta_hdf_diff_order(directory):
         'end_time': datetime.date(2016, 1, 1),
         'matrix_id': 'test_matrix',
         'label_name': 'label',
-        'label_window': '3month',
+        'label_timespan': '3month',
         'indices': ['entity_id'],
     }
 
