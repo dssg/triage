@@ -13,7 +13,7 @@ class FeatureGenerator(object):
         db_engine,
         features_schema_name,
         replace=True,
-        beginning_of_time=None
+        feature_start_time=None
     ):
         """Generates aggregate features using collate
 
@@ -23,14 +23,14 @@ class FeatureGenerator(object):
                 tables should be written to
             replace (boolean, optional) Whether or not existing features
                 should be replaced
-            beginning_of_time (string/datetime, optional) point in time before which
+            feature_start_time (string/datetime, optional) point in time before which
                 should not be included in features
         """
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
         self.categorical_cache = {}
         self.replace = replace
-        self.beginning_of_time = beginning_of_time
+        self.feature_start_time = feature_start_time
         self.entity_id_column = 'entity_id'
 
     def _validate_keys(self, aggregation_config):
@@ -289,7 +289,7 @@ class FeatureGenerator(object):
             state_group=self.entity_id_column,
             date_column=aggregation_config['knowledge_date_column'],
             output_date_column='as_of_date',
-            input_min_date=self.beginning_of_time,
+            input_min_date=self.feature_start_time,
             schema=self.features_schema_name,
             prefix=aggregation_config['prefix']
         )

@@ -278,7 +278,7 @@ def test_index_column_lookup():
         }
 
 
-def test_feature_generation_beginning_of_time():
+def test_feature_generation_feature_start_time():
     aggregate_config = [{
         'prefix': 'aprefix',
         'aggregates_imputation': {'all': {'type': 'constant', 'value': 7}},
@@ -319,7 +319,7 @@ def test_feature_generation_beginning_of_time():
         output_tables = FeatureGenerator(
             db_engine=engine,
             features_schema_name=features_schema_name,
-            beginning_of_time='2013-01-01',
+            feature_start_time='2013-01-01',
         ).create_all_tables(
             feature_dates=['2015-01-01'],
             feature_aggregation_config=aggregate_config,

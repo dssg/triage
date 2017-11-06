@@ -35,7 +35,7 @@ def test_training_label_generation():
         label_generator._create_labels_table(labels_table_name)
         label_generator.generate(
             start_date='2014-09-30',
-            label_window='6month',
+            label_timespan='6month',
             labels_table=labels_table_name
         )
 
@@ -45,7 +45,7 @@ def test_training_label_generation():
         records = [row for row in result]
 
         expected = [
-            # entity_id, as_of_date, label_window, name, type, label
+            # entity_id, as_of_date, label_timespan, name, type, label
             (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
             (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
             (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
@@ -68,18 +68,18 @@ def test_generate_all_labels():
         label_generator.generate_all_labels(
             labels_table=labels_table_name,
             as_of_dates=['2014-09-30', '2015-03-30'],
-            label_windows=['6month', '3month'],
+            label_timespans=['6month', '3month'],
         )
 
         result = engine.execute('''
             select * from {}
-            order by entity_id, as_of_date, label_window desc
+            order by entity_id, as_of_date, label_timespan desc
         '''.format(labels_table_name)
         )
         records = [row for row in result]
 
         expected = [
-            # entity_id, as_of_date, label_window, name, type, label
+            # entity_id, as_of_date, label_timespan, name, type, label
             (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
             (1, date(2014, 9, 30), timedelta(90), 'outcome', 'binary', False),
             (2, date(2015, 3, 30), timedelta(180), 'outcome', 'binary', False),

@@ -11,7 +11,7 @@ def convert_str_to_relativedelta(delta_string):
     convert it to a dateutil.relativedelta.relativedelta.
 
     Assumptions:
-    - the prediction_window string is in the format 'value unit', where
+    - the label_timespan string is in the format 'value unit', where
       value is an int and unit is one of year(s), month(s), day(s),
       week(s), hour(s), minute(s), second(s), microsecond(s).
 

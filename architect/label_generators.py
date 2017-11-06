@@ -19,26 +19,26 @@ class BinaryLabelGenerator(object):
     def generate(
         self,
         start_date,
-        label_window,
+        label_timespan,
         labels_table,
     ):
         query = """insert into {labels_table} (
             select
                 {events_table}.entity_id,
                 '{start_date}'::date as as_of_date,
-                '{label_window}'::interval as label_window,
+                '{label_timespan}'::interval as label_timespan,
                 'outcome' as label_name,
                 'binary' as label_type,
                 bool_or(outcome::bool)::int as label
             from {events_table}
             where '{start_date}' <= outcome_date
-            and outcome_date < '{start_date}'::timestamp + interval '{label_window}'
+            and outcome_date < '{start_date}'::timestamp + interval '{label_timespan}'
             group by 1, 2, 3, 4, 5
         )""".format(
             events_table=self.events_table,
             labels_table=labels_table,
             start_date=start_date,
-            label_window=label_window,
+            label_timespan=label_timespan,
         )
         logging.debug('Running label generation query: %s', query)
         self.db_engine.execute(query)
@@ -52,7 +52,7 @@ class BinaryLabelGenerator(object):
             create table {} (
             entity_id int,
             as_of_date date,
-            label_window interval,
+            label_timespan interval,
             label_name varchar(30),
             label_type varchar(30),
             label int
@@ -62,18 +62,18 @@ class BinaryLabelGenerator(object):
         self,
         labels_table,
         as_of_dates,
-        label_windows,
+        label_timespans,
     ):
         self._create_labels_table(labels_table)
-        logging.info('Creating labels for %s as of dates and %s label windows',
+        logging.info('Creating labels for %s as of dates and %s label timespans',
                      len(as_of_dates),
-                     len(label_windows))
+                     len(label_timespans))
         for as_of_date in as_of_dates:
-            for label_window in label_windows:
-                logging.info('Generating labels for as of date %s and label window %s', as_of_date, label_window)
+            for label_timespan in label_timespans:
+                logging.info('Generating labels for as of date %s and label timespan %s', as_of_date, label_timespan)
                 self.generate(
                     start_date=as_of_date,
-                    label_window=label_window,
+                    label_timespan=label_timespan,
                     labels_table=labels_table,
                 )
         nrows = [

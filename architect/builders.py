@@ -80,7 +80,7 @@ class BuilderBase(object):
         state,
         matrix_type,
         matrix_uuid,
-        label_window
+        label_timespan
     ):
         """ Make a table containing the entity_ids and as_of_dates required for
         the current matrix.
@@ -91,14 +91,14 @@ class BuilderBase(object):
         :param state: the entity state to be used in the matrix
         :param matrix_type: the type (train/test) of matrix
         :param matrix_uuid: a unique id for the matrix
-        :param label_window: the time window that labels in matrix will include
+        :param label_timespan: the time timespan that labels in matrix will include
         :type as_of_times: list
         :type label_name: str
         :type label_type: str
         :type state: str
         :type matrix_type: str
         :type matrix_uuid: str
-        :type label_window: str
+        :type label_timespan: str
 
         :return: table name
         :rtype: str
@@ -111,7 +111,7 @@ class BuilderBase(object):
                 state=state,
                 label_name=label_name,
                 label_type=label_type,
-                label_window=label_window
+                label_timespan=label_timespan
             )
         elif matrix_type == 'test':
             indices_query = self._all_valid_entity_dates_query(
@@ -142,7 +142,7 @@ class BuilderBase(object):
         state,
         label_name,
         label_type,
-        label_window
+        label_timespan
     ):
         query = """
             SELECT entity_id, as_of_date
@@ -152,7 +152,7 @@ class BuilderBase(object):
             AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
             AND label_name = '{l_name}'
             AND label_type = '{l_type}'
-            AND label_window = '{window}'
+            AND label_timespan = '{timespan}'
             AND label is not null
             ORDER BY entity_id, as_of_date
         """.format(
@@ -162,7 +162,7 @@ class BuilderBase(object):
             labels_table_name=self.db_config['labels_table_name'],
             l_name=label_name,
             l_type=label_type,
-            window=label_window,
+            timespan=label_timespan,
             times=as_of_time_strings
         )
 
@@ -236,7 +236,7 @@ class CSVBuilder(BuilderBase):
             matrix_metadata['state'],
             matrix_type,
             matrix_uuid,
-            matrix_metadata['label_window']
+            matrix_metadata['label_timespan']
         )
         logging.info('Extracting feature group data from database into file for matrix %s', matrix_uuid)
         features_csv_names = self.write_features_data(
@@ -252,7 +252,7 @@ class CSVBuilder(BuilderBase):
                 label_type,
                 entity_date_table_name,
                 matrix_uuid,
-                matrix_metadata['label_window']
+                matrix_metadata['label_timespan']
             )
             features_csv_names.insert(0, labels_csv_name)
 
@@ -287,7 +287,7 @@ class CSVBuilder(BuilderBase):
         label_type,
         entity_date_table_name,
         matrix_uuid,
-        label_window
+        label_timespan
     ):
         """ Query the labels table and write the data to disk in csv format.
 
@@ -296,12 +296,12 @@ class CSVBuilder(BuilderBase):
         :param label_type: the type of label to be used
         :param entity_date_table_name: the name of the entity date table
         :param matrix_uuid: a unique id for the matrix
-        :param label_window: the time window that labels in matrix will include
+        :param label_timespan: the time timespan that labels in matrix will include
         :type label_name: str
         :type label_type: str
         :type entity_date_table_name: str
         :type matrix_uuid: str
-        :type label_window: str
+        :type label_timespan: str
 
         :return: name of csv containing labels
         :rtype: str
@@ -323,11 +323,11 @@ class CSVBuilder(BuilderBase):
             additional_conditions='''AND
                 r.label_name = '{name}' AND
                 r.label_type = '{type}' AND
-                r.label_window = '{window}'
+                r.label_timespan = '{timespan}'
             '''.format(
                 name=label_name,
                 type=label_type,
-                window=label_window
+                timespan=label_timespan
             )
         )
 

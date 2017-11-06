@@ -162,15 +162,16 @@ def basic_integration_test(
 
         with TemporaryDirectory() as temp_dir:
             chopper = Timechop(
-                beginning_of_time=datetime(2010, 1, 1),
-                modeling_start_time=datetime(2011, 1, 1),
-                modeling_end_time=datetime(2014, 1, 1),
-                update_window='1y',
-                train_label_windows=['6months'],
-                test_label_windows=['6months'],
-                train_example_frequency='1day',
-                test_example_frequency='3months',
-                train_durations=['1months'],
+                feature_start_time=datetime(2010, 1, 1),
+                feature_end_time=datetime(2014, 1, 1),
+                label_start_time=datetime(2011, 1, 1),
+                label_end_time=datetime(2014, 1, 1),
+                model_update_frequency='1year',
+                training_label_timespans=['6months'],
+                test_label_timespans=['6months'],
+                training_as_of_date_frequencies='1day',
+                test_as_of_date_frequencies='3months',
+                max_training_histories=['1months'],
                 test_durations=['1months'],
             )
 
@@ -203,7 +204,7 @@ def basic_integration_test(
 
             planner = Planner(
                 engine=db_engine,
-                beginning_of_time=datetime(2010, 1, 1),
+                feature_start_time=datetime(2010, 1, 1),
                 label_names=['outcome'],
                 label_types=['binary'],
                 db_config={
@@ -275,7 +276,7 @@ def basic_integration_test(
             label_generator.generate_all_labels(
                 labels_table='labels',
                 as_of_dates=all_as_of_times,
-                label_windows=['6months']
+                label_timespans=['6months']
             )
 
             # create feature table tasks
