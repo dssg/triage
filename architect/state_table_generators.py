@@ -1,5 +1,6 @@
 import logging
 
+from architect.database_reflection import table_has_data
 from architect.validations import (
     table_should_have_data,
     column_should_be_intlike,
@@ -201,7 +202,19 @@ class StateTableGenerator(object):
         """
         logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
         self._generate_sparse_table(self.sparse_table_query_func(as_of_dates))
-        table_should_have_data(self.sparse_table_name, self.db_engine)
+        if not table_has_data(self.sparse_table_name, self.db_engine):
+            raise ValueError(
+                "No entities in table '{input_table}' define time ranges "
+                "that encompass any of experiment's \"as-of-dates\":\n\n"
+                "\t{as_of_dates}\n\n"
+                "Please check temporal and/or state configurations."
+                .format(
+                    input_table=(self.dense_state_table or self.events_table),
+                    as_of_dates=', '.join(str(as_of_date) for as_of_date in (
+                        as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
+                    )),
+                )
+            )
 
     def _generate_sparse_table(self, generate_query):
         """Generate and index a sparse table from a given query
