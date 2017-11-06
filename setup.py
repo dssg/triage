@@ -21,7 +21,7 @@ with open('requirements_dev.txt') as dev_requirements_file:
 
 setup(
     name='matrix-architect',
-    version='0.4.0',
+    version='1.0.0',
     description="Plan, design, and build train and test matrices",
     long_description=readme,
     author="Center for Data Science and Public Policy",
