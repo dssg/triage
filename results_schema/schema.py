@@ -74,7 +74,7 @@ class Model(Base):
     train_end_time = Column(DateTime)
     test = Column(Boolean)
     train_matrix_uuid = Column(Text)
-    train_label_window = Column(Interval)
+    training_label_timespan = Column(Interval)
 
     model_group_rel = relationship('ModelGroup')
     experiment_rel = relationship('Experiment')
@@ -115,7 +115,7 @@ class Prediction(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
     matrix_uuid = Column(Text)
-    test_label_window = Column(Interval)
+    test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
 
@@ -129,7 +129,7 @@ class ListPrediction(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
     matrix_uuid = Column(Text)
-    test_label_window = Column(Interval)
+    test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
 
@@ -152,7 +152,7 @@ class Evaluation(Base):
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
-    example_frequency = Column(Interval, primary_key=True)
+    as_of_date_frequency = Column(Interval, primary_key=True)
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     value = Column(Numeric)

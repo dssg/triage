@@ -60,7 +60,7 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
     train_matrix_uuid = factory.fuzzy.FuzzyText()
-    train_label_window = '1y'
+    training_label_timespan = '1y'
 
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -85,7 +85,7 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     rank_abs = 1
     rank_pct = 1.0
     matrix_uuid = factory.fuzzy.FuzzyText()
-    test_label_window = '3m'
+    test_label_timespan = '3m'
 
 
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -100,7 +100,7 @@ class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     rank_abs = 1
     rank_pct = 1.0
     matrix_uuid = factory.fuzzy.FuzzyText()
-    test_label_window = '3m'
+    test_label_timespan = '3m'
 
 
 class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -123,7 +123,7 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     model_rel = factory.SubFactory(ModelFactory)
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     evaluation_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
-    example_frequency = '3d'
+    as_of_date_frequency = '3d'
     metric = 'precision@'
     parameter = '100_abs'
     value = factory.fuzzy.FuzzyDecimal(0, 1)
