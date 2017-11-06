@@ -65,3 +65,7 @@ target/
 
 #backup file for indentation
 *.bak
+
+# virtual environment
+venv/
+

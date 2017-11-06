@@ -1,5 +1,6 @@
 from timechop.utils import convert_str_to_relativedelta
 from timechop.utils import parse_delta_string
+from timechop.utils import convert_to_list
 import datetime
 import unittest
 import warnings
@@ -26,12 +27,12 @@ class test_convert_str_to_relativedelta(unittest.TestCase):
                 'subtraction_result': datetime.datetime(2015, 12, 29, 0, 0)
             },
             {
-                'interval': '3s',
+                'interval': '3 seconds',
                 'addition_result': datetime.datetime(2016, 1, 1, 0, 0, 3),
                 'subtraction_result': datetime.datetime(2015, 12, 31, 23, 59, 57)
             },
             {
-                'interval': '2y',
+                'interval': '2year',
                 'addition_result': datetime.datetime(2018, 1, 1, 0, 0),
                 'subtraction_result': datetime.datetime(2014, 1, 1, 0, 0)
             },
@@ -63,21 +64,29 @@ class test_convert_str_to_relativedelta(unittest.TestCase):
             assert date - delta == test['subtraction_result']
 
     def test_bad_input(self):
-        bad_delta_string = '4 tacos'
-        with self.assertRaises(ValueError):
-            convert_str_to_relativedelta(bad_delta_string)
+        bad_delta_strings = ['4 tacos', '5m', '3']
+        for bad_delta_string in bad_delta_strings:
+            with self.assertRaises(ValueError):
+                convert_str_to_relativedelta(bad_delta_string)
 
-    def test_warning_for_m(self):
-        delta_strings = ['1m', '2M']
-        for delta_string in delta_strings:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                convert_str_to_relativedelta(delta_string)
-                for warning in w:
-                    print(warning.message)
-                assert len(w) >= 1
-                assert issubclass(w[-1].category, RuntimeWarning)
-                assert 'minutes' in str(w[-1].message)
+
+def test_convert_to_list():
+    tests = [
+        {
+            'val': '1 day',
+            'expected_result': ['1 day']
+        },
+        {
+            'val': ['1 day'],
+            'expected_result': ['1 day']
+        },
+        {
+            'val': 1,
+            'expected_result': [1]
+        }
+    ]
+    for test in tests:
+        assert convert_to_list(test['val']) == test['expected_result']
 
 
 class test_parse_delta_string(unittest.TestCase):
