@@ -43,16 +43,40 @@ class TemporalValidator(Validator):
             Timechop could not produce temporal splits from config {}.
             Error: {}
             '''.format(temporal_config, e))
-        for split in splits:
+        for split_num, split in enumerate(splits):
             if len(split['train_matrix']['as_of_times']) == 0:
                 raise ValueError('''Section: temporal_config -
                 Computed split {} has a train matrix with no as_of_times.
                 '''.format(split))
+
+            # timechop computes the last time available to train data
+            # and stores it in the matrix as 'matrix_info_end_time'
+            # but to be more sure, let's double-check by comparing as_of_times
+            # in the train and all associated test matrices
+            train_max_data_time = max(split['train_matrix']['as_of_times']) +\
+                convert_str_to_relativedelta(split['train_matrix']['training_label_timespan'])
+
             for test_matrix in split['test_matrices']:
                 if len(test_matrix['as_of_times']) == 0:
                     raise ValueError('''Section: temporal_config -
                     Computed split {} has a test matrix with no as_of_times.
                     '''.format(split))
+                overlapping_times = [
+                    as_of_time
+                    for as_of_time in test_matrix['as_of_times']
+                    if as_of_time < train_max_data_time
+                ]
+                if overlapping_times:
+                    raise ValueError('''Section: temporal_config -
+                    Computed split index {} has a test matrix with as_of_times {}
+                    < the maximum train as_of_time + train label timespan.
+                    ({}). This is likely an error in timechop. See the
+                    experiment's split_definitions[{}] for more information'''.format(
+                        split_num,
+                        overlapping_times,
+                        train_max_data_time,
+                        split_num
+                    ))
 
 
 class FeatureAggregationsValidator(Validator):
