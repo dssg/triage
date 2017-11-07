@@ -234,6 +234,25 @@ class ExperimentBase(object):
             )
         return self._split_definitions
 
+    def print_time_split_summary(self):
+        print('\n----TIME SPLIT SUMMARY----\n')
+        print('Number of time splits: {}'.format(len(self.split_definitions)))
+        for split_index, split in enumerate(self.split_definitions):
+            train_times = split['train_matrix']['as_of_times']
+            test_times = [as_of_time for test_matrix in split['test_matrices'] for as_of_time in test_matrix['as_of_times']]
+            print('''Split index {}:
+            Training as_of_time_range: {} to {} ({} total)
+            Testing as_of_time range: {} to {} ({} total)\n\n'''.format(
+                split_index,
+                min(train_times),
+                max(train_times),
+                len(train_times),
+                min(test_times),
+                max(test_times),
+                len(test_times)
+            ))
+        print('For more detailed information on your time splits, inspect the experiment `split_definitions` property')
+
     @property
     def all_as_of_times(self):
         """All 'as of times' in experiment config
@@ -461,3 +480,4 @@ class ExperimentBase(object):
 
     def validate(self):
         ExperimentValidator(self.db_engine).run(self.config)
+        self.print_time_split_summary()
