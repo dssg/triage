@@ -11,7 +11,7 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-results-schema>=1.2
-metta-data
+results-schema>=2.0
+metta-data>=1.0
 smart_open
 boto

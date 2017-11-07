@@ -180,7 +180,7 @@ class ModelEvaluator(object):
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        example_frequency
+        as_of_date_frequency
     ):
         """Evaluate a model based on predictions, and save the results
 
@@ -190,14 +190,14 @@ class ModelEvaluator(object):
             model_id (int) The database identifier of the model
             evaluation_start_time (datetime.datetime) The time of the first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
-            example_frequency (string) How frequently predictions were generated
+            as_of_date_frequency (string) How frequently predictions were generated
         """
         logging.info(
-            'Generating evaluations for model id %s, evaluation range %s-%s, example frequency %s',
+            'Generating evaluations for model id %s, evaluation range %s-%s, as_of_date frequency %s',
             model_id,
             evaluation_start_time,
             evaluation_end_time,
-            example_frequency
+            as_of_date_frequency
         )
         predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
             predictions_proba,
@@ -268,7 +268,7 @@ class ModelEvaluator(object):
             model_id,
             evaluation_start_time,
             evaluation_end_time,
-            example_frequency,
+            as_of_date_frequency,
             evaluations
         )
         logging.info('Done writing metrics to db')
@@ -279,7 +279,7 @@ class ModelEvaluator(object):
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        example_frequency,
+        as_of_date_frequency,
         evaluations
     ):
         """Write evaluation objects to the database
@@ -298,14 +298,14 @@ class ModelEvaluator(object):
                 model_id=model_id,
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
-                example_frequency=example_frequency
+                as_of_date_frequency=as_of_date_frequency
             ).delete()
 
         for evaluation in evaluations:
             evaluation.model_id = model_id
             evaluation.evaluation_start_time = evaluation_start_time
             evaluation.evaluation_end_time = evaluation_end_time
-            evaluation.example_frequency = example_frequency
+            evaluation.as_of_date_frequency = as_of_date_frequency
             session.add(evaluation)
         session.commit()
         session.close()

@@ -33,10 +33,10 @@ def test_integration():
                 'label': [7, 8]
             }).set_index('entity_id')
             train_metadata = {
-                'beginning_of_time': datetime.date(2012, 12, 20),
+                'feature_start_time': datetime.date(2012, 12, 20),
                 'end_time': datetime.date(2016, 12, 20),
                 'label_name': 'label',
-                'label_window': '1y',
+                'label_timespan': '1y',
                 'feature_names': ['ft1', 'ft2'],
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
@@ -59,7 +59,7 @@ def test_integration():
                     }),
                     {
                         'label_name': 'label',
-                        'label_window': '1y',
+                        'label_timespan': '1y',
                         'end_time': as_of_date,
                         'metta-uuid': '1234',
                         'indices': ['entity_id'],
@@ -77,7 +77,7 @@ def test_integration():
                 experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
                 db_engine=db_engine,
-                model_group_keys=['label_name', 'label_window']
+                model_group_keys=['label_name', 'label_timespan']
             )
             predictor = Predictor(
                 project_path,

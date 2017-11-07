@@ -451,7 +451,7 @@ class ModelTrainer(object):
         misc_db_parameters = copy.deepcopy(misc_db_parameters)
         misc_db_parameters['batch_run_time'] = datetime.datetime.now().isoformat()
         misc_db_parameters['train_end_time'] = matrix_store.metadata['end_time']
-        misc_db_parameters['train_label_window'] = matrix_store.metadata['label_window']
+        misc_db_parameters['training_label_timespan'] = matrix_store.metadata['label_timespan']
         misc_db_parameters['train_matrix_uuid'] = matrix_store.uuid
 
         tasks = []

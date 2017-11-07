@@ -47,7 +47,7 @@ def test_predictor():
             metadata = {
                 'label_name': 'label',
                 'end_time': AS_OF_DATE,
-                'label_window': '3month',
+                'label_timespan': '3month',
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
             }
@@ -94,7 +94,7 @@ def test_predictor():
             new_metadata = {
                 'label_name': 'label',
                 'end_time': AS_OF_DATE + datetime.timedelta(days=1),
-                'label_window': '3month',
+                'label_timespan': '3month',
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
             }
@@ -146,7 +146,7 @@ def test_predictor_composite_index():
         metadata = {
             'label_name': 'label',
             'end_time': AS_OF_DATE,
-            'label_window': '3month',
+            'label_timespan': '3month',
             'metta-uuid': '1234',
             'indices': ['entity_id'],
         }
@@ -236,7 +236,7 @@ def test_predictor_retrieve():
         metadata = {
             'label_name': 'label',
             'end_time': AS_OF_DATE,
-            'label_window': '3month',
+            'label_timespan': '3month',
             'metta-uuid': '1234',
             'indices': ['entity_id'],
         }

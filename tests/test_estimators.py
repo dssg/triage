@@ -51,7 +51,7 @@ def test_cutoff_inside_a_pipeline(data):
 
     pipeline.fit(data['X_train'], data['y_train'])
 
-    X_fake_new_data = data['X_test'][-1,:] + 0.5
+    X_fake_new_data = data['X_test'][-1,:].reshape(1,-1) + 0.5
 
     mms = preprocessing.MinMaxScaler().fit(data['X_train'])
 
