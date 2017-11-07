@@ -1,26 +1,30 @@
-from catwalk.db import ensure_db
-from timechop.timechop import Timechop
+import logging
+import os
+from abc import ABCMeta, abstractmethod
+from datetime import datetime
+from functools import partial
+
 from architect.label_generators import BinaryLabelGenerator
-from architect.features import \
-    FeatureGenerator,\
-    FeatureDictionaryCreator,\
-    FeatureGroupCreator,\
-    FeatureGroupMixer
-from architect.state_table_generators import StateTableGenerator
+from architect.features import (
+    FeatureGenerator,
+    FeatureDictionaryCreator,
+    FeatureGroupCreator,
+    FeatureGroupMixer,
+)
 from architect.planner import Planner
+from architect.state_table_generators import StateTableGenerator
+from catwalk.db import ensure_db
 from catwalk.model_trainers import ModelTrainer
 from catwalk.predictors import Predictor
 from catwalk.individual_importance import IndividualImportanceCalculator
 from catwalk.evaluation import ModelEvaluator
 from catwalk.utils import save_experiment_and_get_hash
 from catwalk.storage import CSVMatrixStore
-import os
-from datetime import datetime
-from abc import ABCMeta, abstractmethod
-from functools import partial
-import logging
+from timechop.timechop import Timechop
+
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
+from triage.timeout import timeout
 
 
 def dt_from_str(dt_str):
@@ -31,6 +35,8 @@ class ExperimentBase(object):
     """The Base class for all Experiments."""
     __metaclass__ = ABCMeta
 
+    cleanup_timeout = 60  # seconds
+
     def __init__(
         self,
         config,
@@ -38,6 +44,7 @@ class ExperimentBase(object):
         model_storage_class=None,
         project_path=None,
         replace=True,
+        cleanup_timeout=None,
     ):
         self._check_config_version(config)
         self.config = config
@@ -70,6 +77,9 @@ class ExperimentBase(object):
         self.initialize_factories()
         self.initialize_components()
 
+        self.cleanup_timeout = (self.cleanup_timeout if cleanup_timeout is None
+                                else cleanup_timeout)
+
     def _check_config_version(self, config):
         if 'config_version' in config:
             config_version = config['config_version']
@@ -80,7 +90,7 @@ class ExperimentBase(object):
             raise ValueError(
                 '''Experiment config '{}'
                 does not match current version '{}'.
-                Will not run experiment.'''\
+                Will not run experiment.'''
                 .format(config_version, CONFIG_VERSION)
             )
 
@@ -290,7 +300,7 @@ class ExperimentBase(object):
     @property
     def collate_aggregations(self):
         """collate Aggregation objects used by this experiment.
-        
+
         Returns: (list) of collate.Aggregation objects
         """
         if not self._collate_aggregations:
@@ -301,7 +311,6 @@ class ExperimentBase(object):
                 state_table=self.state_table_generator.sparse_table_name,
             )
         return self._collate_aggregations
-
 
     @property
     def feature_aggregation_table_tasks(self):
@@ -402,11 +411,12 @@ class ExperimentBase(object):
     @property
     def all_label_timespans(self):
         """All train and test label timespans
-        
+
         Returns: (list) label timespans, in string form as they appeared in the experiment config
+
         """
         return list(set(
-            self.config['temporal_config']['training_label_timespans'] + \
+            self.config['temporal_config']['training_label_timespans'] +
             self.config['temporal_config']['test_label_timespans']
         ))
 
@@ -472,10 +482,17 @@ class ExperimentBase(object):
 
     def run(self):
         try:
-            self.build_matrices()
-        finally:
-            logging.info('Matrix build done or errored, cleaning up state table')
-            self.state_table_generator.clean_up()
+            try:
+                logging.info('Building matrices')
+                self.build_matrices()
+            finally:
+                logging.info('Cleaning up state table')
+                with timeout(self.cleanup_timeout):
+                    self.state_table_generator.clean_up()
+        except Exception:
+            logging.exception('Run interrupted by uncaught exception')
+            raise
+
         self.catwalk()
 
     def validate(self):
