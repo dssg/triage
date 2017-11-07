@@ -25,15 +25,16 @@ class TemporalValidator(Validator):
         splits = []
         try:
             chopper = Timechop(
-                beginning_of_time=dt_from_str(temporal_config['beginning_of_time']),
-                modeling_start_time=dt_from_str(temporal_config['modeling_start_time']),
-                modeling_end_time=dt_from_str(temporal_config['modeling_end_time']),
-                update_window=temporal_config['update_window'],
-                train_label_windows=temporal_config['train_label_windows'],
-                test_label_windows=temporal_config['test_label_windows'],
-                train_example_frequency=temporal_config['train_example_frequency'],
-                test_example_frequency=temporal_config['test_example_frequency'],
-                train_durations=temporal_config['train_durations'],
+                feature_start_time=dt_from_str(temporal_config['feature_start_time']),
+                feature_end_time=dt_from_str(temporal_config['feature_end_time']),
+                label_start_time=dt_from_str(temporal_config['label_start_time']),
+                label_end_time=dt_from_str(temporal_config['label_end_time']),
+                model_update_frequency=temporal_config['model_update_frequency'],
+                training_label_timespans=temporal_config['training_label_timespans'],
+                test_label_timespans=temporal_config['test_label_timespans'],
+                training_as_of_date_frequencies=temporal_config['training_as_of_date_frequencies'],
+                test_as_of_date_frequencies=temporal_config['test_as_of_date_frequencies'],
+                max_training_histories=temporal_config['max_training_histories'],
                 test_durations=temporal_config['test_durations'],
             )
             splits = chopper.chop_time()
