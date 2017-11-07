@@ -12,8 +12,8 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-results-schema>=1.2
-timechop==0.1.5
-matrix-architect==0.4
-model-catwalk>=0.3
-metta-data==0.3.0
+results-schema~=2.0
+timechop~=1.0
+matrix-architect~=1.0
+model-catwalk~=1.0
+metta-data~=1.0
