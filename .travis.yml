@@ -21,7 +21,7 @@ install:
 language: python
 notifications:
   email: false
-python: 3.4
+python: 3.5
 script: py.test -vvv -s --cov=triage
 services:
 - postgresql
