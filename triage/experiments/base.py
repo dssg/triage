@@ -31,9 +31,8 @@ def dt_from_str(dt_str):
     return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
-class ExperimentBase(object):
-    """The Base class for all Experiments."""
-    __metaclass__ = ABCMeta
+class ExperimentBase(object, metaclass=ABCMeta):
+    """The base class for all Experiments."""
 
     cleanup_timeout = 60  # seconds
 
@@ -50,9 +49,9 @@ class ExperimentBase(object):
         self.config = config
         self.db_engine = db_engine
         if model_storage_class:
-            self.model_storage_engine =\
-                model_storage_class(project_path=project_path)
-        self.matrix_store_class = CSVMatrixStore # can't make this configurable yet until the Architect obeys
+            self.model_storage_engine = model_storage_class(
+                project_path=project_path)
+        self.matrix_store_class = CSVMatrixStore  # can't be configurable until Architect obeys
         self.project_path = project_path
         self.replace = replace
         ensure_db(self.db_engine)
@@ -84,13 +83,14 @@ class ExperimentBase(object):
         if 'config_version' in config:
             config_version = config['config_version']
         else:
-            logging.warning('config_version key not found in experiment config. Assuming v1, which may not be correct')
+            logging.warning('config_version key not found in experiment config. '
+                            'Assuming v1, which may not be correct')
             config_version = 'v1'
         if config_version != CONFIG_VERSION:
             raise ValueError(
-                '''Experiment config '{}'
-                does not match current version '{}'.
-                Will not run experiment.'''
+                "Experiment config '{}' "
+                "does not match current version '{}'. "
+                "Will not run experiment."
                 .format(config_version, CONFIG_VERSION)
             )
 
@@ -159,7 +159,8 @@ class ExperimentBase(object):
                 # TODO: have planner/builder take state table later on, so we
                 # can grab it from the StateTableGenerator instead of
                 # duplicating it here
-                'sparse_state_table_name': 'tmp_sparse_states_{}'.format(self.experiment_hash),
+                'sparse_state_table_name': 'tmp_sparse_states_{}'
+                                           .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
             states=self.config.get('state_config', {}).get('state_filters', []),
@@ -235,6 +236,7 @@ class ExperimentBase(object):
             'test_matrices': [list of matrix defs similar to train_matrix]
         }
         ```
+
         """
         if not self._split_definitions:
             self._split_definitions = self.chopper.chop_time()
@@ -383,11 +385,11 @@ class ExperimentBase(object):
         Returns: (list) of dicts
         """
         if not self._matrix_build_tasks:
-            updated_split_definitions, matrix_build_tasks =\
-                self.planner.generate_plans(
-                    self.split_definitions,
-                    self.feature_dicts
-                )
+            (updated_split_definitions,
+             matrix_build_tasks) = self.planner.generate_plans(
+                self.split_definitions,
+                self.feature_dicts
+            )
             self._full_matrix_definitions = updated_split_definitions
             self._matrix_build_tasks = matrix_build_tasks
         return self._matrix_build_tasks
@@ -399,11 +401,11 @@ class ExperimentBase(object):
         Returns: (list) temporal and feature information for each matrix
         """
         if not self._full_matrix_definitions:
-            updated_split_definitions, matrix_build_tasks =\
-                self.planner.generate_plans(
-                    self.split_definitions,
-                    self.feature_dicts
-                )
+            (updated_split_definitions,
+             matrix_build_tasks) = self.planner.generate_plans(
+                self.split_definitions,
+                self.feature_dicts
+            )
             self._full_matrix_definitions = updated_split_definitions
             self._matrix_build_tasks = matrix_build_tasks
         return self._full_matrix_definitions
@@ -480,21 +482,26 @@ class ExperimentBase(object):
         """Train, test, and evaluate models"""
         pass
 
+    def validate(self):
+        ExperimentValidator(self.db_engine).run(self.config)
+        self.print_time_split_summary()
+
+    def _run(self):
+        try:
+            logging.info('Building matrices')
+            self.build_matrices()
+        finally:
+            logging.info('Cleaning up state table')
+            with timeout(self.cleanup_timeout):
+                self.state_table_generator.clean_up()
+
+        self.catwalk()
+
     def run(self):
         try:
-            try:
-                logging.info('Building matrices')
-                self.build_matrices()
-            finally:
-                logging.info('Cleaning up state table')
-                with timeout(self.cleanup_timeout):
-                    self.state_table_generator.clean_up()
+            self._run()
         except Exception:
             logging.exception('Run interrupted by uncaught exception')
             raise
 
-        self.catwalk()
-
-    def validate(self):
-        ExperimentValidator(self.db_engine).run(self.config)
-        self.print_time_split_summary()
+    __call__ = run

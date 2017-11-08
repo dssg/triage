@@ -285,7 +285,7 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
                 cleanup_timeout=0.02,  # Set short timeout
             )
             with pytest.raises(TimeoutError):
-                experiment.run()
+                experiment()
 
 
 @parametrize_experiment_classes
@@ -306,7 +306,7 @@ def test_build_error(experiment_class):
                 build_mock.side_effect = RuntimeError('boom!')
 
                 with pytest.raises(RuntimeError):
-                    experiment.run()
+                    experiment()
 
 
 @parametrize_experiment_classes
@@ -330,7 +330,7 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
                 build_mock.side_effect = RuntimeError('boom!')
 
                 with pytest.raises(TimeoutError) as exc_info:
-                    experiment.run()
+                    experiment()
 
     # Last exception is TimeoutError, but earlier error is preserved in
     # __context__, and will be noted as well in any standard traceback:
