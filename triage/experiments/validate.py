@@ -11,6 +11,7 @@ from triage.validation_primitives import table_should_have_data,\
     column_should_be_timelike
 import importlib
 from sklearn.model_selection import ParameterGrid
+from textwrap import dedent
 
 
 class Validator(object):
@@ -39,15 +40,15 @@ class TemporalValidator(Validator):
             )
             splits = chopper.chop_time()
         except Exception as e:
-            raise ValueError('''Section: temporal_config -
+            raise ValueError(dedent('''Section: temporal_config -
             Timechop could not produce temporal splits from config {}.
             Error: {}
-            '''.format(temporal_config, e))
+            '''.format(temporal_config, e)))
         for split_num, split in enumerate(splits):
             if len(split['train_matrix']['as_of_times']) == 0:
-                raise ValueError('''Section: temporal_config -
+                raise ValueError(dedent('''Section: temporal_config -
                 Computed split {} has a train matrix with no as_of_times.
-                '''.format(split))
+                '''.format(split)))
 
             # timechop computes the last time available to train data
             # and stores it in the matrix as 'matrix_info_end_time'
@@ -58,16 +59,16 @@ class TemporalValidator(Validator):
 
             for test_matrix in split['test_matrices']:
                 if len(test_matrix['as_of_times']) == 0:
-                    raise ValueError('''Section: temporal_config -
+                    raise ValueError(dedent('''Section: temporal_config -
                     Computed split {} has a test matrix with no as_of_times.
-                    '''.format(split))
+                    '''.format(split)))
                 overlapping_times = [
                     as_of_time
                     for as_of_time in test_matrix['as_of_times']
                     if as_of_time < train_max_data_time
                 ]
                 if overlapping_times:
-                    raise ValueError('''Section: temporal_config -
+                    raise ValueError(dedent('''Section: temporal_config -
                     Computed split index {} has a test matrix with as_of_times {}
                     < the maximum train as_of_time + train label timespan.
                     ({}). This is likely an error in timechop. See the
@@ -76,7 +77,7 @@ class TemporalValidator(Validator):
                         overlapping_times,
                         train_max_data_time,
                         split_num
-                    ))
+                    )))
 
 
 class FeatureAggregationsValidator(Validator):
@@ -89,41 +90,38 @@ class FeatureAggregationsValidator(Validator):
             'prefix'
         ]:
             if key not in aggregation_config:
-                raise ValueError(
-                    '{} required as key: aggregation config: {}'
-                    .format(key, aggregation_config)
-                )
+                raise ValueError(dedent('''Section: feature_aggregations -
+                '{} required as key: aggregation config: {}'''.format(key, aggregation_config)))
 
     def _validate_aggregates(self, aggregation_config):
         if 'aggregates' not in aggregation_config \
                 and 'categoricals' not in aggregation_config \
                 and 'array_categoricals' not in aggregation_config:
-            raise ValueError(
-                'Need either aggregates, categoricals, or array_categoricals' +
-                ' in {}'.format(aggregation_config)
-            )
+            raise ValueError(dedent('''Section: feature_aggregations -
+            Need either aggregates, categoricals, or array_categoricals
+            in {}'''.format(aggregation_config)))
 
     def _validate_categoricals(self, categoricals):
         conn = self.db_engine.connect()
         for categorical in categoricals:
             if 'choice_query' in categorical and 'choices' in categorical:
-                raise ValueError('''Section: feature_aggregations -
+                raise ValueError(dedent('''Section: feature_aggregations -
                 Both 'choice_query' and 'choices' specified for {}.
-                Please only specify one.'''.format(categorical))
+                Please only specify one.'''.format(categorical)))
             if not ('choice_query' in categorical or 'choices' in categorical):
-                raise ValueError('''Section: feature_aggregations -
+                raise ValueError(dedent('''Section: feature_aggregations -
                 Neither 'choice_query' and 'choices' specified for {}.
-                Please specify one.'''.format(categorical))
+                Please specify one.'''.format(categorical)))
             if 'choice_query' in categorical:
                 logging.info('Validating choice query')
                 choice_query = categorical['choice_query']
                 try:
                     conn.execute('explain {}'.format(choice_query))
                 except Exception as e:
-                    raise ValueError('''Section: feature_aggregations -
+                    raise ValueError(dedent('''Section: feature_aggregations -
                     choice query does not run.
                     choice query: "{}"
-                    Full error: {}'''.format(choice_query, e))
+                    Full error: {}'''.format(choice_query, e)))
 
     def _validate_from_obj(self, from_obj):
         conn = self.db_engine.connect()
@@ -131,10 +129,10 @@ class FeatureAggregationsValidator(Validator):
         try:
             conn.execute('explain select * from {}'.format(from_obj))
         except Exception as e:
-            raise ValueError('''Section: feature_aggregations -
+            raise ValueError(dedent('''Section: feature_aggregations -
                 from_obj query does not run.
                 from_obj: "{}"
-                Full error: {}'''.format(from_obj, e))
+                Full error: {}'''.format(from_obj, e)))
 
     def _validate_time_intervals(self, intervals):
         logging.info('Validating time intervals')
@@ -146,16 +144,16 @@ class FeatureAggregationsValidator(Validator):
                 try:
                     convert_str_to_relativedelta(interval)
                 except Exception as e:
-                    raise ValueError('''Section: feature_aggregations -
+                    raise ValueError(dedent('''Section: feature_aggregations -
                     Time interval is invalid.
                     interval: "{}"
-                    Full error: {}'''.format(interval, e))
+                    Full error: {}'''.format(interval, e)))
 
     def _validate_groups(self, groups):
         if 'entity_id' not in groups:
-            raise ValueError('''Section: feature_aggregations -
+            raise ValueError(dedent('''Section: feature_aggregations -
             List of groups needs to include 'entity_id'.
-            Passed list: {}'''.format(groups))
+            Passed list: {}'''.format(groups)))
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
         """Validate the imputation rule for a given aggregation type."""
@@ -182,20 +180,20 @@ class FeatureAggregationsValidator(Validator):
 
         # no imputation rule was specified
         if 'type' not in impute_rule.keys():
-            raise ValueError('''Section: feature_aggregations -
-            Imputation type must be specified''')
+            raise ValueError(dedent('''Section: feature_aggregations -
+            Imputation type must be specified'''))
 
         # a rule was specified, but not valid for this type of aggregate
         if impute_rule['type'] not in valid_types.keys():
-            raise ValueError('''Section: feature_aggregations -
-            Invalid imputation type %s for %s''' % (impute_rule['type'], aggregate_type))
+            raise ValueError(dedent('''Section: feature_aggregations -
+            Invalid imputation type %s for %s''' % (impute_rule['type'], aggregate_type)))
 
         # check that all required parameters exist in the keys of the imputation rule
         required_params = valid_types[impute_rule['type']]
         for param in required_params:
             if param not in impute_rule.keys():
-                raise ValueError('''Section: feature_aggregations -
-                Missing param %s for %s''' % (param, impute_rule['type']))
+                raise ValueError(dedent('''Section: feature_aggregations -
+                Missing param %s for %s''' % (param, impute_rule['type'])))
 
     def _validate_imputations(self, aggregation_config):
         """Validate the imputation rules in an aggregation config, looping
@@ -246,8 +244,8 @@ class FeatureAggregationsValidator(Validator):
         Raises: ValueError if any part of the config is found to be invalid
         """
         if not feature_aggregation_config:
-            raise ValueError('''Section: feature_aggregations -
-            Section not found. You must define feature aggregations.''')
+            raise ValueError(dedent('''Section: feature_aggregations -
+            Section not found. You must define feature aggregations.'''))
         for aggregation in feature_aggregation_config:
             self._validate_aggregation(aggregation)
 
@@ -255,8 +253,8 @@ class FeatureAggregationsValidator(Validator):
 class EventsTableValidator(Validator):
     def run(self, events_table):
         if not events_table:
-            raise ValueError('''Section: events_table -
-            Section not found. You must define an events table.''')
+            raise ValueError(dedent('''Section: events_table -
+            Section not found. You must define an events table.'''))
         table_should_have_data(events_table, self.db_engine)
         column_should_be_intlike(events_table, 'entity_id', self.db_engine)
         column_should_be_timelike(events_table, 'outcome_date', self.db_engine)
@@ -273,9 +271,9 @@ class StateConfigValidator(Validator):
             column_should_be_timelike(dense_state_table, 'start_time', self.db_engine)
             column_should_be_timelike(dense_state_table, 'end_time', self.db_engine)
             if 'state_filters' not in state_config or len(state_config['state_filters']) < 1:
-                raise ValueError('''Section: state_config -
+                raise ValueError(dedent('''Section: state_config -
                 If a table_name is given in state_config,
-                at least one state filter must be present''')
+                at least one state filter must be present'''))
         else:
             logging.warning('No table_name found in state_config.' +
                             'The provided events table will be used, which ' +
@@ -285,19 +283,19 @@ class StateConfigValidator(Validator):
 class FeatureGroupDefinitionValidator(Validator):
     def run(self, feature_group_definition, feature_aggregation_config):
         if not isinstance(feature_group_definition, dict):
-            raise ValueError('''Section: feature_group_definition -
-            feature_group_definition must be a dictionary''')
+            raise ValueError(dedent('''Section: feature_group_definition -
+            feature_group_definition must be a dictionary'''))
 
         available_subsetters = architect.feature_group_creator.FeatureGroupCreator.subsetters
         for subsetter_name, value in feature_group_definition.items():
             if subsetter_name not in available_subsetters:
-                raise ValueError('''Section: feature_group_definition -
+                raise ValueError(dedent('''Section: feature_group_definition -
                 Unknown feature_group_definition key {} received.
-                Available keys are {}'''.format(subsetter_name, available_subsetters))
+                Available keys are {}'''.format(subsetter_name, available_subsetters)))
             if not hasattr(value, '__iter__') or isinstance(value, (str, bytes)):
-                raise ValueError('''Section: feature_group_definition -
+                raise ValueError(dedent('''Section: feature_group_definition -
                 feature_group_definition value for {}, {}
-                should be a list'''.format(subsetter_name, value))
+                should be a list'''.format(subsetter_name, value)))
 
         if 'prefix' in feature_group_definition:
             available_prefixes = {
@@ -306,11 +304,11 @@ class FeatureGroupDefinitionValidator(Validator):
             }
             bad_prefixes = set(feature_group_definition['prefix']) - available_prefixes
             if bad_prefixes:
-                raise ValueError('''Section: feature_group_definition -
+                raise ValueError(dedent('''Section: feature_group_definition -
                 The following given feature group prefixes: '{}'
                 are invalid. Available prefixes from this experiment's feature
                 aggregations are: '{}'
-                '''.format(bad_prefixes, available_prefixes))
+                '''.format(bad_prefixes, available_prefixes)))
 
         if 'tables' in feature_group_definition:
             available_tables = {
@@ -319,42 +317,42 @@ class FeatureGroupDefinitionValidator(Validator):
             }
             bad_tables = set(feature_group_definition['tables']) - available_tables
             if bad_tables:
-                raise ValueError('''Section: feature_group_definition -
+                raise ValueError(dedent('''Section: feature_group_definition -
                 The following given feature group tables: '{}'
                 are invalid. Available tables from this experiment's feature
                 aggregations are: '{}'
-                '''.format(bad_tables, available_tables))
+                '''.format(bad_tables, available_tables)))
 
 
 class FeatureGroupStrategyValidator(Validator):
     def run(self, feature_group_strategies):
         if not isinstance(feature_group_strategies, list):
-            raise ValueError('''Section: feature_group_strategies -
-            feature_group_strategies section must be a list''')
+            raise ValueError(dedent('''Section: feature_group_strategies -
+            feature_group_strategies section must be a list'''))
         available_strategies = {
             key for key in
             architect.feature_group_mixer.FeatureGroupMixer.strategy_lookup.keys()
         }
         bad_strategies = set(feature_group_strategies) - available_strategies
         if bad_strategies:
-            raise ValueError('''Section: feature_group_strategies -
+            raise ValueError(dedent('''Section: feature_group_strategies -
             The following given feature group strategies:
             '{}' are invalid. Available strategies are: '{}'
-            '''.format(bad_strategies, available_strategies))
+            '''.format(bad_strategies, available_strategies)))
 
 
 class UserMetadataValidator(Validator):
     def run(self, user_metadata):
         if not isinstance(user_metadata, dict):
-            raise ValueError('''Section: user_metadata -
-            user_metadata section must be a dict''')
+            raise ValueError(dedent('''Section: user_metadata -
+            user_metadata section must be a dict'''))
 
 
 class ModelGroupKeysValidator(Validator):
     def run(self, model_group_keys, user_metadata):
         if not isinstance(model_group_keys, list):
-            raise ValueError('''Section: model_group_keys -
-            model_group_keys section must be a list''')
+            raise ValueError(dedent('''Section: model_group_keys -
+            model_group_keys section must be a list'''))
         # planner_keys are defined in architect.Planner._make_metadata
         planner_keys = [
             'beginning_of_time',
@@ -382,9 +380,9 @@ class ModelGroupKeysValidator(Validator):
             temporal_keys
         for model_group_key in model_group_keys:
             if model_group_key not in available_keys:
-                raise ValueError('''Section: model_group_keys -
+                raise ValueError(dedent('''Section: model_group_keys -
                 unknown entry '{}' received. Available keys are {}
-                '''.format(model_group_key, available_keys))
+                '''.format(model_group_key, available_keys)))
 
 
 class GridConfigValidator(Validator):
@@ -398,13 +396,13 @@ class GridConfigValidator(Validator):
                     try:
                         cls(**parameters)
                     except Exception as e:
-                        raise ValueError('''Section: grid_config -
+                        raise ValueError(dedent('''Section: grid_config -
                         Unable to instantiate classifier {} with parameters {}, error thrown: {}
-                        '''.format(classpath, parameters, e))
+                        '''.format(classpath, parameters, e)))
             except Exception as e:
-                raise ValueError('''Section: grid_config -
+                raise ValueError(dedent('''Section: grid_config -
                 Unable to import classifier {}, error thrown: {}
-                '''.format(classpath, e))
+                '''.format(classpath, e)))
 
 
 class ScoringConfigValidator(Validator):
@@ -420,17 +418,17 @@ class ScoringConfigValidator(Validator):
             given_metrics = set(metric_group['metrics'])
             bad_metrics = given_metrics - available_metrics
             if bad_metrics:
-                raise ValueError('''Section: scoring -
+                raise ValueError(dedent('''Section: scoring -
                 The following given metrics '{}' are unavailable. Available metrics are: '{}'
-                '''.format(bad_metrics, available_metrics))
+                '''.format(bad_metrics, available_metrics)))
             for given_metric in given_metrics:
                 metric_function = metric_lookup[given_metric]
                 if not hasattr(metric_function, 'greater_is_better'):
-                    raise ValueError('''Section: scoring -
+                    raise ValueError(dedent('''Section: scoring -
                     The metric {} does not define the attribute
                     'greater_is_better'. This can only be fixed in the catwalk.metrics
                     module. If you still would like to use this metric, consider
-                    submitting a pull request'''.format(given_metric))
+                    submitting a pull request'''.format(given_metric)))
 
 
 class ExperimentValidator(Validator):
