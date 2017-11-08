@@ -8,9 +8,10 @@ from results_schema import Model
 from sqlalchemy.orm import sessionmaker
 import datetime
 import os
-from triage.storage import MettaCSVMatrixStore
+from catwalk.storage import CSVMatrixStore
 from metta import metta_io as metta
 from collections import OrderedDict
+from triage.experiments import CONFIG_VERSION
 
 
 @contextmanager
@@ -116,12 +117,215 @@ def sample_metta_csv_diff_order(directory):
         format='csv'
     )
 
-    train_store = MettaCSVMatrixStore(
+    train_store = CSVMatrixStore(
         matrix_path=os.path.join(directory, '{}.csv'.format(train_uuid)),
         metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
     )
-    test_store = MettaCSVMatrixStore(
+    test_store = CSVMatrixStore(
         matrix_path=os.path.join(directory, '{}.csv'.format(test_uuid)),
         metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
     )
     return train_store, test_store
+
+
+def populate_source_data(db_engine):
+    complaints = [
+        (1, '2010-10-01', 5),
+        (1, '2011-10-01', 4),
+        (1, '2011-11-01', 4),
+        (1, '2011-12-01', 4),
+        (1, '2012-02-01', 5),
+        (1, '2012-10-01', 4),
+        (1, '2013-10-01', 5),
+        (2, '2010-10-01', 5),
+        (2, '2011-10-01', 5),
+        (2, '2011-11-01', 4),
+        (2, '2011-12-01', 4),
+        (2, '2012-02-01', 6),
+        (2, '2012-10-01', 5),
+        (2, '2013-10-01', 6),
+        (3, '2010-10-01', 5),
+        (3, '2011-10-01', 3),
+        (3, '2011-11-01', 4),
+        (3, '2011-12-01', 4),
+        (3, '2012-02-01', 4),
+        (3, '2012-10-01', 3),
+        (3, '2013-10-01', 4),
+    ]
+
+    entity_zip_codes = [
+        (1, '60120'),
+        (2, '60123'),
+        (3, '60123'),
+    ]
+
+    zip_code_events = [
+        ('60120', '2012-10-01', 1),
+        ('60123', '2012-10-01', 10),
+    ]
+
+    events = [
+        (1, 1, '2011-01-01'),
+        (1, 1, '2011-06-01'),
+        (1, 1, '2011-09-01'),
+        (1, 1, '2012-01-01'),
+        (1, 1, '2012-01-10'),
+        (1, 1, '2012-06-01'),
+        (1, 1, '2013-01-01'),
+        (1, 0, '2014-01-01'),
+        (1, 1, '2015-01-01'),
+        (2, 1, '2011-01-01'),
+        (2, 1, '2011-06-01'),
+        (2, 1, '2011-09-01'),
+        (2, 1, '2012-01-01'),
+        (2, 1, '2013-01-01'),
+        (2, 1, '2014-01-01'),
+        (2, 1, '2015-01-01'),
+        (3, 0, '2011-01-01'),
+        (3, 0, '2011-06-01'),
+        (3, 0, '2011-09-01'),
+        (3, 0, '2012-01-01'),
+        (3, 0, '2013-01-01'),
+        (3, 1, '2014-01-01'),
+        (3, 0, '2015-01-01'),
+    ]
+
+    states = [
+        (1, 'state_one', '2012-01-01', '2016-01-01'),
+        (1, 'state_two', '2013-01-01', '2016-01-01'),
+        (2, 'state_one', '2012-01-01', '2016-01-01'),
+        (2, 'state_two', '2013-01-01', '2016-01-01'),
+        (3, 'state_one', '2012-01-01', '2016-01-01'),
+        (3, 'state_two', '2013-01-01', '2016-01-01'),
+    ]
+
+    db_engine.execute('''create table cat_complaints (
+        entity_id int,
+        as_of_date date,
+        cat_sightings int
+        )''')
+
+    db_engine.execute('''create table entity_zip_codes (
+        entity_id int,
+        zip_code text
+        )''')
+
+    for entity_zip_code in entity_zip_codes:
+        db_engine.execute(
+            "insert into entity_zip_codes values (%s, %s)", entity_zip_code
+        )
+
+    db_engine.execute('''create table zip_code_events (
+        zip_code text,
+        as_of_date date,
+        num_events int
+    )''')
+    for zip_code_event in zip_code_events:
+        db_engine.execute(
+            "insert into zip_code_events values (%s, %s, %s)", zip_code_event
+        )
+
+    for complaint in complaints:
+        db_engine.execute(
+            "insert into cat_complaints values (%s, %s, %s)",
+            complaint
+        )
+
+    db_engine.execute('''create table events (
+        entity_id int,
+        outcome int,
+        outcome_date date
+    )''')
+
+    for event in events:
+        db_engine.execute(
+            "insert into events values (%s, %s, %s)",
+            event
+        )
+
+    db_engine.execute('''create table states (
+        entity_id int,
+        state text,
+        start_time timestamp,
+        end_time timestamp
+    )''')
+
+    for state in states:
+        db_engine.execute(
+            'insert into states values (%s, %s, %s, %s)',
+            state
+        )
+
+
+def sample_config():
+    temporal_config = {
+        'feature_start_time': '2010-01-01',
+        'feature_end_time': '2014-01-01',
+        'label_start_time': '2011-01-01',
+        'label_end_time': '2014-01-01',
+        'model_update_frequency': '1year',
+        'training_label_timespans': ['6months'],
+        'test_label_timespans': ['6months'],
+        'training_as_of_date_frequencies': '1day',
+        'test_as_of_date_frequencies': '3months',
+        'max_training_histories': ['6months'],
+        'test_durations': ['1months'],
+    }
+
+    scoring_config = {
+        'metric_groups': [
+            {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+        ]
+    }
+
+    grid_config = {
+        'sklearn.linear_model.LogisticRegression': {
+            'C': [0.00001, 0.0001],
+            'penalty': ['l1', 'l2'],
+            'random_state': [2193]
+        }
+    }
+
+    feature_config = [{
+        'prefix': 'entity_features',
+        'from_obj': 'cat_complaints',
+        'knowledge_date_column': 'as_of_date',
+        'aggregates_imputation': {'all': {'type': 'constant', 'value': 0}},
+        'aggregates': [{
+            'quantity': 'cat_sightings',
+            'metrics': ['count', 'avg'],
+        }],
+        'intervals': ['1year'],
+        'groups': ['entity_id']
+    }, {
+        'prefix': 'zip_code_features',
+        'from_obj': 'entity_zip_codes join zip_code_events using (zip_code)',
+        'knowledge_date_column': 'as_of_date',
+        'aggregates_imputation': {'all': {'type': 'constant', 'value': 0}},
+        'aggregates': [{
+            'quantity': 'num_events',
+            'metrics': ['max', 'min'],
+        }],
+        'intervals': ['1year'],
+        'groups': ['entity_id', 'zip_code']
+    }]
+
+    state_config = {
+        'table_name': 'states',
+        'state_filters': ['state_one or state_two'],
+    }
+
+    return {
+        'config_version': CONFIG_VERSION,
+        'events_table': 'events',
+        'entity_column_name': 'entity_id',
+        'model_comment': 'test2-final-final',
+        'model_group_keys': ['label_name', 'label_type', 'custom_key'],
+        'feature_aggregations': feature_config,
+        'state_config': state_config,
+        'temporal_config': temporal_config,
+        'grid_config': grid_config,
+        'scoring': scoring_config,
+        'user_metadata': { 'custom_key': 'custom_value' },
+        'individual_importance': {'n_ranks': 2}
+    }

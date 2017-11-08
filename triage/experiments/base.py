@@ -20,6 +20,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 import logging
 from triage.experiments import CONFIG_VERSION
+from triage.experiments.validate import ExperimentValidator
 
 
 def dt_from_str(dt_str):
@@ -232,6 +233,25 @@ class ExperimentBase(object):
                 self._split_definitions
             )
         return self._split_definitions
+
+    def print_time_split_summary(self):
+        print('\n----TIME SPLIT SUMMARY----\n')
+        print('Number of time splits: {}'.format(len(self.split_definitions)))
+        for split_index, split in enumerate(self.split_definitions):
+            train_times = split['train_matrix']['as_of_times']
+            test_times = [as_of_time for test_matrix in split['test_matrices'] for as_of_time in test_matrix['as_of_times']]
+            print('''Split index {}:
+            Training as_of_time_range: {} to {} ({} total)
+            Testing as_of_time range: {} to {} ({} total)\n\n'''.format(
+                split_index,
+                min(train_times),
+                max(train_times),
+                len(train_times),
+                min(test_times),
+                max(test_times),
+                len(test_times)
+            ))
+        print('For more detailed information on your time splits, inspect the experiment `split_definitions` property')
 
     @property
     def all_as_of_times(self):
@@ -457,3 +477,7 @@ class ExperimentBase(object):
             logging.info('Matrix build done or errored, cleaning up state table')
             self.state_table_generator.clean_up()
         self.catwalk()
+
+    def validate(self):
+        ExperimentValidator(self.db_engine).run(self.config)
+        self.print_time_split_summary()
