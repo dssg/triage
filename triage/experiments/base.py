@@ -21,10 +21,10 @@ from catwalk.evaluation import ModelEvaluator
 from catwalk.utils import save_experiment_and_get_hash
 from catwalk.storage import CSVMatrixStore
 from timechop.timechop import Timechop
+from timeout import timeout
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
-from triage.timeout import timeout
 
 
 def dt_from_str(dt_str):
