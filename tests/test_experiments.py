@@ -1,38 +1,46 @@
-from datetime import datetime, timedelta
 import os
-from sqlalchemy import create_engine
+import time
+from datetime import datetime, timedelta
 from functools import partial
 from tempfile import TemporaryDirectory
+from unittest import mock, TestCase
+
+import pytest
 import testing.postgresql
-from unittest.mock import Mock
-from unittest import TestCase
+from sqlalchemy import create_engine
 
 from catwalk.db import ensure_db
 from catwalk.storage import FSModelStorageEngine
 
 from tests.utils import sample_config, populate_source_data
 
-from triage.experiments import\
-    MultiCoreExperiment,\
-    SingleThreadedExperiment,\
-    CONFIG_VERSION
+from triage.experiments import (
+    MultiCoreExperiment,
+    SingleThreadedExperiment,
+    CONFIG_VERSION,
+)
 
 
 def num_linked_evaluations(db_engine):
-    num_evaluations = len([
-        row for row in db_engine.execute('''
-            select * from results.evaluations e
-            join results.models using (model_id)
-            join results.predictions p on (
-                e.model_id = p.model_id and
-                e.evaluation_start_time <= p.as_of_date and
-                e.evaluation_end_time >= p.as_of_date)
-        ''')
-    ])
-    return num_evaluations
+    ((result,),) = db_engine.execute('''
+        select count(*) from results.evaluations e
+        join results.models using (model_id)
+        join results.predictions p on (
+            e.model_id = p.model_id and
+            e.evaluation_start_time <= p.as_of_date and
+            e.evaluation_end_time >= p.as_of_date)
+    ''')
+    return result
 
 
-def simple_experiment_test(experiment_class):
+parametrize_experiment_classes = pytest.mark.parametrize(('experiment_class',), [
+    (SingleThreadedExperiment,),
+    (partial(MultiCoreExperiment, n_processes=2, n_db_processes=2),),
+])
+
+
+@parametrize_experiment_classes
+def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -117,30 +125,19 @@ def simple_experiment_test(experiment_class):
         assert len(individual_importances) == num_predictions * 2  # only 2 features
 
 
-def test_singlethreaded_experiment():
-    simple_experiment_test(SingleThreadedExperiment)
-
-
-def test_multicore_experiment():
-    simple_experiment_test(
-        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
-    )
-
-
-def restart_experiment_test(experiment_class):
+@parametrize_experiment_classes
+def test_restart_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        temp_dir = TemporaryDirectory()
-        try:
+        with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir.name, 'inspections'),
+                project_path=os.path.join(temp_dir, 'inspections'),
             )
-
             experiment.run()
 
             evaluations = num_linked_evaluations(db_engine)
@@ -150,27 +147,16 @@ def restart_experiment_test(experiment_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir.name, 'inspections'),
+                project_path=os.path.join(temp_dir, 'inspections'),
                 replace=False
             )
-            experiment.make_entity_date_table = Mock()
+            experiment.make_entity_date_table = mock.Mock()
             experiment.run()
             assert not experiment.make_entity_date_table.called
-        finally:
-            temp_dir.cleanup()
 
 
-def test_restart_singlethreaded_experiment():
-    restart_experiment_test(SingleThreadedExperiment)
-
-
-def test_restart_multicore_experiment():
-    restart_experiment_test(
-        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
-    )
-
-
-def nostate_experiment_test(experiment_class):
+@parametrize_experiment_classes
+def test_nostate_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -251,39 +237,101 @@ def nostate_experiment_test(experiment_class):
         ]
 
 
-def test_nostate_singlethreaded_experiment():
-    nostate_experiment_test(SingleThreadedExperiment)
-
-
-def test_nostate_multicore_experiment():
-    nostate_experiment_test(
-        partial(MultiCoreExperiment, n_processes=2, n_db_processes=2)
-    )
-
-
 class TestConfigVersion(TestCase):
+
     def test_load_if_right_version(self):
         experiment_config = sample_config()
         experiment_config['config_version'] = CONFIG_VERSION
         with testing.postgresql.Postgresql() as postgresql:
             db_engine = create_engine(postgresql.url())
             ensure_db(db_engine)
-            experiment = SingleThreadedExperiment(
-                config=experiment_config,
-                db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
-                project_path='inspections'
-            )
+            with TemporaryDirectory() as temp_dir:
+                experiment = SingleThreadedExperiment(
+                    config=experiment_config,
+                    db_engine=db_engine,
+                    model_storage_class=FSModelStorageEngine,
+                    project_path=os.path.join(temp_dir, 'inspections'),
+                )
 
         assert isinstance(experiment, SingleThreadedExperiment)
 
     def test_noload_if_wrong_version(self):
         experiment_config = sample_config()
         experiment_config['config_version'] = 'v0'
-        with self.assertRaises(ValueError):
-            SingleThreadedExperiment(
-                config=experiment_config,
-                db_engine=None,
+        with TemporaryDirectory() as temp_dir:
+            with self.assertRaises(ValueError):
+                SingleThreadedExperiment(
+                    config=experiment_config,
+                    db_engine=None,
+                    model_storage_class=FSModelStorageEngine,
+                    project_path=os.path.join(temp_dir, 'inspections'),
+                )
+
+
+@parametrize_experiment_classes
+@mock.patch('architect.state_table_generators.StateTableGenerator.clean_up',
+            side_effect=lambda: time.sleep(1))
+def test_cleanup_timeout(_clean_up_mock, experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        populate_source_data(db_engine)
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path='inspections'
+                project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup_timeout=0.02,  # Set short timeout
             )
+            with pytest.raises(TimeoutError):
+                experiment()
+
+
+@parametrize_experiment_classes
+def test_build_error(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir, 'inspections'),
+            )
+
+            with mock.patch.object(experiment, 'build_matrices') as build_mock:
+                build_mock.side_effect = RuntimeError('boom!')
+
+                with pytest.raises(RuntimeError):
+                    experiment()
+
+
+@parametrize_experiment_classes
+@mock.patch('architect.state_table_generators.StateTableGenerator.clean_up',
+            side_effect=lambda: time.sleep(1))
+def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup_timeout=0.02,  # Set short timeout
+            )
+
+            with mock.patch.object(experiment, 'build_matrices') as build_mock:
+                build_mock.side_effect = RuntimeError('boom!')
+
+                with pytest.raises(TimeoutError) as exc_info:
+                    experiment()
+
+    # Last exception is TimeoutError, but earlier error is preserved in
+    # __context__, and will be noted as well in any standard traceback:
+    assert exc_info.value.__context__ is build_mock.side_effect
