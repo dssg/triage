@@ -4,6 +4,9 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from functools import partial
 
+from descriptors import cachedproperty
+from timeout import timeout
+
 from architect.label_generators import BinaryLabelGenerator
 from architect.features import (
     FeatureGenerator,
@@ -21,7 +24,6 @@ from catwalk.evaluation import ModelEvaluator
 from catwalk.utils import save_experiment_and_get_hash
 from catwalk.storage import CSVMatrixStore
 from timechop.timechop import Timechop
-from timeout import timeout
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -47,6 +49,7 @@ class ExperimentBase(object, metaclass=ABCMeta):
     ):
         self._check_config_version(config)
         self.config = config
+
         self.db_engine = db_engine
         if model_storage_class:
             self.model_storage_engine = model_storage_class(
@@ -62,17 +65,9 @@ class ExperimentBase(object, metaclass=ABCMeta):
             self.matrices_directory = os.path.join(self.project_path, 'matrices')
             if not os.path.exists(self.matrices_directory):
                 os.makedirs(self.matrices_directory)
-        self.experiment_hash = save_experiment_and_get_hash(
-            self.config,
-            self.db_engine
-        )
-        self._split_definitions = None
-        self._matrix_build_tasks = None
-        self._collate_aggregations = None
-        self._feature_aggregation_table_tasks = None
-        self._feature_imputation_table_tasks = None
-        self._all_as_of_times = None
-        self._master_feature_dictionary = None
+
+        self.experiment_hash = save_experiment_and_get_hash(self.config,
+                                                            self.db_engine)
         self.initialize_factories()
         self.initialize_components()
 
@@ -211,7 +206,7 @@ class ExperimentBase(object, metaclass=ABCMeta):
         self.individual_importance_calculator = self.indiv_importance_factory(db_engine=self.db_engine)
         self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
 
-    @property
+    @cachedproperty
     def split_definitions(self):
         """Temporal splits based on the experiment's configuration
 
@@ -237,14 +232,14 @@ class ExperimentBase(object, metaclass=ABCMeta):
         }
         ```
 
+        (When updating/setting split definitions, matrices should have
+        UUIDs.)
+
         """
-        if not self._split_definitions:
-            self._split_definitions = self.chopper.chop_time()
-            logging.info(
-                'Computed and saved split definitions: %s',
-                self._split_definitions
-            )
-        return self._split_definitions
+        split_definitions = self.chopper.chop_time()
+        logging.info('Computed and stored split definitions: %s',
+                     split_definitions)
+        return split_definitions
 
     def print_time_split_summary(self):
         print('\n----TIME SPLIT SUMMARY----\n')
@@ -265,105 +260,100 @@ class ExperimentBase(object, metaclass=ABCMeta):
             ))
         print('For more detailed information on your time splits, inspect the experiment `split_definitions` property')
 
-    @property
+    @cachedproperty
     def all_as_of_times(self):
         """All 'as of times' in experiment config
 
         Used for label and feature generation.
 
         Returns: (list) of datetimes
+
         """
-        if not self._all_as_of_times:
-            all_as_of_times = []
-            for split in self.split_definitions:
-                all_as_of_times.extend(split['train_matrix']['as_of_times'])
-                logging.info(
-                    'Adding as_of_times from train matrix: %s',
-                    split['train_matrix']['as_of_times']
-                )
-                for test_matrix in split['test_matrices']:
-                    logging.info(
-                        'Adding as_of_times from test matrix: %s',
-                        test_matrix['as_of_times']
-                    )
-                    all_as_of_times.extend(test_matrix['as_of_times'])
+        all_as_of_times = []
+        for split in self.split_definitions:
+            all_as_of_times.extend(split['train_matrix']['as_of_times'])
+            logging.info('Adding as_of_times from train matrix: %s',
+                         split['train_matrix']['as_of_times'])
+            for test_matrix in split['test_matrices']:
+                logging.info('Adding as_of_times from test matrix: %s',
+                             test_matrix['as_of_times'])
+                all_as_of_times.extend(test_matrix['as_of_times'])
 
-            logging.info(
-                'Computed %s total as_of_times for label and feature generation',
-                len(all_as_of_times)
-            )
-            self._all_as_of_times = list(set(all_as_of_times))
-            logging.info(
-                'Computed %s distinct as_of_times for label and feature generation',
-                len(self._all_as_of_times)
-            )
-        return self._all_as_of_times
+        logging.info(
+            'Computed %s total as_of_times for label and feature generation',
+            len(all_as_of_times)
+        )
+        distinct_as_of_times = list(set(all_as_of_times))
+        logging.info(
+            'Computed %s distinct as_of_times for label and feature generation',
+            len(distinct_as_of_times)
+        )
+        return distinct_as_of_times
 
-    @property
+    @cachedproperty
     def collate_aggregations(self):
-        """collate Aggregation objects used by this experiment.
+        """Collation of ``Aggregation`` objects used by this experiment.
 
-        Returns: (list) of collate.Aggregation objects
+        Returns: (list) of ``collate.Aggregation`` objects
+
         """
-        if not self._collate_aggregations:
-            logging.info('Creating collate aggregations')
-            self._collate_aggregations = self.feature_generator.aggregations(
-                feature_aggregation_config=self.config['feature_aggregations'],
-                feature_dates=self.all_as_of_times,
-                state_table=self.state_table_generator.sparse_table_name,
-            )
-        return self._collate_aggregations
+        logging.info('Creating collate aggregations')
+        return self.feature_generator.aggregations(
+            feature_aggregation_config=self.config['feature_aggregations'],
+            feature_dates=self.all_as_of_times,
+            state_table=self.state_table_generator.sparse_table_name,
+        )
 
-    @property
+    @cachedproperty
     def feature_aggregation_table_tasks(self):
-        """All feature table query tasks specified by this Experiment
+        """All feature table query tasks specified by this
+        ``Experiment``.
 
-        Returns: (dict) keys are group table names, values are themselves dicts, each with keys for different stages of table creation (prepare, inserts, finalize) and with values being lists of SQL commands
+        Returns: (dict) keys are group table names, values are
+            themselves dicts, each with keys for different stages of
+            table creation (prepare, inserts, finalize) and with values
+            being lists of SQL commands
+
         """
-        if not self._feature_aggregation_table_tasks:
-            logging.info(
-                'Calculating feature tasks for %s as_of_times',
-                len(self.all_as_of_times)
-            )
-            self._feature_aggregation_table_tasks = self.feature_generator\
-                .generate_all_table_tasks(self.collate_aggregations, task_type='aggregation')
-        return self._feature_aggregation_table_tasks
+        logging.info('Calculating feature tasks for %s as_of_times',
+                     len(self.all_as_of_times))
+        return self.feature_generator.generate_all_table_tasks(
+            self.collate_aggregations,
+            task_type='aggregation'
+        )
 
-    @property
+    @cachedproperty
     def feature_imputation_table_tasks(self):
-        """All feature imputation query tasks specified by this Experiment
+        """All feature imputation query tasks specified by this
+        ``Experiment``.
 
-        Returns: (dict) keys are group table names, values are themselves dicts,
-            each with keys for different stages of table creation (prepare, inserts, finalize)
-            and with values being lists of SQL commands
+        Returns: (dict) keys are group table names, values are
+            themselves dicts, each with keys for different stages of
+            table creation (prepare, inserts, finalize) and with values
+            being lists of SQL commands
+
         """
-        if not self._feature_imputation_table_tasks:
-            logging.info(
-                'Calculating feature tasks for %s as_of_times',
-                len(self.all_as_of_times)
-            )
-            self._feature_imputation_table_tasks = self.feature_generator\
-                .generate_all_table_tasks(self.collate_aggregations, task_type='imputation')
-        return self._feature_imputation_table_tasks
+        logging.info('Calculating feature tasks for %s as_of_times',
+                     len(self.all_as_of_times))
+        return self.feature_generator.generate_all_table_tasks(
+            self.collate_aggregations,
+            task_type='imputation'
+        )
 
-    @property
+    @cachedproperty
     def master_feature_dictionary(self):
         """All possible features found in the database. Not all features will necessarily end up in matrices
 
         Returns: (list) of dicts, keys being feature table names and values being lists of feature names
         """
-        if not self._master_feature_dictionary:
-            self._master_feature_dictionary = self.feature_dictionary_creator\
-                .feature_dictionary(
-                    feature_table_names=self.feature_imputation_table_tasks.keys(),
-                    index_column_lookup=self.feature_generator.index_column_lookup(self.collate_aggregations)
-                )
-            logging.info(
-                'Computed master feature dictionary: %s',
-                self._master_feature_dictionary
+        result = self.feature_dictionary_creator.feature_dictionary(
+            feature_table_names=self.feature_imputation_table_tasks.keys(),
+            index_column_lookup=self.feature_generator.index_column_lookup(
+                self.collate_aggregations
             )
-
-        return self._master_feature_dictionary
+        )
+        logging.info('Computed master feature dictionary: %s', result)
+        return result
 
     @property
     def feature_dicts(self):
@@ -376,39 +366,43 @@ class ExperimentBase(object, metaclass=ABCMeta):
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
 
-    @property
+    @cachedproperty
     def matrix_build_tasks(self):
-        """Tasks for all matrices that need to be built as a part of this Experiment.
+        """Tasks for all matrices that need to be built as a part of
+        this Experiment.
 
-        Each task contains arguments understood by Architect.build_matrix
+        Each task contains arguments understood by
+        ``Architect.build_matrix``.
 
         Returns: (list) of dicts
-        """
-        if not self._matrix_build_tasks:
-            (updated_split_definitions,
-             matrix_build_tasks) = self.planner.generate_plans(
-                self.split_definitions,
-                self.feature_dicts
-            )
-            self._full_matrix_definitions = updated_split_definitions
-            self._matrix_build_tasks = matrix_build_tasks
-        return self._matrix_build_tasks
 
-    @property
+        """
+        (
+            updated_split_definitions,
+            matrix_build_tasks
+        ) = self.planner.generate_plans(
+            self.split_definitions,
+            self.feature_dicts
+        )
+        self.full_matrix_definitions = updated_split_definitions
+        return matrix_build_tasks
+
+    @cachedproperty
     def full_matrix_definitions(self):
         """Full matrix definitions
 
         Returns: (list) temporal and feature information for each matrix
+
         """
-        if not self._full_matrix_definitions:
-            (updated_split_definitions,
-             matrix_build_tasks) = self.planner.generate_plans(
-                self.split_definitions,
-                self.feature_dicts
-            )
-            self._full_matrix_definitions = updated_split_definitions
-            self._matrix_build_tasks = matrix_build_tasks
-        return self._full_matrix_definitions
+        (
+            updated_split_definitions,
+            matrix_build_tasks
+        ) = self.planner.generate_plans(
+            self.split_definitions,
+            self.feature_dicts
+        )
+        self.matrix_build_tasks = matrix_build_tasks
+        return updated_split_definitions
 
     @property
     def all_label_timespans(self):
@@ -437,13 +431,6 @@ class ExperimentBase(object, metaclass=ABCMeta):
         self.state_table_generator.generate_sparse_table(
             as_of_dates=self.all_as_of_times
         )
-
-    def update_split_definitions(self, new_split_definitions):
-        """Update split definitions
-
-        Args: (dict) split definitions (should have matrix uuids)
-        """
-        self._split_definitions = new_split_definitions
 
     def log_split(self, split_num, split):
         logging.info(
