@@ -1,12 +1,17 @@
 import logging
-from architect.validations import table_should_have_data,\
-    column_should_be_intlike,\
-    column_should_be_booleanlike,\
-    column_should_be_timelike,\
-    column_should_be_stringlike
+
+from architect.database_reflection import table_has_data
+from architect.validations import (
+    table_should_have_data,
+    column_should_be_intlike,
+    column_should_be_booleanlike,
+    column_should_be_timelike,
+    column_should_be_stringlike,
+)
 
 
 class StateFilter(object):
+
     def __init__(self, sparse_state_table, filter_logic):
         self.sparse_state_table = sparse_state_table
         self.filter_logic = filter_logic
@@ -63,6 +68,7 @@ class StateTableGenerator(object):
             outcome events for entities
         dense_state_table (string, optional) name of SQL table containing
             entities and state time ranges
+
     """
     def __init__(
         self,
@@ -131,10 +137,13 @@ class StateTableGenerator(object):
         Returns: (string) A query to produce a sparse states table
         """
         state_columns = [
-            'bool_or(state = \'{desired_state}\') as {desired_state}'
+            "bool_or(state = '{desired_state}') as {desired_state}"
             .format(desired_state=state)
             for state in self._all_known_states(self.dense_state_table)
         ]
+        if not state_columns:
+            raise ValueError("Unable to identify states from table",
+                             self.dense_state_table)
         query = '''
             create table {sparse_state_table} as (
             select d.entity_id, a.as_of_date::timestamp, {state_column_string}
@@ -193,6 +202,19 @@ class StateTableGenerator(object):
         """
         logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
         self._generate_sparse_table(self.sparse_table_query_func(as_of_dates))
+        if not table_has_data(self.sparse_table_name, self.db_engine):
+            raise ValueError(
+                "No entities in table '{input_table}' define time ranges "
+                "that encompass any of experiment's \"as-of-dates\":\n\n"
+                "\t{as_of_dates}\n\n"
+                "Please check temporal and/or state configurations."
+                .format(
+                    input_table=(self.dense_state_table or self.events_table),
+                    as_of_dates=', '.join(str(as_of_date) for as_of_date in (
+                        as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
+                    )),
+                )
+            )
 
     def _generate_sparse_table(self, generate_query):
         """Generate and index a sparse table from a given query
