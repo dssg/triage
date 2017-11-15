@@ -49,7 +49,7 @@ setup(
         'triage',
         'triage.experiments',
     ],
-    package_dir={'triage': 'triage'},
+    package_dir={'': 'src'},
     include_package_data=True,
     install_requires=REQUIREMENTS,
     license=LICENSE_PATH.read_text(),
