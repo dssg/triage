@@ -6,3 +6,4 @@ coverage==4.1
 pytest==2.9.2
 pytest-cov
 codecov
+moto==1.0.1

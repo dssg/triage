@@ -1,14 +1,12 @@
-
-include triage/model_group_stored_procedure.sql
+include src model_group_stored_procedure.sql
 
 include AUTHORS.rst
-
 include CONTRIBUTING.rst
 include HISTORY.rst
 include LICENSE
 include README.rst
 
-recursive-include tests *
+recursive-include src/tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 

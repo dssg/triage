@@ -1,14 +1,18 @@
-from catwalk.storage import InMemoryModelStorageEngine
-from sqlalchemy import create_engine
-from triage.experiments import ExperimentBase
 import logging
-from multiprocessing import Pool
-from functools import partial
-from catwalk.utils import Batch
 import traceback
+from functools import partial
+from multiprocessing import Pool
+
+from sqlalchemy import create_engine
+
+from triage.component.catwalk.utils import Batch
+from triage.component.catwalk.storage import InMemoryModelStorageEngine
+
+from triage.experiments import ExperimentBase
 
 
 class MultiCoreExperiment(ExperimentBase):
+
     def __init__(self, n_processes=1, n_db_processes=1, *args, **kwargs):
         super(MultiCoreExperiment, self).__init__(*args, **kwargs)
         self.n_processes = n_processes

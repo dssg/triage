@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import re
 from pathlib import Path
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 ROOT_PATH = Path(__file__).parent
@@ -45,11 +45,8 @@ setup(
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
     url='https://github.com/dssg/triage',
-    packages=[
-        'triage',
-        'triage.experiments',
-    ],
-    package_dir={'triage': 'triage'},
+    packages=find_packages('src', exclude=['tests', 'tests.*']),
+    package_dir={'': 'src'},
     include_package_data=True,
     install_requires=REQUIREMENTS,
     license=LICENSE_PATH.read_text(),

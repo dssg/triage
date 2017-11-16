@@ -84,7 +84,7 @@ With that in mind, a more full version of the experiment instantiation might loo
     import yaml
     import logging
 
-    from catwalk.storage import FSModelStorageEngine
+    from triage.component.catwalk.storage import FSModelStorageEngine
     from triage.experiments import SingleThreadedExperiment
 
     with open('my_experiment_config.yaml') as f:
@@ -188,13 +188,20 @@ Triage is developed at the University of Chicago's `Center For Data Science and 
 Major Components Used by Triage
 ===============================
 
-Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if you'd like to make use of a subset of Triage's functionality in an existing pipeline:
+Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if you'd like to make use of a subset of Triage's functionality in an existing pipeline.
+
+Components Within Triage
+------------------------
+
+* `Catwalk <src/triage/component/catwalk>`_: Training, testing, and evaluating machine learning classifier models
+
+Components Housed Elsewhere
+---------------------------
 
 * `Architect <https://github.com/dssg/architect>`_: Plan, design and build train and test matrices. Includes feature and label generation.
 * `Collate <https://github.com/dssg/collate>`_: Aggregation SQL Query Builder. This is used by the Architect to build features.
 * `Timechop <https://github.com/dssg/timechop>`_: Generate temporal cross-validation time windows for matrix creation
 * `Metta-Data <https://github.com/dssg/metta-data>`_: Train and test matrix storage
-* `Catwalk <https://github.com/dssg/catwalk>`_: Training, testing, and evaluating machine learning classifier models
 * `Results Schema <https://github.com/dssg/results-schema>`_: Generate a database schema suitable for storing the results of modeling runs
 
 Design Goals
