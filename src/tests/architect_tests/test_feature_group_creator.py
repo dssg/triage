@@ -1,4 +1,4 @@
-from architect.features import FeatureGroupCreator
+from triage.component.architect.features import FeatureGroupCreator
 from unittest import TestCase
 
 

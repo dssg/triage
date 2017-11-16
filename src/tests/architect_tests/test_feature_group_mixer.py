@@ -1,6 +1,6 @@
 import itertools
 
-from architect.feature_group_mixer import FeatureGroupMixer
+from triage.component.architect.feature_group_mixer import FeatureGroupMixer
 
 
 def test_feature_group_mixer_leave_one_out():

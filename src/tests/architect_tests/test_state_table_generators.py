@@ -4,9 +4,9 @@ import pytest
 import testing.postgresql
 from sqlalchemy.engine import create_engine
 
-from architect.state_table_generators import StateTableGenerator
+from triage.component.architect.state_table_generators import StateTableGenerator
 
-from tests import utils
+from . import utils
 
 
 def test_sparse_state_table_generator():

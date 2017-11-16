@@ -1,12 +1,14 @@
-import architect.database_reflection as dbreflect
+from sqlalchemy import Table
+from sqlalchemy import create_engine
+from sqlalchemy.types import VARCHAR
 from testing.postgresql import Postgresql
 from unittest import TestCase
-from sqlalchemy import create_engine
-from sqlalchemy import Table
-from sqlalchemy.types import VARCHAR
+
+from triage.component.architect import database_reflection as dbreflect
 
 
 class TestDatabaseReflection(TestCase):
+
     def setUp(self):
         self.postgresql = Postgresql()
         self.engine = create_engine(self.postgresql.url())

@@ -1,8 +1,11 @@
-from architect.label_generators import BinaryLabelGenerator
+from datetime import date, timedelta
+
 import testing.postgresql
 from sqlalchemy import create_engine
-from datetime import date, timedelta
-from tests.utils import create_binary_outcome_events
+
+from triage.component.architect.label_generators import BinaryLabelGenerator
+
+from .utils import create_binary_outcome_events
 
 events_data = [
     # entity id, event_date, outcome

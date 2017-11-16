@@ -1,4 +1,4 @@
-from architect.features import FeatureDictionaryCreator
+from triage.component.architect.features import FeatureDictionaryCreator
 import testing.postgresql
 from sqlalchemy import create_engine
 

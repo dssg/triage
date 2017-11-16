@@ -1,5 +1,5 @@
 """Functions for validating input, mostly around database schema and state"""
-from architect.database_reflection import\
+from triage.component.architect.database_reflection import\
     table_exists,\
     table_has_column,\
     column_type,\

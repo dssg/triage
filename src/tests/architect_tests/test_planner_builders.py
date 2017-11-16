@@ -1,19 +1,23 @@
-from architect import Planner, builders
-from tests.utils import create_schemas
-from tests.utils import create_entity_date_df
-from tests.utils import convert_string_column_to_date
-from tests.utils import NamedTempFile
-from tests.utils import TemporaryDirectory
-import testing.postgresql
 import csv
 import datetime
-import pandas as pd
 import os
-from sqlalchemy import create_engine
+import uuid
 from unittest import TestCase
+
 from metta import metta_io as metta
 from mock import Mock
-import uuid
+from sqlalchemy import create_engine
+import pandas as pd
+import testing.postgresql
+
+from triage.component.architect import Planner, builders
+from .utils import (
+    create_schemas,
+    create_entity_date_df,
+    convert_string_column_to_date,
+    NamedTempFile,
+    TemporaryDirectory,
+)
 
 # make some fake features data
 
@@ -59,7 +63,7 @@ features0_pre = [
     [1, '2016-03-01', 3, 4],
     [0, '2016-04-01', 4, 3],
     [1, '2016-05-01', 5, 4]
-] 
+]
 
 features1_pre = [
     [2, '2016-01-01', 1, 1],
@@ -74,7 +78,7 @@ features1_pre = [
     [0, '2016-03-01', 3, 3],
     [4, '2016-03-01', 1, 4],
     [5, '2016-03-01', 2, 4]
-] 
+]
 
 # collate will ensure every entity/date combination in the state
 # table have an imputed value in the features table, so ensure
@@ -258,7 +262,7 @@ def test_write_to_csv():
             for table in features_tables:
                 planner.builder.write_to_csv(
                     '''
-                        select * 
+                        select *
                         from features.features{}
                     '''.format(features_tables.index(table)),
                     'test_csv.csv'
@@ -466,7 +470,7 @@ def test_write_labels_data():
                 matrix_directory = temp_dir,
                 user_metadata = {},
                 engine = engine,
-            )       
+            )
 
             # make the entity-date table
             entity_date_table_name = planner.builder.make_entity_date_table(

@@ -1,5 +1,5 @@
 import logging
-from architect.validations import table_should_have_data,\
+from triage.component.architect.validations import table_should_have_data,\
     column_should_be_intlike,\
     column_should_be_booleanlike,\
     column_should_be_timelike

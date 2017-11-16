@@ -11,7 +11,7 @@ from unittest import TestCase
 from collate.collate import Aggregate, Categorical
 from collate.spacetime import SpacetimeAggregation
 
-from architect.feature_generators import FeatureGenerator
+from triage.component.architect.feature_generators import FeatureGenerator
 
 
 INPUT_DATA = [

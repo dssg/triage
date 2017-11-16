@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from collate.collate import Aggregate, Categorical, Compare
 from collate.spacetime import SpacetimeAggregation
-from architect.utils import convert_str_to_relativedelta
+from triage.component.architect.utils import convert_str_to_relativedelta
 import sqlalchemy
 import logging
 

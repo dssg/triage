@@ -1,5 +1,5 @@
 import logging
-from architect.utils import str_in_sql
+from triage.component.architect.utils import str_in_sql
 
 
 class FeatureDictionaryCreator(object):

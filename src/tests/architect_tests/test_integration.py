@@ -5,14 +5,14 @@ from datetime import datetime
 from tempfile import TemporaryDirectory
 from results_schema import Base
 from timechop.timechop import Timechop
-from architect.features import \
+from triage.component.architect.features import \
     FeatureGenerator,\
     FeatureDictionaryCreator,\
     FeatureGroupCreator,\
     FeatureGroupMixer
-from architect.state_table_generators import StateTableGenerator
-from architect.label_generators import BinaryLabelGenerator
-from architect.planner import Planner
+from triage.component.architect.state_table_generators import StateTableGenerator
+from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.planner import Planner
 
 
 def populate_source_data(db_engine):

@@ -1,7 +1,7 @@
 import logging
 
-from architect.database_reflection import table_has_data
-from architect.validations import (
+from triage.component.architect.database_reflection import table_has_data
+from triage.component.architect.validations import (
     table_should_have_data,
     column_should_be_intlike,
     column_should_be_booleanlike,
