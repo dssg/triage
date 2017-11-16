@@ -17,7 +17,7 @@ deploy:
 env:
 - BOTO_CONFIG=/tmp/nowhere
 install:
-- pip install -r requirements_dev.txt
+- pip install -r requirements/dev.txt
 language: python
 notifications:
   email: false

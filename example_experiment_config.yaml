@@ -239,7 +239,7 @@ model_group_keys:
 #
 # Each top-level key should be a class name, importable from triage. sklearn is
 # available, and if you have another classifier package you would like available,
-# contribute it to requirements.txt
+# contribute it to requirements/main.txt
 #
 # Each lower-level key is a hyperparameter name for the given classifier, and
 # each value is a list of potential values. All possible combinations of
