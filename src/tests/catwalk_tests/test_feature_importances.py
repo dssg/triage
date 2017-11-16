@@ -4,7 +4,7 @@ import warnings
 
 import pytest
 
-from catwalk.feature_importances import _ad_hoc_feature_importances, get_feature_importances
+from triage.component.catwalk.feature_importances import _ad_hoc_feature_importances, get_feature_importances
 
 from sklearn import datasets
 from sklearn.svm import SVC

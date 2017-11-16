@@ -2,10 +2,10 @@ from sqlalchemy import create_engine
 import testing.postgresql
 from results_schema.factories import ModelFactory, FeatureImportanceFactory, init_engine, session
 import pandas
-from catwalk.db import ensure_db
-from catwalk.storage import InMemoryMatrixStore
-from catwalk.individual_importance.uniform import uniform_distribution
-from tests.utils import sample_metadata
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import InMemoryMatrixStore
+from triage.component.catwalk.individual_importance.uniform import uniform_distribution
+from .utils import sample_metadata
 
 
 def test_uniform_distribution_entity_id_index():

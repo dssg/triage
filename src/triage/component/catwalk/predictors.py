@@ -1,14 +1,17 @@
-from results_schema import Model, Prediction
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-import pandas
+import csv
 import logging
 import math
-import numpy
 import tempfile
-import csv
+from datetime import datetime
+
+import numpy
+import pandas
 import postgres_copy
-from catwalk.utils import db_retry
+from sqlalchemy.orm import sessionmaker
+
+from results_schema import Model, Prediction
+
+from .utils import db_retry
 
 
 class ModelNotFoundError(ValueError):
@@ -32,6 +35,7 @@ class Predictor(object):
             project_path (string) the path under which to store project data
             model_storage_engine (catwalk.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
+
         """
         self.project_path = project_path
         self.model_storage_engine = model_storage_engine
@@ -207,7 +211,6 @@ class Predictor(object):
             session.commit()
             session.close()
 
-
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
 
@@ -261,13 +264,13 @@ class Predictor(object):
         self._write_to_db(
             model_id,
             matrix_store,
-            predictions_proba[:,1],
+            predictions_proba[:, 1],
             labels,
             misc_db_parameters
         )
         logging.info(
             'Wrote predictions for model %s, matrix %s to database',
-            model_id,\
+            model_id,
             matrix_store.uuid
         )
-        return predictions_proba[:,1]
+        return predictions_proba[:, 1]

@@ -8,7 +8,7 @@ from results_schema import Model
 from sqlalchemy.orm import sessionmaker
 import datetime
 import os
-from catwalk.storage import CSVMatrixStore, HDFMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
 from metta import metta_io as metta
 from collections import OrderedDict
 

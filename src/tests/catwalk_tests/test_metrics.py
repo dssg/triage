@@ -1,5 +1,5 @@
-from catwalk.metrics import fpr
-from catwalk.evaluation import ModelEvaluator
+from triage.component.catwalk.metrics import fpr
+from triage.component.catwalk.evaluation import ModelEvaluator
 
 def test_metric_directionality():
     """All metrics must be wrapped using the @Metric decorator available

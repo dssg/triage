@@ -84,7 +84,7 @@ With that in mind, a more full version of the experiment instantiation might loo
     import yaml
     import logging
 
-    from catwalk.storage import FSModelStorageEngine
+    from triage.component.catwalk.storage import FSModelStorageEngine
     from triage.experiments import SingleThreadedExperiment
 
     with open('my_experiment_config.yaml') as f:
@@ -227,11 +227,11 @@ Below is a complete sample usage of the three Catwalk components::
 
     from metta import metta_io as metta
 
-    from catwalk.storage import FSModelStorageEngine, MettaCSVMatrixStore
-    from catwalk.model_trainers import ModelTrainer
-    from catwalk.predictors import Predictor
-    from catwalk.evaluation import ModelEvaluator
-    from catwalk.utils import save_experiment_and_get_hash
+    from triage.component.catwalk.storage import FSModelStorageEngine, MettaCSVMatrixStore
+    from triage.component.catwalk.model_trainers import ModelTrainer
+    from triage.component.catwalk.predictors import Predictor
+    from triage.component.catwalk.evaluation import ModelEvaluator
+    from triage.component.catwalk.utils import save_experiment_and_get_hash
 
 
     # create a sqlalchemy database engine pointing to a Postgres database

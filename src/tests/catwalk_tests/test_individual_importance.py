@@ -1,6 +1,6 @@
-from catwalk.db import ensure_db
-from catwalk.individual_importance import IndividualImportanceCalculator
-from catwalk.storage import InMemoryModelStorageEngine
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
+from triage.component.catwalk.storage import InMemoryModelStorageEngine
 from tests.utils import fake_trained_model, sample_metta_csv_diff_order
 
 import tempfile
@@ -30,7 +30,7 @@ def sample_individual_importance_strategy(
 
 
 @patch.dict(
-    'catwalk.individual_importance.CALCULATE_STRATEGIES',
+    'triage.component.catwalk.individual_importance.CALCULATE_STRATEGIES',
     {'sample': sample_individual_importance_strategy}
 )
 def test_calculate_and_save():

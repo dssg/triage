@@ -1,24 +1,23 @@
-from sklearn.model_selection import ParameterGrid
-
-from sqlalchemy.orm import sessionmaker
-
+import copy
+import datetime
 import importlib
 import json
 import logging
-import datetime
-import copy
-import pandas
-import numpy as np
 
-from catwalk.utils import \
-    filename_friendly_hash, \
-    retrieve_model_id_from_hash, \
-    db_retry, \
-    save_db_objects
+import numpy as np
+import pandas
+from sklearn.model_selection import ParameterGrid
+from sqlalchemy.orm import sessionmaker
 
 from results_schema import Model, FeatureImportance
 
-from catwalk.feature_importances import get_feature_importances
+from .feature_importances import get_feature_importances
+from .utils import (
+    filename_friendly_hash,
+    retrieve_model_id_from_hash,
+    db_retry,
+    save_db_objects,
+)
 
 
 class ModelTrainer(object):
@@ -147,7 +146,7 @@ class ModelTrainer(object):
             db_objects.append(FeatureImportance(
                 model_id=model_id,
                 feature_importance=0,
-                feature='Algorithm does not support a standard way' + \
+                feature='Algorithm does not support a standard way' +
                         'to calculate feature importance.',
                 rank_abs=0,
                 rank_pct=0,
@@ -254,9 +253,9 @@ class ModelTrainer(object):
         unique_parameters = self.unique_parameters(parameters)
 
         model_group_id = self._get_model_group_id(
-             class_path,
-             unique_parameters,
-             matrix_store.metadata,
+            class_path,
+            unique_parameters,
+            matrix_store.metadata,
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
         model_store.write(trained_model)

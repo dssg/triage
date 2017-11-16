@@ -6,12 +6,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 from results_schema import Prediction
-from catwalk.db import ensure_db
+from triage.component.catwalk.db import ensure_db
 import pandas
 
-from catwalk.predictors import Predictor
+from triage.component.catwalk.predictors import Predictor
 from tests.utils import fake_trained_model, sample_metta_csv_diff_order
-from catwalk.storage import \
+from triage.component.catwalk.storage import \
     InMemoryModelStorageEngine,\
     S3ModelStorageEngine,\
     InMemoryMatrixStore

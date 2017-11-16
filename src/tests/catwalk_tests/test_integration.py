@@ -1,16 +1,16 @@
-from catwalk.model_trainers import ModelTrainer
-from catwalk.predictors import Predictor
-from catwalk.evaluation import ModelEvaluator
-from catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.model_trainers import ModelTrainer
+from triage.component.catwalk.predictors import Predictor
+from triage.component.catwalk.evaluation import ModelEvaluator
+from triage.component.catwalk.utils import save_experiment_and_get_hash
 
 import boto3
 import testing.postgresql
 
 from moto import mock_s3
 from sqlalchemy import create_engine
-from catwalk.db import ensure_db
+from triage.component.catwalk.db import ensure_db
 
-from catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
 import pandas
 

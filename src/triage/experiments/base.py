@@ -16,14 +16,15 @@ from architect.features import (
 )
 from architect.planner import Planner
 from architect.state_table_generators import StateTableGenerator
-from catwalk.db import ensure_db
-from catwalk.model_trainers import ModelTrainer
-from catwalk.predictors import Predictor
-from catwalk.individual_importance import IndividualImportanceCalculator
-from catwalk.evaluation import ModelEvaluator
-from catwalk.utils import save_experiment_and_get_hash
-from catwalk.storage import CSVMatrixStore
 from timechop.timechop import Timechop
+
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.model_trainers import ModelTrainer
+from triage.component.catwalk.predictors import Predictor
+from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
+from triage.component.catwalk.evaluation import ModelEvaluator
+from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.storage import CSVMatrixStore
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator

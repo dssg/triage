@@ -1,7 +1,7 @@
-from catwalk.utils import filename_friendly_hash, \
+from triage.component.catwalk.utils import filename_friendly_hash, \
     save_experiment_and_get_hash, \
     sort_predictions_and_labels
-from catwalk.db import ensure_db
+from triage.component.catwalk.db import ensure_db
 from sqlalchemy import create_engine
 import testing.postgresql
 import datetime

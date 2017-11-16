@@ -4,8 +4,8 @@ import warnings
 
 import pytest
 
-from catwalk.estimators.transformers import CutOff
-from catwalk.estimators.classifiers import ScaledLogisticRegression
+from triage.component.catwalk.estimators.transformers import CutOff
+from triage.component.catwalk.estimators.classifiers import ScaledLogisticRegression
 
 from sklearn import linear_model
 

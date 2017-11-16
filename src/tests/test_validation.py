@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 import testing.postgresql
 
-from catwalk.db import ensure_db
+from triage.component.catwalk.db import ensure_db
 
 from tests.utils import sample_config, populate_source_data
 from triage.experiments.validate import ExperimentValidator

@@ -1,6 +1,8 @@
-from results_schema import IndividualImportance
-from catwalk.utils import save_db_objects
 import logging
+
+from results_schema import IndividualImportance
+
+from triage.component.catwalk.utils import save_db_objects
 
 from .uniform import uniform_distribution
 
@@ -99,11 +101,11 @@ class IndividualImportanceCalculator(object):
             as_of_date (datetime or string) The date to produce individual importances as of
         """
         if not self.replace and not self._needs_new_importances(
-                model_id,
-                as_of_date,
-                method,
-                test_matrix_store
-            ):
+            model_id,
+            as_of_date,
+            method,
+            test_matrix_store
+        ):
                 logging.info('Found as many or more individual importances ' +
                              'for model_id=%s/as_of_date=%s/method=%s, skipping',
                              model_id, as_of_date, method)

@@ -9,11 +9,11 @@ from unittest.mock import patch
 
 from moto import mock_s3
 from sqlalchemy import create_engine
-from catwalk.db import ensure_db
-from catwalk.utils import model_cache_key
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.utils import model_cache_key
 
-from catwalk.model_trainers import ModelTrainer
-from catwalk.storage import InMemoryModelStorageEngine,\
+from triage.component.catwalk.model_trainers import ModelTrainer
+from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
     S3ModelStorageEngine, InMemoryMatrixStore
 
 

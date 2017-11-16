@@ -1,13 +1,22 @@
-from catwalk.storage import S3Store, FSStore, MemoryStore, InMemoryMatrixStore, HDFMatrixStore, CSVMatrixStore
-import tempfile
 import os
-import pandas
-from collections import OrderedDict
+import tempfile
 import unittest
 import yaml
+from collections import OrderedDict
+
 import boto
-import smart_open
+import pandas
 from moto import mock_s3, mock_s3_deprecated
+
+from triage.component.catwalk.storage import (
+    CSVMatrixStore,
+    FSStore,
+    HDFMatrixStore,
+    InMemoryMatrixStore,
+    MemoryStore,
+    S3Store,
+)
+
 
 class SomeClass(object):
     def __init__(self, val):
@@ -94,7 +103,6 @@ class MatrixStoreTest(unittest.TestCase):
 
                 assert csv.labels().to_dict() == inmemory.labels().to_dict()
                 assert hdf.labels().to_dict() == inmemory.labels().to_dict()
-
 
         matrix_store = [inmemory, hdf, csv]
         return matrix_store
@@ -191,8 +199,7 @@ class MatrixStoreTest(unittest.TestCase):
         with mock_s3_deprecated():
             s3_conn = boto.connect_s3()
             bucket_name = 'fake-matrix-bucket'
-            bucket = s3_conn.create_bucket(bucket_name)
-
+            s3_conn.create_bucket(bucket_name)
 
             matrix_store_list = self.matrix_store()
 

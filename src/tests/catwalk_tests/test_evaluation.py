@@ -1,12 +1,12 @@
-from catwalk.evaluation import ModelEvaluator, generate_binary_at_x
-from catwalk.metrics import Metric
+from triage.component.catwalk.evaluation import ModelEvaluator, generate_binary_at_x
+from triage.component.catwalk.metrics import Metric
 import testing.postgresql
 
 import numpy
 from sqlalchemy import create_engine
-from catwalk.db import ensure_db
+from triage.component.catwalk.db import ensure_db
 from tests.utils import fake_labels, fake_trained_model
-from catwalk.storage import InMemoryModelStorageEngine
+from triage.component.catwalk.storage import InMemoryModelStorageEngine
 import datetime
 
 

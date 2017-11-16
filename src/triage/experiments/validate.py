@@ -1,25 +1,33 @@
+import importlib
 import logging
 from datetime import datetime
-from timechop.timechop import Timechop
+from textwrap import dedent
+
+from sklearn.model_selection import ParameterGrid
+
 import architect
 from architect.utils import convert_str_to_relativedelta
-import catwalk
-from triage.validation_primitives import table_should_have_data,\
-    column_should_be_intlike,\
-    column_should_be_booleanlike,\
-    column_should_be_stringlike,\
-    column_should_be_timelike
-import importlib
-from sklearn.model_selection import ParameterGrid
-from textwrap import dedent
+from timechop.timechop import Timechop
+
+from triage.component import catwalk
+
+from triage.validation_primitives import (
+    table_should_have_data,
+    column_should_be_intlike,
+    column_should_be_booleanlike,
+    column_should_be_stringlike,
+    column_should_be_timelike,
+)
 
 
 class Validator(object):
+
     def __init__(self, db_engine=None):
         self.db_engine = db_engine
 
 
 class TemporalValidator(Validator):
+
     def run(self, temporal_config):
         def dt_from_str(dt_str):
             return datetime.strptime(dt_str, '%Y-%m-%d')

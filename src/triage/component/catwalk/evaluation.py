@@ -1,11 +1,13 @@
-import numpy
-from results_schema import Evaluation
-from catwalk.utils import db_retry, sort_predictions_and_labels
-from catwalk.metrics import *
-from sqlalchemy.orm import sessionmaker
 import logging
 import time
 
+import numpy
+from sqlalchemy.orm import sessionmaker
+
+from results_schema import Evaluation
+
+from .utils import db_retry, sort_predictions_and_labels
+from .metrics import *
 
 
 def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
@@ -103,7 +105,7 @@ class ModelEvaluator(object):
         for name, met in custom_metrics.items():
             if not hasattr(met, 'greater_is_better'):
                 raise ValueError("Custom metric {} missing greater_is_better attribute".format(name))
-            elif not met.greater_is_better in (True, False):
+            elif met.greater_is_better not in (True, False):
                 raise ValueError("For custom metric {} greater_is_better must be boolean True or False".format(name))
 
     def _generate_evaluations(

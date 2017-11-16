@@ -5,7 +5,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 
-from catwalk.estimators.transformers import CutOff
+from .transformers import CutOff
+
 
 class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
     """
@@ -18,8 +19,6 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
                  fit_intercept=True, intercept_scaling=1, class_weight=None,
                  random_state=None, solver='liblinear', max_iter=100,
                  multi_class='ovr', verbose=0, warm_start=False, n_jobs=1):
-
-
         self.penalty = penalty
         self.dual = dual
         self.tol = tol
@@ -42,14 +41,13 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
                                      random_state=random_state, solver=solver, max_iter=max_iter,
                                      multi_class=multi_class, verbose=verbose, warm_start=warm_start, n_jobs=n_jobs)
 
-        self.pipeline =Pipeline([
+        self.pipeline = Pipeline([
             ('minmax_scaler', self.minmax_scaler),
             ('dsapp_cutoff', self.dsapp_cutoff),
             ('lr', self.lr)
         ])
 
-
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         self.pipeline.fit(X, y)
 
         self.min_ = self.pipeline.named_steps['minmax_scaler'].min_
@@ -75,4 +73,4 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         return self.pipeline.predict(X)
 
     def score(self, X, y):
-        return self.pipeline.score(X,y)
+        return self.pipeline.score(X, y)
