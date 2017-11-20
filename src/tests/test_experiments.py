@@ -269,7 +269,8 @@ class TestConfigVersion(TestCase):
 
 
 @parametrize_experiment_classes
-@mock.patch('architect.state_table_generators.StateTableGenerator.clean_up',
+@mock.patch('triage.component.architect.state_table_generators.'
+            'StateTableGenerator.clean_up',
             side_effect=lambda: time.sleep(1))
 def test_cleanup_timeout(_clean_up_mock, experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
@@ -310,7 +311,8 @@ def test_build_error(experiment_class):
 
 
 @parametrize_experiment_classes
-@mock.patch('architect.state_table_generators.StateTableGenerator.clean_up',
+@mock.patch('triage.component.architect.state_table_generators.'
+            'StateTableGenerator.clean_up',
             side_effect=lambda: time.sleep(1))
 def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
     with testing.postgresql.Postgresql() as postgresql:

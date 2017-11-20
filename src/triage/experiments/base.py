@@ -7,15 +7,15 @@ from functools import partial
 from descriptors import cachedproperty
 from timeout import timeout
 
-from architect.label_generators import BinaryLabelGenerator
-from architect.features import (
+from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
     FeatureGroupCreator,
     FeatureGroupMixer,
 )
-from architect.planner import Planner
-from architect.state_table_generators import StateTableGenerator
+from triage.component.architect.planner import Planner
+from triage.component.architect.state_table_generators import StateTableGenerator
 from timechop.timechop import Timechop
 
 from triage.component.catwalk.db import ensure_db

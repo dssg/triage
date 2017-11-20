@@ -5,10 +5,10 @@ from textwrap import dedent
 
 from sklearn.model_selection import ParameterGrid
 
-import architect
-from architect.utils import convert_str_to_relativedelta
 from timechop.timechop import Timechop
 
+from triage.component import architect
+from triage.component.architect.utils import convert_str_to_relativedelta
 from triage.component import catwalk
 
 from triage.validation_primitives import (
