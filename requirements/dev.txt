@@ -1,5 +1,6 @@
 -r test.txt
 bumpversion==0.5.3
+cryptography==1.9
 wheel==0.29.0
 mkdocs
 mkdocs-bootstrap
