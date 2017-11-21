@@ -1,0 +1,4 @@
+user: postgres
+password:
+database: test_collate
+port:
