@@ -37,14 +37,14 @@ Triage is a Python package distributable via ``setuptools``. It may be installed
 
 To build this package (without installation), its dependencies may alternatively be installed from the terminal using ``pip``::
 
-    pip install -r requirements/main.txt
+    pip install -r requirement/main.txt
 
 Testing
 -------
 
-To include test and development dependencies, instead use **dev.txt**::
+To add test (and development) dependencies, use **test.txt**::
 
-    pip install -r requirements/dev.txt
+    pip install -r requirement/test.txt [-r requirement/dev.txt]
 
 Then, to run tests::
 
