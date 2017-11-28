@@ -1,5 +1,0 @@
--r requirements.txt
-pytest==2.9.2
-codecov
-pytest-cov
-bumpversion
