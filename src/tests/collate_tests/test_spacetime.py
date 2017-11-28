@@ -1,21 +1,18 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-"""
-test_spacetime
-----------------------------------
+"""test_spacetime
 
 Unit tests for `collate.spacetime` module.
+
 """
-
-import pytest
-from collate.collate import Aggregate
-from collate.spacetime import SpacetimeAggregation
-
-import sqlalchemy
-import testing.postgresql
 from datetime import date
 from itertools import product
+
+import pytest
+import sqlalchemy
+import testing.postgresql
+
+from triage.component.collate import Aggregate, SpacetimeAggregation
+
 
 events_data = [
     # entity id, event_date, outcome
@@ -60,10 +57,10 @@ def test_basic_spacetime():
                 'insert into states values (%s, %s)',
                 state
             )
-        
+
         agg = Aggregate('outcome::int', ['sum','avg'], {
             "coltype": "aggregate",
-            "avg": {"type": "mean"}, 
+            "avg": {"type": "mean"},
             "sum": {"type": "constant", "value": 3},
             "max": {"type": "zero"}
         })
@@ -80,7 +77,7 @@ def test_basic_spacetime():
             )
 
         st.execute(engine.connect())
-        
+
         r = engine.execute('select * from events_entity_id order by entity_id, as_of_date')
         rows = [x for x in r]
         assert rows[0]['entity_id'] == 1
@@ -99,7 +96,7 @@ def test_basic_spacetime():
         assert rows[1]['events_entity_id_2y_outcome::int_avg'] == 0.5
         assert rows[1]['events_entity_id_all_outcome::int_sum'] == 2
         assert rows[1]['events_entity_id_all_outcome::int_avg'] == 0.5
-        
+
         assert rows[2]['entity_id'] == 2
         assert rows[2]['as_of_date'] == date(2015, 1, 1)
         assert rows[2]['events_entity_id_1y_outcome::int_sum'] == 0
@@ -116,7 +113,7 @@ def test_basic_spacetime():
         assert rows[3]['events_entity_id_2y_outcome::int_avg'] == 0
         assert rows[3]['events_entity_id_all_outcome::int_sum'] == 1
         assert rows[3]['events_entity_id_all_outcome::int_avg'] == 0.5
-        
+
         assert rows[4]['entity_id'] == 3
         assert rows[4]['as_of_date'] == date(2015, 1, 1)
         assert rows[4]['events_entity_id_1y_outcome::int_sum'] == 0
@@ -133,7 +130,7 @@ def test_basic_spacetime():
         assert rows[5]['events_entity_id_2y_outcome::int_avg'] == 0.25
         assert rows[5]['events_entity_id_all_outcome::int_sum'] == 1
         assert rows[5]['events_entity_id_all_outcome::int_avg'] == 0.25
-        
+
         assert rows[6]['entity_id'] == 4
         # rows[6]['date'] == date(2015, 1, 1) is skipped due to no data!
         assert rows[6]['as_of_date'] == date(2016, 1, 1)
@@ -178,7 +175,7 @@ def test_basic_spacetime():
         assert rows[7]['events_entity_id_all_outcome::int_avg_imp'] == 0
         assert len(rows) == 8
 
-        
+
 def test_input_min_date():
     with testing.postgresql.Postgresql() as psql:
         engine = sqlalchemy.create_engine(psql.url())
@@ -202,7 +199,7 @@ def test_input_min_date():
 
         agg = Aggregate('outcome::int', ['sum','avg'], {
             "coltype": "aggregate",
-            "avg": {"type": "mean"}, 
+            "avg": {"type": "mean"},
             "sum": {"type": "constant", "value": 3},
             "max": {"type": "zero"}
         })
@@ -219,10 +216,10 @@ def test_input_min_date():
         )
 
         st.execute(engine.connect())
-        
+
         r = engine.execute('select * from events_entity_id order by entity_id')
         rows = [x for x in r]
-        
+
         assert rows[0]['entity_id'] == 1
         assert rows[0]['date'] == date(2016, 1, 1)
         assert rows[0]['events_entity_id_all_outcome::int_sum'] == 1
@@ -231,7 +228,7 @@ def test_input_min_date():
         assert rows[1]['date'] == date(2016, 1, 1)
         assert rows[1]['events_entity_id_all_outcome::int_sum'] == 0
         assert rows[1]['events_entity_id_all_outcome::int_avg'] == 0
-        
+
         assert len(rows) == 2
 
         st = SpacetimeAggregation(

@@ -1,25 +1,24 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-"""
-test_imputation_output
-----------------------------------
+"""test_imputation_output
 
 Unit tests for imputation output.
 
 For all available imputation methods, make sure they correctly handle a variety
-of cases, including completely null columns and columns entirely null for a given 
+of cases, including completely null columns and columns entirely null for a given
 date, generating the right number of records with no nulls in the output set and
 imputed flags as necessary.
+
 """
-
+import pandas as pd
 import pytest
-from collate.collate import Aggregate, available_imputations
-from collate.spacetime import SpacetimeAggregation
-
 import sqlalchemy
 import testing.postgresql
-import pandas as pd
+
+from triage.component.collate import (
+    Aggregate,
+    available_imputations,
+    SpacetimeAggregation,
+)
 
 # some imputations require arguments, so specify default values here
 # everything in collate.collate.available_imputations needs a record here!
@@ -98,9 +97,18 @@ aggs_table_noimp = [
 
 
 def test_available_imputations_coverage():
-    assert set(available_imputations.keys()) == set(list(imputation_values.keys()) + ['error'])
+    assert set(available_imputations.keys()) == \
+           set(list(imputation_values.keys()) + ['error'])
 
-def _base_imputation_test(feat_list, exp_imp_cols, feat_table):
+
+@pytest.mark.parametrize(
+    ('feat_list', 'exp_imp_cols', 'feat_table'),
+    [
+        (['f1', 'f2', 'f3', 'f4'], ['f1', 'f2', 'f3', 'f4'], aggs_table),
+        (['f5', 'f6'], ['f5'], aggs_table_noimp),
+    ]
+)
+def test_imputation_output(feat_list, exp_imp_cols, feat_table):
     with testing.postgresql.Postgresql() as psql:
         engine = sqlalchemy.create_engine(psql.url())
 
@@ -135,7 +143,7 @@ def _base_imputation_test(feat_list, exp_imp_cols, feat_table):
                 continue
 
             for coltype in ['aggregate', 'categorical']:
-                # only consider 
+                # only consider
                 if not imputation_values[imp][coltype]['avail']:
                     continue
 
@@ -173,7 +181,7 @@ def _base_imputation_test(feat_list, exp_imp_cols, feat_table):
                 # sql to drop and create the imputation table
                 drop_imp = st.get_drop(imputed=True)
                 create_imp = st.get_impute_create(
-                            impute_cols=impute_cols, 
+                            impute_cols=impute_cols,
                             nonimpute_cols=nonimpute_cols
                             )
 
@@ -203,18 +211,3 @@ def _base_imputation_test(feat_list, exp_imp_cols, feat_table):
                     else:
                         # should not generate an imputed column when not needed
                         assert 'prefix_entity_id_1y_%s_max_imp' % feat not in df.columns.values
-
-def test_imputation_output():
-    return _base_imputation_test(
-        feat_list=['f1', 'f2', 'f3', 'f4'], 
-        exp_imp_cols = ['f1', 'f2', 'f3', 'f4'],
-        feat_table=aggs_table
-        )
-
-def test_non_imputation_output():
-    return _base_imputation_test(
-        feat_list=['f5', 'f6'], 
-        exp_imp_cols = ['f5'],
-        feat_table=aggs_table_noimp
-        )
-

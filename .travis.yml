@@ -10,10 +10,6 @@ before_install:
 - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
 install:
 - pip install -r requirements/dev.txt
-before_script:
-- createdb test_collate
-- cp tests/config/database.yml{.travis,}
-- python tests/initialize_db.py
 env:
 - BOTO_CONFIG=/tmp/nowhere
 script: tox

@@ -1,23 +1,23 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-"""
-test_imputations
-----------------------------------
+"""test_imputations
 
 Unit tests for `collate.imputations` module.
-"""
 
+"""
 import pytest
-from collate.imputations import *
+
+from triage.component.collate.imputations import *
+
 
 def test_impute_flag():
     imp = BaseImputation(column='a', coltype='aggregate')
     assert imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN 1 ELSE 0 END AS "a_imp" '
 
+
 def test_impute_flag_categorical():
     imp = BaseImputation(column='a', coltype='categorical')
     assert imp.imputed_flag_sql() is None
+
 
 def test_mean_imputation():
     imp = ImputeMean(column='a', coltype='aggregate')
@@ -35,6 +35,7 @@ def test_mean_imputation():
     imp = ImputeMean(column='a__NULL_mean', coltype='categorical')
     assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
 
+
 def test_constant_imputation():
     imp = ImputeConstant(column='a', coltype='aggregate', value=3.14)
     assert imp.to_sql() == 'COALESCE("a", 3.14) AS "a" '
@@ -48,6 +49,7 @@ def test_constant_imputation():
     imp = ImputeConstant(column='a__NULL_mean', coltype='categorical', value='myval')
     assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
 
+
 def test_impute_zero():
     imp = ImputeZero(column='a', coltype='aggregate')
     assert imp.to_sql() == 'COALESCE("a", 0) AS "a" '
@@ -60,6 +62,7 @@ def test_impute_zero():
 
     imp = ImputeZero(column='a__NULL_mean', coltype='categorical')
     assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
+
 
 def test_impute_zero_noflag():
     imp = ImputeZeroNoFlag(column='a', coltype='aggregate')
@@ -75,6 +78,7 @@ def test_impute_zero_noflag():
 
     imp = ImputeZeroNoFlag(column='a__NULL_mean', coltype='categorical')
     assert imp.to_sql() == 'COALESCE("a__NULL_mean", 0) AS "a__NULL_mean" '
+
 
 def test_impute_null_cat():
     imp = ImputeNullCategory(column='a_myval_max', coltype='categorical')
@@ -95,6 +99,7 @@ def test_impute_null_cat():
     else:
         assert False
 
+
 def test_impute_binary_mode():
     imp = ImputeBinaryMode(column='a', coltype='aggregate')
     assert imp.to_sql() == 'COALESCE("a", CASE WHEN AVG("a") OVER () > 0.5 THEN 1 ELSE 0 END, 0) AS "a" '
@@ -110,6 +115,7 @@ def test_impute_binary_mode():
         assert True
     else:
         assert False
+
 
 def test_impute_error():
     try:

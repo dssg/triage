@@ -1,9 +1,15 @@
-from collections import OrderedDict
-from collate.collate import Aggregate, Categorical, Compare
-from collate.spacetime import SpacetimeAggregation
-from triage.component.architect.utils import convert_str_to_relativedelta
-import sqlalchemy
 import logging
+from collections import OrderedDict
+
+import sqlalchemy
+
+from triage.component.architect.utils import convert_str_to_relativedelta
+from triage.component.collate import (
+    Aggregate,
+    Categorical,
+    Compare,
+    SpacetimeAggregation,
+)
 
 
 class FeatureGenerator(object):
