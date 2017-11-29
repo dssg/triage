@@ -6,8 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from results_schema import Evaluation
 
+from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
-from .metrics import *
 
 
 def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
@@ -43,18 +43,18 @@ class ModelEvaluator(object):
     and return a numeric score
     """
     available_metrics = {
-        'precision@': precision,
-        'recall@': recall,
-        'fbeta@': fbeta,
-        'f1': f1,
-        'accuracy': accuracy,
-        'roc_auc': roc_auc,
-        'average precision score': avg_precision,
-        'true positives@': true_positives,
-        'true negatives@': true_negatives,
-        'false positives@': false_positives,
-        'false negatives@': false_negatives,
-        'fpr@': fpr,
+        'precision@': metrics.precision,
+        'recall@': metrics.recall,
+        'fbeta@': metrics.fbeta,
+        'f1': metrics.f1,
+        'accuracy': metrics.accuracy,
+        'roc_auc': metrics.roc_auc,
+        'average precision score': metrics.avg_precision,
+        'true positives@': metrics.true_positives,
+        'true negatives@': metrics.true_negatives,
+        'false positives@': metrics.false_positives,
+        'false negatives@': metrics.false_negatives,
+        'fpr@': metrics.fpr,
     }
 
     def __init__(self, metric_groups, db_engine, sort_seed=None, custom_metrics=None):
@@ -104,9 +104,11 @@ class ModelEvaluator(object):
     ):
         for name, met in custom_metrics.items():
             if not hasattr(met, 'greater_is_better'):
-                raise ValueError("Custom metric {} missing greater_is_better attribute".format(name))
+                raise ValueError("Custom metric {} missing greater_is_better "
+                                 "attribute".format(name))
             elif met.greater_is_better not in (True, False):
-                raise ValueError("For custom metric {} greater_is_better must be boolean True or False".format(name))
+                raise ValueError("For custom metric {} greater_is_better must be "
+                                 "boolean True or False".format(name))
 
     def _generate_evaluations(
         self,
@@ -154,7 +156,8 @@ class ModelEvaluator(object):
                         for key, val in full_params.items()
                     ])
                     logging.info(
-                        'Evaluations for %s%s, labeled examples %s, above threshold %s, positive labels %s, value %s',
+                        'Evaluations for %s%s, labeled examples %s, '
+                        'above threshold %s, positive labels %s, value %s',
                         metric,
                         parameter_string,
                         num_labeled_examples,
@@ -172,7 +175,7 @@ class ModelEvaluator(object):
                         sort_seed=self.sort_seed
                     ))
             else:
-                raise UnknownMetricError()
+                raise metrics.UnknownMetricError()
         return evaluations
 
     def evaluate(
@@ -190,12 +193,14 @@ class ModelEvaluator(object):
             predictions_proba (numpy.array) List of prediction probabilities
             labels (numpy.array) The true labels for the prediction set
             model_id (int) The database identifier of the model
-            evaluation_start_time (datetime.datetime) The time of the first prediction being evaluated
+            evaluation_start_time (datetime.datetime) The time of the
+                first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             as_of_date_frequency (string) How frequently predictions were generated
         """
         logging.info(
-            'Generating evaluations for model id %s, evaluation range %s-%s, as_of_date frequency %s',
+            'Generating evaluations for model id %s, evaluation range %s-%s, '
+            'as_of_date frequency %s',
             model_id,
             evaluation_start_time,
             evaluation_end_time,
@@ -213,7 +218,8 @@ class ModelEvaluator(object):
             logging.info('Creating evaluations for metric group %s', group)
             parameters = group.get('parameters', [{}])
             if 'thresholds' not in group:
-                logging.info('Not a thresholded group, generating evaluation based on all predictions')
+                logging.info('Not a thresholded group, generating evaluation '
+                             'based on all predictions')
                 evaluations = evaluations + self._generate_evaluations(
                     group['metrics'],
                     parameters,

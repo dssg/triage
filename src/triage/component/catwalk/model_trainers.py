@@ -125,8 +125,15 @@ class ModelTrainer(object):
         if isinstance(feature_importances, np.ndarray):
             temp_df = pandas.DataFrame({'feature_importance': feature_importances})
             features_index = temp_df.index.tolist()
-            rankings_abs = temp_df['feature_importance'].rank(method='dense', ascending=False)
-            rankings_pct = temp_df['feature_importance'].rank(method='dense', ascending=False, pct=True)
+            rankings_abs = temp_df['feature_importance'].rank(
+                method='dense',
+                ascending=False,
+            )
+            rankings_pct = temp_df['feature_importance'].rank(
+                method='dense',
+                ascending=False,
+                pct=True,
+            )
             for feature_index, importance, rank_abs, rank_pct in zip(
                 features_index,
                 feature_importances,

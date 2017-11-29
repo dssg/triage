@@ -1,9 +1,9 @@
 import warnings
 
 import numpy as np
-
 import sklearn.linear_model
 from sklearn.svm import SVC
+
 
 def _ad_hoc_feature_importances(model):
     """
@@ -24,13 +24,14 @@ def _ad_hoc_feature_importances(model):
 
     if isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)):
         coef_odds_ratio = np.exp(model.coef_)
-        #intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
-        ## We are ignoring the intercept
+        # intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
+        # We are ignoring the intercept
 
-        ## NOTE: We need to squeeze this array so it has the correct dimensions
+        # NOTE: We need to squeeze this array so it has the correct dimensions
         feature_importances = coef_odds_ratio.squeeze()
 
     return feature_importances
+
 
 def get_feature_importances(model):
     """
@@ -49,7 +50,7 @@ def get_feature_importances(model):
 
     elif isinstance(model, (SVC)) and (model.get_params()['kernel'] == 'linear'):
         feature_importances = model.coef_.squeeze()
-        
+
     else:
         warnings.warn(
             "\nThe selected algorithm, doesn't support a standard way"

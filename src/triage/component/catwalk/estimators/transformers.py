@@ -1,12 +1,11 @@
 # coding: utf-8
-
 import warnings
 
 import numpy as np
-
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
 from sklearn.utils.validation import FLOAT_DTYPES
+
 
 DEPRECATION_MSG_1D = (
     "Passing 1d arrays as data is deprecated in 0.17 and will "
@@ -15,10 +14,9 @@ DEPRECATION_MSG_1D = (
     "X.reshape(1, -1) if it contains a single sample."
 )
 
-class CutOff(BaseEstimator, TransformerMixin):
-    """
-    Transforms features cutting values out of established range
 
+class CutOff(BaseEstimator, TransformerMixin):
+    """Transform features cutting values out of established range
 
     Args:
        feature_range: Range of allowed values, default=`(0,1)`
@@ -42,11 +40,11 @@ class CutOff(BaseEstimator, TransformerMixin):
            pipeline.predict(X_test)
 
     """
-    def __init__(self, feature_range=(0,1), copy=True):
+    def __init__(self, feature_range=(0, 1), copy=True):
         self.feature_range = feature_range
         self.copy = copy
 
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         return self
 
     def transform(self, X):
@@ -57,13 +55,11 @@ class CutOff(BaseEstimator, TransformerMixin):
         if X.ndim == 1:
             warnings.warn(DEPRECATION_MSG_1D, DeprecationWarning)
 
-
         if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
             warnings.warn(
                 "You got data that are out of the range: {}"
                 .format(feature_range)
             )
-
 
         X[X > feature_range[1]] = feature_range[1]
         X[X < feature_range[0]] = feature_range[0]

@@ -36,10 +36,20 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
 
         self.minmax_scaler = MinMaxScaler()
         self.dsapp_cutoff = CutOff()
-        self.lr = LogisticRegression(penalty=penalty, dual=dual, tol=tol, C=C,
-                                     fit_intercept=fit_intercept, intercept_scaling=intercept_scaling, class_weight=class_weight,
-                                     random_state=random_state, solver=solver, max_iter=max_iter,
-                                     multi_class=multi_class, verbose=verbose, warm_start=warm_start, n_jobs=n_jobs)
+        self.lr = LogisticRegression(penalty=penalty,
+                                     dual=dual,
+                                     tol=tol,
+                                     C=C,
+                                     fit_intercept=fit_intercept,
+                                     intercept_scaling=intercept_scaling,
+                                     class_weight=class_weight,
+                                     random_state=random_state,
+                                     solver=solver,
+                                     max_iter=max_iter,
+                                     multi_class=multi_class,
+                                     verbose=verbose,
+                                     warm_start=warm_start,
+                                     n_jobs=n_jobs)
 
         self.pipeline = Pipeline([
             ('minmax_scaler', self.minmax_scaler),

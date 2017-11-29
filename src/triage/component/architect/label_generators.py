@@ -1,11 +1,15 @@
 import logging
-from triage.component.architect.validations import table_should_have_data,\
-    column_should_be_intlike,\
-    column_should_be_booleanlike,\
-    column_should_be_timelike
+
+from triage.component.architect.validations import (
+    table_should_have_data,
+    column_should_be_intlike,
+    column_should_be_booleanlike,
+    column_should_be_timelike,
+)
 
 
 class BinaryLabelGenerator(object):
+
     def __init__(self, events_table, db_engine):
         self.events_table = events_table
         self.db_engine = db_engine
@@ -70,7 +74,8 @@ class BinaryLabelGenerator(object):
                      len(label_timespans))
         for as_of_date in as_of_dates:
             for label_timespan in label_timespans:
-                logging.info('Generating labels for as of date %s and label timespan %s', as_of_date, label_timespan)
+                logging.info('Generating labels for as of date %s and '
+                             'label timespan %s', as_of_date, label_timespan)
                 self.generate(
                     start_date=as_of_date,
                     label_timespan=label_timespan,

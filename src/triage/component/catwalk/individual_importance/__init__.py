@@ -130,11 +130,13 @@ class IndividualImportanceCalculator(object):
 
         Args:
             importance_records (list) Individual importances.
-                Each entry should be a dict with keys 'entity_id' 'feature_name' and 'feature_value'
-                corresponding to the correct values for the model_id, as_of_date, and method
+                Each entry should be a dict with keys 'entity_id' 'feature_name'
+                and 'feature_value' corresponding to the correct values for the
+                model_id, as_of_date, and method
             model_id (int) A model id, expected to be present in results.models
             as_of_date (datetime or string) The as_of_date matching the importance records
             method_name (string) The name of the method that produced the importance records
+
         """
         db_objects = []
         self.db_engine.execute(

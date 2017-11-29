@@ -113,7 +113,13 @@ class Predictor(object):
                 prediction.as_of_date.date().isoformat()
             )] = prediction.score
         if 'as_of_date' in index.names:
-            score_iterator = (score_lookup[(entity_id, datetime.strptime(dt, self.expected_matrix_ts_format).date().isoformat())] for entity_id, dt in index)
+            score_iterator = (
+                score_lookup[(
+                    entity_id,
+                    datetime.strptime(dt, self.expected_matrix_ts_format).date().isoformat()
+                )]
+                for (entity_id, dt) in index
+            )
         else:
             as_of_date = matrix_store.metadata['end_time'].date().isoformat()
             score_iterator = (score_lookup[(row, as_of_date)] for row in index)
@@ -137,7 +143,9 @@ class Predictor(object):
             matrix_store (catwalk.storage.MatrixStore) the matrix and metadata
             entity_ids (iterable) entity ids that predictions were made on
             predictions (iterable) predicted values
-            labels (iterable) labels of prediction set (int) the id of the model to predict based off of
+            labels (iterable) labels of prediction set (int) the id of the model
+            to predict based off of
+
         """
         session = self.sessionmaker()
         self._existing_predictions(session, model_id, matrix_store)\
@@ -148,7 +156,8 @@ class Predictor(object):
         logging.warning(test_label_timespan)
 
         if 'as_of_date' in matrix_store.matrix.index.names:
-            logging.info('as_of_date found as part of matrix index, using index for table as_of_dates')
+            logging.info('as_of_date found as part of matrix index, using '
+                         'index for table as_of_dates')
             session.commit()
             session.close()
             with tempfile.TemporaryFile(mode='w+') as f:
@@ -183,7 +192,8 @@ class Predictor(object):
                 f.seek(0)
                 postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
         else:
-            logging.info('as_of_date not found as part of matrix index, using matrix metadata end_time as as_of_date')
+            logging.info('as_of_date not found as part of matrix index, using '
+                         'matrix metadata end_time as as_of_date')
             temp_df = pandas.DataFrame({'score': predictions})
             rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
             rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)

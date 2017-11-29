@@ -125,7 +125,7 @@ class FeatureGenerator(object):
         # a rule was specified, but not valid for this type of aggregate
         if impute_rule['type'] not in valid_types.keys():
             raise ValueError('Invalid imputation type %s for %s'
-                 % (impute_rule['type'], aggregate_type))
+                             % (impute_rule['type'], aggregate_type))
 
         # check that all required parameters exist in the keys of the imputation rule
         required_params = valid_types[impute_rule['type']]
@@ -455,7 +455,8 @@ class FeatureGenerator(object):
         )
 
     def _aggregation_index_columns(self, aggregation):
-        return sorted([group for group in aggregation.groups.keys()] + [aggregation.output_date_column])
+        return sorted([group for group in aggregation.groups.keys()] +
+                      [aggregation.output_date_column])
 
     def index_column_lookup(self, aggregations, imputed=True):
         return dict((

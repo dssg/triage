@@ -50,7 +50,8 @@ class FeatureGroupCreator(object):
             if subsetter_name not in self.subsetters:
                 raise ValueError('Unknown subsetter %s received', subsetter_name)
             if not hasattr(value, '__iter__') or isinstance(value, (str, bytes)):
-                raise ValueError('Each value in FeatureGroupCreator must be iterable and not a string')
+                raise ValueError('Each value in FeatureGroupCreator must be '
+                                 'iterable and not a string')
 
     def subsets(self, feature_dictionary):
         """Generate subsets of a feature dict
@@ -90,7 +91,8 @@ class FeatureGroupCreator(object):
                         subset[table] = matching_features
                     else:
                         logging.warning(
-                            'No matching features found for config item %s, table %s, master features %s',
+                            'No matching features found for config item %s, '
+                            'table %s, master features %s',
                             config_item,
                             table,
                             features
