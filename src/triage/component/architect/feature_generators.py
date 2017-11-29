@@ -3,7 +3,8 @@ from collections import OrderedDict
 
 import sqlalchemy
 
-from triage.component.architect.utils import convert_str_to_relativedelta
+from triage.util.conf import convert_str_to_relativedelta
+
 from triage.component.collate import (
     Aggregate,
     Categorical,

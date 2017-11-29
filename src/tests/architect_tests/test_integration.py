@@ -4,12 +4,13 @@ import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from results_schema import Base
-from timechop.timechop import Timechop
-from triage.component.architect.features import \
-    FeatureGenerator,\
-    FeatureDictionaryCreator,\
-    FeatureGroupCreator,\
-    FeatureGroupMixer
+from triage.component.timechop import Timechop
+from triage.component.architect.features import (
+    FeatureGenerator,
+    FeatureDictionaryCreator,
+    FeatureGroupCreator,
+    FeatureGroupMixer,
+)
 from triage.component.architect.state_table_generators import StateTableGenerator
 from triage.component.architect.label_generators import BinaryLabelGenerator
 from triage.component.architect.planner import Planner
@@ -361,7 +362,7 @@ def test_integration_simple():
         feature_group_mix_rules=['all'],
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
-        expected_matrix_multiplier=1, 
+        expected_matrix_multiplier=1,
     )
 
 

@@ -1,13 +1,16 @@
-from timechop.timechop import Timechop
-from timechop.utils import convert_str_to_relativedelta
 import datetime
-from unittest import TestCase
-import warnings
 import logging
+from unittest import TestCase
+
+from triage.util.conf import convert_str_to_relativedelta
+
+from triage.component.timechop import Timechop
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 class test_calculate_train_test_split_times(TestCase):
+
     def test_valid_input(self):
         expected_result = [
             datetime.datetime(2015, 3, 1, 0, 0),
@@ -30,7 +33,7 @@ class test_calculate_train_test_split_times(TestCase):
             test_label_timespans=['1 months'],
             training_label_timespans=['3 days']
         )
-        
+
         # this should throw an exception because last possible label date is after
         # end of feature time
         result = chopper.calculate_train_test_split_times(
@@ -55,11 +58,11 @@ class test_calculate_train_test_split_times(TestCase):
             test_label_timespans=['1 months'],
             training_label_timespans=['3 days']
         )
-        
+
         # this should throw an exception because last possible label date is after
         # end of feature time
         with self.assertRaises(ValueError):
-            result = chopper.calculate_train_test_split_times(
+            chopper.calculate_train_test_split_times(
                 training_label_timespan=convert_str_to_relativedelta('3 days'),
                 test_duration='6 months',
                 test_label_timespan=convert_str_to_relativedelta('1 month')
@@ -118,11 +121,11 @@ def test_calculate_as_of_times_one_day_freq():
         training_label_timespans=['3 months']
     )
     result = chopper.calculate_as_of_times(
-        as_of_start_limit = datetime.datetime(2011, 1, 1, 0, 0),
-        as_of_end_limit = datetime.datetime(2011, 1, 11, 0, 0),
-        data_frequency = convert_str_to_relativedelta('1 days')
+        as_of_start_limit=datetime.datetime(2011, 1, 1, 0, 0),
+        as_of_end_limit=datetime.datetime(2011, 1, 11, 0, 0),
+        data_frequency=convert_str_to_relativedelta('1 days')
     )
-    assert(result == expected_result)
+    assert result == expected_result
 
 
 def test_calculate_as_of_times_three_day_freq():
@@ -146,15 +149,16 @@ def test_calculate_as_of_times_three_day_freq():
         training_label_timespans=['3 months']
     )
     result = chopper.calculate_as_of_times(
-        as_of_start_limit = datetime.datetime(2011, 1, 1, 0, 0),
-        as_of_end_limit = datetime.datetime(2011, 1, 11, 0, 0),
-        data_frequency = convert_str_to_relativedelta('3 days'),
+        as_of_start_limit=datetime.datetime(2011, 1, 1, 0, 0),
+        as_of_end_limit=datetime.datetime(2011, 1, 11, 0, 0),
+        data_frequency=convert_str_to_relativedelta('3 days'),
         forward=True
     )
-    assert(result == expected_result)
+    assert result == expected_result
 
 
 class test_generate_matrix_definitions(TestCase):
+
     def test_look_back_time_equal_modeling_start(self):
         # TODO: rework this test since the test label window of 3 months
         # cannot be satisfied by the 10 day difference between modeling
@@ -206,7 +210,7 @@ class test_generate_matrix_definitions(TestCase):
             training_label_timespans=['1 day']
         )
         result = chopper.generate_matrix_definitions(
-            train_test_split_time = datetime.datetime(2010, 1, 6, 0, 0),
+            train_test_split_time=datetime.datetime(2010, 1, 6, 0, 0),
             training_as_of_date_frequency='1 days',
             max_training_history='5 days',
             test_duration='5 days',
@@ -276,7 +280,7 @@ class test_generate_matrix_definitions(TestCase):
             training_label_timespans=['1 day']
         )
         result = chopper.generate_matrix_definitions(
-            train_test_split_time = datetime.datetime(2010, 1, 6, 0, 0),
+            train_test_split_time=datetime.datetime(2010, 1, 6, 0, 0),
             training_as_of_date_frequency='1 days',
             max_training_history='10 days',
             test_duration='5 days',
@@ -618,7 +622,7 @@ class test_chop_time(TestCase):
 class test__init__(TestCase):
     def test_bad_feature_start_time(self):
         with self.assertRaises(ValueError):
-            chopper = Timechop(
+            Timechop(
                 feature_start_time=datetime.datetime(2011, 1, 1, 0, 0),
                 feature_end_time=datetime.datetime(2010, 1, 16, 0, 0),
                 label_start_time=datetime.datetime(2010, 1, 3, 0, 0),

@@ -29,7 +29,7 @@ Timechop currently works with the following:
 
 Here's an example of a typical set-up with a single prediction immediately after training and models built at an annual frequency:
 ```
-from timechop.timechop import Timechop
+from triage.component.timechop import Timechop
 
 chopper = Timechop(
     feature_start_time=datetime.datetime(1990, 1, 1, 0, 0), 
@@ -146,7 +146,7 @@ print(result)
 And a second example with multiple testing dates and showing how the train matrices behave at the edge cases, showing the effects of some of the other paramters:
 
 ```
-from timechop.timechop import Timechop
+from triage.component.timechop import Timechop
 
 chopper = Timechop(
 	feature_start_time=datetime.datetime(1990, 1, 1, 0, 0), 
