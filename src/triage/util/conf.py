@@ -8,9 +8,11 @@ def parse_delta_string(delta_string):
     parse the units and value from it.
 
     Assumptions:
-    - the string is in the format 'value unit', where
+    - The string is in the format 'value unit', where
       value is an int and unit is one of year(s), month(s), day(s),
-      week(s), hour(s), minute(s), second(s), microsecond(s).
+      week(s), hour(s), minute(s), second(s), microsecond(s), or an
+      abbreviation matching y, d, w, h, m, s, or ms (case-insensitive).
+      For example: 1 year, 1year, 2 years, 1 y, 2y, 1Y.
 
     :param delta_string: the time interval to convert
     :type delta_string: str
@@ -38,10 +40,11 @@ def convert_str_to_relativedelta(delta_string):
     convert it to a dateutil.relativedelta.relativedelta.
 
     Assumptions:
-    - the string is in the format 'value unit', where
+    - The string is in the format 'value unit', where
       value is an int and unit is one of year(s), month(s), day(s),
       week(s), hour(s), minute(s), second(s), microsecond(s), or an
       abbreviation matching y, d, w, h, m, s, or ms (case-insensitive).
+      For example: 1 year, 1year, 2 years, 1 y, 2y, 1Y.
 
     :param delta_string: the time interval to convert
     :type delta_string: str
