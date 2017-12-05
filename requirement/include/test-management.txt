@@ -1,2 +1,3 @@
+codecov
 coverage==4.1
 tox==2.9.1

@@ -9,7 +9,7 @@ before_install:
 - sudo apt-get update
 - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
 install:
-- pip install -r requirement/dev.txt -r requirement/include/test-management.txt
+- pip install -r requirement/include/build.txt -r requirement/include/test-management.txt
 env:
 - BOTO_CONFIG=/tmp/nowhere
 script: tox
