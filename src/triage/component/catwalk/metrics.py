@@ -1,8 +1,3 @@
-import numpy
-from sklearn import metrics
-from sklearn.metrics import confusion_matrix
-
-
 """Metric definitions
 
 Mostly just wrappers around sklearn.metrics functions, these functions
@@ -20,11 +15,15 @@ All functions should be wrapped with @Metric to define the optimal direction
 All functions should return: (float) the resulting score
 
 Functions defined here are meant to be used in ModelEvaluator.available_metrics
+
 """
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+
 
 class Metric(object):
-    """decorator for metrics: result will be a callable metric with an 
-    `greater_is_better` parameter defined as either True or False 
+    """decorator for metrics: result will be a callable metric with an
+    `greater_is_better` parameter defined as either True or False
     depending on whether larger or smaller metric values indicate
     better models.
     """
@@ -42,11 +41,11 @@ class Metric(object):
                 self.function = function
                 self.__name__ = function.__name__
                 self.__doc__ = function.__doc__
+
             def __call__(self, *params, **kwparams):
                 return self.function(*params, **kwparams)
 
         return DecoratedMetric(self.greater_is_better, function)
-
 
 
 @Metric(greater_is_better=True)
@@ -86,22 +85,22 @@ def avg_precision(predictions_proba, _, labels, parameters):
 
 @Metric(greater_is_better=True)
 def true_positives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[1,1])
+    return int(confusion_matrix(labels, predictions_binary)[1, 1])
 
 
 @Metric(greater_is_better=False)
 def false_positives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[0,1])
+    return int(confusion_matrix(labels, predictions_binary)[0, 1])
 
 
 @Metric(greater_is_better=True)
 def true_negatives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[0,0])
+    return int(confusion_matrix(labels, predictions_binary)[0, 0])
 
 
 @Metric(greater_is_better=False)
 def false_negatives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[1,0])
+    return int(confusion_matrix(labels, predictions_binary)[1, 0])
 
 
 @Metric(greater_is_better=False)
@@ -113,6 +112,6 @@ def fpr(_, predictions_binary, labels, parameters):
 class UnknownMetricError(ValueError):
     """Signifies that a metric name was passed, but no matching computation
     function is available
+
     """
     pass
-

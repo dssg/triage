@@ -1,10 +1,17 @@
-from .utils import upload_object_to_key, key_exists, model_cache_key, download_object
+import logging
 import os
 import pickle
+
 import pandas
-import yaml
-import logging
 import smart_open
+import yaml
+
+from .utils import (
+    upload_object_to_key,
+    key_exists,
+    model_cache_key,
+    download_object,
+)
 
 
 class Store(object):
@@ -229,6 +236,7 @@ class MatrixStore(object):
 
 
 class HDFMatrixStore(MatrixStore):
+
     def _get_head_of_matrix(self):
         try:
             hdf = pandas.HDFStore(self.matrix_path)
@@ -245,7 +253,7 @@ class HDFMatrixStore(MatrixStore):
         self._metadata = self.load_yaml(self.metadata_path)
         try:
             self._matrix.set_index(self._metadata['indices'], inplace=True)
-        except:
+        except Exception:
             pass
 
     def _read_hdf_from_buffer(self, buffer):

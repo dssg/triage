@@ -5,12 +5,11 @@ from textwrap import dedent
 
 from sklearn.model_selection import ParameterGrid
 
-from timechop.timechop import Timechop
-
 from triage.component import architect
-from triage.component.architect.utils import convert_str_to_relativedelta
 from triage.component import catwalk
+from triage.component.timechop import Timechop
 
+from triage.util.conf import convert_str_to_relativedelta
 from triage.validation_primitives import (
     table_should_have_data,
     column_should_be_intlike,

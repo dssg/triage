@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.pool import QueuePool
 
-from results_schema import *
+from results_schema import Base
 
 
 def ensure_db(engine):

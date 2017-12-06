@@ -63,6 +63,7 @@ def test_MemoryStore():
 
 
 class MatrixStoreTest(unittest.TestCase):
+
     def matrix_store(self):
         data_dict = OrderedDict([
             ('entity_id', [1, 2]),

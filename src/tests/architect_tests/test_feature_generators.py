@@ -1,17 +1,19 @@
 import copy
 from datetime import date
+from unittest import TestCase
 
 import pandas
 import pytest
 import sqlalchemy
 import testing.postgresql
 from sqlalchemy import create_engine
-from unittest import TestCase
-
-from collate.collate import Aggregate, Categorical
-from collate.spacetime import SpacetimeAggregation
 
 from triage.component.architect.feature_generators import FeatureGenerator
+from triage.component.collate import (
+    Aggregate,
+    Categorical,
+    SpacetimeAggregation,
+)
 
 
 INPUT_DATA = [

@@ -131,7 +131,8 @@ class BuilderBase(object):
             table_name=table_name,
             index_query=indices_query
         )
-        logging.info('Creating matrix-specific entity-date table for matrix %s with query %s', matrix_uuid, query)
+        logging.info('Creating matrix-specific entity-date table for matrix '
+                     '%s with query %s', matrix_uuid, query)
         self.engine.execute(query)
 
         return table_name
@@ -238,7 +239,8 @@ class CSVBuilder(BuilderBase):
             matrix_uuid,
             matrix_metadata['label_timespan']
         )
-        logging.info('Extracting feature group data from database into file for matrix %s', matrix_uuid)
+        logging.info('Extracting feature group data from database into file '
+                     'for matrix %s', matrix_uuid)
         features_csv_names = self.write_features_data(
             as_of_times,
             feature_dictionary,
@@ -246,7 +248,8 @@ class CSVBuilder(BuilderBase):
             matrix_uuid
         )
         try:
-            logging.info('Extracting label data frmo database into file for matrix %s', matrix_uuid)
+            logging.info('Extracting label data frmo database into file for '
+                         'matrix %s', matrix_uuid)
             labels_csv_name = self.write_labels_data(
                 label_name,
                 label_type,

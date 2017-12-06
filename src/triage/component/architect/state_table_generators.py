@@ -111,10 +111,12 @@ class StateTableGenerator(object):
     @property
     def sparse_table_query_func(self):
         if self.dense_state_table:
-            logging.info('Dense state table passed to StateTableGenerator, so computing sparse table using it')
+            logging.info('Dense state table passed to StateTableGenerator, '
+                         'so computing sparse table using it')
             return self._sparse_table_query_from_dense
         else:
-            logging.info('Dense state table not passed to StateTableGenerator, so computing sparse table using events table')
+            logging.info('Dense state table not passed to StateTableGenerator, '
+                         'so computing sparse table using events table')
             return self._sparse_table_query_from_events
 
     def _all_known_states(self, dense_state_table):

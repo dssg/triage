@@ -1,5 +1,4 @@
--r test.txt
+-r include/build.txt
 bumpversion==0.5.3
-wheel==0.29.0
 mkdocs
 mkdocs-bootstrap

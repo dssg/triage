@@ -21,4 +21,5 @@ Contributors
 - Joe Walsh
 - Kit Rodolfa
 - Klaus Ackermann
+- Matt Bauman
 - Tristan Crockett

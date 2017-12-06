@@ -37,14 +37,14 @@ Triage is a Python package distributable via ``setuptools``. It may be installed
 
 To build this package (without installation), its dependencies may alternatively be installed from the terminal using ``pip``::
 
-    pip install -r requirements/main.txt
+    pip install -r requirement/main.txt
 
 Testing
 -------
 
-To include test and development dependencies, instead use **dev.txt**::
+To add test (and development) dependencies, use **test.txt**::
 
-    pip install -r requirements/dev.txt
+    pip install -r requirement/test.txt [-r requirement/dev.txt]
 
 Then, to run tests::
 
@@ -195,12 +195,12 @@ Components Within Triage
 
 * `Architect <src/triage/component/architect>`_: Plan, design and build train and test matrices. Includes feature and label generation.
 * `Catwalk <src/triage/component/catwalk>`_: Training, testing, and evaluating machine learning classifier models
+* `Collate <src/triage/component/collate>`_: Aggregation SQL Query Builder. This is used by the Architect to build features.
+* `Timechop <src/triage/component/timechop>`_: Generate temporal cross-validation time windows for matrix creation
 
 Components Housed Elsewhere
 ---------------------------
 
-* `Collate <https://github.com/dssg/collate>`_: Aggregation SQL Query Builder. This is used by the Architect to build features.
-* `Timechop <https://github.com/dssg/timechop>`_: Generate temporal cross-validation time windows for matrix creation
 * `Metta-Data <https://github.com/dssg/metta-data>`_: Train and test matrix storage
 * `Results Schema <https://github.com/dssg/results-schema>`_: Generate a database schema suitable for storing the results of modeling runs
 

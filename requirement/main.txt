@@ -12,10 +12,8 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-collate==0.3.0
 results-schema~=2.0
-timechop~=1.0
 metta-data~=1.0
 Dickens==1.0.1
 signalled-timeout==1.0.0
-smart_open
+smart_open==1.5.3

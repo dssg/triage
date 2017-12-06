@@ -16,8 +16,7 @@ from triage.component.architect.features import (
 )
 from triage.component.architect.planner import Planner
 from triage.component.architect.state_table_generators import StateTableGenerator
-from timechop.timechop import Timechop
-
+from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
@@ -198,13 +197,15 @@ class ExperimentBase(object, metaclass=ABCMeta):
         self.label_generator = self.label_generator_factory(db_engine=self.db_engine)
         self.state_table_generator = self.state_table_generator_factory(db_engine=self.db_engine)
         self.feature_generator = self.feature_generator_factory(db_engine=self.db_engine)
-        self.feature_dictionary_creator = self.feature_dictionary_creator_factory(db_engine=self.db_engine)
+        self.feature_dictionary_creator = self.feature_dictionary_creator_factory(
+            db_engine=self.db_engine)
         self.feature_group_creator = self.feature_group_creator_factory()
         self.feature_group_mixer = self.feature_group_mixer_factory()
         self.planner = self.planner_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
-        self.individual_importance_calculator = self.indiv_importance_factory(db_engine=self.db_engine)
+        self.individual_importance_calculator = self.indiv_importance_factory(
+            db_engine=self.db_engine)
         self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
 
     @cachedproperty
@@ -247,7 +248,8 @@ class ExperimentBase(object, metaclass=ABCMeta):
         print('Number of time splits: {}'.format(len(self.split_definitions)))
         for split_index, split in enumerate(self.split_definitions):
             train_times = split['train_matrix']['as_of_times']
-            test_times = [as_of_time for test_matrix in split['test_matrices'] for as_of_time in test_matrix['as_of_times']]
+            test_times = [as_of_time for test_matrix in split['test_matrices']
+                          for as_of_time in test_matrix['as_of_times']]
             print('''Split index {}:
             Training as_of_time_range: {} to {} ({} total)
             Testing as_of_time range: {} to {} ({} total)\n\n'''.format(
@@ -259,7 +261,8 @@ class ExperimentBase(object, metaclass=ABCMeta):
                 max(test_times),
                 len(test_times)
             ))
-        print('For more detailed information on your time splits, inspect the experiment `split_definitions` property')
+        print('For more detailed information on your time splits, '
+              'inspect the experiment `split_definitions` property')
 
     @cachedproperty
     def all_as_of_times(self):
@@ -343,9 +346,12 @@ class ExperimentBase(object, metaclass=ABCMeta):
 
     @cachedproperty
     def master_feature_dictionary(self):
-        """All possible features found in the database. Not all features will necessarily end up in matrices
+        """All possible features found in the database. Not all features
+        will necessarily end up in matrices
 
-        Returns: (list) of dicts, keys being feature table names and values being lists of feature names
+        Returns: (list) of dicts, keys being feature table names and
+        values being lists of feature names
+
         """
         result = self.feature_dictionary_creator.feature_dictionary(
             feature_table_names=self.feature_imputation_table_tasks.keys(),
@@ -358,11 +364,14 @@ class ExperimentBase(object, metaclass=ABCMeta):
 
     @property
     def feature_dicts(self):
-        """Feature dictionaries, representing the feature tables and columns configured in this experiment after computing feature groups.
+        """Feature dictionaries, representing the feature tables and
+        columns configured in this experiment after computing feature
+        groups.
 
-        Returns: (list) of dicts, keys being feature table names and values being lists of feature names
+        Returns: (list) of dicts, keys being feature table names and
+        values being lists of feature names
+
         """
-
         return self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
