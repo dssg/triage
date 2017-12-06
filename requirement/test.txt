@@ -1,9 +1,7 @@
--r include/flake8.txt
--r include/tox.txt
+-r include/lint.txt
+-r include/test-management.txt
 csvkit==1.0.2
 testing.postgresql
-coverage==4.1
 pytest==3.2.5
 pytest-cov
-codecov
 moto==1.0.1
