@@ -1,13 +1,17 @@
 import testing.postgresql
 from sqlalchemy import create_engine
+
 from results_schema import schema
-from results_schema.factories import ModelGroupFactory,\
-    ModelFactory,\
-    EvaluationFactory,\
-    PredictionFactory,\
-    IndividualImportanceFactory,\
-    init_engine,\
-    session
+
+from .factories import (
+    ModelGroupFactory,
+    ModelFactory,
+    EvaluationFactory,
+    PredictionFactory,
+    IndividualImportanceFactory,
+    init_engine,
+    session,
+)
 
 
 def test_evaluation_factories():

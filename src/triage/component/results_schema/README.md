@@ -25,7 +25,7 @@ This command will create a 'results' schema and the necessary tables.
 
 1. Have a candidate database for comparison. You can use a toy database for this that you upgrade to the current master, or use your project database if the results schema has not been manually modified.
 
-2. Make the desired modifications to [results_schema.schema](results_schema/schema.py).
+2. Make the desired modifications to [results_schema.schema](src/triage/component/results_schema/schema.py).
 
 3. Autogenerate a migration: `alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
 
@@ -33,7 +33,7 @@ This command will create a 'results' schema and the necessary tables.
 
 5. Upgrade the database: `alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml upgrade head` 
 
-6. Update the [factories file](results_schema/factories/__init__.py) with your changes - see more on factories below if you are unfamiliar with them.
+6. Update the [factories file](src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 
 7. If everything looks good, create a pull request!
 
@@ -45,7 +45,7 @@ When you want to create rows of these results tables for a unit test, you can us
 A simple example is to just instantiate an `EvaluationFactory`. `Evaluations` depend on `Models`, which depend on both `ModelGroups` and `Experiments`. So instantiating an `EvaluationFactory` actually creates four objects in the database.
 
 ```
-from results_schema.factories import EvaluationFactory, session
+from tests.results_tests.factories import EvaluationFactory, session
 
 init_engine(engine)
 EvaluationFactory()

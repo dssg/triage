@@ -1,2 +1,0 @@
-include results_schema/model_group_stored_procedure.sql
-include results_schema/alembic.ini

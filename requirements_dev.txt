@@ -1,3 +1,0 @@
-pytest
-testing.postgresql
-bumpversion

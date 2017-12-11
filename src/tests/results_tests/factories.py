@@ -13,19 +13,20 @@ session.commit()
 
 results = engine.execute('select * from results.evaluations')
 ```
-"""
 
-import factory 
-import factory.fuzzy
-from results_schema import schema
-import uuid
+"""
 from datetime import datetime
-import testing.postgresql
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session, create_session
+
+import factory
+import factory.fuzzy
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+from results_schema import schema
+
 
 sessionmaker = sessionmaker()
 session = scoped_session(sessionmaker)
+
 
 class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -33,6 +34,7 @@ class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = session
     experiment_hash = factory.fuzzy.FuzzyText()
     config = {}
+
 
 class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -42,6 +44,7 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
     model_parameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
     feature_list = ['feature1', 'feature2', 'feature3']
     model_config = {}
+
 
 class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -62,6 +65,7 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     train_matrix_uuid = factory.fuzzy.FuzzyText()
     training_label_timespan = '1y'
 
+
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.FeatureImportance
@@ -71,6 +75,7 @@ class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     feature_importance = factory.fuzzy.FuzzyDecimal(0, 1)
     rank_abs = 1
     rank_pct = 1.0
+
 
 class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -131,6 +136,7 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     num_labeled_above_threshold = 8
     num_positive_labels = 5
     sort_seed = 8
+
 
 def init_engine(new_engine):
     global sessionmaker, engine, session
