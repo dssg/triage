@@ -1,28 +1,35 @@
-"""
-Tests for Metta IO
-"""
+"""Tests for Metta IO"""
+import copy
 import datetime
-from dateutil.relativedelta import relativedelta
-import metta.metta_io
-import pandas as pd
 import os
 import unittest
-from metta.datafiles import (example_data_csv,
-                             example_data_h5)
-
-from tempfile import mkdtemp
+from dateutil.relativedelta import relativedelta
 from shutil import rmtree
-import copy
+from tempfile import mkdtemp
+
+import pandas as pd
+
+import metta.metta_io
 
 
-dict_test_config = {'feature_start_time': datetime.date(2016, 1, 1),
-                    'end_time': datetime.date(2016, 12, 31),
-                    'matrix_id': 'testing_matrix',
-                    'label': 'testing_data',
-                    'label_name': 'Survived',
-                    'label_timespan': '1yr',
-                    'feature_names': ['break_last_3y', 'soil',
-                                      'pressure_zone']}
+DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+
+example_data_csv = os.path.join(DATA, 'titanic.csv')
+example_data_h5 = os.path.join(DATA, 'titanic.h5')
+
+dict_test_config = {
+    'feature_start_time': datetime.date(2016, 1, 1),
+    'end_time': datetime.date(2016, 12, 31),
+    'matrix_id': 'testing_matrix',
+    'label': 'testing_data',
+    'label_name': 'Survived',
+    'label_timespan': '1yr',
+    'feature_names': [
+        'break_last_3y',
+        'soil',
+        'pressure_zone',
+    ],
+}
 
 
 class TestMettaIO(unittest.TestCase):
@@ -44,8 +51,7 @@ class TestMettaIO(unittest.TestCase):
     def test_uuid(self):
         fake_uuid = 'd1193048d65fca97ed10d494c49e2d1e'
 
-        assert fake_uuid == metta.metta_io.generate_uuid(
-            dict_test_config)
+        assert fake_uuid == metta.metta_io.generate_uuid(dict_test_config)
 
     def test_store_matrix(self):
         df_data = pd.read_csv(example_data_csv)

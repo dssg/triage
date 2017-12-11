@@ -1,7 +1,7 @@
-"""
-Metta IO
+"""Metta IO
 
 Library for storing train-test sets.
+
 """
 import copy
 import yaml
@@ -52,8 +52,8 @@ def archive_train_test(train_config,
         Writes out to YAML file title.yaml
     data_file: file
         CSV of dataframe feature set title.csv
-    """
 
+    """
     train_uuid = archive_matrix(
         train_config,
         df_train,
@@ -104,8 +104,8 @@ def archive_matrix(
     -------
     uuid: str
         uuid for the stored set
-    """
 
+    """
     if isinstance(df_matrix, pd.DataFrame):
         pass
     elif type(df_matrix) == str:
@@ -145,9 +145,7 @@ def archive_matrix(
 
 
 def _store_matrix(metadata, df_data, title, directory, format='hd5'):
-    """
-    Store matrix and associated meta-data
-
+    """Store matrix and associated meta-data
 
     Parameters
     ----------
@@ -175,6 +173,7 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
     ------
     IOError:
         label name is not the last column name
+
     """
     # check last column is the label
     if isinstance(df_data, pd.DataFrame):
