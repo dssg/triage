@@ -33,7 +33,7 @@ pip install git+git://github.com/dssg/metta-data.git
 
 ### Storing a train and test pair
 ```
-import metta
+from triage.component import metta
 
 
 train_config = {'feature_start_time': datetime.date(2012, 12, 20),
@@ -67,7 +67,7 @@ metta.archive_train_test(train_config,
 
 ### Storing a train and multiple test sets
 ```
-import metta
+from triage.component import metta
 
 
 train_config = {'feature_start_time': datetime.date(2012, 12, 20),

@@ -34,8 +34,7 @@ Below is a complete sample usage of the three Catwalk components::
     import pandas
     from sqlalchemy import create_engine
 
-    from metta import metta_io as metta
-
+    from triage.component import metta
     from triage.component.catwalk.storage import FSModelStorageEngine, MettaCSVMatrixStore
     from triage.component.catwalk.model_trainers import ModelTrainer
     from triage.component.catwalk.predictors import Predictor

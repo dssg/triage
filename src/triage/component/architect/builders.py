@@ -1,8 +1,9 @@
 import io
 import logging
 import pandas
-from metta import metta_io as metta
 import os
+
+from triage.component import metta
 
 
 class BuilderBase(object):

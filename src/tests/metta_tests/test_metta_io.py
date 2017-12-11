@@ -9,7 +9,7 @@ from tempfile import mkdtemp
 
 import pandas as pd
 
-import metta.metta_io
+from triage.component.metta import metta_io
 
 
 DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
@@ -46,24 +46,24 @@ class TestMettaIO(unittest.TestCase):
 
     def test_config(self):
 
-        metta.metta_io.check_config_types(dict_test_config)
+        metta_io.check_config_types(dict_test_config)
 
     def test_uuid(self):
         fake_uuid = 'd1193048d65fca97ed10d494c49e2d1e'
 
-        assert fake_uuid == metta.metta_io.generate_uuid(dict_test_config)
+        assert fake_uuid == metta_io.generate_uuid(dict_test_config)
 
     def test_store_matrix(self):
         df_data = pd.read_csv(example_data_csv)
 
-        metta.metta_io._store_matrix(
+        metta_io._store_matrix(
             dict_test_config,
             df_data,
             'test_titanic',
             self.temp_dir,
             format='csv'
         )
-        metta.metta_io._store_matrix(
+        metta_io._store_matrix(
             dict_test_config,
             df_data,
             'test_titanich5',
@@ -80,17 +80,17 @@ class TestMettaIO(unittest.TestCase):
     def test_archive_matrix(self):
         df_data = pd.read_csv(example_data_csv)
 
-        train_uuid = metta.metta_io.archive_matrix(
+        train_uuid = metta_io.archive_matrix(
             dict_test_config,
             example_data_csv,
             directory=self.temp_dir,
             format='csv')
 
-        train_uuid = metta.metta_io.archive_matrix(
+        train_uuid = metta_io.archive_matrix(
             dict_test_config, example_data_h5,
             directory=self.temp_dir, format='csv')
 
-        train_uuid = metta.metta_io.archive_matrix(
+        train_uuid = metta_io.archive_matrix(
             dict_test_config, df_data,
             directory=self.temp_dir, format='csv')
 
@@ -102,7 +102,7 @@ class TestMettaIO(unittest.TestCase):
             new_test_config = copy.deepcopy(dict_test_config)
             new_test_config['feature_start_time'] += relativedelta(years=years)
             new_test_config['end_time'] += relativedelta(years=years)
-            return metta.metta_io.archive_matrix(
+            return metta_io.archive_matrix(
                 new_test_config,
                 df_data,
                 directory=self.temp_dir,
@@ -119,22 +119,22 @@ class TestMettaIO(unittest.TestCase):
     def test_archive_train_test(self):
         df_data = pd.read_csv(example_data_csv)
 
-        metta.metta_io.archive_train_test(dict_test_config,
-                                          df_data,
-                                          dict_test_config,
-                                          df_data,
-                                          directory=self.temp_dir,
-                                          format='hd5',
-                                          overwrite=False)
+        metta_io.archive_train_test(dict_test_config,
+                                    df_data,
+                                    dict_test_config,
+                                    df_data,
+                                    directory=self.temp_dir,
+                                    format='hd5',
+                                    overwrite=False)
 
         # check that you don't write to a file again
-        metta.metta_io.archive_train_test(dict_test_config,
-                                          df_data,
-                                          dict_test_config,
-                                          df_data,
-                                          directory=self.temp_dir,
-                                          format='hd5',
-                                          overwrite=False)
+        metta_io.archive_train_test(dict_test_config,
+                                    df_data,
+                                    dict_test_config,
+                                    df_data,
+                                    directory=self.temp_dir,
+                                    format='hd5',
+                                    overwrite=False)
 
         assert os.path.isfile(
             self.temp_file('d1193048d65fca97ed10d494c49e2d1e.h5')
@@ -147,13 +147,13 @@ class TestMettaIO(unittest.TestCase):
         prior_creation_time = os.path.getmtime(
             self.temp_file('d1193048d65fca97ed10d494c49e2d1e.h5'))
 
-        metta.metta_io.archive_train_test(dict_test_config,
-                                          df_data,
-                                          dict_test_config,
-                                          df_data,
-                                          directory=self.temp_dir,
-                                          format='hd5',
-                                          overwrite=True)
+        metta_io.archive_train_test(dict_test_config,
+                                    df_data,
+                                    dict_test_config,
+                                    df_data,
+                                    directory=self.temp_dir,
+                                    format='hd5',
+                                    overwrite=True)
 
         later_creation_time = os.path.getmtime(
             self.temp_file('d1193048d65fca97ed10d494c49e2d1e.h5'))
@@ -165,17 +165,17 @@ class TestMettaIO(unittest.TestCase):
     def test_recover(self):
         df_data = pd.read_csv(example_data_csv)
         fake_uuid = 'd1193048d65fca97ed10d494c49e2d1e'
-        metta.metta_io.archive_train_test(dict_test_config, df_data,
-                                          dict_test_config, df_data,
+        metta_io.archive_train_test(dict_test_config, df_data,
+                                    dict_test_config, df_data,
+                                    directory=self.temp_dir)
+
+        assert metta_io.recover_matrix('garbageuuid',
+                                       directory=self.temp_dir) is None
+
+        df_uuid = metta_io.recover_matrix(dict_test_config,
                                           directory=self.temp_dir)
-
-        assert metta.metta_io.recover_matrix(
-            'garbageuuid', directory=self.temp_dir) is None
-
-        df_uuid = metta.metta_io.recover_matrix(dict_test_config,
-                                                directory=self.temp_dir)
         assert df_data.equals(df_uuid)
 
-        df_config = metta.metta_io.recover_matrix(fake_uuid,
-                                                  directory=self.temp_dir)
+        df_config = metta_io.recover_matrix(fake_uuid,
+                                            directory=self.temp_dir)
         assert df_data.equals(df_config)
