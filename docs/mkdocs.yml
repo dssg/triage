@@ -1,0 +1,25 @@
+site_name: Triage Documentation
+theme: bootstrap
+docs_dir: sources
+repo_url: http://github.com/dssg/triage
+edit_uri: blob/master/docs/templates
+site_description: 'Documentation for Triage.'
+
+markdown_extensions:
+    - toc:
+        permalink: True
+        baselevel: 2
+
+pages:
+  - Home: index.md
+  - Experiment Documentation:
+    - Defining an Experiment: experiments/defining.md
+    - Running an Experiment: experiments/running.md
+    - Temporal Validation Deep Dive: experiments/temporal-validation.md
+    - Feature Definition Deep Dive: experiments/features.md
+    - Experiment Algorithm: experiments/algorithm.md
+    - Experiment Architecture: experiments/architecture.md
+  - API Docs:
+    - ExperimentBase: triage.experiments.base.md
+    - SingleThreadedExperiment: triage.experiments.singlethreaded.md
+    - MultiCoreExperiment: triage.experiments.multicore.md
