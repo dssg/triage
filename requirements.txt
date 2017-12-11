@@ -1,6 +1,0 @@
-PyYAML
-numpy
-pandas
-python-dateutil
-boto3
-tables
