@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+
+	<title>Running an Experiment - Triage Documentation</title>
+
+        <link href="../../css/bootstrap-3.0.3.min.css" rel="stylesheet">
+        <link href="../../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="../../css/highlight.css">
+        <link href="../../css/base.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="../..">Triage Documentation</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li >
+                    <a href="../..">Home</a>
+                </li>
+            
+            
+            
+                <li class="dropdown active">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Experiment Documentation <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="../defining/">Defining an Experiment</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="./">Running an Experiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../features/">Feature Definition Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../algorithm/">Experiment Algorithm</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../architecture/">Experiment Architecture</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="../../triage.experiments.base/">ExperimentBase</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../../triage.experiments.singlethreaded/">SingleThreadedExperiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../../triage.experiments.multicore/">MultiCoreExperiment</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                <li >
+                    <a rel="next" href="../defining/">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="../temporal-validation/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="http://github.com/dssg/triage">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#running-an-experiment">Running an Experiment</a></li>
+        
+            <li><a href="#prerequisites">Prerequisites</a></li>
+        
+            <li><a href="#experiment-run-example">Experiment Run Example</a></li>
+        
+            <li><a href="#evaluating-results-of-an-experiment">Evaluating results of an Experiment</a></li>
+        
+            <li><a href="#restarting-an-experiment">Restarting an Experiment</a></li>
+        
+            <li><a href="#inspecting-an-experiment-before-running">Inspecting an Experiment before running</a></li>
+        
+            <li><a href="#experiment-classes">Experiment Classes</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<h2 id="running-an-experiment">Running an Experiment<a class="headerlink" href="#running-an-experiment" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<p>To use a Triage experiment, you first need:</p>
+<ul>
+<li>Python 3.5</li>
+<li>A PostgreSQL database with your source data (events, geographical data, etc) loaded.</li>
+<li>Ample space on an available disk (or S3) to store the needed matrices and models for your experiment</li>
+<li>An experiment definition (see <a href="../defining/">Defining an Experiment</a>)</li>
+</ul>
+<h3 id="experiment-run-example">Experiment Run Example<a class="headerlink" href="#experiment-run-example" title="Permanent link">&para;</a></h3>
+<p>The basic execution of an experiment looks something like the following:</p>
+<pre><code>    SingleThreadedExperiment(
+        config=experiment_config,
+        db_engine=sqlalchemy.create_engine(...),
+        model_storage_class=FSModelStorageEngine,
+        project_path='/path/to/directory/to/save/data'
+    ).run()
+</code></pre>
+
+<p>These lines are a bit dense: what is happening here?</p>
+<ul>
+<li><code>SingleThreadedExperiment</code>:  There are different Experiment classes available in <code>triage.experiments</code> to use, and they each represent a different way of executing the experiment, which we'll talk about in more detail later. The simplest (but slowest) is the SingleThreadedExperiment.</li>
+<li><code>config=experiment_config</code>: The bulk of the work needed in designing an experiment will be in creating this experiment configuration. An up-to-date example is at <a href="../example_experiment_config.yaml">example_experiment_config.yaml</a>; more detailed instructions on each section are located in the example file. Generally these would be easiest to store as a file (or multiple files that you construct together) like that YAML file, but the configuration is passed in dict format to the Experiment constructor and you can store it however you wish.</li>
+<li><code>db_engine=sqlalchemy.create_engine(...)</code>: A SQLAlchemy database engine. This will be used both for querying your source tables and writing results metadata.</li>
+<li><code>model_storage_class=FSModelStorageEngine</code>: The path to a model storage engine class. The library that triage uses for model training and evaluation, <a href="https://github.com/dssg/catwalk">catwalk</a>, provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the <code>catwalk.storage.FSModelStorageEngine</code> to save models on the local filesystem.</li>
+<li><code>project_path='/path/to/directory/to/save/data'</code>: The path to where you would like to store design matrices and trained models.</li>
+</ul>
+<p>With that in mind, a more full version of the experiment run script might look like this:</p>
+<pre><code>import sqlalchemy
+import yaml
+
+from catwalk.storage import FSModelStorageEngine
+from triage.experiments import SingleThreadedExperiment
+
+with open('my_experiment_config.yaml') as f:
+    experiment_config = yaml.load(f)
+with open('my_database_creds') as f:
+    db_connection_string = yaml.load(f)['db_connection_string']
+
+experiment = SingleThreadedExperiment(
+    config=experiment_config,
+    db_engine=sqlalchemy.create_engine(db_connection_string),
+    model_storage_class=FSModelStorageEngine,
+    project_path='/home/research/myproject'
+)
+
+experiment.run()
+</code></pre>
+
+<h3 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment<a class="headerlink" href="#evaluating-results-of-an-experiment" title="Permanent link">&para;</a></h3>
+<p>After the experiment run, a results schema will be created and populated in the configured database with the following tables:</p>
+<ul>
+<li>experiments - The experiment configuration and a hash</li>
+<li>models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.</li>
+<li>model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but <em>have different training windows</em>. Look at these to see how classifiers perform over different training windows.</li>
+<li>feature_importances - The sklearn feature importances results for each trained model</li>
+<li>predictions - Prediction probabilities for entities generated against trained models</li>
+<li>evaluations - Metric scores of trained models over given testing windows</li>
+</ul>
+<p>Here's an example query, which returns the top 10 model groups by precision at the top 100 entities:</p>
+<pre><code>select
+    model_groups.model_group_id,
+    model_groups.model_type,
+    model_groups.model_parameters,
+    max(evaluations.value) as max_precision
+from model_groups
+    join models using (model_group_id)
+    join evaluations using (model_id)
+where
+    metric = 'precision@'
+    and parameter = '100_abs'
+group by 1,2,3
+order by 4 desc
+limit 10
+</code></pre>
+
+<p>The resulting schema is also readable by <a href="https://github.com/tyra">Tyra</a>, our model evaluation webapp.</p>
+<h3 id="restarting-an-experiment">Restarting an Experiment<a class="headerlink" href="#restarting-an-experiment" title="Permanent link">&para;</a></h3>
+<p>If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set <code>replace=True</code> in the Experiment constructor.</p>
+<h3 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running<a class="headerlink" href="#inspecting-an-experiment-before-running" title="Permanent link">&para;</a></h3>
+<p>Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:</p>
+<ul>
+<li><code>experiment.all_as_of_times</code> for debugging temporal config. This will show all dates that features and labels will be calculated at.</li>
+<li><code>experiment.feature_dicts</code> will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment</li>
+<li><code>experiment.matrix_build_tasks</code> will output a list representing each matrix that will be built.</li>
+</ul>
+<h3 id="experiment-classes">Experiment Classes<a class="headerlink" href="#experiment-classes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><em>SingleThreadedExperiment</em>: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.</li>
+<li><em>MultiCoreExperiment</em>: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
+</ul></div>
+        </div>
+
+	<footer class="col-md-12">
+		<hr>
+		
+		<p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+	</footer>
+
+
+        <script src="../../js/jquery-1.10.2.min.js"></script>
+        <script src="../../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../../js/highlight.pack.js"></script>
+        <script src="../../js/base.js"></script>
+    </body>
+</html>

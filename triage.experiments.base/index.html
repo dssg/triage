@@ -56,6 +56,39 @@
             
             
             
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Experiment Documentation <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="../experiments/defining/">Defining an Experiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../experiments/running/">Running an Experiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../experiments/temporal-validation/">Temporal Validation Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../experiments/features/">Feature Definition Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../experiments/algorithm/">Experiment Algorithm</a>
+                        </li>
+                    
+                        <li >
+                            <a href="../experiments/architecture/">Experiment Architecture</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            
                 <li class="dropdown active">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs <b class="caret"></b></a>
                     <ul class="dropdown-menu">
@@ -81,7 +114,7 @@
             <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
                 <li >
-                    <a rel="next" href="..">
+                    <a rel="next" href="../experiments/architecture/">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
@@ -162,45 +195,45 @@
             <div class="col-md-9" role="main">
 
 <p><strong>Source:</strong> <a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L0">triage/experiments/base.py#L0</a></p>
-<h2 id="global-variables"><strong>Global Variables</strong></h2>
+<h3 id="global-variables"><strong>Global Variables</strong><a class="headerlink" href="#global-variables" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>CONFIG_VERSION</strong></li>
 </ul>
 <hr />
-<h3 id="dt_from_str"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L25">dt_from_str</a></h3>
+<h4 id="dt_from_str"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L25">dt_from_str</a><a class="headerlink" href="#dt_from_str" title="Permanent link">&para;</a></h4>
 <pre><code class="python">dt_from_str(dt_str)
 </code></pre>
 
 <hr />
-<h2 id="experimentbase"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L29">ExperimentBase</a></h2>
+<h3 id="experimentbase"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L29">ExperimentBase</a><a class="headerlink" href="#experimentbase" title="Permanent link">&para;</a></h3>
 <p>The Base class for all Experiments.</p>
-<h4 id="experimentbaseall_as_of_times">ExperimentBase.all_as_of_times</h4>
+<h5 id="experimentbaseall_as_of_times">ExperimentBase.all_as_of_times<a class="headerlink" href="#experimentbaseall_as_of_times" title="Permanent link">&para;</a></h5>
 <p>All 'as of times' in experiment config</p>
 <p>Used for label and feature generation.</p>
 <p><em>Returns: (list) of datetimes</em></p>
-<h4 id="experimentbaseall_label_windows">ExperimentBase.all_label_windows</h4>
+<h5 id="experimentbaseall_label_windows">ExperimentBase.all_label_windows<a class="headerlink" href="#experimentbaseall_label_windows" title="Permanent link">&para;</a></h5>
 <p>All train and test label windows</p>
 <p><em>Returns: (list) label windows, in string form as they appeared in the experiment config</em></p>
-<h4 id="experimentbasecollate_aggregations">ExperimentBase.collate_aggregations</h4>
+<h5 id="experimentbasecollate_aggregations">ExperimentBase.collate_aggregations<a class="headerlink" href="#experimentbasecollate_aggregations" title="Permanent link">&para;</a></h5>
 <p>collate Aggregation objects used by this experiment.</p>
 <p><em>Returns: (list) of collate.Aggregation objects</em></p>
-<h4 id="experimentbasefeature_dicts">ExperimentBase.feature_dicts</h4>
+<h5 id="experimentbasefeature_dicts">ExperimentBase.feature_dicts<a class="headerlink" href="#experimentbasefeature_dicts" title="Permanent link">&para;</a></h5>
 <p>Feature dictionaries, representing the feature tables and columns configured in this experiment after computing feature groups.</p>
 <p><em>Returns: (list) of dicts, keys being feature table names and values being lists of feature names</em></p>
-<h4 id="experimentbasefeature_table_tasks">ExperimentBase.feature_table_tasks</h4>
+<h5 id="experimentbasefeature_table_tasks">ExperimentBase.feature_table_tasks<a class="headerlink" href="#experimentbasefeature_table_tasks" title="Permanent link">&para;</a></h5>
 <p>All feature table query tasks specified by this Experiment</p>
 <p><em>Returns: (dict) keys are group table names, values are themselves dicts, each with keys for different stages of table creation (prepare, inserts, finalize) and with values being lists of SQL commands</em></p>
-<h4 id="experimentbasefull_matrix_definitions">ExperimentBase.full_matrix_definitions</h4>
+<h5 id="experimentbasefull_matrix_definitions">ExperimentBase.full_matrix_definitions<a class="headerlink" href="#experimentbasefull_matrix_definitions" title="Permanent link">&para;</a></h5>
 <p>Full matrix definitions</p>
 <p><em>Returns: (list) temporal and feature information for each matrix</em></p>
-<h4 id="experimentbasemaster_feature_dictionary">ExperimentBase.master_feature_dictionary</h4>
+<h5 id="experimentbasemaster_feature_dictionary">ExperimentBase.master_feature_dictionary<a class="headerlink" href="#experimentbasemaster_feature_dictionary" title="Permanent link">&para;</a></h5>
 <p>All possible features found in the database. Not all features will necessarily end up in matrices</p>
 <p><em>Returns: (list) of dicts, keys being feature table names and values being lists of feature names</em></p>
-<h4 id="experimentbasematrix_build_tasks">ExperimentBase.matrix_build_tasks</h4>
+<h5 id="experimentbasematrix_build_tasks">ExperimentBase.matrix_build_tasks<a class="headerlink" href="#experimentbasematrix_build_tasks" title="Permanent link">&para;</a></h5>
 <p>Tasks for all matrices that need to be built as a part of this Experiment.</p>
 <p>Each task contains arguments understood by Architect.build_matrix</p>
 <p><em>Returns: (list) of dicts</em></p>
-<h4 id="experimentbasesplit_definitions">ExperimentBase.split_definitions</h4>
+<h5 id="experimentbasesplit_definitions">ExperimentBase.split_definitions<a class="headerlink" href="#experimentbasesplit_definitions" title="Permanent link">&para;</a></h5>
 <p>Temporal splits based on the experiment's configuration</p>
 <p><em>Returns: (dict) temporal splits</em></p>
 <p><em>Example:</em></p>
@@ -218,52 +251,52 @@
 </code></pre>
 
 <hr />
-<h3 id="experimentbase__init__"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L33">ExperimentBase.<code>__init__</code></a></h3>
+<h4 id="experimentbase__init__"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L33">ExperimentBase.<code>__init__</code></a><a class="headerlink" href="#experimentbase__init__" title="Permanent link">&para;</a></h4>
 <pre><code class="python">__init__(self, config, db_engine, model_storage_class=None, project_path=None, replace=True)
 </code></pre>
 
 <p>Initialize self.  See help(type(self)) for accurate signature.</p>
 <hr />
-<h3 id="experimentbasebuild_matrices"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L419">ExperimentBase.build_matrices</a></h3>
+<h4 id="experimentbasebuild_matrices"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L419">ExperimentBase.build_matrices</a><a class="headerlink" href="#experimentbasebuild_matrices" title="Permanent link">&para;</a></h4>
 <pre><code class="python">build_matrices(self)
 </code></pre>
 
 <p>Generate labels, features, and matrices</p>
 <hr />
-<h3 id="experimentbasecatwalk"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L424">ExperimentBase.catwalk</a></h3>
+<h4 id="experimentbasecatwalk"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L424">ExperimentBase.catwalk</a><a class="headerlink" href="#experimentbasecatwalk" title="Permanent link">&para;</a></h4>
 <pre><code class="python">catwalk(self)
 </code></pre>
 
 <p>Train, test, and evaluate models</p>
 <hr />
-<h3 id="experimentbasegenerate_labels"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L369">ExperimentBase.generate_labels</a></h3>
+<h4 id="experimentbasegenerate_labels"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L369">ExperimentBase.generate_labels</a><a class="headerlink" href="#experimentbasegenerate_labels" title="Permanent link">&para;</a></h4>
 <pre><code class="python">generate_labels(self)
 </code></pre>
 
 <p>Generate labels based on experiment configuration</p>
 <p>Results are stored in the database, not returned</p>
 <hr />
-<h3 id="experimentbasegenerate_sparse_states"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L380">ExperimentBase.generate_sparse_states</a></h3>
+<h4 id="experimentbasegenerate_sparse_states"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L380">ExperimentBase.generate_sparse_states</a><a class="headerlink" href="#experimentbasegenerate_sparse_states" title="Permanent link">&para;</a></h4>
 <pre><code class="python">generate_sparse_states(self)
 </code></pre>
 
 <hr />
-<h3 id="experimentbaseinitialize_components"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L186">ExperimentBase.initialize_components</a></h3>
+<h4 id="experimentbaseinitialize_components"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L186">ExperimentBase.initialize_components</a><a class="headerlink" href="#experimentbaseinitialize_components" title="Permanent link">&para;</a></h4>
 <pre><code class="python">initialize_components(self)
 </code></pre>
 
 <hr />
-<h3 id="experimentbaseinitialize_factories"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L85">ExperimentBase.initialize_factories</a></h3>
+<h4 id="experimentbaseinitialize_factories"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L85">ExperimentBase.initialize_factories</a><a class="headerlink" href="#experimentbaseinitialize_factories" title="Permanent link">&para;</a></h4>
 <pre><code class="python">initialize_factories(self)
 </code></pre>
 
 <hr />
-<h3 id="experimentbaselog_split"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L392">ExperimentBase.log_split</a></h3>
+<h4 id="experimentbaselog_split"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L392">ExperimentBase.log_split</a><a class="headerlink" href="#experimentbaselog_split" title="Permanent link">&para;</a></h4>
 <pre><code class="python">log_split(self, split_num, split)
 </code></pre>
 
 <hr />
-<h3 id="experimentbasematrix_store"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L401">ExperimentBase.matrix_store</a></h3>
+<h4 id="experimentbasematrix_store"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L401">ExperimentBase.matrix_store</a><a class="headerlink" href="#experimentbasematrix_store" title="Permanent link">&para;</a></h4>
 <pre><code class="python">matrix_store(self, matrix_uuid)
 </code></pre>
 
@@ -271,12 +304,12 @@
 <p><em>Args:</em></p>
 <p>matrix_uuid (string) A uuid for a matrix</p>
 <hr />
-<h3 id="experimentbaserun"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L429">ExperimentBase.run</a></h3>
+<h4 id="experimentbaserun"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L429">ExperimentBase.run</a><a class="headerlink" href="#experimentbaserun" title="Permanent link">&para;</a></h4>
 <pre><code class="python">run(self)
 </code></pre>
 
 <hr />
-<h3 id="experimentbaseupdate_split_definitions"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L385">ExperimentBase.update_split_definitions</a></h3>
+<h4 id="experimentbaseupdate_split_definitions"><a href="https://github.com/dssg/triage/tree/master/triage/experiments/base.py#L385">ExperimentBase.update_split_definitions</a><a class="headerlink" href="#experimentbaseupdate_split_definitions" title="Permanent link">&para;</a></h4>
 <pre><code class="python">update_split_definitions(self, new_split_definitions)
 </code></pre>
 

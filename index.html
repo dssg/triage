@@ -57,6 +57,39 @@
             
             
                 <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Experiment Documentation <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="experiments/defining/">Defining an Experiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="experiments/running/">Running an Experiment</a>
+                        </li>
+                    
+                        <li >
+                            <a href="experiments/temporal-validation/">Temporal Validation Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="experiments/features/">Feature Definition Deep Dive</a>
+                        </li>
+                    
+                        <li >
+                            <a href="experiments/algorithm/">Experiment Algorithm</a>
+                        </li>
+                    
+                        <li >
+                            <a href="experiments/architecture/">Experiment Architecture</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            
+                <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                     
@@ -86,7 +119,7 @@
                     </a>
                 </li>
                 <li >
-                    <a rel="prev" href="triage.experiments.base/">
+                    <a rel="prev" href="experiments/defining/">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -111,7 +144,7 @@
     
         <li class="main active"><a href="#triage">Triage</a></li>
         
-            <li><a href="#experiment">Experiment</a></li>
+            <li><a href="#running-an-experiment">Running an Experiment</a></li>
         
             <li><a href="#background">Background</a></li>
         
@@ -126,107 +159,19 @@
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="triage">Triage</h1>
+<h2 id="triage">Triage<a class="headerlink" href="#triage" title="Permanent link">&para;</a></h2>
 <p>Risk modeling and prediction</p>
 <p><a href="https://travis-ci.org/dssg/triage"><img alt="Build Status" src="https://travis-ci.org/dssg/triage.svg?branch=master" /></a>
 <a href="https://codecov.io/gh/dssg/triage"><img alt="codecov" src="https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg" /></a>
 <a href="https://codeclimate.com/github/dssg/triage"><img alt="codeclimate" src="https://codeclimate.com/github/dssg/triage.png" /></a></p>
 <p>Predictive analytics projects require the coordination of many different tasks, such as feature generation, classifier training, evaluation, and list generation. These tasks are complicated in their own right, but in addition have to be combined in different ways throughout the course of the project. </p>
 <p>Triage aims to provide interfaces to these different phases of a project, such as an <code>Experiment</code>. Each phase is defined by configuration specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.</p>
-<h2 id="experiment">Experiment</h2>
 <p>The first phase implemented in triage is the <code>Experiment</code>. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.</p>
-<h3 id="prerequisites">Prerequisites</h3>
-<p>To use a Triage experiment, you first need:</p>
-<ul>
-<li>Python 3+</li>
-<li>A PostgreSQL database with your source data (events, geographical data, etc) loaded.</li>
-<li>Ample space on an available disk (or S3) to store the needed matrices and models for your experiment</li>
-</ul>
-<h3 id="experiment-run-example">Experiment Run Example</h3>
-<p>The basic execution of an experiment looks something like the following:</p>
-<pre><code>    SingleThreadedExperiment(
-        config=experiment_config,
-        db_engine=sqlalchemy.create_engine(...),
-        model_storage_class=FSModelStorageEngine,
-        project_path='/path/to/directory/to/save/data'
-    ).run()
-</code></pre>
-
-<p>These lines are a bit dense: what is happening here?</p>
-<ul>
-<li><code>SingleThreadedExperiment</code>:  There are different Experiment classes available in <code>triage.experiments</code> to use, and they each represent a different way of executing the experiment, which we'll talk about in more detail later. The simplest (but slowest) is the SingleThreadedExperiment.</li>
-<li><code>config=experiment_config</code>: The bulk of the work needed in designing an experiment will be in creating this experiment configuration. An up-to-date example is at <a href="./example_experiment_config.yaml">example_experiment_config.yaml</a>; more detailed instructions on each section are located in the example file. Generally these would be easiest to store as a file (or multiple files that you construct together) like that YAML file, but the configuration is passed in dict format to the Experiment constructor and you can store it however you wish.</li>
-<li><code>db_engine=sqlalchemy.create_engine(...)</code>: A SQLAlchemy database engine. This will be used both for querying your source tables and writing results metadata.</li>
-<li><code>model_storage_class=FSModelStorageEngine</code>: The path to a model storage engine class. The library that triage uses for model training and evaluation, <a href="https://github.com/dssg/catwalk">catwalk</a>, provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the <code>catwalk.storage.FSModelStorageEngine</code> to save models on the local filesystem.</li>
-<li><code>project_path='/path/to/directory/to/save/data'</code>: The path to where you would like to store design matrices and trained models.</li>
-</ul>
-<p>With that in mind, a more full version of the experiment run script might look like this:</p>
-<pre><code>import sqlalchemy
-import yaml
-
-from catwalk.storage import FSModelStorageEngine
-from triage.experiments import SingleThreadedExperiment
-
-with open('my_experiment_config.yaml') as f:
-    experiment_config = yaml.load(f)
-with open('my_database_creds') as f:
-    db_connection_string = yaml.load(f)['db_connection_string']
-
-experiment = SingleThreadedExperiment(
-    config=experiment_config,
-    db_engine=sqlalchemy.create_engine(db_connection_string),
-    model_storage_class=FSModelStorageEngine,
-    project_path='/home/research/myproject'
-)
-
-experiment.run()
-</code></pre>
-
-<h3 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment</h3>
-<p>After the experiment run, a results schema will be created and populated in the configured database with the following tables:</p>
-<ul>
-<li>experiments - The experiment configuration and a hash</li>
-<li>models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.</li>
-<li>model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but <em>have different training windows</em>. Look at these to see how classifiers perform over different training windows.</li>
-<li>feature_importances - The sklearn feature importances results for each trained model</li>
-<li>predictions - Prediction probabilities for entities generated against trained models</li>
-<li>evaluations - Metric scores of trained models over given testing windows</li>
-</ul>
-<p>Here's an example query, which returns the top 10 model groups by precision at the top 100 entities:</p>
-<pre><code>select
-    model_groups.model_group_id,
-    model_groups.model_type,
-    model_groups.model_parameters,
-    max(evaluations.value) as max_precision
-from model_groups
-    join models using (model_group_id)
-    join evaluations using (model_id)
-where
-    metric = 'precision@'
-    and parameter = '100_abs'
-group by 1,2,3
-order by 4 desc
-limit 10
-</code></pre>
-
-<p>The resulting schema is also readable by <a href="https://github.com/tyra">Tyra</a>, our model evaluation webapp.</p>
-<h3 id="restarting-an-experiment">Restarting an Experiment</h3>
-<p>If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set <code>replace=True</code> in the Experiment constructor.</p>
-<h3 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running</h3>
-<p>Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:</p>
-<ul>
-<li><code>experiment.all_as_of_times</code> for debugging temporal config. This will show all dates that features and labels will be calculated at.</li>
-<li><code>experiment.feature_dicts</code> will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment</li>
-<li><code>experiment.matrix_build_tasks</code> will output a list representing each matrix that will be built.</li>
-</ul>
-<h3 id="experiment-classes">Experiment Classes</h3>
-<ul>
-<li><em>SingleThreadedExperiment</em>: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.</li>
-<li><em>MultiCoreExperiment</em>: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
-</ul>
-<h2 id="background">Background</h2>
+<h3 id="running-an-experiment">Running an Experiment<a class="headerlink" href="#running-an-experiment" title="Permanent link">&para;</a></h3>
+<p><a href="experiments/running/">Running an Experiment</a></p>
+<h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>Triage is developed at the University of Chicago's <a href="http://dsapp.uchicago.edu">Center For Data Science and Public Policy</a>. We created it in response to commonly occuring challenges we've encountered and patterns we've developed while working on projects for our partners.</p>
-<h2 id="major-components-used-by-triage">Major Components Used by Triage</h2>
+<h3 id="major-components-used-by-triage">Major Components Used by Triage<a class="headerlink" href="#major-components-used-by-triage" title="Permanent link">&para;</a></h3>
 <p>Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if </p>
 <ul>
 <li><a href="https://github.com/dssg/architect">Architect</a>: Plan, design and build train and test matrices. Includes feature and label generation.</li>
@@ -236,7 +181,7 @@ limit 10
 <li><a href="https://github.com/dssg/catwalk">Catwalk</a>: Training, testing, and evaluating machine learning classifier models</li>
 <li><a href="https://github.com/dssg/results-schema">Results Schema</a>: Generate a database schema suitable for storing the results of modeling runs</li>
 </ul>
-<h2 id="design-goals">Design Goals</h2>
+<h3 id="design-goals">Design Goals<a class="headerlink" href="#design-goals" title="Permanent link">&para;</a></h3>
 <p>There are two overarching design goals for Triage:</p>
 <ul>
 <li>
@@ -246,7 +191,7 @@ limit 10
 <p>All core functionality must be usable outside of a specific pipeline context or workflow manager. There are many good workflow managers; everybody has their favorite, and core functionality should not be designed to work with specific execution expectations.</p>
 </li>
 </ul>
-<h2 id="future-plans">Future Plans</h2>
+<h3 id="future-plans">Future Plans<a class="headerlink" href="#future-plans" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Generation and Management of lists (ie for inspections) by various criteria</li>
 <li>Integration of components with various workflow managers, like <a href="https://github.com/dssg/drain">Drain</a> and <a href="https://github.com/spotify/luigi">Luigi</a>.</li>
