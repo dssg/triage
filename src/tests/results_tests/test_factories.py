@@ -1,7 +1,7 @@
 import testing.postgresql
 from sqlalchemy import create_engine
 
-from results_schema import schema
+from triage.component.results_schema import Base
 
 from .factories import (
     ModelGroupFactory,
@@ -17,7 +17,7 @@ from .factories import (
 def test_evaluation_factories():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        schema.Base.metadata.create_all(engine)
+        Base.metadata.create_all(engine)
         init_engine(engine)
 
         # create some basic evaluations, but with the same model group and
@@ -56,7 +56,7 @@ def test_evaluation_factories():
 def test_prediction_factories():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        schema.Base.metadata.create_all(engine)
+        Base.metadata.create_all(engine)
         init_engine(engine)
 
         # create some basic predictions, but with the same model group and

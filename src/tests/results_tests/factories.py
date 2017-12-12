@@ -4,7 +4,7 @@ If init_engine is called first, objects are instantiated in the session at
 module level. Example:
 
 ```
-from results_schema.factories import EvaluationFactory, session, init_engine
+from .factories import EvaluationFactory, session, init_engine
 
 engine = # your engine creation code here
 init_engine(engine)
@@ -21,7 +21,7 @@ import factory
 import factory.fuzzy
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from results_schema import schema
+from triage.component import results_schema as schema
 
 
 sessionmaker = sessionmaker()

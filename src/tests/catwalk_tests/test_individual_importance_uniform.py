@@ -1,10 +1,18 @@
-from sqlalchemy import create_engine
-import testing.postgresql
-from results_schema.factories import ModelFactory, FeatureImportanceFactory, init_engine, session
 import pandas
+import testing.postgresql
+from sqlalchemy import create_engine
+
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import InMemoryMatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
+
+from tests.results_tests.factories import (
+    ModelFactory,
+    FeatureImportanceFactory,
+    init_engine,
+    session,
+)
+
 from .utils import sample_metadata
 
 

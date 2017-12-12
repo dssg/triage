@@ -1,9 +1,11 @@
-import testing.postgresql
-from sqlalchemy import create_engine
 import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from results_schema import Base
+
+import testing.postgresql
+from sqlalchemy import create_engine
+
+from triage.component.results_schema import Base
 from triage.component.timechop import Timechop
 from triage.component.architect.features import (
     FeatureGenerator,

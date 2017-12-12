@@ -10,10 +10,9 @@ import pandas
 import yaml
 from sqlalchemy.orm import sessionmaker
 
-from results_schema import Model
-
 from triage.component import metta
 from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
+from triage.component.results_schema import Model
 
 
 @contextmanager

@@ -1,6 +1,33 @@
+import os.path
+
 import alembic.config
-from .schema import *
-import os
+
+from .schema import (
+    Base,
+    Evaluation,
+    Experiment,
+    FeatureImportance,
+    IndividualImportance,
+    ListPrediction,
+    Model,
+    ModelGroup,
+    Prediction,
+)
+
+
+__all__ = (
+    'Base',
+    'Evaluation',
+    'Experiment',
+    'FeatureImportance',
+    'IndividualImportance',
+    'ListPrediction',
+    'Model',
+    'ModelGroup',
+    'Prediction',
+    'mark_db_as_upgraded',
+    'upgrade_db',
+)
 
 
 def _base_alembic_args(db_config_filename=None):

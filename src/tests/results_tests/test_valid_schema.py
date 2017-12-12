@@ -1,6 +1,7 @@
 import testing.postgresql
 from sqlalchemy import create_engine
-from results_schema import Base
+
+from triage.component.results_schema import Base
 
 
 def test_full_schema():

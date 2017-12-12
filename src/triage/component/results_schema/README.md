@@ -12,7 +12,7 @@ Store results of modeling runs in a relational database
 3. Call 'upgrade_db' function from Python console or script
 
 ```
->>> from results_schema import upgrade_db
+>>> from triage.component.results_schema import upgrade_db
 >>> upgrade_db('my_db_config.yaml')
 ```
 

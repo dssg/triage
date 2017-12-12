@@ -1,12 +1,15 @@
 from __future__ import with_statement
-from alembic import context
-from sqlalchemy import pool
-from logging.config import fileConfig
-from results_schema import Base
-from sqlalchemy.engine.url import URL
-from sqlalchemy import create_engine
+
 import os
+from logging.config import fileConfig
+
 import yaml
+from alembic import context
+from sqlalchemy import create_engine
+from sqlalchemy import pool
+from sqlalchemy.engine.url import URL
+
+from triage.component.results_schema import Base
 
 
 # this is the Alembic Config object, which provides
@@ -31,21 +34,21 @@ target_metadata = Base.metadata
 url = os.environ.get('DBURL', None)
 
 if not url:
-    db_config_file = context.get_x_argument('db_config_file')\
-        .get('db_config_file', None)
+    db_config_file = (context.get_x_argument('db_config_file')
+                      .get('db_config_file', None))
     if not db_config_file:
         raise ValueError('No database connection information found')
 
-    with open(db_config_file) as f:
-        config = yaml.load(f)
-        dbconfig = {
-            'host': config['host'],
-            'username': config['user'],
-            'database': config['db'],
-            'password': config['pass'],
-            'port': config['port'],
-        }
-        url = URL('postgres', **dbconfig)
+    with open(db_config_file) as fd:
+        config = yaml.load(fd)
+        url = URL(
+            'postgres',
+            host=config['host'],
+            username=config['user'],
+            database=config['db'],
+            password=config['pass'],
+            port=config['port'],
+        )
 
 
 def run_migrations_offline():
@@ -95,6 +98,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

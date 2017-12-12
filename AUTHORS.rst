@@ -13,6 +13,7 @@ Contributors
 - Adolfo De Unánue
 - Andrea Navarrete
 - Avishek Kumar
+- Benedict Kuester
 - Eddie Lin
 - Eric Potash
 - Erika Salomon
@@ -22,4 +23,5 @@ Contributors
 - Kit Rodolfa
 - Klaus Ackermann
 - Matt Bauman
+- Rayid Ghani
 - Tristan Crockett

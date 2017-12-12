@@ -1,25 +1,26 @@
-from sqlalchemy import \
-    Column,\
-    BigInteger,\
-    Boolean,\
-    Integer,\
-    Interval,\
-    String,\
-    Numeric,\
-    DateTime,\
-    JSON,\
-    Float,\
-    Text,\
-    ForeignKey,\
-    MetaData,\
-    DDL,\
-    event
-from sqlalchemy.types import ARRAY
+import os.path
+
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    Boolean,
+    Integer,
+    Interval,
+    String,
+    Numeric,
+    DateTime,
+    JSON,
+    Float,
+    Text,
+    ForeignKey,
+    MetaData,
+    DDL,
+    event,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
-
-import os
+from sqlalchemy.types import ARRAY
 
 
 Base = declarative_base(metadata=MetaData(schema='results'))
@@ -33,8 +34,8 @@ group_proc_filename = os.path.join(
     os.path.dirname(__file__),
     'model_group_stored_procedure.sql'
 )
-with open(group_proc_filename) as f:
-    stmt = f.read()
+with open(group_proc_filename) as fd:
+    stmt = fd.read()
 
 event.listen(
     Base.metadata,
@@ -44,13 +45,17 @@ event.listen(
 
 
 class Experiment(Base):
+
     __tablename__ = 'experiments'
+
     experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
 
 
 class ModelGroup(Base):
+
     __tablename__ = 'model_groups'
+
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
     model_parameters = Column(JSONB)
@@ -59,7 +64,9 @@ class ModelGroup(Base):
 
 
 class Model(Base):
+
     __tablename__ = 'models'
+
     model_id = Column(Integer, primary_key=True)
     model_group_id = Column(Integer, ForeignKey('model_groups.model_group_id'))
     model_hash = Column(String, unique=True, index=True)
@@ -81,20 +88,22 @@ class Model(Base):
 
     def delete(self, session):
         # basically implement a cascade, in case cascade is not implemented
-        session.query(FeatureImportance)\
-            .filter_by(model_id=self.model_id)\
-            .delete()
-        session.query(Evaluation)\
-            .filter_by(model_id=self.model_id)\
-            .delete()
-        session.query(Prediction)\
-            .filter_by(model_id=self.model_id)\
-            .delete()
+        (session.query(FeatureImportance)
+            .filter_by(model_id=self.model_id)
+            .delete())
+        (session.query(Evaluation)
+            .filter_by(model_id=self.model_id)
+            .delete())
+        (session.query(Prediction)
+            .filter_by(model_id=self.model_id)
+            .delete())
         session.delete(self)
 
 
 class FeatureImportance(Base):
+
     __tablename__ = 'feature_importances'
+
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     model = relationship(Model)
     feature = Column(String, primary_key=True)
@@ -106,7 +115,9 @@ class FeatureImportance(Base):
 
 
 class Prediction(Base):
+
     __tablename__ = 'predictions'
+
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -121,7 +132,9 @@ class Prediction(Base):
 
 
 class ListPrediction(Base):
+
     __tablename__ = 'list_predictions'
+
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -135,7 +148,9 @@ class ListPrediction(Base):
 
 
 class IndividualImportance(Base):
+
     __tablename__ = 'individual_importances'
+
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -148,7 +163,9 @@ class IndividualImportance(Base):
 
 
 class Evaluation(Base):
+
     __tablename__ = 'evaluations'
+
     model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)

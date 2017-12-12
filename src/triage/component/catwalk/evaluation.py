@@ -4,7 +4,7 @@ import time
 import numpy
 from sqlalchemy.orm import sessionmaker
 
-from results_schema import Evaluation
+from triage.component.results_schema import Evaluation
 
 from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
