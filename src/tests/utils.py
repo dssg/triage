@@ -1,16 +1,19 @@
-from contextlib import contextmanager
-import pandas
-import tempfile
-import yaml
-import numpy
-import random
-from results_schema import Model
-from sqlalchemy.orm import sessionmaker
 import datetime
 import os
-from triage.component.catwalk.storage import CSVMatrixStore
-from metta import metta_io as metta
+import random
+import tempfile
 from collections import OrderedDict
+from contextlib import contextmanager
+
+import numpy
+import pandas
+import yaml
+from sqlalchemy.orm import sessionmaker
+
+from results_schema import Model
+
+from triage.component import metta
+from triage.component.catwalk.storage import CSVMatrixStore
 from triage.experiments import CONFIG_VERSION
 
 

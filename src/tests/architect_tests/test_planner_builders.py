@@ -4,13 +4,14 @@ import os
 import uuid
 from unittest import TestCase
 
-from metta import metta_io as metta
-from mock import Mock
-from sqlalchemy import create_engine
 import pandas as pd
 import testing.postgresql
+from mock import Mock
+from sqlalchemy import create_engine
 
+from triage.component import metta
 from triage.component.architect import Planner, builders
+
 from .utils import (
     create_schemas,
     create_entity_date_df,

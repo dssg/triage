@@ -2,12 +2,13 @@ import copy
 import itertools
 import logging
 
-from metta import metta_io as metta
+from triage.component import metta
 
 from . import builders, utils, state_table_generators
 
 
 class Planner(object):
+
     def __init__(
         self,
         feature_start_time,
