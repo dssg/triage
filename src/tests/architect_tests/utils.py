@@ -1,14 +1,16 @@
-import pandas as pd
 import datetime
 import shutil
 import sys
 import tempfile
+import random
 from contextlib import contextmanager
+
+import pandas as pd
 import yaml
 import numpy
-import random
 from sqlalchemy.orm import sessionmaker
-from results_schema import Model
+
+from triage.component.results_schema import Model
 
 
 def convert_string_column_to_date(column):

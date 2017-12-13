@@ -1,11 +1,11 @@
 import boto3
 import testing.postgresql
-
 from moto import mock_s3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
-from results_schema import Prediction
+
+from triage.component.results_schema import Prediction
 from triage.component.catwalk.db import ensure_db
 import pandas
 

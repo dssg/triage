@@ -9,7 +9,7 @@ import pandas
 from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
-from results_schema import Model, FeatureImportance
+from triage.component.results_schema import Model, FeatureImportance
 
 from .feature_importances import get_feature_importances
 from .utils import (

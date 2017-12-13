@@ -9,7 +9,7 @@ import pandas
 import postgres_copy
 from sqlalchemy.orm import sessionmaker
 
-from results_schema import Model, Prediction
+from triage.component.results_schema import Model, Prediction
 
 from .utils import db_retry
 

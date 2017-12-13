@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.pool import QueuePool
 
-from results_schema import Base
+from triage.component.results_schema import Base
 
 
 def ensure_db(engine):
@@ -11,14 +11,14 @@ def ensure_db(engine):
 
 
 def connect(poolclass=QueuePool):
-    with open('database.yaml') as f:
-        profile = yaml.load(f)
-        dbconfig = {
-            'host': profile['host'],
-            'username': profile['user'],
-            'database': profile['db'],
-            'password': profile['pass'],
-            'port': profile['port'],
-        }
-        dburl = URL('postgres', **dbconfig)
+    with open('database.yaml') as fd:
+        config = yaml.load(fd)
+        dburl = URL(
+            'postgres',
+            host=config['host'],
+            username=config['user'],
+            database=config['db'],
+            password=config['pass'],
+            port=config['port'],
+        )
         return create_engine(dburl, poolclass=poolclass)

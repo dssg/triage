@@ -1,8 +1,7 @@
 import logging
 
-from results_schema import IndividualImportance
-
 from triage.component.catwalk.utils import save_db_objects
+from triage.component.results_schema import IndividualImportance
 
 from .uniform import uniform_distribution
 

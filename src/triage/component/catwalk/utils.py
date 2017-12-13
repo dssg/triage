@@ -1,18 +1,20 @@
+import csv
 import datetime
-import pickle
-import tempfile
 import hashlib
+import json
+import pickle
+import random
+import tempfile
+
 import botocore
 import pandas
-import random
+import postgres_copy
+import sqlalchemy
 import yaml
-import json
-from results_schema import Experiment, Model
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
-import sqlalchemy
-import csv
-import postgres_copy
+
+from triage.component.results_schema import Experiment, Model
 
 
 def split_s3_path(path):
