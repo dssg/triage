@@ -1,5 +1,0 @@
-matplotlib
-pandas
-results-schema
-model-catwalk>=0.2
-smart_open
