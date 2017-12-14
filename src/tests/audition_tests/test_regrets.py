@@ -1,10 +1,20 @@
-from audition.regrets import SelectionRulePicker, SelectionRulePlotter, BoundSelectionRule
+from unittest.mock import patch
+
+import numpy
 import testing.postgresql
 from sqlalchemy import create_engine
-from tests.utils import create_sample_distance_table
-from audition.selection_rules import best_current_value, best_average_value
-import numpy
-from unittest.mock import patch
+
+from triage.component.audition.regrets import (
+    SelectionRulePicker,
+    SelectionRulePlotter,
+)
+from triage.component.audition.selection_rules import (
+    best_current_value,
+    best_average_value,
+    BoundSelectionRule,
+)
+
+from .utils import create_sample_distance_table
 
 
 def test_selection_rule_picker():
@@ -107,7 +117,7 @@ def test_SelectionPlotter_create_plot_dataframe():
 
 
 def test_SelectionPlotter_plot():
-    with patch('audition.regrets.plot_cats') as plot_patch:
+    with patch('triage.component.audition.regrets.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)

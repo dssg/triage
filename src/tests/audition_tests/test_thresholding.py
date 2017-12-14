@@ -1,13 +1,17 @@
-from audition.distance_from_best import DistanceFromBestTable
-from audition.thresholding import ModelGroupThresholder
+from unittest import TestCase
+
 import testing.postgresql
 from sqlalchemy import create_engine
-from results_schema.factories import ModelGroupFactory, init_engine, session
-from catwalk.db import ensure_db
-from unittest import TestCase
+
+from triage.component.audition.distance_from_best import DistanceFromBestTable
+from triage.component.audition.thresholding import ModelGroupThresholder
+from triage.component.catwalk.db import ensure_db
+
+from tests.results_tests.factories import ModelGroupFactory, init_engine, session
 
 
 class ModelGroupThresholderTest(TestCase):
+
     metric_filters = [
         {
             'metric': 'precision@',

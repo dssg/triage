@@ -1,7 +1,8 @@
-from audition.utils import make_list
 from itertools import product
-from audition.selection_rules import BoundSelectionRule
 import logging
+
+from .selection_rules import BoundSelectionRule
+from .utils import make_list
 
 
 def _expand_param_sets(rule_instances, values):

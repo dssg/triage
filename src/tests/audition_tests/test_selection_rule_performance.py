@@ -1,10 +1,14 @@
-from audition.regrets import SelectionRulePicker
-from audition.selection_rule_performance import SelectionRulePerformancePlotter
-from audition.selection_rules import BoundSelectionRule
+from unittest.mock import patch
+
 import testing.postgresql
 from sqlalchemy import create_engine
-from tests.utils import create_sample_distance_table
-from unittest.mock import patch
+
+from triage.component.audition.regrets import SelectionRulePicker
+from triage.component.audition.selection_rule_performance import SelectionRulePerformancePlotter
+from triage.component.audition.selection_rules import BoundSelectionRule
+
+from .utils import create_sample_distance_table
+
 
 TRAIN_END_TIMES = ['2014-01-01', '2015-01-01']
 
@@ -54,7 +58,7 @@ def test_SelectionRulePerformancePlotter_generate_plot_data():
 
 
 def test_SelectionRulePerformancePlotter_plot_regrets():
-    with patch('audition.selection_rule_performance.plot_cats') as plot_patch:
+    with patch('triage.component.audition.selection_rule_performance.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)
@@ -81,7 +85,7 @@ def test_SelectionRulePerformancePlotter_plot_regrets():
 
 
 def test_SelectionRulePerformancePlotter_plot_metrics():
-    with patch('audition.selection_rule_performance.plot_cats') as plot_patch:
+    with patch('triage.component.audition.selection_rule_performance.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)

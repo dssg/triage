@@ -1,9 +1,12 @@
-from audition.model_group_performance import ModelGroupPerformancePlotter
+from unittest.mock import patch
+
+import numpy
 import testing.postgresql
 from sqlalchemy import create_engine
-import numpy
-from tests.utils import create_sample_distance_table
-from unittest.mock import patch
+
+from triage.component.audition.model_group_performance import ModelGroupPerformancePlotter
+
+from .utils import create_sample_distance_table
 
 
 def test_ModelGroupPerformancePlotter_generate_plot_data():
@@ -23,7 +26,7 @@ def test_ModelGroupPerformancePlotter_generate_plot_data():
 
 
 def test_ModelGroupPerformancePlotter_plot_all():
-    with patch('audition.model_group_performance.plot_cats') as plot_patch:
+    with patch('triage.component.audition.model_group_performance.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)

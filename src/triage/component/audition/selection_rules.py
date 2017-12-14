@@ -1,7 +1,9 @@
-import logging
-from numpy import exp, log, average
-from audition.metric_directionality import greater_is_better, best_in_series, idxbest
 import inspect
+import logging
+
+from numpy import exp, log, average
+
+from .metric_directionality import greater_is_better, best_in_series, idxbest
 
 
 def random_model_group(df, train_end_time):
@@ -93,8 +95,8 @@ def best_average_value(df, train_end_time, metric, parameter):
             ]
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
     return _mg_best_avg_by(met_df, 'raw_value', metric)
-  
-  
+
+
 def lowest_metric_variance(df, train_end_time, metric, parameter):
     """Pick the model with the lowest metric variance so far
 
@@ -114,27 +116,22 @@ def lowest_metric_variance(df, train_end_time, metric, parameter):
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
-    met_df = df.loc[
-                (df['metric'] == metric) &
-                (df['parameter'] == parameter)
-            ]\
-            .groupby(['model_group_id'])['raw_value']\
-            .std()
+    met_df = (df.loc[(df['metric'] == metric) &
+                     (df['parameter'] == parameter)]
+              .groupby(['model_group_id'])['raw_value']
+              .std())
 
     if met_df.isnull().sum() == met_df.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info("Null metric variances for {} {} at {}; picking at random"\
-            .format(metric, parameter, train_end_time)
-            )
+        logging.info("Null metric variances for %s %s at %s; picking at random",
+                     metric, parameter, train_end_time)
         return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
     elif met_df.isnull().sum() > 0:
         # the variances should be all null or no nulls, a mix shouldn't be possible
         # since we should have the same number of observations for every model group
-        raise ValueError(
-            "Mix of null and non-null metric variances for or {} {} at {}"\
-            .format(metric, parameter, train_end_time)
-            )
+        raise ValueError("Mix of null and non-null metric variances for or {} {} at {}"
+                         .format(metric, parameter, train_end_time))
 
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
     return met_df.sample(frac=1).idxmin()
@@ -275,15 +272,16 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty)
                 (df['metric'] == metric) &
                 (df['parameter'] == parameter)
             ]
-    met_df_grp = met_df.groupby(['model_group_id']).aggregate({'raw_value': {'raw_avg': 'mean', 'raw_stdev': 'std'}})
+    met_df_grp = (met_df
+                  .groupby(['model_group_id'])
+                  .aggregate({'raw_value': {'raw_avg': 'mean', 'raw_stdev': 'std'}}))
     met_df_grp.columns = met_df_grp.columns.droplevel(0)
 
     if met_df_grp['raw_stdev'].isnull().sum() == met_df_grp.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info("Null metric variances for {} {} at {}; just using mean"\
-            .format(metric, parameter, train_end_time)
-            )
+        logging.info("Null metric variances for %s %s at %s; just using mean",
+                     metric, parameter, train_end_time)
         return getattr(
           met_df_grp['raw_avg'].sample(frac=1),
           idxbest(metric)
@@ -291,19 +289,18 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty)
     elif met_df_grp['raw_stdev'].isnull().sum() > 0:
         # the variances should be all null or no nulls, a mix shouldn't be possible
         # since we should have the same number of observations for every model group
-        raise ValueError(
-            "Mix of null and non-null metric variances for or {} {} at {}"\
-            .format(metric, parameter, train_end_time)
-            )
+        raise ValueError("Mix of null and non-null metric variances for or {} {} at {}"
+                         .format(metric, parameter, train_end_time))
 
     min_stdev = met_df_grp['raw_stdev'].min()
-    met_df_grp['penalized_avg'] = met_df_grp['raw_avg'] - stdev_penalty * (met_df_grp['raw_stdev'] - min_stdev)
+    met_df_grp['penalized_avg'] = (met_df_grp['raw_avg'] -
+                                   stdev_penalty * (met_df_grp['raw_stdev'] - min_stdev))
 
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
     return getattr(
         met_df_grp['penalized_avg'].sample(frac=1),
         idxbest(metric)
-    )() 
+    )()
 
 
 def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, decay_type):
@@ -354,12 +351,11 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
     else:
         raise ValueError('Must specify linear or exponential decay type')
 
-    wm = lambda x: average(x, weights=df.loc[x.index, 'weight'])
+    def wm(x):
+        return average(x, weights=df.loc[x.index, 'weight'])
 
-    met_df = df.loc[
-                (df['metric'] == metric) &
-                (df['parameter'] == parameter)
-            ]
+    met_df = df.loc[(df['metric'] == metric) &
+                    (df['parameter'] == parameter)]
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
     return getattr(
         met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}).sample(frac=1),
@@ -375,7 +371,7 @@ SELECTION_RULES = {
     'most_frequent_best_dist': most_frequent_best_dist,
     'best_average_two_metrics': best_average_two_metrics,
     'best_avg_var_penalized': best_avg_var_penalized,
-    'best_avg_recency_weight': best_avg_recency_weight    
+    'best_avg_recency_weight': best_avg_recency_weight
 }
 
 

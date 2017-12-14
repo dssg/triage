@@ -1,12 +1,15 @@
-from audition.utils import str_in_sql
-from audition.metric_directionality import sql_rank_order
-from audition.plotting import plot_cats, plot_bounds
-import pandas as pd
-import numpy as np
 import logging
+
+import numpy as np
+import pandas as pd
+
+from .utils import str_in_sql
+from .metric_directionality import sql_rank_order
+from .plotting import plot_cats, plot_bounds
 
 
 class DistanceFromBestTable(object):
+
     def __init__(self, db_engine, models_table, distance_table):
         """A database table that stores the distance from models and the
         best model for that train end time for a variety of chosen metrics
@@ -60,7 +63,7 @@ class DistanceFromBestTable(object):
                 insert into {new_table}
                 WITH first_evals AS (
                     SELECT *, row_number() OVER (
-                        PARTITION BY model_id 
+                        PARTITION BY model_id
                         ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
                         ) AS eval_rn
                     FROM results.evaluations
@@ -260,34 +263,34 @@ class BestDistancePlotter(object):
             'series_end': plot_max,
             'series_tick': plot_tick_dist,
         }
-        sel = """
-                with model_group_ids as ({model_group_union_sql}),
-                x_vals AS (
-                  SELECT m.model_group_id, s.distance
-                  FROM (SELECT GENERATE_SERIES(
-                    {series_start}, {series_end}, {series_tick}
-                  ) AS distance) s
-                  CROSS JOIN
-                  (
-                  SELECT DISTINCT model_group_id FROM model_group_ids
-                  ) m
-                )
-                SELECT dist.model_group_id, distance, mg.model_type,
-                       COUNT(*) AS num_models,
-                       AVG(CASE WHEN dist_from_best_case <= distance THEN 1 ELSE 0 END) AS pct_of_time
-                FROM {distance_table} dist
-                JOIN x_vals USING(model_group_id)
-                JOIN results.model_groups mg using (model_group_id)
-                WHERE
-                    dist.metric='{metric}'
-                    AND dist.parameter='{parameter}'
-                    and model_group_id in ({model_group_str})
-                    and train_end_time in ({train_end_str})
-                GROUP BY 1,2,3
-            """.format(**sel_params)
+        sel = """\
+            with model_group_ids as ({model_group_union_sql}),
+            x_vals AS (
+                SELECT m.model_group_id, s.distance
+                FROM (SELECT GENERATE_SERIES(
+                {series_start}, {series_end}, {series_tick}
+                ) AS distance) s
+                CROSS JOIN
+                (
+                SELECT DISTINCT model_group_id FROM model_group_ids
+                ) m
+            )
+            SELECT dist.model_group_id, distance, mg.model_type,
+                    COUNT(*) AS num_models,
+                    AVG(CASE WHEN dist_from_best_case <= distance THEN 1 ELSE 0 END) AS pct_of_time
+            FROM {distance_table} dist
+            JOIN x_vals USING(model_group_id)
+            JOIN results.model_groups mg using (model_group_id)
+            WHERE
+                dist.metric='{metric}'
+                AND dist.parameter='{parameter}'
+                and model_group_id in ({model_group_str})
+                and train_end_time in ({train_end_str})
+            GROUP BY 1,2,3
+        """.format(**sel_params)
 
-        return pd.read_sql(sel, self.distance_from_best_table.db_engine)\
-            .sort_values(['model_group_id', 'distance'])
+        return (pd.read_sql(sel, self.distance_from_best_table.db_engine)
+                .sort_values(['model_group_id', 'distance']))
 
     def plot_all_best_dist(self, metric_filters, model_group_ids, train_end_times):
         """For each metric, plot the percentage of time that a model group is
@@ -306,7 +309,8 @@ class BestDistancePlotter(object):
 
         """
         for metric_filter in metric_filters:
-            logging.info('Building best distance plot for %s and %s', metric_filter, train_end_times)
+            logging.info('Building best distance plot for %s and %s',
+                         metric_filter, train_end_times)
             df = self.generate_plot_data(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
@@ -318,7 +322,6 @@ class BestDistancePlotter(object):
                 parameter=metric_filter['parameter'],
                 df_best_dist=df
             )
-
 
 
 def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):

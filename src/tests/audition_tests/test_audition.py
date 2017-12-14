@@ -1,16 +1,21 @@
-from audition import Auditioner
-from sqlalchemy import create_engine
-import testing.postgresql
-from results_schema.factories import EvaluationFactory,\
-    ModelFactory,\
-    ModelGroupFactory,\
-    init_engine,\
-    session
-from catwalk.db import ensure_db
-import factory
-from datetime import date, datetime
+from datetime import datetime
 import tempfile
+
+import factory
+import testing.postgresql
 import yaml
+from sqlalchemy import create_engine
+
+from triage.component.audition import Auditioner
+from triage.component.catwalk.db import ensure_db
+
+from tests.results_tests.factories import (
+    EvaluationFactory,
+    ModelFactory,
+    ModelGroupFactory,
+    init_engine,
+    session,
+)
 
 
 def test_Auditioner():
@@ -51,11 +56,12 @@ def test_Auditioner():
         class ImmediateEvalFactory(EvaluationFactory):
             evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)
 
-        _ = [
-            ImmediateEvalFactory(model_rel=model, metric=metric, parameter=parameter)
-            for metric, parameter in metrics
-            for model in models
-        ]
+        for model in models:
+            for (metric, parameter) in metrics:
+                ImmediateEvalFactory(model_rel=model,
+                                     metric=metric,
+                                     parameter=parameter)
+
         session.commit()
 
         # define a very loose filtering that should admit all model groups

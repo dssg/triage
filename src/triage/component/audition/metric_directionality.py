@@ -1,6 +1,7 @@
-from catwalk.evaluation import ModelEvaluator
-import operator
 import logging
+import operator
+
+from triage.component.catwalk.evaluation import ModelEvaluator
 
 
 def greater_is_better(metric):

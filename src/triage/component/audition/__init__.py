@@ -1,6 +1,7 @@
+import logging
+
 import yaml
 from smart_open import smart_open
-import logging
 
 from .distance_from_best import DistanceFromBestTable, BestDistancePlotter
 from .thresholding import ModelGroupThresholder
@@ -11,6 +12,7 @@ from .selection_rule_grid import make_selection_rule_grid
 
 
 class Auditioner(object):
+
     def __init__(
         self,
         db_engine,
@@ -44,7 +46,8 @@ class Auditioner(object):
             and its format is detailed in that method's docstring
 
         Args:
-            db_engine (sqlalchemy.engine) A database engine with access to a results schema of a completed modeling run
+            db_engine (sqlalchemy.engine) A database engine with access to a
+                results schema of a completed modeling run
             model_group_ids (list) A large list of model groups to audition. No effort should
                 be needed to pick 'good' model groups, but they should all be groups that could
                 be used if they are found to perform well. They should also each have evaluations
@@ -61,8 +64,9 @@ class Auditioner(object):
                     max_below_best (float) The maximum value that the given metric
                         can be below the best for a given train end time
                     min_value (float) The minimum value that the given metric can be
-            models_table (string, optional) The name of the results schema models table that you want
-                to use. Will default to 'models', which is also the default in triage.
+            models_table (string, optional) The name of the results schema
+                models table that you want to use. Will default to 'models',
+                which is also the default in triage.
             distance_table (string, optional) The name of the 'best distance' table to use.
                 Will default to 'best_distance', but this can be sent if you want to avoid
                 clobbering the results from a prior analysis.
@@ -85,11 +89,13 @@ class Auditioner(object):
             initial_model_group_ids=model_group_ids,
             initial_metric_filters=initial_metric_filters
         )
-        self.model_group_performance_plotter = ModelGroupPerformancePlotter(self.distance_from_best_table)
+        self.model_group_performance_plotter = \
+            ModelGroupPerformancePlotter(self.distance_from_best_table)
 
         self.selection_rule_picker = SelectionRulePicker(self.distance_from_best_table)
         self.selection_rule_plotter = SelectionRulePlotter(self.selection_rule_picker)
-        self.selection_rule_performance_plotter = SelectionRulePerformancePlotter(self.selection_rule_picker)
+        self.selection_rule_performance_plotter = \
+            SelectionRulePerformancePlotter(self.selection_rule_picker)
 
         self.distance_from_best_table.create_and_populate(
             model_group_ids,
@@ -153,11 +159,12 @@ class Auditioner(object):
         logging.info('Showing best distance plots for all metrics')
         thresholded_model_group_ids = self.thresholded_model_group_ids
         if len(thresholded_model_group_ids) == 0:
-            logging.warning('Zero model group ids found that passed configured thresholds. Nothing to plot')
+            logging.warning('Zero model group ids found that passed configured thresholds. '
+                            'Nothing to plot')
             return
         self.best_distance_plotter.plot_all_best_dist(
             self.metrics,
-            thresholded_model_group_ids, 
+            thresholded_model_group_ids,
             self.train_end_times
         )
         logging.info('Showing model group performance plots for all metrics')
@@ -259,7 +266,8 @@ class Auditioner(object):
                             {'metric': 'recall@', 'parameter': '100_abs'},
                         ],
                         'selection_rules': [
-                            {'name': 'most_frequent_best_dist', 'dist_from_best_case': [0.1, 0.2, 0.3]},
+                            {'name': 'most_frequent_best_dist',
+                             'dist_from_best_case': [0.1, 0.2, 0.3]},
                             {'name': 'best_current_value'}
                         ]
                 }]

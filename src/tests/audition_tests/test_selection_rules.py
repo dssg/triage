@@ -1,8 +1,14 @@
-from audition.selection_rules import best_current_value, best_average_value,\
-    most_frequent_best_dist, best_average_two_metrics,\
-    best_avg_var_penalized, best_avg_recency_weight,\
-    lowest_metric_variance
 import pandas
+
+from triage.component.audition.selection_rules import (
+    best_current_value,
+    best_average_value,
+    most_frequent_best_dist,
+    best_average_two_metrics,
+    best_avg_var_penalized,
+    best_avg_recency_weight,
+    lowest_metric_variance,
+)
 
 
 def test_best_current_value_greater_is_better():
@@ -77,10 +83,9 @@ def test_most_frequent_best_dist():
     assert most_frequent_best_dist(df, '2013-01-01', 'precision@', '100_abs', 0.01) == '2'
 
 
-
 def test_best_average_two_metrics_greater_is_better():
     df = pandas.DataFrame.from_dict({
-        'model_group_id': ['1', '1', '2', '2', '1', '1', '2', '2'], 
+        'model_group_id': ['1', '1', '2', '2', '1', '1', '2', '2'],
         'model_id': ['1', '1', '2', '2', '3', '3', '4', '4'],
         'train_end_time': ['2011-01-01', '2011-01-01', '2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01', '2012-01-01', '2012-01-01'],
         'metric': ['precision@', 'recall@', 'precision@', 'recall@', 'precision@', 'recall@', 'precision@', 'recall@'],
@@ -95,7 +100,7 @@ def test_best_average_two_metrics_greater_is_better():
 
 def test_best_average_two_metrics_lesser_is_better():
     df = pandas.DataFrame.from_dict({
-        'model_group_id': ['1', '1', '2', '2', '1', '1', '2', '2'], 
+        'model_group_id': ['1', '1', '2', '2', '1', '1', '2', '2'],
         'model_id': ['1', '1', '2', '2', '3', '3', '4', '4'],
         'train_end_time': ['2011-01-01', '2011-01-01', '2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01', '2012-01-01', '2012-01-01'],
         'metric': ['false positives@', 'false negatives@', 'false positives@', 'false negatives@', 'false positives@', 'false negatives@', 'false positives@', 'false negatives@'],

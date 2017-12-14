@@ -1,11 +1,14 @@
-from audition.utils import str_in_sql
-from audition.plotting import plot_cats
+import logging
+
 import pandas as pd
 import numpy as np
-import logging
+
+from .plotting import plot_cats
+from .utils import str_in_sql
 
 
 class ModelGroupPerformancePlotter(object):
+
     def __init__(self, distance_from_best_table):
         """Generate a plot illustrating the performance of a model group over time
 
@@ -30,7 +33,8 @@ class ModelGroupPerformancePlotter(object):
 
         """
         for metric_filter in metric_filters:
-            logging.info('Plotting model group performance for %s, %s', metric_filter, train_end_times)
+            logging.info('Plotting model group performance for %s, %s',
+                         metric_filter, train_end_times)
             df = self.generate_plot_data(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
@@ -113,12 +117,13 @@ group by 1, 2, 3, 4, 5, 6
             train_end_times,
             sorted(df_metric['train_end_time'].unique()),
         ):
-            given_time_as_numpy = np.datetime64(given_time) 
+            given_time_as_numpy = np.datetime64(given_time)
             if given_time_as_numpy != matrix_time:
                 raise ValueError(
-                    'Train times given to the plotter do not match up with those extracted from the database. %s (given time) does not equal %s (matrix time)',
-                    given_time_as_numpy,
-                    matrix_time
+                    'Train times given to the plotter do not match up with those '
+                    'extracted from the database: '
+                    '{} (given time) does not equal {} (matrix time)'
+                    .format(given_time_as_numpy, matrix_time)
                 )
 
         plot_cats(

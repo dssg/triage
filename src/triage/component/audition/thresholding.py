@@ -1,6 +1,6 @@
 import logging
 
-from audition.metric_directionality import is_better_operator
+from .metric_directionality import is_better_operator
 
 
 def _past_threshold(df, metric_filter):
@@ -22,6 +22,7 @@ def _of_metric(df, metric_filter):
 
 
 class ModelGroupThresholder(object):
+
     def __init__(
         self,
         distance_from_best_table,

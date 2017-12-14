@@ -1,17 +1,23 @@
-from audition.distance_from_best import DistanceFromBestTable, BestDistancePlotter
-import testing.postgresql
-from sqlalchemy import create_engine
-from results_schema.factories import EvaluationFactory,\
-    ModelFactory,\
-    ModelGroupFactory,\
-    init_engine,\
-    session
-from catwalk.db import ensure_db
+from datetime import datetime, timedelta
+from unittest.mock import patch
+
 import factory
 import numpy
-from tests.utils import create_sample_distance_table
-from unittest.mock import patch
-from datetime import datetime, timedelta
+import testing.postgresql
+from sqlalchemy import create_engine
+
+from triage.component.audition.distance_from_best import DistanceFromBestTable, BestDistancePlotter
+from triage.component.catwalk.db import ensure_db
+
+from tests.results_tests.factories import (
+    EvaluationFactory,
+    ModelFactory,
+    ModelGroupFactory,
+    init_engine,
+    session,
+)
+
+from .utils import create_sample_distance_table
 
 
 def _sql_add_days(sql_date, days):
@@ -19,6 +25,7 @@ def _sql_add_days(sql_date, days):
         datetime.strptime(sql_date, '%Y-%m-%d') + timedelta(days=days),
         '%Y-%m-%d'
     )
+
 
 def test_DistanceFromBestTable():
     with testing.postgresql.Postgresql() as postgresql:
@@ -82,10 +89,10 @@ def test_DistanceFromBestTable():
             metric = 'recall@'
             parameter = '100_abs'
 
-        for add_val, PrecFac, RecFac in [
+        for (add_val, PrecFac, RecFac) in (
             (0, Precision100Factory, Recall100Factory),
             (-0.15, Precision100FactoryMonthOut, Recall100FactoryMonthOut)
-            ]:
+        ):
             PrecFac(model_rel=models['stable_3y_ago'], value=0.6+add_val)
             PrecFac(model_rel=models['stable_2y_ago'], value=0.57+add_val)
             PrecFac(model_rel=models['stable_1y_ago'], value=0.59+add_val)
@@ -179,7 +186,7 @@ def test_BestDistancePlotter():
 
 
 def test_BestDistancePlotter_plot():
-    with patch('audition.distance_from_best.plot_cats') as plot_patch:
+    with patch('triage.component.audition.distance_from_best.plot_cats') as plot_patch:
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
             distance_table, model_groups = create_sample_distance_table(engine)

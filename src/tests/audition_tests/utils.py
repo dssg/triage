@@ -1,6 +1,12 @@
-from audition.distance_from_best import DistanceFromBestTable
-from results_schema.factories import ModelFactory, ModelGroupFactory, init_engine, session
-from catwalk.db import ensure_db
+from triage.component.audition.distance_from_best import DistanceFromBestTable
+from triage.component.catwalk.db import ensure_db
+
+from tests.results_tests.factories import (
+    ModelFactory,
+    ModelGroupFactory,
+    init_engine,
+    session,
+)
 
 
 def create_sample_distance_table(engine):

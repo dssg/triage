@@ -1,5 +1,6 @@
-from audition.plotting import plot_cats
 import pandas
+
+from .plotting import plot_cats
 
 
 class SelectionRulePerformancePlotter(object):

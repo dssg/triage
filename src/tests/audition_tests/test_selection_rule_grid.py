@@ -1,5 +1,5 @@
-from audition.selection_rules import BoundSelectionRule
-from audition.selection_rule_grid import make_selection_rule_grid
+from triage.component.audition.selection_rules import BoundSelectionRule
+from triage.component.audition.selection_rule_grid import make_selection_rule_grid
 
 
 def test_selection_rule_grid():

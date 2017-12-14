@@ -1,7 +1,14 @@
-from audition.plotting import generate_plot_lines, category_colordict, category_styledict, plot_cats
-import matplotlib.lines as mlines
-import pandas
 from unittest.mock import patch
+
+import pandas
+from matplotlib import lines as mlines
+
+from triage.component.audition.plotting import (
+    generate_plot_lines,
+    category_colordict,
+    category_styledict,
+    plot_cats,
+)
 
 
 def test_generate_plot_lines():
@@ -15,9 +22,9 @@ def test_generate_plot_lines():
         'cat2': '--',
         'cat3': '-',
     }
-    label_fcn = lambda x: 'Cat {}'.format(x)
-
-    plot_lines = generate_plot_lines(colordict, label_fcn, styledict)
+    plot_lines = generate_plot_lines(colordict,
+                                     lambda x: 'Cat {}'.format(x),
+                                     styledict)
     assert len(plot_lines) == 3
     for line in plot_lines:
         assert type(line) == mlines.Line2D
@@ -73,6 +80,6 @@ def test_plot_cats():
     })
     # hard to make many assertions, but we can make sure it gets to the end
     # and shows the contents
-    with patch('audition.plotting.plt.show') as show_patch:
+    with patch('triage.component.audition.plotting.plt.show') as show_patch:
         plot_cats(test_df, 'col1', 'col2', cat_col='cats', grp_col='groups')
         assert show_patch.called

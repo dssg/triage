@@ -1,11 +1,13 @@
 import copy
-from audition.selection_rules import *
+
 import numpy
 import pandas
-from audition.plotting import plot_cats, plot_bounds
+
+from .plotting import plot_cats, plot_bounds
 
 
 class SelectionRulePicker(object):
+
     def __init__(self, distance_from_best_table):
         """Runs simulations of different model group selection rules
 
@@ -103,6 +105,7 @@ class SelectionRulePicker(object):
 
         return bound_selection_rule.pick(localized_df, train_end_time)
 
+
 class SelectionRulePlotter(object):
     """Plot selection rules
 
@@ -162,11 +165,11 @@ class SelectionRulePlotter(object):
         Returns: (pandas.DataFrame) A dataframe with columns 'regret',
             'pct_of_time', and 'selection_rule'
         """
-        accumulator = list()
+        accumulator = []
         for selection_rule in bound_selection_rules:
             regrets = [
-                result['dist_from_best_case_next_time'] for result in
-                self.selection_rule_picker.results_for_rule(
+                result['dist_from_best_case_next_time']
+                for result in self.selection_rule_picker.results_for_rule(
                     selection_rule,
                     model_group_ids,
                     train_end_times,
@@ -175,10 +178,10 @@ class SelectionRulePlotter(object):
                 )
             ]
             for regret_threshold in self.regret_thresholds(regret_metric, regret_parameter):
-                pct_of_time = numpy.mean([1 if regret < regret_threshold else 0 for regret in regrets])
+                distro = [int(regret < regret_threshold) for regret in regrets]
                 accumulator.append({
                     'regret': regret_threshold,
-                    'pct_of_time': pct_of_time,
+                    'pct_of_time': numpy.mean(distro),
                     'selection_rule': selection_rule.descriptive_name,
                 })
         return pandas.DataFrame.from_records(accumulator)
@@ -213,8 +216,9 @@ class SelectionRulePlotter(object):
             regret_parameter
         )
         cat_col = 'selection_rule'
-        plt_title = 'Fraction of models X pp worse than best {} {} next time'.format(regret_metric, regret_parameter)
-        plot_min, plot_max = self.plot_bounds(regret_metric, regret_parameter)
+        plt_title = ('Fraction of models X pp worse than best {} {} next time'
+                     .format(regret_metric, regret_parameter))
+        (plot_min, plot_max) = self.plot_bounds(regret_metric, regret_parameter)
 
         plot_cats(
             frame=df_regrets,
