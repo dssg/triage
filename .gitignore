@@ -6,3 +6,6 @@ dist/
 .cache/
 .coverage*
 .tox/
+
+.ipynb_checkpoints/
+venv/
