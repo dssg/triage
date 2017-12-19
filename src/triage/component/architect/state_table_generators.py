@@ -1,54 +1,17 @@
 import logging
+from abc import ABC, abstractmethod
 
 from triage.component.architect.database_reflection import table_has_data
-from triage.component.architect.validations import (
-    table_should_have_data,
-    column_should_be_intlike,
-    column_should_be_booleanlike,
-    column_should_be_timelike,
-    column_should_be_stringlike,
-)
-
-
-class StateFilter(object):
-
-    def __init__(self, sparse_state_table, filter_logic):
-        self.sparse_state_table = sparse_state_table
-        self.filter_logic = filter_logic
-
-    def join_sql(self, join_table, join_date):
-        return '''
-            join {state_table} on (
-                {state_table}.entity_id = {join_table}.entity_id and
-                {state_table}.as_of_date = '{join_date}'::timestamp and
-                ({state_filter_logic})
-            )
-        '''.format(
-            state_table=self.sparse_state_table,
-            state_filter_logic=self.filter_logic,
-            join_date=join_date,
-            join_table=join_table
-        )
 
 
 DEFAULT_ACTIVE_STATE = 'active'
 
 
-class StateTableGenerator(object):
+class StateTableGeneratorBase(ABC):
     """Create a table containing the state of entities on different dates
 
-    Throughout the class we will refer to two types of state tables:
-        'dense' and 'sparse'.
-
-    dense: A table containing entities and *time ranges* for different states
-
-        An example of this would be a building permits table, with
-        time ranges that buildings are permitted.
-
-        The expected format would be entity id/state/start/end
-
-    sparse: A table containing entities, dates, and boolean values for
-        different states.
+    Referred to as a 'sparse states table', this table contains
+        entities, dates, and boolean values for different states.
 
         These types of tables rarely exist in source data, but are useful
         internally in pipelines to express state logic in SQL
@@ -57,6 +20,10 @@ class StateTableGenerator(object):
 
         The output format is entity id/date/state1/state3/state3...
 
+    Subclasses must implement the following methods:
+        '_create_and_populate_sparse_table' to take dates and return a query to create the states table for those dates.
+        '_empty_table_message' to provide a helpful message to the user if no rows are found in the resultant table
+
     The main interface of StateTableGenerator objects is the
     `generate_sparse_table` method, which produces the latter
     'sparse'-style table.
@@ -64,88 +31,143 @@ class StateTableGenerator(object):
     Args:
         db_engine (sqlalchemy.engine)
         experiment_hash (string) unique identifier for the experiment
-        events_table (string, optional) name of SQL table containing
-            outcome events for entities
-        dense_state_table (string, optional) name of SQL table containing
-            entities and state time ranges
 
     """
-    def __init__(
-        self,
-        db_engine,
-        experiment_hash,
-        events_table=None,
-        dense_state_table=None
-    ):
+    def __init__(self, db_engine, experiment_hash):
         self.db_engine = db_engine
         self.experiment_hash = experiment_hash
-        self.dense_state_table = dense_state_table
-        self.events_table = events_table
 
-    def validate(self):
-        if not self.dense_state_table and not self.events_table:
-            raise ValueError('Need to specify either dense_state_table or events_table')
-        if self.events_table:
-            self._event_validations()
-        if self.dense_state_table:
-            self._dense_state_validations()
+    @abstractmethod
+    def _create_and_populate_sparse_table(self, as_of_dates):
+        pass
 
-    def _dense_state_validations(self):
-        table_should_have_data(self.dense_state_table, self.db_engine)
-
-        column_should_be_intlike(self.dense_state_table, 'entity_id', self.db_engine)
-        column_should_be_stringlike(self.dense_state_table, 'state', self.db_engine)
-        column_should_be_timelike(self.dense_state_table, 'start_time', self.db_engine)
-        column_should_be_timelike(self.dense_state_table, 'end_time', self.db_engine)
-
-    def _event_validations(self):
-        table_should_have_data(self.events_table, self.db_engine)
-        column_should_be_intlike(self.events_table, 'entity_id', self.db_engine)
-        column_should_be_timelike(self.events_table, 'outcome_date', self.db_engine)
-        column_should_be_booleanlike(self.events_table, 'outcome', self.db_engine)
+    @abstractmethod
+    def _empty_table_message(self, as_of_dates):
+        pass
 
     @property
     def sparse_table_name(self):
         return 'tmp_sparse_states_{}'.format(self.experiment_hash)
 
-    @property
-    def sparse_table_query_func(self):
-        if self.dense_state_table:
-            logging.info('Dense state table passed to StateTableGenerator, '
-                         'so computing sparse table using it')
-            return self._sparse_table_query_from_dense
-        else:
-            logging.info('Dense state table not passed to StateTableGenerator, '
-                         'so computing sparse table using events table')
-            return self._sparse_table_query_from_events
 
-    def _all_known_states(self, dense_state_table):
+    def generate_sparse_table(self, as_of_dates):
+        """Convert the object's input table 
+        into a sparse states table for the given as_of_dates
+
+        Args:
+            as_of_dates (list of datetime.dates) Dates to include in the sparse
+                state table
+        """
+        logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
+        self._create_and_populate_sparse_table(as_of_dates)
+        self.db_engine.execute(
+            'create index on {} (entity_id, as_of_date)'
+            .format(self.sparse_table_name)
+        )
+        logging.info('Indices created on entity_id and as_of_date for sparse state table')
+        if not table_has_data(self.sparse_table_name, self.db_engine):
+            raise ValueError(self._empty_table_message(as_of_dates))
+
+
+    def clean_up(self):
+        self.db_engine.execute(
+            'drop table if exists {}'.format(self.sparse_table_name)
+        )
+
+
+class StateTableGeneratorFromEntities(StateTableGeneratorBase):
+    """Generates a 'sparse'-style states table from a table containing entity_ids
+
+    This will include all entities found in the table for all given dates
+
+    Args:
+        entities_table (string, optional) name of SQL table containing
+           entities
+    """
+
+    def __init__(self, entities_table, *args, **kwargs):
+
+        super(StateTableGeneratorFromEntities, self).__init__(*args, **kwargs)
+        self.entities_table = entities_table
+
+    def _create_and_populate_sparse_table(self, as_of_dates):
+        """Create a 'sparse'-style table from an convert an entities table and addressing a specific set of dates
+
+        This will include all entities for all given dates
+
+        Args:
+        as_of_dates (list of datetime.date): Dates to calculate entity states as of
+        """
+
+        query = '''
+            create table {sparse_state_table} as (
+            select e.entity_id, a.as_of_date::timestamp, true {active_state}
+                from {entities_table} e
+                cross join (select unnest(ARRAY{as_of_dates}) as as_of_date) a
+                group by e.entity_id, a.as_of_date
+            )
+        '''.format(
+            sparse_state_table=self.sparse_table_name,
+            entities_table=self.entities_table,
+            as_of_dates=[date.isoformat() for date in as_of_dates],
+            active_state=DEFAULT_ACTIVE_STATE
+        )
+        logging.debug('Assembled sparse state table query: %s', query)
+        self.db_engine.execute(query)
+
+    def _empty_table_message(self, as_of_dates):
+        return "No entities in entities table '{input_table}'".format(
+            input_table=self.entities_table,
+        )
+
+
+class StateTableGeneratorFromDense(StateTableGeneratorBase):
+    """Creates a 'sparse'-style states table from a 'dense'-style states table.
+
+    A dense states table contains entities and *time ranges* for different states
+
+    An example of this would be a building permits table, with
+    time ranges that buildings are permitted.
+
+    The expected format is entity id/state/start/end
+
+    Args:
+        dense_state_table (string, optional) name of SQL table containing
+            entities and state time ranges
+    """
+    def __init__(self, dense_state_table, *args, **kwargs):
+        super(StateTableGeneratorFromDense, self).__init__(*args, **kwargs)
+        self.dense_state_table = dense_state_table
+
+    def all_known_states(self):
         all_states = [
             row[0] for row in
             self.db_engine.execute('''
                 select distinct(state) from {} order by state
-            '''.format(dense_state_table))
+            '''.format(self.dense_state_table))
         ]
         logging.info('Distinct states found: %s', all_states)
         return all_states
 
-    def _sparse_table_query_from_dense(self, as_of_dates):
-        """A query to convert a dense-style state table to a 'sparse'-style
-        table containing a specific set of dates.
+    def state_columns(self):
+        state_columns = [
+            "bool_or(state = '{desired_state}') as {desired_state}"
+            .format(desired_state=state)
+            for state in self.all_known_states()
+        ]
+        if not state_columns:
+            raise ValueError("Unable to identify states from table",
+                             self.dense_state_table)
+        return state_columns
+
+    def _create_and_populate_sparse_table(self, as_of_dates):
+        """Creates a sparse states table from a dense states table for a given list of dates
 
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
 
         Returns: (string) A query to produce a sparse states table
         """
-        state_columns = [
-            "bool_or(state = '{desired_state}') as {desired_state}"
-            .format(desired_state=state)
-            for state in self._all_known_states(self.dense_state_table)
-        ]
-        if not state_columns:
-            raise ValueError("Unable to identify states from table",
-                             self.dense_state_table)
         query = '''
             create table {sparse_state_table} as (
             select d.entity_id, a.as_of_date::timestamp, {state_column_string}
@@ -161,78 +183,19 @@ class StateTableGenerator(object):
             sparse_state_table=self.sparse_table_name,
             dense_state_table=self.dense_state_table,
             as_of_dates=[date.isoformat() for date in as_of_dates],
-            state_column_string=', '.join(state_columns)
+            state_column_string=', '.join(self.state_columns())
         )
         logging.debug('Assembled sparse state table query: %s', query)
-        return query
+        self.db_engine.execute(query)
 
-    def _sparse_table_query_from_events(self, as_of_dates):
-        """A query to convert an events table to a 'sparse'-style
-        table containing a specific set of dates.
-
-        This will include all entities for all given dates
-
-        Args:
-        as_of_dates (list of datetime.date): Dates to calculate entity states as of
-
-        Returns: (string) A query to produce a sparse states table
-        """
-
-        query = '''
-            create table {sparse_state_table} as (
-            select e.entity_id, a.as_of_date::timestamp, true {active_state}
-                from {events_table} e
-                cross join (select unnest(ARRAY{as_of_dates}) as as_of_date) a
-                group by e.entity_id, a.as_of_date
+    def _empty_table_message(self, as_of_dates):
+        return \
+            "No entities in dense state table '{input_table}' define time ranges " + \
+            "that encompass any of experiment's \"as-of-dates\":\n\n" + \
+            "\t{as_of_dates}\n\n" + \
+            "Please check temporal config and dense state table".format(
+                input_table=self.dense_state_table,
+                as_of_dates=', '.join(str(as_of_date) for as_of_date in (
+                    as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
+                )),
             )
-        '''.format(
-            sparse_state_table=self.sparse_table_name,
-            events_table=self.events_table,
-            as_of_dates=[date.isoformat() for date in as_of_dates],
-            active_state=DEFAULT_ACTIVE_STATE
-        )
-        logging.debug('Assembled sparse state table query: %s', query)
-        return query
-
-    def generate_sparse_table(self, as_of_dates):
-        """Convert the object's input table (either dense states or events)
-        into a sparse states table for the given as_of_dates
-
-        Args:
-            as_of_dates (list of datetime.dates) Dates to include in the sparse
-                state table
-        """
-        logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
-        self._generate_sparse_table(self.sparse_table_query_func(as_of_dates))
-        if not table_has_data(self.sparse_table_name, self.db_engine):
-            raise ValueError(
-                "No entities in table '{input_table}' define time ranges "
-                "that encompass any of experiment's \"as-of-dates\":\n\n"
-                "\t{as_of_dates}\n\n"
-                "Please check temporal and/or state configurations."
-                .format(
-                    input_table=(self.dense_state_table or self.events_table),
-                    as_of_dates=', '.join(str(as_of_date) for as_of_date in (
-                        as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
-                    )),
-                )
-            )
-
-    def _generate_sparse_table(self, generate_query):
-        """Generate and index a sparse table from a given query
-
-        Args:
-            generate_query (string) A full query to generate a sparse table
-        """
-        self.db_engine.execute(generate_query)
-        logging.info('Sparse state table generated')
-        self.db_engine.execute(
-            'create index on {} (entity_id, as_of_date)'
-            .format(self.sparse_table_name)
-        )
-        logging.info('Indices created on entity_id and as_of_date for sparse state table')
-
-    def clean_up(self):
-        self.db_engine.execute(
-            'drop table if exists {}'.format(self.sparse_table_name)
-        )

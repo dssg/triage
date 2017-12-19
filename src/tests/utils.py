@@ -312,9 +312,11 @@ def sample_config():
         'groups': ['entity_id', 'zip_code']
     }]
 
-    state_config = {
-        'table_name': 'states',
-        'state_filters': ['state_one or state_two'],
+    cohort_config = {
+        'dense_states': {
+            'table_name': 'states',
+            'state_filters': ['state_one or state_two'],
+        }
     }
 
     return {
@@ -324,7 +326,7 @@ def sample_config():
         'model_comment': 'test2-final-final',
         'model_group_keys': ['label_name', 'label_type', 'custom_key'],
         'feature_aggregations': feature_config,
-        'state_config': state_config,
+        'cohort_config': cohort_config,
         'temporal_config': temporal_config,
         'grid_config': grid_config,
         'scoring': scoring_config,

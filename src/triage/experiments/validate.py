@@ -268,9 +268,14 @@ class EventsTableValidator(Validator):
         column_should_be_booleanlike(events_table, 'outcome', self.db_engine)
 
 
-class StateConfigValidator(Validator):
-    def run(self, state_config):
-        if 'table_name' in state_config:
+class CohortConfigValidator(Validator):
+    def run(self, cohort_config):
+        if 'dense_states' in cohort_config:
+            state_config = cohort_config['dense_states']
+            if 'table_name' not in state_config:
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'dense_states' is used as cohort config,
+                a table name must be present'''))
             dense_state_table = state_config['table_name']
             table_should_have_data(dense_state_table, self.db_engine)
             column_should_be_intlike(dense_state_table, 'entity_id', self.db_engine)
@@ -278,13 +283,13 @@ class StateConfigValidator(Validator):
             column_should_be_timelike(dense_state_table, 'start_time', self.db_engine)
             column_should_be_timelike(dense_state_table, 'end_time', self.db_engine)
             if 'state_filters' not in state_config or len(state_config['state_filters']) < 1:
-                raise ValueError(dedent('''Section: state_config -
-                If a table_name is given in state_config,
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'dense_states' is used as cohort config,
                 at least one state filter must be present'''))
-        else:
-            logging.warning('No table_name found in state_config.' +
-                            'The provided events table will be used, which ' +
-                            'may result in unnecessarily large matrices')
+        elif 'entities_table' in cohort_config:
+            entities_table = cohort_config['entities_table']
+            table_should_have_data(entities_table, self.db_engine)
+            column_should_be_intlike(entities_table, 'entity_id', self.db_engine)
 
 
 class FeatureGroupDefinitionValidator(Validator):
@@ -444,7 +449,7 @@ class ExperimentValidator(Validator):
         FeatureAggregationsValidator(self.db_engine)\
             .run(experiment_config.get('feature_aggregations', {}))
         EventsTableValidator(self.db_engine).run(experiment_config.get('events_table', None))
-        StateConfigValidator(self.db_engine).run(experiment_config.get('state_config', {}))
+        CohortConfigValidator(self.db_engine).run(experiment_config.get('cohort_config', {}))
         FeatureGroupDefinitionValidator().run(
             experiment_config.get('feature_group_definition', {}),
             experiment_config['feature_aggregations']

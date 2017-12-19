@@ -183,18 +183,23 @@ feature_group_definition:
 # available: all, leave-one-out, leave-one-in
 feature_group_strategies: ['all']
 
-# STATE MANAGEMENT (optional)
-# If you want to only include rows in your matrices in a specific state,
-# provide:
-# 1. a dense state table that defines when entities were in specific states
-#   should have columns entity_id/state/start/end
-# 2. a list of state filtering SQL clauses to iterate through. Assuming the
-#   states are boolean columns (the experiment will convert the one you pass in
-#   to this format), write a SQL expression for each state
-#   configuration you want, ie '(permitted OR suspended) AND licensed'
-state_config:
-    table_name: 'states'
-    state_filters:
+# COHORT CONFIG
+# To define what entities make it into different matrices, there are two options.
+#
+# 1. Pass an entities table. All distinct entities present in this table (the 'entity_id' column) will be included in all matrices. Other columns will be ignored
+#
+# 2. Pass a dense states table, and information about which state filters to use in this experiment
+#
+#   a. a dense state table that defines when entities were in specific states
+#       should have columns entity_id/state/start/end
+#   b. a list of state filtering SQL clauses to iterate through. Assuming the
+#       states are boolean columns (the experiment will convert the one you pass in
+#       to this format), write a SQL expression for each state
+#       configuration you want, ie '(permitted OR suspended) AND licensed'
+cohort_config:
+    dense_states:
+        table_name: 'states'
+        state_filters:
         - 'state_one AND state_two'
         - '(state_one OR state_two) AND state_three'
 
