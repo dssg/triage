@@ -59,7 +59,7 @@ class PreAudition(object):
         self.model_group = list(model_groups['model_group_id'])
         return self.model_group
 
-    def get_train_end_times(self, after, query=None):
+    def get_train_end_times(self, after=None, query=None):
         """A function to get a list of train_end_times after certain time
 
         Args:

@@ -93,4 +93,15 @@ def test_PreAudition():
         assert len(pre_aud.get_model_groups(query)) == 1
 
         # Expect the number of train_end_times after 2014-01-01
-        assert len(pre_aud.get_train_end_times('2014-01-01')) == 6
+        assert len(pre_aud.get_train_end_times(after='2014-01-01')) == 6
+
+
+        query = """
+            SELECT DISTINCT train_end_time
+            FROM results.models
+            WHERE model_group_id IN ({})
+                AND train_end_time >= '2014-01-01'
+            ORDER BY train_end_time
+            """.format(', '.join(map(str, pre_aud.model_groups)))
+
+        assert len(pre_aud.get_train_end_times(query=query)) == 6
