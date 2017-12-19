@@ -174,7 +174,14 @@ class Auditioner(object):
             train_end_times=self.train_end_times
         )
 
-    def update_metric_filters(self, new_filters, plot=True):
+    def update_metric_filters(
+            self,
+            metric='precision@',
+            parameter='100_abs',
+            max_from_best='0.05',
+            threshold_value='0.1',
+            new_filters=None,
+            plot=True):
         """Update the thresholding metric filters
 
         Args:
@@ -192,6 +199,12 @@ class Auditioner(object):
             plot (boolean, default True) Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
+        if new_filters is None:
+            new_filters = [{'metric': metric,
+                            'parameter': parameter,
+                            'max_from_best': max_from_best,
+                            'threshold_value': threshold_value
+                            }]
         logging.info('Updating metric filters with new config %s', new_filters)
         self.model_group_thresholder.update_filters(new_filters)
         if plot:
