@@ -187,7 +187,7 @@ feature_group_strategies: ['all']
 # If you want to only include rows in your matrices in a specific state,
 # provide:
 # 1. a dense state table that defines when entities were in specific states
-#   should have columns entity_id/state/start/end
+#   should have columns entity_id/state/start_time/end_time
 # 2. a list of state filtering SQL clauses to iterate through. Assuming the
 #   states are boolean columns (the experiment will convert the one you pass in
 #   to this format), write a SQL expression for each state
