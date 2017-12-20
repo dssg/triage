@@ -75,7 +75,8 @@ def test_PreAudition():
 
 
         # Expect the number of model groups with label_1
-        assert len(pre_aud.get_model_groups_from_label("label_1")) == sum([x['label_definition']=='label_1' for x in model_configs])
+        assert len(pre_aud.get_model_groups_from_label("label_1")) ==
+            sum([x['label_definition']=='label_1' for x in model_configs])
 
         # Expect the number of model groups with certain experiment_hash
         experiment_hash = list(pd.read_sql(

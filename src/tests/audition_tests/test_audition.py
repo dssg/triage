@@ -111,7 +111,11 @@ def test_Auditioner():
         assert len(auditioner.thresholded_model_group_ids) == 0
 
         # pass the argument instead and remove all model groups
-        auditioner.update_metric_filters(metric='precision@', parameter='100_abs', max_from_best=0.0, threshold_value=1.1)
+        auditioner.update_metric_filters(
+            metric='precision@',
+            parameter='100_abs',
+            max_from_best=0.0,
+            threshold_value=1.1)
         assert len(auditioner.thresholded_model_group_ids) == 0
 
         # one potential place for bugs would be when we pull back the rules
@@ -121,7 +125,11 @@ def test_Auditioner():
         assert len(auditioner.thresholded_model_group_ids) == num_model_groups
 
         # pass the argument instead and let all model groups pass
-        auditioner.update_metric_filters(metric='precision@', parameter='100_abs', max_from_best=1.0, threshold_value=0.0)
+        auditioner.update_metric_filters(
+            metric='precision@',
+            parameter='100_abs',
+            max_from_best=1.0,
+            threshold_value=0.0)
         assert len(auditioner.thresholded_model_group_ids) == num_model_groups
 
         # now, we want to take this partially thresholded list and run it through

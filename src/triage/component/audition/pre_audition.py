@@ -27,7 +27,10 @@ class PreAudition(object):
             ORDER BY RANDOM()
             """
 
-        model_groups = pd.read_sql(query, con=self.db_engine, params={"label_definition": label_def})
+        model_groups = pd.read_sql(
+            query,
+            con=self.db_engine,
+            params={"label_definition": label_def})
         self.model_groups = list(model_groups['model_group_id'])
         return self.model_groups
 
@@ -44,7 +47,10 @@ class PreAudition(object):
             WHERE experiment_hash = %(experiment_hash)s
             """
 
-        model_groups = pd.read_sql(query, con=self.db_engine, params={"experiment_hash": experiment_hash})
+        model_groups = pd.read_sql(
+            query,
+            con=self.db_engine,
+            params={"experiment_hash": experiment_hash})
         self.model_groups = list(model_groups['model_group_id'])
         return self.model_groups
 
@@ -76,5 +82,8 @@ class PreAudition(object):
             ;
             """.format(', '.join(map(str, self.model_groups)))
 
-        end_times = list(pd.read_sql(query, con=self.db_engine, params={"after": after})['train_end_time'])
+        end_times = list(pd.read_sql(
+            query,
+            con=self.db_engine,
+            params={"after": after})['train_end_time'])
         return end_times
