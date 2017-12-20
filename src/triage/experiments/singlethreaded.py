@@ -40,6 +40,8 @@ class SingleThreadedExperiment(ExperimentBase):
                 ),
                 matrix_store=train_store
             )
+            # remove Nones from model_ids so we don't try to predict/evaluate on skipped baselines
+            model_ids = list(filter(None.__ne__, model_ids))
             logging.info('Done training models')
 
             for split_def, test_uuid in zip(
