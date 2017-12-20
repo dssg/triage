@@ -270,6 +270,18 @@ class EventsTableValidator(Validator):
 
 class CohortConfigValidator(Validator):
     def run(self, cohort_config):
+        available_keys = set(['dense_states', 'entities_table', 'query'])
+        bad_keys = set(cohort_config.keys()) - available_keys
+        if bad_keys:
+            raise ValueError(dedent('''Section: cohort_config -
+                The following given keys: '{}'
+                are invalid. Available keys are: '{}'
+                '''.format(bad_keys, available_keys)))
+        if len(cohort_config.keys()) > 1:
+            raise ValueError(dedent('''Section: cohort_config -
+                Only one key can be sent
+                '''))
+
         if 'dense_states' in cohort_config:
             state_config = cohort_config['dense_states']
             if 'table_name' not in state_config:
@@ -290,6 +302,22 @@ class CohortConfigValidator(Validator):
             entities_table = cohort_config['entities_table']
             table_should_have_data(entities_table, self.db_engine)
             column_should_be_intlike(entities_table, 'entity_id', self.db_engine)
+        elif 'query' in cohort_config:
+            query = cohort_config['query']
+            if '{as_of_date}' not in query:
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'query' is used as cohort_config,
+                {as_of_date} must be present'''))
+            dated_query = query.replace('{as_of_date}', '2016-01-01::timestamp')
+            conn = self.db_engine.connect()
+            logging.info('Validating cohort query')
+            try:
+                conn.execute('explain {}'.format(dated_query))
+            except Exception as e:
+                raise ValueError(dedent('''Section: cohort_config -
+                    given query can not be run with a sample as_of_date .
+                    query: "{}"
+                    Full error: {}'''.format(query, e)))
 
 
 class FeatureGroupDefinitionValidator(Validator):

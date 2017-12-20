@@ -184,11 +184,13 @@ feature_group_definition:
 feature_group_strategies: ['all']
 
 # COHORT CONFIG
-# To define what entities make it into different matrices, there are two options.
+# To define what entities make it into different matrices, there are three options (only choose one).
 #
 # 1. Pass an entities table. All distinct entities present in this table (the 'entity_id' column) will be included in all matrices. Other columns will be ignored
 #
-# 2. Pass a dense states table, and information about which state filters to use in this experiment
+# 2. Pass a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs.
+#
+# 3. Pass a dense states table, and information about which state filters to use in this experiment
 #
 #   a. a dense state table that defines when entities were in specific states
 #       should have columns entity_id/state/start/end
@@ -197,11 +199,13 @@ feature_group_strategies: ['all']
 #       to this format), write a SQL expression for each state
 #       configuration you want, ie '(permitted OR suspended) AND licensed'
 cohort_config:
-    dense_states:
-        table_name: 'states'
-        state_filters:
-        - 'state_one AND state_two'
-        - '(state_one OR state_two) AND state_three'
+#   entities_table: 'events'
+#   dense_states:
+#        table_name: 'states'
+#        state_filters:
+#        - 'state_one AND state_two'
+#        - '(state_one OR state_two) AND state_three'
+    query: "select entity_id from events where outcome_date < '{as_of_date}'"
 
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the

@@ -15,7 +15,7 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
-from triage.component.architect.state_table_generators import StateTableGeneratorFromDense, StateTableGeneratorFromEntities
+from triage.component.architect.state_table_generators import StateTableGeneratorFromDense, StateTableGeneratorFromEntities, StateTableGeneratorFromQuery
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_trainers import ModelTrainer
@@ -108,7 +108,13 @@ class ExperimentBase(ABC):
         )
 
         cohort_config = self.config.get('cohort_config', {})
-        if 'entities_table' in cohort_config:
+        if 'query' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromQuery,
+                experiment_hash=self.experiment_hash,
+                query=cohort_config['query']
+            )
+        elif 'entities_table' in cohort_config:
             self.state_table_generator_factory = partial(
                 StateTableGeneratorFromEntities,
                 experiment_hash=self.experiment_hash,
