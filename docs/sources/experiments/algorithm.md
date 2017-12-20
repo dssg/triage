@@ -32,11 +32,13 @@ The Experiment keeps track of what states any given entities are in to, based on
 
 In code, it does this by computing what it calls the 'sparse' state table for an experiment. This is a table with a boolean flag entry for every entity, as_of_time, and state. The structure of this table allows for state filtering based on SQL conditions given by the user.
 
-Based on configuration, it can get created through one of two code paths:
+Based on configuration, it can get created through one of three code paths:
 
 1. If the user passes what we call a 'dense states' table, with the following structure: entity id/state/start/end, and a list of state filters. This 'dense states' table basically holds time ranges that entities were in specific states. When converting this to a sparse table, we take each as_of_time present in the Experiment, and for each known state (that is, the distinct values found in the 'dense states' table), see if there is any entry in the dense states table with this state whose range overlaps this as_of_time. If so, the entity is considered to be in that state as of that date.
 
-2. If the user doesn't pass a dense states table, we use the events table to create a default one. It will simply use all entities present in the events table, and mark them as 'active' for every as_of_time in the experiment.
+2. If the user passes what we call an 'entities' table, containing an entity_id, it will simply use all distinct entities present in said table, and mark them as 'active' for every as_of_time in the experiment. Any other columns are ignored.
+
+3. If the user passes a query, parameterized with an as of date, we will populate the table by running it for each as_of_date.
 
 This table is created and exists until matrices are built, at which point it is considered unnecessary and then dropped.
 

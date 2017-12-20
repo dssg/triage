@@ -1,6 +1,6 @@
 import logging
 import os
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import partial
 
@@ -15,7 +15,11 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
-from triage.component.architect.state_table_generators import StateTableGenerator
+from triage.component.architect.state_table_generators import (
+    StateTableGeneratorFromDense,
+    StateTableGeneratorFromEntities,
+    StateTableGeneratorFromQuery
+)
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_trainers import ModelTrainer
@@ -33,7 +37,7 @@ def dt_from_str(dt_str):
     return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
-class ExperimentBase(object, metaclass=ABCMeta):
+class ExperimentBase(ABC):
     """The base class for all Experiments."""
 
     cleanup_timeout = 60  # seconds
@@ -107,13 +111,27 @@ class ExperimentBase(object, metaclass=ABCMeta):
             test_durations=split_config['test_durations'],
         )
 
-        self.state_table_generator_factory = partial(
-            StateTableGenerator,
-            experiment_hash=self.experiment_hash,
-            dense_state_table=self.config.get('state_config', {})
-            .get('table_name', None),
-            events_table=self.config['events_table']
-        )
+        cohort_config = self.config.get('cohort_config', {})
+        if 'query' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromQuery,
+                experiment_hash=self.experiment_hash,
+                query=cohort_config['query']
+            )
+        elif 'entities_table' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromEntities,
+                experiment_hash=self.experiment_hash,
+                entities_table=cohort_config['entities_table']
+            )
+        elif 'dense_states' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromDense,
+                experiment_hash=self.experiment_hash,
+                dense_state_table=cohort_config['dense_states']['table_name']
+            )
+        else:
+            raise ValueError('Cohort config missing or unrecognized')
 
         self.label_generator_factory = partial(
             BinaryLabelGenerator,
@@ -158,7 +176,9 @@ class ExperimentBase(object, metaclass=ABCMeta):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
-            states=self.config.get('state_config', {}).get('state_filters', []),
+            states=self.config.get('cohort_config', {})\
+            .get('dense_states', {})\
+            .get('state_filters', []),
             user_metadata=self.config.get('user_metadata', {}),
             replace=self.replace
         )
