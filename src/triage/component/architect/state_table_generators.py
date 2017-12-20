@@ -21,8 +21,10 @@ class StateTableGeneratorBase(ABC):
         The output format is entity id/date/state1/state3/state3...
 
     Subclasses must implement the following methods:
-        '_create_and_populate_sparse_table' to take dates and return a query to create the states table for those dates.
-        '_empty_table_message' to provide a helpful message to the user if no rows are found in the resultant table
+        '_create_and_populate_sparse_table' to take dates
+            and return a query to create the states table for those dates
+        '_empty_table_message' to provide a helpful message to the user
+            if no rows are found in the resultant table
 
     The main interface of StateTableGenerator objects is the
     `generate_sparse_table` method, which produces the latter
@@ -49,9 +51,8 @@ class StateTableGeneratorBase(ABC):
     def sparse_table_name(self):
         return 'tmp_sparse_states_{}'.format(self.experiment_hash)
 
-
     def generate_sparse_table(self, as_of_dates):
-        """Convert the object's input table 
+        """Convert the object's input table
         into a sparse states table for the given as_of_dates
 
         Args:
@@ -67,7 +68,6 @@ class StateTableGeneratorBase(ABC):
         logging.info('Indices created on entity_id and as_of_date for sparse state table')
         if not table_has_data(self.sparse_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
-
 
     def clean_up(self):
         self.db_engine.execute(
@@ -91,7 +91,8 @@ class StateTableGeneratorFromEntities(StateTableGeneratorBase):
         self.entities_table = entities_table
 
     def _create_and_populate_sparse_table(self, as_of_dates):
-        """Create a 'sparse'-style table from an convert an entities table and addressing a specific set of dates
+        """Create a 'sparse'-style table from an entities table
+            for a specific set of dates
 
         This will include all entities for all given dates
 
@@ -125,7 +126,8 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
     """Generates a 'sparse'-style states table from a given query
 
     Args:
-    query (string) SQL query string to select entities for a given as_of_date (parameterized with brackets: {as_of_date})
+    query (string) SQL query string to select entities for a given as_of_date
+        The as_of_date should be parameterized with brackets: {as_of_date}
     """
 
     def __init__(self, query, *args, **kwargs):
@@ -134,7 +136,8 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
         self.query = query
 
     def _create_and_populate_sparse_table(self, as_of_dates):
-        """Create a 'sparse'-style states table by sequentially running a given date-parameterized query for all known dates.
+        """Create a 'sparse'-style states table by sequentially running a
+            given date-parameterized query for all known dates.
 
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
@@ -146,18 +149,18 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
                 as_of_date timestamp,
                 {active_state} boolean
             )
-        '''.format(
-            sparse_state_table=self.sparse_table_name,
-            active_state=DEFAULT_ACTIVE_STATE
-        ))
+            '''.format(
+                sparse_state_table=self.sparse_table_name,
+                active_state=DEFAULT_ACTIVE_STATE
+            )
+        )
         logging.info('Created sparse state table, now inserting rows')
         for as_of_date in as_of_dates:
             formatted_date = "'{}'::timestamp".format(as_of_date.isoformat())
             dated_query = self.query.replace('{as_of_date}', formatted_date)
             full_query = '''insert into {sparse_state_table}
                 select q.entity_id, {as_of_date}, true
-                from 
-                ({query}) q
+                from ({query}) q
                 group by 1, 2, 3
             '''.format(
                 sparse_state_table=self.sparse_table_name,
@@ -172,7 +175,9 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
             self.db_engine.execute(full_query)
 
     def _empty_table_message(self, as_of_dates):
-        return "Query does not return any rows for the given as_of_dates: {as_of_dates} '{query}'".format(
+        return """Query does not return any rows for the given as_of_dates:
+            {as_of_dates}
+            '{query}'""".format(
             query=self.query,
             as_of_dates=', '.join(str(as_of_date) for as_of_date in (
                 as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']

@@ -15,7 +15,11 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
-from triage.component.architect.state_table_generators import StateTableGeneratorFromDense, StateTableGeneratorFromEntities, StateTableGeneratorFromQuery
+from triage.component.architect.state_table_generators import (
+    StateTableGeneratorFromDense,
+    StateTableGeneratorFromEntities,
+    StateTableGeneratorFromQuery
+)
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_trainers import ModelTrainer
@@ -172,7 +176,9 @@ class ExperimentBase(ABC):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
-            states=self.config.get('cohort_config', {}).get('dense_states', {}).get('state_filters', []),
+            states=self.config.get('cohort_config', {})\
+            .get('dense_states', {})\
+            .get('state_filters', []),
             user_metadata=self.config.get('user_metadata', {}),
             replace=self.replace
         )
