@@ -9,7 +9,8 @@ from timeout import timeout
 
 from triage.component.architect.label_generators import (
     InspectionsLabelGenerator,
-    QueryBinaryLabelGenerator
+    QueryBinaryLabelGenerator,
+    DEFAULT_LABEL_NAME
 )
 
 from triage.component.architect.features import (
@@ -26,6 +27,7 @@ from triage.component.architect.state_table_generators import (
 )
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
@@ -101,11 +103,13 @@ class ExperimentBase(ABC):
         if 'inspection_outcomes_table' in label_config:
             return partial(
                 InspectionsLabelGenerator,
+                label_name=label_config.get('name', None),
                 events_table=label_config['inspection_outcomes_table']
             )
         elif 'query' in label_config:
             return partial(
                 QueryBinaryLabelGenerator,
+                label_name=label_config.get('name', None),
                 query=label_config['query']
             )
         else:
@@ -180,7 +184,7 @@ class ExperimentBase(ABC):
         self.planner_factory = partial(
             Planner,
             feature_start_time=dt_from_str(split_config['feature_start_time']),
-            label_names=['outcome'],
+            label_names=[self.config.get('label_config', {}).get('name', DEFAULT_LABEL_NAME)],
             label_types=['binary'],
             db_config={
                 'features_schema_name': self.features_schema_name,
@@ -193,6 +197,7 @@ class ExperimentBase(ABC):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
+            cohort_name=self.config.get('cohort_config', {}).get('name', None),
             states=self.config.get('cohort_config', {})\
             .get('dense_states', {})\
             .get('state_filters', []),
@@ -205,7 +210,7 @@ class ExperimentBase(ABC):
             project_path=self.project_path,
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
-            model_group_keys=self.config['model_group_keys'],
+            model_grouper=ModelGrouper(self.config.get('model_group_keys', [])),
             replace=self.replace
         )
 

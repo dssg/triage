@@ -1,67 +1,56 @@
 import boto3
 import pandas
 import testing.postgresql
-import datetime
 import sqlalchemy
 import unittest
 from unittest.mock import patch
+import pytest
 
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 
+from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
     S3ModelStorageEngine, InMemoryMatrixStore
+from .utils import sample_matrix_store, sample_metadata
 
 
-def test_model_trainer():
+@pytest.fixture
+def grid_config():
+    return {
+        'sklearn.linear_model.LogisticRegression': {
+            'C': [0.00001, 0.0001],
+            'penalty': ['l1', 'l2'],
+            'random_state': [2193]
+        }
+    }
+
+
+def test_model_trainer(sample_matrix_store, grid_config):
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
-
-        grid_config = {
-            'sklearn.linear_model.LogisticRegression': {
-                'C': [0.00001, 0.0001],
-                'penalty': ['l1', 'l2'],
-                'random_state': [2193]
-            }
-        }
 
         with mock_s3():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
 
             # create training set
-            matrix = pandas.DataFrame.from_dict({
-                'entity_id': [1, 2],
-                'feature_one': [3, 4],
-                'feature_two': [5, 6],
-                'label': ['good', 'bad']
-            })
-            metadata = {
-                'feature_start_time': datetime.date(2012, 12, 20),
-                'end_time': datetime.date(2016, 12, 20),
-                'label_name': 'label',
-                'label_timespan': '1y',
-                'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2'],
-                'indices': ['entity_id'],
-            }
             project_path = 'econ-dev/inspections'
             model_storage_engine = S3ModelStorageEngine(project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
+                model_grouper=ModelGrouper(),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_timespan']
             )
-            matrix_store = InMemoryMatrixStore(matrix, metadata)
             model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store
+                matrix_store=sample_matrix_store
             )
 
             # assert
@@ -101,7 +90,8 @@ def test_model_trainer():
                 'feature_two': [6, 5],
             })
 
-            test_matrix = InMemoryMatrixStore(matrix=test_matrix, metadata=metadata).matrix
+            test_matrix = InMemoryMatrixStore(matrix=test_matrix, metadata=sample_metadata())\
+                .matrix
 
             for model_pickle in model_pickles:
                 predictions = model_pickle.predict(test_matrix)
@@ -111,7 +101,7 @@ def test_model_trainer():
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store
+                matrix_store=sample_matrix_store
             )
             assert len([
                 row for row in
@@ -129,13 +119,13 @@ def test_model_trainer():
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_timespan'],
+                model_grouper=ModelGrouper(model_group_keys=['label_name', 'label_timespan']),
                 replace=True
             )
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store,
+                matrix_store=sample_matrix_store,
             )
             assert model_ids == new_model_ids
             assert [
@@ -160,7 +150,7 @@ def test_model_trainer():
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store
+                matrix_store=sample_matrix_store
             )
             assert model_ids == sorted(new_model_ids)
 
@@ -168,13 +158,46 @@ def test_model_trainer():
             new_model_ids = trainer.generate_trained_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
-                matrix_store=matrix_store
+                matrix_store=sample_matrix_store
             )
             assert model_ids == \
                 sorted([model_id for model_id in new_model_ids])
 
 
-def test_n_jobs_not_new_model():
+def test_custom_groups(sample_matrix_store, grid_config):
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        ensure_db(engine)
+
+        with mock_s3():
+            s3_conn = boto3.resource('s3')
+            s3_conn.create_bucket(Bucket='econ-dev')
+
+            # create training set
+            project_path = 'econ-dev/inspections'
+            model_storage_engine = S3ModelStorageEngine(project_path)
+            trainer = ModelTrainer(
+                project_path=project_path,
+                experiment_hash=None,
+                model_storage_engine=model_storage_engine,
+                model_grouper=ModelGrouper(['class_path']),
+                db_engine=engine,
+            )
+            model_ids = trainer.train_models(
+                grid_config=grid_config,
+                misc_db_parameters=dict(),
+                matrix_store=sample_matrix_store
+            )
+            # expect only one model group now
+            records = [
+                row[0] for row in
+                engine.execute('select distinct model_group_id from results.models')
+            ]
+            assert len(records) == 1
+            assert records[0] == model_ids[0]
+
+
+def test_n_jobs_not_new_model(sample_matrix_store):
     grid_config = {
         'sklearn.ensemble.AdaBoostClassifier': {
             'n_estimators': [10, 100, 1000]
@@ -199,29 +222,15 @@ def test_n_jobs_not_new_model():
                 experiment_hash=None,
                 model_storage_engine=S3ModelStorageEngine('econ-dev/inspections'),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_timespan']
+                model_grouper=ModelGrouper()
             )
 
-            matrix = pandas.DataFrame.from_dict({
-                'entity_id': [1, 2],
-                'feature_one': [3, 4],
-                'feature_two': [5, 6],
-                'label': ['good', 'bad']
-            })
             train_tasks = trainer.generate_train_tasks(
                 grid_config,
                 dict(),
-                InMemoryMatrixStore(matrix, {
-                    'label_timespan': '1d',
-                    'end_time': datetime.datetime.now(),
-                    'feature_start_time': datetime.date(2012, 12, 20),
-                    'label_name': 'label',
-                    'metta-uuid': '1234',
-                    'feature_names': ['ft1', 'ft2'],
-                    'indices': ['entity_id'],
-                })
+                sample_matrix_store,
             )
-            assert len(train_tasks) == 35 # 32+3, would be (32*2)+3 if we didn't remove
+            assert len(train_tasks) == 35  # 32+3, would be (32*2)+3 if we didn't remove
             assert len([
                 task for task in train_tasks
                 if 'n_jobs' in task['parameters']
@@ -238,12 +247,6 @@ def test_n_jobs_not_new_model():
 
 class RetryTest(unittest.TestCase):
     def test_retry_max(self):
-        grid_config = {
-            'sklearn.ensemble.AdaBoostClassifier': {
-                'n_estimators': [10]
-            },
-        }
-
         engine = None
         trainer = None
         # set up a basic model training run
@@ -258,39 +261,18 @@ class RetryTest(unittest.TestCase):
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_timespan']
+                model_grouper=ModelGrouper()
             )
 
-            matrix = pandas.DataFrame.from_dict({
-                'entity_id': [1, 2],
-                'feature_one': [3, 4],
-                'feature_two': [5, 6],
-                'label': ['good', 'bad']
-            })
-            matrix_store = InMemoryMatrixStore(matrix, {
-                'label_timespan': '1d',
-                'end_time': datetime.datetime.now(),
-                'feature_start_time': datetime.date(2012, 12, 20),
-                'label_name': 'label',
-                'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2'],
-                'indices': ['entity_id'],
-            })
         # the postgres server goes out of scope here and thus no longer exists
         with patch('time.sleep') as time_mock:
             with self.assertRaises(sqlalchemy.exc.OperationalError):
-                trainer.train_models(grid_config, dict(), matrix_store)
+                trainer.train_models(grid_config(), dict(), sample_matrix_store())
             # we want to make sure that we are using the retrying module sanely
             # as opposed to matching the exact # of calls specified by the code
             assert len(time_mock.mock_calls) > 5
 
     def test_retry_recovery(self):
-        grid_config = {
-            'sklearn.ensemble.AdaBoostClassifier': {
-                'n_estimators': [10]
-            },
-        }
-
         engine = None
         trainer = None
         port = None
@@ -303,29 +285,14 @@ class RetryTest(unittest.TestCase):
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
                 db_engine=engine,
-                model_group_keys=['label_name', 'label_timespan']
+                model_grouper=ModelGrouper()
             )
-
-            matrix = pandas.DataFrame.from_dict({
-                'entity_id': [1, 2],
-                'feature_one': [3, 4],
-                'feature_two': [5, 6],
-                'label': ['good', 'bad']
-            })
-            matrix_store = InMemoryMatrixStore(matrix, {
-                'label_timespan': '1d',
-                'end_time': datetime.datetime.now(),
-                'feature_start_time': datetime.date(2012, 12, 20),
-                'label_name': 'label',
-                'metta-uuid': '1234',
-                'feature_names': ['ft1', 'ft2'],
-                'indices': ['entity_id'],
-            })
 
         # start without a database server
         # then bring it back up after the first sleep
         # use self so it doesn't go out of scope too early and shut down
         self.new_server = None
+
         def replace_db(arg):
             self.new_server = testing.postgresql.Postgresql(port=port)
             engine = create_engine(self.new_server.url())
@@ -333,7 +300,7 @@ class RetryTest(unittest.TestCase):
         with patch('time.sleep') as time_mock:
             time_mock.side_effect = replace_db
             try:
-                trainer.train_models(grid_config, dict(), matrix_store)
+                trainer.train_models(grid_config(), dict(), sample_matrix_store())
             finally:
                 if self.new_server is not None:
                     self.new_server.stop()

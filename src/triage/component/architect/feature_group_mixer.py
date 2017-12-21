@@ -1,4 +1,5 @@
 import logging
+from triage.component.architect.feature_group_creator import FeatureGroup
 
 
 def leave_one_in(feature_groups):
@@ -24,7 +25,7 @@ def leave_one_out(feature_groups):
     for index_to_exclude in range(0, len(feature_groups)):
         group_copy = feature_groups.copy()
         del group_copy[index_to_exclude]
-        feature_dict = {}
+        feature_dict = FeatureGroup()
         for group in group_copy:
             feature_dict.update(group)
         results.append(feature_dict)
@@ -39,7 +40,7 @@ def all_features(feature_groups):
 
     Returns: A list of feature dicts
     """
-    feature_dict = {}
+    feature_dict = FeatureGroup()
     for group in feature_groups:
         feature_dict.update(group)
     return [feature_dict]

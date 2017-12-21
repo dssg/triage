@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
+import yaml
+import logging
 
 import testing.postgresql
 from sqlalchemy import create_engine
@@ -156,7 +158,8 @@ def basic_integration_test(
     state_filters,
     feature_group_create_rules,
     feature_group_mix_rules,
-    expected_matrix_multiplier
+    expected_matrix_multiplier,
+    expected_group_lists
 ):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
@@ -349,6 +352,13 @@ def basic_integration_test(
             metadatas = [path for path in os.listdir(matrix_directory) if '.yaml' in path]
             assert len(matrices) == num_split_matrices * expected_matrix_multiplier
             assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
+            feature_group_name_lists = []
+            for metadata_path in metadatas:
+                with open(os.path.join(matrix_directory, metadata_path)) as f:
+                    metadata = yaml.load(f)
+                    feature_group_name_lists.append(metadata['feature_groups'])
+            deep_unique_tuple = lambda l: set([tuple(i) for i in l])
+            assert deep_unique_tuple(feature_group_name_lists) == deep_unique_tuple(expected_group_lists)
 
 
 def test_integration_simple():
@@ -359,6 +369,7 @@ def test_integration_simple():
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
         expected_matrix_multiplier=1,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -369,6 +380,7 @@ def test_integration_more_state_filtering():
         feature_group_mix_rules=['all'],
         # 3 state filters, so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -379,4 +391,5 @@ def test_integration_feature_grouping():
         feature_group_mix_rules=['leave-one-out', 'all'],
         # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['prefix: cat'], ['prefix: cat', 'prefix: dog'], ['prefix: dog']],
     )

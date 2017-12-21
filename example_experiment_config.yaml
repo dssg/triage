@@ -42,6 +42,10 @@ temporal_config:
 # 2. Pass a query that returns two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
 #   The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
 #   reproduces the inspection outcome boolean-or logic:
+#
+# In addition to these configuration options, you can pass a name to apply to the label configuration
+# that will be present in matrix metadata for each matrix created by this experiment,
+# under the 'label_name' key. The default label_name is 'outcome'.
 label_config:
     #inspection_outcomes_table: 'events'
     query: |
@@ -52,6 +56,7 @@ label_config:
         where '{as_of_date}' <= outcome_date
             and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
             group by entity_id
+    #name: 'inspections'
 
 
 # FEATURE GENERATION
@@ -216,6 +221,12 @@ feature_group_strategies: ['all']
 #       states are boolean columns (the experiment will convert the one you pass in
 #       to this format), write a SQL expression for each state
 #       configuration you want, ie '(permitted OR suspended) AND licensed'
+#
+#
+# Regardless of which method you choose, you may enter a 'name' for your configuration.
+# This will be included in the metadata for each matrix and used to group models
+# If you don't pass one, the string 'default' will be used.
+#
 cohort_config:
 #   entities_table: 'events'
 #   dense_states:
@@ -224,6 +235,7 @@ cohort_config:
 #        - 'state_one AND state_two'
 #        - '(state_one OR state_two) AND state_three'
     query: "select entity_id from events where outcome_date < '{as_of_date}'"
+    name: 'past_events'
 
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the
@@ -242,24 +254,31 @@ cohort_config:
 user_metadata:
     label_definition: 'severe_violations'
 
-# MODEL GROUPING
-# Model groups are aimed at defining models which are equivalent across time splits.
-# In other words, you will probably want to define model groups by any  parameters
-# that distinguish models *other than the beginning end dates of their data.*
-# By default, the classifier module name, hyperparameters, and feature names are used.
-# 
+# MODEL GROUPING (optional)
+# Model groups are a way of partitioning trained models in a way that makes for easier analysis.
 #
-# model_group_keys defines a list of *additional* matrix metadata keys that
-# should be considered when creating a model group. For example, if the models are
-# built on matrices with different history lengths (train durations), different
-# labeling windows (e.g., inspection violations in the next month, next year, or
-# next two years) the frequency of rows for each entity(train example frequency), or
-# the definition of a positive label.
-model_group_keys:
-    - 'train_duration'
-    - 'label_window'
-    - 'example_frequency'
-    - 'label_definition'
+# model_group_keys defines a list of training matrix metadata and classifier keys that
+# should be considered when creating a model group.
+#
+# There is an extensive default configuration, which is aimed at producing groups whose
+# constituent models are equivalent to each other in all ways except for when they were trained.
+# This makes the analysis of model stability easier.
+#
+# To accomplish this, the following default keys are used:
+# 'class_path', 'parameters'
+# 'feature_names', 'feature_groups', 'cohort_name', 'state'
+# 'label_name', 'label_timespan', 'as_of_date_frequency', 'max_training_history'
+#
+# If you want to override this list, you can supply a 'model_group_keys' value.
+# All of the defaults are available, along with some other temporal information
+# that could be useful for more specialized analyses:
+#
+# 'first_as_of_time', 'last_as_of_time', 'matrix_info_end_time', 'as_of_times', 'feature_start_time'
+#
+# You can also use any pieces of user_metadata that you included in this experiment definition,
+# as they will be present in the matrix metadata.
+#
+# model_group_keys: ['feature_groups', 'label_definition']
 
 # GRID CONFIGURATION
 # The classifier/hyperparameter combinations that should be trained

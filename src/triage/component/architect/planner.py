@@ -20,11 +20,13 @@ class Planner(object):
         user_metadata,
         engine,
         builder_class=builders.HighMemoryCSVBuilder,
+        cohort_name='default',
         replace=True
     ):
         self.feature_start_time = feature_start_time  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
+        self.cohort_name = cohort_name
         self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
         self.db_config = db_config
         self.matrix_directory = matrix_directory
@@ -100,6 +102,7 @@ class Planner(object):
             # columns
             'indices': ['entity_id', 'as_of_date'],
             'feature_names': utils.feature_list(feature_dictionary),
+            'feature_groups': feature_dictionary.names,
             'label_name': label_name,
 
             # other information
@@ -108,6 +111,7 @@ class Planner(object):
                 'test_label_timespan',
                 matrix_definition.get('training_label_timespan', '0 days')
             ),
+            'cohort_name': self.cohort_name,
             'state': state,
             'matrix_id': matrix_id,
             'matrix_type': matrix_type
