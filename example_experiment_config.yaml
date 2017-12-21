@@ -52,8 +52,8 @@ events_table: 'events'
 #
 # Rules specifying how to handle imputation of null values must be explicitly
 # defined in your config file. These can be specified in two places: either
-# within each feature or overall for each type of feature (aggregates,
-# categoricals, array_categoricals). In either case, a rule must be given for 
+# within each feature or overall for each type of feature (aggregates_imputation,
+# categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for 
 # each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
 # can be specified with `all`. Aggregation function-specific rules will take
 # precedence over the `all` rule and feature-specific rules will take 
