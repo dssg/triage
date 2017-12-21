@@ -35,7 +35,6 @@ class SimpleRuleMaker(BaseRules):
         self._append(params_dict, rule_dict)
         return self.create()
 
-
     def add_rule_best_average_value(self, metric=None, parameter=None):
         if metric is not None:
             self._metric = metric
@@ -107,7 +106,8 @@ class RandomGroupRuleMaker(BaseRules):
 
 class TwoMetricsRuleMaker(BaseRules):
     def add_rule_best_average_two_metrics(self, metric1='precision@', parameter1='100_abs',
-                                          metric2='recall@', parameter2='300_abs', metric1_weight=[0.5]):
+                                          metric2='recall@', parameter2='300_abs',
+                                          metric1_weight=[0.5]):
         params_dict = {
             'metric1': metric1,
             'parameter1': parameter1
@@ -121,7 +121,5 @@ class TwoMetricsRuleMaker(BaseRules):
         self._append(params_dict, rule_dict)
 
 
-
 def create_selection_grid(*args):
-
     return list(map(lambda r: r.create()[0], args))
