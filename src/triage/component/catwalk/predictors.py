@@ -1,17 +1,13 @@
-import csv
 import logging
 import math
-import tempfile
 from datetime import datetime
 
 import numpy
-import pandas
-import postgres_copy
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, Prediction
 
-from .utils import db_retry
+from .utils import db_retry, save_db_objects
 
 
 class ModelNotFoundError(ValueError):
@@ -151,75 +147,100 @@ class Predictor(object):
         self._existing_predictions(session, model_id, matrix_store)\
             .delete(synchronize_session=False)
         session.expire_all()
-        db_objects = []
         test_label_timespan = matrix_store.metadata['label_timespan']
         logging.warning(test_label_timespan)
+        session.commit()
+        session.close()
 
+        db_objects_generator = None
         if 'as_of_date' in matrix_store.matrix.index.names:
             logging.info('as_of_date found as part of matrix index, using '
                          'index for table as_of_dates')
-            session.commit()
-            session.close()
-            with tempfile.TemporaryFile(mode='w+') as f:
-                writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+
+            db_objects_generator = (
+                Prediction(
+                    model_id=int(model_id),
+                    entity_id=int(index[0]),
+                    as_of_date=index[1],
+                    score=float(score),
+                    label_value=int(label) if not math.isnan(label) else None,
+                    matrix_uuid=matrix_store.uuid,
+                    test_label_timespan=test_label_timespan,
+                    **misc_db_parameters
+                )
                 for index, score, label in zip(
                     matrix_store.matrix.index,
                     predictions,
                     labels
-                ):
-                    entity_id, as_of_date = index
-                    prediction = Prediction(
-                        model_id=int(model_id),
-                        entity_id=int(entity_id),
-                        as_of_date=as_of_date,
-                        score=float(score),
-                        label_value=int(label) if not math.isnan(label) else None,
-                        matrix_uuid=matrix_store.uuid,
-                        test_label_timespan=test_label_timespan,
-                        **misc_db_parameters
-                    )
-                    writer.writerow([
-                        prediction.model_id,
-                        prediction.entity_id,
-                        prediction.as_of_date,
-                        prediction.score,
-                        prediction.label_value,
-                        prediction.rank_abs,
-                        prediction.rank_pct,
-                        prediction.matrix_uuid,
-                        prediction.test_label_timespan
-                    ])
-                f.seek(0)
-                postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
+                )
+            )
         else:
             logging.info('as_of_date not found as part of matrix index, using '
                          'matrix metadata end_time as as_of_date')
-            temp_df = pandas.DataFrame({'score': predictions})
-            rankings_abs = temp_df['score'].rank(method='dense', ascending=False)
-            rankings_pct = temp_df['score'].rank(method='dense', ascending=False, pct=True)
-            for entity_id, score, label, rank_abs, rank_pct in zip(
-                matrix_store.matrix.index,
-                predictions,
-                labels,
-                rankings_abs,
-                rankings_pct
-            ):
-                db_objects.append(Prediction(
+            db_objects_generator = (
+                Prediction(
                     model_id=int(model_id),
                     entity_id=int(entity_id),
                     as_of_date=matrix_store.metadata['end_time'],
                     score=round(float(score), 10),
                     label_value=int(label) if not math.isnan(label) else None,
-                    rank_abs=int(rank_abs),
-                    rank_pct=round(float(rank_pct), 10),
                     matrix_uuid=matrix_store.uuid,
                     test_label_timespan=test_label_timespan,
                     **misc_db_parameters
-                ))
-
-            session.bulk_save_objects(db_objects)
-            session.commit()
-            session.close()
+                )
+                for entity_id, score, label in zip(
+                    matrix_store.matrix.index,
+                    predictions,
+                    labels,
+                )
+            )
+        logging.info(
+            'Beginning COPY of Prediction database objects for model %s, matrix %s',
+            model_id,
+            matrix_store.uuid
+        )
+        save_db_objects(self.db_engine, db_objects_generator)
+        logging.info(
+            'Completed COPY of Prediction database objects for model %s, matrix %s',
+            model_id,
+            matrix_store.uuid
+        )
+        logging.info(
+            'Beginning ranking of new Predictions for model %s, matrix %s',
+            model_id,
+            matrix_store.uuid
+        )
+        with self.db_engine.begin() as conn:
+            conn.execute('''
+                with ranks as (
+                    select
+                        entity_id,
+                        as_of_date,
+                        dense_rank() over (
+                            partition by as_of_date order by score desc
+                        ) as abs_rank,
+                        percent_rank() over (
+                            partition by as_of_date order by score desc
+                        ) as pct_rank
+                        from results.predictions
+                        where model_id = %(model_id)s and matrix_uuid = %(uuid)s
+                )
+                update results.predictions as p
+                set
+                    rank_abs = r.abs_rank,
+                    rank_pct = r.pct_rank
+                from ranks as r
+                where
+                    p.model_id = %(model_id)s
+                    and p.matrix_uuid = %(uuid)s
+                    and p.entity_id = r.entity_id
+                    and p.as_of_date = r.as_of_date
+            ''', model_id=model_id, uuid=matrix_store.uuid)
+        logging.info(
+            'Completed ranking of new Predictions for model %s, matrix %s',
+            model_id,
+            matrix_store.uuid
+        )
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database

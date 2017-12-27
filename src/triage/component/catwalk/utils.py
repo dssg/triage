@@ -117,14 +117,21 @@ def save_db_objects(db_engine, db_objects):
 
     Args:
         db_engine (sqlalchemy.engine)
-        db_objects (list) SQLAlchemy model objects, corresponding to a valid table
+        db_objects (iterable) SQLAlchemy model objects, corresponding to a valid table
     """
     with tempfile.TemporaryFile(mode='w+') as f:
         writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+        first_object_type = None
         for db_object in db_objects:
+            # keep track of object type to send to postgres_copy
+            # but also make sure that all objects match this type
+            if not first_object_type:
+                first_object_type = type(db_object)
+            else:
+                assert first_object_type == type(db_object)
             writer.writerow([
                 getattr(db_object, col.name)
                 for col in db_object.__table__.columns
             ])
         f.seek(0)
-        postgres_copy.copy_from(f, type(db_objects[0]), db_engine, format='csv')
+        postgres_copy.copy_from(f, first_object_type, db_engine, format='csv')

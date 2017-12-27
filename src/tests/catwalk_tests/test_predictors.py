@@ -82,7 +82,21 @@ def test_predictor():
             # 4. that the entity ids match the given dataset
             assert sorted([record[0] for record in records]) == [1, 2]
 
-            # 5. running with same model_id, different as of date
+            # 5. that absolute ranks are computed
+            ranks = [
+                row[0] for row in
+                db_engine.execute('select distinct(rank_abs) from results.predictions order by 1')
+            ]
+            assert ranks == [1, 2]
+
+            # 6. that percentile ranks are computed
+            ranks = [
+                row[0] for row in
+                db_engine.execute('select distinct(rank_pct) from results.predictions order by 1')
+            ]
+            assert ranks == [0, 1]
+
+            # 7. running with same model_id, different as of date
             # then with same as of date only replaces the records
             # with the same date
             new_matrix = pandas.DataFrame.from_dict({
@@ -119,7 +133,7 @@ def test_predictor():
             ]
             assert len(records) == 4
 
-            # 6. That we can delete the model when done prediction on it
+            # 8. That we can delete the model when done prediction on it
             predictor.delete_model(model_id)
             assert predictor.load_model(model_id) == None
 
@@ -171,6 +185,20 @@ def test_predictor_composite_index():
             join results.models using (model_id)''')
         ]
         assert len(records) == 4
+
+        # 3. that absolute ranks are computed
+        ranks = [
+            row[0] for row in
+            db_engine.execute('select distinct(rank_abs) from results.predictions order by 1')
+        ]
+        assert ranks == [1, 2]
+
+        # 4. that percentile ranks are computed
+        ranks = [
+            row[0] for row in
+            db_engine.execute('select distinct(rank_pct) from results.predictions order by 1')
+        ]
+        assert ranks == [0, 1]
 
 
 def test_predictor_get_train_columns():
