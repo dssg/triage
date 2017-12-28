@@ -13,32 +13,34 @@ from triage.component.audition.selection_rules import (
 
 def test_best_current_value_greater_is_better():
     df = pandas.DataFrame.from_dict({
-        'model_group_id': ['1', '2', '1', '2'],
-        'model_id': ['1', '2', '3', '4'],
-        'train_end_time': ['2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01'],
-        'metric': ['precision@', 'precision@', 'precision@', 'precision@'],
-        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs'],
-        'raw_value': [0.5, 0.4, 0.6, 0.7],
-        'dist_from_best_case': [0.0, 0.1, 0.1, 0.0],
+        'model_group_id': ['1', '2', '4', '1', '2', '3'],
+        'model_id': ['1', '2', '3', '4', '5', '6'],
+        'train_end_time': ['2011-01-01', '2012-01-01', '2012-01-01', '2012-01-01', '2012-01-01', '2012-01-01'],
+        'metric': ['precision@', 'precision@', 'precision@', 'precision@', 'precision@', 'precision@'],
+        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs'],
+        'raw_value': [0.5, 0.4, 0.4, 0.6, 0.8, 0.7],
+        'dist_from_best_case': [0.0, 0.1, 0.1, 0.1, 0.0, 0.0],
     })
 
-    assert best_current_value(df, '2011-01-01', 'precision@', '100_abs') == '1'
+    assert best_current_value(df, '2012-01-01', 'precision@', '100_abs', n=2) == ['2', '3']
+    assert best_current_value(df, '2011-01-01', 'precision@', '100_abs', n=2) == '1'
+    assert best_current_value(df, '2011-01-01', 'precision@', '100_abs', n=1) == '1'
     assert best_current_value(df, '2012-01-01', 'precision@', '100_abs') == '2'
 
 
 def test_best_current_value_lesser_is_better():
     df = pandas.DataFrame.from_dict({
-        'model_group_id': ['1', '2', '1', '2'],
-        'model_id': ['1', '2', '3', '4'],
-        'train_end_time': ['2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01'],
-        'metric': ['false positives@', 'false positives@', 'false positives@', 'false positives@'],
-        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs'],
-        'raw_value': [40, 50, 60, 70],
-        'dist_from_best_case': [0, 10, 0, 10],
+        'model_group_id': ['1', '2', '3', '1', '2'],
+        'model_id': ['1', '2', '3', '4', '5'],
+        'train_end_time': ['2011-01-01', '2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01'],
+        'metric': ['false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@'],
+        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs', '100_abs'],
+        'raw_value': [40, 50, 55, 60, 70],
+        'dist_from_best_case': [0, 10, 5, 0, 10],
     })
 
-    assert best_current_value(df, '2011-01-01', 'false positives@', '100_abs') == '1'
-    assert best_current_value(df, '2012-01-01', 'false positives@', '100_abs') == '1'
+    assert best_current_value(df, '2011-01-01', 'false positives@', '100_abs', n=2) == ['1', '2']
+    assert best_current_value(df, '2012-01-01', 'false positives@', '100_abs', n=1) == '1'
 
 
 def test_best_average_value_greater_is_better():
@@ -48,11 +50,11 @@ def test_best_average_value_greater_is_better():
         'train_end_time': ['2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01', '2013-01-01', '2013-01-01'],
         'metric': ['precision@', 'precision@', 'precision@', 'precision@', 'precision@', 'precision@'],
         'parameter': ['100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs'],
-        'raw_value': [0.5, 0.4, 0.6, 0.69, 0.6, 0.62],
-        'dist_from_best_case': [0.0, 0.1, 0.1, 0.0, 0.02, 0.0],
+        'raw_value': [0.5, 0.4, 0.6, 0.69, 0.62, 0.62],
+        'dist_from_best_case': [0.0, 0.1, 0.1, 0.0, 0.0, 0.0],
     })
-
-    assert best_average_value(df, '2013-01-01', 'precision@', '100_abs') == '2'
+    assert best_average_value(df, '2013-01-01', 'precision@', '100_abs', n=2) == ['1', '2']
+    assert best_average_value(df, '2012-01-01', 'precision@', '100_abs', n=1) == '1'
 
 
 def test_best_average_value_lesser_is_better():

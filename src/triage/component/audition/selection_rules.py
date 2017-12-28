@@ -24,7 +24,7 @@ def random_model_group(df, train_end_time):
     return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
 
 
-def _mg_best_avg_by(df, value_col, metric):
+def _mg_best_avg_by(df, value_col, metric, n=1):
     """Best model group in dataframe by average of some column
 
     Args:
@@ -32,13 +32,18 @@ def _mg_best_avg_by(df, value_col, metric):
         value_col (str) The column which contains the value to be averaged
         metric (str) the name of the column
     """
-    return getattr(
-        df.groupby(['model_group_id'])[value_col].mean().sample(frac=1),
-        idxbest(metric)
-    )()
+    if n == 1:
+        return getattr(
+            df.groupby(['model_group_id'])[value_col].mean().sample(frac=1),
+            idxbest(metric)
+        )()
+    else:
+        if greater_is_better(metric):
+            return df.groupby(['model_group_id'])[value_col].mean().nlargest(n).index.tolist()
+        else:
+            return df.groupby(['model_group_id'])[value_col].mean().nsmallest(n).index.tolist()
 
-
-def best_current_value(df, train_end_time, metric, parameter):
+def best_current_value(df, train_end_time, metric, parameter, n=1):
     """Pick the model group with the best current metric value
 
     Arguments:
@@ -62,15 +67,28 @@ def best_current_value(df, train_end_time, metric, parameter):
                 (df['parameter'] == parameter)
               ]
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-
     best_raw_value = getattr(curr_df['raw_value'], best_in_series(metric))()
-    return curr_df\
-        .loc[curr_df['raw_value'] == best_raw_value, 'model_group_id']\
-        .sample(frac=1)\
-        .tolist()[0]
+    if n <= 1:
+        return curr_df\
+            .loc[curr_df['raw_value'] == best_raw_value, 'model_group_id']\
+            .sample(frac=1)\
+            .tolist()[0]
+    else:
+        if greater_is_better(metric):
+            result = curr_df.nlargest(n, 'raw_value')['model_group_id'].tolist()
+            if len(result) == 1:
+                return result[0]
+            else:
+                return result
+        else:
+            result = curr_df.nsmallest(n, 'raw_value')['model_group_id'].tolist()
+            if len(result) == 1:
+                return result[0]
+            else:
+                return result
 
 
-def best_average_value(df, train_end_time, metric, parameter):
+def best_average_value(df, train_end_time, metric, parameter, n=1):
     """Pick the model with the highest average metric value so far
 
     Arguments:
@@ -88,13 +106,12 @@ def best_average_value(df, train_end_time, metric, parameter):
                 dist_from_best_case
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
-
     met_df = df.loc[
                 (df['metric'] == metric) &
                 (df['parameter'] == parameter)
             ]
-    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return _mg_best_avg_by(met_df, 'raw_value', metric)
+
+    return _mg_best_avg_by(met_df, 'raw_value', metric, n)
 
 
 def lowest_metric_variance(df, train_end_time, metric, parameter):
