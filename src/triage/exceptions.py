@@ -4,7 +4,7 @@ __all__ = ['BaselineFeatureNotInMatrix']
 
 class BaselineFeatureNotInMatrix(Exception):
     """ This error is used to allow feature mixing and baseline classes to be
-    including the same experiment.
+    included in the same experiment.
 
     Without error handling, the baseline classes would cause the experiment to
     end prematurely when they received a matrix without the required feature
