@@ -14,11 +14,13 @@ def _ad_hoc_feature_importances(model):
         model: A trained model that has not a `feature_importances_` attribute
 
     Returns:
-        At this moment, this method only returns the odds ratio of both the
+        At this moment, this method returns
+        (a) the odds ratio of both the
         intercept and the coefficients given by sklearn's implementation of
         the LogisticRegression.
         The order of the odds ratio list is the standard
         of the statistical packages (like R, SAS, etc) i.e. (intercept, coefficients)
+        (b) The coefficients (Weights assigned to the features) of the SVC
     """
     feature_importances = None
 
@@ -29,6 +31,10 @@ def _ad_hoc_feature_importances(model):
 
         # NOTE: We need to squeeze this array so it has the correct dimensions
         feature_importances = coef_odds_ratio.squeeze()
+
+    elif isinstance(model, (SVC)) and (model.get_params()['kernel'] == 'linear'):
+        feature_importances = model.coef_.squeeze()
+
 
     return feature_importances
 
@@ -43,13 +49,10 @@ def get_feature_importances(model):
     Returns:
         Feature importances, or failing that, None
     """
-    feature_importances = None
+
 
     if hasattr(model, 'feature_importances_'):
         feature_importances = model.feature_importances_
-
-    elif isinstance(model, (SVC)) and (model.get_params()['kernel'] == 'linear'):
-        feature_importances = model.coef_.squeeze()
 
     else:
         warnings.warn(

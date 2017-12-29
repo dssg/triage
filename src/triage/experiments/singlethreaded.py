@@ -68,11 +68,14 @@ class SingleThreadedExperiment(ExperimentBase):
                         train_matrix_columns=train_store.columns(),
                     )
 
-                    self.individual_importance_calculator\
-                        .calculate_and_save_all_methods_and_dates(
-                            model_id,
-                            test_store
-                        )
+                    try:
+                        self.individual_importance_calculator\
+                            .calculate_and_save_all_methods_and_dates(
+                                model_id,
+                                test_store
+                            )
+                    except AttributeError:
+                        logging.info("No individual feature importance calculation requested")
 
                     self.evaluator.evaluate(
                         predictions_proba=predictions_proba,

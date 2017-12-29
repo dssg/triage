@@ -179,12 +179,13 @@ class ExperimentBase(object, metaclass=ABCMeta):
             replace=self.replace
         )
 
-        self.indiv_importance_factory = partial(
-            IndividualImportanceCalculator,
-            n_ranks=self.config.get('individual_importance', {}).get('n_ranks', 5),
-            methods=self.config.get('individual_importance', {}).get('methods', ['uniform']),
-            replace=self.replace
-        )
+        if self.config.get('individual_importance') is not None:  # This section should be optional
+            self.indiv_importance_factory = partial(
+                IndividualImportanceCalculator,
+                n_ranks=self.config.get('individual_importance', {}).get('n_ranks', 5),
+                methods=self.config.get('individual_importance', {}).get('methods', ['uniform']),
+                replace=self.replace
+            )
 
         self.evaluator_factory = partial(
             ModelEvaluator,
@@ -204,9 +205,14 @@ class ExperimentBase(object, metaclass=ABCMeta):
         self.planner = self.planner_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
-        self.individual_importance_calculator = self.indiv_importance_factory(
-            db_engine=self.db_engine)
         self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
+        ## Individual feature importance should be optional
+        try:
+            self.individual_importance_calculator = self.indiv_importance_factory(
+                db_engine=self.db_engine)
+        except AttributeError:
+            logging.info("No individual feature importance calculation requested")
+
 
     @cachedproperty
     def split_definitions(self):
