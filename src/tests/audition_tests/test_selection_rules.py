@@ -59,16 +59,16 @@ def test_best_average_value_greater_is_better():
 
 def test_best_average_value_lesser_is_better():
     df = pandas.DataFrame.from_dict({
-        'model_group_id': ['1', '2', '1', '2', '1', '2'],
-        'model_id': ['1', '2', '3', '4', '5', '6'],
-        'train_end_time': ['2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01', '2013-01-01', '2013-01-01'],
-        'metric': ['false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@'],
-        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs'],
-        'raw_value': [20, 30, 30, 30, 10, 5],
-        'dist_from_best_case': [0, 10, 0, 0, 5, 0],
+        'model_group_id': ['1', '2', '3', '1', '2', '3', '1', '2', '3'],
+        'model_id': ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+        'train_end_time': ['2011-01-01', '2011-01-01', '2011-01-01', '2012-01-01', '2012-01-01', '2012-01-01', '2013-01-01', '2013-01-01', '2013-01-01'],
+        'metric': ['false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@', 'false positives@'],
+        'parameter': ['100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs', '100_abs'],
+        'raw_value': [20, 30, 10, 30, 30, 10, 10, 5, 10],
+        'dist_from_best_case': [10, 20, 0, 20, 20, 0, 5, 0, 5],
     })
-
-    assert best_average_value(df, '2013-01-01', 'false positives@', '100_abs') == '1'
+    assert best_average_value(df, '2012-01-01', 'false positives@', '100_abs', n=2) == ['3', '1']
+    assert best_average_value(df, '2013-01-01', 'false positives@', '100_abs') == '3'
 
 
 def test_most_frequent_best_dist():
