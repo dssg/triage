@@ -74,7 +74,7 @@ class SimpleThresholder(object):
                 rule['operator'] = self._validate_operator(rule['operator'], rule)
                 converted_rules.append(rule)
 
-        vars(self)['rules'] = = converted_rules
+        vars(self)['rules'] = converted_rules
 
     @property
     def all_feature_names(self):
