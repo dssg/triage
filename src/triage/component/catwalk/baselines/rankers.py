@@ -1,6 +1,6 @@
 from scipy import stats
 import numpy as np
-from triage.exceptions import BaselineFeatureNotInMatrix
+from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
 class PercentileRankOneFeature(object):
@@ -16,7 +16,7 @@ class PercentileRankOneFeature(object):
         feature_importances = [0] * len(x.columns)
         try:
             position = x.columns.get_loc(self.feature)
-        except Exception:
+        except KeyError:
             raise BaselineFeatureNotInMatrix((
                 'Trying to rank on a feature ({feature_name})'
                 ' not included in the training matrix!'.format(

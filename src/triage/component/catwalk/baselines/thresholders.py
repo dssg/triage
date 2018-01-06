@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from six import string_types
 
-from triage.exceptions import BaselineFeatureNotInMatrix
+from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 REQUIRED_KEYS = ['feature_name', 'operator', 'threshold']
 
@@ -37,7 +37,7 @@ class SimpleThresholder(object):
 
     @property
     def rules(self):
-        return self._rules
+        return vars(self)['rules']
 
     @rules.setter
     def rules(self, rules):
@@ -63,7 +63,7 @@ class SimpleThresholder(object):
                         'Rule "{rule}" is not of a supported type (string or '
                         'dict).'.format(rule=rule)
                     ))
-                if not all([key in rule.keys() for key in REQUIRED_KEYS]):
+                if not rule.keys() >= REQUIRED_KEYS:
                     raise ValueError((
                         'Rule "{rule}" missing one or more required keys '
                         '({required_keys}).'.format(
@@ -74,7 +74,7 @@ class SimpleThresholder(object):
                 rule['operator'] = self._validate_operator(rule['operator'], rule)
                 converted_rules.append(rule)
 
-        self._rules = converted_rules
+        vars(self)['rules'] = = converted_rules
 
     @property
     def all_feature_names(self):
@@ -103,7 +103,7 @@ class SimpleThresholder(object):
         }
         try:
             operator = operator_lookup[operator_string]
-        except Exception:
+        except KeyError:
             raise ValueError((
                 'Operator "{operator}" extracted from rule "{rule}" is not a '
                 'supported operator ({supported_operators}).'.format(
@@ -132,7 +132,7 @@ class SimpleThresholder(object):
 
         try:
             threshold = int(components[2])
-        except Exception:
+        except ValueError:
             raise ValueError((
                 'Threshold "{threshold}" parsed from rule "{rule}" is not an '
                 'int.'.format(threshold=components[2], rule=rule)
@@ -154,7 +154,7 @@ class SimpleThresholder(object):
         for feature_name in self.all_feature_names:
             try:
                 position = x.columns.get_loc(feature_name)
-            except Exception:
+            except KeyError:
                 raise BaselineFeatureNotInMatrix((
                     'Rules refer to a feature ({feature_name}) not included in '
                     'the training matrix!'.format(feature_name=feature_name)
