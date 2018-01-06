@@ -7,7 +7,7 @@ from unittest import TestCase
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
 from triage.component.catwalk.baselines.thresholders import SimpleThresholder
-from triage.exceptions import BaselineFeatureNotInMatrix
+from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
 @pytest.fixture(scope='class')
