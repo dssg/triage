@@ -16,7 +16,7 @@ class TestSimpleRuleMaker(unittest.TestCase):
         Rule.add_rule_best_current_value(metric="precision@", parameter="100_abs")
         assert Rule.create() == [
             {
-                'selection_rules': [{'name': 'best_current_value'}],
+                'selection_rules': [{'name': 'best_current_value', 'n': 1}],
                 'shared_parameters': [{'metric':'precision@', 'parameter':'100_abs'}]
             }
         ]
@@ -26,7 +26,7 @@ class TestSimpleRuleMaker(unittest.TestCase):
         Rule.add_rule_best_average_value(metric="precision@", parameter="100_abs")
         assert Rule.create() == [
             {
-                'selection_rules': [{'name': 'best_average_value'}],
+                'selection_rules': [{'name': 'best_average_value', 'n': 1}],
                 'shared_parameters': [{'metric': 'precision@', 'parameter': '100_abs'}]
             }
         ]
@@ -36,7 +36,7 @@ class TestSimpleRuleMaker(unittest.TestCase):
         Rule.add_rule_lowest_metric_variance(metric="precision@", parameter="100_abs")
         assert Rule.create() == [
             {
-                'selection_rules': [{'name': 'lowest_metric_variance'}],
+                'selection_rules': [{'name': 'lowest_metric_variance', 'n': 1}],
                 'shared_parameters': [{'metric': 'precision@', 'parameter': '100_abs'}]
             }
         ]
@@ -50,7 +50,8 @@ class TestSimpleRuleMaker(unittest.TestCase):
                 'selection_rules': [
                     {
                         'dist_from_best_case': [0.01, 0.05, 0.1, 0.15],
-                        'name': 'most_frequent_best_dist'
+                        'name': 'most_frequent_best_dist',
+                        'n': 1
                     }
                 ],
                 'shared_parameters': [{'metric': 'precision@', 'parameter': '100_abs'}]
@@ -66,7 +67,8 @@ class TestSimpleRuleMaker(unittest.TestCase):
                     {
                         'curr_weight': [1.5, 2.0, 5.0],
                         'decay_type': ['linear'],
-                        'name': 'best_avg_recency_weight'
+                        'name': 'best_avg_recency_weight',
+                        'n': 1
                     }
                 ],
                 'shared_parameters': [{'metric': 'precision@', 'parameter': '100_abs'}]
@@ -81,7 +83,8 @@ class TestSimpleRuleMaker(unittest.TestCase):
                 'selection_rules': [
                     {
                         'name': 'best_avg_var_penalized',
-                        'stdev_penalty': 0.5
+                        'stdev_penalty': 0.5,
+                        'n': 1
                     }
                 ],
                 'shared_parameters': [{'metric': 'precision@', 'parameter': '100_abs'}]
@@ -93,7 +96,7 @@ class TestRandomGroupRuleMaker(unittest.TestCase):
         Rule = RandomGroupRuleMaker()
         assert Rule.create() == [
             {
-                'selection_rules': [{'name': 'random_model_group'}],
+                'selection_rules': [{'name': 'random_model_group', 'n': 1}],
                 'shared_parameters': [{}]
             }
         ]
@@ -110,7 +113,8 @@ class TestTwoMetricsRuleMaker(unittest.TestCase):
                         'metric1_weight': [0.5],
                         'name': 'best_average_two_metrics',
                         'metric2': ['recall@'],
-                        'parameter2': ['300_abs']
+                        'parameter2': ['300_abs'],
+                        'n': 1
                     }
                 ],
                 'shared_parameters': [
@@ -164,47 +168,47 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
 
         expected_output = [
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.1',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.1_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.1}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.2',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.2_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.2}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.3',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.3_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.3}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.1',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.1_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.1}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.2',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.2_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.2}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.3',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.3_1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.3}
             ),
             BoundSelectionRule(
-                descriptive_name='best_current_value_precision@_100_abs',
+                descriptive_name='best_current_value_precision@_100_abs_1',
                 function_name='best_current_value',
                 args={'metric': 'precision@', 'parameter': '100_abs'}
             ),
             BoundSelectionRule(
-                descriptive_name='best_current_value_recall@_100_abs',
+                descriptive_name='best_current_value_recall@_100_abs_1',
                 function_name='best_current_value',
                 args={'metric': 'recall@', 'parameter': '100_abs'}
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.4',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.4_1',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',
@@ -215,7 +219,7 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
                 }
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.5',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.5_1',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',
@@ -226,7 +230,7 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
                 }
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.6',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.6_1',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',

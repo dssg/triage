@@ -102,6 +102,7 @@ class Auditioner(object):
             self.train_end_times,
             self.metrics
         )
+        self.results_for_rule = None
 
     @property
     def metrics(self):
@@ -238,6 +239,7 @@ class Auditioner(object):
             self.selection_rule_plotter.plot_all_selection_rules(**common_kwargs)
             self.selection_rule_performance_plotter.plot(plot_type='regret', **common_kwargs)
             self.selection_rule_performance_plotter.plot(plot_type='metric', **common_kwargs)
+            self.results_for_rule = self.selection_rule_performance_plotter.results_for_rule
 
     def register_selection_rule_grid(self, rule_grid, plot=True):
         """Register a grid of selection rules

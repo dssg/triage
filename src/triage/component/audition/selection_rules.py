@@ -6,7 +6,7 @@ from numpy import exp, log, average
 from .metric_directionality import greater_is_better, best_in_series, idxbest
 
 
-def random_model_group(df, train_end_time):
+def random_model_group(df, train_end_time, n=1):
     """Pick a random model group (as a baseline)
 
     Arguments:
@@ -21,7 +21,7 @@ def random_model_group(df, train_end_time):
                 below_best
     Returns: (int) the model group id to select, with highest current raw metric value
     """
-    return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
+    return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[:n]
 
 
 def _mg_best_avg_by(df, value_col, metric, n=1):
@@ -33,10 +33,10 @@ def _mg_best_avg_by(df, value_col, metric, n=1):
         metric (str) the name of the column
     """
     if n == 1:
-        return getattr(
+        return [getattr(
             df.groupby(['model_group_id'])[value_col].mean().sample(frac=1),
             idxbest(metric)
-        )()
+        )()]
     else:
         if greater_is_better(metric):
             return df.groupby(['model_group_id'])[value_col].mean().nlargest(n).index.tolist()
@@ -72,20 +72,14 @@ def best_current_value(df, train_end_time, metric, parameter, n=1):
         return curr_df\
             .loc[curr_df['raw_value'] == best_raw_value, 'model_group_id']\
             .sample(frac=1)\
-            .tolist()[0]
+            .tolist()
     else:
         if greater_is_better(metric):
             result = curr_df.nlargest(n, 'raw_value')['model_group_id'].tolist()
-            if len(result) == 1:
-                return result[0]
-            else:
-                return result
+            return result
         else:
             result = curr_df.nsmallest(n, 'raw_value')['model_group_id'].tolist()
-            if len(result) == 1:
-                return result[0]
-            else:
-                return result
+            return result
 
 
 def best_average_value(df, train_end_time, metric, parameter, n=1):
@@ -110,11 +104,10 @@ def best_average_value(df, train_end_time, metric, parameter, n=1):
                 (df['metric'] == metric) &
                 (df['parameter'] == parameter)
             ]
-
     return _mg_best_avg_by(met_df, 'raw_value', metric, n)
 
 
-def lowest_metric_variance(df, train_end_time, metric, parameter):
+def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
     """Pick the model with the lowest metric variance so far
 
     Arguments:
@@ -143,18 +136,20 @@ def lowest_metric_variance(df, train_end_time, metric, parameter):
         # per model group
         logging.info("Null metric variances for %s %s at %s; picking at random",
                      metric, parameter, train_end_time)
-        return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()[0]
+        return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()
     elif met_df.isnull().sum() > 0:
         # the variances should be all null or no nulls, a mix shouldn't be possible
         # since we should have the same number of observations for every model group
         raise ValueError("Mix of null and non-null metric variances for or {} {} at {}"
                          .format(metric, parameter, train_end_time))
+    if n == 1:
+        # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+        return [met_df.sample(frac=1).idxmin()]
+    else:
+        return met_df.nsmallest(n).index.tolist()
 
-    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return met_df.sample(frac=1).idxmin()
 
-
-def most_frequent_best_dist(df, train_end_time, metric, parameter, dist_from_best_case):
+def most_frequent_best_dist(df, train_end_time, metric, parameter, dist_from_best_case, n=1):
     """Pick the model that is most frequently within `dist_from_best_case` from the
     best-performing model group across test sets so far
 
@@ -180,9 +175,11 @@ def most_frequent_best_dist(df, train_end_time, metric, parameter, dist_from_bes
                 (df['parameter'] == parameter)
             ]
     met_df['within_dist'] = (df['dist_from_best_case'] <= dist_from_best_case).astype('int')
-    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return met_df.groupby(['model_group_id'])['within_dist'].mean().sample(frac=1).idxmax()
-
+    if n == 1:
+        # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+        return [met_df.groupby(['model_group_id'])['within_dist'].mean().sample(frac=1).idxmax()]
+    else:
+        return met_df.groupby(['model_group_id'])['within_dist'].mean().nlargest(n).index.tolist()
 
 def best_average_two_metrics(
     df,
@@ -191,7 +188,8 @@ def best_average_two_metrics(
     parameter1,
     metric2,
     parameter2,
-    metric1_weight=0.5
+    metric1_weight=0.5,
+    n=1
 ):
     """Pick the model with the highest average combined value to date
     of two metrics weighted together using `metric1_weight`
@@ -257,7 +255,7 @@ def best_average_two_metrics(
     return _mg_best_avg_by(met_df_wt, 'weighted_raw', metric1)
 
 
-def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty):
+def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty, n=1):
     """Pick the model with the highest average metric value so far, penalized
     for relative variance as:
         avg_value - (stdev_penalty) * (stdev - min_stdev)
@@ -314,13 +312,13 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty)
                                    stdev_penalty * (met_df_grp['raw_stdev'] - min_stdev))
 
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return getattr(
+    return [getattr(
         met_df_grp['penalized_avg'].sample(frac=1),
         idxbest(metric)
-    )()
+    )()]
 
 
-def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, decay_type):
+def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, decay_type, n=1):
     """Pick the model with the highest average metric value so far, penalized
     for relative variance as:
         avg_value - (stdev_penalty) * (stdev - min_stdev)
@@ -374,10 +372,11 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
     met_df = df.loc[(df['metric'] == metric) &
                     (df['parameter'] == parameter)]
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return getattr(
+    result = getattr(
         met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}).sample(frac=1),
         idxbest(metric)
-    )()[0]
+    )()
+    return result.tolist()
 
 
 SELECTION_RULES = {
