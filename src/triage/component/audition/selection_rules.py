@@ -387,12 +387,12 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
         )()
         return result.tolist()
     else:
+        met_df_grp = met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})
         if greater_is_better(metric):
-            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}) \
-                ['raw_value'].nlargest(n).index.tolist()
+
+            return met_df_grp['raw_value'].nlargest(n).index.tolist()
         else:
-            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}) \
-                ['raw_value'].nsmallest(n).index.tolist()
+            return met_df_grp['raw_value'].nsmallest(n).index.tolist()
 
 
 SELECTION_RULES = {
