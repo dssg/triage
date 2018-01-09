@@ -23,7 +23,7 @@ def test_selection_rule_picker():
         distance_table, model_groups = create_sample_distance_table(engine)
 
         def pick_spiky(df, train_end_time):
-            return model_groups['spiky'].model_group_id
+            return [model_groups['spiky'].model_group_id]
 
         selection_rule_picker = SelectionRulePicker(
             distance_from_best_table=distance_table
@@ -53,7 +53,7 @@ def test_selection_rule_picker_with_args():
             assert len(df['train_end_time'].unique()) == 2
             subsetted = df[(df['metric'] == metric) & (df['parameter'] == parameter)]
             mean = subsetted.groupby(['model_group_id'])['raw_value'].mean()
-            return mean.nlargest(1).index[0]
+            return [mean.nlargest(1).index[0]]
 
         selection_rule_picker = SelectionRulePicker(
             distance_from_best_table=distance_table

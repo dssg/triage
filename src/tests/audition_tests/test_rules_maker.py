@@ -168,47 +168,47 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
 
         expected_output = [
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.1_1',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.1}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.2_1',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.2',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.2}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.3_1',
+                descriptive_name='most_frequent_best_dist_precision@_100_abs_0.3',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'precision@', 'parameter': '100_abs', 'dist_from_best_case': 0.3}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.1_1',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.1',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.1}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.2_1',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.2',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.2}
             ),
             BoundSelectionRule(
-                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.3_1',
+                descriptive_name='most_frequent_best_dist_recall@_100_abs_0.3',
                 function_name='most_frequent_best_dist',
                 args={'metric': 'recall@', 'parameter': '100_abs', 'dist_from_best_case': 0.3}
             ),
             BoundSelectionRule(
-                descriptive_name='best_current_value_precision@_100_abs_1',
+                descriptive_name='best_current_value_precision@_100_abs',
                 function_name='best_current_value',
                 args={'metric': 'precision@', 'parameter': '100_abs'}
             ),
             BoundSelectionRule(
-                descriptive_name='best_current_value_recall@_100_abs_1',
+                descriptive_name='best_current_value_recall@_100_abs',
                 function_name='best_current_value',
                 args={'metric': 'recall@', 'parameter': '100_abs'}
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.4_1',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.4',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',
@@ -219,7 +219,7 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
                 }
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.5_1',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.5',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',
@@ -230,7 +230,7 @@ class TestCreateSelectionRuleGrid(unittest.TestCase):
                 }
             ),
             BoundSelectionRule(
-                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.6_1',
+                descriptive_name='best_average_two_metrics_precision@_100_abs_recall@_100_abs_0.6',
                 function_name='best_average_two_metrics',
                 args={
                     'metric1': 'precision@',

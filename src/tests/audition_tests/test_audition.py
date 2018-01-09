@@ -141,8 +141,8 @@ def test_Auditioner():
                 {'metric': 'recall@', 'parameter': '100_abs'},
             ],
             'selection_rules': [
-                {'name': 'most_frequent_best_dist', 'dist_from_best_case': [0.1, 0.2, 0.3]},
-                {'name': 'best_current_value'}
+                {'name': 'most_frequent_best_dist', 'dist_from_best_case': [0.1, 0.2, 0.3], 'n': 1},
+                {'name': 'best_current_value', 'n': 1}
             ]
         }, {
             'shared_parameters': [
@@ -153,7 +153,8 @@ def test_Auditioner():
                     'name': 'best_average_two_metrics',
                     'metric2': ['recall@'],
                     'parameter2': ['100_abs'],
-                    'metric1_weight': [0.4, 0.5, 0.6]
+                    'metric1_weight': [0.4, 0.5, 0.6],
+                    'n': 1
                 },
             ]
         }]

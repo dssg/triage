@@ -252,7 +252,7 @@ def best_average_two_metrics(
     met_df_wt = met_df.groupby(['model_group_id', 'train_end_time'], as_index=False).sum()
 
     # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return _mg_best_avg_by(met_df_wt, 'weighted_raw', metric1)
+    return _mg_best_avg_by(met_df_wt, 'weighted_raw', metric1, n)
 
 
 def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty, n=1):
@@ -289,18 +289,18 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
             ]
     met_df_grp = (met_df
                   .groupby(['model_group_id'])
-                  .aggregate({'raw_value': {'raw_avg': 'mean', 'raw_stdev': 'std'}}))
+                  .aggregate({'raw_value': ['mean', 'std']}))
     met_df_grp.columns = met_df_grp.columns.droplevel(0)
-
+    met_df_grp.columns = ['raw_avg', 'raw_stdev']
     if met_df_grp['raw_stdev'].isnull().sum() == met_df_grp.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
         logging.info("Null metric variances for %s %s at %s; just using mean",
                      metric, parameter, train_end_time)
-        return getattr(
+        return [getattr(
           met_df_grp['raw_avg'].sample(frac=1),
           idxbest(metric)
-        )()
+        )()]
     elif met_df_grp['raw_stdev'].isnull().sum() > 0:
         # the variances should be all null or no nulls, a mix shouldn't be possible
         # since we should have the same number of observations for every model group
@@ -311,11 +311,17 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
     met_df_grp['penalized_avg'] = (met_df_grp['raw_avg'] -
                                    stdev_penalty * (met_df_grp['raw_stdev'] - min_stdev))
 
-    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    return [getattr(
-        met_df_grp['penalized_avg'].sample(frac=1),
-        idxbest(metric)
-    )()]
+    if n == 1:
+        # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+        return [getattr(
+            met_df_grp['penalized_avg'].sample(frac=1),
+            idxbest(metric)
+        )()]
+    else:
+        if greater_is_better(metric):
+            return met_df_grp['penalized_avg'].nlargest(n).index.tolist()
+        else:
+            return met_df_grp['penalized_avg'].nsmallest(n).index.tolist()
 
 
 def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, decay_type, n=1):
@@ -371,13 +377,18 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
 
     met_df = df.loc[(df['metric'] == metric) &
                     (df['parameter'] == parameter)]
-    # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
-    result = getattr(
-        met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}).sample(frac=1),
-        idxbest(metric)
-    )()
-    return result.tolist()
-
+    if n == 1:
+        # sample(frac=1) to shuffle rows so we don't accidentally introduce bias in breaking ties
+        result = getattr(
+            met_df.groupby(['model_group_id']).aggregate({'raw_value': wm}).sample(frac=1),
+            idxbest(metric)
+        )()
+        return result.tolist()
+    else:
+        if greater_is_better(metric):
+            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})['raw_value'].nlargest(n).index.tolist()
+        else:
+            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})['raw_value'].nsmallest(n).index.tolist()
 
 SELECTION_RULES = {
     'random_model_group': random_model_group,
@@ -442,7 +453,7 @@ class BoundSelectionRule(object):
         ]
         return '_'.join(
             [self.function_name] +
-            [str(self.args[key]) for key in args]
+            [str(self.args[key]) for key in args if key is not 'n']
         )
 
     def pick(self, dataframe, train_end_time):
