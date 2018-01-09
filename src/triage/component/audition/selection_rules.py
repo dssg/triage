@@ -43,6 +43,7 @@ def _mg_best_avg_by(df, value_col, metric, n=1):
         else:
             return df.groupby(['model_group_id'])[value_col].mean().nsmallest(n).index.tolist()
 
+
 def best_current_value(df, train_end_time, metric, parameter, n=1):
     """Pick the model group with the best current metric value
 
@@ -180,6 +181,7 @@ def most_frequent_best_dist(df, train_end_time, metric, parameter, dist_from_bes
         return [met_df.groupby(['model_group_id'])['within_dist'].mean().sample(frac=1).idxmax()]
     else:
         return met_df.groupby(['model_group_id'])['within_dist'].mean().nlargest(n).index.tolist()
+
 
 def best_average_two_metrics(
     df,
@@ -386,9 +388,12 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
         return result.tolist()
     else:
         if greater_is_better(metric):
-            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})['raw_value'].nlargest(n).index.tolist()
+            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})\
+                ['raw_value'].nlargest(n).index.tolist()
         else:
-            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})['raw_value'].nsmallest(n).index.tolist()
+            return met_df.groupby(['model_group_id']).aggregate({'raw_value': wm})\
+                ['raw_value'].nsmallest(n).index.tolist()
+
 
 SELECTION_RULES = {
     'random_model_group': random_model_group,
