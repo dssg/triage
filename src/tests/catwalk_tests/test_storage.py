@@ -4,7 +4,6 @@ import unittest
 import yaml
 from collections import OrderedDict
 
-import boto
 import pandas
 from moto import mock_s3, mock_s3_deprecated
 
@@ -24,11 +23,11 @@ class SomeClass(object):
 
 
 def test_S3Store():
-    import boto3
     with mock_s3():
-        s3_conn = boto3.resource('s3')
-        s3_conn.create_bucket(Bucket='a-bucket')
-        store = S3Store(s3_conn.Object('a-bucket', 'a-path'))
+        import boto3
+        client = boto3.client('s3')
+        client.create_bucket(Bucket='test_bucket', ACL='public-read')
+        store = S3Store(path=f"s3://test_bucket/a_path")
         assert not store.exists()
         store.write(SomeClass('val'))
         assert store.exists()
@@ -198,9 +197,9 @@ class MatrixStoreTest(unittest.TestCase):
 
     def test_s3_save(self):
         with mock_s3_deprecated():
-            s3_conn = boto.connect_s3()
-            bucket_name = 'fake-matrix-bucket'
-            s3_conn.create_bucket(bucket_name)
+            import boto3
+            client = boto3.client('s3')
+            client.create_bucket(Bucket='fake-matrix-bucket', ACL='public-read')
 
             matrix_store_list = self.matrix_store()
 
