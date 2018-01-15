@@ -3,7 +3,7 @@ import os
 import pickle
 
 import pandas as pd
-import smart_open
+import logging
 import yaml
 
 from .utils import (
@@ -353,6 +353,10 @@ class CSVMatrixStore(MatrixStore):
                 raise ValueError(f"URL scheme not supported: {scheme} (from {self.matrix_path})")
 
             head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+        except FileNotFoundError as fnfe:
+            logging.error(f"Matrix isn't there: {fnfe}")
+            logging.error("Returning None")
+            head_of_matrix = None
         except pd.errors.EmptyDataError:
             head_of_matrix = None
 
