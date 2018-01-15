@@ -15,10 +15,8 @@ from .utils import (
 
 import s3fs
 
-try:
-    from urllib.parse import urlparse
-except:
-    from urlparse import urlparse
+from urllib.parse import urlparse # Python3
+
 
 class Store(object):
     def __init__(self, path):
