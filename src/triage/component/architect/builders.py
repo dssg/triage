@@ -249,7 +249,7 @@ class CSVBuilder(BuilderBase):
             matrix_uuid
         )
         try:
-            logging.info('Extracting label data frmo database into file for '
+            logging.info('Extracting label data from database into file for '
                          'matrix %s', matrix_uuid)
             labels_csv_name = self.write_labels_data(
                 label_name,
