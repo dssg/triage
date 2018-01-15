@@ -340,10 +340,22 @@ class CSVMatrixStore(MatrixStore):
 
     def _get_head_of_matrix(self):
         try:
-            head_of_matrix = pd.read_csv(self.matrix_path, nrows=1)
+            path_parsed = urlparse(self.matrix_path)
+            scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+            if not scheme or scheme == 'file':  # Local file
+                with open(self.matrix_path, "r") as f:
+                    head_of_matrix = pd.read_csv(f, nrows=1)
+            elif scheme == 's3':
+                s3 = s3fs.S3FileSystem()
+                with s3.open(self.matrix_path, 'rb') as f:
+                    head_of_matrix = pd.read_csv(f, nrows=1)
+            else:
+                raise ValueError(f"URL scheme not supported: {scheme} (from {self.matrix_path})")
+
             head_of_matrix.set_index(self.metadata['indices'], inplace=True)
         except pd.errors.EmptyDataError:
             head_of_matrix = None
+
         return head_of_matrix
 
     def _load(self):
