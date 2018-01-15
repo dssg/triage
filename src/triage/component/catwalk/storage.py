@@ -105,7 +105,6 @@ class ModelStorageEngine(object):
 class S3ModelStorageEngine(ModelStorageEngine):
     def __init__(self, *args, **kwargs):
         super(S3ModelStorageEngine, self).__init__(*args, **kwargs)
-        self.s3_conn = s3_conn
 
     def get_store(self, model_hash):
         full_path=os.path.join(self.project_path, 'trained_models', model_hash)
