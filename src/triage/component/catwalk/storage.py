@@ -175,7 +175,12 @@ class MatrixStore(object):
 
     @property
     def empty(self):
-        if not os.path.isfile(self.matrix_path):
+        path_parsed = urlparse(self.matrix_path)
+        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
+        if scheme in ('','file') and (not os.path.exists(self.matrix_path)):
+            return True
+        elif scheme == 's3' and (not s3fs.S3FileSystem().existx(self.matrix_path)):
             return True
         else:
             head_of_matrix = self.head_of_matrix
@@ -305,7 +310,8 @@ class HDFMatrixStore(MatrixStore):
     def _load(self):
         path_parsed = urlparse(self.matrix_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-        if not scheme or scheme == 'file':  # Local file
+
+        if scheme in ('', 'file'):  # Local file
             matrix = pd.read_hdf(self.matrix_path)
         else:
             raise ValueError(f"""
@@ -319,9 +325,10 @@ class HDFMatrixStore(MatrixStore):
         return matrix
 
     def save(self, project_path, name):
-        path_parsed = urlparse(self.project_path)
+        path_parsed = urlparse(project_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-        if not scheme or scheme == 'file':  # Local file
+
+        if self.scheme in ('', 'file'):  # Local file
             with open(os.path.join(project_path, name + ".h5"), "w") as f:
                 self.matrix.to_hdf(f, format='table', mode='w')
         else:
@@ -339,10 +346,11 @@ class CSVMatrixStore(MatrixStore):
         super().__init__(matrix_path, metadata_path)
 
     def _get_head_of_matrix(self):
+        path_parsed = urlparse(self.matrix_path)
+        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
         try:
-            path_parsed = urlparse(self.matrix_path)
-            scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-            if not scheme or scheme == 'file':  # Local file
+            if scheme in ('','file'):  # Local file
                 with open(self.matrix_path, "r") as f:
                     head_of_matrix = pd.read_csv(f, nrows=1)
             elif scheme == 's3':
@@ -353,27 +361,25 @@ class CSVMatrixStore(MatrixStore):
                 raise ValueError(f"URL scheme not supported: {scheme} (from {self.matrix_path})")
 
             head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+
         except FileNotFoundError as fnfe:
             logging.error(f"Matrix isn't there: {fnfe}")
-            logging.error("Returning None")
-            head_of_matrix = None
-        except pd.errors.EmptyDataError:
-            head_of_matrix = None
+            logging.error("Returning Empty data frame")
+            head_of_matrix = pd.DataFrame()
 
         return head_of_matrix
 
     def _load(self):
         path_parsed = urlparse(self.matrix_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-        if not scheme or scheme == 'file':  # Local file
+
+        if scheme in ('','file'):  # Local file
             with open(self.matrix_path, "r") as f:
                 matrix = pd.read_csv(f)
         elif scheme == 's3':
             s3 = s3fs.S3FileSystem()
             with s3.open(self.matrix_path, 'rb') as f:
                 matrix = pd.read_csv(f)
-        else:
-            raise ValueError(f"URL scheme not supported: {scheme} (from {self.matrix_path})")
 
         matrix.set_index(self.metadata['indices'], inplace=True)
 
@@ -394,7 +400,6 @@ class CSVMatrixStore(MatrixStore):
             raise ValueError(f"URL scheme not supported: {scheme} (from {os.path.join(project_path, name + '.csv')})")
 
         self.save_metadata(self.metadata, project_path, name)
-
 
 class InMemoryMatrixStore(MatrixStore):
     def __init__(self, matrix, metadata, labels=None):
