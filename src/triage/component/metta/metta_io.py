@@ -13,6 +13,9 @@ import shutil
 import pandas as pd
 import numpy as np
 
+import s3fs
+
+from urllib.parse import urlparse
 
 def archive_train_test(train_config,
                        df_train,
@@ -123,10 +126,6 @@ def archive_matrix(
         raise IOError(
             'Not a dataframe or path to a dataframe: {}'.type(df_matrix))
 
-    abs_path_dir = os.path.abspath(directory)
-    if not os.path.exists(abs_path_dir):
-        os.makedirs(abs_path_dir)
-
     check_config_types(matrix_config)
 
     matrix_uuid = generate_uuid(matrix_config)
@@ -134,9 +133,25 @@ def archive_matrix(
     matrix_config = copy.deepcopy(matrix_config)
     matrix_config['metta-uuid'] = matrix_uuid
 
-    fname = directory + '/' + matrix_uuid
+    fname = os.path.join(directory, matrix_uuid)
 
-    write_matrix = (overwrite) or not(os.path.isfile(fname + format))
+    # The output directory is local or in s3
+    path_parsed = urlparse(directory)
+    scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
+    if scheme in ('', 'file'):  # Local file
+       abs_path_dir = os.path.abspath(directory)
+       if not os.path.exists(abs_path_dir):
+           os.makedirs(abs_path_dir)
+       write_matrix = (overwrite) or not(os.path.exists(fname + format))
+    elif scheme == 's3':
+        abs_path_dir = directory
+        write_matrix = (overwrite) or not(s3fs.S3FileSystem().exists(fname + format))
+    else:
+        raise ValueError(f"""URL scheme not supported:
+              {scheme} (from {os.path.join(project_path, name + '.csv')})
+        """)
+
     if write_matrix:
         _store_matrix(matrix_config, df_matrix, matrix_uuid, abs_path_dir,
                       format=format)
@@ -189,37 +204,69 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
     if not (metadata['label_name'] == last_col):
         raise IOError('label_name is not last column')
 
-    yaml_fname = directory + '/' + title + '.yaml'
+    # The output directory is local or in s3
+    path_parsed = urlparse(directory)
+    scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
 
-    with open(yaml_fname, 'w') as stream:
-        yaml.dump(metadata, stream)
+    yaml_fname = os.path.join(directory, title + '.yaml')
+    matrix_fname = os.path.join(directory, title + f".{format}")
 
-    if format == 'hd5':
+    if scheme in ('', 'file'):  # Local file
+        with open(yaml_fname, 'w') as stream:
+            yaml.dump(metadata, stream)
 
-        for col in df_data.columns:
-            if (df_data[col].dtype == np.dtype('datetime64[ns]')):
-                df_data[col] = df_data[col].map(lambda x: x.timestamp())
-            elif isinstance(df_data[col].dtype, object):
-                df_data[col] = df_data[col].astype(float)
+        if format == 'hd5':  # H5 only supported locally
+            matrix_fname = os.path.join(directory, title + ".h5")
+            for col in df_data.columns:
+                if (df_data[col].dtype == np.dtype('datetime64[ns]')):
+                    df_data[col] = df_data[col].map(lambda x: x.timestamp())
+                elif isinstance(df_data[col].dtype, object):
+                    df_data[col] = df_data[col].astype(float)
 
-        hdf = pd.HDFStore(directory + '/' + title + '.h5',
-                          mode='w',
-                          complevel=5,
-                          complib="zlib",
-                          format='table')
-        hdf.put(title, df_data, data_columns=True)
-        hdf.close()
-    elif format == 'csv':
-        fpath = '{directory}/{title}.csv'.format(directory=directory,
-                                                 title=title)
+            hdf = pd.HDFStore(matrix_fname,
+                              mode='w',
+                              complevel=5,
+                              complib="zlib",
+                              format='table')
+            hdf.put(title, df_data, data_columns=True)
+            hdf.close()
+        elif format == 'csv':
+            if isinstance(df_data, pd.DataFrame):
+                if df_data.index.name:
+                    df_data.to_csv(matrix_fname, index=False)
+                else:
+                    df_data.to_csv(matrix_fname)
+            elif type(df_data) == str:
+                if os.path.splitext(abs_path_file)[1] == 'csv':
+                    shutil.copyfile(abs_path_file, matrix_fname)
+        else:
+            raise ValueError(f"""
+                  File format not supported:
+                  {format} (from {yaml_fname})
+            """)
+    elif scheme == 's3':
+        s3 = s3fs.S3FileSystem()
+        with s3.open(yaml_fname, "wb") as stream:
+            yaml.dump(metadata, stream, encoding='utf-8')
         if isinstance(df_data, pd.DataFrame):
             if df_data.index.name:
-                df_data.to_csv(fpath, index=False)
+                bytes_to_write = df_data.to_csv(None, index=False).encode()
             else:
-                df_data.to_csv(fpath)
+                bytes_to_write = df_data.to_csv(None).encode()
+            with s3.open(matrix_fname, "wb") as stream:
+                stream.write(bytes_to_write)
         elif type(df_data) == str:
-            if abs_path_file[-3:] == 'csv':
-                shutil.copyfile(abs_path_file, fpath)
+            s3.put(df_data, matrix_fname)
+        else:
+            raise ValueError(f"""
+                  Type not supported:
+                  {type(df_data)}
+            """)
+    else:
+        raise ValueError(f"""
+              URL scheme not supported:
+              {scheme} (from {yaml_fname})
+        """)
 
 
 def check_config_types(dict_config):

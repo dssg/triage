@@ -386,6 +386,7 @@ class CSVMatrixStore(MatrixStore):
     def save(self, project_path, name):
         path_parsed = urlparse(project_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
         if not scheme or scheme == 'file':  # Local file
             with open(os.path.join(project_path, name + ".csv"), "w") as f:
                 self.matrix.to_csv(f)
