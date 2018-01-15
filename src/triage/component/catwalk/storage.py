@@ -337,7 +337,6 @@ class CSVMatrixStore(MatrixStore):
 
     def __init__(self, matrix_path=None, metadata_path=None):
         super().__init__(matrix_path, metadata_path)
-        self.metadata = self.load_metadata()
 
     def _get_head_of_matrix(self):
         try:
