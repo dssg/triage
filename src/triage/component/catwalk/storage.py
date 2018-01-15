@@ -180,7 +180,7 @@ class MatrixStore(object):
 
         if scheme in ('','file') and (not os.path.exists(self.matrix_path)):
             return True
-        elif scheme == 's3' and (not s3fs.S3FileSystem().existx(self.matrix_path)):
+        elif scheme == 's3' and (not s3fs.S3FileSystem().exists(self.matrix_path)):
             return True
         else:
             head_of_matrix = self.head_of_matrix
