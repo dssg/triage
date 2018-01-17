@@ -137,7 +137,7 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
         # per model group
         logging.info("Null metric variances for %s %s at %s; picking at random",
                      metric, parameter, train_end_time)
-        return df['model_group_id'].drop_duplicates().sample(frac=1).tolist()
+        return df['model_group_id'].drop_duplicates().sample(n=n).tolist()
     elif met_df.isnull().sum() > 0:
         # the variances should be all null or no nulls, a mix shouldn't be possible
         # since we should have the same number of observations for every model group
@@ -454,11 +454,11 @@ class BoundSelectionRule(object):
         argspec = inspect.getargspec(self.function)
         args = [
             arg for arg in argspec.args
-            if arg not in ['df', 'train_end_time']
+            if arg not in ['df', 'train_end_time', 'n']
         ]
         return '_'.join(
             [self.function_name] +
-            [str(self.args[key]) for key in args if key is not 'n']
+            [str(self.args[key]) for key in args]
         )
 
     def pick(self, dataframe, train_end_time):

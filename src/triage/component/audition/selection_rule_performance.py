@@ -104,8 +104,7 @@ class SelectionRulePerformancePlotter(object):
                     'raw_value_next_time': result['raw_value_next_time'],
                     'model_group_id': result['model_group_id']
                 })
-        self.results_for_rule = pandas.DataFrame.from_records(accumulator)
-        return self.results_for_rule
+        return pandas.DataFrame.from_records(accumulator)
 
     def regret_plot_from_dataframe(self, metric, parameter, df, **plt_format_args):
         """Generate a regret-over-time plot from a given dataframe

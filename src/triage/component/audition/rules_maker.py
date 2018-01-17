@@ -5,16 +5,16 @@ class BaseRules(object):
         self.shared_parameters = []
         self.selection_rules = []
 
-    def _is_parameters_existed(self, params_dict):
+    def _does_parameters_exist(self, params_dict):
         return params_dict in self.shared_parameters
 
-    def _is_selection_rule_exisited(self, rule_dict):
+    def _does_selection_rule_exisit(self, rule_dict):
         return rule_dict in self.selection_rules
 
     def _append(self, params_dict, rule_dict):
-        if not self._is_parameters_existed(params_dict):
+        if not self._does_parameters_exist(params_dict):
             self.shared_parameters.append(params_dict)
-        if not self._is_selection_rule_exisited(rule_dict):
+        if not self._does_selection_rule_exisit(rule_dict):
             self.selection_rules.append(rule_dict)
 
     def create(self):
