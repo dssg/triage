@@ -25,8 +25,11 @@ class BuilderBase(object):
 
     def build_all_matrices(self, build_tasks):
         logging.info('Building %s matrices', len(build_tasks.keys()))
-        for matrix_uuid, task_arguments in build_tasks.items():
+
+        for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items()):
+            logging.info("Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})")
             self.build_matrix(**task_arguments)
+            logging.debug(f"Matrix {matrix_uuid} built")
 
     def _outer_join_query(
         self,

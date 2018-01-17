@@ -13,9 +13,12 @@ import shutil
 import pandas as pd
 import numpy as np
 
+import logging
+
 import s3fs
 
 from urllib.parse import urlparse
+
 
 def archive_train_test(train_config,
                        df_train,
@@ -248,20 +251,30 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         s3 = s3fs.S3FileSystem()
         with s3.open(yaml_fname, "wb") as stream:
             yaml.dump(metadata, stream, encoding='utf-8')
+
+
         if isinstance(df_data, pd.DataFrame):
+            logging.debug(f"Data frame to be store in {matrix_fname} has a size of {df_data.memory_usage(index = True, deep=True)}")
+            logging.debug(f"Data frame dimensions: {df_data.shape}")
+
             if df_data.index.name:
                 bytes_to_write = df_data.to_csv(None, index=False).encode()
             else:
                 bytes_to_write = df_data.to_csv(None).encode()
             with s3.open(matrix_fname, "wb") as stream:
                 stream.write(bytes_to_write)
+
+            logging.debug(f"Data frame stored in {matrix_fname}")
         elif type(df_data) == str:
+            logging.debug(f"Local file received: {df_data}")
             s3.put(df_data, matrix_fname)
+            logging.debug("Local file stored in {matrix_fname}")
         else:
             raise ValueError(f"""
                   Type not supported:
                   {type(df_data)}
             """)
+
     else:
         raise ValueError(f"""
               URL scheme not supported:

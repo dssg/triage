@@ -217,8 +217,14 @@ def build_matrix(
     try:
         db_engine = create_engine(db_connection_string)
         planner = planner_factory(engine=db_engine)
-        for build_task in build_tasks:
+
+        logging.info('Building %s matrices', len(build_tasks.keys()))
+
+        for i, build_task in enumerate(build_tasks):
+            logging.info("Building matrix ({i}/{len(build_tasks.keys())})")
             planner.build_matrix(**build_task)
+            logging.debug(f"Matrix ({i}) built")
+
         return True
     except Exception:
         logging.error('Child error: %s', traceback.format_exc())
