@@ -185,7 +185,7 @@ class MultiCoreExperiment(ExperimentBase):
         n_processes,
         chunksize=1,
     ):
-        with Pool(n_processes) as pool:
+        with Pool(n_processes, maxtasksperchild=1) as pool:
             for result in pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)]
