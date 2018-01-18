@@ -3,6 +3,9 @@ import logging
 import pandas
 import os
 
+import s3fs
+from urllib.parse import urlparse
+
 from triage.component import metta
 
 
@@ -227,9 +230,23 @@ class CSVBuilder(BuilderBase):
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
         )
-        if not self.replace and os.path.exists(matrix_filename):
-            logging.info('Skipping %s because matrix already exists', matrix_filename)
-            return
+
+        # The output directory is local or in s3
+        path_parsed = urlparse(matrix_filename)
+        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
+        if scheme in ('', 'file'):
+            if not self.replace and os.path.exists(matrix_filename):
+                logging.info('Skipping %s because matrix already exists', matrix_filename)
+                return
+        elif scheme == 's3':
+            if not self.replace and s3fs.S3FileSystem().exists(matrix_filename):
+                logging.info('Skipping %s because matrix already exists', matrix_filename)
+                return
+        else:
+            raise ValueError(f"""URL scheme not supported:
+              {scheme} (from {matrix_filename})
+            """)
 
         logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
