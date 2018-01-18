@@ -268,6 +268,7 @@ class CSVBuilder(BuilderBase):
             entity_date_table_name,
             matrix_uuid
         )
+        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
         try:
             logging.info('Extracting label data from database into file for '
                          'matrix %s', matrix_uuid)
@@ -280,6 +281,7 @@ class CSVBuilder(BuilderBase):
             )
             features_csv_names.insert(0, labels_csv_name)
 
+            logging.info(f"Label data extracted for matrix {matrix_uuid}")
             # stitch together the csvs
             logging.info('Merging feature files for matrix %s', matrix_uuid)
             output = self.merge_feature_csvs(
@@ -287,6 +289,7 @@ class CSVBuilder(BuilderBase):
                 matrix_directory,
                 matrix_uuid
             )
+            logging.info(f"Features data merged for matrix {matrix_uuid}")
         finally:
             # clean up files and database before finishing
             for csv_name in features_csv_names:
@@ -301,6 +304,7 @@ class CSVBuilder(BuilderBase):
                 directory=self.matrix_directory,
                 format='csv'
             )
+            logging.info("Matrix {matrix_uuid} archived (using metta)")
         finally:
             if isinstance(output, str):
                 os.remove(output)

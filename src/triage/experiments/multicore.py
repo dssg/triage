@@ -218,12 +218,8 @@ def build_matrix(
         db_engine = create_engine(db_connection_string)
         planner = planner_factory(engine=db_engine)
 
-        logging.info(f"Building {len(build_tasks)} matrices")
-
         for i, build_task in enumerate(build_tasks):
-            logging.info(f"Building matrix ({i}/{len(build_tasks)}")
             planner.build_matrix(**build_task)
-            logging.debug(f"Matrix ({i}) built")
 
         return True
     except Exception:
