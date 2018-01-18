@@ -111,7 +111,7 @@ def test_Auditioner():
         assert len(auditioner.thresholded_model_group_ids) == 0
 
         # pass the argument instead and remove all model groups
-        auditioner.update_metric_filters(
+        auditioner.set_one_metric_filter(
             metric='precision@',
             parameter='100_abs',
             max_from_best=0.0,
@@ -125,7 +125,7 @@ def test_Auditioner():
         assert len(auditioner.thresholded_model_group_ids) == num_model_groups
 
         # pass the argument instead and let all model groups pass
-        auditioner.update_metric_filters(
+        auditioner.set_one_metric_filter(
             metric='precision@',
             parameter='100_abs',
             max_from_best=1.0,

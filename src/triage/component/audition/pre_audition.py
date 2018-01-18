@@ -82,8 +82,8 @@ class PreAudition(object):
             ;
             """.format(', '.join(map(str, self.model_groups)))
 
-        end_times = list(pd.read_sql(
+        end_times = sorted(list(pd.read_sql(
             query,
             con=self.db_engine,
-            params={"after": after})['train_end_time'])
+            params={"after": after})['train_end_time']))
         return end_times
