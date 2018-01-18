@@ -27,7 +27,7 @@ class BuilderBase(object):
         logging.info('Building %s matrices', len(build_tasks.keys()))
 
         for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items()):
-            logging.info("Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})")
+            logging.info(f"Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})")
             self.build_matrix(**task_arguments)
             logging.debug(f"Matrix {matrix_uuid} built")
 

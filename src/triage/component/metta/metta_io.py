@@ -268,7 +268,7 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         elif type(df_data) == str:
             logging.debug(f"Local file received: {df_data}")
             s3.put(df_data, matrix_fname)
-            logging.debug("Local file stored in {matrix_fname}")
+            logging.debug(f"Local file stored in {matrix_fname}")
         else:
             raise ValueError(f"""
                   Type not supported:

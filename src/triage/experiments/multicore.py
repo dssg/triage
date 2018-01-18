@@ -221,7 +221,7 @@ def build_matrix(
         logging.info('Building %s matrices', len(build_tasks.keys()))
 
         for i, build_task in enumerate(build_tasks):
-            logging.info("Building matrix ({i}/{len(build_tasks.keys())})")
+            logging.info("Building matrix ({i}/{len(build_tasks)}")
             planner.build_matrix(**build_task)
             logging.debug(f"Matrix ({i}) built")
 
