@@ -21,10 +21,9 @@ class PreAudition(object):
 
         """
         query = """
-            SELECT model_group_id
+            SELECT DISTINCT(model_group_id)
             FROM results.model_groups
             WHERE model_config->>'label_definition' = %(label_definition)s
-            ORDER BY RANDOM()
             """
 
         model_groups = pd.read_sql(
