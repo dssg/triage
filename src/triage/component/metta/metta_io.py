@@ -254,8 +254,8 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
 
 
         if isinstance(df_data, pd.DataFrame):
-            logging.debug(f"Data frame to be store in {matrix_fname} has a size of {df_data.memory_usage(index = True, deep=True)}")
-            logging.debug(f"Data frame dimensions: {df_data.shape}")
+            logging.debug(f"Data frame received: {df_data.shape}")
+            logging.debug(f"Data frame size in memory: {df_data.memory_usage(index=True, deep=True).sum()} bytes")
 
             if df_data.index.name:
                 bytes_to_write = df_data.to_csv(None, index=False).encode()
