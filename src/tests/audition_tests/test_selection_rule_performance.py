@@ -19,12 +19,14 @@ class MockSelectionRulePicker(object):
             {
                 'train_end_time': TRAIN_END_TIMES[0],
                 'dist_from_best_case_next_time': 0.15,
-                'raw_value_next_time': 0.5
+                'raw_value_next_time': 0.5,
+                'model_group_id': 1
             },
             {
                 'train_end_time': TRAIN_END_TIMES[1],
                 'dist_from_best_case_next_time': 0.30,
-                'raw_value_next_time': 0.4
+                'raw_value_next_time': 0.4,
+                'model_group_id': 2
             }
         ]
 
@@ -44,6 +46,7 @@ def test_SelectionRulePerformancePlotter_generate_plot_data():
         model_group_ids=[1, 2],
         train_end_times=TRAIN_END_TIMES,
     )
+    print(df.to_dict('list'))
     assert df.to_dict('list') == {
         'selection_rule': [
             'best_current_value_precision@_100_abs',
@@ -53,7 +56,8 @@ def test_SelectionRulePerformancePlotter_generate_plot_data():
         ],
         'train_end_time': TRAIN_END_TIMES + TRAIN_END_TIMES,
         'regret': [0.15, 0.30, 0.15, 0.30],
-        'raw_value_next_time': [0.5, 0.4, 0.5, 0.4]
+        'raw_value_next_time': [0.5, 0.4, 0.5, 0.4],
+        'model_group_id': [1, 2, 1, 2]
     }
 
 

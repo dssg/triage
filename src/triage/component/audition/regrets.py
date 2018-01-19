@@ -57,17 +57,15 @@ class SelectionRulePicker(object):
             'raw_value',
             'raw_value_next_time'
         """
-
         df = self.distance_from_best_table.as_dataframe(model_group_ids)
         choices = []
-
         for train_end_time in train_end_times:
+            # When plotting rules, we use only the best one model group id
             model_group_id = self.model_group_from_rule(
                 bound_selection_rule,
                 model_group_ids,
                 train_end_time
-            )
-
+            )[0]
             choice = df[
                 (df['model_group_id'] == model_group_id) &
                 (df['train_end_time'] == train_end_time) &
