@@ -193,7 +193,10 @@ feature_group_strategies: ['all']
 # 3. Pass a dense states table, and information about which state filters to use in this experiment
 #
 #   a. a dense state table that defines when entities were in specific states
-#       should have columns entity_id/state/start/end
+#       should have columns entity_id/state/start timestamp/end timestamp
+#       Note that the time columns are timestamps, not dates. So if you would like
+#       to signify that an entity is in a state for an entire day, make the start
+#       the beginning of the day and the end a day later.
 #   b. a list of state filtering SQL clauses to iterate through. Assuming the
 #       states are boolean columns (the experiment will convert the one you pass in
 #       to this format), write a SQL expression for each state
