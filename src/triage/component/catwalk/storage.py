@@ -3,10 +3,12 @@
 import os
 import logging
 import pickle
+from sklearn.externals import joblib
 from urllib.parse import urlparse
 
 import pandas as pd
 import s3fs
+import boto3
 import yaml
 
 from .utils import (
@@ -39,6 +41,11 @@ class Store(object):
 
 class S3Store(Store):
 
+    def __init__(self, path):
+        path_parsed = urlparse(path)
+        self.bucket = path_parsed.netloc
+        self.key = path_parsed.path
+
     def exists(self):
         s3 = s3fs.S3FileSystem()
         return s3.exists(self.path)
@@ -46,12 +53,12 @@ class S3Store(Store):
     def write(self, obj):
         s3 = s3fs.S3FileSystem()
         with s3.open(self.path, 'wb') as f:
-            pickle.dump(obj, f)
+            joblib.dump(obj, f, compress=True)
 
     def load(self):
         s3 = s3fs.S3FileSystem()
         with s3.open(self.path, 'rb') as f:
-            return pickle.load(f)
+            return joblib.load(f)
 
     def delete(self):
         s3 = s3fs.S3FileSystem()
