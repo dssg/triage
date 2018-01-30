@@ -41,11 +41,6 @@ class Store(object):
 
 class S3Store(Store):
 
-    def __init__(self, path):
-        path_parsed = urlparse(path)
-        self.bucket = path_parsed.netloc
-        self.key = path_parsed.path
-
     def exists(self):
         s3 = s3fs.S3FileSystem()
         return s3.exists(self.path)
