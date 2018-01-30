@@ -1,9 +1,12 @@
-import logging
+# coding: utf-8
+
 import os
+import logging
 import pickle
+from urllib.parse import urlparse
 
 import pandas as pd
-import logging
+import s3fs
 import yaml
 
 from .utils import (
@@ -12,10 +15,6 @@ from .utils import (
     model_cache_key,
     download_object,
 )
-
-import s3fs
-
-from urllib.parse import urlparse # Python3
 
 
 class Store(object):
@@ -361,8 +360,8 @@ class CSVMatrixStore(MatrixStore):
             head_of_matrix.set_index(self.metadata['indices'], inplace=True)
 
         except FileNotFoundError as fnfe:
-            logging.error(f"Matrix isn't there: {fnfe}")
-            logging.error("Returning Empty data frame")
+            logging.exception(f"Matrix isn't there: {fnfe}")
+            logging.exception("Returning Empty data frame")
             head_of_matrix = pd.DataFrame()
 
         return head_of_matrix
