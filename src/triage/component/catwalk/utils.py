@@ -2,88 +2,15 @@ import csv
 import datetime
 import hashlib
 import json
-import pickle
 import random
 import tempfile
 
-import botocore
-import pandas
 import postgres_copy
 import sqlalchemy
-import yaml
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Experiment, Model
-
-
-def split_s3_path(path):
-    """
-    Args:
-        path: a string representing an s3 path including a bucket
-            (bucket_name/prefix/prefix2)
-    Returns:
-        A tuple containing the bucket name and full prefix)
-    """
-    return path.split('/', 1)
-
-
-def upload_object_to_key(obj, cache_key):
-    """Pickles object and uploads it to the given s3 key
-
-    Args:
-        obj (object) any picklable Python object
-        cache_key (boto3.s3.Object) an s3 key
-    """
-    with tempfile.NamedTemporaryFile('w+b') as f:
-        pickle.dump(obj, f)
-        f.seek(0)
-        cache_key.upload_file(f.name)
-
-
-def download_object(cache_key):
-    with tempfile.NamedTemporaryFile() as f:
-        cache_key.download_fileobj(f)
-        f.seek(0)
-        return pickle.load(f)
-
-
-def model_cache_key(project_path, model_id, s3_conn):
-    """Generates an s3 key for a given model_id
-
-    Args:
-        model_id (string) a unique model id
-
-    Returns:
-        (boto3.s3.Object) an s3 key, which may or may not have contents
-    """
-    bucket_name, prefix = split_s3_path(project_path)
-    path = '/'.join([prefix, 'trained_models', model_id])
-    return s3_conn.Object(bucket_name, path)
-
-
-def key_exists(key):
-    try:
-        key.load()
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            return False
-        else:
-            raise
-    else:
-        return True
-
-
-def get_matrix_and_metadata(matrix_path, metadata_path):
-    """Retrieve a matrix in hdf format and
-    metadata about the matrix in yaml format
-
-    Returns: (tuple) matrix, metadata
-    """
-    matrix = pandas.read_hdf(matrix_path)
-    with open(metadata_path) as f:
-        metadata = yaml.load(f)
-    return matrix, metadata
 
 
 def filename_friendly_hash(inputs):

@@ -35,7 +35,7 @@ Below is a complete sample usage of the three Catwalk components::
     from sqlalchemy import create_engine
 
     from triage.component import metta
-    from triage.component.catwalk.storage import FSModelStorageEngine, MettaCSVMatrixStore
+    from triage.component.catwalk.storage import FSModelStorageEngine, CSVMatrixStore
     from triage.component.catwalk.model_trainers import ModelTrainer
     from triage.component.catwalk.predictors import Predictor
     from triage.component.catwalk.evaluation import ModelEvaluator
@@ -66,9 +66,9 @@ Below is a complete sample usage of the three Catwalk components::
     }
     train_matrix_uuid = metta.archive_matrix(train_metadata, train_matrix, format='csv')
 
-    # The MettaCSVMatrixStore bundles the matrix and metadata together
+    # The CSVMatrixStore bundles the matrix and metadata together
     # for catwalk to use
-    train_matrix_store = MettaCSVMatrixStore(
+    train_matrix_store = CSVMatrixStore(
         matrix_path='{}.csv'.format(train_matrix_uuid),
         metadata_path='{}.yaml'.format(train_matrix_uuid)
     )
@@ -91,9 +91,9 @@ Below is a complete sample usage of the three Catwalk components::
     }
     test_matrix_uuid = metta.archive_matrix(test_metadata, test_matrix, format='csv')
 
-    # The MettaCSVMatrixStore bundles the matrix and metadata together
+    # The CSVMatrixStore bundles the matrix and metadata together
     # for catwalk to use
-    test_matrix_store = MettaCSVMatrixStore(
+    test_matrix_store = CSVMatrixStore(
         matrix_path='{}.csv'.format(test_matrix_uuid),
         metadata_path='{}.yaml'.format(test_matrix_uuid)
     )

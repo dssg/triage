@@ -33,7 +33,7 @@ def test_predictor():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
             project_path = 'econ-dev/inspections'
-            model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+            model_storage_engine = S3ModelStorageEngine(project_path)
             _, model_id = \
                 fake_trained_model(project_path, model_storage_engine, db_engine)
             predictor = Predictor(project_path, model_storage_engine, db_engine)
@@ -148,7 +148,7 @@ def test_predictor_composite_index():
             'end_time': AS_OF_DATE,
             'label_timespan': '3month',
             'metta-uuid': '1234',
-            'indices': ['entity_id'],
+            'indices': ['entity_id', 'as_of_date'],
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
         predict_proba = predictor.predict(
@@ -238,7 +238,7 @@ def test_predictor_retrieve():
             'end_time': AS_OF_DATE,
             'label_timespan': '3month',
             'metta-uuid': '1234',
-            'indices': ['entity_id'],
+            'indices': ['entity_id', 'as_of_date'],
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
         predict_proba = predictor.predict(
