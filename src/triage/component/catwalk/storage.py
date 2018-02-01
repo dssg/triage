@@ -406,7 +406,8 @@ class InMemoryMatrixStore(MatrixStore):
         super().__init__()
         self.matrix = matrix
         self.metadata = metadata
-        self.matrix.set_index(self.metadata['indices'], inplace=True)
+        if self.matrix.index.names != self.metadata['indices']:
+            self.matrix.set_index(self.metadata['indices'], inplace=True)
         self._labels = labels
         self.head_of_matrix = None
 
