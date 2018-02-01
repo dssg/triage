@@ -8,15 +8,7 @@ from urllib.parse import urlparse
 
 import pandas as pd
 import s3fs
-import boto3
 import yaml
-
-from .utils import (
-    upload_object_to_key,
-    key_exists,
-    model_cache_key,
-    download_object,
-)
 
 
 class Store(object):
@@ -106,7 +98,7 @@ class S3ModelStorageEngine(ModelStorageEngine):
         super(S3ModelStorageEngine, self).__init__(*args, **kwargs)
 
     def get_store(self, model_hash):
-        full_path=os.path.join(self.project_path, 'trained_models', model_hash)
+        full_path = os.path.join(self.project_path, 'trained_models', model_hash)
         return S3Store(path=full_path)
 
 
@@ -177,7 +169,7 @@ class MatrixStore(object):
         path_parsed = urlparse(self.matrix_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
 
-        if scheme in ('','file') and (not os.path.exists(self.matrix_path)):
+        if scheme in ('', 'file') and (not os.path.exists(self.matrix_path)):
             return True
         elif scheme == 's3' and (not s3fs.S3FileSystem().exists(self.matrix_path)):
             return True
@@ -349,7 +341,7 @@ class CSVMatrixStore(MatrixStore):
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
 
         try:
-            if scheme in ('','file'):  # Local file
+            if scheme in ('', 'file'):  # Local file
                 with open(self.matrix_path, "r") as f:
                     head_of_matrix = pd.read_csv(f, nrows=1)
             elif scheme == 's3':
@@ -372,7 +364,7 @@ class CSVMatrixStore(MatrixStore):
         path_parsed = urlparse(self.matrix_path)
         scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
 
-        if scheme in ('','file'):  # Local file
+        if scheme in ('', 'file'):  # Local file
             with open(self.matrix_path, "r") as f:
                 matrix = pd.read_csv(f)
         elif scheme == 's3':
@@ -397,9 +389,11 @@ class CSVMatrixStore(MatrixStore):
             with s3.open(os.path.join(project_path, name + ".csv"), "wb") as f:
                 f.write(bytes_to_write)
         else:
-            raise ValueError(f"URL scheme not supported: {scheme} (from {os.path.join(project_path, name + '.csv')})")
+            raise ValueError(f"URL scheme not supported: {scheme} "
+                             "(from {os.path.join(project_path, name + '.csv')})")
 
         self.save_metadata(self.metadata, project_path, name)
+
 
 class InMemoryMatrixStore(MatrixStore):
     def __init__(self, matrix, metadata, labels=None):

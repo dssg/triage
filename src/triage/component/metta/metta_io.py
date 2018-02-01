@@ -143,16 +143,16 @@ def archive_matrix(
     scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
 
     if scheme in ('', 'file'):  # Local file
-       abs_path_dir = os.path.abspath(directory)
-       if not os.path.exists(abs_path_dir):
-           os.makedirs(abs_path_dir)
-       write_matrix = (overwrite) or not(os.path.exists(fname + format))
+        abs_path_dir = os.path.abspath(directory)
+        if not os.path.exists(abs_path_dir):
+            os.makedirs(abs_path_dir)
+        write_matrix = (overwrite) or not(os.path.exists(fname + format))
     elif scheme == 's3':
         abs_path_dir = directory
         write_matrix = (overwrite) or not(s3fs.S3FileSystem().exists(fname + format))
     else:
         raise ValueError(f"""URL scheme not supported:
-              {scheme} (from {os.path.join(project_path, name + '.csv')})
+              {scheme} (from {fname})
         """)
 
     if write_matrix:
@@ -252,10 +252,10 @@ def _store_matrix(metadata, df_data, title, directory, format='hd5'):
         with s3.open(yaml_fname, "wb") as stream:
             yaml.dump(metadata, stream, encoding='utf-8')
 
-
         if isinstance(df_data, pd.DataFrame):
             logging.debug(f"Data frame received: {df_data.shape}")
-            logging.debug(f"Data frame size in memory: {df_data.memory_usage(index=True, deep=True).sum()} bytes")
+            logging.debug(f"Data frame size in memory: " +
+                          f"{df_data.memory_usage(index=True, deep=True).sum()} bytes")
 
             if df_data.index.name:
                 bytes_to_write = df_data.to_csv(None, index=False).encode()
