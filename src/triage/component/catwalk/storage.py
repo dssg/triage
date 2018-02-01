@@ -2,7 +2,6 @@
 
 import os
 import logging
-import pickle
 from sklearn.externals import joblib
 from urllib.parse import urlparse
 
@@ -59,11 +58,11 @@ class FSStore(Store):
     def write(self, obj):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, 'w+b') as f:
-            pickle.dump(obj, f)
+            joblib.dump(obj, f, compress=True)
 
     def load(self):
         with open(self.path, 'rb') as f:
-            return pickle.load(f)
+            return joblib.load(f)
 
     def delete(self):
         os.remove(self.path)
