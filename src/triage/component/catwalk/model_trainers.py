@@ -154,7 +154,7 @@ class ModelTrainer(object):
                 model_id=model_id,
                 feature_importance=0,
                 feature='Algorithm does not support a standard way' +
-                        'to calculate feature importance.',
+                        ' to calculate feature importance.',
                 rank_abs=0,
                 rank_pct=0,
             ))
