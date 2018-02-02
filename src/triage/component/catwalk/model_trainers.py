@@ -19,6 +19,9 @@ from .utils import (
     save_db_objects,
 )
 
+NO_FEATURE_IMPORTANCE = 'Algorithm does not support a standard way' +\
+                        ' to calculate feature importance.'
+
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
@@ -153,8 +156,7 @@ class ModelTrainer(object):
             db_objects.append(FeatureImportance(
                 model_id=model_id,
                 feature_importance=0,
-                feature='Algorithm does not support a standard way' +
-                        ' to calculate feature importance.',
+                feature=NO_FEATURE_IMPORTANCE,
                 rank_abs=0,
                 rank_pct=0,
             ))

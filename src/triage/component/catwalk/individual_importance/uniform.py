@@ -1,3 +1,5 @@
+from triage.component.catwalk.model_trainers import NO_FEATURE_IMPORTANCE
+
 def _entity_feature_values(matrix, feature_name, as_of_date=None):
     """Finds the value of the given feature for each entity in a matrix
 
@@ -9,11 +11,9 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
 
     Returns: (list) of (entity_id, feature_value) tuples
     """
-    feature_wo_importance = 'Algorithm does not support a standard way to calculate feature importance.'
-
     if matrix.index.names == ['entity_id']:
-        if feature_name == feature_wo_importance:
-            #if model does not support feature importance, write 0 as individual importance.
+        if feature_name == NO_FEATURE_IMPORTANCE:
+            # if model does not support feature importance, write 0 as individual importance.
             return list(zip(matrix.index.values, [None] * len(matrix.index.values)))
         else:
             return list(zip(matrix.index.values, matrix[feature_name].tolist()))
@@ -22,7 +22,7 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
         index_of_entity = matrix.index.names.index('entity_id')
         index_of_date = matrix.index.names.index('as_of_date')
 
-        if feature_name == feature_wo_importance:
+        if feature_name == NO_FEATURE_IMPORTANCE:
             zipped_iter = zip(matrix.index.values, [None] * len(matrix.index.values))
         else:
             zipped_iter = zip(matrix.index.values, matrix[feature_name].tolist())
