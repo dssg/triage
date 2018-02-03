@@ -16,6 +16,7 @@ class SelectionRulePerformancePlotter(object):
     """
     def __init__(self, selection_rule_picker):
         self.selection_rule_picker = selection_rule_picker
+        self.results_for_rule = None
 
     def plot(
         self,
@@ -101,6 +102,7 @@ class SelectionRulePerformancePlotter(object):
                     'regret': result['dist_from_best_case_next_time'],
                     'selection_rule': selection_rule.descriptive_name,
                     'raw_value_next_time': result['raw_value_next_time'],
+                    'model_group_id': result['model_group_id']
                 })
         return pandas.DataFrame.from_records(accumulator)
 

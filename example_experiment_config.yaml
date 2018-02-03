@@ -52,8 +52,8 @@ events_table: 'events'
 #
 # Rules specifying how to handle imputation of null values must be explicitly
 # defined in your config file. These can be specified in two places: either
-# within each feature or overall for each type of feature (aggregates,
-# categoricals, array_categoricals). In either case, a rule must be given for 
+# within each feature or overall for each type of feature (aggregates_imputation,
+# categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for 
 # each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
 # can be specified with `all`. Aggregation function-specific rules will take
 # precedence over the `all` rule and feature-specific rules will take 
@@ -193,7 +193,7 @@ feature_group_strategies: ['all']
 # 3. Pass a dense states table, and information about which state filters to use in this experiment
 #
 #   a. a dense state table that defines when entities were in specific states
-#       should have columns entity_id/state/start timestamp/end timestamp
+#       should have columns entity_id/state/start time/end time
 #       Note that the time columns are timestamps, not dates. So if you would like
 #       to signify that an entity is in a state for an entire day, make the start
 #       the beginning of the day and the end a day later.

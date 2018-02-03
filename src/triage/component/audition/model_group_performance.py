@@ -63,26 +63,27 @@ class ModelGroupPerformancePlotter(object):
         """
 
         base_df = pd.read_sql(
-            '''select
-    model_group_id,
-    metric,
-    parameter,
-    train_end_time,
-    raw_value,
-    mg.model_type
-from {dist_table} dist
-join results.model_groups mg using (model_group_id)
-where model_group_id in ({model_group_ids})
-union
-select
-    0 model_group_id,
-    metric,
-    parameter,
-    train_end_time,
-    best_case,
-    'best case' model_type
-from {dist_table}
-group by 1, 2, 3, 4, 5, 6
+            '''
+            select
+                model_group_id,
+                metric,
+                parameter,
+                train_end_time,
+                raw_value,
+                mg.model_type
+            from {dist_table} dist
+            join results.model_groups mg using (model_group_id)
+            where model_group_id in ({model_group_ids})
+            union
+            select
+                0 model_group_id,
+                metric,
+                parameter,
+                train_end_time,
+                best_case,
+                'best case' model_type
+            from {dist_table}
+            group by 1, 2, 3, 4, 5, 6
             '''.format(
                 dist_table=self.distance_from_best_table.distance_table,
                 model_group_ids=str_in_sql(model_group_ids)
