@@ -211,12 +211,17 @@ aud.register_selection_rule_grid(seln_rules, plot=True)
 aud.selection_rule_model_group_ids
 ```
 
-will give us something like
+It will give us the results like
 
 ```
-{'best_average_value_precision@_50_abs': [246, 232, 239],
- 'best_current_value_precision@_50_abs': [201, 206, 317],
- 'lowest_metric_variance_precision@_50_abs': [268, 2756, 2795],
- 'most_frequent_best_dist_precision@_50_abs_0.05': [237, 238, 197],
- 'random_model_group': [254]}
+{'best_average_two_metrics_precision@_50_abs_precision@_100_abs_0.5': [246],
+ 'best_average_value_precision@_50_abs': [246, 235, 232],
+ 'best_avg_recency_weight_precision@_50_abs_1.5_linear': [246],
+ 'best_avg_recency_weight_precision@_50_abs_2.0_linear': [246],
+ 'best_avg_recency_weight_precision@_50_abs_5.0_linear': [202],
+ 'best_avg_var_penalized_precision@_50_abs_0.5': [246],
+ 'best_current_value_precision@_50_abs': [200, 2713, 2714],
+ 'lowest_metric_variance_precision@_50_abs': [2757, 2754, 2767],
+ 'most_frequent_best_dist_precision@_50_abs_0.05': [237, 238, 2713],
+ 'random_model_group': [224]}
 ```
