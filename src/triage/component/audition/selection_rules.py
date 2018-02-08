@@ -339,7 +339,7 @@ def best_avg_recency_weight(df, train_end_time, metric, parameter, curr_weight, 
     for relative variance as:
         avg_value - (stdev_penalty) * (stdev - min_stdev)
     where min_stdev is the minimum standard deviation of the metric across all
-    model groqups
+    model groups
 
     Arguments:
         decay_type (string) -- either 'linear' or 'exponential'; the shape of

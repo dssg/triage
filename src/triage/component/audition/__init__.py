@@ -122,6 +122,13 @@ class Auditioner(object):
         return self.model_group_thresholder.model_group_ids
 
     @property
+    def average_regret_for_rules(self):
+        result = dict()
+        for k in self.results_for_rule.keys():
+            result[k] = self.results_for_rule[k].groupby('selection_rule')['regret'].mean().to_dict()
+        return result
+
+    @property
     def selection_rule_model_group_ids(self):
         """Calculate the current winners for each selection rule and the most recent date
 
