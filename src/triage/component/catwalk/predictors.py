@@ -40,11 +40,9 @@ class Predictor(object):
             self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.replace = replace
 
-
     @property
     def session(self):
         return session_manager(self.sessionmaker)
-
 
     @db_retry
     def _retrieve_model_hash(self, model_id):
@@ -208,11 +206,12 @@ class Predictor(object):
         self._generate_ranks(model_id, matrix_store.uuid)
 
     def _generate_ranks(self, model_id, matrix_uuid):
-        """Update predictions table with rankings.
+        """Update predictions table with rankings, both absolute and percentile.
 
         All entities should have different ranks, so to break ties:
         - abs_rank uses the 'row_number' function, so ties are broken by the database ordering
-        - pct_rank uses the output of the abs_rank to compute percentiles (as opposed to raw scores), so it inherits the tie-breaking from abs_rank
+        - pct_rank uses the output of the abs_rank to compute percentiles
+          (as opposed to raw scores), so it inherits the tie-breaking from abs_rank
 
         Args:
             model_id (int) the id of the model associated with the given predictions
