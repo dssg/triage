@@ -166,6 +166,8 @@ For each test matrix, predictions, individual importances, and evaluation metric
 #### Predictions
 The trained model's prediction probabilities (`predict_proba()`) are computed and saved for the test matrix. More specifically, `predict_proba` returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the `results.predictions` table. The `entity_id` and `as_of_date` are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.
 
+The predictions table also contains entity rankings, both absolute and percentile, scoped by `as_of_date`. Ties in both cases are broken by the database ordering, so no two entities will have the same rank or percentile, nor will there be gaps.
+
 ### Individual Feature Importance
 Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
