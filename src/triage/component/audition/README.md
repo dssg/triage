@@ -139,7 +139,7 @@ The goal of audition is to narrow a very large number of model groups to a small
 
 Audition formalizes this idea through "selection rules" that take in the data up to a given point in time, apply some rule to choose a model group, and evaluate the performance of that chosen model in the subsequent time window, the regret. You can register, evaluate, and update selection rules associated with the Auditioner object as shown below.
 
-Audition will run similations of different model group selection rules to show users and let users asses which rule(s) is the best for their needs. Next, Audition will output numbers of best model in current time period for each model.
+Audition will run similations of different model group selection rules to show users and let users asses which rule(s) is the best for their needs. Next, Audition will output numbers of best model in current time period for each rule.
 
 First, we need to create a selection rule grid which will be passed to aud.register_selection_rule_grid() to run the simulations. The selection rule grid is only recognized as a list of dictionaries of all the parameters. One can create this giant grid by hands, but Audition also provides some helper functions to create the grid easily.
 
@@ -225,3 +225,28 @@ It will give us the results like
  'most_frequent_best_dist_precision@_50_abs_0.05': [237, 238, 2713],
  'random_model_group': [224]}
 ```
+The result will have each rule give you the best `n` model groups ids based on the metric and parameter following that rule for the most recent time period.
+For example, rules like `best_average_value_precision@_50_abs`, `best_current_value_precision@_50_abs`, `lowest_metric_variance_precision@_50_abs`, and `most_frequent_best_dist_precision@_50_abs_0.05`, since we specified `n=3` when we created rules, return 3 model group ids. The rest of rules only has one model group id as a result.
+
+```python
+aud.average_regret_for_rules
+```
+
+This will give us an average regret for each rule.
+
+```
+{
+  'precision@50_abs':{
+    'best_average_two_metrics_precision@_50_abs_precision@_100_abs_0.5': 0.10533333333333333,
+	 'best_average_value_precision@_50_abs': 0.09866666666666668,
+	 'best_avg_recency_weight_precision@_50_abs_1.5_linear': 0.10933333333333334,
+	 'best_avg_recency_weight_precision@_50_abs_2.0_linear': 0.1023401360544218,
+	 'best_avg_recency_weight_precision@_50_abs_5.0_linear': 0.092,
+	 'best_avg_var_penalized_precision@_50_abs_0.5': 0.09866666666666667,
+	 'best_current_value_precision@_50_abs': 0.08666666666666667,
+	 'lowest_metric_variance_precision@_50_abs': 0.12000000000000001,
+	 'most_frequent_best_dist_precision@_50_abs_0.05': 0.10666666666666669,
+	 'random_model_group': 0.12266666666666667}
+ }
+```
+
