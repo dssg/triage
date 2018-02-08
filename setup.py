@@ -39,7 +39,7 @@ with REQUIREMENTS_TEST_PATH.open() as test_requirements_file:
 
 setup(
     name='triage',
-    version='2.1.0',
+    version='2.2.0',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     author="Center for Data Science and Public Policy",
