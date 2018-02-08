@@ -125,7 +125,10 @@ class Auditioner(object):
     def average_regret_for_rules(self):
         result = dict()
         for k in self.results_for_rule.keys():
-            result[k] = self.results_for_rule[k].groupby('selection_rule')['regret'].mean().to_dict()
+            result[k] = self.results_for_rule[k]\
+                .groupby('selection_rule')['regret']\
+                .mean()\
+                .to_dict()
         return result
 
     @property
