@@ -4,6 +4,7 @@ import hashlib
 import json
 import random
 import tempfile
+from contextlib import contextmanager
 
 import postgres_copy
 import sqlalchemy
@@ -135,3 +136,17 @@ def save_db_objects(db_engine, db_objects):
             ])
         f.seek(0)
         postgres_copy.copy_from(f, first_object_type, db_engine, format='csv')
+
+
+@contextmanager
+def session_manager(constructor):
+    """Provide a transactional scope around a series of operations."""
+    session = constructor()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()

@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, Prediction
 
-from .utils import db_retry, save_db_objects
+from .utils import db_retry, save_db_objects, session_manager
 
 
 class ModelNotFoundError(ValueError):
@@ -40,6 +40,12 @@ class Predictor(object):
             self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.replace = replace
 
+
+    @property
+    def session(self):
+        return session_manager(self.sessionmaker)
+
+
     @db_retry
     def _retrieve_model_hash(self, model_id):
         """Retrieves the model hash associated with a given model id
@@ -49,11 +55,8 @@ class Predictor(object):
 
         Returns: (str) the stored hash of the model
         """
-        try:
-            session = self.sessionmaker()
+        with self.session as session:
             model_hash = session.query(Model).get(model_id).model_hash
-        finally:
-            session.close()
         return model_hash
 
     @db_retry
@@ -143,14 +146,11 @@ class Predictor(object):
             to predict based off of
 
         """
-        session = self.sessionmaker()
-        self._existing_predictions(session, model_id, matrix_store)\
-            .delete(synchronize_session=False)
-        session.expire_all()
+        with self.session as session:
+            self._existing_predictions(session, model_id, matrix_store)\
+                .delete(synchronize_session=False)
+            session.expire_all()
         test_label_timespan = matrix_store.metadata['label_timespan']
-        logging.warning(test_label_timespan)
-        session.commit()
-        session.close()
 
         db_objects_generator = None
         if 'as_of_date' in matrix_store.matrix.index.names:
@@ -205,41 +205,60 @@ class Predictor(object):
             model_id,
             matrix_store.uuid
         )
+        self._generate_ranks(model_id, matrix_store.uuid)
+
+    def _generate_ranks(self, model_id, matrix_uuid):
+        """Update predictions table with rankings.
+
+        All entities should have different ranks, so to break ties:
+        - abs_rank uses the 'row_number' function, so ties are broken by the database ordering
+        - pct_rank uses the output of the abs_rank to compute percentiles (as opposed to raw scores), so it inherits the tie-breaking from abs_rank
+
+        Args:
+            model_id (int) the id of the model associated with the given predictions
+            matrix_uuid (string) the uuid of the prediction matrix
+        """
         logging.info(
             'Beginning ranking of new Predictions for model %s, matrix %s',
             model_id,
-            matrix_store.uuid
+            matrix_uuid
         )
         with self.db_engine.begin() as conn:
             conn.execute('''
-                with ranks as (
+                with abs_ranks as (
                     select
                         entity_id,
                         as_of_date,
-                        dense_rank() over (
+                        row_number() over (
                             partition by as_of_date order by score desc
-                        ) as abs_rank,
-                        percent_rank() over (
-                            partition by as_of_date order by score desc
-                        ) as pct_rank
+                        ) as abs_rank
                         from results.predictions
                         where model_id = %(model_id)s and matrix_uuid = %(uuid)s
+                ), pct_ranks as (
+                    select
+                        entity_id,
+                        as_of_date,
+                        percent_rank() over (
+                            partition by as_of_date order by abs_rank desc
+                        ) as pct_rank
+                        from abs_ranks
                 )
                 update results.predictions as p
                 set
-                    rank_abs = r.abs_rank,
-                    rank_pct = r.pct_rank
-                from ranks as r
+                    rank_abs = abs.abs_rank,
+                    rank_pct = pct.pct_rank
+                from abs_ranks as abs
+                join pct_ranks pct using (entity_id, as_of_date)
                 where
                     p.model_id = %(model_id)s
                     and p.matrix_uuid = %(uuid)s
-                    and p.entity_id = r.entity_id
-                    and p.as_of_date = r.as_of_date
-            ''', model_id=model_id, uuid=matrix_store.uuid)
+                    and p.entity_id = abs.entity_id
+                    and p.as_of_date = abs.as_of_date
+            ''', model_id=model_id, uuid=matrix_uuid)
         logging.info(
             'Completed ranking of new Predictions for model %s, matrix %s',
             model_id,
-            matrix_store.uuid
+            matrix_uuid
         )
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):

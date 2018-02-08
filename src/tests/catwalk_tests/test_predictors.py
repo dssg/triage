@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 
-from triage.component.results_schema import Prediction
+from triage.component.results_schema import Prediction, Model
 from triage.component.catwalk.db import ensure_db
 import pandas
 
@@ -20,6 +20,7 @@ import datetime
 from unittest.mock import Mock
 from numpy.testing import assert_array_equal
 import tempfile
+import numpy
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
 
@@ -139,23 +140,48 @@ def test_predictor():
 
 
 def test_predictor_composite_index():
+    class ModelWithTies(object):
+        def predict_proba(self, dataset):
+            # will rank entity #s 2 and 3 as 1.0, #1 as 0.5
+            # To ensure that the tiebreaking logic is used
+            scores = [1.0 if index[0] in [2, 3] else 0.5 for index, _ in dataset.iterrows()]
+            return numpy.array([scores, scores]).transpose()
+
+
+    def fake_trained_model_id(model_class, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
+        """Creates and stores a trivial trained model
+
+        Args:
+            model_storage_engine (catwalk.storage.ModelStorageEngine)
+            db_engine (sqlalchemy.engine)
+
+        Returns:
+            (int) model id for database retrieval
+        """
+        trained_model = model_class()
+        model_storage_engine.get_store('abcd').write(trained_model)
+        session = sessionmaker(db_engine)()
+        db_model = Model(model_hash='abcd', train_matrix_uuid=train_matrix_uuid)
+        session.add(db_model)
+        session.commit()
+        return db_model.model_id
+
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         project_path = 'econ-dev/inspections'
         model_storage_engine = InMemoryModelStorageEngine(project_path)
-        _, model_id = \
-            fake_trained_model(project_path, model_storage_engine, db_engine)
+        model_id = fake_trained_model_id(ModelWithTies, model_storage_engine, db_engine)
         predictor = Predictor(project_path, model_storage_engine, db_engine)
         dayone = datetime.datetime(2011, 1, 1)
         daytwo = datetime.datetime(2011, 1, 2)
         # create prediction set
         matrix = pandas.DataFrame.from_dict({
-            'entity_id': [1, 2, 1, 2],
-            'as_of_date': [dayone, dayone, daytwo, daytwo],
-            'feature_one': [3, 4, 5, 6],
-            'feature_two': [5, 6, 7, 8],
-            'label': [7, 8, 8, 7]
+            'entity_id': [1, 2, 3, 1, 2, 3],
+            'as_of_date': ([dayone] * 3) + ([daytwo] * 3),
+            'feature_one': [3] * 6,
+            'feature_two': [5] * 6,
+            'label': [True, False] * 3
         }).set_index(['entity_id', 'as_of_date'])
         metadata = {
             'label_name': 'label',
@@ -174,7 +200,7 @@ def test_predictor_composite_index():
 
         # assert
         # 1. that the returned predictions are of the desired length
-        assert len(predict_proba) == 4
+        assert len(predict_proba) == 6
 
         # 2. that the predictions table entries are present and
         # can be linked to the original models
@@ -184,21 +210,29 @@ def test_predictor_composite_index():
             from results.predictions
             join results.models using (model_id)''')
         ]
-        assert len(records) == 4
+        assert len(records) == 6
 
         # 3. that absolute ranks are computed
         ranks = [
-            row[0] for row in
-            db_engine.execute('select distinct(rank_abs) from results.predictions order by 1')
+            row for row in
+            db_engine.execute('select entity_id, rank_abs from results.predictions where as_of_date = %s order by rank_abs', dayone)
         ]
-        assert ranks == [1, 2]
+        assert ranks == [
+            (2, 1),
+            (3, 2),
+            (1, 3)
+        ]
 
         # 4. that percentile ranks are computed
         ranks = [
-            row[0] for row in
-            db_engine.execute('select distinct(rank_pct) from results.predictions order by 1')
+            row for row in
+            db_engine.execute('select entity_id, rank_pct from results.predictions where as_of_date = %s order by rank_pct desc', dayone)
         ]
-        assert ranks == [0, 1]
+        assert ranks == [
+            (2, 1.0),
+            (3, 0.5),
+            (1, 0.0)
+        ]
 
 
 def test_predictor_get_train_columns():
