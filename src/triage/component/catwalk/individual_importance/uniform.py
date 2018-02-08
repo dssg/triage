@@ -1,5 +1,6 @@
 from triage.component.catwalk.model_trainers import NO_FEATURE_IMPORTANCE
 
+
 def _entity_feature_values(matrix, feature_name, as_of_date=None):
     """Finds the value of the given feature for each entity in a matrix
 
