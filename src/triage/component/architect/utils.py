@@ -33,6 +33,7 @@ def feature_list(feature_dictionary):
         )
     )
 
+
 def convert_string_column_to_date(column):
     return(
         [datetime.datetime.strptime(date, '%Y-%m-%d').date() for date in column]
@@ -89,7 +90,6 @@ def create_schemas(engine, features_tables, labels, states):
         )
 
 
-
 def create_features_table(table_number, table, engine):
     engine.execute(
         """
@@ -129,7 +129,7 @@ def create_entity_date_df(
         'label_type',
         'label'
     ])
-    states_table = pd.DataFrame(states, columns = [
+    states_table = pd.DataFrame(states, columns=[
         'entity_id',
         'as_of_date',
         'state_one',
