@@ -14,7 +14,7 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.state_table_generators import StateTableGenerator
-from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.label_generators import InspectionsLabelGenerator
 from triage.component.architect.planner import Planner
 
 
@@ -185,7 +185,7 @@ def basic_integration_test(
             )
 
 
-            label_generator = BinaryLabelGenerator(
+            label_generator = InspectionsLabelGenerator(
                 db_engine=db_engine,
                 events_table='events'
             )
@@ -265,7 +265,6 @@ def basic_integration_test(
             }]
 
             state_table_generator.validate()
-            label_generator.validate()
             feature_generator.validate(feature_aggregation_config)
             feature_group_creator.validate()
             planner.validate()

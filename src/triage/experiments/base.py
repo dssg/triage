@@ -7,7 +7,7 @@ from functools import partial
 from descriptors import cachedproperty
 from timeout import timeout
 
-from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.label_generators import InspectionsLabelGenerator
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -116,7 +116,7 @@ class ExperimentBase(object, metaclass=ABCMeta):
         )
 
         self.label_generator_factory = partial(
-            BinaryLabelGenerator,
+            InspectionsLabelGenerator,
             events_table=self.config['events_table'],
         )
 
