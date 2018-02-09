@@ -3,9 +3,10 @@ from datetime import date, timedelta
 import testing.postgresql
 from sqlalchemy import create_engine
 
-from triage.component.architect.label_generators import(
-    BinaryLabelGenerator,
-    QueryBinaryLabelGenerator)
+from triage.component.architect.label_generators import (
+    InspectionsLabelGenerator,
+    QueryBinaryLabelGenerator
+)
 
 from .utils import create_binary_outcome_events
 
@@ -33,7 +34,7 @@ def test_training_label_generation():
 
         labels_table_name = 'labels'
 
-        label_generator = BinaryLabelGenerator(
+        label_generator = InspectionsLabelGenerator(
             events_table='events',
             db_engine=engine
         )
@@ -66,31 +67,39 @@ def test_training_query_label_generation():
         create_binary_outcome_events(engine, 'events', events_data)
 
         labels_table_name = 'labels'
+        query = """select
+            events.entity_id,
+            bool_or(outcome::bool)::integer as outcome
+        from events
+        where
+            '{as_of_date}' <= outcome_date
+            and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+            group by entity_id
+        """
         label_generator = QueryBinaryLabelGenerator(
-            events_table='events',
-            db_engine=engine
+            db_engine=engine,
+            query=query
         )
 
         label_generator._create_labels_table(labels_table_name)
-        query = """SELECT
-                      {events_table}.entity_id,
-                      '{start_date}'::date as as_of_date,
-                      '{label_timespan}'::interval as label_timespan,
-                      'outcome' as label_name,
-                      'binary' as label_type,
-                      bool_or(outcome::bool)::int as label
-                   FROM {events_table}
-                   WHERE
-                      '{start_date}' <= outcome_date AND
-                       outcome_date < '{start_date}'::timestamp + interval '{label_timespan}'
-                   GROUP BY 1, 2, 3, 4, 5;""".format(
-            events_table='events',
+        label_generator.generate(
+            start_date='2014-09-30',
             label_timespan='6months',
-            start_date='2014-09-30')
-        label_generator.generate(query=query,
-                                 start_date='2014-09-30',
-                                 label_timespan='6months',
-                                 labels_table='labels')
+            labels_table='labels'
+        )
+
+        expected = [
+            # entity_id, as_of_date, label_timespan, name, type, label
+            (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+            (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
+            (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+        ]
+        result = engine.execute(
+            'select * from {} order by entity_id, as_of_date'.format(
+                labels_table_name)
+        )
+        records = [row for row in result]
+        assert records == expected
 
 
 def test_generate_all_labels():
@@ -100,7 +109,7 @@ def test_generate_all_labels():
 
         labels_table_name = 'labels'
 
-        label_generator = BinaryLabelGenerator(
+        label_generator = InspectionsLabelGenerator(
             events_table='events',
             db_engine=engine,
         )
