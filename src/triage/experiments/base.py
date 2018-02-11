@@ -7,7 +7,11 @@ from functools import partial
 from descriptors import cachedproperty
 from timeout import timeout
 
-from triage.component.architect.label_generators import InspectionsLabelGenerator
+from triage.component.architect.label_generators import (
+    InspectionsLabelGenerator,
+    QueryBinaryLabelGenerator
+)
+
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -89,6 +93,20 @@ class ExperimentBase(object, metaclass=ABCMeta):
                 .format(config_version, CONFIG_VERSION)
             )
 
+    def initialize_label_generator_factory(self, label_config):
+        if 'inspection_outcomes_table' in label_config:
+            return partial(
+                InspectionsLabelGenerator,
+                events_table=label_config['inspection_outcomes_table']
+            )
+        elif 'query' in label_config:
+            return partial(
+                QueryBinaryLabelGenerator,
+                query=label_config['query']
+            )
+        else:
+            raise ValueError('Label config missing or unrecognized')
+
     def initialize_factories(self):
         split_config = self.config['temporal_config']
 
@@ -115,9 +133,8 @@ class ExperimentBase(object, metaclass=ABCMeta):
             events_table=self.config['events_table']
         )
 
-        self.label_generator_factory = partial(
-            InspectionsLabelGenerator,
-            events_table=self.config['events_table'],
+        self.label_generator_factory = self.initialize_label_generator_factory(
+            self.config['label_config']
         )
 
         self.feature_dictionary_creator_factory = partial(
