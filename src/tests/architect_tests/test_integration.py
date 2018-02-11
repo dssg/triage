@@ -13,8 +13,8 @@ from triage.component.architect.features import (
     FeatureGroupCreator,
     FeatureGroupMixer,
 )
-from triage.component.architect.state_table_generators import StateTableGenerator
 from triage.component.architect.label_generators import InspectionsLabelGenerator
+from triage.component.architect.state_table_generators import StateTableGeneratorFromDense
 from triage.component.architect.planner import Planner
 
 
@@ -178,7 +178,7 @@ def basic_integration_test(
                 test_durations=['1months'],
             )
 
-            state_table_generator = StateTableGenerator(
+            state_table_generator = StateTableGeneratorFromDense(
                 db_engine=db_engine,
                 experiment_hash='abcd',
                 dense_state_table='states',
@@ -263,11 +263,6 @@ def basic_integration_test(
                 'intervals': ['1y'],
                 'groups': ['entity_id']
             }]
-
-            state_table_generator.validate()
-            feature_generator.validate(feature_aggregation_config)
-            feature_group_creator.validate()
-            planner.validate()
 
             # generate sparse state table
             state_table_generator.generate_sparse_table(

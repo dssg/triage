@@ -3,6 +3,9 @@ import logging
 import pandas
 import os
 
+import s3fs
+from urllib.parse import urlparse
+
 from triage.component import metta
 
 
@@ -25,8 +28,11 @@ class BuilderBase(object):
 
     def build_all_matrices(self, build_tasks):
         logging.info('Building %s matrices', len(build_tasks.keys()))
-        for matrix_uuid, task_arguments in build_tasks.items():
+
+        for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items()):
+            logging.info(f"Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})")
             self.build_matrix(**task_arguments)
+            logging.debug(f"Matrix {matrix_uuid} built")
 
     def _outer_join_query(
         self,
@@ -224,9 +230,23 @@ class CSVBuilder(BuilderBase):
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
         )
-        if not self.replace and os.path.exists(matrix_filename):
-            logging.info('Skipping %s because matrix already exists', matrix_filename)
-            return
+
+        # The output directory is local or in s3
+        path_parsed = urlparse(matrix_filename)
+        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+
+        if scheme in ('', 'file'):
+            if not self.replace and os.path.exists(matrix_filename):
+                logging.info('Skipping %s because matrix already exists', matrix_filename)
+                return
+        elif scheme == 's3':
+            if not self.replace and s3fs.S3FileSystem().exists(matrix_filename):
+                logging.info('Skipping %s because matrix already exists', matrix_filename)
+                return
+        else:
+            raise ValueError(f"""URL scheme not supported:
+              {scheme} (from {matrix_filename})
+            """)
 
         logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
@@ -248,8 +268,9 @@ class CSVBuilder(BuilderBase):
             entity_date_table_name,
             matrix_uuid
         )
+        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
         try:
-            logging.info('Extracting label data frmo database into file for '
+            logging.info('Extracting label data from database into file for '
                          'matrix %s', matrix_uuid)
             labels_csv_name = self.write_labels_data(
                 label_name,
@@ -260,6 +281,7 @@ class CSVBuilder(BuilderBase):
             )
             features_csv_names.insert(0, labels_csv_name)
 
+            logging.info(f"Label data extracted for matrix {matrix_uuid}")
             # stitch together the csvs
             logging.info('Merging feature files for matrix %s', matrix_uuid)
             output = self.merge_feature_csvs(
@@ -267,6 +289,7 @@ class CSVBuilder(BuilderBase):
                 matrix_directory,
                 matrix_uuid
             )
+            logging.info(f"Features data merged for matrix {matrix_uuid}")
         finally:
             # clean up files and database before finishing
             for csv_name in features_csv_names:
@@ -281,6 +304,7 @@ class CSVBuilder(BuilderBase):
                 directory=self.matrix_directory,
                 format='csv'
             )
+            logging.info("Matrix {matrix_uuid} archived (using metta)")
         finally:
             if isinstance(output, str):
                 os.remove(output)

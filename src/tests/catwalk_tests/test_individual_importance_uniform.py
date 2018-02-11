@@ -30,7 +30,7 @@ def test_uniform_distribution_entity_id_index():
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
         test_store = InMemoryMatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict).set_index(['entity_id']),
+            matrix=pandas.DataFrame.from_dict(data_dict),
             metadata=sample_metadata()
         )
         session.commit()
@@ -68,9 +68,11 @@ def test_uniform_distribution_entity_date_index():
         data_dict = {'entity_id': [1, 1], 'as_of_date': ['2016-01-01', '2017-01-01']}
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
+        metadata = sample_metadata()
+        metadata['indices'] = ['entity_id', 'as_of_date']
         test_store = InMemoryMatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict).set_index(['entity_id', 'as_of_date']),
-            metadata=sample_metadata()
+            matrix=pandas.DataFrame.from_dict(data_dict),
+            metadata=metadata
         )
         session.commit()
         results = uniform_distribution(

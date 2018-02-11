@@ -301,9 +301,26 @@ class LabelConfigValidator(Validator):
             self._validate_query(label_config['query'])
 
 
-class StateConfigValidator(Validator):
-    def run(self, state_config):
-        if 'table_name' in state_config:
+class CohortConfigValidator(Validator):
+    def run(self, cohort_config):
+        available_keys = set(['dense_states', 'entities_table', 'query'])
+        bad_keys = set(cohort_config.keys()) - available_keys
+        if bad_keys:
+            raise ValueError(dedent('''Section: cohort_config -
+                The following given keys: '{}'
+                are invalid. Available keys are: '{}'
+                '''.format(bad_keys, available_keys)))
+        if len(cohort_config.keys()) > 1:
+            raise ValueError(dedent('''Section: cohort_config -
+                Only one key can be sent
+                '''))
+
+        if 'dense_states' in cohort_config:
+            state_config = cohort_config['dense_states']
+            if 'table_name' not in state_config:
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'dense_states' is used as cohort config,
+                a table name must be present'''))
             dense_state_table = state_config['table_name']
             table_should_have_data(dense_state_table, self.db_engine)
             column_should_be_intlike(dense_state_table, 'entity_id', self.db_engine)
@@ -311,13 +328,29 @@ class StateConfigValidator(Validator):
             column_should_be_timelike(dense_state_table, 'start_time', self.db_engine)
             column_should_be_timelike(dense_state_table, 'end_time', self.db_engine)
             if 'state_filters' not in state_config or len(state_config['state_filters']) < 1:
-                raise ValueError(dedent('''Section: state_config -
-                If a table_name is given in state_config,
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'dense_states' is used as cohort config,
                 at least one state filter must be present'''))
-        else:
-            logging.warning('No table_name found in state_config.' +
-                            'The provided events table will be used, which ' +
-                            'may result in unnecessarily large matrices')
+        elif 'entities_table' in cohort_config:
+            entities_table = cohort_config['entities_table']
+            table_should_have_data(entities_table, self.db_engine)
+            column_should_be_intlike(entities_table, 'entity_id', self.db_engine)
+        elif 'query' in cohort_config:
+            query = cohort_config['query']
+            if '{as_of_date}' not in query:
+                raise ValueError(dedent('''Section: cohort_config -
+                If 'query' is used as cohort_config,
+                {as_of_date} must be present'''))
+            dated_query = query.replace('{as_of_date}', '2016-01-01::timestamp')
+            conn = self.db_engine.connect()
+            logging.info('Validating cohort query')
+            try:
+                conn.execute('explain {}'.format(dated_query))
+            except Exception as e:
+                raise ValueError(dedent('''Section: cohort_config -
+                    given query can not be run with a sample as_of_date .
+                    query: "{}"
+                    Full error: {}'''.format(query, e)))
 
 
 class FeatureGroupDefinitionValidator(Validator):
@@ -477,7 +510,7 @@ class ExperimentValidator(Validator):
         FeatureAggregationsValidator(self.db_engine)\
             .run(experiment_config.get('feature_aggregations', {}))
         LabelConfigValidator(self.db_engine).run(experiment_config.get('label_config', None))
-        StateConfigValidator(self.db_engine).run(experiment_config.get('state_config', {}))
+        CohortConfigValidator(self.db_engine).run(experiment_config.get('cohort_config', {}))
         FeatureGroupDefinitionValidator().run(
             experiment_config.get('feature_group_definition', {}),
             experiment_config['feature_aggregations']

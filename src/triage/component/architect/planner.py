@@ -221,5 +221,5 @@ class Planner(object):
         self.builder.build_all_matrices(*args, **kwargs)
 
     def build_matrix(self, *args, **kwargs):
-        logging.info('Building matrix with args %s', args)
+        logging.info(f"Building matrix with {args}, {kwargs}")
         self.builder.build_matrix(*args, **kwargs)

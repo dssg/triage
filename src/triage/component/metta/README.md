@@ -65,6 +65,8 @@ metta.archive_train_test(train_config,
                          overwrite=False)
 ```
 
+The argument `directory` could be a path to the local file system or `s3` path (only supported for `csv` format due to limitations of `pytables`)
+
 ### Storing a train and multiple test sets
 ```
 from triage.component import metta

@@ -68,7 +68,7 @@ def test_integration():
                 for as_of_date in as_of_dates
             ]
 
-            model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+            model_storage_engine = S3ModelStorageEngine(project_path)
 
             experiment_hash = save_experiment_and_get_hash({}, db_engine)
             # instantiate pipeline objects
