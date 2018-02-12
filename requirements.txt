@@ -12,9 +12,9 @@ inflection
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
-results-schema>=1.2
-git+https://github.com/dssg/timechop.git@v0.1.4
+git+https://github.com/dssg/results-schema.git@fix_setup_py
+timechop==0.1.5
 collate==0.2.1
 matrix-architect==0.3
-model-catwalk>=0.3
+model-catwalk==0.3
 metta-data==0.3.0

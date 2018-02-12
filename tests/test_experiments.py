@@ -303,8 +303,9 @@ def simple_experiment_test(experiment_class):
             for model in db_engine.execute('select * from results.models')
         ]
         assert sorted(set(results)) == [
-            (datetime(2012, 1, 1), timedelta(180)),
-            (datetime(2013, 1, 1), timedelta(180))
+            (datetime(2011, 7, 1), timedelta(180)),
+            (datetime(2012, 7, 1), timedelta(180)),
+            (datetime(2013, 7, 1), timedelta(180))
         ]
 
         # 8. that the right number of individual importances are present
@@ -443,8 +444,9 @@ def nostate_experiment_test(experiment_class):
             for model in db_engine.execute('select * from results.models')
         ]
         assert sorted(set(results)) == [
-            (datetime(2012, 1, 1), timedelta(180)),
-            (datetime(2013, 1, 1), timedelta(180))
+            (datetime(2011, 7, 1), timedelta(180)),
+            (datetime(2012, 7, 1), timedelta(180)),
+            (datetime(2013, 7, 1), timedelta(180))
         ]
 
 
