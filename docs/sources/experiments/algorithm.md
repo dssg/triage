@@ -22,7 +22,11 @@ With all of the `as_of_times` for this Experiment now computed, it's now possibl
 
 ### Labels
 
-The Experiment transforms event outcomes data from the `events_table` into a binary labels table. It does this assuming that, if any event outcome within a given `label_timespan` after a given `as_of_time` is true, that `as_of_time` will be assigned it a true label.
+The Experiment computes labels from one of two options:
+
+1. If an inspection outcomes table is given, it converts this to binary labels assuming that, if any event outcome within a given `label_timespan` after a given `as_of_time` is true, that `as_of_time` will be assigned it a true label.
+
+2. If a query is given, it is run for each `as_of_time` and `label_timespan` combination, and the returned entities and outcomes for that combination are saved.
 
 This binary labels table is scoped to the entire Experiment, so all `as_of_time` (computed in step 1) and `label_timespan` (taken straight from `temporal_config`) combinations are present. Individual matrices will just select what they need from this table.
 

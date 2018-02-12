@@ -29,14 +29,29 @@ temporal_config:
     test_label_timespans: ['7day'] # time period across which outcomes are labeled in test matrices
 
 # LABEL GENERATION
-# Information needed to generate labels
+# There are two ways to configure label generation, choose only one:
 #
-# An events table is expected, with the columns:
-#   entity_id - an identifier for which the labels are applied to
-#   outcome_date - The date at which some outcome was known
-#   outcome - A boolean outcome
-# These are used to generate appropriate labels for each train/test split
-events_table: 'events'
+# 1. Pass a table of inspection outcomes
+#   An events table is expected, with the columns:
+#       entity_id - an identifier for which the labels are applied to
+#       outcome_date - The date at which some outcome was known
+#       outcome - A boolean outcome
+#   The label for any label timespan will be True if *any* inspection outcomes
+#   for that entity in that timespan are True.
+#
+# 2. Pass a query that returns two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
+#   The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
+#   reproduces the inspection outcome boolean-or logic:
+label_config:
+    #inspection_outcomes_table: 'events'
+    query: |
+        select
+        events.entity_id,
+        bool_or(outcome::bool)::integer as outcome
+        from events
+        where '{as_of_date}' <= outcome_date
+            and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+            group by entity_id
 
 
 # FEATURE GENERATION

@@ -257,15 +257,48 @@ class FeatureAggregationsValidator(Validator):
             self._validate_aggregation(aggregation)
 
 
-class EventsTableValidator(Validator):
-    def run(self, events_table):
-        if not events_table:
-            raise ValueError(dedent('''Section: events_table -
-            Section not found. You must define an events table.'''))
-        table_should_have_data(events_table, self.db_engine)
-        column_should_be_intlike(events_table, 'entity_id', self.db_engine)
-        column_should_be_timelike(events_table, 'outcome_date', self.db_engine)
-        column_should_be_booleanlike(events_table, 'outcome', self.db_engine)
+class LabelConfigValidator(Validator):
+    def _validate_inspection_outcomes(self, inspection_outcomes_table):
+        if not inspection_outcomes_table:
+            raise ValueError(dedent('''Section: label_config -
+            inspection_outcomes_table key sent with no value. If you wish you use an
+            inspection outcomes table to generate labels, you must pass a value.'''))
+        table_should_have_data(inspection_outcomes_table, self.db_engine)
+        column_should_be_intlike(inspection_outcomes_table, 'entity_id', self.db_engine)
+        column_should_be_timelike(inspection_outcomes_table, 'outcome_date', self.db_engine)
+        column_should_be_booleanlike(inspection_outcomes_table, 'outcome', self.db_engine)
+
+    def _validate_query(self, query):
+        if '{as_of_date}' not in query:
+            raise ValueError(dedent('''Section: label_config -
+            If 'query' is used as label_config,
+            {as_of_date} must be present'''))
+        if '{label_timespan}' not in query:
+            raise ValueError(dedent('''Section: label_config -
+            If 'query' is used as label_config,
+            {label_timespan} must be present'''))
+        bound_query = query\
+            .replace('{as_of_date}', '2016-01-01::timestamp')\
+            .replace('{label_timespan}', '6month::interval')
+        conn = self.db_engine.connect()
+        logging.info('Validating label query via EXPLAIN')
+        try:
+            conn.execute('explain {}'.format(bound_query))
+        except Exception as e:
+            raise ValueError(dedent('''Section: label_config -
+                given query can not be run with a sample as_of_date and label_timespan.
+                query: "{}"
+                Full error: {}'''.format(query, e)))
+
+    def run(self, label_config):
+        if not label_config:
+            raise ValueError(dedent('''Section: label_config -
+            Section not found. You must define a label config.'''))
+
+        if 'inspection_outcomes_table' in label_config:
+            self._validate_inspection_outcomes(label_config['inspection_outcomes_table'])
+        elif 'query' in label_config:
+            self._validate_query(label_config['query'])
 
 
 class CohortConfigValidator(Validator):
@@ -476,7 +509,7 @@ class ExperimentValidator(Validator):
         TemporalValidator().run(experiment_config.get('temporal_config', {}))
         FeatureAggregationsValidator(self.db_engine)\
             .run(experiment_config.get('feature_aggregations', {}))
-        EventsTableValidator(self.db_engine).run(experiment_config.get('events_table', None))
+        LabelConfigValidator(self.db_engine).run(experiment_config.get('label_config', None))
         CohortConfigValidator(self.db_engine).run(experiment_config.get('cohort_config', {}))
         FeatureGroupDefinitionValidator().run(
             experiment_config.get('feature_group_definition', {}),
