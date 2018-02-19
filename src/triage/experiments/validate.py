@@ -303,17 +303,21 @@ class LabelConfigValidator(Validator):
 
 class CohortConfigValidator(Validator):
     def run(self, cohort_config):
-        available_keys = set(['dense_states', 'entities_table', 'query'])
-        bad_keys = set(cohort_config.keys()) - available_keys
+        mutex_keys = set(['dense_states', 'entities_table', 'query'])
+        available_keys = mutex_keys | set(['name'])
+        used_keys = set(cohort_config.keys())
+        bad_keys = used_keys - available_keys
         if bad_keys:
             raise ValueError(dedent('''Section: cohort_config -
                 The following given keys: '{}'
                 are invalid. Available keys are: '{}'
                 '''.format(bad_keys, available_keys)))
-        if len(cohort_config.keys()) > 1:
+        used_mutex_keys = mutex_keys & used_keys
+        if len(used_mutex_keys) > 1:
             raise ValueError(dedent('''Section: cohort_config -
-                Only one key can be sent
-                '''))
+                Only one of the following keys can be sent: '{}'
+                Found '{}'
+                '''.format(mutex_keys, used_mutex_keys)))
 
         if 'dense_states' in cohort_config:
             state_config = cohort_config['dense_states']
@@ -426,31 +430,40 @@ class ModelGroupKeysValidator(Validator):
         if not isinstance(model_group_keys, list):
             raise ValueError(dedent('''Section: model_group_keys -
             model_group_keys section must be a list'''))
+        classifier_keys = [
+            'class_path',
+            'parameters'
+        ]
         # planner_keys are defined in architect.Planner._make_metadata
         planner_keys = [
-            'beginning_of_time',
+            'feature_start_time',
             'end_time',
             'indices',
             'feature_names',
+            'feature_groups',
             'label_name',
             'label_type',
+            'label_timespan',
             'state',
+            'cohort_name',
             'matrix_id',
             'matrix_type'
         ]
         # temporal_keys are defined in
         # timechop.Timechop.generate_matrix_definition
         temporal_keys = [
-            'matrix_start_time',
-            'matrix_end_time',
+            'first_as_of_time',
+            'last_as_of_time',
+            'matrix_info_end_time',
             'as_of_times',
-            'label_window',
-            'example_frequency',
-            'train_duration'
+            'training_label_timespan',
+            'training_as_of_date_frequency',
+            'max_training_history'
         ]
         available_keys = [key for key in user_metadata.keys()] + \
             planner_keys +\
-            temporal_keys
+            temporal_keys +\
+            classifier_keys
         for model_group_key in model_group_keys:
             if model_group_key not in available_keys:
                 raise ValueError(dedent('''Section: model_group_keys -

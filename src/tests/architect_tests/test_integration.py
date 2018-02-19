@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
+import yaml
+
 
 import testing.postgresql
 from sqlalchemy import create_engine
@@ -156,7 +158,8 @@ def basic_integration_test(
     state_filters,
     feature_group_create_rules,
     feature_group_mix_rules,
-    expected_matrix_multiplier
+    expected_matrix_multiplier,
+    expected_group_lists
 ):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
@@ -184,7 +187,6 @@ def basic_integration_test(
                 dense_state_table='states',
             )
 
-
             label_generator = InspectionsLabelGenerator(
                 db_engine=db_engine,
                 events_table='events'
@@ -201,7 +203,8 @@ def basic_integration_test(
                 features_schema_name='features'
             )
 
-            feature_group_creator = FeatureGroupCreator(feature_group_create_rules)
+            feature_group_creator = FeatureGroupCreator(
+                feature_group_create_rules)
 
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
 
@@ -224,7 +227,8 @@ def basic_integration_test(
 
             # chop time
             split_definitions = chopper.chop_time()
-            num_split_matrices = sum(1 + len(split['test_matrices']) for split in split_definitions)
+            num_split_matrices = sum(
+                1 + len(split['test_matrices']) for split in split_definitions)
 
             # generate as_of_times for feature/label/state generation
             all_as_of_times = []
@@ -233,36 +237,6 @@ def basic_integration_test(
                 for test_matrix in split['test_matrices']:
                     all_as_of_times.extend(test_matrix['as_of_times'])
             all_as_of_times = list(set(all_as_of_times))
-
-            feature_aggregation_config = [{
-                'prefix': 'cat',
-                'from_obj': 'cat_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates': [{
-                    'quantity': 'cat_sightings',
-                    'metrics': ['count', 'avg'],
-                    'imputation': {
-                        'all': {'type': 'mean'}
-                    }
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }, {
-                'prefix': 'dog',
-                'from_obj': 'dog_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates_imputation': {
-                    'count': {'type': 'constant', 'value': 7},
-                    'sum': {'type': 'mean'},
-                    'avg': {'type': 'zero'}
-                },
-                'aggregates': [{
-                    'quantity': 'dog_sightings',
-                    'metrics': ['count', 'avg'],
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }]
 
             # generate sparse state table
             state_table_generator.generate_sparse_table(
@@ -312,12 +286,14 @@ def basic_integration_test(
                 feature_dates=all_as_of_times,
                 state_table=state_table_generator.sparse_table_name
             )
-            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='aggregation')
+            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(
+                aggregations, task_type='aggregation')
 
             # create feature aggregation tables
             feature_generator.process_table_tasks(feature_table_agg_tasks)
 
-            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='imputation')
+            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(
+                aggregations, task_type='imputation')
 
             # create feature imputation tables
             feature_generator.process_table_tasks(feature_table_imp_tasks)
@@ -326,7 +302,8 @@ def basic_integration_test(
             # subsetting config
             master_feature_dict = feature_dictionary_creator.feature_dictionary(
                 feature_table_names=feature_table_imp_tasks.keys(),
-                index_column_lookup=feature_generator.index_column_lookup(aggregations)
+                index_column_lookup=feature_generator.index_column_lookup(
+                    aggregations)
             )
 
             feature_dicts = feature_group_mixer.generate(
@@ -345,10 +322,23 @@ def basic_integration_test(
 
             # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')
-            matrices = [path for path in os.listdir(matrix_directory) if '.csv' in path]
-            metadatas = [path for path in os.listdir(matrix_directory) if '.yaml' in path]
-            assert len(matrices) == num_split_matrices * expected_matrix_multiplier
-            assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
+            matrices = [path for path in os.listdir(
+                matrix_directory) if '.csv' in path]
+            metadatas = [path for path in os.listdir(
+                matrix_directory) if '.yaml' in path]
+            assert len(matrices) == num_split_matrices * \
+                expected_matrix_multiplier
+            assert len(metadatas) == num_split_matrices * \
+                expected_matrix_multiplier
+            feature_group_name_lists = []
+            for metadata_path in metadatas:
+                with open(os.path.join(matrix_directory, metadata_path)) as f:
+                    metadata = yaml.load(f)
+                    feature_group_name_lists.append(metadata['feature_groups'])
+
+            def deep_unique_tuple(l): return set([tuple(i) for i in l])
+            assert deep_unique_tuple(
+                feature_group_name_lists) == deep_unique_tuple(expected_group_lists)
 
 
 def test_integration_simple():
@@ -359,6 +349,7 @@ def test_integration_simple():
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
         expected_matrix_multiplier=1,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -369,6 +360,7 @@ def test_integration_more_state_filtering():
         feature_group_mix_rules=['all'],
         # 3 state filters, so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -379,4 +371,6 @@ def test_integration_feature_grouping():
         feature_group_mix_rules=['leave-one-out', 'all'],
         # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['prefix: cat'], [
+            'prefix: cat', 'prefix: dog'], ['prefix: dog']],
     )

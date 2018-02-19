@@ -4,6 +4,7 @@ import random
 import tempfile
 from collections import OrderedDict
 from contextlib import contextmanager
+import pytest
 
 import numpy
 import pandas
@@ -11,7 +12,7 @@ import yaml
 from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, InMemoryMatrixStore
 from triage.component.results_schema import Model
 
 
@@ -68,15 +69,35 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     return trained_model, db_model.model_id
 
 
+@pytest.fixture
 def sample_metadata():
     return {
-        'feature_start_time': datetime.date(2015, 1, 1),
-        'end_time': datetime.date(2016, 1, 1),
-        'matrix_id': 'test_matrix',
+        'feature_start_time': datetime.date(2012, 12, 20),
+        'end_time': datetime.date(2016, 12, 20),
         'label_name': 'label',
-        'label_timespan': '3month',
+        'as_of_date_frequency': '1w',
+        'max_training_history': '5y',
+        'state': 'default',
+        'cohort_name': 'default',
+        'label_timespan': '1y',
+        'metta-uuid': '1234',
+        'feature_names': ['ft1', 'ft2'],
+        'feature_groups': ['all: True'],
         'indices': ['entity_id'],
     }
+
+@pytest.fixture
+def sample_df():
+    return pandas.DataFrame.from_dict({
+        'entity_id': [1, 2],
+        'feature_one': [3, 4],
+        'feature_two': [5, 6],
+        'label': ['good', 'bad']
+    })
+
+@pytest.fixture
+def sample_matrix_store():
+   return InMemoryMatrixStore(sample_df(), sample_metadata())
 
 
 def sample_metta_csv_diff_order(directory):

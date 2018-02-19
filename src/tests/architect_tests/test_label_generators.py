@@ -27,7 +27,7 @@ events_data = [
 ]
 
 
-def test_training_label_generation():
+def test_inspections_label_generation():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         create_binary_outcome_events(engine, 'events', events_data)
@@ -36,6 +36,7 @@ def test_training_label_generation():
 
         label_generator = InspectionsLabelGenerator(
             events_table='events',
+            label_name='inspections',
             db_engine=engine
         )
         label_generator._create_labels_table(labels_table_name)
@@ -53,9 +54,9 @@ def test_training_label_generation():
 
         expected = [
             # entity_id, as_of_date, label_timespan, name, type, label
-            (1, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
-            (3, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', True),
-            (4, date(2014, 9, 30), timedelta(180), 'outcome', 'binary', False),
+            (1, date(2014, 9, 30), timedelta(180), 'inspections', 'binary', False),
+            (3, date(2014, 9, 30), timedelta(180), 'inspections', 'binary', True),
+            (4, date(2014, 9, 30), timedelta(180), 'inspections', 'binary', False),
         ]
 
         assert records == expected

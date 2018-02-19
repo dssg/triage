@@ -321,7 +321,7 @@ def sample_config():
 
     return {
         'config_version': CONFIG_VERSION,
-        'label_config': {'inspection_outcomes_table': 'events'},
+        'label_config': {'name': 'custom_label_name', 'inspection_outcomes_table': 'events'},
         'entity_column_name': 'entity_id',
         'model_comment': 'test2-final-final',
         'model_group_keys': ['label_name', 'label_type', 'custom_key'],

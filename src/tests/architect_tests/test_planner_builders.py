@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 
 from triage.component import metta
 from triage.component.architect import Planner, builders
+from triage.component.architect.feature_group_creator import FeatureGroup
 
 from .utils import (
     create_schemas,
@@ -611,13 +612,20 @@ def test_generate_plans():
             }]
         }
     ]
-    feature_dict_one = {'features0': ['f1', 'f2'], 'features1': ['f1', 'f2']}
-    feature_dict_two = {'features2': ['f3', 'f4'], 'features3': ['f5', 'f6']}
+    feature_dict_one = FeatureGroup(
+        name='first_features',
+        features_by_table={'features0': ['f1', 'f2'], 'features1': ['f1', 'f2']}
+    )
+    feature_dict_two = FeatureGroup(
+        name='second_features',
+        features_by_table={'features2': ['f3', 'f4'], 'features3': ['f5', 'f6']}
+    )
     feature_dicts = [feature_dict_one, feature_dict_two]
     planner = Planner(
         feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
         label_names = ['booking'],
         label_types = ['binary'],
+        cohort_name = 'prior_bookings',
         states = ['state_one AND state_two'],
         db_config = db_config,
         user_metadata = {},
@@ -644,6 +652,19 @@ def test_generate_plans():
     assert all(task for task in build_tasks if task['matrix_directory'] == '')
     assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_one) == 4
     assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_two) == 4
+    assert sum(
+        1 for task in build_tasks
+        if task['matrix_metadata']['feature_groups'] == ['first_features']
+    ) == 4
+    assert sum(
+        1 for task in build_tasks
+        if task['matrix_metadata']['feature_groups'] == ['second_features']
+    ) == 4
+    assert sum(
+        1 for task in build_tasks
+        if task['matrix_metadata']['cohort_name'] == 'prior_bookings'
+    ) == 8
+
 
 
 class TestBuildMatrix(TestCase):
@@ -673,10 +694,13 @@ class TestBuildMatrix(TestCase):
                     user_metadata = {},
                     engine = engine
                 )
-                feature_dictionary = {
+                feature_dictionary = FeatureGroup(
+                    name='mygroup',
+                    features_by_table={
                     'features0': ['f1', 'f2'],
                     'features1': ['f3', 'f4'],
-                }
+                    }
+                )
                 matrix_metadata = {
                     'matrix_id': 'hi',
                     'state': 'state_one AND state_two',

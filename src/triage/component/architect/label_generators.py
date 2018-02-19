@@ -3,9 +3,13 @@ import textwrap
 from abc import ABCMeta, abstractmethod
 
 
+DEFAULT_LABEL_NAME = 'outcome'
+
+
 class BinaryLabelBase(object, metaclass=ABCMeta):
-    def __init__(self, db_engine):
+    def __init__(self, db_engine, label_name=None):
         self.db_engine = db_engine
+        self.label_name = label_name or DEFAULT_LABEL_NAME
 
     def _create_labels_table(self, labels_table_name):
         self.db_engine.execute(
@@ -72,7 +76,7 @@ class InspectionsLabelGenerator(BinaryLabelBase):
                 {events_table}.entity_id,
                 '{start_date}'::date as as_of_date,
                 '{label_timespan}'::interval as label_timespan,
-                'outcome' as label_name,
+                '{label_name}' as label_name,
                 'binary' as label_type,
                 bool_or(outcome::bool)::int as label
             from {events_table}
@@ -84,6 +88,7 @@ class InspectionsLabelGenerator(BinaryLabelBase):
             labels_table=labels_table,
             start_date=start_date,
             label_timespan=label_timespan,
+            label_name=self.label_name,
         )
 
         logging.debug('Running label generation query: %s', query)
@@ -125,7 +130,7 @@ class QueryBinaryLabelGenerator(BinaryLabelBase):
                 entities_and_outcomes.entity_id,
                 '{as_of_date}' as as_of_date,
                 '{label_timespan}'::interval as label_timespan,
-                'outcome' as label_name,
+                '{label_name}' as label_name,
                 'binary' as label_type,
                 entities_and_outcomes.outcome as label
             from ({user_query}) entities_and_outcomes
@@ -134,6 +139,7 @@ class QueryBinaryLabelGenerator(BinaryLabelBase):
             labels_table=labels_table,
             as_of_date=start_date,
             label_timespan=label_timespan,
+            label_name=self.label_name,
         )
 
         logging.debug("Running label creation query")

@@ -13,6 +13,7 @@ from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
 import pandas
+from .utils import sample_metadata
 
 
 def test_integration():
@@ -32,17 +33,8 @@ def test_integration():
                 'feature_two': [5, 6],
                 'label': [7, 8]
             }).set_index('entity_id')
-            train_metadata = {
-                'feature_start_time': datetime.date(2012, 12, 20),
-                'end_time': datetime.date(2016, 12, 20),
-                'label_name': 'label',
-                'label_timespan': '1y',
-                'feature_names': ['ft1', 'ft2'],
-                'metta-uuid': '1234',
-                'indices': ['entity_id'],
-            }
 
-            train_store = InMemoryMatrixStore(train_matrix, train_metadata)
+            train_store = InMemoryMatrixStore(train_matrix, sample_metadata())
 
             as_of_dates = [
                 datetime.date(2016, 12, 21),
@@ -77,7 +69,6 @@ def test_integration():
                 experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
                 db_engine=db_engine,
-                model_group_keys=['label_name', 'label_timespan']
             )
             predictor = Predictor(
                 project_path,

@@ -1,7 +1,6 @@
 import copy
 import datetime
 import importlib
-import json
 import logging
 
 import numpy as np
@@ -11,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, FeatureImportance
 
+from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
 from .utils import (
     filename_friendly_hash,
@@ -36,7 +36,7 @@ class ModelTrainer(object):
         experiment_hash,
         model_storage_engine,
         db_engine,
-        model_group_keys,
+        model_grouper=None,
         replace=True
     ):
         self.project_path = project_path
@@ -44,7 +44,7 @@ class ModelTrainer(object):
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
         self.sessionmaker = sessionmaker(bind=self.db_engine)
-        self.model_group_keys = model_group_keys
+        self.model_grouper = model_grouper or ModelGrouper()
         self.replace = replace
 
     def unique_parameters(self, parameters):
@@ -259,10 +259,11 @@ class ModelTrainer(object):
 
         unique_parameters = self.unique_parameters(parameters)
 
-        model_group_id = self._get_model_group_id(
+        model_group_id = self.model_grouper.get_model_group_id(
             class_path,
             unique_parameters,
             matrix_store.metadata,
+            self.db_engine
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
         model_store.write(trained_model)
@@ -278,60 +279,6 @@ class ModelTrainer(object):
         )
         logging.info('Wrote model to db: hash %s, got id %s', model_hash, model_id)
         return model_id
-
-    def _get_model_group_id(
-        self,
-        class_path,
-        parameters,
-        matrix_metadata,
-    ):
-        """
-        Returns model group id using store procedure 'get_model_group_id' which will
-        return the same value for models with the same class_path, parameters,
-        features, and model_config
-
-        Args:
-            class_path (string) A full classpath to the model class
-            parameters (dict) hyperparameters to give to the model constructor
-            matrix_metadata (dict) stored metadata about the train matrix
-
-        Returns: (int) a database id for the model group id
-        """
-        feature_names = matrix_metadata['feature_names']
-        model_config = {}
-        for model_group_key in self.model_group_keys:
-            model_config[model_group_key] = matrix_metadata[model_group_key]
-        db_conn = self.db_engine.raw_connection()
-        cur = db_conn.cursor()
-        cur.execute("SELECT EXISTS ( "
-                    "       SELECT * "
-                    "       FROM pg_catalog.pg_proc "
-                    "       WHERE proname = 'get_model_group_id' ) ")
-        condition = cur.fetchone()
-
-        if condition:
-            query = ("SELECT get_model_group_id( "
-                     "            '{class_path}'::TEXT, "
-                     "            '{parameters}'::JSONB, "
-                     "             ARRAY{feature_names}::TEXT [] , "
-                     "            '{model_config}'::JSONB )"
-                     .format(class_path=class_path,
-                             parameters=json.dumps(parameters),
-                             feature_names=feature_names,
-                             model_config=json.dumps(model_config, sort_keys=True)))
-            logging.info('Getting model group from query %s', query)
-            cur.execute(query)
-            db_conn.commit()
-            model_group_id = cur.fetchone()
-            model_group_id = model_group_id[0]
-
-        else:
-            logging.info("Could not found stored procedure public.model_group_id")
-            model_group_id = None
-        db_conn.close()
-
-        logging.debug('Model_group_id = {}'.format(model_group_id))
-        return model_group_id
 
     def generate_trained_models(
         self,

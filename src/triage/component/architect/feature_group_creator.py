@@ -1,6 +1,27 @@
 import logging
 
 
+class FeatureGroup(dict):
+    def __init__(self, *args, **kwargs):
+        try:
+            self._names = [kwargs.pop('name')]
+        except KeyError:
+            self._names = []
+        try:
+            features = kwargs.pop('features_by_table')
+        except KeyError:
+            features = {}
+        super(FeatureGroup, self).__init__(*args, **features)
+
+    @property
+    def names(self):
+        return self._names
+
+    def update(self, other_group):
+        super(FeatureGroup, self).update(other_group)
+        self._names += other_group.names
+
+
 def table_subsetter(config_item, table, features):
     "Return features matching a given table"
     if table == config_item:
@@ -77,7 +98,7 @@ class FeatureGroupCreator(object):
         subsets = []
         for name, config in sorted(self.definition.items()):
             for config_item in config:
-                subset = {}
+                subset = FeatureGroup(name='{}: {}'.format(name, config_item))
                 for table, features in feature_dictionary.items():
                     matching_features =\
                         self.subsetters[name](config_item, table, features)

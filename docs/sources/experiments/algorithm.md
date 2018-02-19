@@ -28,7 +28,7 @@ The Experiment computes labels from one of two options:
 
 2. If a query is given, it is run for each `as_of_time` and `label_timespan` combination, and the returned entities and outcomes for that combination are saved.
 
-This binary labels table is scoped to the entire Experiment, so all `as_of_time` (computed in step 1) and `label_timespan` (taken straight from `temporal_config`) combinations are present. Individual matrices will just select what they need from this table.
+This binary labels table is scoped to the entire Experiment, so all `as_of_time` (computed in step 1) and `label_timespan` (taken straight from `temporal_config`) combinations are present. Additionally, the 'label_name' and 'label_type' are also recorded with each row in the table. Individual matrices will just select the rows they need from this table and bundle the data in their metadata file.
 
 ### State Table
 
@@ -94,8 +94,8 @@ But to do this, we have to figure out exactly what matrices we have to build. Th
 What do we iterate over?
 * Feature List - All subsets of features that the user wants to cycle through. This is the end result of the feature group generation and mixing process, which is described more below.
 * States - All configured `state_filters` in the experiment config. These take the form of boolean SQL clauses that are applied to the sparse states table, and the purpose of this is to test different cohorts against each other. Generally there is just one here.
-* Label names - In theory we can take in different labels (e.g. complaints, sustained complaints) in the same experiment. Right now this isn't done, there is one label name and it is 'outcome'.
-* Label types - In theory we can take in different label types (e.g. binary) in the same experiment. Right now this isn't done, there is one label type and it is 'binary'.
+* Label names - In theory we can take in different labels (e.g. complaints, sustained complaints) in the same experiment. Right now there is no support for multiple label names, but the label name used is configurable through the optional 'label_config'->'name' config value
+* Label types - In theory we can take in different label types (e.g. binary) in the same experiment. Right now this isn't done, there is one label type and it is hardcoded as 'binary'.
 
 ### Feature Lists
 How do we arrive at the feature lists? There are two pieces of config that are used: `feature group_definition` and `feature_group_strategies`. Feature group definitions are just ways to define logical blocks of features, most often features that come from the same source, or describing a particular type of event. These groups within the experiment as a list of feature names, representing some subset of all potential features for the experiment. Feature group strategies are ways to take feature groups and mix them together in various ways. The feature group strategies take these subsets of features and convert them into another list of subsets of features, which is the final list iterated over to create different matrices.
@@ -135,7 +135,7 @@ How do we get the data for an individual matrix out of the database?
 Matrix metadata reference:
 - [Train matrix temporal info](https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L433-L440)
 - [Test matrix temporal info](https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L514-L523)
-- [Feature, label, index, state, user metadata](https://github.com/dssg/triage/blob/master/src/triage/component/architect/planner.py#L89-L112)
+- [Feature, label, index, cohort, user metadata](https://github.com/dssg/triage/blob/master/src/triage/component/architect/planner.py#L89-L112)
 
 ### Recap
 
@@ -152,7 +152,7 @@ Each matrix marked for training is sent through the configured grid in the exper
 
 #### Model Groups
 
-Each model is assigned a 'model group'. A model group represents a number of trained classifiers that we want to treat as equivalent by some criteria. By default, this is aimed at defining models which are equivalent across time splits, to make analyzing model stability easier. The experiment defines model groups by a static set of data about the model (classifier module, hyperparameters, feature list) and a user-supplied list of keys that must correspond to some key in the matrix metadata (See end of 'Retrieving Data and Saving Completed Matrix' section). This data is stored in the `results.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `results.models` table.
+Each model is assigned a 'model group'. A model group represents a number of trained classifiers that we want to treat as equivalent by some criteria. By default, this is aimed at defining models which are equivalent across time splits, to make analyzing model stability easier. This default is accomplished with a set of 'model group keys' that includes data about the classifier (module, hyperparameters), temporal intervals used to create the train matrix (label timespan, training history, as-of-date frequency), and metadata describing the data in the train matrix (features and feature groups, label name, cohort name). The user can override this set of `model_group_keys` in the experiment definition, with all of the default information plus other matrix metadata at their disposal (See end of 'Retrieving Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `results.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `results.models` table.
 
 
 #### Model Hash
