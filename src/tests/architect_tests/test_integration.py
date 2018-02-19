@@ -238,36 +238,6 @@ def basic_integration_test(
                     all_as_of_times.extend(test_matrix['as_of_times'])
             all_as_of_times = list(set(all_as_of_times))
 
-            feature_aggregation_config = [{
-                'prefix': 'cat',
-                'from_obj': 'cat_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates': [{
-                    'quantity': 'cat_sightings',
-                    'metrics': ['count', 'avg'],
-                    'imputation': {
-                        'all': {'type': 'mean'}
-                    }
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }, {
-                'prefix': 'dog',
-                'from_obj': 'dog_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates_imputation': {
-                    'count': {'type': 'constant', 'value': 7},
-                    'sum': {'type': 'mean'},
-                    'avg': {'type': 'zero'}
-                },
-                'aggregates': [{
-                    'quantity': 'dog_sightings',
-                    'metrics': ['count', 'avg'],
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }]
-
             # generate sparse state table
             state_table_generator.generate_sparse_table(
                 as_of_dates=all_as_of_times

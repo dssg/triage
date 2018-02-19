@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 
@@ -26,8 +25,8 @@ class ModelGrouper(object):
             In addition, the non-matrix attributes 'class_path' and 'parameters', referring to
             classifier training arguments, can be sent.
     """
-    def __init__(self, model_group_keys=[]):
-        self.model_group_keys = model_group_keys
+    def __init__(self, model_group_keys=()):
+        self.model_group_keys = frozenset(model_group_keys)
 
     def _final_model_group_args(
         self,
@@ -60,7 +59,7 @@ class ModelGrouper(object):
         # step 1: is there an override?
         if len(self.model_group_keys) > 0:
             final = {}
-            keys = copy.copy(self.model_group_keys)
+            keys = set(self.model_group_keys)
             if 'class_path' in keys:
                 final['class_path'] = class_path
                 keys.remove('class_path')
