@@ -188,7 +188,7 @@ def test_baseline_exception_handling():
             trainer = ModelTrainer(
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
-                model_storage_engine=S3ModelStorageEngine(s3_conn, 'econ-dev/inspections'),
+                model_storage_engine = S3ModelStorageEngine(project_path),
                 db_engine=engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
