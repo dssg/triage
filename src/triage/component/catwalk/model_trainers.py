@@ -440,6 +440,7 @@ class ModelTrainer(object):
             logging.warning(
                 "Tried to train baseline model without required feature in matrix. Skipping."
             )
+            model_id = None
         return model_id
 
     def generate_train_tasks(
