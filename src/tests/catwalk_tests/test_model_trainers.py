@@ -181,6 +181,8 @@ def test_baseline_exception_handling():
     }
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
+        project_path = 'econ-dev/inspections'
+        model_storage_engine = S3ModelStorageEngine(project_path)
         ensure_db(engine)
         with mock_s3():
             s3_conn = boto3.resource('s3')
@@ -188,7 +190,7 @@ def test_baseline_exception_handling():
             trainer = ModelTrainer(
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
-                model_storage_engine = S3ModelStorageEngine(project_path),
+                model_storage_engine = model_storage_engine,
                 db_engine=engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
