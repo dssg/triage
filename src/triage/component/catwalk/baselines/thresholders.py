@@ -4,7 +4,7 @@ from six import string_types
 
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
-REQUIRED_KEYS = ['feature_name', 'operator', 'threshold']
+REQUIRED_KEYS = frozenset(['feature_name', 'operator', 'threshold'])
 
 
 class SimpleThresholder(object):
