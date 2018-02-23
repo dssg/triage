@@ -2,7 +2,7 @@
 __all__ = ['BaselineFeatureNotInMatrix']
 
 
-class BaselineFeatureNotInMatrix(Exception):
+class BaselineFeatureNotInMatrix(KeyError):
     """ This error is used to allow feature mixing and baseline classes to be
     included in the same experiment.
 
