@@ -187,7 +187,7 @@ class MultiCoreExperiment(ExperimentBase):
         n_processes,
         chunksize=1,
     ):
-        with Pool(n_processes) as pool:
+        with Pool(n_processes, maxtasksperchild=1) as pool:
             for result in pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)]
@@ -219,8 +219,10 @@ def build_matrix(
     try:
         db_engine = create_engine(db_connection_string)
         planner = planner_factory(engine=db_engine)
-        for build_task in build_tasks:
+
+        for i, build_task in enumerate(build_tasks):
             planner.build_matrix(**build_task)
+
         return True
     except Exception:
         logging.error('Child error: %s', traceback.format_exc())

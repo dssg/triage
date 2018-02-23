@@ -81,7 +81,7 @@ At this point, we have at least three tables that are used to populate matrices:
 
 ## 3. Building Matrices
 
-At this point, we have to build actual train and test matrices that can be processed by machine learning algorithms.
+At this point, we have to build actual train and test matrices that can be processed by machine learning algorithms, save at the user's specified path, either on the local filesystem or s3 depending on the scheme portion of the path (e.g. `s3://bucket-name/project_directory`)
 
 But to do this, we have to figure out exactly what matrices we have to build. The split definitions from step 1 are a good start -- they are our train and test splits -- but sometimes we also want to test different subsets of the data, like feature groups (e.g. 'how does using group of features A perform against using all features?'). So there's a layer of iteration we introduce for each split, that may produce many more matrices.
 
@@ -124,7 +124,7 @@ How do we get the data for an individual matrix out of the database?
 
 3. Write labels data to disk in CSV format using a COPY command. It is joined with the matrix-specific entity-date table to only include the desired rows.
 
-4. Merge the features and labels CSV files horizontally, in pandas. They are expected to be of the same shape, which is enforced by the entity-date table. The resulting matrix is indexed on `entity_id` and `as_of_date`, and then saved to disk (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information. along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and the metadata is saved in a YAML file with the same hash and directory.
+4. Merge the features and labels CSV files horizontally, in pandas. They are expected to be of the same shape, which is enforced by the entity-date table. The resulting matrix is indexed on `entity_id` and `as_of_date`, and then saved (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information. along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and the metadata is saved in a YAML file with the same hash and directory.
 
 Matrix metadata reference:
 - [Train matrix temporal info](https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L433-L440)

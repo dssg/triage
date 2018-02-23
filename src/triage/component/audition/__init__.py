@@ -63,7 +63,7 @@ class Auditioner(object):
                         such as '300_abs'
                     max_below_best (float) The maximum value that the given metric
                         can be below the best for a given train end time
-                    min_value (float) The minimum value that the given metric can be
+                    threshold_value (float) The minimum value that the given metric can be
             models_table (string, optional) The name of the results schema
                 models table that you want to use. Will default to 'models',
                 which is also the default in triage.
@@ -102,6 +102,7 @@ class Auditioner(object):
             self.train_end_times,
             self.metrics
         )
+        self.results_for_rule = {}
 
     @property
     def metrics(self):
@@ -119,6 +120,16 @@ class Auditioner(object):
         Returns: (list) of model group ids
         """
         return self.model_group_thresholder.model_group_ids
+
+    @property
+    def average_regret_for_rules(self):
+        result = dict()
+        for k in self.results_for_rule.keys():
+            result[k] = self.results_for_rule[k]\
+                .groupby('selection_rule')['regret']\
+                .mean()\
+                .to_dict()
+        return result
 
     @property
     def selection_rule_model_group_ids(self):
@@ -174,7 +185,35 @@ class Auditioner(object):
             train_end_times=self.train_end_times
         )
 
-    def update_metric_filters(self, new_filters, plot=True):
+    def set_one_metric_filter(
+            self,
+            metric='precision@',
+            parameter='100_abs',
+            max_from_best=0.05,
+            threshold_value=0.1):
+        """Set one thresholding metric filter
+        If one wnats to update multiple filters, one should use `update_metric_filters()` instead.
+
+        Args:
+            metric (string) model evaluation metric such as 'precision@'
+            parameter (string) model evaluation parameter such as '100_abs'
+            max_from_best (string) The maximum value that the given metric can be below the best
+                for a given train end time
+            threshold_value (string) The thresold value that the given metric can be
+            plot (boolean, default True) Whether or not to also plot model group performance
+                and thresholding details at this time.
+        """
+        new_filters = [{'metric': metric,
+                        'parameter': parameter,
+                        'max_from_best': max_from_best,
+                        'threshold_value': threshold_value
+                        }]
+        self.update_metric_filters(new_filters)
+
+    def update_metric_filters(
+            self,
+            new_filters=None,
+            plot=True):
         """Update the thresholding metric filters
 
         Args:
@@ -188,7 +227,7 @@ class Auditioner(object):
                         such as '300_abs'
                     max_below_best (float) The maximum value that the given metric
                         can be below the best for a given train end time
-                    min_value (float) The minimum value that the given metric can be
+                    threshold_value (float) The threshold value that the given metric can be
             plot (boolean, default True) Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
@@ -223,8 +262,21 @@ class Auditioner(object):
                 # are sorted in the constructor
             )
             self.selection_rule_plotter.plot_all_selection_rules(**common_kwargs)
-            self.selection_rule_performance_plotter.plot(plot_type='regret', **common_kwargs)
-            self.selection_rule_performance_plotter.plot(plot_type='metric', **common_kwargs)
+
+            df = self.selection_rule_performance_plotter.generate_plot_data(**common_kwargs)
+            self.selection_rule_performance_plotter.regret_plot_from_dataframe(
+                metric=metric_definition['metric'],
+                parameter=metric_definition['parameter'],
+                df=df
+            )
+            self.selection_rule_performance_plotter.raw_next_time_plot_from_dataframe(
+                metric=metric_definition['metric'],
+                parameter=metric_definition['parameter'],
+                df=df
+            )
+
+            key = metric_definition['metric'] + metric_definition['parameter']
+            self.results_for_rule[key] = df
 
     def register_selection_rule_grid(self, rule_grid, plot=True):
         """Register a grid of selection rules

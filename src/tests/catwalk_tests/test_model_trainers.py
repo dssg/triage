@@ -1,6 +1,5 @@
 import boto3
 import pandas
-import pickle
 import testing.postgresql
 import datetime
 import sqlalchemy
@@ -10,7 +9,6 @@ from unittest.mock import patch
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.utils import model_cache_key
 
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
@@ -51,7 +49,7 @@ def test_model_trainer():
                 'indices': ['entity_id'],
             }
             project_path = 'econ-dev/inspections'
-            model_storage_engine = S3ModelStorageEngine(s3_conn, project_path)
+            model_storage_engine = S3ModelStorageEngine(project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
                 experiment_hash=None,
@@ -79,11 +77,7 @@ def test_model_trainer():
                 engine.execute('select model_hash from results.models')
             ]
             assert len(records) == 4
-
-            cache_keys = [
-                model_cache_key(project_path, model_row[0], s3_conn)
-                for model_row in records
-            ]
+            hashes = [row[0] for row in records]
 
             # 2. that the model groups are distinct
             records = [
@@ -94,8 +88,8 @@ def test_model_trainer():
 
             # 3. that all four models are cached
             model_pickles = [
-                pickle.loads(cache_key.get()['Body'].read())
-                for cache_key in cache_keys
+                model_storage_engine.get_store(model_hash).load()
+                for model_hash in hashes
             ]
             assert len(model_pickles) == 4
             assert len([x for x in model_pickles if x is not None]) == 4
@@ -247,7 +241,7 @@ def test_n_jobs_not_new_model():
             trainer = ModelTrainer(
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
-                model_storage_engine=S3ModelStorageEngine(s3_conn, 'econ-dev/inspections'),
+                model_storage_engine=S3ModelStorageEngine('econ-dev/inspections'),
                 db_engine=engine,
                 model_group_keys=['label_name', 'label_timespan']
             )

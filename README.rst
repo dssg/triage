@@ -76,7 +76,7 @@ These lines are a bit dense: what is happening here?
 - ``config=experiment_config``: The bulk of the work needed in designing an experiment will be in creating this experiment configuration. An up-to-date example is at `example_experiment_config.yaml <example_experiment_config.yaml>`_; more detailed instructions on each section are located in the example file. Generally these would be easiest to store as a file (or multiple files that you construct together) like that YAML file, but the configuration is passed in dict format to the Experiment constructor and you can store it however you wish.
 - ``db_engine=sqlalchemy.create_engine(...)``: A SQLAlchemy database engine. This will be used both for querying your source tables and writing results metadata.
 - ``model_storage_class=FSModelStorageEngine``: The path to a model storage engine class. The library that Triage uses for model training and evaluation, `catwalk <https://github.com/dssg/catwalk>`_, provides multiple classes that handle storing trained models in different mediums, such as on the local filesystem or Amazon S3. We recommend starting with the ``catwalk.storage.FSModelStorageEngine`` to save models on the local filesystem.
-- ``project_path='/path/to/directory/to/save/data'``: The path to where you would like to store design matrices and trained models.
+- ``project_path='/path/to/directory/to/save/data'``: The path to where you would like to store design matrices and trained models. May be an s3 path (e.g. s3://bucket-name/project-directory), in which case s3 will be used to store matrices and models.
 
 With that in mind, a more full version of the experiment instantiation might look like this::
 

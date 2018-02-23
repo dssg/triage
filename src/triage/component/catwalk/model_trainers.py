@@ -20,6 +20,9 @@ from .utils import (
     save_db_objects,
 )
 
+NO_FEATURE_IMPORTANCE = 'Algorithm does not support a standard way' +\
+                        ' to calculate feature importance.'
+
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
@@ -154,8 +157,7 @@ class ModelTrainer(object):
             db_objects.append(FeatureImportance(
                 model_id=model_id,
                 feature_importance=0,
-                feature='Algorithm does not support a standard way' +
-                        'to calculate feature importance.',
+                feature=NO_FEATURE_IMPORTANCE,
                 rank_abs=0,
                 rank_pct=0,
             ))
@@ -423,7 +425,8 @@ class ModelTrainer(object):
         elif not saved_model_id:
             reason = 'model metadata not found'
 
-        logging.info('Training %s/%s: %s', class_path, parameters, reason)
+        logging.info(f"Training {class_path} with parameters {parameters}"
+                     f"(reason to train: {reason})")
         try:
             model_id = self._train_and_store_model(
                 matrix_store,
@@ -437,8 +440,6 @@ class ModelTrainer(object):
             logging.warning(
                 "Tried to train baseline model without required feature in matrix. Skipping."
             )
-            model_id = None
-
         return model_id
 
     def generate_train_tasks(
@@ -472,7 +473,8 @@ class ModelTrainer(object):
 
         for class_path, parameters in self._generate_model_configs(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
-            logging.info('Computed model hash %s', model_hash)
+            logging.info(f"Computed model hash for {class_path} "
+                         f"with parameters {parameters}: {model_hash}")
 
             if any(task['model_hash'] == model_hash for task in tasks):
                 logging.info('Skipping model_hash %s because another'
@@ -488,4 +490,5 @@ class ModelTrainer(object):
                 'misc_db_parameters': misc_db_parameters,
             })
         logging.info('Found %s unique model training tasks', len(tasks))
+
         return tasks
