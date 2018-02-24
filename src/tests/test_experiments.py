@@ -337,3 +337,104 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
     # Last exception is TimeoutError, but earlier error is preserved in
     # __context__, and will be noted as well in any standard traceback:
     assert exc_info.value.__context__ is build_mock.side_effect
+
+
+@parametrize_experiment_classes
+def test_baselines_with_missing_features(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        populate_source_data(db_engine)
+
+        # set up the config with the baseline model and feature group mixing
+        config = sample_config()
+        config['grid_config'] = {
+            'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature': {
+                'feature': ['entity_features_entity_id_1year_cat_sightings_count']
+            }
+        }
+        config['feature_group_definition'] = {
+            'tables': [
+                'entity_features_aggregation_imputed',
+                'zip_code_features_aggregation_imputed'
+            ]
+        }
+        config['feature_group_strategies'] = ['leave-one-in']
+        with TemporaryDirectory() as temp_dir:
+            experiment_class(
+                config=config,
+                db_engine=db_engine,
+                model_storage_class=FSModelStorageEngine,
+                project_path=os.path.join(temp_dir, 'inspections')
+            ).run()
+
+        # assert
+        # 1. that model groups entries are present
+        num_mgs = len([
+            row for row in
+            db_engine.execute('select * from results.model_groups')
+        ])
+        assert num_mgs > 0
+
+        # 2. that model entries are present, and linked to model groups
+        num_models = len([
+            row for row in db_engine.execute('''
+                select * from results.model_groups
+                join results.models using (model_group_id)
+                where model_comment = 'test2-final-final'
+            ''')
+        ])
+        assert num_models > 0
+
+        # 3. predictions, linked to models
+        num_predictions = len([
+            row for row in db_engine.execute('''
+                select * from results.predictions
+                join results.models using (model_id)''')
+        ])
+        assert num_predictions > 0
+
+        # 4. evaluations linked to predictions linked to models
+        num_evaluations = len([
+            row for row in db_engine.execute('''
+                select * from results.evaluations e
+                join results.models using (model_id)
+                join results.predictions p on (
+                    e.model_id = p.model_id and
+                    e.evaluation_start_time <= p.as_of_date and
+                    e.evaluation_end_time >= p.as_of_date)
+            ''')
+        ])
+        assert num_evaluations > 0
+
+        # 5. experiment
+        num_experiments = len([
+            row for row in db_engine.execute('select * from results.experiments')
+        ])
+        assert num_experiments == 1
+
+        # 6. that models are linked to experiments
+        num_models_with_experiment = len([
+            row for row in db_engine.execute('''
+                select * from results.experiments
+                join results.models using (experiment_hash)
+            ''')
+        ])
+        assert num_models == num_models_with_experiment
+
+        # 7. that models have the train end date and label timespan
+        results = [
+            (model['train_end_time'], model['training_label_timespan'])
+            for model in db_engine.execute('select * from results.models')
+        ]
+        assert sorted(set(results)) == [
+            (datetime(2012, 6, 1), timedelta(180)),
+            (datetime(2013, 6, 1), timedelta(180)),
+        ]
+
+        # 8. that the right number of individual importances are present
+        individual_importances = [row for row in db_engine.execute('''
+            select * from results.individual_importances
+            join results.models using (model_id)
+        ''')]
+        assert len(individual_importances) == num_predictions * 2  # only 2 features

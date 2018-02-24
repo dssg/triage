@@ -173,6 +173,52 @@ def test_model_trainer():
             assert model_ids == \
                 sorted([model_id for model_id in new_model_ids])
 
+def test_baseline_exception_handling():
+    grid_config = {
+        'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature': {
+            'feature': ['feature_one', 'feature_three']
+        }
+    }
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        project_path = 'econ-dev/inspections'
+        model_storage_engine = S3ModelStorageEngine(project_path)
+        ensure_db(engine)
+        with mock_s3():
+            s3_conn = boto3.resource('s3')
+            s3_conn.create_bucket(Bucket='econ-dev')
+            trainer = ModelTrainer(
+                project_path='econ-dev/inspections',
+                experiment_hash=None,
+                model_storage_engine = model_storage_engine,
+                db_engine=engine,
+                model_group_keys=['label_name', 'label_timespan']
+            )
+
+            matrix = pandas.DataFrame.from_dict({
+                'entity_id': [1, 2],
+                'feature_one': [3, 4],
+                'feature_two': [5, 6],
+                'label': ['good', 'bad']
+            })
+            train_tasks = trainer.generate_train_tasks(
+                grid_config,
+                dict(),
+                InMemoryMatrixStore(matrix, {
+                    'label_timespan': '1d',
+                    'end_time': datetime.datetime.now(),
+                    'feature_start_time': datetime.date(2012, 12, 20),
+                    'label_name': 'label',
+                    'metta-uuid': '1234',
+                    'feature_names': ['ft1', 'ft2'],
+                    'indices': ['entity_id'],
+                })
+            )
+            model_ids = []
+            for train_task in train_tasks:
+                model_ids.append(trainer.process_train_task(**train_task))
+            assert model_ids == [1, None]
+
 
 def test_n_jobs_not_new_model():
     grid_config = {

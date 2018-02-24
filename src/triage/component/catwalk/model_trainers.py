@@ -10,6 +10,7 @@ from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, FeatureImportance
+from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 from .feature_importances import get_feature_importances
 from .utils import (
@@ -426,14 +427,20 @@ class ModelTrainer(object):
 
         logging.info(f"Training {class_path} with parameters {parameters}"
                      f"(reason to train: {reason})")
-        model_id = self._train_and_store_model(
-            matrix_store,
-            class_path,
-            parameters,
-            model_hash,
-            model_store,
-            misc_db_parameters
-        )
+        try:
+            model_id = self._train_and_store_model(
+                matrix_store,
+                class_path,
+                parameters,
+                model_hash,
+                model_store,
+                misc_db_parameters
+            )
+        except BaselineFeatureNotInMatrix:
+            logging.warning(
+                "Tried to train baseline model without required feature in matrix. Skipping."
+            )
+            model_id = None
         return model_id
 
     def generate_train_tasks(
