@@ -265,18 +265,30 @@ def test_and_evaluate(
             evaluator = evaluator_factory(db_engine=db_engine)
             individual_importance = indiv_importance_factory(db_engine=db_engine)
 
+            # Predictions for the testing data
             predictions_proba = predictor.predict(
                 model_id,
                 test_store,
                 misc_db_parameters=dict(),
                 train_matrix_columns=train_matrix_columns
             )
+
+            # Predictions for the training data
+            predictions_proba_train = predictor.predict(
+                model_id,
+                train_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns
+            )
+
             logging.info('Generating individual importances for model id %s', model_id)
             individual_importance.calculate_and_save_all_methods_and_dates(
                 model_id,
                 test_store
             )
             logging.info('Generating evaluations for model id %s', model_id)
+
+            # Calls evaluate once for the testing metrics
             evaluator.evaluate(
                 predictions_proba=predictions_proba,
                 labels=test_store.labels(),
@@ -284,7 +296,20 @@ def test_and_evaluate(
                 # for evaluation range, using first to last as of time:
                 evaluation_start_time=split_def['first_as_of_time'],
                 evaluation_end_time=split_def['last_as_of_time'],
-                as_of_date_frequency=split_def['test_as_of_date_frequency']
+                as_of_date_frequency=split_def['test_as_of_date_frequency'],
+                test_or_train="Test"
+            )
+
+            #Calls again for the training metrics
+            evaluator.evaluate(
+                predictions_proba=predictions_proba_train,
+                labels=train_store.labels(),
+                model_id=model_id,
+                # for evaluation range, using first to last as of time:
+                evaluation_start_time=split_def['first_as_of_time'],
+                evaluation_end_time=split_def['last_as_of_time'],
+                as_of_date_frequency=split_def['test_as_of_date_frequency'],
+                test_or_train="Train"
             )
         return True
     except Exception:

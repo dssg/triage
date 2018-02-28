@@ -177,5 +177,6 @@ class Evaluation(Base):
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
+    test_or_train = Column(String, primary_key=True)
 
     model_rel = relationship('Model')

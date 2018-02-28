@@ -57,7 +57,7 @@ class ModelEvaluator(object):
         'fpr@': metrics.fpr,
     }
 
-    def __init__(self, metric_groups, db_engine, sort_seed=None, custom_metrics=None):
+    def __init__(self, metric_groups, training_metric_groups, db_engine, sort_seed=None, custom_metrics=None):
         """
         Args:
             metric_groups (list) A list of groups of metric/configurations
@@ -81,7 +81,8 @@ class ModelEvaluator(object):
                     'metrics': ['fbeta@'],
                     'parameters': [{'beta': 0.75}, {'beta': 1.25}]
                 }]
-
+            training_metric_groups (list) metrics to be calculated on training set,
+                in the same form as metric_groups
             db_engine (sqlalchemy.engine)
             custom_metrics (dict) Functions to generate metrics
                 not available by default
@@ -90,6 +91,7 @@ class ModelEvaluator(object):
                 and return a numeric score
         """
         self.metric_groups = metric_groups
+        self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
         self.sort_seed = sort_seed or int(time.time())
         if custom_metrics:
@@ -118,6 +120,7 @@ class ModelEvaluator(object):
         predictions_proba,
         predictions_binary,
         labels,
+        test_or_train
     ):
         """Generate evaluations based on config and create ORM objects to hold them
 
@@ -130,6 +133,7 @@ class ModelEvaluator(object):
             predictions_proba (list) Probability predictions
             predictions_binary (list) Binary predictions
             labels (list) True labels
+            test_or_train (string) indicates whether the value is a for testing or training metric
 
         Returns: (list) results_schema.Evaluation objects
         Raises: UnknownMetricError if a given metric is not present in
@@ -173,6 +177,7 @@ class ModelEvaluator(object):
                         num_labeled_above_threshold=num_labeled_above_threshold,
                         num_positive_labels=num_positive_labels,
                         sort_seed=self.sort_seed
+                        test_or_train=test_or_train
                     ))
             else:
                 raise metrics.UnknownMetricError()
@@ -185,7 +190,8 @@ class ModelEvaluator(object):
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        as_of_date_frequency
+        as_of_date_frequency,
+        test_or_train="Test"
     ):
         """Evaluate a model based on predictions, and save the results
 
@@ -197,6 +203,7 @@ class ModelEvaluator(object):
                 first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             as_of_date_frequency (string) How frequently predictions were generated
+            test_or_train (string) indicates whether the value is a for testing or training metric
         """
         logging.info(
             'Generating evaluations for model id %s, evaluation range %s-%s, '
@@ -214,7 +221,15 @@ class ModelEvaluator(object):
         labels_sorted = numpy.array(labels_sorted)
 
         evaluations = []
-        for group in self.metric_groups:
+        if train_or_test.lower() == "train":
+            metrics_groups_to_compute = self.training_metric_groups
+        elif train_or_test.lower() == "test:
+            metrics_groups_to_compute = self.metric_groups
+        else:
+            raise ValueError("metric set {} unrecognized. Please select 'Train' or 'Test'".format(train_or_test))
+
+
+        for group in metrics_groups_to_compute:
             logging.info('Creating evaluations for metric group %s', group)
             parameters = group.get('parameters', [{}])
             if 'thresholds' not in group:
@@ -231,6 +246,7 @@ class ModelEvaluator(object):
                         unit='percentile'
                     ),
                     labels_sorted.tolist(),
+                    test_or_train
                 )
 
             for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
@@ -250,6 +266,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
+                    test_or_train
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
@@ -269,6 +286,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
+                    test_or_train
                 )
 
         logging.info('Writing metrics to db')

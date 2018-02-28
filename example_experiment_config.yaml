@@ -3,7 +3,7 @@
 # The experiment configuration changes from time to time, and we upgrade the
 # triage.experiments.CONFIG_VERSION variable whenever drastic changes that break
 # old configuration files are released. Be sure to assign the config version
-# that matches the triage.experiments.CONFIG_VERSION in the triage release 
+# that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
 config_version: 'v3'
 
@@ -53,22 +53,22 @@ events_table: 'events'
 # Rules specifying how to handle imputation of null values must be explicitly
 # defined in your config file. These can be specified in two places: either
 # within each feature or overall for each type of feature (aggregates_imputation,
-# categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for 
+# categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for
 # each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
 # can be specified with `all`. Aggregation function-specific rules will take
-# precedence over the `all` rule and feature-specific rules will take 
+# precedence over the `all` rule and feature-specific rules will take
 # precedence over the higher-level rules. Several examples are provided below.
 #
 # Available Imputation Rules:
-#   * mean: The average value of the feature (for SpacetimeAggregation the 
+#   * mean: The average value of the feature (for SpacetimeAggregation the
 #           mean is taken within-date).
 #   * constant: Fill with a constant value from a required `value` parameter.
 #   * zero: Fill with zero.
-#   * null_category: Only available for categorical features. Just flag null 
-#                    values with the null category column. 
-#   * binary_mode: Only available for aggregate column types. Takes the modal 
+#   * null_category: Only available for categorical features. Just flag null
+#                    values with the null category column.
+#   * binary_mode: Only available for aggregate column types. Takes the modal
 #                  value for a binary feature.
-#   * error: Raise an exception if any null values are encountered for this 
+#   * error: Raise an exception if any null values are encountered for this
 #            feature.
 feature_aggregations:
     -
@@ -85,7 +85,7 @@ feature_aggregations:
 
         # top-level imputation rules that will apply to all aggregates functions
         # can also specify categoricals_imputation or array_categoricals_imputation
-        # 
+        #
         # You must specified at least one of the top-level or feature-level imputation
         # to cover ever feature being defined.
         aggregates_imputation:
@@ -122,7 +122,7 @@ feature_aggregations:
                 metrics:
                     - 'count'
                     - 'sum'
-            - 
+            -
                 # since we're specifying `aggregates_imputation` above,
                 # a feature-specific imputation rule can be omitted
                 quantity: 'some_flag'
@@ -220,7 +220,7 @@ user_metadata:
 # In other words, you will probably want to define model groups by any  parameters
 # that distinguish models *other than the beginning end dates of their data.*
 # By default, the classifier module name, hyperparameters, and feature names are used.
-# 
+#
 #
 # model_group_keys defines a list of *additional* matrix metadata keys that
 # should be considered when creating a model group. For example, if the models are
@@ -307,6 +307,9 @@ scoring:
                     beta: 0.75
                 -
                     beta: 1.25
+      training_metric_groups:
+        -
+            metrics: [accuracy]
 
 
 # INDIVIDUAL IMPORTANCES

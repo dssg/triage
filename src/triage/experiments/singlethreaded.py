@@ -63,9 +63,19 @@ class SingleThreadedExperiment(ExperimentBase):
                     continue
                 for model_id in model_ids:
                     logging.info('Testing model id %s', model_id)
+
+                    #First generate predictions for the testing data
                     predictions_proba = self.predictor.predict(
                         model_id,
                         test_store,
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=train_store.columns(),
+                    )
+
+                    #Next, generate predictions for the training data for the same time period
+                    predictions_proba_train = self.predictor.predict(
+                        model_id,
+                        train_store,
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
                     )
@@ -75,7 +85,7 @@ class SingleThreadedExperiment(ExperimentBase):
                             model_id,
                             test_store
                         )
-
+                    # Calls evaluate once for the testing metrics
                     self.evaluator.evaluate(
                         predictions_proba=predictions_proba,
                         labels=test_store.labels(),
@@ -83,5 +93,16 @@ class SingleThreadedExperiment(ExperimentBase):
                         # for evaluation range, using first to last as of time:
                         evaluation_start_time=split_def['first_as_of_time'],
                         evaluation_end_time=split_def['last_as_of_time'],
-                        as_of_date_frequency=split_def['test_as_of_date_frequency']
+                        as_of_date_frequency=split_def['test_as_of_date_frequency'],
+                        test_or_train="Test"
                     )
+                    #Calls again for the training metrics
+                    self.evaluator.evaluate(
+                        predictions_proba=predictions_proba_train,
+                        labels=train_store.labels(),
+                        model_id=model_id,
+                        # for evaluation range, using first to last as of time:
+                        evaluation_start_time=split_def['first_as_of_time'],
+                        evaluation_end_time=split_def['last_as_of_time'],
+                        as_of_date_frequency=split_def['test_as_of_date_frequency'],
+                        test_or_train="Train"
