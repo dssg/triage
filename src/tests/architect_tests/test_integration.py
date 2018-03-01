@@ -15,10 +15,12 @@ from triage.component.architect.features import (
     FeatureGroupCreator,
     FeatureGroupMixer,
 )
-from triage.component.architect.label_generators import InspectionsLabelGenerator
+from triage.component.architect.label_generators import LabelGenerator
 from triage.component.architect.state_table_generators import StateTableGeneratorFromDense
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import HighMemoryCSVBuilder
+
+from tests.utils import sample_config
 
 
 def populate_source_data(db_engine):
@@ -188,9 +190,9 @@ def basic_integration_test(
                 dense_state_table='states',
             )
 
-            label_generator = InspectionsLabelGenerator(
+            label_generator = LabelGenerator(
                 db_engine=db_engine,
-                events_table='events'
+                query=sample_config()['label_config']['query']
             )
 
             feature_generator = FeatureGenerator(

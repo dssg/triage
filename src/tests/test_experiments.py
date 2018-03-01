@@ -258,33 +258,6 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
 
 
 @parametrize_experiment_classes
-def test_label_generation_query(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        config = sample_config()
-        query = '''
-        select
-        events.entity_id,
-        bool_or(outcome::bool)::integer as outcome
-        from events
-        where '{as_of_date}' <= outcome_date
-            and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
-            group by entity_id
-        '''
-        config['label_config'] = {'query': query}
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=config,
-                db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir, 'inspections'),
-            )
-            assert experiment.label_generator.__class__.__name__ == 'QueryBinaryLabelGenerator'
-            assert experiment.label_generator.query == query
-
-
-@parametrize_experiment_classes
 def test_custom_label_name(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())

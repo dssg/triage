@@ -13,7 +13,6 @@ from triage.util.conf import convert_str_to_relativedelta
 from triage.validation_primitives import (
     table_should_have_data,
     column_should_be_intlike,
-    column_should_be_booleanlike,
     column_should_be_stringlike,
     column_should_be_timelike,
 )
@@ -258,16 +257,6 @@ class FeatureAggregationsValidator(Validator):
 
 
 class LabelConfigValidator(Validator):
-    def _validate_inspection_outcomes(self, inspection_outcomes_table):
-        if not inspection_outcomes_table:
-            raise ValueError(dedent('''Section: label_config -
-            inspection_outcomes_table key sent with no value. If you wish you use an
-            inspection outcomes table to generate labels, you must pass a value.'''))
-        table_should_have_data(inspection_outcomes_table, self.db_engine)
-        column_should_be_intlike(inspection_outcomes_table, 'entity_id', self.db_engine)
-        column_should_be_timelike(inspection_outcomes_table, 'outcome_date', self.db_engine)
-        column_should_be_booleanlike(inspection_outcomes_table, 'outcome', self.db_engine)
-
     def _validate_query(self, query):
         if '{as_of_date}' not in query:
             raise ValueError(dedent('''Section: label_config -
@@ -278,8 +267,8 @@ class LabelConfigValidator(Validator):
             If 'query' is used as label_config,
             {label_timespan} must be present'''))
         bound_query = query\
-            .replace('{as_of_date}', '2016-01-01::timestamp')\
-            .replace('{label_timespan}', '6month::interval')
+            .replace('{as_of_date}', '2016-01-01')\
+            .replace('{label_timespan}', '6month')
         conn = self.db_engine.connect()
         logging.info('Validating label query via EXPLAIN')
         try:
@@ -290,15 +279,25 @@ class LabelConfigValidator(Validator):
                 query: "{}"
                 Full error: {}'''.format(query, e)))
 
+    def _validate_include_missing_labels_in_train_as(self, missing_label_flag):
+        if missing_label_flag not in set([None, True, False]):
+            raise ValueError(dedent('''Section: label_config -
+            The value for 'include_missing_labels_in_train_as', {}, is invalid.
+            The key must be either absent, or a boolean value True or False
+            Triage only supports binary labels at this time.'''.format(missing_label_flag)))
+
     def run(self, label_config):
         if not label_config:
             raise ValueError(dedent('''Section: label_config -
             Section not found. You must define a label config.'''))
 
-        if 'inspection_outcomes_table' in label_config:
-            self._validate_inspection_outcomes(label_config['inspection_outcomes_table'])
-        elif 'query' in label_config:
-            self._validate_query(label_config['query'])
+        if 'query' not in label_config:
+            raise ValueError(dedent('''Section: label_config -
+            key 'query' not found. You must define a label query.'''))
+        self._validate_query(label_config['query'])
+        self._validate_include_missing_labels_in_train_as(
+            label_config.get('include_missing_labels_in_train_as', None)
+        )
 
 
 class CohortConfigValidator(Validator):

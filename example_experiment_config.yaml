@@ -28,26 +28,58 @@ temporal_config:
     training_label_timespans: ['1month'] # time period across which outcomes are labeled in train matrices
     test_label_timespans: ['7day'] # time period across which outcomes are labeled in test matrices
 
+
+# COHORT CONFIG
+# To define what entities make it into different matrices, there are three options (only choose one).
+#
+# 1. Pass an entities table. All distinct entities present in this table (the 'entity_id' column) will be included in all matrices. Other columns will be ignored
+#
+# 2. Pass a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs.
+#
+# 3. Pass a dense states table, and information about which state filters to use in this experiment
+#
+#   a. a dense state table that defines when entities were in specific states
+#       should have columns entity_id/state/start time/end time
+#       Note that the time columns are timestamps, not dates. So if you would like
+#       to signify that an entity is in a state for an entire day, make the start
+#       the beginning of the day and the end a day later.
+#   b. a list of state filtering SQL clauses to iterate through. Assuming the
+#       states are boolean columns (the experiment will convert the one you pass in
+#       to this format), write a SQL expression for each state
+#       configuration you want, ie '(permitted OR suspended) AND licensed'
+#
+#
+# Regardless of which method you choose, you may enter a 'name' for your configuration.
+# This will be included in the metadata for each matrix and used to group models
+# If you don't pass one, the string 'default' will be used.
+#
+cohort_config:
+#   entities_table: 'events'
+#   dense_states:
+#        table_name: 'states'
+#        state_filters:
+#        - 'state_one AND state_two'
+#        - '(state_one OR state_two) AND state_three'
+    query: "select entity_id from events where outcome_date < '{as_of_date}'"
+    name: 'past_events'
+
+
 # LABEL GENERATION
-# There are two ways to configure label generation, choose only one:
+# Labels are configured by passing a query with placeholders for the 'as_of_date' and 'label_timespan'.
 #
-# 1. Pass a table of inspection outcomes
-#   An events table is expected, with the columns:
-#       entity_id - an identifier for which the labels are applied to
-#       outcome_date - The date at which some outcome was known
-#       outcome - A boolean outcome
-#   The label for any label timespan will be True if *any* inspection outcomes
-#   for that entity in that timespan are True.
+# The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
+# The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
+# reproduces the inspection outcome boolean-or logic:
 #
-# 2. Pass a query that returns two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
-#   The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
-#   reproduces the inspection outcome boolean-or logic:
+# In addition, you can configure what label is given to entities that are in the matrix
+#   (see 'cohort_config' section) but that do not show up in this label query.
+# By default, these will show up as missing/null.
+# However, passing the key 'include_missing_labels_in_train_as' allows you to pick True or False.
 #
 # In addition to these configuration options, you can pass a name to apply to the label configuration
 # that will be present in matrix metadata for each matrix created by this experiment,
 # under the 'label_name' key. The default label_name is 'outcome'.
 label_config:
-    inspection_outcomes_table: 'events'
     query: |
         select
         events.entity_id,
@@ -56,6 +88,7 @@ label_config:
         where '{as_of_date}' <= outcome_date
             and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
             group by entity_id
+    #include_missing_labels_in_train_as: False
     #name: 'inspections'
 
 
@@ -203,39 +236,6 @@ feature_group_definition:
 # available: all, leave-one-out, leave-one-in
 feature_group_strategies: ['all']
 
-# COHORT CONFIG
-# To define what entities make it into different matrices, there are three options (only choose one).
-#
-# 1. Pass an entities table. All distinct entities present in this table (the 'entity_id' column) will be included in all matrices. Other columns will be ignored
-#
-# 2. Pass a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs.
-#
-# 3. Pass a dense states table, and information about which state filters to use in this experiment
-#
-#   a. a dense state table that defines when entities were in specific states
-#       should have columns entity_id/state/start time/end time
-#       Note that the time columns are timestamps, not dates. So if you would like
-#       to signify that an entity is in a state for an entire day, make the start
-#       the beginning of the day and the end a day later.
-#   b. a list of state filtering SQL clauses to iterate through. Assuming the
-#       states are boolean columns (the experiment will convert the one you pass in
-#       to this format), write a SQL expression for each state
-#       configuration you want, ie '(permitted OR suspended) AND licensed'
-#
-#
-# Regardless of which method you choose, you may enter a 'name' for your configuration.
-# This will be included in the metadata for each matrix and used to group models
-# If you don't pass one, the string 'default' will be used.
-l#
-cohort_config:
-#   entities_table: 'events'
-#   dense_states:
-#        table_name: 'states'
-#        state_filters:
-#        - 'state_one AND state_two'
-#        - '(state_one OR state_two) AND state_three'
-    query: "select entity_id from events where outcome_date < '{as_of_date}'"
-    name: 'past_events'
 
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the

@@ -7,11 +7,7 @@ from functools import partial
 from descriptors import cachedproperty
 from timeout import timeout
 
-from triage.component.architect.label_generators import (
-    InspectionsLabelGenerator,
-    QueryBinaryLabelGenerator,
-    DEFAULT_LABEL_NAME
-)
+from triage.component.architect.label_generators import LabelGenerator, DEFAULT_LABEL_NAME
 
 from triage.component.architect.features import (
     FeatureGenerator,
@@ -100,22 +96,6 @@ class ExperimentBase(ABC):
                 .format(config_version, CONFIG_VERSION)
             )
 
-    def initialize_label_generator_factory(self, label_config):
-        if 'inspection_outcomes_table' in label_config:
-            return partial(
-                InspectionsLabelGenerator,
-                label_name=label_config.get('name', None),
-                events_table=label_config['inspection_outcomes_table']
-            )
-        elif 'query' in label_config:
-            return partial(
-                QueryBinaryLabelGenerator,
-                label_name=label_config.get('name', None),
-                query=label_config['query']
-            )
-        else:
-            raise ValueError('Label config missing or unrecognized')
-
     def initialize_factories(self):
         split_config = self.config['temporal_config']
 
@@ -156,8 +136,10 @@ class ExperimentBase(ABC):
         else:
             raise ValueError('Cohort config missing or unrecognized')
 
-        self.label_generator_factory = self.initialize_label_generator_factory(
-            self.config['label_config']
+        self.label_generator_factory = partial(
+            LabelGenerator,
+            label_name=self.config['label_config'].get('name', None),
+            query=self.config['label_config']['query']
         )
 
         self.feature_dictionary_creator_factory = partial(
@@ -207,6 +189,8 @@ class ExperimentBase(ABC):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
+            include_missing_labels_in_train_as=self.config['label_config']
+            .get('include_missing_labels_in_train_as', None),
             replace=self.replace
         )
 

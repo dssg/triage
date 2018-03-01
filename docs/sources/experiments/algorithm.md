@@ -22,13 +22,27 @@ With all of the `as_of_times` for this Experiment now computed, it's now possibl
 
 ### Labels
 
-The Experiment computes labels from one of two options:
+The Experiment populates a 'labels' table using the following input:
+1. A query, given by the user as configuration, that generates entity_ids and outcomes for a given as_of_date and label_timespan
 
-1. If an inspection outcomes table is given, it converts this to binary labels assuming that, if any event outcome within a given `label_timespan` after a given `as_of_time` is true, that `as_of_time` will be assigned it a true label.
+2. Each as_of_date and label_timespan defined in temporal config
 
-2. If a query is given, it is run for each `as_of_time` and `label_timespan` combination, and the returned entities and outcomes for that combination are saved.
+For instance, an inspections-style query (for the given timespan, return the entity and outcome of any matching inspections) would look like:
 
-This binary labels table is scoped to the entire Experiment, so all `as_of_time` (computed in step 1) and `label_timespan` (taken straight from `temporal_config`) combinations are present. Additionally, the 'label_name' and 'label_type' are also recorded with each row in the table. Individual matrices will just select the rows they need from this table and bundle the data in their metadata file.
+```
+	select
+	events.entity_id,
+	bool_or(outcome::bool)::integer as outcome
+	from events
+	where '{as_of_date}' <= outcome_date
+		and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+		group by entity_id
+```
+
+This binary labels table is scoped to the entire Experiment, so all `as_of_time` (computed in step 1) and `label_timespan` (taken straight from `temporal_config`) combinations are present. Additionally, the 'label_name' and 'label_type' are also recorded with each row in the table.
+
+At this point, the 'labels' table may not have entries for all entities and dates that need to be in a given matrix. How these rows have their labels represented is up to the configured `include_missing_labels_in_train_as` value in the experiment. This value is not processed when we generate the labels table, but later on when the matrix is built (see 'Retrieving Data and Saving Completed Matrix')
+
 
 ### State Table
 
@@ -124,11 +138,19 @@ As an example, if the experiment defines 3 train/test splits (one test per train
 
 How do we get the data for an individual matrix out of the database?
 
-1. Create an entity-date table for this specific matrix. If it is a test matrix, the table is made up of all valid entity dates. These dates come from the entity-date-state table for the experiment, filtered down to the entity-date pairs that match both *the state filter and the list of as-of-dates for this matrix*. If it is a train matrix, the table is made up of all valid *and labeled* entity dates. The same valid filter used in test matrices applies, but it also joins with the labels table for this experiment on the label name, label type, and label timespan to filter out unlabeled examples.
+1. Create an entity-date table for this specific matrix. There is some logic applied to decide what rows show up. There are two possible sets of rows that could show up.
+
+- `all valid entity dates`. These dates come from the entity-date-state table for the experiment (populated using the rules defined in the 'cohort_config'), filtered down to the entity-date pairs that match both *the state filter and the list of as-of-dates for this matrix*. 
+
+- `all labeled entity dates`. These dates consist of all the valid entity dates from above, that also have an entry in the labels table.
+
+If the matrix is a test matrix, all valid entity dates will be present.
+
+If the matrix is a train matrix, whether or not valid but unlabeled examples show up is decided by the `include_missing_labels_in_train_as` configuration value. If it is present in any form, these labels will be in the matrix. Otherwise, they will be filtered out.
 
 2. Write features data from tables to disk in CSV format using a COPY command, table by table. Each table is joined with the matrix-specific entity-date table to only include the desired rows.
 
-3. Write labels data to disk in CSV format using a COPY command. It is joined with the matrix-specific entity-date table to only include the desired rows.
+3. Write labels data to disk in CSV format using a COPY command. These labels will consist of the rows in the matrix-specific entity-date table left joined to the labels table. Rows not present in the labels table will have their label filled in (either True or False) based on the value of the `include_missing_labels_in_train_as` configuration key.
 
 4. Merge the features and labels CSV files horizontally, in pandas. They are expected to be of the same shape, which is enforced by the entity-date table. The resulting matrix is indexed on `entity_id` and `as_of_date`, and then saved to disk (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information. along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and the metadata is saved in a YAML file with the same hash and directory.
 
