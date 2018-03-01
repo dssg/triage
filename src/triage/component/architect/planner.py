@@ -4,7 +4,7 @@ import logging
 
 from triage.component import metta
 
-from . import builders, utils, state_table_generators
+from . import utils, state_table_generators
 
 
 class Planner(object):
@@ -15,33 +15,17 @@ class Planner(object):
         label_names,
         label_types,
         states,
-        db_config,
         matrix_directory,
         user_metadata,
-        engine,
-        builder_class=builders.HighMemoryCSVBuilder,
         cohort_name='default',
-        replace=True
     ):
         self.feature_start_time = feature_start_time  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
         self.cohort_name = cohort_name
         self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
-        self.db_config = db_config
         self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata
-        self.engine = engine
-        self.replace = replace
-        self.builder = builder_class(
-            db_config,
-            matrix_directory,
-            engine,
-            replace
-        )
-
-    def validate(self):
-        self.builder.validate()
 
     def _generate_build_task(
         self,
@@ -220,10 +204,3 @@ class Planner(object):
             len(build_tasks.keys())
         )
         return updated_definitions, build_tasks
-
-    def build_all_matrices(self, *args, **kwargs):
-        self.builder.build_all_matrices(*args, **kwargs)
-
-    def build_matrix(self, *args, **kwargs):
-        logging.info(f"Building matrix with {args}, {kwargs}")
-        self.builder.build_matrix(*args, **kwargs)

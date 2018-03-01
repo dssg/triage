@@ -18,6 +18,7 @@ from triage.component.architect.features import (
 from triage.component.architect.label_generators import InspectionsLabelGenerator
 from triage.component.architect.state_table_generators import StateTableGeneratorFromDense
 from triage.component.architect.planner import Planner
+from triage.component.architect.builders import HighMemoryCSVBuilder
 
 
 def populate_source_data(db_engine):
@@ -209,10 +210,16 @@ def basic_integration_test(
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
 
             planner = Planner(
-                engine=db_engine,
                 feature_start_time=datetime(2010, 1, 1),
                 label_names=['outcome'],
                 label_types=['binary'],
+                matrix_directory=os.path.join(temp_dir, 'matrices'),
+                states=state_filters,
+                user_metadata={},
+            )
+
+            builder = HighMemoryCSVBuilder(
+                engine=db_engine,
                 db_config={
                     'features_schema_name': 'features',
                     'labels_schema_name': 'public',
@@ -220,8 +227,6 @@ def basic_integration_test(
                     'sparse_state_table_name': 'tmp_sparse_states_abcd',
                 },
                 matrix_directory=os.path.join(temp_dir, 'matrices'),
-                states=state_filters,
-                user_metadata={},
                 replace=True
             )
 
@@ -318,7 +323,7 @@ def basic_integration_test(
                 )
 
             # go and build the matrices
-            planner.build_all_matrices(matrix_build_tasks)
+            builder.build_all_matrices(matrix_build_tasks)
 
             # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')

@@ -14,7 +14,7 @@ class SingleThreadedExperiment(ExperimentBase):
         logging.info('Creating feature imputation tables')
         self.feature_generator.process_table_tasks(self.feature_imputation_table_tasks)
         logging.info('Building all matrices')
-        self.planner.build_all_matrices(self.matrix_build_tasks)
+        self.matrix_builder.build_all_matrices(self.matrix_build_tasks)
 
     def catwalk(self):
         for split_num, split in enumerate(self.full_matrix_definitions):
