@@ -223,7 +223,7 @@ class ModelEvaluator(object):
         evaluations = []
         if train_or_test.lower() == "train":
             metrics_groups_to_compute = self.training_metric_groups
-        elif train_or_test.lower() == "test:
+        elif train_or_test.lower() == "test":
             metrics_groups_to_compute = self.metric_groups
         else:
             raise ValueError("metric set {} unrecognized. Please select 'Train' or 'Test'".format(train_or_test))
