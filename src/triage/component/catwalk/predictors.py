@@ -221,7 +221,7 @@ class Predictor(object):
             session.commit()
             session.close()
 
-    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
+    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns, write_data=True):
         """Generate predictions and store them in the database
 
         Args:
@@ -232,6 +232,8 @@ class Predictor(object):
                 Prediction object in the results schema
             train_matrix_columns (list): The order of columns that the model
                 was trained on
+            write_data (bool): the write the predictions to the predictions table.
+                False for predictions on training data.
 
         Returns:
             (numpy.Array) the generated prediction values
@@ -269,18 +271,19 @@ class Predictor(object):
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
-
         logging.info('Generated predictions for model %s, matrix %s', model_id, matrix_store.uuid)
-        self._write_to_db(
-            model_id,
-            matrix_store,
-            predictions_proba[:, 1],
-            labels,
-            misc_db_parameters
-        )
-        logging.info(
-            'Wrote predictions for model %s, matrix %s to database',
-            model_id,
-            matrix_store.uuid
-        )
+
+        if write_data:
+            self._write_to_db(
+                model_id,
+                matrix_store,
+                predictions_proba[:, 1],
+                labels,
+                misc_db_parameters
+            )
+            logging.info(
+                'Wrote predictions for model %s, matrix %s to database',
+                model_id,
+                matrix_store.uuid
+            )
         return predictions_proba[:, 1]

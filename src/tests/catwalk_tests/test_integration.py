@@ -86,6 +86,7 @@ def test_integration():
             )
             model_evaluator = ModelEvaluator(
                 [{'metrics': ['precision@'], 'thresholds': {'top_n': [5]}}],
+                [{}],
                 db_engine
             )
 

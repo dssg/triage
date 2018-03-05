@@ -70,6 +70,7 @@ class SingleThreadedExperiment(ExperimentBase):
                         test_store,
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
+                        write_data=True
                     )
 
                     #Next, generate predictions for the training data for the same time period
@@ -78,6 +79,7 @@ class SingleThreadedExperiment(ExperimentBase):
                         train_store,
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
+                        write_data=False
                     )
 
                     self.individual_importance_calculator\
@@ -94,7 +96,7 @@ class SingleThreadedExperiment(ExperimentBase):
                         evaluation_start_time=split_def['first_as_of_time'],
                         evaluation_end_time=split_def['last_as_of_time'],
                         as_of_date_frequency=split_def['test_as_of_date_frequency'],
-                        test_or_train="Test"
+                        matrix_type="Test"
                     )
                     #Calls again for the training metrics
                     self.evaluator.evaluate(
@@ -105,4 +107,5 @@ class SingleThreadedExperiment(ExperimentBase):
                         evaluation_start_time=split_def['first_as_of_time'],
                         evaluation_end_time=split_def['last_as_of_time'],
                         as_of_date_frequency=split_def['test_as_of_date_frequency'],
-                        test_or_train="Train"
+                        matrix_type="Train"
+                    )

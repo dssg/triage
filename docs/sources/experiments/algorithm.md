@@ -62,7 +62,7 @@ GROUP BY {group}
 ```
 
 #### Writing Group-wide Feature Tables
-For each `as_of_time`, the results from the generated query are written to a table whose name is prefixed with the `prefix`, and suffixed with the `group`. For instance, if the configuration specifies zipcode-level aggregates and entity-level aggregates, there will be a table for each, keyed on its group plus the as_of_date. 
+For each `as_of_time`, the results from the generated query are written to a table whose name is prefixed with the `prefix`, and suffixed with the `group`. For instance, if the configuration specifies zipcode-level aggregates and entity-level aggregates, there will be a table for each, keyed on its group plus the as_of_date.
 
 #### Merging into Aggregation-wide Feature Tables
 Each generated group table is combined into one representing the whole aggregation with a left join. Given that the groups originally came from the same table (the `from_obj` of the aggregation) and therefore we know the zipcode for each entity, what we do now is create a table that would be keyed on entity and as_of_date, and contain all entity-level and zipcode-level aggregates from both tables. This aggregation-level table represents all of the features in the aggregation, pre-imputation. Its output location is generally `{prefix}_aggregation`
@@ -97,7 +97,7 @@ How do we arrive at the feature lists? There are two pieces of config that are u
 #### Feature Group Definition
 Feature groups, at present, can be defined as either a `prefix` (the prefix of the feature name), a `table` (the feature table that the feature resides in), or `all` (all features).  Each argument is passed as a list, and each entry in the list is interpreted as a group. So, a feature group config of `{'table': ['complaints_aggregate_imputed', 'incidents_aggregate_imputed']}` would result in two feature groups: one with all the features in `complaints_aggregate_imputed`, and one with all the features in `incidents_aggregate_imputed`. Note that this requires a bit of knowledge on the user's part of how the feature table names will be constructed.
 
-`prefix` works on the prefix of the feature name as it exists in the database. So this also requires some knowledge of how these get created. The general format is: `{aggregation_prefix}_{group}_{timeperiod}_{quantity}`, so with some knowledge the user can create groups with the aggregation's configured prefix (common), or the aggregations configured prefix + group (in case they want to compare, for instance, zip-code level features versus entity level features). 
+`prefix` works on the prefix of the feature name as it exists in the database. So this also requires some knowledge of how these get created. The general format is: `{aggregation_prefix}_{group}_{timeperiod}_{quantity}`, so with some knowledge the user can create groups with the aggregation's configured prefix (common), or the aggregations configured prefix + group (in case they want to compare, for instance, zip-code level features versus entity level features).
 
 `all`, with a single value of `True`, will include a feature group with all defined features. If no feature group definition is sent, this is the default.
 
@@ -155,7 +155,7 @@ Each trained model is assigned a hash, for the purpose of uniquely defining and 
 #### Global Feature Importance
 The training phase also writes global feature importances to the database, in the `results.feature_importances` table. A few methods are queried to attempt to compute feature importances:
 * The bulk of these are computed using the trained model's `.feature_importances_` attribute, if it exists.
-* For sklearn's `SVC` models with a linear kernel, the model's `.coef_.squeeze()` is used. 
+* For sklearn's `SVC` models with a linear kernel, the model's `.coef_.squeeze()` is used.
 * For sklearn's LogisticRegression models, `np.exp(model.coef_).squeeze()` is used.
 * Otherwise, no feature importances are written.
 
@@ -170,7 +170,9 @@ The trained model's prediction probabilities (`predict_proba()`) are computed an
 Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
 #### Metrics
-Evaluation metrics, such as precision and recall at various thresholds, are written to the `results.evaluations` table. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile. Thresholding is done by sorting the predictions and labels by the row's score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and only considering the first n rows that fall before the configured threshold.
+Evaluation metrics, such as precision and recall at various thresholds, are written to the `results.evaluations` table. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile. Thresholding is done by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
+
+Triage allows for the computation of both testing set and training set evaluation metrics. Specific metrics for each can be specified in the the configuration file. Both types of metrics are stored in the `results.evaluations` table, demarcated by the `matrix_type` field as either 'Test' or 'Train'.
 
 Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
 
@@ -179,4 +181,4 @@ Sometimes test matrices may not have labels for every row, so it's worth mention
 * `num_positive_labels` - The number of positive labels in the test matrix
 
 ### Recap
-At this point, the `results` database schema is fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished. 
+At this point, the `results` database schema is fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.

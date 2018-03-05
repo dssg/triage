@@ -15,7 +15,6 @@ def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
 
     Args:
         test_predictions (list) A list of predictions, sorted by risk desc
-        test_labels (list) A list of labels, sorted by risk desc
         x_value (int) The percentile or absolute value desired
         unit (string, default 'top_n') The subsetting method desired,
             either percentile or top_n
@@ -120,7 +119,7 @@ class ModelEvaluator(object):
         predictions_proba,
         predictions_binary,
         labels,
-        test_or_train
+        matrix_type
     ):
         """Generate evaluations based on config and create ORM objects to hold them
 
@@ -133,7 +132,7 @@ class ModelEvaluator(object):
             predictions_proba (list) Probability predictions
             predictions_binary (list) Binary predictions
             labels (list) True labels
-            test_or_train (string) indicates whether the value is a for testing or training metric
+            matrix_type (string) either "Test" or "Train" for the type of matrix
 
         Returns: (list) results_schema.Evaluation objects
         Raises: UnknownMetricError if a given metric is not present in
@@ -176,8 +175,8 @@ class ModelEvaluator(object):
                         num_labeled_examples=num_labeled_examples,
                         num_labeled_above_threshold=num_labeled_above_threshold,
                         num_positive_labels=num_positive_labels,
-                        sort_seed=self.sort_seed
-                        test_or_train=test_or_train
+                        sort_seed=self.sort_seed,
+                        matrix_type=matrix_type
                     ))
             else:
                 raise metrics.UnknownMetricError()
@@ -191,7 +190,7 @@ class ModelEvaluator(object):
         evaluation_start_time,
         evaluation_end_time,
         as_of_date_frequency,
-        test_or_train="Test"
+        matrix_type="Test"
     ):
         """Evaluate a model based on predictions, and save the results
 
@@ -203,7 +202,7 @@ class ModelEvaluator(object):
                 first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             as_of_date_frequency (string) How frequently predictions were generated
-            test_or_train (string) indicates whether the value is a for testing or training metric
+            matrix_type (string) either "Test" or "Train" for the type of matrix
         """
         logging.info(
             'Generating evaluations for model id %s, evaluation range %s-%s, '
@@ -221,13 +220,12 @@ class ModelEvaluator(object):
         labels_sorted = numpy.array(labels_sorted)
 
         evaluations = []
-        if train_or_test.lower() == "train":
+        if matrix_type.lower() == "train":
             metrics_groups_to_compute = self.training_metric_groups
-        elif train_or_test.lower() == "test":
+        elif matrix_type.lower() == "test":
             metrics_groups_to_compute = self.metric_groups
         else:
-            raise ValueError("metric set {} unrecognized. Please select 'Train' or 'Test'".format(train_or_test))
-
+            raise ValueError("metric set {} unrecognized. Please select 'Train' or 'Test'".format(matrix_type))
 
         for group in metrics_groups_to_compute:
             logging.info('Creating evaluations for metric group %s', group)
@@ -246,7 +244,7 @@ class ModelEvaluator(object):
                         unit='percentile'
                     ),
                     labels_sorted.tolist(),
-                    test_or_train
+                    matrix_type
                 )
 
             for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
@@ -266,7 +264,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
-                    test_or_train
+                    matrix_type
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
@@ -286,7 +284,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
-                    test_or_train
+                    matrix_type
                 )
 
         logging.info('Writing metrics to db')
