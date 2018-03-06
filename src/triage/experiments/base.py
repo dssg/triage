@@ -20,6 +20,7 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
+from triage.component.architect.builders import HighMemoryCSVBuilder
 from triage.component.architect.state_table_generators import (
     StateTableGeneratorFromDense,
     StateTableGeneratorFromEntities,
@@ -186,6 +187,15 @@ class ExperimentBase(ABC):
             feature_start_time=dt_from_str(split_config['feature_start_time']),
             label_names=[self.config.get('label_config', {}).get('name', DEFAULT_LABEL_NAME)],
             label_types=['binary'],
+            matrix_directory=self.matrices_directory,
+            cohort_name=self.config.get('cohort_config', {}).get('name', None),
+            states=self.config.get('cohort_config', {}).get('dense_states', {})
+            .get('state_filters', []),
+            user_metadata=self.config.get('user_metadata', {}),
+        )
+
+        self.matrix_builder_factory = partial(
+            HighMemoryCSVBuilder,
             db_config={
                 'features_schema_name': self.features_schema_name,
                 'labels_schema_name': 'public',
@@ -197,11 +207,6 @@ class ExperimentBase(ABC):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
-            cohort_name=self.config.get('cohort_config', {}).get('name', None),
-            states=self.config.get('cohort_config', {})\
-            .get('dense_states', {})\
-            .get('state_filters', []),
-            user_metadata=self.config.get('user_metadata', {}),
             replace=self.replace
         )
 
@@ -243,7 +248,8 @@ class ExperimentBase(ABC):
             db_engine=self.db_engine)
         self.feature_group_creator = self.feature_group_creator_factory()
         self.feature_group_mixer = self.feature_group_mixer_factory()
-        self.planner = self.planner_factory(engine=self.db_engine)
+        self.planner = self.planner_factory()
+        self.matrix_builder = self.matrix_builder_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
         self.individual_importance_calculator = self.indiv_importance_factory(
