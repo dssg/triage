@@ -115,7 +115,8 @@ class ModelEvaluator(object):
         self,
         threshold_unit,
         threshold_value,
-        parameter_combination
+        parameter_combination,
+        threshold_specified_by_user
     ):
         """Encode the metric parameters and threshold into a short, human-parseable string
 
@@ -125,11 +126,12 @@ class ModelEvaluator(object):
             threshold_unit (string) the type of threshold, either 'percentile' or 'top_n'
             threshold_value (int) the numeric threshold,
             parameter_combination (dict) The non-threshold parameter keys and values used
+                Usually this will be empty, but an example would be {'beta': 0.25}
 
         Returns: (string) A short, human-parseable string
         """
         full_params = parameter_combination.copy()
-        if not (threshold_unit == 'percentile' and threshold_value == 100):
+        if threshold_specified_by_user:
             short_threshold_unit = 'pct' if threshold_unit == 'percentile' else 'abs'
             full_params[short_threshold_unit] = threshold_value
         parameter_string = '/'.join([
@@ -163,6 +165,7 @@ class ModelEvaluator(object):
         labels,
         threshold_unit,
         threshold_value,
+        threshold_specified_by_user=True
     ):
         """Generate evaluations for a given threshold in a metric group,
         and create ORM objects to hold them
@@ -212,7 +215,8 @@ class ModelEvaluator(object):
                 parameter_string = self._build_parameter_string(
                     threshold_unit=threshold_unit,
                     threshold_value=threshold_value,
-                    parameter_combination=parameter_combination
+                    parameter_combination=parameter_combination,
+                    threshold_specified_by_user=threshold_specified_by_user
                 )
 
                 logging.info(
@@ -266,7 +270,8 @@ class ModelEvaluator(object):
             logging.info('Not a thresholded group, generating evaluation based on all predictions')
             evaluations = evaluations + generate_evaluations(
                 threshold_unit='percentile',
-                threshold_value=100
+                threshold_value=100,
+                threshold_specified_by_user=False
             )
 
         for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
@@ -320,7 +325,7 @@ class ModelEvaluator(object):
 
         evaluations = []
         for group in self.metric_groups:
-            evaluations += self._evaluations_for_group(
+            evaluations = evaluations + self._evaluations_for_group(
                 group,
                 predictions_proba_sorted,
                 labels_sorted
