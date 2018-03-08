@@ -6,7 +6,7 @@ python-dateutil
 scipy
 scikit-learn
 tables==3.3.0
-matplotlib
+matplotlib<2.2
 pandas
 boto3
 click
