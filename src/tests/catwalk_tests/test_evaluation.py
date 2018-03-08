@@ -120,6 +120,9 @@ def test_model_scoring_inspections():
         metric_groups = [{
             'metrics': ['precision@', 'recall@', 'fpr@'],
             'thresholds': {'percentiles': [50.0], 'top_n': [3]}
+        }, {
+            # ensure we test a non-thresholded metric as well
+            'metrics': ['accuracy'],
         }]
 
         model_evaluator = ModelEvaluator(metric_groups, db_engine)
@@ -151,7 +154,9 @@ def test_model_scoring_inspections():
         ):
             assert record['num_labeled_examples'] == 4
             assert record['num_positive_labels'] == 2
-            if 'pct' in record['parameter']:
+            if record['parameter'] == '':
+                assert record['num_labeled_above_threshold'] == 4
+            elif 'pct' in record['parameter']:
                 assert record['num_labeled_above_threshold'] == 1
             else:
                 assert record['num_labeled_above_threshold'] == 2
