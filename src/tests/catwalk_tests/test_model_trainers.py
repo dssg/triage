@@ -86,7 +86,17 @@ def test_model_trainer():
             ]
             assert len(records) == 4
 
-            # 3. that all four models are cached
+            # 3. that the model sizes are saved in the table and all are < 1 kB
+            records = [
+                row for row in
+                engine.execute('select model_size from results.models')
+            ]
+            assert len(records) == 4
+            for i in records:
+                size = i[0]
+                assert size < 1
+
+            # 4. that all four models are cached
             model_pickles = [
                 model_storage_engine.get_store(model_hash).load()
                 for model_hash in hashes
@@ -94,7 +104,7 @@ def test_model_trainer():
             assert len(model_pickles) == 4
             assert len([x for x in model_pickles if x is not None]) == 4
 
-            # 4. that their results can have predictions made on it
+            # 5. that their results can have predictions made on it
             test_matrix = pandas.DataFrame.from_dict({
                 'entity_id': [3, 4],
                 'feature_one': [4, 4],
@@ -107,7 +117,7 @@ def test_model_trainer():
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
 
-            # 5. when run again, same models are returned
+            # 6. when run again, same models are returned
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
@@ -119,7 +129,7 @@ def test_model_trainer():
             ]) == 4
             assert model_ids == new_model_ids
 
-            # 6. if replace is set, update non-unique attributes and feature importances
+            # 7. if replace is set, update non-unique attributes and feature importances
             max_batch_run_time = [
                 row[0] for row in
                 engine.execute('select max(batch_run_time) from results.models')
@@ -154,7 +164,7 @@ def test_model_trainer():
             ]
             assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
-            # 7. if the cache is missing but the metadata is still there, reuse the metadata
+            # 8. if the cache is missing but the metadata is still there, reuse the metadata
             for row in engine.execute('select model_hash from results.models'):
                 model_storage_engine.get_store(row[0]).delete()
             new_model_ids = trainer.train_models(
@@ -164,7 +174,7 @@ def test_model_trainer():
             )
             assert model_ids == sorted(new_model_ids)
 
-            # 8. that the generator interface works the same way
+            # 9. that the generator interface works the same way
             new_model_ids = trainer.generate_trained_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),

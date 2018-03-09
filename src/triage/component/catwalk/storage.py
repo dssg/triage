@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import pandas as pd
 import s3fs
+import sys
 import yaml
 
 
@@ -40,6 +41,8 @@ class S3Store(Store):
         s3 = s3fs.S3FileSystem()
         with s3.open(self.path, 'wb') as f:
             joblib.dump(obj, f, compress=True)
+        # Return the file size of the model object in kB
+        return s3.info(self.path)["Size"]/(1024.0)
 
     def load(self):
         s3 = s3fs.S3FileSystem()
@@ -59,6 +62,8 @@ class FSStore(Store):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, 'w+b') as f:
             joblib.dump(obj, f, compress=True)
+        # Return the file size of the model object in kB
+        return os.path.getsize(self.path)/(1024.0)
 
     def load(self):
         with open(self.path, 'rb') as f:
@@ -76,6 +81,8 @@ class MemoryStore(Store):
 
     def write(self, obj):
         self.store = obj
+        # Return the file size of the model object in kB
+        return sys.getsizeof(obj)/(1024.0)
 
     def load(self):
         return self.store

@@ -168,6 +168,7 @@ class ModelEvaluator(object):
                         num_positive_labels,
                         value
                     )
+                    # Most of the information to be written to the database
                     evaluations.append(Evaluation(
                         metric=metric,
                         parameter=parameter_string,

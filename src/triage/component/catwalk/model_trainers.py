@@ -172,6 +172,7 @@ class ModelTrainer(object):
         model_hash,
         trained_model,
         model_group_id,
+        model_size,
         misc_db_parameters
     ):
         """Writes model and feature importance data to a database
@@ -191,6 +192,8 @@ class ModelTrainer(object):
             feature_names (list) feature names in order given to model
             model_hash (string) a unique id for the model
             trained_model (object) a trained model object
+            model_group_id (int) the unique id for the model group
+            model_size (float) the size of the stored model in kB
             misc_db_parameters (dict) params to pass through to the database
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
@@ -207,6 +210,7 @@ class ModelTrainer(object):
                 model_parameters=parameters,
                 model_group_id=model_group_id,
                 experiment_hash=self.experiment_hash,
+                model_size=model_size,
                 **misc_db_parameters
             )
             session = self.sessionmaker()
@@ -268,7 +272,9 @@ class ModelTrainer(object):
             matrix_store.metadata,
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
-        model_store.write(trained_model)
+        #Writing the model to storage, with its size in bytes returned.
+        model_size = model_store.write(trained_model)
+
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
@@ -277,6 +283,7 @@ class ModelTrainer(object):
             model_hash,
             trained_model,
             model_group_id,
+            model_size,
             misc_db_parameters
         )
         logging.info('Wrote model to db: hash %s, got id %s', model_hash, model_id)

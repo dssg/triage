@@ -3,7 +3,9 @@ import os.path
 import alembic.config
 
 from .schema import (
-    Base,
+    Model_metadata_base,
+    Test_results_base,
+    Train_results_base,
     Evaluation,
     Experiment,
     FeatureImportance,

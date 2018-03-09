@@ -22,8 +22,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
 
+# One declarative_base object for each schema created
+# Schema: metadata=MetaData(schema='train_results')
+Base = declarative_base()
+#Test_results_base = declarative_base(metadata=MetaData(schema='test_results'))
+#Train_results_base = declarative_base(metadata=MetaData(schema='train_results'))
 
-Base = declarative_base(metadata=MetaData(schema='results'))
 event.listen(
     Base.metadata,
     'before_create',
@@ -47,6 +51,7 @@ event.listen(
 class Experiment(Base):
 
     __tablename__ = 'experiments'
+    __table_args__ = {"schema": "model_metadata"}
 
     experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
@@ -55,6 +60,7 @@ class Experiment(Base):
 class ModelGroup(Base):
 
     __tablename__ = 'model_groups'
+    __table_args__ = {"schema": "model_metadata"}
 
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
@@ -63,12 +69,46 @@ class ModelGroup(Base):
     model_config = Column(JSONB)
 
 
+class ListPrediction(Base):
+
+    __tablename__ = 'list_predictions'
+    __table_args__ = {"schema": "model_metadata"}
+
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
+    entity_id = Column(BigInteger, primary_key=True)
+    as_of_date = Column(DateTime, primary_key=True)
+    score = Column(Numeric)
+    rank_abs = Column(Integer)
+    rank_pct = Column(Float)
+    matrix_uuid = Column(Text)
+    test_label_timespan = Column(Interval)
+
+    model_rel = relationship('Model')
+
+
+class Matrices(Base):
+
+    __tablename__ = 'matrices'
+    __table_args__ = {"schema": "model_metadata"}
+
+    matrix_id = Column(Integer)
+    matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
+    matrix_type = Column(String) # 'train' or 'test'
+    labeling_window = Column(Interval) #
+    n_examples = Column(Integer)
+    creation_time = Column(DateTime)
+    lookback_duration = Column(Interval)
+    beginning_of_time = Column(DateTime)
+    metadata = Column(JSONB)
+
+
 class Model(Base):
 
     __tablename__ = 'models'
+    __table_args__ = {"schema": "model_metadata"}
 
     model_id = Column(Integer, primary_key=True)
-    model_group_id = Column(Integer, ForeignKey('model_groups.model_group_id'))
+    model_group_id = Column(Integer, ForeignKey('model_metadata.model_groups.model_group_id'))
     model_hash = Column(String, unique=True, index=True)
     run_time = Column(DateTime)
     batch_run_time = Column(DateTime)
@@ -77,11 +117,12 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    experiment_hash = Column(String, ForeignKey('experiments.experiment_hash'))
+    experiment_hash = Column(String, ForeignKey('model_metadata.experiments.experiment_hash'))
     train_end_time = Column(DateTime)
     test = Column(Boolean)
-    train_matrix_uuid = Column(Text)
+    train_matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     training_label_timespan = Column(Interval)
+    model_size = Column(Float)
 
     model_group_rel = relationship('ModelGroup')
     experiment_rel = relationship('Experiment')
@@ -103,8 +144,9 @@ class Model(Base):
 class FeatureImportance(Base):
 
     __tablename__ = 'feature_importances'
+    __table_args__ = {"schema": "train_results"}
 
-    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
     model = relationship(Model)
     feature = Column(String, primary_key=True)
     feature_importance = Column(Numeric)
@@ -114,34 +156,36 @@ class FeatureImportance(Base):
     model_rel = relationship('Model')
 
 
-class Prediction(Base):
+class TestPrediction(Base):
 
-    __tablename__ = 'predictions'
+    __tablename__ = 'test_predictions'
+    __table_args__ = {"schema": "test_results"}
 
-    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text)
+    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
 
+class TrainPrediction(Base):
 
-class ListPrediction(Base):
+    __tablename__ = 'train_predictions'
+    __table_args__ = {"schema": "train_results"}
 
-    __tablename__ = 'list_predictions'
-
-    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
+    label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text)
+    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
@@ -150,8 +194,9 @@ class ListPrediction(Base):
 class IndividualImportance(Base):
 
     __tablename__ = 'individual_importances'
+    __table_args__ = {"schema": "test_results"}
 
-    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     feature = Column(String, primary_key=True)
@@ -162,11 +207,32 @@ class IndividualImportance(Base):
     model_rel = relationship('Model')
 
 
-class Evaluation(Base):
+class TestEvaluation(Base):
 
-    __tablename__ = 'evaluations'
+    __tablename__ = 'test_evaluations'
+    __table_args__ = {"schema": "test_results"}
 
-    model_id = Column(Integer, ForeignKey('models.model_id'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
+    evaluation_start_time = Column(DateTime, primary_key=True)
+    evaluation_end_time = Column(DateTime, primary_key=True)
+    as_of_date_frequency = Column(Interval, primary_key=True)
+    metric = Column(String, primary_key=True)
+    parameter = Column(String, primary_key=True)
+    value = Column(Numeric)
+    num_labeled_examples = Column(Integer)
+    num_labeled_above_threshold = Column(Integer)
+    num_positive_labels = Column(Integer)
+    sort_seed = Column(Integer)
+    matrix_type = Column(String, primary_key=True)
+
+    model_rel = relationship('Model')
+
+class TrainEvaluation(Base):
+
+    __tablename__ = 'train_evaluations'
+    __table_args__ = {"schema": "train_results"}
+
+    model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
