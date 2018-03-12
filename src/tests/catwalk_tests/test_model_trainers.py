@@ -68,13 +68,13 @@ def test_model_trainer():
             # 1. that the models and feature importances table entries are present
             records = [
                 row for row in
-                engine.execute('select * from results.feature_importances')
+                engine.execute('select * from train_results.feature_importances')
             ]
             assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
             records = [
                 row for row in
-                engine.execute('select model_hash from results.models')
+                engine.execute('select model_hash from model_metadata.models')
             ]
             assert len(records) == 4
             hashes = [row[0] for row in records]
@@ -82,14 +82,14 @@ def test_model_trainer():
             # 2. that the model groups are distinct
             records = [
                 row for row in
-                engine.execute('select distinct model_group_id from results.models')
+                engine.execute('select distinct model_group_id from model_metadata.models')
             ]
             assert len(records) == 4
 
             # 3. that the model sizes are saved in the table and all are < 1 kB
             records = [
                 row for row in
-                engine.execute('select model_size from results.models')
+                engine.execute('select model_size from model_metadata.models')
             ]
             assert len(records) == 4
             for i in records:
@@ -125,14 +125,14 @@ def test_model_trainer():
             )
             assert len([
                 row for row in
-                engine.execute('select model_hash from results.models')
+                engine.execute('select model_hash from model_metadata.models')
             ]) == 4
             assert model_ids == new_model_ids
 
             # 7. if replace is set, update non-unique attributes and feature importances
             max_batch_run_time = [
                 row[0] for row in
-                engine.execute('select max(batch_run_time) from results.models')
+                engine.execute('select max(batch_run_time) from model_metadata.models')
             ][0]
             trainer = ModelTrainer(
                 project_path=project_path,
@@ -150,22 +150,22 @@ def test_model_trainer():
             assert model_ids == new_model_ids
             assert [
                 row['model_id'] for row in
-                engine.execute('select model_id from results.models order by 1 asc')
+                engine.execute('select model_id from model_metadata.models order by 1 asc')
             ] == model_ids
             new_max_batch_run_time = [
                 row[0] for row in
-                engine.execute('select max(batch_run_time) from results.models')
+                engine.execute('select max(batch_run_time) from model_metadata.models')
             ][0]
             assert new_max_batch_run_time > max_batch_run_time
 
             records = [
                 row for row in
-                engine.execute('select * from results.feature_importances')
+                engine.execute('select * from train_results.feature_importances')
             ]
             assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
             # 8. if the cache is missing but the metadata is still there, reuse the metadata
-            for row in engine.execute('select model_hash from results.models'):
+            for row in engine.execute('select model_hash from model_metadata.models'):
                 model_storage_engine.get_store(row[0]).delete()
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
@@ -287,7 +287,7 @@ def test_n_jobs_not_new_model():
                 trainer.process_train_task(**train_task)
 
             for row in engine.execute(
-                'select model_parameters from results.model_groups'
+                'select model_parameters from model_metadata.model_groups'
             ):
                 assert 'n_jobs' not in row[0]
 

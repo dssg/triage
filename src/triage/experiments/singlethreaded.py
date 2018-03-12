@@ -70,7 +70,7 @@ class SingleThreadedExperiment(ExperimentBase):
                         test_store,
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
-                        write_data=True
+                        matrix_type = 'Test'
                     )
 
                     #Next, generate predictions for the training data for the same time period
@@ -79,7 +79,7 @@ class SingleThreadedExperiment(ExperimentBase):
                         train_store,
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
-                        write_data=False
+                        matrix_type = 'Train'
                     )
 
                     self.individual_importance_calculator\

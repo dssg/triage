@@ -3,30 +3,34 @@ import os.path
 import alembic.config
 
 from .schema import (
-    Model_metadata_base,
-    Test_results_base,
-    Train_results_base,
-    Evaluation,
+    Base,
     Experiment,
     FeatureImportance,
     IndividualImportance,
     ListPrediction,
+    Matrices,
     Model,
     ModelGroup,
-    Prediction,
+    TestEvaluation,
+    TrainEvaluation,
+    TestPrediction,
+    TrainPrediction
 )
 
 
 __all__ = (
     'Base',
-    'Evaluation',
     'Experiment',
     'FeatureImportance',
     'IndividualImportance',
     'ListPrediction',
+    'Matrices',
     'Model',
     'ModelGroup',
-    'Prediction',
+    'TestEvaluation',
+    'TrainEvaluation',
+    'TestPrediction',
+    'TrainPrediction',
     'mark_db_as_upgraded',
     'upgrade_db',
 )

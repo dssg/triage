@@ -110,7 +110,8 @@ def test_integration():
                         model_id,
                         test_store,
                         misc_db_parameters=dict(),
-                        train_matrix_columns=['feature_one', 'feature_two']
+                        train_matrix_columns=['feature_one', 'feature_two'],
+                        matrix_type = "Test"
                     )
 
                     model_evaluator.evaluate(
@@ -128,8 +129,8 @@ def test_integration():
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, model_id, as_of_date
-                from results.predictions
-                join results.models using (model_id)
+                from test_results.test_predictions
+                join model_metadata.models using (model_id)
                 order by 3, 2''')
             ]
             assert records == [
@@ -148,7 +149,7 @@ def test_integration():
                 row for row in
                 db_engine.execute('''
                     select model_id, evaluation_start_time, metric, parameter
-                    from results.evaluations order by 2, 1''')
+                    from test_results.test_evaluations order by 2, 1''')
             ]
             assert records == [
                 (1, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),

@@ -58,8 +58,7 @@ def test_evaluating_early_warning():
         labels = fake_labels(5)
         as_of_date = datetime.date(2016, 5, 5)
 
-        # Evaluate the testing metrics and test for all of them. Note that the test version
-        # of the evaluations table can hold only 1 set of results at a time.
+        # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
             labels,
@@ -72,8 +71,8 @@ def test_evaluating_early_warning():
         records = [
             row[0] for row in
             db_engine.execute(
-                '''select distinct(metric || parameter || matrix_type)
-                from results.evaluations
+                '''select distinct(metric || parameter)
+                from test_results.test_evaluations
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
@@ -81,37 +80,37 @@ def test_evaluating_early_warning():
             )
         ]
         assert records == [
-            'accuracyTest',
-            'average precision scoreTest',
-            'f1Test',
-            'false negatives@10.0_pctTest',
-            'false negatives@10_absTest',
-            'false negatives@5.0_pctTest',
-            'false negatives@5_absTest',
-            'false positives@10.0_pctTest',
-            'false positives@10_absTest',
-            'false positives@5.0_pctTest',
-            'false positives@5_absTest',
-            'fbeta@0.75_betaTest',
-            'fbeta@1.25_betaTest',
-            'mediocreTest',
-            'precision@10.0_pctTest',
-            'precision@10_absTest',
-            'precision@5.0_pctTest',
-            'precision@5_absTest',
-            'recall@10.0_pctTest',
-            'recall@10_absTest',
-            'recall@5.0_pctTest',
-            'recall@5_absTest',
-            'roc_aucTest',
-            'true negatives@10.0_pctTest',
-            'true negatives@10_absTest',
-            'true negatives@5.0_pctTest',
-            'true negatives@5_absTest',
-            'true positives@10.0_pctTest',
-            'true positives@10_absTest',
-            'true positives@5.0_pctTest',
-            'true positives@5_absTest'
+            'accuracy',
+            'average precision score',
+            'f1',
+            'false negatives@10.0_pct',
+            'false negatives@10_abs',
+            'false negatives@5.0_pct',
+            'false negatives@5_abs',
+            'false positives@10.0_pct',
+            'false positives@10_abs',
+            'false positives@5.0_pct',
+            'false positives@5_abs',
+            'fbeta@0.75_beta',
+            'fbeta@1.25_beta',
+            'mediocre',
+            'precision@10.0_pct',
+            'precision@10_abs',
+            'precision@5.0_pct',
+            'precision@5_abs',
+            'recall@10.0_pct',
+            'recall@10_abs',
+            'recall@5.0_pct',
+            'recall@5_abs',
+            'roc_auc',
+            'true negatives@10.0_pct',
+            'true negatives@10_abs',
+            'true negatives@5.0_pct',
+            'true negatives@5_abs',
+            'true positives@10.0_pct',
+            'true positives@10_abs',
+            'true positives@5.0_pct',
+            'true positives@5_abs'
         ]
 
         # Evaluate the training metrics and test
@@ -127,15 +126,15 @@ def test_evaluating_early_warning():
         records = [
             row[0] for row in
             db_engine.execute(
-                '''select distinct(metric || parameter || matrix_type)
-                from results.evaluations
+                '''select distinct(metric || parameter)
+                from train_results.train_evaluations
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
                 (model_id, as_of_date)
             )
         ]
-        assert records == [ 'accuracyTrain', 'roc_aucTrain']
+        assert records == ['accuracy', 'roc_auc']
 
 
 def test_model_scoring_inspections():
@@ -178,8 +177,8 @@ def test_model_scoring_inspections():
             matrix_type="Test"
         )
         for record in db_engine.execute(
-            '''select * from results.evaluations
-            where model_id = %s and evaluation_start_time = %s and matrix_type = 'Test'
+            '''select * from test_results.test_evaluations
+            where model_id = %s and evaluation_start_time = %s
             order by 1''',
             (model_id, evaluation_start)
         ):
@@ -201,8 +200,8 @@ def test_model_scoring_inspections():
                     matrix_type="Train"
         )
         for record in db_engine.execute(
-            '''select * from results.evaluations
-            where model_id = %s and evaluation_start_time = %s and matrix_type = 'Train'
+            '''select * from train_results.train_evaluations
+            where model_id = %s and evaluation_start_time = %s
             order by 1''',
             (model_id, evaluation_start)
         ):

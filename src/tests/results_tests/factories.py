@@ -79,7 +79,7 @@ class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
 
 class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
-        model = schema.Prediction
+        model = schema.TestPrediction
         sqlalchemy_session = session
 
     model_rel = factory.SubFactory(ModelFactory)
@@ -123,7 +123,7 @@ class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
 
 class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
-        model = schema.Evaluation
+        model = schema.TestEvaluation
         sqlalchemy_session = session
     model_rel = factory.SubFactory(ModelFactory)
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 
-from triage.component.results_schema import Prediction
+from triage.component.results_schema import TestPrediction
 from triage.component.catwalk.db import ensure_db
 import pandas
 
@@ -54,33 +54,37 @@ def test_predictor():
 
             matrix_store = InMemoryMatrixStore(matrix, metadata)
             train_matrix_columns = ['feature_one', 'feature_two']
-            predict_proba = predictor.predict(
-                model_id,
-                matrix_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
-            )
 
-            # assert
-            # 1. that the returned predictions are of the desired length
-            assert len(predict_proba) == 2
+            # Runs the same test for training and testing predictions
+            for mat_type in ("train", "test"):
+                predict_proba = predictor.predict(
+                    model_id,
+                    matrix_store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_matrix_columns,
+                    matrix_type = mat_type
+                )
 
-            # 2. that the predictions table entries are present and
-            # can be linked to the original models
-            records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
-                from results.predictions
-                join results.models using (model_id)''')
-            ]
-            assert len(records) == 2
+                # assert
+                # 1. that the returned predictions are of the desired length
+                assert len(predict_proba) == 2
 
-            # 3. that the contained as_of_dates match what we sent in
-            for record in records:
-                assert record[1].date() == AS_OF_DATE
+                # 2. that the predictions table entries are present and
+                # can be linked to the original models
+                records = [
+                    row for row in
+                    db_engine.execute('''select entity_id, as_of_date
+                    from {}_results.{}_predictions
+                    join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                ]
+                assert len(records) == 2
 
-            # 4. that the entity ids match the given dataset
-            assert sorted([record[0] for record in records]) == [1, 2]
+                # 3. that the contained as_of_dates match what we sent in
+                for record in records:
+                    assert record[1].date() == AS_OF_DATE
+
+                # 4. that the entity ids match the given dataset
+                assert sorted([record[0] for record in records]) == [1, 2]
 
             # 5. running with same model_id, different as of date
             # then with same as of date only replaces the records
@@ -99,25 +103,30 @@ def test_predictor():
                 'indices': ['entity_id'],
             }
             new_matrix_store = InMemoryMatrixStore(new_matrix, new_metadata)
-            predictor.predict(
-                model_id,
-                new_matrix_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
-            )
-            predictor.predict(
-                model_id,
-                matrix_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
-            )
-            records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
-                from results.predictions
-                join results.models using (model_id)''')
-            ]
-            assert len(records) == 4
+
+            # Runs the same test for training and testing predictions
+            for mat_type in ("train", "test"):
+                predictor.predict(
+                    model_id,
+                    new_matrix_store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_matrix_columns,
+                    matrix_type = mat_type
+                )
+                predictor.predict(
+                    model_id,
+                    matrix_store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_matrix_columns,
+                    matrix_type = mat_type
+                )
+                records = [
+                    row for row in
+                    db_engine.execute('''select entity_id, as_of_date
+                    from {}_results.{}_predictions
+                    join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                ]
+                assert len(records) == 4
 
             # 6. That we can delete the model when done prediction on it
             predictor.delete_model(model_id)
@@ -151,26 +160,30 @@ def test_predictor_composite_index():
             'indices': ['entity_id', 'as_of_date'],
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
-        predict_proba = predictor.predict(
-            model_id,
-            matrix_store,
-            misc_db_parameters=dict(),
-            train_matrix_columns=['feature_one', 'feature_two']
-        )
 
-        # assert
-        # 1. that the returned predictions are of the desired length
-        assert len(predict_proba) == 4
+        # Runs the same test for training and testing predictions
+        for mat_type in ("train", "test"):
+            predict_proba = predictor.predict(
+                model_id,
+                matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=['feature_one', 'feature_two'],
+                matrix_type = mat_type
+            )
 
-        # 2. that the predictions table entries are present and
-        # can be linked to the original models
-        records = [
-            row for row in
-            db_engine.execute('''select entity_id, as_of_date
-            from results.predictions
-            join results.models using (model_id)''')
-        ]
-        assert len(records) == 4
+            # assert
+            # 1. that the returned predictions are of the desired length
+            assert len(predict_proba) == 4
+
+            # 2. that the predictions table entries are present and
+            # can be linked to the original models
+            records = [
+                row for row in
+                db_engine.execute('''select entity_id, as_of_date
+                from {}_results.{}_predictions
+                join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+            ]
+            assert len(records) == 4
 
 
 def test_predictor_get_train_columns():
@@ -191,25 +204,28 @@ def test_predictor_get_train_columns():
                 )
             predictor = Predictor(project_path, model_storage_engine, db_engine)
 
-            predict_proba = predictor.predict(
-                model_id,
-                test_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_store.columns()
-            )
-            # assert
-            # 1. that we calculated predictions
-            assert len(predict_proba) > 0
+            # Runs the same test for training and testing predictions
+            for mat_type in ("train", "test"):
+                predict_proba = predictor.predict(
+                    model_id,
+                    test_store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_store.columns(),
+                    matrix_type = mat_type
+                )
+                # assert
+                # 1. that we calculated predictions
+                assert len(predict_proba) > 0
 
-            # 2. that the predictions table entries are present and
-            # can be linked to the original models
-            records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
-                from results.predictions
-                join results.models using (model_id)''')
-            ]
-            assert len(records) > 0
+                # 2. that the predictions table entries are present and
+                # can be linked to the original models
+                records = [
+                    row for row in
+                    db_engine.execute('''select entity_id, as_of_date
+                    from {}_results.{}_predictions
+                    join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                ]
+                assert len(records) > 0
 
 
 def test_predictor_retrieve():
@@ -245,7 +261,8 @@ def test_predictor_retrieve():
             model_id,
             matrix_store,
             misc_db_parameters=dict(),
-            train_matrix_columns=['feature_one', 'feature_two']
+            train_matrix_columns=['feature_one', 'feature_two'],
+            matrix_type = "Test"
         )
 
         # When run again, the predictions retrieved from the database
@@ -268,8 +285,9 @@ def test_predictor_retrieve():
         # So we simulate a table order mutation that can happen over time:
         # Remove the first row and put it at the end.
         # If the Predictor doesn't explicitly reorder the results, this will fail
+        # Only running on TestPrediction because TrainPrediction behaves the exact same way
         session = sessionmaker(bind=db_engine)()
-        obj = session.query(Prediction).first()
+        obj = session.query(TestPrediction).first()
         session.delete(obj)
         session.commit()
 
@@ -283,7 +301,8 @@ def test_predictor_retrieve():
             model_id,
             matrix_store,
             misc_db_parameters=dict(),
-            train_matrix_columns=['feature_one', 'feature_two']
+            train_matrix_columns=['feature_one', 'feature_two'],
+            matrix_type = "Test"
         )
         assert_array_equal(new_predict_proba, predict_proba)
         assert not predictor.load_model.called

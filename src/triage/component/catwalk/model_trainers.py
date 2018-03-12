@@ -29,7 +29,7 @@ class ModelTrainer(object):
     Args:
         project_path (string) path to project folder,
             under which to cache model pickles
-        experiment_hash (string) foreign key to the results.experiments table
+        experiment_hash (string) foreign key to the model_metadata.experiments table
         model_storage_engine (catwalk.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
         replace (bool) whether or not to replace existing versions of models
@@ -122,7 +122,7 @@ class ModelTrainer(object):
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
         self.db_engine.execute(
-            'delete from results.feature_importances where model_id = %s',
+            'delete from train_results.feature_importances where model_id = %s',
             model_id
         )
         db_objects = []

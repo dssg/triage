@@ -28,10 +28,14 @@ Base = declarative_base()
 #Test_results_base = declarative_base(metadata=MetaData(schema='test_results'))
 #Train_results_base = declarative_base(metadata=MetaData(schema='train_results'))
 
+schemas = ("CREATE SCHEMA IF NOT EXISTS model_metadata;"
+           " CREATE SCHEMA IF NOT EXISTS test_results;"
+           " CREATE SCHEMA IF NOT EXISTS train_results;")
+
 event.listen(
     Base.metadata,
     'before_create',
-    DDL("CREATE SCHEMA IF NOT EXISTS results")
+    DDL(schemas)
 )
 
 group_proc_filename = os.path.join(
@@ -94,12 +98,12 @@ class Matrices(Base):
     matrix_id = Column(Integer)
     matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
     matrix_type = Column(String) # 'train' or 'test'
-    labeling_window = Column(Interval) #
+    labeling_window = Column(Interval)
     n_examples = Column(Integer)
     creation_time = Column(DateTime)
     lookback_duration = Column(Interval)
     beginning_of_time = Column(DateTime)
-    metadata = Column(JSONB)
+    matrix_metadata = Column(JSONB)
 
 
 class Model(Base):
@@ -120,7 +124,7 @@ class Model(Base):
     experiment_hash = Column(String, ForeignKey('model_metadata.experiments.experiment_hash'))
     train_end_time = Column(DateTime)
     test = Column(Boolean)
-    train_matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    train_matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
     training_label_timespan = Column(Interval)
     model_size = Column(Float)
 
@@ -168,7 +172,7 @@ class TestPrediction(Base):
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
@@ -185,7 +189,7 @@ class TrainPrediction(Base):
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
@@ -223,9 +227,9 @@ class TestEvaluation(Base):
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
-    matrix_type = Column(String, primary_key=True)
 
     model_rel = relationship('Model')
+
 
 class TrainEvaluation(Base):
 
@@ -243,6 +247,5 @@ class TrainEvaluation(Base):
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
-    matrix_type = Column(String, primary_key=True)
 
     model_rel = relationship('Model')

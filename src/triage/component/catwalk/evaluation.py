@@ -4,7 +4,8 @@ import time
 import numpy
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Evaluation
+from triage.component.results_schema import TestEvaluation, TrainEvaluation
+
 
 from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
@@ -134,7 +135,7 @@ class ModelEvaluator(object):
             labels (list) True labels
             matrix_type (string) either "Test" or "Train" for the type of matrix
 
-        Returns: (list) results_schema.Evaluation objects
+        Returns: (list) results_schema.TrainEvaluation or TestEvaluation objects
         Raises: UnknownMetricError if a given metric is not present in
             self.available_metrics
         """
@@ -169,15 +170,19 @@ class ModelEvaluator(object):
                         value
                     )
                     # Most of the information to be written to the database
-                    evaluations.append(Evaluation(
+                    if matrix_type.lower() == "train":
+                        table_obj = TrainEvaluation
+                    elif matrix_type.lower() == "test":
+                        table_obj = TestEvaluation
+
+                    evaluations.append(table_obj(
                         metric=metric,
                         parameter=parameter_string,
                         value=value,
                         num_labeled_examples=num_labeled_examples,
                         num_labeled_above_threshold=num_labeled_above_threshold,
                         num_positive_labels=num_positive_labels,
-                        sort_seed=self.sort_seed,
-                        matrix_type=matrix_type
+                        sort_seed=self.sort_seed
                     ))
             else:
                 raise metrics.UnknownMetricError()
@@ -205,6 +210,7 @@ class ModelEvaluator(object):
             as_of_date_frequency (string) How frequently predictions were generated
             matrix_type (string) either "Test" or "Train" for the type of matrix
         """
+
         logging.info(
             'Generating evaluations for model id %s, evaluation range %s-%s, '
             'as_of_date frequency %s',
@@ -288,15 +294,16 @@ class ModelEvaluator(object):
                     matrix_type
                 )
 
-        logging.info('Writing metrics to db')
+        logging.info('Writing metrics to db: %s table', matrix_type)
         self._write_to_db(
             model_id,
             evaluation_start_time,
             evaluation_end_time,
             as_of_date_frequency,
-            evaluations
+            evaluations,
+            matrix_type
         )
-        logging.info('Done writing metrics to db')
+        logging.info('Done writing metrics to db: %s table', matrix_type)
 
     @db_retry
     def _write_to_db(
@@ -305,7 +312,8 @@ class ModelEvaluator(object):
         evaluation_start_time,
         evaluation_end_time,
         as_of_date_frequency,
-        evaluations
+        evaluations,
+        matrix_type
     ):
         """Write evaluation objects to the database
 
@@ -316,9 +324,15 @@ class ModelEvaluator(object):
             model_id (int) primary key of the model
             as_of_date (datetime.date) Date the predictions were made as of
             evaluations (list) results_schema.Evaluation objects
+            matrix_type (string) Train or Test, specifies to which table to write
         """
         session = self.sessionmaker()
-        session.query(Evaluation)\
+        if matrix_type.lower() == "train":
+            table_obj = TrainEvaluation
+        elif matrix_type.lower() == "test":
+            table_obj = TestEvaluation
+
+        session.query(table_obj)\
             .filter_by(
                 model_id=model_id,
                 evaluation_start_time=evaluation_start_time,
