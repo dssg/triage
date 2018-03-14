@@ -102,7 +102,7 @@ class Matrices(Base):
     n_examples = Column(Integer)
     creation_time = Column(DateTime)
     lookback_duration = Column(Interval)
-    beginning_of_time = Column(DateTime)
+    feature_start_time = Column(DateTime)
     matrix_metadata = Column(JSONB)
 
 

@@ -348,6 +348,7 @@ def basic_integration_test(
 
             # go and build the matrices
             planner.build_all_matrices(matrix_build_tasks)
+            assert False ###
 
             # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')
