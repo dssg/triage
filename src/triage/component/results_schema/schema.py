@@ -15,18 +15,16 @@ from sqlalchemy import (
     ForeignKey,
     MetaData,
     DDL,
-    event,
+    event
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
+from sqlalchemy.sql import func
 
 # One declarative_base object for each schema created
-# Schema: metadata=MetaData(schema='train_results')
 Base = declarative_base()
-#Test_results_base = declarative_base(metadata=MetaData(schema='test_results'))
-#Train_results_base = declarative_base(metadata=MetaData(schema='train_results'))
 
 schemas = ("CREATE SCHEMA IF NOT EXISTS model_metadata;"
            " CREATE SCHEMA IF NOT EXISTS test_results;"
@@ -95,12 +93,12 @@ class Matrices(Base):
     __tablename__ = 'matrices'
     __table_args__ = {"schema": "model_metadata"}
 
-    matrix_id = Column(Integer)
+    matrix_id = Column(String)
     matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
     matrix_type = Column(String) # 'train' or 'test'
     labeling_window = Column(Interval)
     n_examples = Column(Integer)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime(timezone=True), server_default=func.now())
     lookback_duration = Column(Interval)
     feature_start_time = Column(DateTime)
     matrix_metadata = Column(JSONB)
@@ -124,7 +122,7 @@ class Model(Base):
     experiment_hash = Column(String, ForeignKey('model_metadata.experiments.experiment_hash'))
     train_end_time = Column(DateTime)
     test = Column(Boolean)
-    train_matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    train_matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     training_label_timespan = Column(Interval)
     model_size = Column(Float)
 
@@ -172,7 +170,7 @@ class TestPrediction(Base):
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')
@@ -189,7 +187,7 @@ class TrainPrediction(Base):
     label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
-    matrix_uuid = Column(Text) #, ForeignKey('model_metadata.matrices.matrix_uuid'))
+    matrix_uuid = Column(Text, ForeignKey('model_metadata.matrices.matrix_uuid'))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship('Model')

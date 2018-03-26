@@ -245,8 +245,6 @@ class Predictor(object):
         elif matrix_type.lower() == "test":
             Prediction_obj = TestPrediction
 
-        print(Prediction_obj, self.replace)
-
         session = self.sessionmaker()
         if not self.replace:
             logging.info(

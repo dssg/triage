@@ -41,7 +41,7 @@ DEFAULT_RETRY_KWARGS = {
 db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 @db_retry
-def save_db_objects(db_engine, db_objects):
+def save_matrix_object(db_engine, matrix_object):
     """Saves a collection of SQLAlchemy model objects to the database using a COPY command
 
     Args:
@@ -50,10 +50,21 @@ def save_db_objects(db_engine, db_objects):
     """
     with tempfile.TemporaryFile(mode='w+') as f:
         writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-        for db_object in db_objects:
-            writer.writerow([
-                getattr(db_object, col.name)
-                for col in db_object.__table__.columns
-            ])
+        writer.writerow([
+            getattr(matrix_object, col.name)
+            for col in matrix_object.__table__.columns
+        ])
         f.seek(0)
-        postgres_copy.copy_from(f, type(db_objects[0]), db_engine, format='csv')
+        #postgres_copy.copy_from(f, type(matrix_object), db_engine, format='csv')
+
+        conn = db_engine.raw_connection()
+        cursor = conn.cursor()
+        relation = '"model_metadata"."matrices"'
+        formatted_flags = "(FORMAT 'csv')"
+        copy = 'COPY {} FROM STDIN {}'.format(
+            relation,
+            formatted_flags
+        )
+        cursor.copy_expert(copy, f)
+        conn.commit()
+        conn.close()

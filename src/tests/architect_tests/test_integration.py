@@ -348,7 +348,11 @@ def basic_integration_test(
 
             # go and build the matrices
             planner.build_all_matrices(matrix_build_tasks)
-            assert False ###
+            matrices_records = list(db_engine.execute(
+                    '''select matrix_uuid, n_examples, lookback_duration
+                    from model_metadata.matrices
+                    '''
+                ))
 
             # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')
@@ -357,9 +361,11 @@ def basic_integration_test(
             assert len(matrices) == num_split_matrices * expected_matrix_multiplier
             assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
 
+            return matrices_records
+
 
 def test_integration_simple():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -368,9 +374,15 @@ def test_integration_simple():
         expected_matrix_multiplier=1,
     )
 
+    print(matrices_records)
+    assert len(matrices_records) == 4
+    assert matrices_records[0][0] == '8af84bde5a09e9adac63a384d924aab3' #The hash uuid
+    for n_examples in [row[1] for row in matrices_records]:
+        assert type(n_examples) is int
+
 
 def test_integration_more_state_filtering():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two', 'state_one', 'state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -378,12 +390,24 @@ def test_integration_more_state_filtering():
         expected_matrix_multiplier=3,
     )
 
+    print(matrices_records)
+    assert len(matrices_records) == 12
+    assert matrices_records[0][0] == '8af84bde5a09e9adac63a384d924aab3' #The hash uuid
+    for n_examples in [row[1] for row in matrices_records]:
+        assert type(n_examples) is int
+
 
 def test_integration_feature_grouping():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'prefix': ['cat', 'dog']},
         feature_group_mix_rules=['leave-one-out', 'all'],
         # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
     )
+
+    print(matrices_records)
+    assert len(matrices_records) == 12
+    assert matrices_records[0][0] == 'd16a3c88c0a9933e714f0b4b87f24552' #The hash uuid
+    for n_examples in [row[1] for row in matrices_records]:
+        assert type(n_examples) is int

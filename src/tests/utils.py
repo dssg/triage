@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
 from triage.component.catwalk.storage import CSVMatrixStore
-from triage.component.results_schema import Model
+from triage.component.results_schema import Model, Matrices
 from triage.experiments import CONFIG_VERSION
 
 
@@ -50,7 +50,7 @@ class MockTrainedModel(object):
 
 
 def fake_trained_model(project_path, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
-    """Creates and stores a trivial trained model
+    """Creates and stores a trivial trained model and training matrix
 
     Args:
         project_path (string) a desired fs/s3 project path
@@ -60,13 +60,29 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     Returns:
         (int) model id for database retrieval
     """
+    session = sessionmaker(db_engine)()
+
+    store_fake_train_matrix(db_engine, train_matrix_uuid)
+
+    # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
     model_storage_engine.get_store('abcd').write(trained_model)
-    session = sessionmaker(db_engine)()
     db_model = Model(model_hash='abcd', train_matrix_uuid=train_matrix_uuid)
     session.add(db_model)
     session.commit()
     return trained_model, db_model.model_id
+
+def store_fake_train_matrix(db_engine, matrix_uuid):
+    """Creates and stores a trival training matrix for ForeignKey requirement
+
+    Args:
+        db_engine (sqlalchemy.engine)
+        matrix_uuid (string) the uuid for the matrix
+    """
+    session_m = sessionmaker(db_engine)()
+    train_matrix = Matrices(matrix_uuid=matrix_uuid)
+    session_m.add(train_matrix)
+    session_m.commit()
 
 
 def sample_metta_csv_diff_order(directory):

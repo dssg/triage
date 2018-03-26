@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import InMemoryMatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
+from triage.component.results_schema import Matrices
+from tests.utils import store_fake_train_matrix
 
 from tests.results_tests.factories import (
     ModelFactory,
@@ -33,6 +35,10 @@ def test_uniform_distribution_entity_id_index():
             matrix=pandas.DataFrame.from_dict(data_dict),
             metadata=sample_metadata()
         )
+
+        # Complementary model parameters found in results_tests/factories.py in ModelFactory
+        store_fake_train_matrix(db_engine, "efgh")
+
         session.commit()
         results = uniform_distribution(
             db_engine,
@@ -74,6 +80,9 @@ def test_uniform_distribution_entity_date_index():
             matrix=pandas.DataFrame.from_dict(data_dict),
             metadata=metadata
         )
+
+        store_fake_train_matrix(db_engine, "efgh")
+
         session.commit()
         results = uniform_distribution(
             db_engine,

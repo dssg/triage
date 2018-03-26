@@ -138,7 +138,6 @@ def test_evaluating_early_warning():
 
 
 def test_model_scoring_inspections():
-    print('\n')
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)

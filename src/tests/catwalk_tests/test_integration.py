@@ -9,6 +9,7 @@ import testing.postgresql
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
+from tests.utils import store_fake_train_matrix
 
 from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
@@ -41,6 +42,7 @@ def test_integration():
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
             }
+            store_fake_train_matrix(db_engine, '1234')
 
             train_store = InMemoryMatrixStore(train_matrix, train_metadata)
 

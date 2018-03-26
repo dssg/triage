@@ -5,12 +5,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 
-from triage.component.results_schema import TestPrediction
+from triage.component.results_schema import TestPrediction, TrainPrediction
 from triage.component.catwalk.db import ensure_db
 import pandas
 
 from triage.component.catwalk.predictors import Predictor
-from tests.utils import fake_trained_model, sample_metta_csv_diff_order
+from tests.utils import fake_trained_model, sample_metta_csv_diff_order, \
+    store_fake_train_matrix
 from triage.component.catwalk.storage import \
     InMemoryModelStorageEngine,\
     S3ModelStorageEngine,\
@@ -52,7 +53,10 @@ def test_predictor():
                 'indices': ['entity_id'],
             }
 
+            # Create the matrix to be tested and store in db
             matrix_store = InMemoryMatrixStore(matrix, metadata)
+            store_fake_train_matrix(db_engine, '1234')
+
             train_matrix_columns = ['feature_one', 'feature_two']
 
             # Runs the same test for training and testing predictions
@@ -160,6 +164,7 @@ def test_predictor_composite_index():
             'indices': ['entity_id', 'as_of_date'],
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
+        store_fake_train_matrix(db_engine, '1234')
 
         # Runs the same test for training and testing predictions
         for mat_type in ("train", "test"):
@@ -203,6 +208,8 @@ def test_predictor_get_train_columns():
                     train_matrix_uuid=train_store.uuid
                 )
             predictor = Predictor(project_path, model_storage_engine, db_engine)
+            # The train_store uuid is stored in fake_trained_model. Storing the other
+            store_fake_train_matrix(db_engine, test_store.uuid)
 
             # Runs the same test for training and testing predictions
             for mat_type in ("train", "test"):
@@ -257,6 +264,8 @@ def test_predictor_retrieve():
             'indices': ['entity_id', 'as_of_date'],
         }
         matrix_store = InMemoryMatrixStore(matrix, metadata)
+        store_fake_train_matrix(db_engine, '1234')
+
         predict_proba = predictor.predict(
             model_id,
             matrix_store,

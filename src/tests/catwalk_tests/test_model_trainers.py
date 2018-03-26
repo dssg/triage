@@ -9,6 +9,7 @@ from unittest.mock import patch
 from moto import mock_s3
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
+from tests.utils import store_fake_train_matrix
 
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
@@ -48,6 +49,8 @@ def test_model_trainer():
                 'feature_names': ['ft1', 'ft2'],
                 'indices': ['entity_id'],
             }
+            store_fake_train_matrix(engine, "1234")
+
             project_path = 'econ-dev/inspections'
             model_storage_engine = S3ModelStorageEngine(project_path)
             trainer = ModelTrainer(
@@ -224,6 +227,8 @@ def test_baseline_exception_handling():
                     'indices': ['entity_id'],
                 })
             )
+            store_fake_train_matrix(engine, "1234")
+
             model_ids = []
             for train_task in train_tasks:
                 model_ids.append(trainer.process_train_task(**train_task))
@@ -277,6 +282,8 @@ def test_n_jobs_not_new_model():
                     'indices': ['entity_id'],
                 })
             )
+            store_fake_train_matrix(engine, "1234")
+
             assert len(train_tasks) == 35 # 32+3, would be (32*2)+3 if we didn't remove
             assert len([
                 task for task in train_tasks
@@ -386,6 +393,7 @@ class RetryTest(unittest.TestCase):
             self.new_server = testing.postgresql.Postgresql(port=port)
             engine = create_engine(self.new_server.url())
             ensure_db(engine)
+            store_fake_train_matrix(engine, "1234")
         with patch('time.sleep') as time_mock:
             time_mock.side_effect = replace_db
             try:

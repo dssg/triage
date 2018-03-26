@@ -62,7 +62,7 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     experiment_rel = factory.SubFactory(ExperimentFactory)
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
-    train_matrix_uuid = factory.fuzzy.FuzzyText()
+    train_matrix_uuid = "efgh"
     training_label_timespan = '1y'
 
 
