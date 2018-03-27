@@ -55,7 +55,7 @@ class DistanceFromBestTable(object):
                 row should be a dict with keys:
                         'metric' (e.g. 'precision@')
                         'parameter' (e.g. '100_abs')
-                All models should have the results.evaluations table populated
+                All models should have the test_results.test_evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
         """
         for metric in metrics:
@@ -66,7 +66,7 @@ class DistanceFromBestTable(object):
                         PARTITION BY model_id
                         ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
                         ) AS eval_rn
-                    FROM results.evaluations
+                    FROM test_results.test_evaluations
                     WHERE metric='{metric}' AND parameter='{parameter}'
                 ),
                 model_ranks AS (
@@ -80,8 +80,8 @@ class DistanceFromBestTable(object):
                             ORDER BY ev.value {metric_value_order}, RANDOM()
                         ) AS rank
                   FROM first_evals ev
-                  JOIN results.{models_table} m USING(model_id)
-                  JOIN results.model_groups mg USING(model_group_id)
+                  JOIN model_metadata.{models_table} m USING(model_id)
+                  JOIN model_metadata.model_groups mg USING(model_group_id)
                   WHERE m.model_group_id IN ({model_group_ids})
                         AND train_end_time in ({train_end_times})
                         AND ev.eval_rn = 1
@@ -166,7 +166,7 @@ class DistanceFromBestTable(object):
                 row should be a dict with keys:
                         'metric' (e.g. 'precision@')
                         'parameter' (e.g. '100_abs')
-                All models should have the results.evaluations table populated
+                All models should have the test_results.test_evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
             delete (boolean, optional) Delete any previous version of the
                 distance table if it exists
@@ -280,7 +280,7 @@ class BestDistancePlotter(object):
                     AVG(CASE WHEN dist_from_best_case <= distance THEN 1 ELSE 0 END) AS pct_of_time
             FROM {distance_table} dist
             JOIN x_vals USING(model_group_id)
-            JOIN results.model_groups mg using (model_group_id)
+            JOIN model_metadata.model_groups mg using (model_group_id)
             WHERE
                 dist.metric='{metric}'
                 AND dist.parameter='{parameter}'

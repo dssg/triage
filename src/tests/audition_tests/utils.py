@@ -1,5 +1,6 @@
 from triage.component.audition.distance_from_best import DistanceFromBestTable
 from triage.component.catwalk.db import ensure_db
+from tests.utils import store_fake_train_matrix
 
 from tests.results_tests.factories import (
     ModelFactory,
@@ -16,6 +17,8 @@ def create_sample_distance_table(engine):
         'stable': ModelGroupFactory(model_type='myStableClassifier'),
         'spiky': ModelGroupFactory(model_type='mySpikeClassifier'),
     }
+
+    store_fake_train_matrix(engine, "efgh")
 
     class StableModelFactory(ModelFactory):
         model_group_rel = model_groups['stable']

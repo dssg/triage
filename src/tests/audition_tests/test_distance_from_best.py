@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 
 from triage.component.audition.distance_from_best import DistanceFromBestTable, BestDistancePlotter
 from triage.component.catwalk.db import ensure_db
+from tests.utils import store_fake_train_matrix
 
 from tests.results_tests.factories import (
     EvaluationFactory,
@@ -58,6 +59,8 @@ def test_DistanceFromBestTable():
             'spiky_2y_ago': SpikyModelFactory(train_end_time='2015-01-01'),
             'spiky_1y_ago': SpikyModelFactory(train_end_time='2016-01-01'),
         }
+
+        store_fake_train_matrix(engine, "efgh")
 
         class ImmediateEvalFactory(EvaluationFactory):
             evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)
