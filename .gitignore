@@ -9,3 +9,4 @@ dist/
 
 .ipynb_checkpoints/
 venv/
+my_db_config.yaml

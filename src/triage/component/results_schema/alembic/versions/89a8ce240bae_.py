@@ -32,6 +32,7 @@ def upgrade():
               ' ALTER TABLE results.individual_importances SET SCHEMA test_results;' +
               ' ALTER TABLE results.feature_importances SET SCHEMA train_results;' )
 
+    op.execute('ALTER TABLE model_metadata.models ADD COLUMN model_size real')
     op.create_table('matrices',
     sa.Column('matrix_id', sa.String(), nullable=True),
     sa.Column('matrix_uuid', sa.String(), nullable=False),
@@ -120,6 +121,7 @@ def downgrade():
               ' ALTER TABLE train_results.feature_importances SET SCHEMA results;')
 
     op.drop_index(op.f('ix_model_metadata_matrices_matrix_uuid'), table_name='matrices', schema='model_metadata')
+    op.execute('ALTER TABLE results.models DROP COLUMN IF EXISTS model_size')
     op.execute('DROP TABLE model_metadata.matrices CASCADE')
     op.execute('DROP TABLE train_results.train_predictions CASCADE')
     op.execute('DROP TABLE train_results.train_evaluations CASCADE')
