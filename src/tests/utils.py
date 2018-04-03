@@ -61,8 +61,7 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
         (int) model id for database retrieval
     """
     session = sessionmaker(db_engine)()
-
-    store_fake_train_matrix(db_engine, train_matrix_uuid)
+    session.add(Matrices(matrix_uuid=train_matrix_uuid))
 
     # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
@@ -71,18 +70,6 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     session.add(db_model)
     session.commit()
     return trained_model, db_model.model_id
-
-def store_fake_train_matrix(db_engine, matrix_uuid):
-    """Creates and stores a trival training matrix for ForeignKey requirement
-
-    Args:
-        db_engine (sqlalchemy.engine)
-        matrix_uuid (string) the uuid for the matrix
-    """
-    session_m = sessionmaker(db_engine)()
-    train_matrix = Matrices(matrix_uuid=matrix_uuid)
-    session_m.add(train_matrix)
-    session_m.commit()
 
 
 def sample_metta_csv_diff_order(directory):
@@ -293,7 +280,11 @@ def sample_config():
     scoring_config = {
         'metric_groups': [
             {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+        ],
+        'training_metric_groups': [
+            {'metrics': ['precision@'], 'thresholds': {'top_n': [3]}}
         ]
+
     }
 
     grid_config = {

@@ -5,14 +5,13 @@ import pandas as pd
 import testing.postgresql
 from sqlalchemy import create_engine
 
-from tests.utils import store_fake_train_matrix
-
 from tests.results_tests.factories import (
     EvaluationFactory,
     ModelFactory,
     ModelGroupFactory,
     init_engine,
     session,
+    MatrixFactory
 )
 
 from triage.component.audition.pre_audition import PreAudition
@@ -49,8 +48,11 @@ def test_PreAudition():
             datetime(2016, 7, 1),
             datetime(2016, 1, 1),
         ]
+        # Creates a matrix for all models to reference
+        DefaultMatrix = MatrixFactory()
+
         models = [
-            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time)
+            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time, matrix_rel=DefaultMatrix)
             for model_group in model_groups
             for train_end_time in train_end_times
         ]
@@ -65,7 +67,6 @@ def test_PreAudition():
         class ImmediateEvalFactory(EvaluationFactory):
             evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)
 
-        store_fake_train_matrix(db_engine, "efgh")
 
         for model in models:
             for (metric, parameter) in metrics:

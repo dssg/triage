@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 from triage.component import metta
 from triage.component.results_schema import Matrices
-from .utils import save_matrix_object
 
 
 class BuilderBase(object):

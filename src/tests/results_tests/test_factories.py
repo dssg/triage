@@ -11,6 +11,7 @@ from .factories import (
     IndividualImportanceFactory,
     init_engine,
     session,
+    MatrixFactory
 )
 
 
@@ -22,8 +23,10 @@ def test_evaluation_factories():
 
         # create some basic evaluations, but with the same model group and
         # model to test the factory relationships
+        default_matrix = MatrixFactory()
+
         model_group = ModelGroupFactory()
-        model = ModelFactory(model_group_rel=model_group)
+        model = ModelFactory(model_group_rel=model_group, matrix_rel=default_matrix)
         for metric, value in [
             ('precision@', 0.4),
             ('recall@', 0.3),
@@ -42,8 +45,8 @@ def test_evaluation_factories():
                 e.metric,
                 e.value
             from
-                results.evaluations e
-                join results.models m using (model_id)
+                test_results.test_evaluations e
+                join model_metadata.models m using (model_id)
         ''')
         for model_group_id, model_id, metric, value in results:
             # if the evaluations are created with the model group and model,
@@ -85,9 +88,9 @@ def test_prediction_factories():
         results = engine.execute('''
             select m.*, p.*
             from
-                results.predictions p
-                join results.models m using (model_id)
-                join results.individual_importances i using (model_id, entity_id, as_of_date)
+                test_results.test_predictions p
+                join model_metadata.models m using (model_id)
+                join test_results.individual_importances i using (model_id, entity_id, as_of_date)
         ''')
         assert len([row for row in results]) == 6
         # if the predictions are created with the model,

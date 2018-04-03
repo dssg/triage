@@ -8,7 +8,6 @@ from sqlalchemy import create_engine
 
 from triage.component.audition.distance_from_best import DistanceFromBestTable, BestDistancePlotter
 from triage.component.catwalk.db import ensure_db
-from tests.utils import store_fake_train_matrix
 
 from tests.results_tests.factories import (
     EvaluationFactory,
@@ -16,6 +15,7 @@ from tests.results_tests.factories import (
     ModelGroupFactory,
     init_engine,
     session,
+    MatrixFactory
 )
 
 from .utils import create_sample_distance_table
@@ -38,15 +38,20 @@ def test_DistanceFromBestTable():
             'bad': ModelGroupFactory(model_type='myBadClassifier'),
             'spiky': ModelGroupFactory(model_type='mySpikeClassifier'),
         }
+        # Creates an entry in the matrix db with uuid = "efgh" for all the models to referenece
+        DefaultMatrix = MatrixFactory()
 
         class StableModelFactory(ModelFactory):
             model_group_rel = model_groups['stable']
+            matrix_rel = DefaultMatrix
 
         class BadModelFactory(ModelFactory):
             model_group_rel = model_groups['bad']
+            matrix_rel = DefaultMatrix
 
         class SpikyModelFactory(ModelFactory):
             model_group_rel = model_groups['spiky']
+            matrix_rel = DefaultMatrix
 
         models = {
             'stable_3y_ago': StableModelFactory(train_end_time='2014-01-01'),
@@ -59,8 +64,6 @@ def test_DistanceFromBestTable():
             'spiky_2y_ago': SpikyModelFactory(train_end_time='2015-01-01'),
             'spiky_1y_ago': SpikyModelFactory(train_end_time='2016-01-01'),
         }
-
-        store_fake_train_matrix(engine, "efgh")
 
         class ImmediateEvalFactory(EvaluationFactory):
             evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)

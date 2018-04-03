@@ -3,7 +3,6 @@ import functools
 import operator
 import tempfile
 
-import postgres_copy
 from retrying import retry
 import sqlalchemy
 
@@ -55,7 +54,6 @@ def save_matrix_object(db_engine, matrix_object):
             for col in matrix_object.__table__.columns
         ])
         f.seek(0)
-        #postgres_copy.copy_from(f, type(matrix_object), db_engine, format='csv')
 
         conn = db_engine.raw_connection()
         cursor = conn.cursor()

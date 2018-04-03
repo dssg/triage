@@ -104,6 +104,7 @@ class Matrices(Base):
     matrix_metadata = Column(JSONB)
 
 
+
 class Model(Base):
 
     __tablename__ = 'models'
@@ -128,6 +129,7 @@ class Model(Base):
 
     model_group_rel = relationship('ModelGroup')
     experiment_rel = relationship('Experiment')
+    matrix_rel = relationship('Matrices')
 
     def delete(self, session):
         # basically implement a cascade, in case cascade is not implemented

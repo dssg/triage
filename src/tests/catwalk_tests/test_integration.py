@@ -2,16 +2,15 @@ from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.evaluation import ModelEvaluator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 import boto3
 import testing.postgresql
 
 from moto import mock_s3
 from sqlalchemy import create_engine
-from triage.component.catwalk.db import ensure_db
-from tests.utils import store_fake_train_matrix
-
-from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
 import pandas
 
@@ -20,6 +19,7 @@ def test_integration():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
 
         with mock_s3():
             s3_conn = boto3.resource('s3')
@@ -42,7 +42,9 @@ def test_integration():
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
             }
-            store_fake_train_matrix(db_engine, '1234')
+            # Creates a matrix entry in the Matrices table with uuid from train_metadata
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
 
             train_store = InMemoryMatrixStore(train_matrix, train_metadata)
 

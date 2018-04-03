@@ -4,23 +4,23 @@ from moto import mock_s3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
-
-from triage.component.results_schema import TestPrediction, TrainPrediction
-from triage.component.catwalk.db import ensure_db
-import pandas
-
-from triage.component.catwalk.predictors import Predictor
-from tests.utils import fake_trained_model, sample_metta_csv_diff_order, \
-    store_fake_train_matrix
-from triage.component.catwalk.storage import \
-    InMemoryModelStorageEngine,\
-    S3ModelStorageEngine,\
-    InMemoryMatrixStore
 import datetime
-
 from unittest.mock import Mock
 from numpy.testing import assert_array_equal
 import tempfile
+import pandas
+
+from triage.component.results_schema import TestPrediction, TrainPrediction
+from triage.component.catwalk.db import ensure_db
+
+from triage.component.catwalk.predictors import Predictor
+from tests.utils import fake_trained_model, sample_metta_csv_diff_order
+from triage.component.catwalk.storage import (
+    InMemoryModelStorageEngine,
+    S3ModelStorageEngine,
+    InMemoryMatrixStore )
+from tests.results_tests.factories import init_engine, session as session2, MatrixFactory
+
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
 
@@ -29,6 +29,7 @@ def test_predictor():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
 
         with mock_s3():
             s3_conn = boto3.resource('s3')
@@ -52,10 +53,12 @@ def test_predictor():
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
             }
+            # Creates a matrix entry in the Matrices table with uuid from metadata above
+            MatrixFactory(matrix_uuid = "1234")
+            session2.commit()
 
             # Create the matrix to be tested and store in db
             matrix_store = InMemoryMatrixStore(matrix, metadata)
-            store_fake_train_matrix(db_engine, '1234')
 
             train_matrix_columns = ['feature_one', 'feature_two']
 
@@ -141,6 +144,8 @@ def test_predictor_composite_index():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
+
         project_path = 'econ-dev/inspections'
         model_storage_engine = InMemoryModelStorageEngine(project_path)
         _, model_id = \
@@ -163,8 +168,11 @@ def test_predictor_composite_index():
             'metta-uuid': '1234',
             'indices': ['entity_id', 'as_of_date'],
         }
+        # Creates a matrix entry in the Matrices table with uuid from metadata above
+        MatrixFactory(matrix_uuid = "1234")
+        session2.commit()
+
         matrix_store = InMemoryMatrixStore(matrix, metadata)
-        store_fake_train_matrix(db_engine, '1234')
 
         # Runs the same test for training and testing predictions
         for mat_type in ("train", "test"):
@@ -195,6 +203,8 @@ def test_predictor_get_train_columns():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
+
         project_path = 'econ-dev/inspections'
         with tempfile.TemporaryDirectory() as temp_dir:
             train_store, test_store = sample_metta_csv_diff_order(temp_dir)
@@ -208,8 +218,10 @@ def test_predictor_get_train_columns():
                     train_matrix_uuid=train_store.uuid
                 )
             predictor = Predictor(project_path, model_storage_engine, db_engine)
+
             # The train_store uuid is stored in fake_trained_model. Storing the other
-            store_fake_train_matrix(db_engine, test_store.uuid)
+            MatrixFactory(matrix_uuid = test_store.uuid)
+            session2.commit()
 
             # Runs the same test for training and testing predictions
             for mat_type in ("train", "test"):
@@ -239,6 +251,8 @@ def test_predictor_retrieve():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
+
         project_path = 'econ-dev/inspections'
         model_storage_engine = InMemoryModelStorageEngine(project_path)
         _, model_id = \
@@ -263,8 +277,11 @@ def test_predictor_retrieve():
             'metta-uuid': '1234',
             'indices': ['entity_id', 'as_of_date'],
         }
+        # Creates a matrix entry in the Matrices table with uuid from metadata above
+        MatrixFactory(matrix_uuid = "1234")
+        session2.commit()
+
         matrix_store = InMemoryMatrixStore(matrix, metadata)
-        store_fake_train_matrix(db_engine, '1234')
 
         predict_proba = predictor.predict(
             model_id,

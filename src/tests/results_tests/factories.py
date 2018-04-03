@@ -45,6 +45,11 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
     feature_list = ['feature1', 'feature2', 'feature3']
     model_config = {}
 
+class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.Matrices
+        sqlalchemy_session = session
+    matrix_uuid = "efgh"
 
 class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -59,12 +64,12 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     model_comment = ''
     batch_comment = ''
     config = {}
+    matrix_rel = factory.SubFactory(MatrixFactory)
     experiment_rel = factory.SubFactory(ExperimentFactory)
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
     train_matrix_uuid = "efgh"
     training_label_timespan = '1y'
-
 
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -89,7 +94,7 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     label_value = factory.fuzzy.FuzzyInteger(0, 1)
     rank_abs = 1
     rank_pct = 1.0
-    matrix_uuid = factory.fuzzy.FuzzyText()
+    matrix_uuid = "efgh"
     test_label_timespan = '3m'
 
 
@@ -104,7 +109,7 @@ class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     score = factory.fuzzy.FuzzyDecimal(0, 1)
     rank_abs = 1
     rank_pct = 1.0
-    matrix_uuid = factory.fuzzy.FuzzyText()
+    matrix_uuid = "efgh"
     test_label_timespan = '3m'
 
 

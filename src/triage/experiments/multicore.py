@@ -92,9 +92,9 @@ class MultiCoreExperiment(ExperimentBase):
                     evaluator_factory=self.evaluator_factory,
                     indiv_importance_factory=self.indiv_importance_factory,
                     test_store=test_store,
+                    train_store=train_store,
                     db_connection_string=self.db_engine.url,
                     split_def=split_def,
-                    train_matrix_columns=train_store.columns(),
                     config=self.config
                 )
                 logging.info(
@@ -252,9 +252,9 @@ def test_and_evaluate(
     evaluator_factory,
     indiv_importance_factory,
     test_store,
+    train_store,
     db_connection_string,
     split_def,
-    train_matrix_columns,
     config
 ):
     try:
@@ -265,22 +265,22 @@ def test_and_evaluate(
             evaluator = evaluator_factory(db_engine=db_engine)
             individual_importance = indiv_importance_factory(db_engine=db_engine)
 
-            # Predictions for the testing data
+            #First generate predictions for the testing data
             predictions_proba = predictor.predict(
                 model_id,
                 test_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns,
-                write_data=True
+                train_matrix_columns=train_store.columns(),
+                matrix_type = 'Test'
             )
 
-            # Predictions for the training data
+            #Next, generate predictions for the training data for the same time period
             predictions_proba_train = predictor.predict(
                 model_id,
                 train_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns,
-                write_data=False
+                train_matrix_columns=train_store.columns(),
+                matrix_type = 'Train'
             )
 
             logging.info('Generating individual importances for model id %s', model_id)
