@@ -5,7 +5,7 @@ import testing.postgresql
 import numpy
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
-from tests.utils import fake_labels, fake_trained_model
+from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
 from triage.component.catwalk.storage import InMemoryModelStorageEngine
 import datetime
 
@@ -49,24 +49,26 @@ def test_evaluating_early_warning():
             custom_metrics=custom_metrics
         )
 
+        labels = fake_labels(5)
+        fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, labels)
+        fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, labels)
+
         trained_model, model_id = fake_trained_model(
             'myproject',
             InMemoryModelStorageEngine('myproject'),
             db_engine
         )
 
-        labels = fake_labels(5)
         as_of_date = datetime.date(2016, 5, 5)
 
         # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
-            labels,
+            fake_test_matrix_store,
             model_id,
             as_of_date,
             as_of_date,
-            '1y',
-            "Test"
+            '1y'
         )
         records = [
             row[0] for row in
@@ -116,12 +118,11 @@ def test_evaluating_early_warning():
         # Evaluate the training metrics and test
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
-            labels,
+            fake_train_matrix_store,
             model_id,
             as_of_date,
             as_of_date,
-            '1y',
-            "Train"
+            '1y'
         )
         records = [
             row[0] for row in
@@ -134,6 +135,19 @@ def test_evaluating_early_warning():
                 (model_id, as_of_date)
             )
         ]
+        records2 = [
+            row for row in
+            db_engine.execute(
+                '''select *
+                from train_results.train_evaluations
+                where model_id = %s and
+                evaluation_start_time = %s
+                order by 1''',
+                (model_id, as_of_date)
+            )
+        ]
+
+        print(records2)
         assert records == ['accuracy', 'roc_auc']
 
 
@@ -149,12 +163,6 @@ def test_model_scoring_inspections():
 
         model_evaluator = ModelEvaluator(metric_groups, training_metric_groups, db_engine)
 
-        trained_model, model_id = fake_trained_model(
-            'myproject',
-            InMemoryModelStorageEngine('myproject'),
-            db_engine
-        )
-
         testing_labels = numpy.array([True, False, numpy.nan, True, False])
         testing_prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
 
@@ -165,15 +173,23 @@ def test_model_scoring_inspections():
         evaluation_end = datetime.datetime(2016, 7, 1)
         example_as_of_date_frequency = '1d'
 
+        fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, training_labels)
+        fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, testing_labels)
+
+        trained_model, model_id = fake_trained_model(
+            'myproject',
+            InMemoryModelStorageEngine('myproject'),
+            db_engine
+        )
+
         # Evaluate testing matrix and test the results
         model_evaluator.evaluate(
             testing_prediction_probas,
-            testing_labels,
+            fake_test_matrix_store,
             model_id,
             evaluation_start,
             evaluation_end,
-            example_as_of_date_frequency,
-            matrix_type="Test"
+            example_as_of_date_frequency
         )
         for record in db_engine.execute(
             '''select * from test_results.test_evaluations
@@ -191,12 +207,11 @@ def test_model_scoring_inspections():
         # Evaluate the training matrix and test the results
         model_evaluator.evaluate(
                     training_prediction_probas,
-                    training_labels,
+                    fake_train_matrix_store,
                     model_id,
                     evaluation_start,
                     evaluation_end,
-                    example_as_of_date_frequency,
-                    matrix_type="Train"
+                    example_as_of_date_frequency
         )
         for record in db_engine.execute(
             '''select * from train_results.train_evaluations

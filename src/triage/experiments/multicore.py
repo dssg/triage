@@ -265,24 +265,6 @@ def test_and_evaluate(
             evaluator = evaluator_factory(db_engine=db_engine)
             individual_importance = indiv_importance_factory(db_engine=db_engine)
 
-            #First generate predictions for the testing data
-            predictions_proba = predictor.predict(
-                model_id,
-                test_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_store.columns(),
-                matrix_type = 'Test'
-            )
-
-            #Next, generate predictions for the training data for the same time period
-            predictions_proba_train = predictor.predict(
-                model_id,
-                train_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_store.columns(),
-                matrix_type = 'Train'
-            )
-
             logging.info('Generating individual importances for model id %s', model_id)
             individual_importance.calculate_and_save_all_methods_and_dates(
                 model_id,
@@ -290,30 +272,26 @@ def test_and_evaluate(
             )
             logging.info('Generating evaluations for model id %s', model_id)
 
-            # Calls evaluate once for the testing metrics
-            evaluator.evaluate(
-                predictions_proba=predictions_proba,
-                labels=test_store.labels(),
-                model_id=model_id,
-                # for evaluation range, using first to last as of time:
-                evaluation_start_time=split_def['first_as_of_time'],
-                evaluation_end_time=split_def['last_as_of_time'],
-                as_of_date_frequency=split_def['test_as_of_date_frequency'],
-                matrix_type="Test"
-            )
+            #Generate predictions for the testing data then training data
+            for store in (test_store, train_store):
+                predictions_proba = predictor.predict(
+                    model_id,
+                    store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_store.columns()
+                )
 
-            #Calls again for the training metrics
-            evaluator.evaluate(
-                predictions_proba=predictions_proba_train,
-                labels=train_store.labels(),
-                model_id=model_id,
-                # for evaluation range, using first to last as of time:
-                evaluation_start_time=split_def['first_as_of_time'],
-                evaluation_end_time=split_def['last_as_of_time'],
-                as_of_date_frequency=split_def['test_as_of_date_frequency'],
-                matrix_type="Train"
-            )
+                evaluator.evaluate(
+                    predictions_proba=predictions_proba,
+                    matrix_store=store,
+                    model_id=model_id,
+                    # for evaluation range, using first to last as of time:
+                    evaluation_start_time=split_def['first_as_of_time'],
+                    evaluation_end_time=split_def['last_as_of_time'],
+                    as_of_date_frequency=split_def['test_as_of_date_frequency']
+                )
         return True
+
     except Exception:
         logging.error('Child error: %s', traceback.format_exc())
         return False

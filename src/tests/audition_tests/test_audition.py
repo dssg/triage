@@ -42,11 +42,9 @@ def test_Auditioner():
             datetime(2015, 1, 1),
             datetime(2016, 1, 1),
         ]
-        # Creates an entry in the matrix db with uuid = "efgh" for all the models to referenece
-        DefaultMatrix = MatrixFactory()
 
         models = [
-            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time, matrix_rel=DefaultMatrix)
+            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time)
             for model_group in model_groups
             for train_end_time in train_end_times
         ]

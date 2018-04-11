@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 
 from triage.component import metta
-from triage.component.results_schema import Matrices
+from triage.component.results_schema import Matrix
 
 
 class BuilderBase(object):
@@ -317,19 +317,16 @@ class CSVBuilder(BuilderBase):
             else:
                 lookback = matrix_metadata["test_duration"]
 
-            matrix = Matrices(
-                matrix_id = matrix_metadata["matrix_id"],
-                matrix_uuid = matrix_uuid,
-                matrix_type = matrix_type,
-                labeling_window = matrix_metadata["label_timespan"],
-                n_examples = len(output),
-                lookback_duration = lookback,
-                feature_start_time = matrix_metadata["feature_start_time"],
-                matrix_metadata = json.dumps(matrix_metadata, sort_keys=True, default=str)
+            matrix = Matrix(
+                matrix_id=matrix_metadata["matrix_id"],
+                matrix_uuid=matrix_uuid,
+                matrix_type=matrix_type,
+                labeling_window=matrix_metadata["label_timespan"],
+                n_examples=len(output),
+                lookback_duration=lookback,
+                feature_start_time=matrix_metadata["feature_start_time"],
+                matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)
             )
-            # Development note, saving to db not working, pursue another method.
-            #save_matrix_object(self.engine, matrix)
-
             session = self.sessionmaker()
             session.add(matrix)
             session.commit()

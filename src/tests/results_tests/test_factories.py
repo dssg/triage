@@ -21,12 +21,8 @@ def test_evaluation_factories():
         Base.metadata.create_all(engine)
         init_engine(engine)
 
-        # create some basic evaluations, but with the same model group and
-        # model to test the factory relationships
-        default_matrix = MatrixFactory()
-
         model_group = ModelGroupFactory()
-        model = ModelFactory(model_group_rel=model_group, matrix_rel=default_matrix)
+        model = ModelFactory(model_group_rel=model_group)
         for metric, value in [
             ('precision@', 0.4),
             ('recall@', 0.3),

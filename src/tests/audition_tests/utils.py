@@ -16,16 +16,12 @@ def create_sample_distance_table(engine):
         'stable': ModelGroupFactory(model_type='myStableClassifier'),
         'spiky': ModelGroupFactory(model_type='mySpikeClassifier'),
     }
-    # Creates an entry in the matrix db with uuid = "efgh" for all the models to referenece
-    DefaultMatrix = MatrixFactory()
 
     class StableModelFactory(ModelFactory):
         model_group_rel = model_groups['stable']
-        matrix_rel = DefaultMatrix
 
     class SpikyModelFactory(ModelFactory):
         model_group_rel = model_groups['spiky']
-        matrix_rel = DefaultMatrix
 
     models = {
         'stable_3y_ago': StableModelFactory(train_end_time='2014-01-01'),

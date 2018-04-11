@@ -3,6 +3,7 @@ import datetime
 import importlib
 import json
 import logging
+import sys
 
 import numpy as np
 import pandas
@@ -272,8 +273,9 @@ class ModelTrainer(object):
             matrix_store.metadata,
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
-        #Writing the model to storage, with its size in bytes returned.
-        model_size = model_store.write(trained_model)
+        #Writing the model to storage, then getting its size in kilobytes.
+        model_store.write(trained_model)
+        model_size = sys.getsizeof(trained_model)/(1024.0)
 
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(

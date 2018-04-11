@@ -9,7 +9,7 @@ import pandas
 import postgres_copy
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Model, TestPrediction, TrainPrediction
+from triage.component.results_schema import Model
 
 from .utils import db_retry
 
@@ -223,7 +223,7 @@ class Predictor(object):
             session.commit()
             session.close()
 
-    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns, matrix_type = 'Test'):
+    def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
 
         Args:
@@ -234,16 +234,12 @@ class Predictor(object):
                 TrainPrediction or TestPrediction object in the results schema
             train_matrix_columns (list): The order of columns that the model
                 was trained on
-            matrix_type: (string) 'Train' or 'Test', specifies to which predictions table to write
 
         Returns:
             (numpy.Array) the generated prediction values
         """
-        #Setting the Prediction object type - train or test for their respective tables
-        if matrix_type.lower() == "train":
-            Prediction_obj = TrainPrediction
-        elif matrix_type.lower() == "test":
-            Prediction_obj = TestPrediction
+        #Setting the Prediction object type - TrainPrediction or TestPrediction
+        prediction_obj = matrix_store.matrix_type.prediction_obj
 
         session = self.sessionmaker()
         if not self.replace:
@@ -253,7 +249,7 @@ class Predictor(object):
                 matrix_store.uuid
             )
             existing_predictions = self._existing_predictions(
-                Prediction_obj,
+                prediction_obj,
                 session,
                 model_id,
                 matrix_store
@@ -275,7 +271,9 @@ class Predictor(object):
         if not model:
             raise ModelNotFoundError('Model id {} not found'.format(model_id))
 
+        # Labels are popped from matrix (IE, they are removed and returned)
         labels = matrix_store.labels()
+
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
@@ -287,7 +285,7 @@ class Predictor(object):
             predictions_proba[:, 1],
             labels,
             misc_db_parameters,
-            Prediction_obj
+            prediction_obj
         )
         logging.info(
             'Wrote predictions for model %s, matrix %s to database',

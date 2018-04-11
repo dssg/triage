@@ -50,7 +50,7 @@ def test_model_trainer():
                 'feature_names': ['ft1', 'ft2'],
                 'indices': ['entity_id'],
             }
-            # Creates a matrix entry in the Matrices table with uuid from metadata above
+            # Creates a matrix entry in the matrices table with uuid from metadata above
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
@@ -231,7 +231,7 @@ def test_baseline_exception_handling():
                     'indices': ['entity_id'],
                 })
             )
-            # Creates a matrix entry in the Matrices table with uuid from train_metadata
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
@@ -289,7 +289,7 @@ def test_n_jobs_not_new_model():
                     'indices': ['entity_id'],
                 })
             )
-            # Creates a matrix entry in the Matrices table with uuid from train_metadata
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
@@ -406,7 +406,7 @@ class RetryTest(unittest.TestCase):
             ensure_db(db_engine)
             init_engine(db_engine)
 
-            # Creates a matrix entry in the Matrices table with uuid from train_metadata
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 

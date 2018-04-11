@@ -88,7 +88,7 @@ class ListPrediction(Base):
     model_rel = relationship('Model')
 
 
-class Matrices(Base):
+class Matrix(Base):
 
     __tablename__ = 'matrices'
     __table_args__ = {"schema": "model_metadata"}
@@ -129,7 +129,7 @@ class Model(Base):
 
     model_group_rel = relationship('ModelGroup')
     experiment_rel = relationship('Experiment')
-    matrix_rel = relationship('Matrices')
+    matrix_rel = relationship('Matrix')
 
     def delete(self, session):
         # basically implement a cascade, in case cascade is not implemented

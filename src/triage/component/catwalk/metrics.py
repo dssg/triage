@@ -85,22 +85,50 @@ def avg_precision(predictions_proba, _, labels, parameters):
 
 @Metric(greater_is_better=True)
 def true_positives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[1, 1])
+    # If all labels false
+    if not any(labels):
+        return 0
+    # If all labels true and all predictions 1
+    elif all(labels) and all(i == 1 for i in predictions_binary):
+        return 1
+    else:
+        return int(confusion_matrix(labels, predictions_binary)[1, 1])
 
 
 @Metric(greater_is_better=False)
 def false_positives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[0, 1])
+    # If all labels false
+    if not any(labels):
+        return 0
+    # If all labels true and all predictions 1
+    elif all(labels) and all(i == 1 for i in predictions_binary):
+        return 0
+    else:
+        return int(confusion_matrix(labels, predictions_binary)[0, 1])
 
 
 @Metric(greater_is_better=True)
 def true_negatives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[0, 0])
+    # If all labels false and all predictions 0
+    if not any(labels) and all(i == 0 for i in predictions_binary):
+        return 1
+    # If all labels true
+    elif all(labels):
+        return 0
+    else:
+        return int(confusion_matrix(labels, predictions_binary)[0, 0])
 
 
 @Metric(greater_is_better=False)
 def false_negatives(_, predictions_binary, labels, parameters):
-    return int(confusion_matrix(labels, predictions_binary)[1, 0])
+    # If all labels false and all predictions 0
+    if not any(labels) and all(i == 0 for i in predictions_binary):
+        return 0
+    # If all labels true
+    elif all(labels):
+        return 0
+    else:
+        return int(confusion_matrix(labels, predictions_binary)[1, 0])
 
 
 @Metric(greater_is_better=False)

@@ -137,7 +137,6 @@ def test_simple_experiment(experiment_class):
         assert len(matrices) == 4
 
 
-
 @parametrize_experiment_classes
 def test_restart_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:

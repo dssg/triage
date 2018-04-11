@@ -29,9 +29,7 @@ def test_S3Store():
         client.create_bucket(Bucket='test_bucket', ACL='public-read-write')
         store = S3Store(path=f"s3://test_bucket/a_path")
         assert not store.exists()
-        obj_size = store.write(SomeClass('val'))
-        # test obj less than 1 kb
-        assert obj_size < 1
+        store.write(SomeClass('val'))
         assert store.exists()
         newVal = store.load()
         assert newVal.val == 'val'
@@ -44,8 +42,7 @@ def test_FSStore():
         tmpfile = os.path.join(tmpdir, 'tmpfile')
         store = FSStore(tmpfile)
         assert not store.exists()
-        obj_size = store.write(SomeClass('val'))
-        assert obj_size < 1
+        store.write(SomeClass('val'))
         assert store.exists()
         newVal = store.load()
         assert newVal.val == 'val'
@@ -56,8 +53,7 @@ def test_FSStore():
 def test_MemoryStore():
     store = MemoryStore(None)
     assert not store.exists()
-    obj_size = store.write(SomeClass('val'))
-    assert obj_size < 1
+    store.write(SomeClass('val'))
     assert store.exists()
     newVal = store.load()
     assert newVal.val == 'val'

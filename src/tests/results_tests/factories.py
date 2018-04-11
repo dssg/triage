@@ -47,9 +47,9 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
 
 class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
-        model = schema.Matrices
+        model = schema.Matrix
         sqlalchemy_session = session
-    matrix_uuid = "efgh"
+    matrix_uuid = factory.fuzzy.FuzzyText()
 
 class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -68,7 +68,7 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     experiment_rel = factory.SubFactory(ExperimentFactory)
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
-    train_matrix_uuid = "efgh"
+    train_matrix_uuid = factory.SelfAttribute('matrix_rel.matrix_uuid')
     training_label_timespan = '1y'
 
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -94,7 +94,7 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     label_value = factory.fuzzy.FuzzyInteger(0, 1)
     rank_abs = 1
     rank_pct = 1.0
-    matrix_uuid = "efgh"
+    matrix_uuid = factory.SelfAttribute('model_rel.train_matrix_uuid')
     test_label_timespan = '3m'
 
 

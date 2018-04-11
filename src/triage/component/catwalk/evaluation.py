@@ -4,9 +4,6 @@ import time
 import numpy
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import TestEvaluation, TrainEvaluation
-
-
 from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
 
@@ -120,7 +117,7 @@ class ModelEvaluator(object):
         predictions_proba,
         predictions_binary,
         labels,
-        matrix_type
+        evaluation_table_obj
     ):
         """Generate evaluations based on config and create ORM objects to hold them
 
@@ -133,7 +130,8 @@ class ModelEvaluator(object):
             predictions_proba (list) Probability predictions
             predictions_binary (list) Binary predictions
             labels (list) True labels
-            matrix_type (string) either "Test" or "Train" for the type of matrix
+            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
+                specifies to which table to add the evaluations
 
         Returns: (list) results_schema.TrainEvaluation or TestEvaluation objects
         Raises: UnknownMetricError if a given metric is not present in
@@ -169,13 +167,8 @@ class ModelEvaluator(object):
                         num_positive_labels,
                         value
                     )
-                    # Most of the information to be written to the database
-                    if matrix_type.lower() == "train":
-                        table_obj = TrainEvaluation
-                    elif matrix_type.lower() == "test":
-                        table_obj = TestEvaluation
 
-                    evaluations.append(table_obj(
+                    evaluations.append(evaluation_table_obj(
                         metric=metric,
                         parameter=parameter_string,
                         value=value,
@@ -191,25 +184,29 @@ class ModelEvaluator(object):
     def evaluate(
         self,
         predictions_proba,
-        labels,
+        matrix_store,
         model_id,
         evaluation_start_time,
         evaluation_end_time,
-        as_of_date_frequency,
-        matrix_type="Test"
+        as_of_date_frequency
     ):
         """Evaluate a model based on predictions, and save the results
 
         Args:
             predictions_proba (numpy.array) List of prediction probabilities
-            labels (numpy.array) The true labels for the prediction set
+            matrix_store (catwalk.storage.MatrixStore) a wrapper for the
+                prediction matrix and metadata
             model_id (int) The database identifier of the model
             evaluation_start_time (datetime.datetime) The time of the
                 first prediction being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             as_of_date_frequency (string) How frequently predictions were generated
-            matrix_type (string) either "Test" or "Train" for the type of matrix
         """
+        labels = matrix_store.labels()
+        matrix_type = matrix_store.matrix_type.string_name
+
+        # Specifies which evaluation table to write to: TestEvaluation or TrainEvaluation
+        evaluation_table_obj = matrix_store.matrix_type.evaluation_obj
 
         logging.info(
             'Generating evaluations for model id %s, evaluation range %s-%s, '
@@ -227,12 +224,12 @@ class ModelEvaluator(object):
         labels_sorted = numpy.array(labels_sorted)
 
         evaluations = []
-        if matrix_type.lower() == "train":
-            metrics_groups_to_compute = self.training_metric_groups
-        elif matrix_type.lower() == "test":
+
+        ##### Needs to be addressed ###### -- class name instead
+        if matrix_store.matrix_type.is_test:
             metrics_groups_to_compute = self.metric_groups
         else:
-            raise ValueError("metric set {} unrecognized. Please select 'Train' or 'Test'".format(matrix_type))
+            metrics_groups_to_compute = self.training_metric_groups
 
         for group in metrics_groups_to_compute:
             logging.info('Creating evaluations for metric group %s', group)
@@ -251,7 +248,7 @@ class ModelEvaluator(object):
                         unit='percentile'
                     ),
                     labels_sorted.tolist(),
-                    matrix_type
+                    evaluation_table_obj
                 )
 
             for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
@@ -271,7 +268,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
-                    matrix_type
+                    evaluation_table_obj
                 )
 
             for abs_thresh in group.get('thresholds', {}).get('top_n', []):
@@ -291,7 +288,7 @@ class ModelEvaluator(object):
                     None,
                     predicted_classes,
                     present_labels_sorted,
-                    matrix_type
+                    evaluation_table_obj
                 )
 
         logging.info('Writing metrics to db: %s table', matrix_type)
@@ -301,7 +298,7 @@ class ModelEvaluator(object):
             evaluation_end_time,
             as_of_date_frequency,
             evaluations,
-            matrix_type
+            evaluation_table_obj
         )
         logging.info('Done writing metrics to db: %s table', matrix_type)
 
@@ -313,7 +310,7 @@ class ModelEvaluator(object):
         evaluation_end_time,
         as_of_date_frequency,
         evaluations,
-        matrix_type
+        evaluation_table_obj
     ):
         """Write evaluation objects to the database
 
@@ -323,16 +320,13 @@ class ModelEvaluator(object):
         Args:
             model_id (int) primary key of the model
             as_of_date (datetime.date) Date the predictions were made as of
-            evaluations (list) results_schema.Evaluation objects
-            matrix_type (string) Train or Test, specifies to which table to write
+            evaluations (list) results_schema.TestEvaluation or TrainEvaluation objects
+            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
+                specifies to which table to add the evaluations
         """
         session = self.sessionmaker()
-        if matrix_type.lower() == "train":
-            table_obj = TrainEvaluation
-        elif matrix_type.lower() == "test":
-            table_obj = TestEvaluation
 
-        session.query(table_obj)\
+        session.query(evaluation_table_obj)\
             .filter_by(
                 model_id=model_id,
                 evaluation_start_time=evaluation_start_time,

@@ -4,6 +4,8 @@ import os
 import logging
 from sklearn.externals import joblib
 from urllib.parse import urlparse
+from triage.component.results_schema import TestEvaluation, TrainEvaluation, \
+    TestPrediction, TrainPrediction
 
 import pandas as pd
 import s3fs
@@ -41,8 +43,6 @@ class S3Store(Store):
         s3 = s3fs.S3FileSystem()
         with s3.open(self.path, 'wb') as f:
             joblib.dump(obj, f, compress=True)
-        # Return the file size of the model object in kB
-        return s3.info(self.path)["Size"]/(1024.0)
 
     def load(self):
         s3 = s3fs.S3FileSystem()
@@ -62,8 +62,6 @@ class FSStore(Store):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, 'w+b') as f:
             joblib.dump(obj, f, compress=True)
-        # Return the file size of the model object in kB
-        return os.path.getsize(self.path)/(1024.0)
 
     def load(self):
         with open(self.path, 'rb') as f:
@@ -81,8 +79,6 @@ class MemoryStore(Store):
 
     def write(self, obj):
         self.store = obj
-        # Return the file size of the model object in kB
-        return sys.getsizeof(obj)/(1024.0)
 
     def load(self):
         return self.store
@@ -220,6 +216,16 @@ class MatrixStore(object):
             return len(self.matrix.index.values)
         elif 'entity_id' in self.matrix.index.names:
             return len(self.matrix.index.levels[self.matrix.index.names.index('entity_id')])
+
+    @property
+    def matrix_type(self):
+        if self.metadata['matrix_type'] == 'train':
+            return TrainMatrixType
+        elif self.metadata['matrix_type'] == 'test':
+            return TestMatrixType
+        else:
+            raise Exception('''matrix metadata for matrix {} must contain 'matrix_type'
+             = "train" or "test" '''.format(self.uuid))
 
     def matrix_with_sorted_columns(self, columns):
         columnset = set(self.columns())
@@ -421,3 +427,17 @@ class InMemoryMatrixStore(MatrixStore):
 
     def save(self, project_path, name):
         return None
+
+
+class TestMatrixType(object):
+    string_name = 'test'
+    evaluation_obj = TestEvaluation
+    prediction_obj = TestPrediction
+    is_test = True
+
+
+class TrainMatrixType(object):
+    string_name = 'train'
+    evaluation_obj = TrainEvaluation
+    prediction_obj = TrainPrediction
+    is_test = False

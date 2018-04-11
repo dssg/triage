@@ -48,11 +48,9 @@ def test_PreAudition():
             datetime(2016, 7, 1),
             datetime(2016, 1, 1),
         ]
-        # Creates a matrix for all models to reference
-        DefaultMatrix = MatrixFactory()
 
         models = [
-            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time, matrix_rel=DefaultMatrix)
+            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time)
             for model_group in model_groups
             for train_end_time in train_end_times
         ]

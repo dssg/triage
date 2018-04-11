@@ -41,8 +41,9 @@ def test_integration():
                 'feature_names': ['ft1', 'ft2'],
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
+                'matrix_type': 'train'
             }
-            # Creates a matrix entry in the Matrices table with uuid from train_metadata
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
@@ -67,6 +68,7 @@ def test_integration():
                         'end_time': as_of_date,
                         'metta-uuid': '1234',
                         'indices': ['entity_id'],
+                        'matrix_type': 'test'
                     }
                 )
                 for as_of_date in as_of_dates
@@ -114,13 +116,12 @@ def test_integration():
                         model_id,
                         test_store,
                         misc_db_parameters=dict(),
-                        train_matrix_columns=['feature_one', 'feature_two'],
-                        matrix_type = "Test"
+                        train_matrix_columns=['feature_one', 'feature_two']
                     )
 
                     model_evaluator.evaluate(
                         predictions_proba,
-                        test_store.labels(),
+                        test_store,
                         model_id,
                         as_of_date,
                         as_of_date,

@@ -12,8 +12,9 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
 from triage.component.catwalk.storage import CSVMatrixStore
-from triage.component.results_schema import Model, Matrices
+from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
+from triage.component.catwalk.storage import TrainMatrixType, TestMatrixType
 
 
 @contextmanager
@@ -48,6 +49,29 @@ class MockTrainedModel(object):
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
+class MockMatrixStore(object):
+    def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=[]):
+        if matrix_type == 'train':
+            self.matrix_type = TrainMatrixType
+        elif matrix_type == 'test':
+            self.matrix_type = TestMatrixType
+        else:
+            raise Exception('Initialize MockMatrixStore with matrix_type = "train" or "test"')
+
+        self.label_count = label_count
+        self.init_labels = init_labels
+        self.matrix_uuid = matrix_uuid
+
+        session = sessionmaker(db_engine)()
+        session.add(Matrix(matrix_uuid=matrix_uuid))
+
+    def labels(self):
+        if self.init_labels == []:
+            return fake_labels(self.label_count)
+        else:
+            return self.init_labels
+
+
 
 def fake_trained_model(project_path, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
     """Creates and stores a trivial trained model and training matrix
@@ -61,7 +85,7 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
         (int) model id for database retrieval
     """
     session = sessionmaker(db_engine)()
-    session.add(Matrices(matrix_uuid=train_matrix_uuid))
+    session.add(Matrix(matrix_uuid=train_matrix_uuid))
 
     # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
@@ -94,6 +118,7 @@ def sample_metta_csv_diff_order(directory):
         'label_name': 'label',
         'label_timespan': '3month',
         'indices': ['entity_id'],
+        'matrix_type': 'train'
     }
 
     test_dict = OrderedDict([
@@ -111,6 +136,7 @@ def sample_metta_csv_diff_order(directory):
         'label_name': 'label',
         'label_timespan': '3month',
         'indices': ['entity_id'],
+        'matrix_type': 'test'
     }
 
     train_uuid, test_uuid = metta.archive_train_test(
