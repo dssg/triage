@@ -43,7 +43,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
 
     Args:
         db_engine (sqlalchemy.engine)
-        model_id (int) A model id, expected to be present in results.models
+        model_id (int) A model id, expected to be present in model_metadata.models
         as_of_date (datetime or string) The date to produce individual importances as of
         test_matrix_store (catwalk.storage.MatrixStore) The test matrix
         n_ranks (int) Number of ranks to calculate and save. Defaults to 5
@@ -52,7 +52,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
     """
     global_feature_importances = [row for row in db_engine.execute(
         '''select feature, feature_importance
-        from results.feature_importances where model_id = %s
+        from train_results.feature_importances where model_id = %s
         order by feature_importance desc limit %s''',
         model_id,
         n_ranks

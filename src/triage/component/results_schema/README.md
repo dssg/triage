@@ -3,9 +3,9 @@ Store results of modeling runs in a relational database
 
 ## Quick Start
 
-1. Install
+1. Install Triage
 
-`pip install git+https://github.com/dssg/results-schema.git`
+`pip install git+https://github.com/dssg/triage.git`
 
 2. Create a YAML file with your database credentials (see example_db_config.yaml), or an environment variable 'DBURL' with a connection string. The database must be created already.
 
@@ -27,11 +27,11 @@ This command will create a 'results' schema and the necessary tables.
 
 2. Make the desired modifications to [results_schema.schema](src/triage/component/results_schema/schema.py).
 
-3. Autogenerate a migration: `alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
+3. From within the results schema directory, autogenerate a migration: `PYTHONPATH='../../../' alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
 
 4. Inspect the file generated in step 3 and make sure that the changes it is suggesting make sense. Make any modifications you want; the autogenerate functionality is just meant as a guideline.
 
-5. Upgrade the database: `alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml upgrade head` 
+5. Upgrade the database: `PYTHONPATH='../../../' alembic -c alembic.ini -x db_config_file=my_db_config.yaml upgrade head`
 
 6. Update the [factories file](src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 

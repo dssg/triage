@@ -13,12 +13,14 @@ from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
     S3ModelStorageEngine, InMemoryMatrixStore
+from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 
 def test_model_trainer():
     with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        ensure_db(engine)
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        init_engine(db_engine)
 
         grid_config = {
             'sklearn.linear_model.LogisticRegression': {
@@ -48,13 +50,17 @@ def test_model_trainer():
                 'feature_names': ['ft1', 'ft2'],
                 'indices': ['entity_id'],
             }
+            # Creates a matrix entry in the matrices table with uuid from metadata above
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
+
             project_path = 'econ-dev/inspections'
             model_storage_engine = S3ModelStorageEngine(project_path)
             trainer = ModelTrainer(
                 project_path=project_path,
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
             matrix_store = InMemoryMatrixStore(matrix, metadata)
@@ -68,13 +74,13 @@ def test_model_trainer():
             # 1. that the models and feature importances table entries are present
             records = [
                 row for row in
-                engine.execute('select * from results.feature_importances')
+                db_engine.execute('select * from train_results.feature_importances')
             ]
             assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
             records = [
                 row for row in
-                engine.execute('select model_hash from results.models')
+                db_engine.execute('select model_hash from model_metadata.models')
             ]
             assert len(records) == 4
             hashes = [row[0] for row in records]
@@ -82,11 +88,21 @@ def test_model_trainer():
             # 2. that the model groups are distinct
             records = [
                 row for row in
-                engine.execute('select distinct model_group_id from results.models')
+                db_engine.execute('select distinct model_group_id from model_metadata.models')
             ]
             assert len(records) == 4
 
-            # 3. that all four models are cached
+            # 3. that the model sizes are saved in the table and all are < 1 kB
+            records = [
+                row for row in
+                db_engine.execute('select model_size from model_metadata.models')
+            ]
+            assert len(records) == 4
+            for i in records:
+                size = i[0]
+                assert size < 1
+
+            # 4. that all four models are cached
             model_pickles = [
                 model_storage_engine.get_store(model_hash).load()
                 for model_hash in hashes
@@ -94,7 +110,7 @@ def test_model_trainer():
             assert len(model_pickles) == 4
             assert len([x for x in model_pickles if x is not None]) == 4
 
-            # 4. that their results can have predictions made on it
+            # 5. that their results can have predictions made on it
             test_matrix = pandas.DataFrame.from_dict({
                 'entity_id': [3, 4],
                 'feature_one': [4, 4],
@@ -107,7 +123,7 @@ def test_model_trainer():
                 predictions = model_pickle.predict(test_matrix)
                 assert len(predictions) == 2
 
-            # 5. when run again, same models are returned
+            # 6. when run again, same models are returned
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
@@ -115,20 +131,20 @@ def test_model_trainer():
             )
             assert len([
                 row for row in
-                engine.execute('select model_hash from results.models')
+                db_engine.execute('select model_hash from model_metadata.models')
             ]) == 4
             assert model_ids == new_model_ids
 
-            # 6. if replace is set, update non-unique attributes and feature importances
+            # 7. if replace is set, update non-unique attributes and feature importances
             max_batch_run_time = [
                 row[0] for row in
-                engine.execute('select max(batch_run_time) from results.models')
+                db_engine.execute('select max(batch_run_time) from model_metadata.models')
             ][0]
             trainer = ModelTrainer(
                 project_path=project_path,
                 experiment_hash=None,
                 model_storage_engine=model_storage_engine,
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan'],
                 replace=True
             )
@@ -140,22 +156,22 @@ def test_model_trainer():
             assert model_ids == new_model_ids
             assert [
                 row['model_id'] for row in
-                engine.execute('select model_id from results.models order by 1 asc')
+                db_engine.execute('select model_id from model_metadata.models order by 1 asc')
             ] == model_ids
             new_max_batch_run_time = [
                 row[0] for row in
-                engine.execute('select max(batch_run_time) from results.models')
+                db_engine.execute('select max(batch_run_time) from model_metadata.models')
             ][0]
             assert new_max_batch_run_time > max_batch_run_time
 
             records = [
                 row for row in
-                engine.execute('select * from results.feature_importances')
+                db_engine.execute('select * from train_results.feature_importances')
             ]
             assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
-            # 7. if the cache is missing but the metadata is still there, reuse the metadata
-            for row in engine.execute('select model_hash from results.models'):
+            # 8. if the cache is missing but the metadata is still there, reuse the metadata
+            for row in db_engine.execute('select model_hash from model_metadata.models'):
                 model_storage_engine.get_store(row[0]).delete()
             new_model_ids = trainer.train_models(
                 grid_config=grid_config,
@@ -164,7 +180,7 @@ def test_model_trainer():
             )
             assert model_ids == sorted(new_model_ids)
 
-            # 8. that the generator interface works the same way
+            # 9. that the generator interface works the same way
             new_model_ids = trainer.generate_trained_models(
                 grid_config=grid_config,
                 misc_db_parameters=dict(),
@@ -180,10 +196,11 @@ def test_baseline_exception_handling():
         }
     }
     with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
+        db_engine = create_engine(postgresql.url())
         project_path = 'econ-dev/inspections'
         model_storage_engine = S3ModelStorageEngine(project_path)
-        ensure_db(engine)
+        ensure_db(db_engine)
+        init_engine(db_engine)
         with mock_s3():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
@@ -191,7 +208,7 @@ def test_baseline_exception_handling():
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
                 model_storage_engine = model_storage_engine,
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
 
@@ -214,6 +231,10 @@ def test_baseline_exception_handling():
                     'indices': ['entity_id'],
                 })
             )
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
+
             model_ids = []
             for train_task in train_tasks:
                 model_ids.append(trainer.process_train_task(**train_task))
@@ -235,8 +256,9 @@ def test_n_jobs_not_new_model():
     }
 
     with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        ensure_db(engine)
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        init_engine(db_engine)
         with mock_s3():
             s3_conn = boto3.resource('s3')
             s3_conn.create_bucket(Bucket='econ-dev')
@@ -244,7 +266,7 @@ def test_n_jobs_not_new_model():
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
                 model_storage_engine=S3ModelStorageEngine('econ-dev/inspections'),
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
 
@@ -267,6 +289,10 @@ def test_n_jobs_not_new_model():
                     'indices': ['entity_id'],
                 })
             )
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
+
             assert len(train_tasks) == 35 # 32+3, would be (32*2)+3 if we didn't remove
             assert len([
                 task for task in train_tasks
@@ -276,8 +302,8 @@ def test_n_jobs_not_new_model():
             for train_task in train_tasks:
                 trainer.process_train_task(**train_task)
 
-            for row in engine.execute(
-                'select model_parameters from results.model_groups'
+            for row in db_engine.execute(
+                'select model_parameters from model_metadata.model_groups'
             ):
                 assert 'n_jobs' not in row[0]
 
@@ -290,20 +316,21 @@ class RetryTest(unittest.TestCase):
             },
         }
 
-        engine = None
+        db_engine = None
         trainer = None
         # set up a basic model training run
         # TODO abstract the setup of a basic model training run where
         # we don't worry about the specific values used? it would make
         # tests like this require a bit less noise to read past
         with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
+            db_engine = create_engine(postgresql.url())
+            ensure_db(db_engine)
+            init_engine(db_engine)
             trainer = ModelTrainer(
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
 
@@ -337,18 +364,19 @@ class RetryTest(unittest.TestCase):
             },
         }
 
-        engine = None
+        db_engine = None
         trainer = None
         port = None
         with testing.postgresql.Postgresql() as postgresql:
             port = postgresql.settings['port']
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
+            db_engine = create_engine(postgresql.url())
+            ensure_db(db_engine)
+            init_engine(db_engine)
             trainer = ModelTrainer(
                 project_path='econ-dev/inspections',
                 experiment_hash=None,
                 model_storage_engine=InMemoryModelStorageEngine(project_path=''),
-                db_engine=engine,
+                db_engine=db_engine,
                 model_group_keys=['label_name', 'label_timespan']
             )
 
@@ -374,8 +402,14 @@ class RetryTest(unittest.TestCase):
         self.new_server = None
         def replace_db(arg):
             self.new_server = testing.postgresql.Postgresql(port=port)
-            engine = create_engine(self.new_server.url())
-            ensure_db(engine)
+            db_engine = create_engine(self.new_server.url())
+            ensure_db(db_engine)
+            init_engine(db_engine)
+
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
+
         with patch('time.sleep') as time_mock:
             time_mock.side_effect = replace_db
             try:

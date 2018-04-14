@@ -72,7 +72,7 @@ class ModelGroupPerformancePlotter(object):
                 raw_value,
                 mg.model_type
             from {dist_table} dist
-            join results.model_groups mg using (model_group_id)
+            join model_metadata.model_groups mg using (model_group_id)
             where model_group_id in ({model_group_ids})
             union
             select

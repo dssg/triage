@@ -346,8 +346,14 @@ def basic_integration_test(
                     feature_dicts
                 )
 
+
             # go and build the matrices
             planner.build_all_matrices(matrix_build_tasks)
+            matrices_records = list(db_engine.execute(
+                    '''select matrix_uuid, n_examples, matrix_type
+                    from model_metadata.matrices
+                    '''
+                ))
 
             # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')
@@ -355,10 +361,17 @@ def basic_integration_test(
             metadatas = [path for path in os.listdir(matrix_directory) if '.yaml' in path]
             assert len(matrices) == num_split_matrices * expected_matrix_multiplier
             assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
+            assert len(matrices) == len(matrices_records)
+
+            for matrix_uuid, n_examples, matrix_type in matrices_records:
+                assert matrix_uuid in matrix_build_tasks #the hashes of the matrices
+                assert type(n_examples) is int
+                assert matrix_type == matrix_build_tasks[matrix_uuid]['matrix_type']
+
 
 
 def test_integration_simple():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -368,8 +381,9 @@ def test_integration_simple():
     )
 
 
+
 def test_integration_more_state_filtering():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two', 'state_one', 'state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -379,7 +393,7 @@ def test_integration_more_state_filtering():
 
 
 def test_integration_feature_grouping():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'prefix': ['cat', 'dog']},
         feature_group_mix_rules=['leave-one-out', 'all'],

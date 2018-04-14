@@ -3,6 +3,7 @@ import datetime
 import importlib
 import json
 import logging
+import sys
 
 import numpy as np
 import pandas
@@ -29,7 +30,7 @@ class ModelTrainer(object):
     Args:
         project_path (string) path to project folder,
             under which to cache model pickles
-        experiment_hash (string) foreign key to the results.experiments table
+        experiment_hash (string) foreign key to the model_metadata.experiments table
         model_storage_engine (catwalk.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
         replace (bool) whether or not to replace existing versions of models
@@ -122,7 +123,7 @@ class ModelTrainer(object):
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
         self.db_engine.execute(
-            'delete from results.feature_importances where model_id = %s',
+            'delete from train_results.feature_importances where model_id = %s',
             model_id
         )
         db_objects = []
@@ -172,6 +173,7 @@ class ModelTrainer(object):
         model_hash,
         trained_model,
         model_group_id,
+        model_size,
         misc_db_parameters
     ):
         """Writes model and feature importance data to a database
@@ -191,6 +193,8 @@ class ModelTrainer(object):
             feature_names (list) feature names in order given to model
             model_hash (string) a unique id for the model
             trained_model (object) a trained model object
+            model_group_id (int) the unique id for the model group
+            model_size (float) the size of the stored model in kB
             misc_db_parameters (dict) params to pass through to the database
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
@@ -207,6 +211,7 @@ class ModelTrainer(object):
                 model_parameters=parameters,
                 model_group_id=model_group_id,
                 experiment_hash=self.experiment_hash,
+                model_size=model_size,
                 **misc_db_parameters
             )
             session = self.sessionmaker()
@@ -268,7 +273,10 @@ class ModelTrainer(object):
             matrix_store.metadata,
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
+        #Writing the model to storage, then getting its size in kilobytes.
         model_store.write(trained_model)
+        model_size = sys.getsizeof(trained_model)/(1024.0)
+
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
@@ -277,6 +285,7 @@ class ModelTrainer(object):
             model_hash,
             trained_model,
             model_group_id,
+            model_size,
             misc_db_parameters
         )
         logging.info('Wrote model to db: hash %s, got id %s', model_hash, model_id)

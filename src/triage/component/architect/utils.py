@@ -1,5 +1,10 @@
+import csv
 import functools
 import operator
+import tempfile
+
+from retrying import retry
+import sqlalchemy
 
 
 def feature_list(feature_dictionary):
@@ -20,3 +25,6 @@ def feature_list(feature_dictionary):
 
 def str_in_sql(values):
     return ','.join("'{}'".format(value) for value in values)
+
+def retry_if_db_error(exception):
+    return isinstance(exception, sqlalchemy.exc.OperationalError)

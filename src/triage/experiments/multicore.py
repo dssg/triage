@@ -92,9 +92,9 @@ class MultiCoreExperiment(ExperimentBase):
                     evaluator_factory=self.evaluator_factory,
                     indiv_importance_factory=self.indiv_importance_factory,
                     test_store=test_store,
+                    train_store=train_store,
                     db_connection_string=self.db_engine.url,
                     split_def=split_def,
-                    train_matrix_columns=train_store.columns(),
                     config=self.config
                 )
                 logging.info(
@@ -252,9 +252,9 @@ def test_and_evaluate(
     evaluator_factory,
     indiv_importance_factory,
     test_store,
+    train_store,
     db_connection_string,
     split_def,
-    train_matrix_columns,
     config
 ):
     try:
@@ -265,28 +265,33 @@ def test_and_evaluate(
             evaluator = evaluator_factory(db_engine=db_engine)
             individual_importance = indiv_importance_factory(db_engine=db_engine)
 
-            predictions_proba = predictor.predict(
-                model_id,
-                test_store,
-                misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
-            )
             logging.info('Generating individual importances for model id %s', model_id)
             individual_importance.calculate_and_save_all_methods_and_dates(
                 model_id,
                 test_store
             )
             logging.info('Generating evaluations for model id %s', model_id)
-            evaluator.evaluate(
-                predictions_proba=predictions_proba,
-                labels=test_store.labels(),
-                model_id=model_id,
-                # for evaluation range, using first to last as of time:
-                evaluation_start_time=split_def['first_as_of_time'],
-                evaluation_end_time=split_def['last_as_of_time'],
-                as_of_date_frequency=split_def['test_as_of_date_frequency']
-            )
+
+            #Generate predictions for the testing data then training data
+            for store in (test_store, train_store):
+                predictions_proba = predictor.predict(
+                    model_id,
+                    store,
+                    misc_db_parameters=dict(),
+                    train_matrix_columns=train_store.columns()
+                )
+
+                evaluator.evaluate(
+                    predictions_proba=predictions_proba,
+                    matrix_store=store,
+                    model_id=model_id,
+                    # for evaluation range, using first to last as of time:
+                    evaluation_start_time=split_def['first_as_of_time'],
+                    evaluation_end_time=split_def['last_as_of_time'],
+                    as_of_date_frequency=split_def['test_as_of_date_frequency']
+                )
         return True
+
     except Exception:
         logging.error('Child error: %s', traceback.format_exc())
         return False

@@ -5,8 +5,6 @@ import time
 import numpy
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Evaluation
-
 from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
 
@@ -16,7 +14,6 @@ def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
 
     Args:
         test_predictions (list) A list of predictions, sorted by risk desc
-        test_labels (list) A list of labels, sorted by risk desc
         x_value (int) The percentile or absolute value desired
         unit (string, default 'top_n') The subsetting method desired,
             either percentile or top_n
@@ -58,7 +55,14 @@ class ModelEvaluator(object):
         'fpr@': metrics.fpr,
     }
 
-    def __init__(self, metric_groups, db_engine, sort_seed=None, custom_metrics=None):
+    def __init__(
+        self,
+        metric_groups,
+        training_metric_groups,
+        db_engine,
+        sort_seed=None,
+        custom_metrics=None
+    ):
         """
         Args:
             metric_groups (list) A list of groups of metric/configurations
@@ -82,7 +86,8 @@ class ModelEvaluator(object):
                     'metrics': ['fbeta@'],
                     'parameters': [{'beta': 0.75}, {'beta': 1.25}]
                 }]
-
+            training_metric_groups (list) metrics to be calculated on training set,
+                in the same form as metric_groups
             db_engine (sqlalchemy.engine)
             custom_metrics (dict) Functions to generate metrics
                 not available by default
@@ -91,6 +96,7 @@ class ModelEvaluator(object):
                 and return a numeric score
         """
         self.metric_groups = metric_groups
+        self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
         self.sort_seed = sort_seed or int(time.time())
         if custom_metrics:
@@ -163,9 +169,10 @@ class ModelEvaluator(object):
         parameters,
         predictions_proba,
         labels,
+        evaluation_table_obj,
         threshold_unit,
         threshold_value,
-        threshold_specified_by_user=True
+        threshold_specified_by_user=True,
     ):
         """Generate evaluations for a given threshold in a metric group,
         and create ORM objects to hold them
@@ -173,12 +180,16 @@ class ModelEvaluator(object):
         Args:
             metrics (list) names of metric to compute
             parameters (list) dicts holding parameters to pass to metrics
-            threshold_unit (string) the type of threshold, either 'percentile' or 'top_n'
-            threshold_value (int) the numeric threshold,
             predictions_proba (list) Probability predictions
             labels (list) True labels (may have NaNs)
+            threshold_unit (string) the type of threshold, either 'percentile' or 'top_n'
+            threshold_value (int) the numeric threshold,
+            threshold_specified_by_user (bool) Whether or not there was any threshold
+                specified by the user. Defaults to True
+            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
+                specifies to which table to add the evaluations
 
-        Returns: (list) results_schema.Evaluation objects
+        Returns: (list) results_schema.TrainEvaluation or TestEvaluation objects
         Raises: UnknownMetricError if a given metric is not present in
             self.available_metrics
         """
@@ -229,7 +240,7 @@ class ModelEvaluator(object):
                     num_positive_labels,
                     value
                 )
-                evaluations.append(Evaluation(
+                evaluations.append(evaluation_table_obj(
                     metric=metric,
                     parameter=parameter_string,
                     value=value,
@@ -244,7 +255,8 @@ class ModelEvaluator(object):
         self,
         group,
         predictions_proba_sorted,
-        labels_sorted
+        labels_sorted,
+        evaluation_table_obj,
     ):
         """Generate evaluations for a given metric group, and create ORM objects to hold them
 
@@ -263,7 +275,8 @@ class ModelEvaluator(object):
             metrics=group['metrics'],
             parameters=parameters,
             predictions_proba=predictions_proba_sorted,
-            labels=labels_sorted
+            labels=labels_sorted,
+            evaluation_table_obj=evaluation_table_obj
         )
         evaluations = []
         if 'thresholds' not in group:
@@ -292,7 +305,7 @@ class ModelEvaluator(object):
     def evaluate(
         self,
         predictions_proba,
-        labels,
+        matrix_store,
         model_id,
         evaluation_start_time,
         evaluation_end_time,
@@ -302,13 +315,20 @@ class ModelEvaluator(object):
 
         Args:
             predictions_proba (numpy.array) List of prediction probabilities
-            labels (numpy.array) The true labels for the prediction set
+            matrix_store (catwalk.storage.MatrixStore) a wrapper for the
+                prediction matrix and metadata
             model_id (int) The database identifier of the model
             evaluation_start_time (datetime.datetime) The time of the first prediction
                 being evaluated
             evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
             as_of_date_frequency (string) How frequently predictions were generated
         """
+        labels = matrix_store.labels()
+        matrix_type = matrix_store.matrix_type.string_name
+
+        # Specifies which evaluation table to write to: TestEvaluation or TrainEvaluation
+        evaluation_table_obj = matrix_store.matrix_type.evaluation_obj
+
         logging.info(
             'Generating evaluations for model id %s, evaluation range %s-%s, '
             'as_of_date frequency %s',
@@ -324,22 +344,29 @@ class ModelEvaluator(object):
         )
 
         evaluations = []
-        for group in self.metric_groups:
+        matrix_type = matrix_store.matrix_type
+        if matrix_type.is_test:
+            metric_groups_to_compute = self.metric_groups
+        else:
+            metric_groups_to_compute = self.training_metric_groups
+        for group in metric_groups_to_compute:
             evaluations = evaluations + self._evaluations_for_group(
                 group,
                 predictions_proba_sorted,
-                labels_sorted
+                labels_sorted,
+                matrix_type.evaluation_obj
             )
 
-        logging.info('Writing metrics to db')
+        logging.info('Writing metrics to db: %s table', matrix_type)
         self._write_to_db(
             model_id,
             evaluation_start_time,
             evaluation_end_time,
             as_of_date_frequency,
-            evaluations
+            evaluations,
+            evaluation_table_obj
         )
-        logging.info('Done writing metrics to db')
+        logging.info('Done writing metrics to db: %s table', matrix_type)
 
     @db_retry
     def _write_to_db(
@@ -348,7 +375,8 @@ class ModelEvaluator(object):
         evaluation_start_time,
         evaluation_end_time,
         as_of_date_frequency,
-        evaluations
+        evaluations,
+        evaluation_table_obj
     ):
         """Write evaluation objects to the database
 
@@ -358,10 +386,13 @@ class ModelEvaluator(object):
         Args:
             model_id (int) primary key of the model
             as_of_date (datetime.date) Date the predictions were made as of
-            evaluations (list) results_schema.Evaluation objects
+            evaluations (list) results_schema.TestEvaluation or TrainEvaluation objects
+            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
+                specifies to which table to add the evaluations
         """
         session = self.sessionmaker()
-        session.query(Evaluation)\
+
+        session.query(evaluation_table_obj)\
             .filter_by(
                 model_id=model_id,
                 evaluation_start_time=evaluation_start_time,

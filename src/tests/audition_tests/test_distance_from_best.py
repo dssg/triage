@@ -15,6 +15,7 @@ from tests.results_tests.factories import (
     ModelGroupFactory,
     init_engine,
     session,
+    MatrixFactory
 )
 
 from .utils import create_sample_distance_table

@@ -57,8 +57,8 @@ def test_calculate_and_save():
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, as_of_date
-                from results.individual_importances
-                join results.models using (model_id)''')
+                from test_results.individual_importances
+                join model_metadata.models using (model_id)''')
             ]
             assert len(records) > 0
             # and that when run again, has the same result
@@ -66,8 +66,8 @@ def test_calculate_and_save():
             new_records = [
                 row for row in
                 db_engine.execute('''select entity_id, as_of_date
-                from results.individual_importances
-                join results.models using (model_id)''')
+                from test_results.individual_importances
+                join model_metadata.models using (model_id)''')
             ]
             assert len(records) == len(new_records)
             assert records == new_records

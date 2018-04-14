@@ -5,12 +5,14 @@ from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import InMemoryMatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
+from triage.component.results_schema import Matrix
 
 from tests.results_tests.factories import (
     ModelFactory,
     FeatureImportanceFactory,
     init_engine,
     session,
+    MatrixFactory
 )
 
 from .utils import sample_metadata
@@ -21,6 +23,7 @@ def test_uniform_distribution_entity_id_index():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         init_engine(db_engine)
+
         model = ModelFactory()
         feature_importances = [
             FeatureImportanceFactory(model_rel=model, feature='feature_{}'.format(i))
@@ -33,6 +36,7 @@ def test_uniform_distribution_entity_id_index():
             matrix=pandas.DataFrame.from_dict(data_dict),
             metadata=sample_metadata()
         )
+
         session.commit()
         results = uniform_distribution(
             db_engine,
@@ -60,6 +64,7 @@ def test_uniform_distribution_entity_date_index():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         init_engine(db_engine)
+
         model = ModelFactory()
         feature_importances = [
             FeatureImportanceFactory(model_rel=model, feature='feature_{}'.format(i))
@@ -74,6 +79,7 @@ def test_uniform_distribution_entity_date_index():
             matrix=pandas.DataFrame.from_dict(data_dict),
             metadata=metadata
         )
+
         session.commit()
         results = uniform_distribution(
             db_engine,

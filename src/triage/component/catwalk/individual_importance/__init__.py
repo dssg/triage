@@ -36,7 +36,7 @@ class IndividualImportanceCalculator(object):
 
     def _num_existing_importances(self, model_id, as_of_date, method):
         return [row[0] for row in self.db_engine.execute(
-            '''select count(*) from results.individual_importances
+            '''select count(*) from test_results.individual_importances
             where model_id = %s
             and as_of_date = %s
             and method = %s''',
@@ -49,7 +49,7 @@ class IndividualImportanceCalculator(object):
         and compare with the number of importances that the given matrix will produce.
 
         Args:
-            model_id (int) A model id, expected to be present in results.models
+            model_id (int) A model id, expected to be present in test_results.models
             as_of_date (datetime or string) The date to produce individual importances as of
             method (string) The name of a method to use to produce individual importances
             matrix_store (catwalk.storage.MatrixStore) The test matrix
@@ -76,7 +76,7 @@ class IndividualImportanceCalculator(object):
         """Calculate and save individual importances for the given model and test matrix
 
         Args:
-            model_id (int) A model id, expected to be present in results.models
+            model_id (int) A model id, expected to be present in test_results.models
             test_matrix_store (catwalk.storage.MatrixStore) The test matrix
         """
         for method in self.methods:
@@ -93,7 +93,7 @@ class IndividualImportanceCalculator(object):
         """Calculate and save importances for a given model, test matrix, method, and date
 
         Args:
-            model_id (int) A model id, expected to be present in results.models
+            model_id (int) A model id, expected to be present in test_results.models
             test_matrix_store (catwalk.storage.MatrixStore) The test matrix
             method_name (string) The name of a method to use to produce individual importances
                 Expected to be present in CALCULATE_STRATEGIES
@@ -132,14 +132,14 @@ class IndividualImportanceCalculator(object):
                 Each entry should be a dict with keys 'entity_id' 'feature_name'
                 and 'feature_value' corresponding to the correct values for the
                 model_id, as_of_date, and method
-            model_id (int) A model id, expected to be present in results.models
+            model_id (int) A model id, expected to be present in test_results.models
             as_of_date (datetime or string) The as_of_date matching the importance records
             method_name (string) The name of the method that produced the importance records
 
         """
         db_objects = []
         self.db_engine.execute(
-            '''delete from results.individual_importances
+            '''delete from test_results.individual_importances
             where model_id = %s
             and as_of_date = %s
             and method = %s''',

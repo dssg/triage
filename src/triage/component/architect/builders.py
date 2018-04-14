@@ -1,12 +1,16 @@
 import io
+import json
 import logging
 import pandas
 import os
 
 import s3fs
+from sqlalchemy.orm import sessionmaker
 from urllib.parse import urlparse
 
+
 from triage.component import metta
+from triage.component.results_schema import Matrix
 
 
 class BuilderBase(object):
@@ -15,6 +19,7 @@ class BuilderBase(object):
         self.matrix_directory = matrix_directory
         self.engine = engine
         self.replace = replace
+        self.sessionmaker = sessionmaker(bind=self.engine)
 
     def validate(self):
         for expected_db_config_val in [
@@ -305,9 +310,32 @@ class CSVBuilder(BuilderBase):
                 format='csv'
             )
             logging.info("Matrix {matrix_uuid} archived (using metta)")
+            # If completely archived, save its information to matrices table
+            # At this point, existence of matrix already tested, so no need to delete from db
+            if matrix_type == 'train':
+                lookback = matrix_metadata["max_training_history"]
+            else:
+                lookback = matrix_metadata["test_duration"]
+
+            matrix = Matrix(
+                matrix_id=matrix_metadata["matrix_id"],
+                matrix_uuid=matrix_uuid,
+                matrix_type=matrix_type,
+                labeling_window=matrix_metadata["label_timespan"],
+                n_examples=len(output),
+                lookback_duration=lookback,
+                feature_start_time=matrix_metadata["feature_start_time"],
+                matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)
+            )
+            session = self.sessionmaker()
+            session.add(matrix)
+            session.commit()
+            session.close()
+
         finally:
             if isinstance(output, str):
                 os.remove(output)
+
 
     def write_labels_data(
         self,

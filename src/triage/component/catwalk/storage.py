@@ -4,9 +4,12 @@ import os
 import logging
 from sklearn.externals import joblib
 from urllib.parse import urlparse
+from triage.component.results_schema import TestEvaluation, TrainEvaluation, \
+    TestPrediction, TrainPrediction
 
 import pandas as pd
 import s3fs
+import sys
 import yaml
 
 
@@ -214,6 +217,16 @@ class MatrixStore(object):
         elif 'entity_id' in self.matrix.index.names:
             return len(self.matrix.index.levels[self.matrix.index.names.index('entity_id')])
 
+    @property
+    def matrix_type(self):
+        if self.metadata['matrix_type'] == 'train':
+            return TrainMatrixType
+        elif self.metadata['matrix_type'] == 'test':
+            return TestMatrixType
+        else:
+            raise Exception('''matrix metadata for matrix {} must contain 'matrix_type'
+             = "train" or "test" '''.format(self.uuid))
+
     def matrix_with_sorted_columns(self, columns):
         columnset = set(self.columns())
         desired_columnset = set(columns)
@@ -414,3 +427,17 @@ class InMemoryMatrixStore(MatrixStore):
 
     def save(self, project_path, name):
         return None
+
+
+class TestMatrixType(object):
+    string_name = 'test'
+    evaluation_obj = TestEvaluation
+    prediction_obj = TestPrediction
+    is_test = True
+
+
+class TrainMatrixType(object):
+    string_name = 'train'
+    evaluation_obj = TrainEvaluation
+    prediction_obj = TrainPrediction
+    is_test = False

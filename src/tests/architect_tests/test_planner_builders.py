@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 
 from triage.component import metta
 from triage.component.architect import Planner, builders
+from triage.component.catwalk.db import ensure_db
 
 from .utils import (
     create_schemas,
@@ -651,6 +652,7 @@ class TestBuildMatrix(TestCase):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
+            ensure_db(engine)
             create_schemas(
                 engine=engine,
                 features_tables=features_tables,
@@ -683,7 +685,8 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month'
+                    'label_timespan': '1 month',
+                    'max_training_history': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 planner.build_matrix(
@@ -709,6 +712,7 @@ class TestBuildMatrix(TestCase):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
+            ensure_db(engine)
             create_schemas(
                 engine=engine,
                 features_tables=features_tables,
@@ -747,7 +751,8 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month'
+                    'label_timespan': '1 month',
+                    'test_duration': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 planner.build_matrix(
@@ -820,7 +825,8 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month'
+                    'label_timespan': '1 month',
+                    'test_duration': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 with self.assertRaises(ValueError):
@@ -839,6 +845,7 @@ class TestBuildMatrix(TestCase):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
+            ensure_db(engine)
             create_schemas(
                 engine=engine,
                 features_tables=features_tables,
@@ -878,9 +885,12 @@ class TestBuildMatrix(TestCase):
                     'label_name': 'booking',
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month'
+                    'label_timespan': '1 month',
+                    'test_duration': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
+
+                ##########
                 planner.build_matrix(
                     as_of_times = dates,
                     label_name = 'booking',

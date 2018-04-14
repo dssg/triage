@@ -6,8 +6,8 @@ from tests.results_tests.factories import (
     ModelGroupFactory,
     init_engine,
     session,
+    MatrixFactory
 )
-
 
 def create_sample_distance_table(engine):
     ensure_db(engine)

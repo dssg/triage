@@ -2,15 +2,15 @@ from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.evaluation import ModelEvaluator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 import boto3
 import testing.postgresql
 
 from moto import mock_s3
 from sqlalchemy import create_engine
-from triage.component.catwalk.db import ensure_db
-
-from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
 import datetime
 import pandas
 
@@ -19,6 +19,7 @@ def test_integration():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
+        init_engine(db_engine)
 
         with mock_s3():
             s3_conn = boto3.resource('s3')
@@ -40,7 +41,11 @@ def test_integration():
                 'feature_names': ['ft1', 'ft2'],
                 'metta-uuid': '1234',
                 'indices': ['entity_id'],
+                'matrix_type': 'train'
             }
+            # Creates a matrix entry in the matrices table with uuid from train_metadata
+            MatrixFactory(matrix_uuid = "1234")
+            session.commit()
 
             train_store = InMemoryMatrixStore(train_matrix, train_metadata)
 
@@ -63,6 +68,7 @@ def test_integration():
                         'end_time': as_of_date,
                         'metta-uuid': '1234',
                         'indices': ['entity_id'],
+                        'matrix_type': 'test'
                     }
                 )
                 for as_of_date in as_of_dates
@@ -86,6 +92,7 @@ def test_integration():
             )
             model_evaluator = ModelEvaluator(
                 [{'metrics': ['precision@'], 'thresholds': {'top_n': [5]}}],
+                [{}],
                 db_engine
             )
 
@@ -114,7 +121,7 @@ def test_integration():
 
                     model_evaluator.evaluate(
                         predictions_proba,
-                        test_store.labels(),
+                        test_store,
                         model_id,
                         as_of_date,
                         as_of_date,
@@ -127,8 +134,8 @@ def test_integration():
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, model_id, as_of_date
-                from results.predictions
-                join results.models using (model_id)
+                from test_results.test_predictions
+                join model_metadata.models using (model_id)
                 order by 3, 2''')
             ]
             assert records == [
@@ -147,7 +154,7 @@ def test_integration():
                 row for row in
                 db_engine.execute('''
                     select model_id, evaluation_start_time, metric, parameter
-                    from results.evaluations order by 2, 1''')
+                    from test_results.test_evaluations order by 2, 1''')
             ]
             assert records == [
                 (1, datetime.datetime(2016, 12, 21), 'precision@', '5_abs'),
