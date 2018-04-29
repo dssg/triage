@@ -59,16 +59,11 @@ def test_evaluating_early_warning():
             db_engine
         )
 
-        as_of_date = datetime.date(2016, 5, 5)
-
         # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
             fake_test_matrix_store,
             model_id,
-            as_of_date,
-            as_of_date,
-            '1y'
         )
         records = [
             row[0] for row in
@@ -78,7 +73,7 @@ def test_evaluating_early_warning():
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
-                (model_id, as_of_date)
+                (model_id, fake_test_matrix_store.as_of_dates[0])
             )
         ]
         assert records == [
@@ -120,9 +115,6 @@ def test_evaluating_early_warning():
             trained_model.predict_proba(labels)[:, 1],
             fake_train_matrix_store,
             model_id,
-            as_of_date,
-            as_of_date,
-            '1y'
         )
         records = [
             row[0] for row in
@@ -132,22 +124,9 @@ def test_evaluating_early_warning():
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
-                (model_id, as_of_date)
+                (model_id, fake_train_matrix_store.as_of_dates[0])
             )
         ]
-        records2 = [
-            row for row in
-            db_engine.execute(
-                '''select *
-                from train_results.train_evaluations
-                where model_id = %s and
-                evaluation_start_time = %s
-                order by 1''',
-                (model_id, as_of_date)
-            )
-        ]
-
-        print(records2)
         assert records == ['accuracy', 'roc_auc']
 
 
@@ -172,10 +151,6 @@ def test_model_scoring_inspections():
         training_labels = numpy.array([False, False, True, True, True, False, True, True])
         training_prediction_probas = numpy.array([0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6])
 
-        evaluation_start = datetime.datetime(2016, 4, 1)
-        evaluation_end = datetime.datetime(2016, 7, 1)
-        example_as_of_date_frequency = '1d'
-
         fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, training_labels)
         fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, testing_labels)
 
@@ -190,15 +165,12 @@ def test_model_scoring_inspections():
             testing_prediction_probas,
             fake_test_matrix_store,
             model_id,
-            evaluation_start,
-            evaluation_end,
-            example_as_of_date_frequency
         )
         for record in db_engine.execute(
             '''select * from test_results.test_evaluations
             where model_id = %s and evaluation_start_time = %s
             order by 1''',
-            (model_id, evaluation_start)
+            (model_id, fake_test_matrix_store.as_of_dates[0])
         ):
             assert record['num_labeled_examples'] == 4
             assert record['num_positive_labels'] == 2
@@ -214,15 +186,12 @@ def test_model_scoring_inspections():
                     training_prediction_probas,
                     fake_train_matrix_store,
                     model_id,
-                    evaluation_start,
-                    evaluation_end,
-                    example_as_of_date_frequency
         )
         for record in db_engine.execute(
             '''select * from train_results.train_evaluations
             where model_id = %s and evaluation_start_time = %s
             order by 1''',
-            (model_id, evaluation_start)
+            (model_id, fake_train_matrix_store.as_of_dates[0])
         ):
             assert record['num_labeled_examples'] == 8
             assert record['num_positive_labels'] == 5

@@ -102,8 +102,10 @@ class ModelEvaluator(object):
         if custom_metrics:
             self._validate_metrics(custom_metrics)
             self.available_metrics.update(custom_metrics)
-        if self.db_engine:
-            self.sessionmaker = sessionmaker(bind=self.db_engine)
+
+    @property
+    def sessionmaker(self):
+        return sessionmaker(bind=self.db_engine)
 
     def _validate_metrics(
         self,
@@ -302,15 +304,7 @@ class ModelEvaluator(object):
             )
         return evaluations
 
-    def evaluate(
-        self,
-        predictions_proba,
-        matrix_store,
-        model_id,
-        evaluation_start_time,
-        evaluation_end_time,
-        as_of_date_frequency
-    ):
+    def evaluate(self, predictions_proba, matrix_store, model_id):
         """Evaluate a model based on predictions, and save the results
 
         Args:
@@ -318,13 +312,12 @@ class ModelEvaluator(object):
             matrix_store (catwalk.storage.MatrixStore) a wrapper for the
                 prediction matrix and metadata
             model_id (int) The database identifier of the model
-            evaluation_start_time (datetime.datetime) The time of the first prediction
-                being evaluated
-            evaluation_end_time (datetime.datetime) The time of the last prediction being evaluated
-            as_of_date_frequency (string) How frequently predictions were generated
         """
         labels = matrix_store.labels()
         matrix_type = matrix_store.matrix_type.string_name
+        evaluation_start_time = matrix_store.as_of_dates[0]
+        evaluation_end_time = matrix_store.as_of_dates[-1]
+        as_of_date_frequency = matrix_store.metadata['as_of_date_frequency']
 
         # Specifies which evaluation table to write to: TestEvaluation or TrainEvaluation
         evaluation_table_obj = matrix_store.matrix_type.evaluation_obj

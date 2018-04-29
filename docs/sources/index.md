@@ -15,7 +15,7 @@ The first phase implemented in triage is the `Experiment`. An experiment represe
 
 
 ## Running an Experiment
-[Running an Experiment](experiments/running.md)
+See the [Running an Experiment](experiments/running.md) documentation.
 
 ## Upgrading an Experiment config
 [v3/v4 -> v5](experiments/upgrade-to-v5.md)

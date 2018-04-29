@@ -15,6 +15,8 @@ REQUIREMENTS_PATH = ROOT_PATH / 'requirement' / 'main.txt'
 
 REQUIREMENTS_TEST_PATH = ROOT_PATH / 'requirement' / 'test.txt'
 
+REQUIREMENTS_RQ_PATH = ROOT_PATH / 'requirement' / 'extras-rq.txt'
+
 
 def stream_requirements(fd):
     """For a given requirements file descriptor, generate lines of
@@ -36,6 +38,9 @@ with REQUIREMENTS_TEST_PATH.open() as test_requirements_file:
     REQUIREMENTS_TEST = REQUIREMENTS[:]
     REQUIREMENTS_TEST.extend(stream_requirements(test_requirements_file))
 
+with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
+    RQ_REQUIREMENTS = list(stream_requirements(rq_requirements_file))
+
 
 setup(
     name='triage',
@@ -49,6 +54,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=REQUIREMENTS,
+    extras_require={'rq': RQ_REQUIREMENTS},
     license=LICENSE_PATH.read_text(),
     zip_safe=False,
     keywords='triage',

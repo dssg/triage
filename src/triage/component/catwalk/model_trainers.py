@@ -47,10 +47,13 @@ class ModelTrainer(object):
         self.project_path = project_path
         self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
-        self.db_engine = db_engine
-        self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.model_grouper = model_grouper or ModelGrouper()
+        self.db_engine = db_engine
         self.replace = replace
+
+    @property
+    def sessionmaker(self):
+        return sessionmaker(bind=self.db_engine)
 
     def unique_parameters(self, parameters):
         return {

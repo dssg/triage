@@ -24,10 +24,13 @@ class BuilderBase(object):
     ):
         self.db_config = db_config
         self.matrix_directory = matrix_directory
-        self.engine = engine
+        self.db_engine = engine
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
-        self.sessionmaker = sessionmaker(bind=self.engine)
+
+    @property
+    def sessionmaker(self):
+        return sessionmaker(bind=self.db_engine)
 
     def validate(self):
         for expected_db_config_val in [
@@ -153,7 +156,7 @@ class BuilderBase(object):
         )
         logging.info('Creating matrix-specific entity-date table for matrix '
                      '%s with query %s', matrix_uuid, query)
-        self.engine.execute(query)
+        self.db_engine.execute(query)
 
         return table_name
 
@@ -239,6 +242,7 @@ class CSVBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
+        logging.info('popped matrix %s build off the queue', matrix_uuid)
         matrix_filename = os.path.join(
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
@@ -485,7 +489,7 @@ class CSVBuilder(BuilderBase):
                 query=query_string,
                 head=header
             )
-            conn = self.engine.raw_connection()
+            conn = self.db_engine.raw_connection()
             cur = conn.cursor()
             cur.copy_expert(copy_sql, matrix_csv)
         finally:

@@ -1,90 +1,15 @@
-import logging
-
 from triage.experiments import ExperimentBase
 
 
 class SingleThreadedExperiment(ExperimentBase):
-    def build_matrices(self):
-        logging.info('Creating sparse states')
-        self.generate_sparse_states()
-        logging.info('Creating labels')
-        self.generate_labels()
-        logging.info('Creating feature aggregation tables')
-        self.feature_generator.process_table_tasks(self.feature_aggregation_table_tasks)
-        logging.info('Creating feature imputation tables')
-        self.feature_generator.process_table_tasks(self.feature_imputation_table_tasks)
-        logging.info('Building all matrices')
-        self.matrix_builder.build_all_matrices(self.matrix_build_tasks)
+    def process_query_tasks(self, query_tasks):
+        self.feature_generator.process_table_tasks(query_tasks)
 
-    def catwalk(self):
-        for split_num, split in enumerate(self.full_matrix_definitions):
-            self.log_split(split_num, split)
-            train_store = self.matrix_store(split['train_uuid'])
-            if train_store.empty:
-                logging.warning('''Train matrix for split %s was empty,
-                no point in training this model. Skipping
-                ''', split['train_uuid'])
-                continue
-            if len(train_store.labels().unique()) == 1:
-                logging.warning('''Train Matrix for split %s had only one
-                unique value, no point in training this model. Skipping
-                ''', split['train_uuid'])
-                continue
+    def process_matrix_build_tasks(self, matrix_build_tasks):
+        self.matrix_builder.build_all_matrices(matrix_build_tasks)
 
-            logging.info('Training models')
-            model_ids = self.trainer.train_models(
-                grid_config=self.config['grid_config'],
-                misc_db_parameters=dict(
-                    test=False,
-                    model_comment=self.config.get('model_comment', None),
-                ),
-                matrix_store=train_store
-            )
-            # remove Nones from model_ids so we don't try to predict/evaluate on skipped baselines
-            model_ids = [model_id for model_id in model_ids if model_id is not None]
-            logging.info('Done training models')
+    def process_train_tasks(self, train_tasks):
+        return [self.trainer.process_train_task(**train_task) for train_task in train_tasks]
 
-            for split_def, test_uuid in zip(
-                split['test_matrices'],
-                split['test_uuids']
-            ):
-                as_of_times = split_def['as_of_times']
-                logging.info(
-                    'Testing and scoring as_of_times min: %s max: %s num: %s',
-                    min(as_of_times),
-                    max(as_of_times),
-                    len(as_of_times)
-                )
-                test_store = self.matrix_store(test_uuid)
-                if test_store.empty:
-                    logging.warning('''Test matrix for uuid %s
-                    was empty, no point in generating predictions. Skipping.
-                    ''', test_uuid)
-                    continue
-                for model_id in model_ids:
-                    logging.info('Testing model id %s', model_id)
-
-                    self.individual_importance_calculator\
-                        .calculate_and_save_all_methods_and_dates(
-                            model_id,
-                            test_store
-                        )
-
-                    #Generate predictions for the testing data then training data
-                    for store in (test_store, train_store):
-                        predictions_proba = self.predictor.predict(
-                            model_id,
-                            store,
-                            misc_db_parameters=dict(),
-                            train_matrix_columns=train_store.columns()
-                        )
-
-                        self.evaluator.evaluate(
-                            predictions_proba=predictions_proba,
-                            matrix_store=store,
-                            model_id=model_id,
-                            # for evaluation range, using first to last as of time:
-                            evaluation_start_time=split_def['first_as_of_time'],
-                            evaluation_end_time=split_def['last_as_of_time'],
-                            as_of_date_frequency=split_def['test_as_of_date_frequency']
-                        )
+    def process_model_test_tasks(self, test_tasks):
+        return [self.tester.process_model_test_task(**test_task) for test_task in test_tasks]
