@@ -319,9 +319,23 @@ def sample_config():
         }
     }
 
+    label_config = {
+        'query': """
+            select
+            events.entity_id,
+            bool_or(outcome::bool)::integer as outcome
+            from events
+            where '{as_of_date}'::date <= outcome_date
+                and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
+                group by entity_id
+        """,
+        'name': 'custom_label_name',
+        'include_missing_labels_in_train_as': False,
+    }
+
     return {
         'config_version': CONFIG_VERSION,
-        'label_config': {'name': 'custom_label_name', 'inspection_outcomes_table': 'events'},
+        'label_config': label_config,
         'entity_column_name': 'entity_id',
         'model_comment': 'test2-final-final',
         'model_group_keys': ['label_name', 'label_type', 'custom_key'],

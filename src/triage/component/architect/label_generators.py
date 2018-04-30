@@ -1,14 +1,17 @@
 import logging
 import textwrap
-from abc import ABCMeta, abstractmethod
 
 
 DEFAULT_LABEL_NAME = 'outcome'
 
 
-class BinaryLabelBase(object, metaclass=ABCMeta):
-    def __init__(self, db_engine, label_name=None):
+class LabelGenerator(object):
+    def __init__(self, db_engine, query, label_name=None):
         self.db_engine = db_engine
+
+        # query is expected to select a number of entity ids
+        # and an outcome for each given an as-of-date
+        self.query = query
         self.label_name = label_name or DEFAULT_LABEL_NAME
 
     def _create_labels_table(self, labels_table_name):
@@ -55,54 +58,6 @@ class BinaryLabelBase(object, metaclass=ABCMeta):
         else:
             logging.info('Rows in labels table: %s', nrows)
 
-    @abstractmethod
-    def generate(self):
-        pass
-
-
-class InspectionsLabelGenerator(BinaryLabelBase):
-    def __init__(self, events_table, *args, **kwargs):
-        super(InspectionsLabelGenerator, self).__init__(*args, **kwargs)
-        self.events_table = events_table
-
-    def generate(
-        self,
-        start_date,
-        label_timespan,
-        labels_table,
-    ):
-        query = """insert into {labels_table} (
-            select
-                {events_table}.entity_id,
-                '{start_date}'::date as as_of_date,
-                '{label_timespan}'::interval as label_timespan,
-                '{label_name}' as label_name,
-                'binary' as label_type,
-                bool_or(outcome::bool)::int as label
-            from {events_table}
-            where '{start_date}' <= outcome_date
-            and outcome_date < '{start_date}'::timestamp + interval '{label_timespan}'
-            group by 1, 2, 3, 4, 5
-        )""".format(
-            events_table=self.events_table,
-            labels_table=labels_table,
-            start_date=start_date,
-            label_timespan=label_timespan,
-            label_name=self.label_name,
-        )
-
-        logging.debug('Running label generation query: %s', query)
-        self.db_engine.execute(query)
-        return labels_table
-
-
-class QueryBinaryLabelGenerator(BinaryLabelBase):
-    def __init__(self, query, *args, **kwargs):
-        super(QueryBinaryLabelGenerator, self).__init__(*args, **kwargs)
-        # query is expected to select a number of entity ids
-        # and an outcome for each given an as-of-date
-        self.query = query
-
     def generate(self, start_date, label_timespan, labels_table):
         """Generate labels table using a query
 
@@ -115,7 +70,6 @@ class QueryBinaryLabelGenerator(BinaryLabelBase):
         labels_table: str
             name of labels table
         """
-        self._create_labels_table(labels_table)
         # we want to apply the as-of-date and label in the database driver,
         # so replace the user {as_of_date} with the SQL %(as_of_date)
 

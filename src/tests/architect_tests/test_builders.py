@@ -28,6 +28,7 @@ states = [
     [0, '2016-03-01', False, True],
     [0, '2016-04-01', False, True],
     [0, '2016-05-01', False, True],
+    [0, '2016-06-01', True, True],
     [1, '2016-01-01', True, False],
     [1, '2016-02-01', True, False],
     [1, '2016-03-01', True, False],
@@ -327,6 +328,74 @@ def test_make_entity_date_table():
             assert(test.all().all())
 
 
+def test_make_entity_date_table_include_missing_labels():
+    """ Test that the make_entity_date_table function contains the correct
+    values.
+    """
+    dates = [datetime.datetime(2016, 1, 1, 0, 0),
+             datetime.datetime(2016, 2, 1, 0, 0),
+             datetime.datetime(2016, 3, 1, 0, 0),
+             datetime.datetime(2016, 6, 1, 0, 0)]
+
+    # same as the other make_entity_date_label test except there is an extra date, 2016-06-01
+    # entity 0 is included in this date via the states table, but has no label
+
+    # make a dataframe of entity ids and dates to test against
+    ids_dates = create_entity_date_df(
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        state_one=True,
+        state_two=True,
+        label_name='booking',
+        label_type='binary',
+        label_timespan='1 month'
+    )
+    # this line adds the new entity-date combo as an expected one
+    ids_dates = ids_dates.append({'entity_id': 0, 'as_of_date': datetime.date(2016, 6, 1)}, ignore_index=True)
+
+    with testing.postgresql.Postgresql() as postgresql:
+        # create an engine and generate a table with fake feature data
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine=engine,
+            features_tables=features_tables,
+            labels=labels,
+            states=states
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                include_missing_labels_in_train_as=False,
+                engine=engine
+            )
+            engine.execute(
+                'CREATE TABLE features.tmp_entity_date (a int, b date);'
+            )
+            # call the function to test the creation of the table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                state='state_one AND state_two',
+                matrix_uuid='my_uuid',
+                matrix_type='train',
+                label_timespan='1 month'
+            )
+
+            # read in the table
+            result = pd.read_sql(
+                "select * from features.{} order by entity_id, as_of_date"
+                .format(entity_date_table_name),
+                engine
+            )
+
+            # compare the table to the test dataframe
+            assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
+
+
 def test_write_features_data():
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
              datetime.datetime(2016, 2, 1, 0, 0)]
@@ -471,6 +540,83 @@ def test_write_labels_data():
                 'as_of_date': ['2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
                 'booking': [0, 0, 1, 0],
             }).set_index(['entity_id', 'as_of_date'])
+
+            result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
+                .set_index(['entity_id', 'as_of_date'])
+            test = (result == df)
+            assert(test.all().all())
+
+
+def test_write_labels_data_include_missing_labels_as_false():
+    """ Test the write_labels_data function by checking whether the query
+    produces the correct labels
+    """
+    # set up labeling config variables
+    dates = [datetime.datetime(2016, 1, 1, 0, 0),
+             datetime.datetime(2016, 2, 1, 0, 0),
+             datetime.datetime(2016, 6, 1, 0, 0)]
+
+    # same as the other write_labels_data test, except we include an extra date, 2016-06-01
+    # this date does have entity 0 included via the states table, but no labels
+
+    # make a dataframe of labels to test against
+    labels_df = pd.DataFrame(
+        labels,
+        columns=[
+            'entity_id',
+            'as_of_date',
+            'label_timespan',
+            'label_name',
+            'label_type',
+            'label'
+        ]
+    )
+
+    labels_df['as_of_date'] = convert_string_column_to_date(labels_df['as_of_date'])
+    labels_df.set_index(['entity_id', 'as_of_date'])
+
+    # create an engine and generate a table with fake feature data
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine,
+            features_tables,
+            labels,
+            states
+        )
+        with TemporaryDirectory() as temp_dir:
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine,
+                include_missing_labels_in_train_as=False,
+            )
+
+            # make the entity-date table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                state='state_one AND state_two',
+                matrix_type='train',
+                matrix_uuid='my_uuid',
+                label_timespan='1 month'
+            )
+
+            csv_filename = builder.write_labels_data(
+                label_name=label_name,
+                label_type=label_type,
+                label_timespan='1 month',
+                matrix_uuid='my_uuid',
+                entity_date_table_name=entity_date_table_name,
+            )
+            df = pd.DataFrame.from_dict({
+                'entity_id': [0, 2, 3, 4, 4],
+                'as_of_date': ['2016-06-01', '2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
+                'booking': [0, 0, 0, 1, 0],
+            }).set_index(['entity_id', 'as_of_date'])
+            # the first row would not be here if we had not configured the Builder
+            # to include missing labels as false
 
             result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
                 .set_index(['entity_id', 'as_of_date'])
