@@ -551,25 +551,30 @@ class ScoringConfigValidator(Validator):
                             'Your experiment may run, but you will not have any ' +
                             'evaluation metrics computed'
                             )
+        if 'training_metric_groups' not in scoring_config:
+            logging.warning('Section: scoring - No training_metric_groups configured. ' +
+                            'If training set evaluation metrics are desired, they must be added'
+                            )
         metric_lookup = catwalk.evaluation.ModelEvaluator.available_metrics
         available_metrics = set(metric_lookup.keys())
-        for metric_group in scoring_config['metric_groups']:
-            given_metrics = set(metric_group['metrics'])
-            bad_metrics = given_metrics - available_metrics
-            if bad_metrics:
-                raise ValueError(dedent('''
-                Section: scoring -
-                The following given metrics '{}' are unavailable. Available metrics are: '{}'
-                '''.format(bad_metrics, available_metrics)))
-            for given_metric in given_metrics:
-                metric_function = metric_lookup[given_metric]
-                if not hasattr(metric_function, 'greater_is_better'):
-                    raise ValueError(dedent('''
-                    Section: scoring -
-                    The metric {} does not define the attribute
-                    'greater_is_better'. This can only be fixed in the catwalk.metrics
-                    module. If you still would like to use this metric, consider
-                    submitting a pull request'''.format(given_metric)))
+        for group in ('metric_groups', 'training_metric_groups'):
+            for metric_group in scoring_config[group]:
+                given_metrics = set(metric_group['metrics'])
+                bad_metrics = given_metrics - available_metrics
+                if bad_metrics:
+                    raise ValueError(dedent(
+                        '''Section: scoring -
+                        The following given metrics '{}' are unavailable. Available metrics are: '{}'
+                        '''.format(bad_metrics, available_metrics)))
+                for given_metric in given_metrics:
+                    metric_function = metric_lookup[given_metric]
+                    if not hasattr(metric_function, 'greater_is_better'):
+                        raise ValueError(dedent(
+                        '''Section: scoring -
+                        The metric {} does not define the attribute
+                        'greater_is_better'. This can only be fixed in the catwalk.metrics
+                        module. If you still would like to use this metric, consider
+                        submitting a pull request'''.format(given_metric)))
 
 
 class ExperimentValidator(Validator):

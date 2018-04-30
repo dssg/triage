@@ -5,7 +5,7 @@ import testing.postgresql
 import numpy
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
-from tests.utils import fake_labels, fake_trained_model
+from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
 from triage.component.catwalk.storage import InMemoryModelStorageEngine
 import datetime
 
@@ -41,13 +41,17 @@ def test_evaluating_early_warning():
             'parameters': [{'beta': 0.75}, {'beta': 1.25}]
         }]
 
+        training_metric_groups = [{'metrics': ['accuracy', 'roc_auc']}]
+
         custom_metrics = {'mediocre': always_half}
 
-        model_evaluator = ModelEvaluator(
-            metric_groups,
-            db_engine,
+        model_evaluator = ModelEvaluator(metric_groups, training_metric_groups, db_engine,
             custom_metrics=custom_metrics
         )
+
+        labels = fake_labels(5)
+        fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, labels)
+        fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, labels)
 
         trained_model, model_id = fake_trained_model(
             'myproject',
@@ -55,26 +59,25 @@ def test_evaluating_early_warning():
             db_engine
         )
 
-        labels = fake_labels(5)
         as_of_date = datetime.date(2016, 5, 5)
+
+        # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
-            labels,
+            fake_test_matrix_store,
             model_id,
             as_of_date,
             as_of_date,
             '1y'
         )
-
-        # assert
-        # that all of the records are there
         records = [
             row[0] for row in
             db_engine.execute(
                 '''select distinct(metric || parameter)
-                from results.evaluations
+                from test_results.test_evaluations
                 where model_id = %s and
-                evaluation_start_time = %s order by 1''',
+                evaluation_start_time = %s
+                order by 1''',
                 (model_id, as_of_date)
             )
         ]
@@ -112,6 +115,41 @@ def test_evaluating_early_warning():
             'true positives@5_abs'
         ]
 
+        # Evaluate the training metrics and test
+        model_evaluator.evaluate(
+            trained_model.predict_proba(labels)[:, 1],
+            fake_train_matrix_store,
+            model_id,
+            as_of_date,
+            as_of_date,
+            '1y'
+        )
+        records = [
+            row[0] for row in
+            db_engine.execute(
+                '''select distinct(metric || parameter)
+                from train_results.train_evaluations
+                where model_id = %s and
+                evaluation_start_time = %s
+                order by 1''',
+                (model_id, as_of_date)
+            )
+        ]
+        records2 = [
+            row for row in
+            db_engine.execute(
+                '''select *
+                from train_results.train_evaluations
+                where model_id = %s and
+                evaluation_start_time = %s
+                order by 1''',
+                (model_id, as_of_date)
+            )
+        ]
+
+        print(records2)
+        assert records == ['accuracy', 'roc_auc']
+
 
 def test_model_scoring_inspections():
     with testing.postgresql.Postgresql() as postgresql:
@@ -120,41 +158,75 @@ def test_model_scoring_inspections():
         metric_groups = [{
             'metrics': ['precision@', 'recall@', 'fpr@'],
             'thresholds': {'percentiles': [50.0], 'top_n': [3]}
+        }, {
+            # ensure we test a non-thresholded metric as well
+            'metrics': ['accuracy'],
         }]
+        training_metric_groups = [{'metrics': ['accuracy'], 'thresholds': {'percentiles': [50.0]}}]
 
-        model_evaluator = ModelEvaluator(metric_groups, db_engine)
+        model_evaluator = ModelEvaluator(metric_groups, training_metric_groups, db_engine)
 
-        _, model_id = fake_trained_model(
+        testing_labels = numpy.array([True, False, numpy.nan, True, False])
+        testing_prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
+
+        training_labels = numpy.array([False, False, True, True, True, False, True, True])
+        training_prediction_probas = numpy.array([0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6])
+
+        evaluation_start = datetime.datetime(2016, 4, 1)
+        evaluation_end = datetime.datetime(2016, 7, 1)
+        example_as_of_date_frequency = '1d'
+
+        fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, training_labels)
+        fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, testing_labels)
+
+        trained_model, model_id = fake_trained_model(
             'myproject',
             InMemoryModelStorageEngine('myproject'),
             db_engine
         )
 
-        labels = numpy.array([True, False, numpy.nan, True, False])
-        prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
-        evaluation_start = datetime.datetime(2016, 4, 1)
-        evaluation_end = datetime.datetime(2016, 7, 1)
-        example_as_of_date_frequency = '1d'
+        # Evaluate testing matrix and test the results
         model_evaluator.evaluate(
-            prediction_probas,
-            labels,
+            testing_prediction_probas,
+            fake_test_matrix_store,
             model_id,
             evaluation_start,
             evaluation_end,
             example_as_of_date_frequency
         )
-
         for record in db_engine.execute(
-            '''select * from results.evaluations
-            where model_id = %s and evaluation_start_time = %s order by 1''',
+            '''select * from test_results.test_evaluations
+            where model_id = %s and evaluation_start_time = %s
+            order by 1''',
             (model_id, evaluation_start)
         ):
             assert record['num_labeled_examples'] == 4
             assert record['num_positive_labels'] == 2
-            if 'pct' in record['parameter']:
+            if record['parameter'] == '':
+                assert record['num_labeled_above_threshold'] == 4
+            elif 'pct' in record['parameter']:
                 assert record['num_labeled_above_threshold'] == 1
             else:
                 assert record['num_labeled_above_threshold'] == 2
+
+        # Evaluate the training matrix and test the results
+        model_evaluator.evaluate(
+                    training_prediction_probas,
+                    fake_train_matrix_store,
+                    model_id,
+                    evaluation_start,
+                    evaluation_end,
+                    example_as_of_date_frequency
+        )
+        for record in db_engine.execute(
+            '''select * from train_results.train_evaluations
+            where model_id = %s and evaluation_start_time = %s
+            order by 1''',
+            (model_id, evaluation_start)
+        ):
+            assert record['num_labeled_examples'] == 8
+            assert record['num_positive_labels'] == 5
+            assert record['value'] == 0.625
 
 
 def test_generate_binary_at_x():
@@ -166,5 +238,3 @@ def test_generate_binary_at_x():
 
     assert generate_binary_at_x(input_list, 2) == \
         [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
-
-

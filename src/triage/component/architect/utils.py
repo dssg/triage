@@ -1,11 +1,13 @@
 import datetime
 import shutil
 import sys
-import tempfile
 import random
 from contextlib import contextmanager
 import functools
 import operator
+import tempfile
+
+import sqlalchemy
 
 import pandas as pd
 import yaml
@@ -279,3 +281,7 @@ def create_binary_outcome_events(db_engine, table_name, events_data):
             'insert into {} values (%s, %s, %s::bool)'.format(table_name),
             event
         )
+
+
+def retry_if_db_error(exception):
+    return isinstance(exception, sqlalchemy.exc.OperationalError)

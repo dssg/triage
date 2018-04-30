@@ -149,7 +149,7 @@ At this point, we have at least three tables that are used to populate matrices:
 
 ## 3. Building Matrices
 
-At this point, we, now, have to build train and test matrices that can be processed by machine learning algorithms.
+At this point, we have to build actual train and test matrices that can be processed by machine learning algorithms, save at the user's specified path, either on the local filesystem or s3 depending on the scheme portion of the path (e.g. `s3://bucket-name/project_directory`)
 
 First we have to figure out exactly what matrices we have to build. The split definitions from step 1 are a
 good start -- they are our train and test splits -- but sometimes we also want to test different subsets of the data,
@@ -248,7 +248,7 @@ label filled in (either True or False) based on the value of the `include_missin
 enforced by the entity-date table. The resulting matrix is indexed on `entity_id` and `as_of_date`, and then saved to
 disk (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information.
 along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and
-the metadata is saved in a YAML file with the same hash and directory.
+the metadata is saved in a YAML file with the same hash and directory. The metadata is additionally added to a database table 'matrices'.
 
 Matrix metadata reference:
 - [Train matrix temporal info](https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L433-L440)
@@ -263,8 +263,7 @@ Experiment constructor, in the subdirectory `matrices`.
 
 ## 4. Running Models
 
-The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This
-procedure writes metadata to the 'results' schema.
+The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.
 
 
 ### Train
@@ -275,8 +274,7 @@ and hyperparameter combinations contained herein, and calls `.fit()` with that t
 adheres to the scikit-learn `.fit/.transform` interface and is available in the Python environment will work here,
 whether it is a standard scikit-learn classifier, a third-party library like XGBoost, or a custom-built one in the
 calling repository (for instance, one that implements the problem domain's baseline heuristic algorithm for
-comparison).  Metadata about the trained classifier is written to the `results.models` Postgres table. The trained
-model is saved to a filename with the model hash (see Model Hash section below).
+comparison).  Metadata about the trained classifier is written to the `model_metadata.models` Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).
 
 #### Model Groups
 
@@ -287,18 +285,16 @@ data about the classifier (module, hyperparameters), temporal intervals used to 
 timespan, training history, as-of-date frequency), and metadata describing the data in the train matrix (features and
 feature groups, label name, cohort name). The user can override this set of `model_group_keys` in the experiment
 definition, with all of the default information plus other matrix metadata at their disposal (See end of 'Retrieving
-Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the
-`results.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `results.models` table.
-
+Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `model_metadata.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `model_metadata.models` table.
 
 #### Model Hash
 Each trained model is assigned a hash, for the purpose of uniquely defining and caching the model. This hash is based
 on the training matrix metadata, classifier path, hyperparameters (except those which concern execution and do not
 affect results of the classifier, such as `n_jobs`), and the given project path for the Experiment. This hash can be
-found in each row of the `results.models` table. It is enforced as a unique key in the table.
+found in each row of the `model_metadata.models` table. It is enforced as a unique key in the table.
 
 #### Global Feature Importance
-The training phase also writes global feature importances to the database, in the `results.feature_importances` table.
+The training phase also writes global feature importances to the database, in the `train_results.feature_importances` table.
 A few methods are queried to attempt to compute feature importances:
 * The bulk of these are computed using the trained model's `.feature_importances_` attribute, if it exists.
 * For sklearn's `SVC` models with a linear kernel, the model's `.coef_.squeeze()` is used.
@@ -307,37 +303,18 @@ A few methods are queried to attempt to compute feature importances:
 
 
 ### Test Matrix
-For each test matrix, predictions, individual importances, and evaluation metrics are written to the database.
+For each test matrix, predictions, individual importances, and the user-specified testing evaluation metrics are written to the 'test_results' schema. For each train matrix, predictions and the user-specified training evaluation metrics are written to the 'train_results' schema.
 
 #### Predictions
-The trained model's prediction probabilities (`predict_proba()`) are computed and saved for the test matrix. More
-specifically, `predict_proba` returns the probabilities for each label (false and true), but in this case only the
-probabilities for the true label are saved in the `results.predictions` table. The `entity_id` and `as_of_date` are
-retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if
-it has one), as well as other metadata.
+The trained model's prediction probabilities (`predict_proba()`) are computed both for the matrix it was trained on and any testing matrices. The predictions for the training matrix are saved in `train_results.train_predictions` and those for the testing matrices are saved in the `test_results.test_predictions`. More specifically, `predict_proba` returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the `{train or test}_predictions` table. The `entity_id` and `as_of_date` are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.
 
 ### Individual Feature Importance
-Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and
-written to the `results.individual_importances` table. Right now, there are no sophisticated calculation methods
-integrated into the experiment; simply the top 5 global feature importances for the model are copied to the
-`individual_importances` table.
+Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `test_results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
 #### Metrics
-Evaluation metrics, such as precision and recall at various thresholds, are written to the `results.evaluations` table.
-Triage defines a number of [Evaluation
-Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that
-can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as
-the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile.
-Thresholding is done by sorting the predictions and labels by the row's score, with ties broken at random (the random
-seed can be passed in the config file to make this deterministic), and only considering the first n rows that fall
-before the configured threshold.
+Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.train_evaluations` table or the `test_results.test_evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
 
-Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and
-interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of
-these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So
-if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the
-precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this
-more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
+Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
 
 * `num_labeled_examples` - The number of rows in the test matrix that have labels
 * `num_labeled_above_threshold` - The number of rows above the configured threshold for this metric score that have
@@ -345,6 +322,4 @@ labels
 * `num_positive_labels` - The number of positive labels in the test matrix
 
 ### Recap
-At this point, the `results` database schema is fully populated with data about models, model groups, predictions,
-feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files
-are saved in the configured project path. The experiment is considered finished.
+At this point, the 'model_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.

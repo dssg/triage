@@ -324,10 +324,16 @@ def basic_integration_test(
                     feature_dicts
                 )
 
+
             # go and build the matrices
             builder.build_all_matrices(matrix_build_tasks)
 
             # super basic assertion: did matrices we expect get created?
+            matrices_records = list(db_engine.execute(
+                    '''select matrix_uuid, n_examples, matrix_type
+                    from model_metadata.matrices
+                    '''
+                ))
             matrix_directory = os.path.join(temp_dir, 'matrices')
             matrices = [path for path in os.listdir(
                 matrix_directory) if '.csv' in path]
@@ -337,19 +343,24 @@ def basic_integration_test(
                 expected_matrix_multiplier
             assert len(metadatas) == num_split_matrices * \
                 expected_matrix_multiplier
+            assert len(matrices) == len(matrices_records)
             feature_group_name_lists = []
             for metadata_path in metadatas:
                 with open(os.path.join(matrix_directory, metadata_path)) as f:
                     metadata = yaml.load(f)
                     feature_group_name_lists.append(metadata['feature_groups'])
 
+            for matrix_uuid, n_examples, matrix_type in matrices_records:
+                assert matrix_uuid in matrix_build_tasks #the hashes of the matrices
+                assert type(n_examples) is int
+                assert matrix_type == matrix_build_tasks[matrix_uuid]['matrix_type']
             def deep_unique_tuple(l): return set([tuple(i) for i in l])
             assert deep_unique_tuple(
                 feature_group_name_lists) == deep_unique_tuple(expected_group_lists)
 
 
 def test_integration_simple():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -360,8 +371,9 @@ def test_integration_simple():
     )
 
 
+
 def test_integration_more_state_filtering():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two', 'state_one', 'state_two'],
         feature_group_create_rules={'all': [True]},
         feature_group_mix_rules=['all'],
@@ -372,7 +384,7 @@ def test_integration_more_state_filtering():
 
 
 def test_integration_feature_grouping():
-    basic_integration_test(
+    matrices_records = basic_integration_test(
         state_filters=['state_one OR state_two'],
         feature_group_create_rules={'prefix': ['cat', 'dog']},
         feature_group_mix_rules=['leave-one-out', 'all'],

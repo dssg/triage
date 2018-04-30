@@ -5,7 +5,7 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v3'
+config_version: 'v4'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
@@ -297,6 +297,26 @@ grid_config:
         max_depth: [1,5,10,20,50]
         max_features: [sqrt,log2]
         min_samples_split: [2,5,10]
+    # catwalk's custom model wrapper ScaledLogisticRegression will
+    # automatically scale the train data prior to fitting the model
+    # and then use the same scaling for the test data
+    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        penalty: ['l1', 'l2'],
+        C: [0.01, 1]
+    # catwalk's PercentileRankOneFeature baseline will score each entity as
+    # as its percentile on the named feature. This is useful for comparing
+    # predictive models to simply ranking entities on a single feature.
+    'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
+        feature: ['feature_one', 'feature_two'],
+        descend: True
+    # catwalk's SimpleThresholder baseline will evaluate each entity against
+    # a list of rules and classify entities as 1 based on whether they meet
+    # any or all of these rules, depending on whether 'or' or 'and' is
+    # passed as the logical_operator. This is useful for comparing
+    # predictive modeling against simple rule-based classification.
+    'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
+        rules: [['feature_one > 3', 'feature_two <= 5']]
+        logical_operator: 'and'
 
 
 # MODEL SCORING
@@ -333,6 +353,9 @@ scoring:
                     beta: 0.75
                 -
                     beta: 1.25
+      training_metric_groups:
+        -
+            metrics: [accuracy]
 
 
 # INDIVIDUAL IMPORTANCES

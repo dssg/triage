@@ -12,8 +12,9 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
 from triage.component.catwalk.storage import CSVMatrixStore
-from triage.component.results_schema import Model
+from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
+from triage.component.catwalk.storage import TrainMatrixType, TestMatrixType
 
 
 @contextmanager
@@ -48,9 +49,32 @@ class MockTrainedModel(object):
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
+class MockMatrixStore(object):
+    def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=[]):
+        if matrix_type == 'train':
+            self.matrix_type = TrainMatrixType
+        elif matrix_type == 'test':
+            self.matrix_type = TestMatrixType
+        else:
+            raise Exception('Initialize MockMatrixStore with matrix_type = "train" or "test"')
+
+        self.label_count = label_count
+        self.init_labels = init_labels
+        self.matrix_uuid = matrix_uuid
+
+        session = sessionmaker(db_engine)()
+        session.add(Matrix(matrix_uuid=matrix_uuid))
+
+    def labels(self):
+        if self.init_labels == []:
+            return fake_labels(self.label_count)
+        else:
+            return self.init_labels
+
+
 
 def fake_trained_model(project_path, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
-    """Creates and stores a trivial trained model
+    """Creates and stores a trivial trained model and training matrix
 
     Args:
         project_path (string) a desired fs/s3 project path
@@ -60,9 +84,12 @@ def fake_trained_model(project_path, model_storage_engine, db_engine, train_matr
     Returns:
         (int) model id for database retrieval
     """
+    session = sessionmaker(db_engine)()
+    session.add(Matrix(matrix_uuid=train_matrix_uuid))
+
+    # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
     model_storage_engine.get_store('abcd').write(trained_model)
-    session = sessionmaker(db_engine)()
     db_model = Model(model_hash='abcd', train_matrix_uuid=train_matrix_uuid)
     session.add(db_model)
     session.commit()
@@ -91,6 +118,7 @@ def sample_metta_csv_diff_order(directory):
         'label_name': 'label',
         'label_timespan': '3month',
         'indices': ['entity_id'],
+        'matrix_type': 'train'
     }
 
     test_dict = OrderedDict([
@@ -108,6 +136,7 @@ def sample_metta_csv_diff_order(directory):
         'label_name': 'label',
         'label_timespan': '3month',
         'indices': ['entity_id'],
+        'matrix_type': 'test'
     }
 
     train_uuid, test_uuid = metta.archive_train_test(
@@ -277,14 +306,18 @@ def sample_config():
     scoring_config = {
         'metric_groups': [
             {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
+        ],
+        'training_metric_groups': [
+            {'metrics': ['precision@'], 'thresholds': {'top_n': [3]}}
         ]
+
     }
 
     grid_config = {
-        'sklearn.linear_model.LogisticRegression': {
-            'C': [0.00001, 0.0001],
-            'penalty': ['l1', 'l2'],
-            'random_state': [2193]
+        'sklearn.tree.DecisionTreeClassifier': {
+            'min_samples_split': [10, 100],
+            'max_depth': [3,5],
+            'criterion': ['gini']
         }
     }
 

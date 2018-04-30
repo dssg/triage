@@ -9,7 +9,7 @@ import pandas
 import postgres_copy
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Model, Prediction
+from triage.component.results_schema import Model
 
 from .utils import db_retry
 
@@ -89,10 +89,10 @@ class Predictor(object):
         model_store.delete()
 
     @db_retry
-    def _existing_predictions(self, session, model_id, matrix_store):
-        return session.query(Prediction)\
+    def _existing_predictions(self, Prediction_obj, session, model_id, matrix_store):
+        return session.query(Prediction_obj)\
             .filter_by(model_id=model_id)\
-            .filter(Prediction.as_of_date.in_(self._as_of_dates(matrix_store)))
+            .filter(Prediction_obj.as_of_date.in_(self._as_of_dates(matrix_store)))
 
     def _as_of_dates(self, matrix_store):
         matrix = matrix_store.matrix
@@ -133,6 +133,7 @@ class Predictor(object):
         predictions,
         labels,
         misc_db_parameters,
+        Prediction_obj
     ):
         """Writes given predictions to database
 
@@ -145,10 +146,11 @@ class Predictor(object):
             predictions (iterable) predicted values
             labels (iterable) labels of prediction set (int) the id of the model
             to predict based off of
+            Prediction_obj (TrainPrediction or TestPrediction) table to store predictions to
 
         """
         session = self.sessionmaker()
-        self._existing_predictions(session, model_id, matrix_store)\
+        self._existing_predictions(Prediction_obj, session, model_id, matrix_store)\
             .delete(synchronize_session=False)
         session.expire_all()
         db_objects = []
@@ -168,7 +170,7 @@ class Predictor(object):
                     labels
                 ):
                     entity_id, as_of_date = index
-                    prediction = Prediction(
+                    prediction = Prediction_obj(
                         model_id=int(model_id),
                         entity_id=int(entity_id),
                         as_of_date=as_of_date,
@@ -190,7 +192,7 @@ class Predictor(object):
                         prediction.test_label_timespan
                     ])
                 f.seek(0)
-                postgres_copy.copy_from(f, Prediction, self.db_engine, format='csv')
+                postgres_copy.copy_from(f, Prediction_obj, self.db_engine, format='csv')
         else:
             logging.info('as_of_date not found as part of matrix index, using '
                          'matrix metadata end_time as as_of_date')
@@ -204,7 +206,7 @@ class Predictor(object):
                 rankings_abs,
                 rankings_pct
             ):
-                db_objects.append(Prediction(
+                db_objects.append(Prediction_obj(
                     model_id=int(model_id),
                     entity_id=int(entity_id),
                     as_of_date=matrix_store.metadata['end_time'],
@@ -229,13 +231,16 @@ class Predictor(object):
             matrix_store (catwalk.storage.MatrixStore) a wrapper for the
                 prediction matrix and metadata
             misc_db_parameters (dict): attributes and values to add to each
-                Prediction object in the results schema
+                TrainPrediction or TestPrediction object in the results schema
             train_matrix_columns (list): The order of columns that the model
                 was trained on
 
         Returns:
             (numpy.Array) the generated prediction values
         """
+        #Setting the Prediction object type - TrainPrediction or TestPrediction
+        prediction_obj = matrix_store.matrix_type.prediction_obj
+
         session = self.sessionmaker()
         if not self.replace:
             logging.info(
@@ -244,6 +249,7 @@ class Predictor(object):
                 matrix_store.uuid
             )
             existing_predictions = self._existing_predictions(
+                prediction_obj,
                 session,
                 model_id,
                 matrix_store
@@ -265,18 +271,21 @@ class Predictor(object):
         if not model:
             raise ModelNotFoundError('Model id {} not found'.format(model_id))
 
+        # Labels are popped from matrix (IE, they are removed and returned)
         labels = matrix_store.labels()
+
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
-
         logging.info('Generated predictions for model %s, matrix %s', model_id, matrix_store.uuid)
+
         self._write_to_db(
             model_id,
             matrix_store,
             predictions_proba[:, 1],
             labels,
-            misc_db_parameters
+            misc_db_parameters,
+            prediction_obj
         )
         logging.info(
             'Wrote predictions for model %s, matrix %s to database',

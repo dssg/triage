@@ -2,6 +2,7 @@ import copy
 import datetime
 import importlib
 import logging
+import sys
 
 import numpy as np
 import pandas
@@ -9,6 +10,7 @@ from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, FeatureImportance
+from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
@@ -19,13 +21,16 @@ from .utils import (
     save_db_objects,
 )
 
+NO_FEATURE_IMPORTANCE = 'Algorithm does not support a standard way' +\
+                        ' to calculate feature importance.'
+
 
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
     Args:
         project_path (string) path to project folder,
             under which to cache model pickles
-        experiment_hash (string) foreign key to the results.experiments table
+        experiment_hash (string) foreign key to the model_metadata.experiments table
         model_storage_engine (catwalk.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
         replace (bool) whether or not to replace existing versions of models
@@ -118,7 +123,7 @@ class ModelTrainer(object):
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
         self.db_engine.execute(
-            'delete from results.feature_importances where model_id = %s',
+            'delete from train_results.feature_importances where model_id = %s',
             model_id
         )
         db_objects = []
@@ -153,8 +158,7 @@ class ModelTrainer(object):
             db_objects.append(FeatureImportance(
                 model_id=model_id,
                 feature_importance=0,
-                feature='Algorithm does not support a standard way' +
-                        'to calculate feature importance.',
+                feature=NO_FEATURE_IMPORTANCE,
                 rank_abs=0,
                 rank_pct=0,
             ))
@@ -169,6 +173,7 @@ class ModelTrainer(object):
         model_hash,
         trained_model,
         model_group_id,
+        model_size,
         misc_db_parameters
     ):
         """Writes model and feature importance data to a database
@@ -188,6 +193,8 @@ class ModelTrainer(object):
             feature_names (list) feature names in order given to model
             model_hash (string) a unique id for the model
             trained_model (object) a trained model object
+            model_group_id (int) the unique id for the model group
+            model_size (float) the size of the stored model in kB
             misc_db_parameters (dict) params to pass through to the database
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
@@ -204,6 +211,7 @@ class ModelTrainer(object):
                 model_parameters=parameters,
                 model_group_id=model_group_id,
                 experiment_hash=self.experiment_hash,
+                model_size=model_size,
                 **misc_db_parameters
             )
             session = self.sessionmaker()
@@ -266,7 +274,10 @@ class ModelTrainer(object):
             self.db_engine
         )
         logging.info('Trained model: hash %s, model group id %s ', model_hash, model_group_id)
+        #Writing the model to storage, then getting its size in kilobytes.
         model_store.write(trained_model)
+        model_size = sys.getsizeof(trained_model)/(1024.0)
+
         logging.info('Cached model: %s', model_hash)
         model_id = self._write_model_to_db(
             class_path,
@@ -275,6 +286,7 @@ class ModelTrainer(object):
             model_hash,
             trained_model,
             model_group_id,
+            model_size,
             misc_db_parameters
         )
         logging.info('Wrote model to db: hash %s, got id %s', model_hash, model_id)
@@ -371,14 +383,20 @@ class ModelTrainer(object):
 
         logging.info(f"Training {class_path} with parameters {parameters}"
                      f"(reason to train: {reason})")
-        model_id = self._train_and_store_model(
-            matrix_store,
-            class_path,
-            parameters,
-            model_hash,
-            model_store,
-            misc_db_parameters
-        )
+        try:
+            model_id = self._train_and_store_model(
+                matrix_store,
+                class_path,
+                parameters,
+                model_hash,
+                model_store,
+                misc_db_parameters
+            )
+        except BaselineFeatureNotInMatrix:
+            logging.warning(
+                "Tried to train baseline model without required feature in matrix. Skipping."
+            )
+            model_id = None
         return model_id
 
     def generate_train_tasks(

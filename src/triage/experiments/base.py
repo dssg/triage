@@ -221,6 +221,7 @@ class ExperimentBase(ABC):
             ModelEvaluator,
             sort_seed=self.config['scoring'].get('sort_seed', None),
             metric_groups=self.config['scoring']['metric_groups'],
+            training_metric_groups =self.config['scoring']['training_metric_groups']
         )
 
     def initialize_components(self):

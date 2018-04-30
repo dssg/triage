@@ -40,6 +40,8 @@ class SingleThreadedExperiment(ExperimentBase):
                 ),
                 matrix_store=train_store
             )
+            # remove Nones from model_ids so we don't try to predict/evaluate on skipped baselines
+            model_ids = [model_id for model_id in model_ids if model_id is not None]
             logging.info('Done training models')
 
             for split_def, test_uuid in zip(
@@ -61,12 +63,6 @@ class SingleThreadedExperiment(ExperimentBase):
                     continue
                 for model_id in model_ids:
                     logging.info('Testing model id %s', model_id)
-                    predictions_proba = self.predictor.predict(
-                        model_id,
-                        test_store,
-                        misc_db_parameters=dict(),
-                        train_matrix_columns=train_store.columns(),
-                    )
 
                     self.individual_importance_calculator\
                         .calculate_and_save_all_methods_and_dates(
@@ -74,12 +70,21 @@ class SingleThreadedExperiment(ExperimentBase):
                             test_store
                         )
 
-                    self.evaluator.evaluate(
-                        predictions_proba=predictions_proba,
-                        labels=test_store.labels(),
-                        model_id=model_id,
-                        # for evaluation range, using first to last as of time:
-                        evaluation_start_time=split_def['first_as_of_time'],
-                        evaluation_end_time=split_def['last_as_of_time'],
-                        as_of_date_frequency=split_def['test_as_of_date_frequency']
-                    )
+                    #Generate predictions for the testing data then training data
+                    for store in (test_store, train_store):
+                        predictions_proba = self.predictor.predict(
+                            model_id,
+                            store,
+                            misc_db_parameters=dict(),
+                            train_matrix_columns=train_store.columns()
+                        )
+
+                        self.evaluator.evaluate(
+                            predictions_proba=predictions_proba,
+                            matrix_store=store,
+                            model_id=model_id,
+                            # for evaluation range, using first to last as of time:
+                            evaluation_start_time=split_def['first_as_of_time'],
+                            evaluation_end_time=split_def['last_as_of_time'],
+                            as_of_date_frequency=split_def['test_as_of_date_frequency']
+                        )

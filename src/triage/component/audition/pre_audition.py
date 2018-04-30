@@ -22,7 +22,7 @@ class PreAudition(object):
         """
         query = """
             SELECT DISTINCT(model_group_id)
-            FROM results.model_groups
+            FROM model_metadata.model_groups
             WHERE model_config->>'label_definition' = %(label_definition)s
             """
 
@@ -42,7 +42,7 @@ class PreAudition(object):
         """
         query = """
             SELECT DISTINCT(model_group_id)
-            FROM results.models
+            FROM model_metadata.models
             WHERE experiment_hash = %(experiment_hash)s
             """
 
@@ -74,7 +74,7 @@ class PreAudition(object):
         if query is None:
             query = """
             SELECT DISTINCT train_end_time
-            FROM results.models
+            FROM model_metadata.models
             WHERE model_group_id IN ({})
                 AND train_end_time >= %(after)s
             ORDER BY train_end_time

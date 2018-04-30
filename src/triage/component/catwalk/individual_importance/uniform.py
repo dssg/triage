@@ -1,3 +1,6 @@
+from triage.component.catwalk.model_trainers import NO_FEATURE_IMPORTANCE
+
+
 def _entity_feature_values(matrix, feature_name, as_of_date=None):
     """Finds the value of the given feature for each entity in a matrix
 
@@ -10,12 +13,22 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
     Returns: (list) of (entity_id, feature_value) tuples
     """
     if matrix.index.names == ['entity_id']:
-        return list(zip(matrix.index.values, matrix[feature_name].tolist()))
+        if feature_name == NO_FEATURE_IMPORTANCE:
+            # if model does not support feature importance, write 0 as individual importance.
+            return list(zip(matrix.index.values, [None] * len(matrix.index.values)))
+        else:
+            return list(zip(matrix.index.values, matrix[feature_name].tolist()))
     elif 'entity_id' in matrix.index.names:
         results = []
         index_of_entity = matrix.index.names.index('entity_id')
         index_of_date = matrix.index.names.index('as_of_date')
-        for row in zip(matrix.index.values, matrix[feature_name].tolist()):
+
+        if feature_name == NO_FEATURE_IMPORTANCE:
+            zipped_iter = zip(matrix.index.values, [None] * len(matrix.index.values))
+        else:
+            zipped_iter = zip(matrix.index.values, matrix[feature_name].tolist())
+
+        for row in zipped_iter:
             index_values, feature_value = row
             entity_id = index_values[index_of_entity]
             if index_values[index_of_date] == as_of_date:
@@ -30,7 +43,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
 
     Args:
         db_engine (sqlalchemy.engine)
-        model_id (int) A model id, expected to be present in results.models
+        model_id (int) A model id, expected to be present in model_metadata.models
         as_of_date (datetime or string) The date to produce individual importances as of
         test_matrix_store (catwalk.storage.MatrixStore) The test matrix
         n_ranks (int) Number of ranks to calculate and save. Defaults to 5
@@ -39,7 +52,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
     """
     global_feature_importances = [row for row in db_engine.execute(
         '''select feature, feature_importance
-        from results.feature_importances where model_id = %s
+        from train_results.feature_importances where model_id = %s
         order by feature_importance desc limit %s''',
         model_id,
         n_ranks

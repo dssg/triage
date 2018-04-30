@@ -14,6 +14,8 @@ Python's scikit-learn package provides much of this functionality, but it is not
 - Hashing classifier model configuration to only retrain a model if necessary.
 - Various best practices in areas like input scaling for different classifier types and feature importance
 - Common scikit-learn model evaluation metrics as well as the ability to bundle custom evaluation metrics
+- Custom model wrappers for classifiers
+- 'Baseline' classes that generate classifications or predictions based on pre-determined rules, to be used for evaluating predictive models against simple hueristics
 
 Components
 ----------
@@ -133,10 +135,37 @@ Below is a complete sample usage of the three Catwalk components::
 
     # run the pipeline
     grid_config = {
+        # catwalk will run any sklearn model by specifying the model class as a
+        # dictionary key with a dictionary of hyperparameters over which to
+        # search. catwalk will fit models over the cartesian product of the
+        # hyperparameters.
         'sklearn.linear_model.LogisticRegression': {
             'C': [0.00001, 0.0001],
             'penalty': ['l1', 'l2'],
             'random_state': [2193]
+        },
+        # catwalk's custom model wrapper ScaledLogisticRegression will
+        # automatically scale the train data prior to fitting the model
+        # and then use the same scaling for the test data
+        'catwalk.estimators.classifiers.ScaledLogisticRegression': {
+            'penalty': ['l1', 'l2'],
+            'C': [0.01, 1]
+        },
+        # catwalk's PercentileRankOneFeature baseline will score each entity as
+        # as its percentile on the named feature. This is useful for comparing
+        # predictive models to simply ranking entities on a single feature.
+        'catwalk.baselines.rankers.PercentileRankOneFeature': {
+            'feature': ['feature_one', 'feature_two'],
+            'descend': True
+        },
+        # catwalk's SimpleThresholder baseline will evaluate each entity against
+        # a list of rules and classify entities as 1 based on whether they meet
+        # any or all of these rules, depending on whether 'or' or 'and' is
+        # passed as the logical_operator. This is useful for comparing
+        # predictive modeling against simple rule-based classification.
+        'catwalk.baselines.thresholders.SimpleThresholder': {
+            'rules': [['feature_one > 3', 'feature_two <= 5']]
+            'logical_operator': 'and'
         }
     }
 
