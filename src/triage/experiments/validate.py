@@ -32,9 +32,12 @@ class TemporalValidator(Validator):
         splits = []
         try:
             chopper = Timechop(
-                feature_start_time=dt_from_str(temporal_config['feature_start_time']),
-                feature_end_time=dt_from_str(temporal_config['feature_end_time']),
-                label_start_time=dt_from_str(temporal_config['label_start_time']),
+                feature_start_time=dt_from_str(
+                    temporal_config['feature_start_time']),
+                feature_end_time=dt_from_str(
+                    temporal_config['feature_end_time']),
+                label_start_time=dt_from_str(
+                    temporal_config['label_start_time']),
                 label_end_time=dt_from_str(temporal_config['label_end_time']),
                 model_update_frequency=temporal_config['model_update_frequency'],
                 training_label_timespans=temporal_config['training_label_timespans'],
@@ -63,7 +66,8 @@ class TemporalValidator(Validator):
             # but to be more sure, let's double-check by comparing as_of_times
             # in the train and all associated test matrices
             train_max_data_time = max(split['train_matrix']['as_of_times']) +\
-                convert_str_to_relativedelta(split['train_matrix']['training_label_timespan'])
+                convert_str_to_relativedelta(
+                    split['train_matrix']['training_label_timespan'])
 
             for test_matrix in split['test_matrices']:
                 if len(test_matrix['as_of_times']) == 0:
@@ -194,7 +198,8 @@ class FeatureAggregationsValidator(Validator):
         valid_imputations['array_categoricals'] = valid_imputations['categoricals']
 
         # the valid imputation rules for the specific aggregation type being checked
-        valid_types = dict(valid_imputations['all'], **valid_imputations[aggregate_type])
+        valid_types = dict(
+            valid_imputations['all'], **valid_imputations[aggregate_type])
 
         # no imputation rule was specified
         if 'type' not in impute_rule.keys():
@@ -298,7 +303,8 @@ class LabelConfigValidator(Validator):
                 query: "{}"
                 Full error: {}'''.format(query, e)))
 
-    def _validate_include_missing_labels_in_train_as(self, missing_label_flag):
+    @staticmethod
+    def _validate_include_missing_labels_in_train_as(missing_label_flag):
         if missing_label_flag not in {None, True, False}:
             raise ValueError(dedent('''
             Section: label_config -
@@ -351,10 +357,14 @@ class CohortConfigValidator(Validator):
                 a table name must be present'''))
             dense_state_table = state_config['table_name']
             table_should_have_data(dense_state_table, self.db_engine)
-            column_should_be_intlike(dense_state_table, 'entity_id', self.db_engine)
-            column_should_be_stringlike(dense_state_table, 'state', self.db_engine)
-            column_should_be_timelike(dense_state_table, 'start_time', self.db_engine)
-            column_should_be_timelike(dense_state_table, 'end_time', self.db_engine)
+            column_should_be_intlike(
+                dense_state_table, 'entity_id', self.db_engine)
+            column_should_be_stringlike(
+                dense_state_table, 'state', self.db_engine)
+            column_should_be_timelike(
+                dense_state_table, 'start_time', self.db_engine)
+            column_should_be_timelike(
+                dense_state_table, 'end_time', self.db_engine)
             if 'state_filters' not in state_config or len(state_config['state_filters']) < 1:
                 raise ValueError(dedent('''
                 Section: cohort_config -
@@ -363,7 +373,8 @@ class CohortConfigValidator(Validator):
         elif 'entities_table' in cohort_config:
             entities_table = cohort_config['entities_table']
             table_should_have_data(entities_table, self.db_engine)
-            column_should_be_intlike(entities_table, 'entity_id', self.db_engine)
+            column_should_be_intlike(
+                entities_table, 'entity_id', self.db_engine)
         elif 'query' in cohort_config:
             query = cohort_config['query']
             if '{as_of_date}' not in query:
@@ -371,7 +382,8 @@ class CohortConfigValidator(Validator):
                 Section: cohort_config -
                 If 'query' is used as cohort_config,
                 {as_of_date} must be present'''))
-            dated_query = query.replace('{as_of_date}', '2016-01-01::timestamp')
+            dated_query = query.replace(
+                '{as_of_date}', '2016-01-01::timestamp')
             conn = self.db_engine.connect()
             logging.info('Validating cohort query')
             try:
@@ -409,7 +421,8 @@ class FeatureGroupDefinitionValidator(Validator):
                 aggregation['prefix']
                 for aggregation in feature_aggregation_config
             }
-            bad_prefixes = set(feature_group_definition['prefix']) - available_prefixes
+            bad_prefixes = set(
+                feature_group_definition['prefix']) - available_prefixes
             if bad_prefixes:
                 raise ValueError(dedent('''
                 Section: feature_group_definition -
@@ -423,7 +436,8 @@ class FeatureGroupDefinitionValidator(Validator):
                 aggregation['prefix'] + '_aggregation_imputed'
                 for aggregation in feature_aggregation_config
             }
-            bad_tables = set(feature_group_definition['tables']) - available_tables
+            bad_tables = set(
+                feature_group_definition['tables']) - available_tables
             if bad_tables:
                 raise ValueError(dedent('''
                 Section: feature_group_definition -
@@ -563,8 +577,10 @@ class ExperimentValidator(Validator):
         TemporalValidator().run(experiment_config.get('temporal_config', {}))
         FeatureAggregationsValidator(self.db_engine)\
             .run(experiment_config.get('feature_aggregations', {}))
-        LabelConfigValidator(self.db_engine).run(experiment_config.get('label_config', None))
-        CohortConfigValidator(self.db_engine).run(experiment_config.get('cohort_config', {}))
+        LabelConfigValidator(self.db_engine).run(
+            experiment_config.get('label_config', None))
+        CohortConfigValidator(self.db_engine).run(
+            experiment_config.get('cohort_config', {}))
         FeatureGroupDefinitionValidator().run(
             experiment_config.get('feature_group_definition', {}),
             experiment_config['feature_aggregations']
