@@ -61,7 +61,7 @@ Documentation
 ---------------------------
 - `Dirty Duck Tutorial <https://dssg.github.io/dirtyduck/>`_
 - `Experiment Algorithm Deep Dive <https://dssg.github.io/triage/experiments/algorithm>`_
-- `Experiment Config v5 Upgrade Guide<https://dssg.github.io/triage/experiments/upgrade-to-v5>`_
+- `Experiment Config v5 Upgrade Guide <https://dssg.github.io/triage/experiments/upgrade-to-v5>`_
 
 
 Instantiating an Experiment
