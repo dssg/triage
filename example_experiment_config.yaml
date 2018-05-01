@@ -5,7 +5,7 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v4'
+config_version: 'v5'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
