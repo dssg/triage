@@ -17,6 +17,10 @@ The first phase implemented in triage is the `Experiment`. An experiment represe
 ## Running an Experiment
 [Running an Experiment](experiments/running.md)
 
+## Upgrading an Experiment config
+[v3/v4 -> v5](experiments/upgrade-to-v5.md)
+
+
 ## Background
 
 Triage is developed at the University of Chicago's [Center For Data Science and Public Policy](http://dsapp.uchicago.edu). We created it in response to commonly occuring challenges we've encountered and patterns we've developed while working on projects for our partners.

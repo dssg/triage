@@ -14,11 +14,19 @@ from triage.component.results_schema import Matrix
 
 
 class BuilderBase(object):
-    def __init__(self, db_config, matrix_directory, engine, replace=True):
+    def __init__(
+        self,
+        db_config,
+        matrix_directory,
+        engine,
+        replace=True,
+        include_missing_labels_in_train_as=None,
+    ):
         self.db_config = db_config
         self.matrix_directory = matrix_directory
         self.engine = engine
         self.replace = replace
+        self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
         self.sessionmaker = sessionmaker(bind=self.engine)
 
     def validate(self):
@@ -117,18 +125,18 @@ class BuilderBase(object):
         """
 
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
-        if matrix_type == 'train':
+        if matrix_type == 'test' or self.include_missing_labels_in_train_as is not None:
+            indices_query = self._all_valid_entity_dates_query(
+                as_of_time_strings=as_of_time_strings,
+                state=state
+            )
+        elif matrix_type == 'train':
             indices_query = self._all_labeled_entity_dates_query(
                 as_of_time_strings=as_of_time_strings,
                 state=state,
                 label_name=label_name,
                 label_type=label_type,
                 label_timespan=label_timespan
-            )
-        elif matrix_type == 'test':
-            indices_query = self._all_valid_entity_dates_query(
-                as_of_time_strings=as_of_time_strings,
-                state=state
             )
         else:
             raise ValueError('Unknown matrix type passed: {}'.format(matrix_type))
@@ -366,6 +374,19 @@ class CSVBuilder(BuilderBase):
             self.matrix_directory,
             '{}-{}.csv'.format(matrix_uuid, self.db_config['labels_table_name'])
         )
+        if self.include_missing_labels_in_train_as is None:
+            label_predicate = 'r.label'
+        elif self.include_missing_labels_in_train_as is False:
+            label_predicate = 'coalesce(r.label, 0)'
+        elif self.include_missing_labels_in_train_as is True:
+            label_predicate = 'coalesce(r.label, 1)'
+        else:
+            raise ValueError(
+                'incorrect value "{}" for include_missing_labels_in_train_as'.format(
+                    self.include_missing_labels_in_train_as
+                )
+            )
+
         labels_query = self._outer_join_query(
             right_table_name='{schema}.{table}'.format(
                 schema=self.db_config['labels_schema_name'],
@@ -375,7 +396,7 @@ class CSVBuilder(BuilderBase):
                 schema=self.db_config['features_schema_name'],
                 table=entity_date_table_name
             ),
-            right_column_selections=', r.label as {}'.format(label_name),
+            right_column_selections=', {} as {}'.format(label_predicate, label_name),
             additional_conditions='''AND
                 r.label_name = '{name}' AND
                 r.label_type = '{type}' AND

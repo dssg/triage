@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
+import yaml
+
 
 import testing.postgresql
 from sqlalchemy import create_engine
@@ -13,9 +15,12 @@ from triage.component.architect.features import (
     FeatureGroupCreator,
     FeatureGroupMixer,
 )
-from triage.component.architect.state_table_generators import StateTableGenerator
-from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.label_generators import LabelGenerator
+from triage.component.architect.state_table_generators import StateTableGeneratorFromDense
 from triage.component.architect.planner import Planner
+from triage.component.architect.builders import HighMemoryCSVBuilder
+
+from tests.utils import sample_config
 
 
 def populate_source_data(db_engine):
@@ -156,7 +161,8 @@ def basic_integration_test(
     state_filters,
     feature_group_create_rules,
     feature_group_mix_rules,
-    expected_matrix_multiplier
+    expected_matrix_multiplier,
+    expected_group_lists
 ):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
@@ -178,16 +184,15 @@ def basic_integration_test(
                 test_durations=['1months'],
             )
 
-            state_table_generator = StateTableGenerator(
+            state_table_generator = StateTableGeneratorFromDense(
                 db_engine=db_engine,
                 experiment_hash='abcd',
                 dense_state_table='states',
             )
 
-
-            label_generator = BinaryLabelGenerator(
+            label_generator = LabelGenerator(
                 db_engine=db_engine,
-                events_table='events'
+                query=sample_config()['label_config']['query']
             )
 
             feature_generator = FeatureGenerator(
@@ -201,15 +206,22 @@ def basic_integration_test(
                 features_schema_name='features'
             )
 
-            feature_group_creator = FeatureGroupCreator(feature_group_create_rules)
+            feature_group_creator = FeatureGroupCreator(
+                feature_group_create_rules)
 
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
 
             planner = Planner(
-                engine=db_engine,
                 feature_start_time=datetime(2010, 1, 1),
                 label_names=['outcome'],
                 label_types=['binary'],
+                matrix_directory=os.path.join(temp_dir, 'matrices'),
+                states=state_filters,
+                user_metadata={},
+            )
+
+            builder = HighMemoryCSVBuilder(
+                engine=db_engine,
                 db_config={
                     'features_schema_name': 'features',
                     'labels_schema_name': 'public',
@@ -217,14 +229,13 @@ def basic_integration_test(
                     'sparse_state_table_name': 'tmp_sparse_states_abcd',
                 },
                 matrix_directory=os.path.join(temp_dir, 'matrices'),
-                states=state_filters,
-                user_metadata={},
                 replace=True
             )
 
             # chop time
             split_definitions = chopper.chop_time()
-            num_split_matrices = sum(1 + len(split['test_matrices']) for split in split_definitions)
+            num_split_matrices = sum(
+                1 + len(split['test_matrices']) for split in split_definitions)
 
             # generate as_of_times for feature/label/state generation
             all_as_of_times = []
@@ -233,42 +244,6 @@ def basic_integration_test(
                 for test_matrix in split['test_matrices']:
                     all_as_of_times.extend(test_matrix['as_of_times'])
             all_as_of_times = list(set(all_as_of_times))
-
-            feature_aggregation_config = [{
-                'prefix': 'cat',
-                'from_obj': 'cat_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates': [{
-                    'quantity': 'cat_sightings',
-                    'metrics': ['count', 'avg'],
-                    'imputation': {
-                        'all': {'type': 'mean'}
-                    }
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }, {
-                'prefix': 'dog',
-                'from_obj': 'dog_complaints',
-                'knowledge_date_column': 'as_of_date',
-                'aggregates_imputation': {
-                    'count': {'type': 'constant', 'value': 7},
-                    'sum': {'type': 'mean'},
-                    'avg': {'type': 'zero'}
-                },
-                'aggregates': [{
-                    'quantity': 'dog_sightings',
-                    'metrics': ['count', 'avg'],
-                }],
-                'intervals': ['1y'],
-                'groups': ['entity_id']
-            }]
-
-            state_table_generator.validate()
-            label_generator.validate()
-            feature_generator.validate(feature_aggregation_config)
-            feature_group_creator.validate()
-            planner.validate()
 
             # generate sparse state table
             state_table_generator.generate_sparse_table(
@@ -318,12 +293,14 @@ def basic_integration_test(
                 feature_dates=all_as_of_times,
                 state_table=state_table_generator.sparse_table_name
             )
-            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='aggregation')
+            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(
+                aggregations, task_type='aggregation')
 
             # create feature aggregation tables
             feature_generator.process_table_tasks(feature_table_agg_tasks)
 
-            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(aggregations, task_type='imputation')
+            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(
+                aggregations, task_type='imputation')
 
             # create feature imputation tables
             feature_generator.process_table_tasks(feature_table_imp_tasks)
@@ -332,7 +309,8 @@ def basic_integration_test(
             # subsetting config
             master_feature_dict = feature_dictionary_creator.feature_dictionary(
                 feature_table_names=feature_table_imp_tasks.keys(),
-                index_column_lookup=feature_generator.index_column_lookup(aggregations)
+                index_column_lookup=feature_generator.index_column_lookup(
+                    aggregations)
             )
 
             feature_dicts = feature_group_mixer.generate(
@@ -348,26 +326,37 @@ def basic_integration_test(
 
 
             # go and build the matrices
-            planner.build_all_matrices(matrix_build_tasks)
+            builder.build_all_matrices(matrix_build_tasks)
+
+            # super basic assertion: did matrices we expect get created?
             matrices_records = list(db_engine.execute(
                     '''select matrix_uuid, n_examples, matrix_type
                     from model_metadata.matrices
                     '''
                 ))
-
-            # super basic assertion: did matrices we expect get created?
             matrix_directory = os.path.join(temp_dir, 'matrices')
-            matrices = [path for path in os.listdir(matrix_directory) if '.csv' in path]
-            metadatas = [path for path in os.listdir(matrix_directory) if '.yaml' in path]
-            assert len(matrices) == num_split_matrices * expected_matrix_multiplier
-            assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
+            matrices = [path for path in os.listdir(
+                matrix_directory) if '.csv' in path]
+            metadatas = [path for path in os.listdir(
+                matrix_directory) if '.yaml' in path]
+            assert len(matrices) == num_split_matrices * \
+                expected_matrix_multiplier
+            assert len(metadatas) == num_split_matrices * \
+                expected_matrix_multiplier
             assert len(matrices) == len(matrices_records)
+            feature_group_name_lists = []
+            for metadata_path in metadatas:
+                with open(os.path.join(matrix_directory, metadata_path)) as f:
+                    metadata = yaml.load(f)
+                    feature_group_name_lists.append(metadata['feature_groups'])
 
             for matrix_uuid, n_examples, matrix_type in matrices_records:
                 assert matrix_uuid in matrix_build_tasks #the hashes of the matrices
                 assert type(n_examples) is int
                 assert matrix_type == matrix_build_tasks[matrix_uuid]['matrix_type']
-
+            def deep_unique_tuple(l): return set([tuple(i) for i in l])
+            assert deep_unique_tuple(
+                feature_group_name_lists) == deep_unique_tuple(expected_group_lists)
 
 
 def test_integration_simple():
@@ -378,6 +367,7 @@ def test_integration_simple():
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
         expected_matrix_multiplier=1,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -389,6 +379,7 @@ def test_integration_more_state_filtering():
         feature_group_mix_rules=['all'],
         # 3 state filters, so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['all: True']],
     )
 
 
@@ -399,4 +390,6 @@ def test_integration_feature_grouping():
         feature_group_mix_rules=['leave-one-out', 'all'],
         # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
+        expected_group_lists=[['prefix: cat'], [
+            'prefix: cat', 'prefix: dog'], ['prefix: dog']],
     )

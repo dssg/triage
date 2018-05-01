@@ -10,14 +10,14 @@ from mock import Mock
 from sqlalchemy import create_engine
 
 from triage.component import metta
-from triage.component.architect import Planner, builders
+from triage.component.architect.feature_group_creator import FeatureGroup
+from triage.component.architect import builders
 from triage.component.catwalk.db import ensure_db
 
 from .utils import (
     create_schemas,
     create_entity_date_df,
     convert_string_column_to_date,
-    NamedTempFile,
     TemporaryDirectory,
 )
 
@@ -29,6 +29,7 @@ states = [
     [0, '2016-03-01', False, True],
     [0, '2016-04-01', False, True],
     [0, '2016-05-01', False, True],
+    [0, '2016-06-01', True, True],
     [1, '2016-01-01', True, False],
     [1, '2016-02-01', True, False],
     [1, '2016-03-01', True, False],
@@ -85,8 +86,8 @@ features1_pre = [
 # collate will ensure every entity/date combination in the state
 # table have an imputed value in the features table, so ensure
 # this is true for our test (filling with 9's):
-f0_dict = {(r[0], r[1]) : r for r in features0_pre}
-f1_dict = {(r[0], r[1]) : r for r in features1_pre}
+f0_dict = {(r[0], r[1]): r for r in features0_pre}
+f1_dict = {(r[0], r[1]): r for r in features1_pre}
 
 for rec in states:
     ent_dt = (rec[0], rec[1])
@@ -248,28 +249,22 @@ def test_write_to_csv():
         )
 
         with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = engine,
-                builder_class = builders.HighMemoryCSVBuilder
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine,
             )
 
             # for each table, check that corresponding csv has the correct # of rows
             for table in features_tables:
-                planner.builder.write_to_csv(
+                builder.write_to_csv(
                     '''
                         select *
                         from features.features{}
                     '''.format(features_tables.index(table)),
                     'test_csv.csv'
                 )
-                reader = csv.reader(planner.builder.open_fh_for_reading('test_csv.csv'))
+                reader = csv.reader(builder.open_fh_for_reading('test_csv.csv'))
                 assert(len([row for row in reader]) == len(table) + 1)
 
 
@@ -304,21 +299,16 @@ def test_make_entity_date_table():
         )
 
         with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = engine
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine
             )
             engine.execute(
                 'CREATE TABLE features.tmp_entity_date (a int, b date);'
             )
             # call the function to test the creation of the table
-            entity_date_table_name = planner.builder.make_entity_date_table(
+            entity_date_table_name = builder.make_entity_date_table(
                 as_of_times=dates,
                 label_type='binary',
                 label_name='booking',
@@ -330,14 +320,82 @@ def test_make_entity_date_table():
 
             # read in the table
             result = pd.read_sql(
-                "select * from features.{} order by entity_id, as_of_date".format(entity_date_table_name),
+                "select * from features.{} order by entity_id, as_of_date"
+                .format(entity_date_table_name),
                 engine
             )
-            labels_df = pd.read_sql('select * from labels.labels', engine)
-
             # compare the table to the test dataframe
             test = (result == ids_dates)
             assert(test.all().all())
+
+
+def test_make_entity_date_table_include_missing_labels():
+    """ Test that the make_entity_date_table function contains the correct
+    values.
+    """
+    dates = [datetime.datetime(2016, 1, 1, 0, 0),
+             datetime.datetime(2016, 2, 1, 0, 0),
+             datetime.datetime(2016, 3, 1, 0, 0),
+             datetime.datetime(2016, 6, 1, 0, 0)]
+
+    # same as the other make_entity_date_label test except there is an extra date, 2016-06-01
+    # entity 0 is included in this date via the states table, but has no label
+
+    # make a dataframe of entity ids and dates to test against
+    ids_dates = create_entity_date_df(
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        state_one=True,
+        state_two=True,
+        label_name='booking',
+        label_type='binary',
+        label_timespan='1 month'
+    )
+    # this line adds the new entity-date combo as an expected one
+    ids_dates = ids_dates.append({'entity_id': 0, 'as_of_date': datetime.date(2016, 6, 1)}, ignore_index=True)
+
+    with testing.postgresql.Postgresql() as postgresql:
+        # create an engine and generate a table with fake feature data
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine=engine,
+            features_tables=features_tables,
+            labels=labels,
+            states=states
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                include_missing_labels_in_train_as=False,
+                engine=engine
+            )
+            engine.execute(
+                'CREATE TABLE features.tmp_entity_date (a int, b date);'
+            )
+            # call the function to test the creation of the table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                state='state_one AND state_two',
+                matrix_uuid='my_uuid',
+                matrix_type='train',
+                label_timespan='1 month'
+            )
+
+            # read in the table
+            result = pd.read_sql(
+                "select * from features.{} order by entity_id, as_of_date"
+                .format(entity_date_table_name),
+                engine
+            )
+
+            # compare the table to the test dataframe
+            assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
+
 
 def test_write_features_data():
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
@@ -360,16 +418,13 @@ def test_write_features_data():
     features_dfs = []
     for i, table in enumerate(features_tables):
         cols = ['entity_id', 'as_of_date'] + features[i]
-        temp_df = pd.DataFrame(
-            table,
-            columns = cols
-        )
+        temp_df = pd.DataFrame(table, columns=cols)
         temp_df['as_of_date'] = convert_string_column_to_date(temp_df['as_of_date'])
         features_dfs.append(
             ids_dates.merge(
-                right = temp_df,
-                how = 'left',
-                on = ['entity_id', 'as_of_date']
+                right=temp_df,
+                how='left',
+                on=['entity_id', 'as_of_date']
             )
         )
 
@@ -384,23 +439,18 @@ def test_write_features_data():
         )
 
         with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = engine,
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine,
             )
 
             # make the entity-date table
-            entity_date_table_name = planner.builder.make_entity_date_table(
+            entity_date_table_name = builder.make_entity_date_table(
                 as_of_times=dates,
                 label_type='binary',
                 label_name='booking',
-                state = 'state_one AND state_two',
+                state='state_one AND state_two',
                 matrix_type='train',
                 matrix_uuid='my_uuid',
                 label_timespan='1 month'
@@ -410,7 +460,7 @@ def test_write_features_data():
                 ('features{}'.format(i), feature_list) for i, feature_list in enumerate(features)
             )
 
-            features_csv_names = planner.builder.write_features_data(
+            features_csv_names = builder.write_features_data(
                 as_of_times=dates,
                 feature_dictionary=feature_dictionary,
                 entity_date_table_name=entity_date_table_name,
@@ -421,7 +471,7 @@ def test_write_features_data():
             for feature_csv_name, df in zip(sorted(features_csv_names), features_dfs):
                 df = df.reset_index()
 
-                result = pd.read_csv(planner.builder.open_fh_for_reading(feature_csv_name))\
+                result = pd.read_csv(builder.open_fh_for_reading(feature_csv_name))\
                     .reset_index()
                 result['as_of_date'] = convert_string_column_to_date(result['as_of_date'])
                 test = (result == df)
@@ -436,11 +486,10 @@ def test_write_labels_data():
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
              datetime.datetime(2016, 2, 1, 0, 0)]
 
-
     # make a dataframe of labels to test against
     labels_df = pd.DataFrame(
         labels,
-        columns = [
+        columns=[
             'entity_id',
             'as_of_date',
             'label_timespan',
@@ -463,29 +512,24 @@ def test_write_labels_data():
             states
         )
         with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = engine,
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine,
             )
 
             # make the entity-date table
-            entity_date_table_name = planner.builder.make_entity_date_table(
+            entity_date_table_name = builder.make_entity_date_table(
                 as_of_times=dates,
                 label_type='binary',
                 label_name='booking',
-                state = 'state_one AND state_two',
+                state='state_one AND state_two',
                 matrix_type='train',
                 matrix_uuid='my_uuid',
                 label_timespan='1 month'
             )
 
-            csv_filename = planner.builder.write_labels_data(
+            csv_filename = builder.write_labels_data(
                 label_name=label_name,
                 label_type=label_type,
                 label_timespan='1 month',
@@ -498,7 +542,84 @@ def test_write_labels_data():
                 'booking': [0, 0, 1, 0],
             }).set_index(['entity_id', 'as_of_date'])
 
-            result = pd.read_csv(planner.builder.open_fh_for_reading(csv_filename))\
+            result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
+                .set_index(['entity_id', 'as_of_date'])
+            test = (result == df)
+            assert(test.all().all())
+
+
+def test_write_labels_data_include_missing_labels_as_false():
+    """ Test the write_labels_data function by checking whether the query
+    produces the correct labels
+    """
+    # set up labeling config variables
+    dates = [datetime.datetime(2016, 1, 1, 0, 0),
+             datetime.datetime(2016, 2, 1, 0, 0),
+             datetime.datetime(2016, 6, 1, 0, 0)]
+
+    # same as the other write_labels_data test, except we include an extra date, 2016-06-01
+    # this date does have entity 0 included via the states table, but no labels
+
+    # make a dataframe of labels to test against
+    labels_df = pd.DataFrame(
+        labels,
+        columns=[
+            'entity_id',
+            'as_of_date',
+            'label_timespan',
+            'label_name',
+            'label_type',
+            'label'
+        ]
+    )
+
+    labels_df['as_of_date'] = convert_string_column_to_date(labels_df['as_of_date'])
+    labels_df.set_index(['entity_id', 'as_of_date'])
+
+    # create an engine and generate a table with fake feature data
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine,
+            features_tables,
+            labels,
+            states
+        )
+        with TemporaryDirectory() as temp_dir:
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=engine,
+                include_missing_labels_in_train_as=False,
+            )
+
+            # make the entity-date table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type='binary',
+                label_name='booking',
+                state='state_one AND state_two',
+                matrix_type='train',
+                matrix_uuid='my_uuid',
+                label_timespan='1 month'
+            )
+
+            csv_filename = builder.write_labels_data(
+                label_name=label_name,
+                label_type=label_type,
+                label_timespan='1 month',
+                matrix_uuid='my_uuid',
+                entity_date_table_name=entity_date_table_name,
+            )
+            df = pd.DataFrame.from_dict({
+                'entity_id': [0, 2, 3, 4, 4],
+                'as_of_date': ['2016-06-01', '2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
+                'booking': [0, 0, 0, 1, 0],
+            }).set_index(['entity_id', 'as_of_date'])
+            # the first row would not be here if we had not configured the Builder
+            # to include missing labels as false
+
+            result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
                 .set_index(['entity_id', 'as_of_date'])
             test = (result == df)
             assert(test.all().all())
@@ -509,15 +630,10 @@ class TestMergeFeatureCSVs(TestCase):
         """We assert column names, so replacing 'date' with 'as_of_date'
         should result in an error"""
         with TemporaryDirectory() as temp_dir:
-            planner = Planner(
-                feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                label_names = ['booking'],
-                label_types = ['binary'],
-                states = ['state_one AND state_two'],
-                db_config = db_config,
-                matrix_directory = temp_dir,
-                user_metadata = {},
-                engine = None,
+            builder = builders.HighMemoryCSVBuilder(
+                db_config=db_config,
+                matrix_directory=temp_dir,
+                engine=None,
             )
             rowlists = [
                 [
@@ -543,108 +659,17 @@ class TestMergeFeatureCSVs(TestCase):
             filekeys = []
             for rows in rowlists:
                 filekey = uuid.uuid4()
-                planner.builder.open_fh_for_writing(filekey)
+                builder.open_fh_for_writing(filekey)
                 filekeys.append(filekey)
-                writer = csv.writer(planner.builder.filehandles[filekey])
+                writer = csv.writer(builder.filehandles[filekey])
                 for row in rows:
                     writer.writerow(row)
             with self.assertRaises(KeyError):
-                planner.builder.merge_feature_csvs(
+                builder.merge_feature_csvs(
                     filekeys,
                     matrix_directory=temp_dir,
                     matrix_uuid='1234'
                 )
-
-def test_generate_plans():
-    matrix_set_definitions = [
-        {
-            'feature_start_time': datetime.datetime(1990, 1, 1, 0, 0),
-            'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
-            'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
-            'train_matrix': {
-                'first_as_of_time': datetime.datetime(2010, 1, 1, 0, 0),
-                'matrix_info_end_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'as_of_times': [
-                    datetime.datetime(2010, 1, 1, 0, 0),
-                    datetime.datetime(2010, 1, 2, 0, 0),
-                    datetime.datetime(2010, 1, 3, 0, 0),
-                    datetime.datetime(2010, 1, 4, 0, 0),
-                    datetime.datetime(2010, 1, 5, 0, 0)
-                ]
-            },
-            'test_matrices': [{
-                'first_as_of_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'matrix_info_end_time': datetime.datetime(2010, 1, 11, 0, 0),
-                'as_of_times': [
-                    datetime.datetime(2010, 1, 6, 0, 0),
-                    datetime.datetime(2010, 1, 7, 0, 0),
-                    datetime.datetime(2010, 1, 8, 0, 0),
-                    datetime.datetime(2010, 1, 9, 0, 0),
-                    datetime.datetime(2010, 1, 10, 0, 0)
-                ]
-            }]
-        },
-        {
-            'feature_start_time': datetime.datetime(1990, 1, 1, 0, 0),
-            'modeling_start_time': datetime.datetime(2010, 1, 1, 0, 0),
-            'modeling_end_time': datetime.datetime(2010, 1, 16, 0, 0),
-            'train_matrix': {
-                'first_as_of_time': datetime.datetime(2010, 1, 6, 0, 0),
-                'matrix_info_end_time': datetime.datetime(2010, 1, 11, 0, 0),
-                'as_of_times': [
-                    datetime.datetime(2010, 1, 6, 0, 0),
-                    datetime.datetime(2010, 1, 7, 0, 0),
-                    datetime.datetime(2010, 1, 8, 0, 0),
-                    datetime.datetime(2010, 1, 9, 0, 0),
-                    datetime.datetime(2010, 1, 10, 0, 0)
-                ]
-            },
-            'test_matrices': [{
-                'first_as_of_time': datetime.datetime(2010, 1, 11, 0, 0),
-                'matrix_info_end_time': datetime.datetime(2010, 1, 16, 0, 0),
-                'as_of_times': [
-                    datetime.datetime(2010, 1, 11, 0, 0),
-                    datetime.datetime(2010, 1, 12, 0, 0),
-                    datetime.datetime(2010, 1, 13, 0, 0),
-                    datetime.datetime(2010, 1, 14, 0, 0),
-                    datetime.datetime(2010, 1, 15, 0, 0)
-                ]
-            }]
-        }
-    ]
-    feature_dict_one = {'features0': ['f1', 'f2'], 'features1': ['f1', 'f2']}
-    feature_dict_two = {'features2': ['f3', 'f4'], 'features3': ['f5', 'f6']}
-    feature_dicts = [feature_dict_one, feature_dict_two]
-    planner = Planner(
-        feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-        label_names = ['booking'],
-        label_types = ['binary'],
-        states = ['state_one AND state_two'],
-        db_config = db_config,
-        user_metadata = {},
-        matrix_directory = '', # this test won't write anything
-        engine = None # or look at the db!
-    )
-
-    updated_matrix_definitions, build_tasks = planner.generate_plans(matrix_set_definitions, feature_dicts)
-    # test that it added uuids: we don't much care what they are
-    matrix_uuids = []
-    for matrix_def in updated_matrix_definitions:
-        assert isinstance(matrix_def['train_uuid'], str)
-        matrix_uuids.append(matrix_def['train_uuid'])
-        for test_uuid in matrix_def['test_uuids']:
-            assert isinstance(test_uuid, str)
-    assert len(set(matrix_uuids)) == 4
-
-    # not going to assert anything on the keys (uuids), just get out the values
-    build_tasks = build_tasks.values()
-    assert len(build_tasks) == 8 # 2 splits * 2 matrices per split * 2 feature dicts
-
-    assert sum(1 for task in build_tasks if task['matrix_type'] == 'train') == 4
-    assert sum(1 for task in build_tasks if task['matrix_type'] == 'test') == 4
-    assert all(task for task in build_tasks if task['matrix_directory'] == '')
-    assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_one) == 4
-    assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_two) == 4
 
 
 class TestBuildMatrix(TestCase):
@@ -665,20 +690,18 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                planner = Planner(
-                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                    label_names = ['booking'],
-                    label_types = ['binary'],
-                    states = ['state_one AND state_two'],
-                    db_config = db_config,
-                    matrix_directory = temp_dir,
-                    user_metadata = {},
-                    engine = engine
+                builder = builders.HighMemoryCSVBuilder(
+                    db_config=db_config,
+                    matrix_directory=temp_dir,
+                    engine=engine
                 )
-                feature_dictionary = {
-                    'features0': ['f1', 'f2'],
-                    'features1': ['f3', 'f4'],
-                }
+                feature_dictionary = FeatureGroup(
+                    name='mygroup',
+                    features_by_table={
+                        'features0': ['f1', 'f2'],
+                        'features1': ['f3', 'f4'],
+                    }
+                )
                 matrix_metadata = {
                     'matrix_id': 'hi',
                     'state': 'state_one AND state_two',
@@ -689,15 +712,15 @@ class TestBuildMatrix(TestCase):
                     'max_training_history': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-                planner.build_matrix(
-                    as_of_times = dates,
-                    label_name = 'booking',
-                    label_type = 'binary',
-                    feature_dictionary = feature_dictionary,
-                    matrix_directory = temp_dir,
-                    matrix_metadata = matrix_metadata,
-                    matrix_uuid = uuid,
-                    matrix_type = 'train'
+                builder.build_matrix(
+                    as_of_times=dates,
+                    label_name='booking',
+                    label_type='binary',
+                    feature_dictionary=feature_dictionary,
+                    matrix_directory=temp_dir,
+                    matrix_metadata=matrix_metadata,
+                    matrix_uuid=uuid,
+                    matrix_type='train'
                 )
 
                 matrix_filename = os.path.join(
@@ -725,22 +748,12 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                planner = Planner(
-                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                    label_names = ['booking'],
-                    label_types = ['binary'],
-                    states = ['state_one AND state_two'],
-                    db_config = db_config,
-                    matrix_directory = temp_dir,
-                    user_metadata = {},
-                    engine = engine
+                builder = builders.HighMemoryCSVBuilder(
+                    db_config=db_config,
+                    matrix_directory=temp_dir,
+                    engine=engine
                 )
 
-                matrix_dates = {
-                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'as_of_times': dates
-                }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
                     'features1': ['f3', 'f4'],
@@ -755,15 +768,15 @@ class TestBuildMatrix(TestCase):
                     'test_duration': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-                planner.build_matrix(
-                    as_of_times = dates,
-                    label_name = 'booking',
-                    label_type = 'binary',
-                    feature_dictionary = feature_dictionary,
-                    matrix_directory = temp_dir,
-                    matrix_metadata = matrix_metadata,
-                    matrix_uuid = uuid,
-                    matrix_type = 'test'
+                builder.build_matrix(
+                    as_of_times=dates,
+                    label_name='booking',
+                    label_type='binary',
+                    feature_dictionary=feature_dictionary,
+                    matrix_directory=temp_dir,
+                    matrix_metadata=matrix_metadata,
+                    matrix_uuid=uuid,
+                    matrix_type='test'
                 )
                 matrix_filename = os.path.join(
                     temp_dir,
@@ -775,9 +788,8 @@ class TestBuildMatrix(TestCase):
                     assert(len([row for row in reader]) == 6)
 
     def test_nullcheck(self):
-        f0_dict = {(r[0], r[1]) : r for r in features0_pre}
-        f1_dict = {(r[0], r[1]) : r for r in features1_pre}
-
+        f0_dict = {(r[0], r[1]): r for r in features0_pre}
+        f1_dict = {(r[0], r[1]): r for r in features1_pre}
 
         features0 = sorted(f0_dict.values(), key=lambda x: (x[1], x[0]))
         features1 = sorted(f1_dict.values(), key=lambda x: (x[1], x[0]))
@@ -799,22 +811,12 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                planner = Planner(
-                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                    label_names = ['booking'],
-                    label_types = ['binary'],
-                    states = ['state_one AND state_two'],
-                    db_config = db_config,
-                    matrix_directory = temp_dir,
-                    user_metadata = {},
-                    engine = engine
+                builder = builders.HighMemoryCSVBuilder(
+                    db_config=db_config,
+                    matrix_directory=temp_dir,
+                    engine=engine
                 )
 
-                matrix_dates = {
-                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'as_of_times': dates
-                }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
                     'features1': ['f3', 'f4'],
@@ -830,15 +832,15 @@ class TestBuildMatrix(TestCase):
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 with self.assertRaises(ValueError):
-                    planner.build_matrix(
-                        as_of_times = dates,
-                        label_name = 'booking',
-                        label_type = 'binary',
-                        feature_dictionary = feature_dictionary,
-                        matrix_directory = temp_dir,
-                        matrix_metadata = matrix_metadata,
-                        matrix_uuid = uuid,
-                        matrix_type = 'test'
+                    builder.build_matrix(
+                        as_of_times=dates,
+                        label_name='booking',
+                        label_type='binary',
+                        feature_dictionary=feature_dictionary,
+                        matrix_directory=temp_dir,
+                        matrix_metadata=matrix_metadata,
+                        matrix_uuid=uuid,
+                        matrix_type='test'
                     )
 
     def test_replace(self):
@@ -858,23 +860,13 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
             with TemporaryDirectory() as temp_dir:
-                planner = Planner(
-                    feature_start_time = datetime.datetime(2010, 1, 1, 0, 0),
-                    label_names = ['booking'],
-                    label_types = ['binary'],
-                    states = ['state_one AND state_two'],
-                    db_config = db_config,
-                    matrix_directory = temp_dir,
-                    user_metadata = {},
-                    engine = engine,
+                builder = builders.HighMemoryCSVBuilder(
+                    db_config=db_config,
+                    matrix_directory=temp_dir,
+                    engine=engine,
                     replace=False
                 )
 
-                matrix_dates = {
-                    'first_as_of_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'matrix_info_end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'as_of_times': dates
-                }
                 feature_dictionary = {
                     'features0': ['f1', 'f2'],
                     'features1': ['f3', 'f4'],
@@ -889,17 +881,15 @@ class TestBuildMatrix(TestCase):
                     'test_duration': '1 month'
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
-
-                ##########
-                planner.build_matrix(
-                    as_of_times = dates,
-                    label_name = 'booking',
-                    label_type = 'binary',
-                    feature_dictionary = feature_dictionary,
-                    matrix_directory = temp_dir,
-                    matrix_metadata = matrix_metadata,
-                    matrix_uuid = uuid,
-                    matrix_type = 'test'
+                builder.build_matrix(
+                    as_of_times=dates,
+                    label_name='booking',
+                    label_type='binary',
+                    feature_dictionary=feature_dictionary,
+                    matrix_directory=temp_dir,
+                    matrix_metadata=matrix_metadata,
+                    matrix_uuid=uuid,
+                    matrix_type='test'
                 )
 
                 matrix_filename = os.path.join(
@@ -912,15 +902,15 @@ class TestBuildMatrix(TestCase):
                     assert(len([row for row in reader]) == 6)
 
                 # rerun
-                planner.builder.make_entity_date_table = Mock()
-                planner.builder.build_matrix(
-                    as_of_times = dates,
-                    label_name = 'booking',
-                    label_type = 'binary',
-                    feature_dictionary = feature_dictionary,
-                    matrix_directory = temp_dir,
-                    matrix_metadata = matrix_metadata,
-                    matrix_uuid = uuid,
-                    matrix_type = 'test'
+                builder.make_entity_date_table = Mock()
+                builder.build_matrix(
+                    as_of_times=dates,
+                    label_name='booking',
+                    label_type='binary',
+                    feature_dictionary=feature_dictionary,
+                    matrix_directory=temp_dir,
+                    matrix_metadata=matrix_metadata,
+                    matrix_uuid=uuid,
+                    matrix_type='test'
                 )
-                assert not planner.builder.make_entity_date_table.called
+                assert not builder.make_entity_date_table.called

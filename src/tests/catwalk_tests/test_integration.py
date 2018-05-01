@@ -13,6 +13,7 @@ from moto import mock_s3
 from sqlalchemy import create_engine
 import datetime
 import pandas
+from .utils import sample_metadata
 
 
 def test_integration():
@@ -47,7 +48,7 @@ def test_integration():
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
-            train_store = InMemoryMatrixStore(train_matrix, train_metadata)
+            train_store = InMemoryMatrixStore(train_matrix, sample_metadata())
 
             as_of_dates = [
                 datetime.date(2016, 12, 21),
@@ -83,7 +84,6 @@ def test_integration():
                 experiment_hash=experiment_hash,
                 model_storage_engine=model_storage_engine,
                 db_engine=db_engine,
-                model_group_keys=['label_name', 'label_timespan']
             )
             predictor = Predictor(
                 project_path,

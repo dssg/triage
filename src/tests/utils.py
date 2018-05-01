@@ -314,10 +314,10 @@ def sample_config():
     }
 
     grid_config = {
-        'sklearn.linear_model.LogisticRegression': {
-            'C': [0.00001, 0.0001],
-            'penalty': ['l1', 'l2'],
-            'random_state': [2193]
+        'sklearn.tree.DecisionTreeClassifier': {
+            'min_samples_split': [10, 100],
+            'max_depth': [3,5],
+            'criterion': ['gini']
         }
     }
 
@@ -345,19 +345,35 @@ def sample_config():
         'groups': ['entity_id', 'zip_code']
     }]
 
-    state_config = {
-        'table_name': 'states',
-        'state_filters': ['state_one or state_two'],
+    cohort_config = {
+        'dense_states': {
+            'table_name': 'states',
+            'state_filters': ['state_one or state_two'],
+        }
+    }
+
+    label_config = {
+        'query': """
+            select
+            events.entity_id,
+            bool_or(outcome::bool)::integer as outcome
+            from events
+            where '{as_of_date}'::date <= outcome_date
+                and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
+                group by entity_id
+        """,
+        'name': 'custom_label_name',
+        'include_missing_labels_in_train_as': False,
     }
 
     return {
         'config_version': CONFIG_VERSION,
-        'events_table': 'events',
+        'label_config': label_config,
         'entity_column_name': 'entity_id',
         'model_comment': 'test2-final-final',
         'model_group_keys': ['label_name', 'label_type', 'custom_key'],
         'feature_aggregations': feature_config,
-        'state_config': state_config,
+        'cohort_config': cohort_config,
         'temporal_config': temporal_config,
         'grid_config': grid_config,
         'scoring': scoring_config,

@@ -56,6 +56,14 @@ Experiment
 
 The first phase implemented in Triage is the ``Experiment``. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
 
+
+Documentation
+---------------------------
+- `Dirty Duck Tutorial <https://dssg.github.io/dirtyduck/>`_
+- `Experiment Algorithm Deep Dive <https://dssg.github.io/triage/experiments/algorithm>`_
+- `Experiment Config v5 Upgrade Guide <https://dssg.github.io/triage/experiments/upgrade-to-v5>`_
+
+
 Instantiating an Experiment
 ---------------------------
 

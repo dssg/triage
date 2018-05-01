@@ -1,13 +1,14 @@
 import logging
 import os
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import partial
 
 from descriptors import cachedproperty
 from timeout import timeout
 
-from triage.component.architect.label_generators import BinaryLabelGenerator
+from triage.component.architect.label_generators import LabelGenerator, DEFAULT_LABEL_NAME
+
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -15,9 +16,15 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
-from triage.component.architect.state_table_generators import StateTableGenerator
+from triage.component.architect.builders import HighMemoryCSVBuilder
+from triage.component.architect.state_table_generators import (
+    StateTableGeneratorFromDense,
+    StateTableGeneratorFromEntities,
+    StateTableGeneratorFromQuery
+)
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
@@ -33,7 +40,7 @@ def dt_from_str(dt_str):
     return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
-class ExperimentBase(object, metaclass=ABCMeta):
+class ExperimentBase(ABC):
     """The base class for all Experiments."""
 
     cleanup_timeout = 60  # seconds
@@ -107,17 +114,32 @@ class ExperimentBase(object, metaclass=ABCMeta):
             test_durations=split_config['test_durations'],
         )
 
-        self.state_table_generator_factory = partial(
-            StateTableGenerator,
-            experiment_hash=self.experiment_hash,
-            dense_state_table=self.config.get('state_config', {})
-            .get('table_name', None),
-            events_table=self.config['events_table']
-        )
+        cohort_config = self.config.get('cohort_config', {})
+        if 'query' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromQuery,
+                experiment_hash=self.experiment_hash,
+                query=cohort_config['query']
+            )
+        elif 'entities_table' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromEntities,
+                experiment_hash=self.experiment_hash,
+                entities_table=cohort_config['entities_table']
+            )
+        elif 'dense_states' in cohort_config:
+            self.state_table_generator_factory = partial(
+                StateTableGeneratorFromDense,
+                experiment_hash=self.experiment_hash,
+                dense_state_table=cohort_config['dense_states']['table_name']
+            )
+        else:
+            raise ValueError('Cohort config missing or unrecognized')
 
         self.label_generator_factory = partial(
-            BinaryLabelGenerator,
-            events_table=self.config['events_table'],
+            LabelGenerator,
+            label_name=self.config['label_config'].get('name', None),
+            query=self.config['label_config']['query']
         )
 
         self.feature_dictionary_creator_factory = partial(
@@ -145,8 +167,17 @@ class ExperimentBase(object, metaclass=ABCMeta):
         self.planner_factory = partial(
             Planner,
             feature_start_time=dt_from_str(split_config['feature_start_time']),
-            label_names=['outcome'],
+            label_names=[self.config.get('label_config', {}).get('name', DEFAULT_LABEL_NAME)],
             label_types=['binary'],
+            matrix_directory=self.matrices_directory,
+            cohort_name=self.config.get('cohort_config', {}).get('name', None),
+            states=self.config.get('cohort_config', {}).get('dense_states', {})
+            .get('state_filters', []),
+            user_metadata=self.config.get('user_metadata', {}),
+        )
+
+        self.matrix_builder_factory = partial(
+            HighMemoryCSVBuilder,
             db_config={
                 'features_schema_name': self.features_schema_name,
                 'labels_schema_name': 'public',
@@ -158,8 +189,8 @@ class ExperimentBase(object, metaclass=ABCMeta):
                                            .format(self.experiment_hash),
             },
             matrix_directory=self.matrices_directory,
-            states=self.config.get('state_config', {}).get('state_filters', []),
-            user_metadata=self.config.get('user_metadata', {}),
+            include_missing_labels_in_train_as=self.config['label_config']
+            .get('include_missing_labels_in_train_as', None),
             replace=self.replace
         )
 
@@ -168,7 +199,7 @@ class ExperimentBase(object, metaclass=ABCMeta):
             project_path=self.project_path,
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
-            model_group_keys=self.config['model_group_keys'],
+            model_grouper=ModelGrouper(self.config.get('model_group_keys', [])),
             replace=self.replace
         )
 
@@ -202,7 +233,8 @@ class ExperimentBase(object, metaclass=ABCMeta):
             db_engine=self.db_engine)
         self.feature_group_creator = self.feature_group_creator_factory()
         self.feature_group_mixer = self.feature_group_mixer_factory()
-        self.planner = self.planner_factory(engine=self.db_engine)
+        self.planner = self.planner_factory()
+        self.matrix_builder = self.matrix_builder_factory(engine=self.db_engine)
         self.trainer = self.trainer_factory(db_engine=self.db_engine)
         self.predictor = self.predictor_factory(db_engine=self.db_engine)
         self.individual_importance_calculator = self.indiv_importance_factory(
