@@ -66,7 +66,6 @@ class ExperimentBase(ABC):
         self.replace = replace
         ensure_db(self.db_engine)
 
-        self.labels_table_name = 'labels'
         self.features_schema_name = 'features'
         if project_path:
             self.matrices_directory = os.path.join(self.project_path, 'matrices')
@@ -75,6 +74,7 @@ class ExperimentBase(ABC):
 
         self.experiment_hash = save_experiment_and_get_hash(self.config,
                                                             self.db_engine)
+        self.labels_table_name = 'labels_{}'.format(self.experiment_hash)
         self.initialize_factories()
         self.initialize_components()
 
@@ -524,6 +524,7 @@ class ExperimentBase(ABC):
             logging.info('Cleaning up state table')
             with timeout(self.cleanup_timeout):
                 self.state_table_generator.clean_up()
+                self.db_engine.execute('drop table if exists {}'.format(self.labels_table_name))
 
         self.catwalk()
 
