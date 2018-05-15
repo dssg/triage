@@ -4,7 +4,7 @@
     
     <url>
      <loc>/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -13,59 +13,37 @@
         
     <url>
      <loc>/experiments/defining/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/experiments/running/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/experiments/temporal-validation/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/experiments/features/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/experiments/algorithm/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/experiments/architecture/</loc>
-     <lastmod>2017-12-12</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    
-
-    
-        
-    <url>
-     <loc>/triage.experiments.base/</loc>
-     <lastmod>2017-12-12</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>/triage.experiments.singlethreaded/</loc>
-     <lastmod>2017-12-12</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>/triage.experiments.multicore/</loc>
-     <lastmod>2017-12-12</lastmod>
+     <lastmod>2018-05-15</lastmod>
      <changefreq>daily</changefreq>
     </url>
         

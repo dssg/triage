@@ -4,25 +4,25 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
+        <meta name="description" content="Documentation for Triage.">
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-
-	<title>Experiment Algorithm - Triage Documentation</title>
-
-        <link href="../../css/bootstrap-3.0.3.min.css" rel="stylesheet">
-        <link href="../../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <title>Experiment Algorithm - Triage Documentation</title>
+        <link href="../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+        <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link rel="stylesheet" href="../../css/highlight.css">
         <link href="../../css/base.css" rel="stylesheet">
-
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.3/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
 
-        
+        <script src="../../js/jquery-1.10.2.min.js"></script>
+        <script src="../../js/bootstrap-3.3.7.min.js"></script>
+        <script src="../../js/highlight.pack.js"></script>
+         
     </head>
 
     <body>
@@ -39,8 +39,6 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-
-            <!-- Main title -->
             <a class="navbar-brand" href="../..">Triage Documentation</a>
         </div>
 
@@ -88,44 +86,23 @@
                 </li>
             
             
-            
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs <b class="caret"></b></a>
-                    <ul class="dropdown-menu">
-                    
-                        <li >
-                            <a href="../../triage.experiments.base/">ExperimentBase</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../../triage.experiments.singlethreaded/">SingleThreadedExperiment</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../../triage.experiments.multicore/">MultiCoreExperiment</a>
-                        </li>
-                    
-                    </ul>
-                </li>
-            
-            
             </ul>
 
             <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
-                <li >
-                    <a rel="next" href="../features/">
-                        <i class="fa fa-arrow-left"></i> Previous
-                    </a>
-                </li>
-                <li >
-                    <a rel="prev" href="../architecture/">
-                        Next <i class="fa fa-arrow-right"></i>
-                    </a>
-                </li>
+                    <li >
+                        <a rel="next" href="../features/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="../architecture/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
                 
                 <li>
-                    <a href="http://github.com/dssg/triage">
+                    <a href="http://github.com/dssg/triage/">
                         
                             <i class="fa fa-github"></i>
                         
@@ -139,8 +116,10 @@
 </div>
 
         <div class="container">
-            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+                <div class="row">
+                    <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
+      
     
         <li class="main active"><a href="#experiment-algorithm-deep-dive">Experiment Algorithm Deep Dive</a></li>
         
@@ -153,46 +132,103 @@
             <li><a href="#4-running-models">4. Running Models</a></li>
         
     
+    
     </ul>
 </div></div>
-            <div class="col-md-9" role="main">
+                    <div class="col-md-9" role="main">
 
 <h2 id="experiment-algorithm-deep-dive">Experiment Algorithm Deep Dive<a class="headerlink" href="#experiment-algorithm-deep-dive" title="Permanent link">&para;</a></h2>
-<p>This guide's purpose is to provide familiarity of the inner workings of a Triage Experiment to people with some experience in data science and Python. A Triage Experiment is a highly structured way of defining the experimentation phase of a data science project. To those wondering whether this Experiment structure is flexible enough to fit their needs, this should help.</p>
+<p>This guide's purpose is to provide familiarity of the inner workings of a Triage Experiment to people with some
+experience in data science and Python. A Triage Experiment is a highly structured way of defining the experimentation
+phase of a data science project. To those wondering whether this Experiment structure is flexible enough to fit their
+needs, this should help.</p>
 <h3 id="1-temporal-validation-setup">1. Temporal Validation Setup<a class="headerlink" href="#1-temporal-validation-setup" title="Permanent link">&para;</a></h3>
-<p>First, the given <code>temporal_config</code> section in the experiment definition is transformed into train and test splits, including <code>as_of_times</code> for each matrix.</p>
-<p>We create these splits by figuring out the latest reasonable split time from the inputs, and moving backwards in time at the rate of the given <code>model_update_frequency</code>, until we get to the earliest reasonable split time.</p>
-<p>For each split, we create <code>as_of_times</code> by moving either backwards from the split time towards the <code>max_training_history</code> (for train matrices) or forwards from the split time towards the <code>test_duration</code> (for test matrices) at the provided <code>data_frequency</code>.</p>
-<p>Many of these configured values may be lists, in which case we generated the cross-product of all the possible values and generate more splits.</p>
+<p>First, the given <code>temporal_config</code> section in the experiment definition is transformed into train and test splits,
+including <code>as_of_times</code> for each matrix.</p>
+<p>We create these splits by figuring out the latest reasonable split time from the inputs, and moving backwards in time
+at the rate of the given <code>model_update_frequency</code>, until we get to the earliest reasonable split time.</p>
+<p>For each split, we create <code>as_of_times</code> by moving either backwards from the split time towards the
+<code>max_training_history</code> (for train matrices) or forwards from the split time towards the <code>test_duration</code> (for test
+matrices) at the provided <code>data_frequency</code>.</p>
+<p>Many of these configured values may be lists, in which case we generate the cross-product of all the possible values
+and generate more splits.</p>
 <p>For a more detailed look at the temporal validation logic, see <a href="../temporal-validation/">Temporal Validation Deep Dive</a>.</p>
-<p>The train and test splits themselves are not used until the <a href="#3-building-matrices">Building Matrices</a> section, but a flat list of all computed <code>as_of_times</code> for all matrices needed in the experiment is used in the next section, <a href="#2-transforming-data">Transforming Data</a>.</p>
+<p>The train and test splits themselves are not used until the <a href="#3-building-matrices">Building Matrices</a> section, but a
+flat list of all computed <code>as_of_times</code> for all matrices needed in the experiment is used in the next section,
+<a href="#2-transforming-data">Transforming Data</a>.</p>
 <h3 id="2-transforming-data">2. Transforming Data<a class="headerlink" href="#2-transforming-data" title="Permanent link">&para;</a></h3>
-<p>With all of the <code>as_of_times</code> for this Experiment now computed, it's now possible to transform the input data into features and labels as of all the required times.</p>
+<p>With all of the <code>as_of_times</code> for this Experiment now computed, it's now possible to transform the input data into
+features and labels as of all the required times.</p>
 <h4 id="labels">Labels<a class="headerlink" href="#labels" title="Permanent link">&para;</a></h4>
-<p>The Experiment transforms event outcomes data from the <code>events_table</code> into a binary labels table. It does this assuming that, if any event outcome within a given <code>label_timespan</code> after a given <code>as_of_time</code> is true, that <code>as_of_time</code> will be assigned it a true label.</p>
-<p>This binary labels table is scoped to the entire Experiment, so all <code>as_of_time</code> (computed in step 1) and <code>label_timespan</code> (taken straight from <code>temporal_config</code>) combinations are present. Individual matrices will just select what they need from this table.</p>
+<p>The Experiment populates a 'labels' table using the following input:
+1. A query, provided by the user in the configuration file, that generates entity_ids and outcomes for a given
+as_of_date and label_timespan.</p>
+<ol>
+<li>Each as_of_date and label_timespan defined in temporal config</li>
+</ol>
+<p>For instance, an inspections-style query (for the given timespan, return the entity and outcome of any matching
+inspections) would look like:</p>
+<pre><code>    select
+    events.entity_id,
+    bool_or(outcome::bool)::integer as outcome
+    from events
+    where '{as_of_date}' &lt;= outcome_date
+        and outcome_date &lt; '{as_of_date}'::timestamp + interval '{label_timespan}'
+        group by entity_id
+</code></pre>
+
+<p>This binary labels table is scoped to the entire Experiment, so all <code>as_of_time</code> (computed in step 1) and
+<code>label_timespan</code> (taken straight from <code>temporal_config</code>) combinations are present. Additionally, the 'label_name' and
+'label_type' are also recorded with each row in the table.</p>
+<p>At this point, the 'labels' table may not have entries for all entities and dates that need to be in a given matrix.
+How these rows have their labels represented is up to the configured <code>include_missing_labels_in_train_as</code> value in the
+experiment. This value is not processed when we generate the labels table, but later on when the matrix is built (see
+'Retrieving Data and Saving Completed Matrix')</p>
 <h4 id="state-table">State Table<a class="headerlink" href="#state-table" title="Permanent link">&para;</a></h4>
-<p>The Experiment keeps track of what states any given entities are in to, based on configuration, include only certain entities for different time periods in matrices and in imputation.</p>
-<p>In code, it does this by computing what it calls the 'sparse' state table for an experiment. This is a table with a boolean flag entry for every entity, as_of_time, and state. The structure of this table allows for state filtering based on SQL conditions given by the user.</p>
-<p>Based on configuration, it can get created through one of two code paths:</p>
+<p>The Experiment keeps track of the state of the entities. Based on the configuration, certain entities can be included
+or excluded for different time periods in feature imputation, creating matrices, or both.</p>
+<p>In code, it does this by computing what it calls the 'sparse' state table for an experiment. This is a table with a
+boolean flag entry for every entity, as_of_time, and state. The structure of this table allows for state filtering
+based on SQL conditions given by the user.</p>
+<p>Based on configuration, it can be created through one of three code paths:</p>
 <ol>
 <li>
-<p>If the user passes what we call a 'dense states' table, with the following structure: entity id/state/start/end, and a list of state filters. This 'dense states' table basically holds time ranges that entities were in specific states. When converting this to a sparse table, we take each as_of_time present in the Experiment, and for each known state (that is, the distinct values found in the 'dense states' table), see if there is any entry in the dense states table with this state whose range overlaps this as_of_time. If so, the entity is considered to be in that state as of that date.</p>
+<p>If the user passes what we call a 'dense states' table, with the following structure: entity id/state/start/end, and
+a list of state filters, this 'dense states' table holds time ranges that entities were in for specific states.
+When converting this to a sparse table, we take each as_of_time present in the Experiment, and for each known state
+(that is, the distinct values found in the 'dense states' table), see if there is any entry in the dense states table
+with this state whose range overlaps with the as_of_time. If so, the entity is considered to be in that state as of that
+date.</p>
 </li>
 <li>
-<p>If the user doesn't pass a dense states table, we use the events table to create a default one. It will simply use all entities present in the events table, and mark them as 'active' for every as_of_time in the experiment.</p>
+<p>If the user passes what we call an 'entities' table, containing an entity_id, it will simply use all distinct
+entities present in said table, and mark them as 'active' for every as_of_time in the experiment. Any other columns are
+ignored.</p>
+</li>
+<li>
+<p>If the user passes a query, parameterized with an as of date, we will populate the table by running it for each
+as_of_date.</p>
 </li>
 </ol>
 <p>This table is created and exists until matrices are built, at which point it is considered unnecessary and then dropped.</p>
 <h4 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h4>
-<p>Each provided <code>feature_aggregation</code> configures the creation and population of several feature tables in the 'features' schema: one for each of the groups specified in the config, one that merges the groups together into one table, and one that fills in null values from the merged table with imputed values based on imputation config.</p>
+<p>Each provided <code>feature_aggregation</code> configures the creation and population of several feature tables in the 'features'
+schema: one for each of the groups specified in the config, one that merges the groups together into one table, and one
+that fills in null values from the merged table with imputed values based on imputation config.</p>
 <h5 id="generating-aggregation-sql">Generating Aggregation SQL<a class="headerlink" href="#generating-aggregation-sql" title="Permanent link">&para;</a></h5>
-<p>To generate the SQL that creates the pre-imputation table, the Experiment assembles building blocks from the feature aggregation config, as well as the experiment's list of <code>as_of_times</code>:</p>
+<p>To generate the SQL that creates the pre-imputation table, the Experiment assembles building blocks from the feature
+aggregation config, as well as the experiment's list of <code>as_of_times</code>:</p>
 <ul>
-<li><code>from_obj</code> represents, well, the object of the FROM clause in the SQL query. Often this is just a table, but can be configured to be a subquery. This holds all the data that we want to aggregate into features</li>
-<li>Each <code>as_of_time</code> in the experiment and <code>interval</code> in the <code>feature_aggregation</code> is combined with the <code>knowledge_date_column</code> to create a WHERE clause representing a valid window of events to aggregate in the <code>from_obj</code>: e.g (<code>where {knowledge_date_column} &gt;= {as_of_time} - interval {interval}</code>)</li>
-<li>Each <code>aggregate</code>, <code>categorical</code>, or <code>array_categorical</code> represents a SELECT clause. For aggregates, the <code>quantity</code> is a column or SQL expression representing a numeric quantity present in the <code>from_obj</code>, and the <code>metrics</code> are any number of aggregate functions we want to use. The aggregate function is applied to the quantity.</li>
-<li>Each <code>group</code> is a column applied to the GROUP BY clause. Generally this is 'entity_id', but higher-level groupings (for instance, 'zip_code') can be used as long as they can be rolled up to 'entity_id'.</li>
+<li><code>from_obj</code> represents, well, the object of the FROM clause in the SQL query. Often this is just a table, but can be
+configured to be a subquery. This holds all the data that we want to aggregate into features</li>
+<li>Each <code>as_of_time</code> in the experiment and <code>interval</code> in the <code>feature_aggregation</code> is combined with the
+<code>knowledge_date_column</code> to create a WHERE clause representing a valid window of events to aggregate in the <code>from_obj</code>:
+e.g (<code>where {knowledge_date_column} &gt;= {as_of_time} - interval {interval}</code>)</li>
+<li>Each <code>aggregate</code>, <code>categorical</code>, or <code>array_categorical</code> represents a SELECT clause. For aggregates, the <code>quantity</code> is
+a column or SQL expression representing a numeric quantity present in the <code>from_obj</code>, and the <code>metrics</code> are any number
+of aggregate functions we want to use. The aggregate function is applied to the quantity.</li>
+<li>Each <code>group</code> is a column applied to the GROUP BY clause. Generally this is 'entity_id', but higher-level groupings
+(for instance, 'zip_code') can be used as long as they can be rolled up to 'entity_id'.</li>
 </ul>
 <p>So a simplified version of a typical query would look like:</p>
 <pre><code>SELECT {group}, {metric}({quantity})
@@ -202,11 +238,21 @@ GROUP BY {group}
 </code></pre>
 
 <h5 id="writing-group-wide-feature-tables">Writing Group-wide Feature Tables<a class="headerlink" href="#writing-group-wide-feature-tables" title="Permanent link">&para;</a></h5>
-<p>For each <code>as_of_time</code>, the results from the generated query are written to a table whose name is prefixed with the <code>prefix</code>, and suffixed with the <code>group</code>. For instance, if the configuration specifies zipcode-level aggregates and entity-level aggregates, there will be a table for each, keyed on its group plus the as_of_date. </p>
+<p>For each <code>as_of_time</code>, the results from the generated query are written to a table whose name is prefixed with the
+<code>prefix</code>, and suffixed with the <code>group</code>. For instance, if the configuration specifies zipcode-level aggregates and
+entity-level aggregates, there will be a table for each, keyed on its group plus the as_of_date.</p>
 <h5 id="merging-into-aggregation-wide-feature-tables">Merging into Aggregation-wide Feature Tables<a class="headerlink" href="#merging-into-aggregation-wide-feature-tables" title="Permanent link">&para;</a></h5>
-<p>Each generated group table is combined into one representing the whole aggregation with a left join. Given that the groups originally came from the same table (the <code>from_obj</code> of the aggregation) and therefore we know the zipcode for each entity, what we do now is create a table that would be keyed on entity and as_of_date, and contain all entity-level and zipcode-level aggregates from both tables. This aggregation-level table represents all of the features in the aggregation, pre-imputation. Its output location is generally <code>{prefix}_aggregation</code></p>
+<p>Each generated group table is combined into one representing the whole aggregation with a left join. Given that the
+groups originally came from the same table (the <code>from_obj</code> of the aggregation) and therefore we know the zipcode for
+each entity, what we do now is create a table that would be keyed on entity and as_of_date, and contain all
+entity-level and zipcode-level aggregates from both tables. This aggregation-level table represents all of the features
+in the aggregation, pre-imputation. Its output location is generally <code>{prefix}_aggregation</code></p>
 <h5 id="imputing-values">Imputing Values<a class="headerlink" href="#imputing-values" title="Permanent link">&para;</a></h5>
-<p>A table that looks similar, but with imputed values is created. The state table from above is passed into collate as the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the <code>from_obj</code>. Each feature column has an imputation rule, inherited from some level of the feature definition. The imputation rules that are based on data (e.g. <code>mean</code>) use the rows from the <code>as_of_time</code> to produce the imputed value. Its output location is generally <code>{prefix}_aggregation_imputed</code></p>
+<p>A table that looks similar, but with imputed values is created. The state table from above is passed into collate as
+the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the
+<code>from_obj</code>. Each feature column has an imputation rule, inherited from some level of the feature definition. The
+imputation rules that are based on data (e.g. <code>mean</code>) use the rows from the <code>as_of_time</code> to produce the imputed value.
+Its output location is generally <code>{prefix}_aggregation_imputed</code></p>
 <h4 id="recap">Recap<a class="headerlink" href="#recap" title="Permanent link">&para;</a></h4>
 <p>At this point, we have at least three tables that are used to populate matrices:</p>
 <ul>
@@ -215,90 +261,166 @@ GROUP BY {group}
 <li>A <code>features.{prefix}_aggregation_imputed</code> table for each feature aggregation present in the experiment config.</li>
 </ul>
 <h3 id="3-building-matrices">3. Building Matrices<a class="headerlink" href="#3-building-matrices" title="Permanent link">&para;</a></h3>
-<p>At this point, we have to build actual train and test matrices that can be processed by machine learning algorithms.</p>
-<p>But to do this, we have to figure out exactly what matrices we have to build. The split definitions from step 1 are a good start -- they are our train and test splits -- but sometimes we also want to test different subsets of the data, like feature groups (e.g. 'how does using group of features A perform against using all features?'). So there's a layer of iteration we introduce for each split, that may produce many more matrices.</p>
+<p>At this point, we have to build actual train and test matrices that can be processed by machine learning algorithms, save at the user's specified path, either on the local filesystem or s3 depending on the scheme portion of the path (e.g. <code>s3://bucket-name/project_directory</code>)</p>
+<p>First we have to figure out exactly what matrices we have to build. The split definitions from step 1 are a
+good start -- they are our train and test splits -- but sometimes we also want to test different subsets of the data,
+like feature groups (e.g. 'how does using group of features A perform against using all features?'). So there's a layer
+of iteration we introduce for each split, that may produce many more matrices.</p>
 <p>What do we iterate over?
-<em> Feature List - All subsets of features that the user wants to cycle through. This is the end result of the feature group generation and mixing process, which is described more below.
-</em> States - All configured <code>state_filters</code> in the experiment config. These take the form of boolean SQL clauses that are applied to the sparse states table, and the purpose of this is to test different cohorts against each other. Generally there is just one here.
-<em> Label names - In theory we can take in different labels (e.g. complaints, sustained complaints) in the same experiment. Right now this isn't done, there is one label name and it is 'outcome'.
-</em> Label types - In theory we can take in different label types (e.g. binary) in the same experiment. Right now this isn't done, there is one label type and it is 'binary'.</p>
+<em> Feature List - All subsets of features that the user wants to cycle through. This is the end result of the feature
+group generation and mixing process, which is described more below.
+</em> States - All configured <code>state_filters</code> in the experiment config. These take the form of boolean SQL clauses that are
+applied to the sparse states table, and the purpose of this is to test different cohorts against each other. Generally
+there is just one here.
+<em> Label names - In theory we can take in different labels (e.g. complaints, sustained complaints) in the same
+experiment. Right now there is no support for multiple label names, but the label name used is configurable through the
+optional 'label_config'-&gt;'name' config value
+</em> Label types - In theory we can take in different label types (e.g. binary) in the same experiment. <em>Right now this
+isn't done, there is one label type and it is hardcoded as 'binary'.</em></p>
 <h4 id="feature-lists">Feature Lists<a class="headerlink" href="#feature-lists" title="Permanent link">&para;</a></h4>
-<p>How do we arrive at the feature lists? There are two pieces of config that are used: <code>feature group_definition</code> and <code>feature_group_strategies</code>. Feature group definitions are just ways to define logical blocks of features, most often features that come from the same source, or describing a particular type of event. These groups within the experiment as a list of feature names, representing some subset of all potential features for the experiment. Feature group strategies are ways to take feature groups and mix them together in various ways. The feature group strategies take these subsets of features and convert them into another list of subsets of features, which is the final list iterated over to create different matrices.</p>
+<p>How do we arrive at the feature lists? There are two pieces of config that are used: <code>feature group_definition</code> and
+<code>feature_group_strategies</code>. Feature group definitions are just ways to define logical blocks of features, most often
+features that come from the same source, or describing a particular type of event. These groups within the experiment
+as a list of feature names, representing some subset of all potential features for the experiment. Feature group
+strategies are ways to take feature groups and mix them together in various ways. The feature group strategies take
+these subsets of features and convert them into another list of subsets of features, which is the final list iterated
+over to create different matrices.</p>
 <h5 id="feature-group-definition">Feature Group Definition<a class="headerlink" href="#feature-group-definition" title="Permanent link">&para;</a></h5>
-<p>Feature groups, at present, can be defined as either a <code>prefix</code> (the prefix of the feature name), a <code>table</code> (the feature table that the feature resides in), or <code>all</code> (all features).  Each argument is passed as a list, and each entry in the list is interpreted as a group. So, a feature group config of <code>{'table': ['complaints_aggregate_imputed', 'incidents_aggregate_imputed']}</code> would result in two feature groups: one with all the features in <code>complaints_aggregate_imputed</code>, and one with all the features in <code>incidents_aggregate_imputed</code>. Note that this requires a bit of knowledge on the user's part of how the feature table names will be constructed.</p>
-<p><code>prefix</code> works on the prefix of the feature name as it exists in the database. So this also requires some knowledge of how these get created. The general format is: <code>{aggregation_prefix}_{group}_{timeperiod}_{quantity}</code>, so with some knowledge the user can create groups with the aggregation's configured prefix (common), or the aggregations configured prefix + group (in case they want to compare, for instance, zip-code level features versus entity level features). </p>
-<p><code>all</code>, with a single value of <code>True</code>, will include a feature group with all defined features. If no feature group definition is sent, this is the default.</p>
-<p>Either way, at the end of this process the experiment will be aware of some list of feature groups, even if the list is just length 1 with all features as one group.</p>
+<p>Feature groups, at present, can be defined as either a <code>prefix</code> (the prefix of the feature name), a <code>table</code> (the
+feature table that the feature resides in), or <code>all</code> (all features).  Each argument is passed as a list, and each entry
+in the list is interpreted as a group. So, a feature group config of <code>{'table': ['complaints_aggregate_imputed',
+'incidents_aggregate_imputed']}</code> would result in two feature groups: one with all the features in
+<code>complaints_aggregate_imputed</code>, and one with all the features in <code>incidents_aggregate_imputed</code>. Note that this requires
+a bit of knowledge on the user's part of how the feature table names will be constructed.</p>
+<p><code>prefix</code> works on the prefix of the feature name as it exists in the database. So this also requires some knowledge of
+how these get created. The general format is: <code>{aggregation_prefix}_{group}_{timeperiod}_{quantity}</code>, so with some
+knowledge the user can create groups with the aggregation's configured prefix (common), or the aggregations configured
+prefix + group (in case they want to compare, for instance, zip-code level features versus entity level features).</p>
+<p><code>all</code>, with a single value of <code>True</code>, will include a feature group with all defined features. If no feature group
+definition is sent, this is the default.</p>
+<p>Either way, at the end of this process the experiment will be aware of some list of feature groups, even if the list is
+just length 1 with all features as one group.</p>
 <h5 id="feature-group-mixing">Feature Group Mixing<a class="headerlink" href="#feature-group-mixing" title="Permanent link">&para;</a></h5>
-<p>A few basic feature group mixing strategies are implemented: <code>leave-one-in</code>, <code>leave-one-out</code>, and <code>all</code>. These are sent in the experiment definition as a list, so different strategies can be tried in the same experiment. Each included strategy will be applied to the list of feature groups from the previous step, to convert them into</p>
-<p>For instance, 'leave-one-in' will cycle through each feature group, and for each one create a list of features that just represents that feature group, so for some matrices we would only use features from that particular group. <code>leave-one-out</code> does the opposite, for each feature group creating a list of features that includes all other feature groups but that one. <code>all</code> just creates a list of features that represents all feature groups together.</p>
+<p>A few basic feature group mixing strategies are implemented: <code>leave-one-in</code>, <code>leave-one-out</code>, and <code>all</code>. These are sent
+in the experiment definition as a list, so different strategies can be tried in the same experiment. Each included
+strategy will be applied to the list of feature groups from the previous step, to convert them into</p>
+<p>For instance, 'leave-one-in' will cycle through each feature group, and for each one create a list of features that
+just represents that feature group, so for some matrices we would only use features from that particular group.
+<code>leave-one-out</code> does the opposite, for each feature group creating a list of features that includes all other feature
+groups but that one. <code>all</code> just creates a list of features that represents all feature groups together.</p>
 <h4 id="iteration-and-matrix-creation">Iteration and Matrix Creation<a class="headerlink" href="#iteration-and-matrix-creation" title="Permanent link">&para;</a></h4>
-<p>At this point, matrices are created by looping through all train/test splits and data subsets (e.g. feature groups, state definitions), grabbing the data corresponding to each from the database, and assembling that data into a design matrix that is saved along with the metadata that defines it.</p>
-<p>As an example, if the experiment defines 3 train/test splits (one test per train in this example, for simplicity), 3 feature groups that are mixed using the 'leave-one-out' and 'all' strategies, and 1 state definition, we'll expect 18 matrices to be saved: 9 splits after multiplying the time splits by the feature groups, and each one creating a train and test matrix.</p>
+<p>At this point, matrices are created by looping through all train/test splits and data subsets (e.g. feature groups,
+state definitions), grabbing the data corresponding to each from the database, and assembling that data into a design
+matrix that is saved along with the metadata that defines it.</p>
+<p>As an example, if the experiment defines 3 train/test splits (one test per train in this example, for simplicity), 3
+feature groups that are mixed using the 'leave-one-out' and 'all' strategies, and 1 state definition, we'll expect 18
+matrices to be saved: 9 splits after multiplying the time splits by the feature groups, and each one creating a train
+and test matrix.</p>
 <h5 id="retrieving-data-and-saving-completed-matrix">Retrieving Data and Saving Completed Matrix<a class="headerlink" href="#retrieving-data-and-saving-completed-matrix" title="Permanent link">&para;</a></h5>
 <p>How do we get the data for an individual matrix out of the database?</p>
 <ol>
 <li>
-<p>Create an entity-date table for this specific matrix. If it is a test matrix, the table is made up of all valid entity dates. These dates come from the entity-date-state table for the experiment, filtered down to the entity-date pairs that match both <em>the state filter and the list of as-of-dates for this matrix</em>. If it is a train matrix, the table is made up of all valid <em>and labeled</em> entity dates. The same valid filter used in test matrices applies, but it also joins with the labels table for this experiment on the label name, label type, and label timespan to filter out unlabeled examples.</p>
+<p>Create an entity-date table for this specific matrix. There is some logic applied to decide what rows show up. There
+are two possible sets of rows that could show up.</p>
 </li>
 <li>
-<p>Write features data from tables to disk in CSV format using a COPY command, table by table. Each table is joined with the matrix-specific entity-date table to only include the desired rows.</p>
+<p><code>all valid entity dates</code>. These dates come from the entity-date-state table for the experiment (populated using the
+rules defined in the 'cohort_config'), filtered down to the entity-date pairs that match both <em>the state filter and the
+list of as-of-dates for this matrix</em>.</p>
 </li>
 <li>
-<p>Write labels data to disk in CSV format using a COPY command. It is joined with the matrix-specific entity-date table to only include the desired rows.</p>
+<p><code>all labeled entity dates</code>. These dates consist of all the valid entity dates from above, that also have an entry in
+the labels table.</p>
+</li>
+</ol>
+<p>If the matrix is a test matrix, all valid entity dates will be present.</p>
+<p>If the matrix is a train matrix, whether or not valid but unlabeled examples show up is decided by the
+<code>include_missing_labels_in_train_as</code> configuration value. If it is present in any form, these labels will be in the
+matrix. Otherwise, they will be filtered out.</p>
+<ol>
+<li>
+<p>Write features data from tables to disk in CSV format using a COPY command, table by table. Each table is joined
+with the matrix-specific entity-date table to only include the desired rows.</p>
 </li>
 <li>
-<p>Merge the features and labels CSV files horizontally, in pandas. They are expected to be of the same shape, which is enforced by the entity-date table. The resulting matrix is indexed on <code>entity_id</code> and <code>as_of_date</code>, and then saved to disk (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information. along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and the metadata is saved in a YAML file with the same hash and directory.</p>
+<p>Write labels data to disk in CSV format using a COPY command. These labels will consist of the rows in the
+matrix-specific entity-date table left joined to the labels table. Rows not present in the labels table will have their
+label filled in (either True or False) based on the value of the <code>include_missing_labels_in_train_as</code> configuration key.</p>
+</li>
+<li>
+<p>Merge the features and labels CSV files horizontally, in pandas. They are expected to be of the same shape, which is
+enforced by the entity-date table. The resulting matrix is indexed on <code>entity_id</code> and <code>as_of_date</code>, and then saved to
+disk (in CSV format, more formats to come) along with its metadata: time, feature, label, index, and state information.
+along with any user metadata the experiment config specified. The filename is decided by a hash of this metadata, and
+the metadata is saved in a YAML file with the same hash and directory. The metadata is additionally added to a database table 'matrices'.</p>
 </li>
 </ol>
 <p>Matrix metadata reference:
 - <a href="https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L433-L440">Train matrix temporal info</a>
 - <a href="https://github.com/dssg/timechop/blob/master/timechop/timechop.py#L514-L523">Test matrix temporal info</a>
-- <a href="https://github.com/dssg/triage/blob/master/src/triage/component/architect/planner.py#L89-L112">Feature, label, index, state, user metadata</a></p>
+- <a href="https://github.com/dssg/triage/blob/master/src/triage/component/architect/planner.py#L89-L112">Feature, label, index, cohort, user
+metadata</a></p>
 <h4 id="recap_1">Recap<a class="headerlink" href="#recap_1" title="Permanent link">&para;</a></h4>
-<p>At this point, all finished matrices and metadata will be saved under the <code>project_path</code> supplied by the user to the Experiment constructor, in the subdirectory <code>matrices</code>.</p>
+<p>At this point, all finished matrices and metadata will be saved under the <code>project_path</code> supplied by the user to the
+Experiment constructor, in the subdirectory <code>matrices</code>.</p>
 <h3 id="4-running-models">4. Running Models<a class="headerlink" href="#4-running-models" title="Permanent link">&para;</a></h3>
-<p>The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 'results' schema.</p>
+<p>The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.</p>
 <h4 id="train">Train<a class="headerlink" href="#train" title="Permanent link">&para;</a></h4>
-<p>Each matrix marked for training is sent through the configured grid in the experiment's <code>grid_config</code>. This works much like the scikit-learn <code>ParameterGrid</code> (and in fact uses it on the backend). It cycles through all of the classifiers and hyperparameter combinations contained herein, and calls <code>.fit()</code> with that train matrix. Any classifier that adheres to the scikit-learn <code>.fit/.transform</code> interface and is available in the Python environment will work here, whether it is a standard scikit-learn classifier, a third-party library like XGBoost, or a custom-built one in the calling repository (for instance, one that implements the problem domain's baseline heuristic algorithm for comparison).  Metadata about the trained classifier is written to the <code>results.models</code> Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).</p>
+<p>Each matrix marked for training is sent through the configured grid in the experiment's <code>grid_config</code>. This works much
+like the scikit-learn <code>ParameterGrid</code> (and in fact uses it on the backend). It cycles through all of the classifiers
+and hyperparameter combinations contained herein, and calls <code>.fit()</code> with that train matrix. Any classifier that
+adheres to the scikit-learn <code>.fit/.transform</code> interface and is available in the Python environment will work here,
+whether it is a standard scikit-learn classifier, a third-party library like XGBoost, or a custom-built one in the
+calling repository (for instance, one that implements the problem domain's baseline heuristic algorithm for
+comparison).  Metadata about the trained classifier is written to the <code>model_metadata.models</code> Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).</p>
 <h5 id="model-groups">Model Groups<a class="headerlink" href="#model-groups" title="Permanent link">&para;</a></h5>
-<p>Each model is assigned a 'model group'. A model group represents a number of trained classifiers that we want to treat as equivalent by some criteria. By default, this is aimed at defining models which are equivalent across time splits, to make analyzing model stability easier. The experiment defines model groups by a static set of data about the model (classifier module, hyperparameters, feature list) and a user-supplied list of keys that must correspond to some key in the matrix metadata (See end of 'Retrieving Data and Saving Completed Matrix' section). This data is stored in the <code>results.model_groups</code> table, along with a <code>model_group_id</code> that is used as a foreign key in the <code>results.models</code> table.</p>
+<p>Each model is assigned a 'model group'. A model group represents a number of trained classifiers that we want to treat
+as equivalent by some criteria. By default, this is aimed at defining models which are equivalent across time splits,
+to make analyzing model stability easier. This default is accomplished with a set of 'model group keys' that includes
+data about the classifier (module, hyperparameters), temporal intervals used to create the train matrix (label
+timespan, training history, as-of-date frequency), and metadata describing the data in the train matrix (features and
+feature groups, label name, cohort name). The user can override this set of <code>model_group_keys</code> in the experiment
+definition, with all of the default information plus other matrix metadata at their disposal (See end of 'Retrieving
+Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the <code>model_metadata.model_groups</code> table, along with a <code>model_group_id</code> that is used as a foreign key in the <code>model_metadata.models</code> table.</p>
 <h5 id="model-hash">Model Hash<a class="headerlink" href="#model-hash" title="Permanent link">&para;</a></h5>
-<p>Each trained model is assigned a hash, for the purpose of uniquely defining and caching the model. This hash is based on the training matrix metadata, classifier path, hyperparameters (except those which concern execution and do not affect results of the classifier, such as <code>n_jobs</code>), and the given project path for the Experiment. This hash can be found in each row of the <code>results.models</code> table. It is enforced as a unique key in the table.</p>
+<p>Each trained model is assigned a hash, for the purpose of uniquely defining and caching the model. This hash is based
+on the training matrix metadata, classifier path, hyperparameters (except those which concern execution and do not
+affect results of the classifier, such as <code>n_jobs</code>), and the given project path for the Experiment. This hash can be
+found in each row of the <code>model_metadata.models</code> table. It is enforced as a unique key in the table.</p>
 <h5 id="global-feature-importance">Global Feature Importance<a class="headerlink" href="#global-feature-importance" title="Permanent link">&para;</a></h5>
-<p>The training phase also writes global feature importances to the database, in the <code>results.feature_importances</code> table. A few methods are queried to attempt to compute feature importances:
+<p>The training phase also writes global feature importances to the database, in the <code>train_results.feature_importances</code> table.
+A few methods are queried to attempt to compute feature importances:
 <em> The bulk of these are computed using the trained model's <code>.feature_importances_</code> attribute, if it exists.
-</em> For sklearn's <code>SVC</code> models with a linear kernel, the model's <code>.coef_.squeeze()</code> is used. 
+</em> For sklearn's <code>SVC</code> models with a linear kernel, the model's <code>.coef_.squeeze()</code> is used.
 <em> For sklearn's LogisticRegression models, <code>np.exp(model.coef_).squeeze()</code> is used.
 </em> Otherwise, no feature importances are written.</p>
 <h4 id="test-matrix">Test Matrix<a class="headerlink" href="#test-matrix" title="Permanent link">&para;</a></h4>
-<p>For each test matrix, predictions, individual importances, and evaluation metrics are written to the database.</p>
+<p>For each test matrix, predictions, individual importances, and the user-specified testing evaluation metrics are written to the 'test_results' schema. For each train matrix, predictions and the user-specified training evaluation metrics are written to the 'train_results' schema.</p>
 <h5 id="predictions">Predictions<a class="headerlink" href="#predictions" title="Permanent link">&para;</a></h5>
-<p>The trained model's prediction probabilities (<code>predict_proba()</code>) are computed and saved for the test matrix. More specifically, <code>predict_proba</code> returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the <code>results.predictions</code> table. The <code>entity_id</code> and <code>as_of_date</code> are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.</p>
+<p>The trained model's prediction probabilities (<code>predict_proba()</code>) are computed both for the matrix it was trained on and any testing matrices. The predictions for the training matrix are saved in <code>train_results.train_predictions</code> and those for the testing matrices are saved in the <code>test_results.test_predictions</code>. More specifically, <code>predict_proba</code> returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the <code>{train or test}_predictions</code> table. The <code>entity_id</code> and <code>as_of_date</code> are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.</p>
 <h4 id="individual-feature-importance">Individual Feature Importance<a class="headerlink" href="#individual-feature-importance" title="Permanent link">&para;</a></h4>
-<p>Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the <code>results.individual_importances</code> table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the <code>individual_importances</code> table.</p>
+<p>Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the <code>test_results.individual_importances</code> table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the <code>individual_importances</code> table.</p>
 <h5 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h5>
-<p>Evaluation metrics, such as precision and recall at various thresholds, are written to the <code>results.evaluations</code> table. Triage defines a number of <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58">Evaluation Metrics</a> metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile. Thresholding is done by sorting the predictions and labels by the row's score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and only considering the first n rows that fall before the configured threshold.</p>
+<p>Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the <code>train_results.train_evaluations</code> table or the <code>test_results.test_evaluations</code>. Triage defines a number of <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58">Evaluation Metrics</a> metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.</p>
 <p>Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.</p>
 <ul>
 <li><code>num_labeled_examples</code> - The number of rows in the test matrix that have labels</li>
-<li><code>num_labeled_above_threshold</code> - The number of rows above the configured threshold for this metric score that have labels</li>
+<li><code>num_labeled_above_threshold</code> - The number of rows above the configured threshold for this metric score that have
+labels</li>
 <li><code>num_positive_labels</code> - The number of positive labels in the test matrix</li>
 </ul>
 <h4 id="recap_2">Recap<a class="headerlink" href="#recap_2" title="Permanent link">&para;</a></h4>
-<p>At this point, the <code>results</code> database schema is fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished. </p></div>
+<p>At this point, the 'model_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.</p></div>
+                </div>
         </div>
 
-	<footer class="col-md-12">
-		<hr>
-		
-		<p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
-	</footer>
-
-
-        <script src="../../js/jquery-1.10.2.min.js"></script>
-        <script src="../../js/bootstrap-3.0.3.min.js"></script>
-        <script src="../../js/highlight.pack.js"></script>
+    <hr>
+    <footer class="container">
+        
+        <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
+    </footer>
         <script src="../../js/base.js"></script>
+        <script src="../../search/require.js"></script>
+        <script src="../../search/search.js"></script>
     </body>
 </html>
