@@ -4,10 +4,11 @@ from datetime import datetime, timedelta
 from functools import partial
 from tempfile import TemporaryDirectory
 from unittest import mock, TestCase
+import fakeredis
 
 import pytest
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import FSModelStorageEngine
@@ -17,6 +18,7 @@ from tests.utils import sample_config, populate_source_data
 from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
+    RQExperiment,
     CONFIG_VERSION,
 )
 
@@ -36,6 +38,7 @@ def num_linked_evaluations(db_engine):
 parametrize_experiment_classes = pytest.mark.parametrize(('experiment_class',), [
     (SingleThreadedExperiment,),
     (partial(MultiCoreExperiment, n_processes=2, n_db_processes=2),),
+    (partial(RQExperiment, redis_connection=fakeredis.FakeStrictRedis(), queue_kwargs={'async': False}),),
 ])
 
 
@@ -233,7 +236,7 @@ def test_build_error(experiment_class):
                 project_path=os.path.join(temp_dir, 'inspections'),
             )
 
-            with mock.patch.object(experiment, 'build_matrices') as build_mock:
+            with mock.patch.object(experiment, 'generate_matrices') as build_mock:
                 build_mock.side_effect = RuntimeError('boom!')
 
                 with pytest.raises(RuntimeError):
@@ -258,7 +261,7 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
                 cleanup_timeout=0.02,  # Set short timeout
             )
 
-            with mock.patch.object(experiment, 'build_matrices') as build_mock:
+            with mock.patch.object(experiment, 'generate_matrices') as build_mock:
                 build_mock.side_effect = RuntimeError('boom!')
 
                 with pytest.raises(TimeoutError) as exc_info:

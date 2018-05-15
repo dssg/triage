@@ -19,7 +19,3 @@ pages:
     - Feature Definition Deep Dive: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
-  - API Docs:
-    - ExperimentBase: triage.experiments.base.md
-    - SingleThreadedExperiment: triage.experiments.singlethreaded.md
-    - MultiCoreExperiment: triage.experiments.multicore.md

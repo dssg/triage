@@ -11,7 +11,7 @@ import yaml
 from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, InMemoryMatrixStore
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from triage.component.catwalk.storage import TrainMatrixType, TestMatrixType
@@ -49,14 +49,30 @@ class MockTrainedModel(object):
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
-class MockMatrixStore(object):
-    def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=[]):
-        if matrix_type == 'train':
-            self.matrix_type = TrainMatrixType
-        elif matrix_type == 'test':
-            self.matrix_type = TestMatrixType
-        else:
-            raise Exception('Initialize MockMatrixStore with matrix_type = "train" or "test"')
+class MockMatrixStore(InMemoryMatrixStore):
+    def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=None, metadata_overrides=None, matrix=None):
+        base_metadata = {
+            'feature_start_time': datetime.date(2014, 1, 1),
+            'end_time': datetime.date(2015, 1, 1),
+            'as_of_date_frequency': '1y',
+            'matrix_id': 'some_matrix',
+            'label_name': 'label',
+            'label_timespan': '3month',
+            'indices': ['entity_id'],
+            'matrix_type': matrix_type
+        }
+        metadata_overrides = metadata_overrides or {}
+        base_metadata.update(metadata_overrides)
+        if matrix is None: 
+            matrix = pandas.DataFrame.from_dict({
+                'entity_id': [1, 2],
+                'feature_one': [3, 4],
+                'feature_two': [5, 6],
+                'label': [7, 8]
+            }).set_index('entity_id')
+        super().__init__(matrix=matrix, metadata=base_metadata)
+        if init_labels is None:
+            init_labels = []
 
         self.label_count = label_count
         self.init_labels = init_labels

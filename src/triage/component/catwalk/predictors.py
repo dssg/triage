@@ -40,9 +40,11 @@ class Predictor(object):
         self.project_path = project_path
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
-        if self.db_engine:
-            self.sessionmaker = sessionmaker(bind=self.db_engine)
         self.replace = replace
+
+    @property
+    def sessionmaker(self):
+        return sessionmaker(bind=self.db_engine)
 
     @db_retry
     def _retrieve_model_hash(self, model_id):

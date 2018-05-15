@@ -2,10 +2,10 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
-from functools import partial
 
 from descriptors import cachedproperty
 from timeout import timeout
+from sqlalchemy.engine import Engine
 
 from triage.component.architect.label_generators import LabelGenerator, DEFAULT_LABEL_NAME
 
@@ -26,14 +26,14 @@ from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
-from triage.component.catwalk.predictors import Predictor
-from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
-from triage.component.catwalk.evaluation import ModelEvaluator
+from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import save_experiment_and_get_hash
 from triage.component.catwalk.storage import CSVMatrixStore
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
+
+from triage.util.db import create_engine
 
 
 def dt_from_str(dt_str):
@@ -41,8 +41,24 @@ def dt_from_str(dt_str):
 
 
 class ExperimentBase(ABC):
-    """The base class for all Experiments."""
+    """The base class for all Experiments.
 
+    Subclasses must implement the following four methods:
+    process_query_tasks
+    process_matrix_build_tasks
+    process_train_tasks
+    process_model_test_tasks
+
+    Look at singlethreaded.py for reference implementation of each.
+
+    Args:
+        config (dict)
+        db_engine (triage.util.db.SerializableDbEngine or sqlalchemy.engine.Engine)
+        model_storage_class (triage.component.catwalk.storage.ModelStorageEngine)
+        project_path (string)
+        replace (bool)
+        cleanup_timeout (int)
+    """
     cleanup_timeout = 60  # seconds
 
     def __init__(
@@ -57,7 +73,12 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        self.db_engine = db_engine
+        if isinstance(db_engine, Engine):
+            logging.warning('Raw, unserializable SQLAlchemy engine passed. URL will be used, other options may be lost in multi-process environments')
+            self.db_engine = create_engine(db_engine.url)
+        else:
+            self.db_engine = db_engine
+
         if model_storage_class:
             self.model_storage_engine = model_storage_class(
                 project_path=project_path)
@@ -75,7 +96,6 @@ class ExperimentBase(ABC):
         self.experiment_hash = save_experiment_and_get_hash(self.config,
                                                             self.db_engine)
         self.labels_table_name = 'labels_{}'.format(self.experiment_hash)
-        self.initialize_factories()
         self.initialize_components()
 
         self.cleanup_timeout = (self.cleanup_timeout if cleanup_timeout is None
@@ -96,11 +116,10 @@ class ExperimentBase(ABC):
                 .format(config_version, CONFIG_VERSION)
             )
 
-    def initialize_factories(self):
+    def initialize_components(self):
         split_config = self.config['temporal_config']
 
-        self.chopper_factory = partial(
-            Timechop,
+        self.chopper = Timechop(
             feature_start_time=dt_from_str(split_config['feature_start_time']),
             feature_end_time=dt_from_str(split_config['feature_end_time']),
             label_start_time=dt_from_str(split_config['label_start_time']),
@@ -116,56 +135,53 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get('cohort_config', {})
         if 'query' in cohort_config:
-            self.state_table_generator_factory = partial(
-                StateTableGeneratorFromQuery,
+            self.state_table_generator = StateTableGeneratorFromQuery(
                 experiment_hash=self.experiment_hash,
+                db_engine=self.db_engine,
                 query=cohort_config['query']
             )
         elif 'entities_table' in cohort_config:
-            self.state_table_generator_factory = partial(
-                StateTableGeneratorFromEntities,
+            self.state_table_generator = StateTableGeneratorFromEntities(
                 experiment_hash=self.experiment_hash,
+                db_engine=self.db_engine,
                 entities_table=cohort_config['entities_table']
             )
         elif 'dense_states' in cohort_config:
-            self.state_table_generator_factory = partial(
-                StateTableGeneratorFromDense,
+            self.state_table_generator = StateTableGeneratorFromDense(
                 experiment_hash=self.experiment_hash,
+                db_engine=self.db_engine,
                 dense_state_table=cohort_config['dense_states']['table_name']
             )
         else:
             raise ValueError('Cohort config missing or unrecognized')
 
-        self.label_generator_factory = partial(
-            LabelGenerator,
+        self.label_generator = LabelGenerator(
             label_name=self.config['label_config'].get('name', None),
-            query=self.config['label_config']['query']
+            query=self.config['label_config']['query'],
+            db_engine=self.db_engine,
         )
 
-        self.feature_dictionary_creator_factory = partial(
-            FeatureDictionaryCreator,
+        self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name=self.features_schema_name,
+            db_engine=self.db_engine,
         )
 
-        self.feature_generator_factory = partial(
-            FeatureGenerator,
+        self.feature_generator = FeatureGenerator(
             features_schema_name=self.features_schema_name,
             replace=self.replace,
+            db_engine=self.db_engine,
             feature_start_time=split_config['feature_start_time']
         )
 
-        self.feature_group_creator_factory = partial(
-            FeatureGroupCreator,
+        self.feature_group_creator = FeatureGroupCreator(
             self.config.get('feature_group_definition', {'all': [True]})
         )
 
-        self.feature_group_mixer_factory = partial(
-            FeatureGroupMixer,
+        self.feature_group_mixer = FeatureGroupMixer(
             self.config.get('feature_group_strategies', ['all'])
         )
 
-        self.planner_factory = partial(
-            Planner,
+        self.planner = Planner(
             feature_start_time=dt_from_str(split_config['feature_start_time']),
             label_names=[self.config.get('label_config', {}).get('name', DEFAULT_LABEL_NAME)],
             label_types=['binary'],
@@ -176,8 +192,7 @@ class ExperimentBase(ABC):
             user_metadata=self.config.get('user_metadata', {}),
         )
 
-        self.matrix_builder_factory = partial(
-            HighMemoryCSVBuilder,
+        self.matrix_builder = HighMemoryCSVBuilder(
             db_config={
                 'features_schema_name': self.features_schema_name,
                 'labels_schema_name': 'public',
@@ -191,55 +206,27 @@ class ExperimentBase(ABC):
             matrix_directory=self.matrices_directory,
             include_missing_labels_in_train_as=self.config['label_config']
             .get('include_missing_labels_in_train_as', None),
+            engine=self.db_engine,
             replace=self.replace
         )
 
-        self.trainer_factory = partial(
-            ModelTrainer,
+        self.trainer = ModelTrainer(
             project_path=self.project_path,
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
             model_grouper=ModelGrouper(self.config.get('model_group_keys', [])),
+            db_engine=self.db_engine,
             replace=self.replace
         )
 
-        self.predictor_factory = partial(
-            Predictor,
+        self.tester = ModelTester(
             model_storage_engine=self.model_storage_engine,
             project_path=self.project_path,
-            replace=self.replace
+            replace=self.replace,
+            db_engine=self.db_engine,
+            individual_importance_config=self.config.get('individual_importance', {}),
+            evaluator_config=self.config.get('scoring', {})
         )
-
-        self.indiv_importance_factory = partial(
-            IndividualImportanceCalculator,
-            n_ranks=self.config.get('individual_importance', {}).get('n_ranks', 5),
-            methods=self.config.get('individual_importance', {}).get('methods', ['uniform']),
-            replace=self.replace
-        )
-
-        self.evaluator_factory = partial(
-            ModelEvaluator,
-            sort_seed=self.config['scoring'].get('sort_seed', None),
-            metric_groups=self.config['scoring']['metric_groups'],
-            training_metric_groups =self.config['scoring']['training_metric_groups']
-        )
-
-    def initialize_components(self):
-        self.chopper = self.chopper_factory()
-        self.label_generator = self.label_generator_factory(db_engine=self.db_engine)
-        self.state_table_generator = self.state_table_generator_factory(db_engine=self.db_engine)
-        self.feature_generator = self.feature_generator_factory(db_engine=self.db_engine)
-        self.feature_dictionary_creator = self.feature_dictionary_creator_factory(
-            db_engine=self.db_engine)
-        self.feature_group_creator = self.feature_group_creator_factory()
-        self.feature_group_mixer = self.feature_group_mixer_factory()
-        self.planner = self.planner_factory()
-        self.matrix_builder = self.matrix_builder_factory(engine=self.db_engine)
-        self.trainer = self.trainer_factory(db_engine=self.db_engine)
-        self.predictor = self.predictor_factory(db_engine=self.db_engine)
-        self.individual_importance_calculator = self.indiv_importance_factory(
-            db_engine=self.db_engine)
-        self.evaluator = self.evaluator_factory(db_engine=self.db_engine)
 
     @cachedproperty
     def split_definitions(self):
@@ -503,14 +490,76 @@ class ExperimentBase(ABC):
         return matrix_store
 
     @abstractmethod
-    def build_matrices(self):
-        """Generate labels, features, and matrices"""
+    def process_train_tasks(self, train_tasks):
         pass
 
     @abstractmethod
-    def catwalk(self):
-        """Train, test, and evaluate models"""
+    def process_query_tasks(self, query_tasks):
         pass
+
+    @abstractmethod
+    def process_matrix_build_tasks(self, matrix_build_tasks):
+        pass
+
+    def generate_preimputation_features(self):
+        self.process_query_tasks(self.feature_aggregation_table_tasks)
+
+    def generate_imputed_features(self):
+        self.process_query_tasks(self.feature_imputation_table_tasks)
+
+    def build_matrices(self):
+        self.process_matrix_build_tasks(self.matrix_build_tasks)
+
+    def generate_matrices(self):
+        logging.info('Creating sparse states')
+        self.generate_sparse_states()
+        logging.info('Creating labels')
+        self.generate_labels()
+        logging.info('Creating feature aggregation tables')
+        self.generate_preimputation_features()
+        logging.info('Creating feature imputation tables')
+        self.generate_imputed_features()
+        logging.info('Building all matrices')
+        self.build_matrices()
+
+    def train_and_test_models(self):
+        for split_num, split in enumerate(self.full_matrix_definitions):
+            self.log_split(split_num, split)
+            train_store = self.matrix_store(split['train_uuid'])
+            if train_store.empty:
+                logging.warning('''Train matrix for split %s was empty,
+                no point in training this model. Skipping
+                ''', split['train_uuid'])
+                continue
+            if len(train_store.labels().unique()) == 1:
+                logging.warning('''Train Matrix for split %s had only one
+                unique value, no point in training this model. Skipping
+                ''', split['train_uuid'])
+                continue
+
+            logging.info('Training models')
+
+            train_tasks = self.trainer.generate_train_tasks(
+                grid_config=self.config['grid_config'],
+                misc_db_parameters=dict(
+                    test=False,
+                    model_comment=self.config.get('model_comment', None),
+                ),
+                matrix_store=train_store
+            )
+            model_ids = self.process_train_tasks(train_tasks)
+
+            logging.info('Done training models for split %s', split_num)
+
+            test_tasks = self.tester.generate_model_test_tasks(
+                split=split,
+                train_store=train_store,
+                model_ids=model_ids,
+                matrix_store_creator=self.matrix_store
+            )
+            logging.info('Found %s non-empty test matrices for split %s', len(test_tasks), split_num)
+
+            self.process_model_test_tasks(test_tasks)
 
     def validate(self):
         ExperimentValidator(self.db_engine).run(self.config)
@@ -518,15 +567,15 @@ class ExperimentBase(ABC):
 
     def _run(self):
         try:
-            logging.info('Building matrices')
-            self.build_matrices()
+            logging.info('Generating matrices')
+            self.generate_matrices()
         finally:
             logging.info('Cleaning up state table')
             with timeout(self.cleanup_timeout):
                 self.state_table_generator.clean_up()
                 self.db_engine.execute('drop table if exists {}'.format(self.labels_table_name))
 
-        self.catwalk()
+        self.train_and_test_models()
 
     def run(self):
         try:

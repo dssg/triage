@@ -69,7 +69,8 @@ def test_integration():
                         'end_time': as_of_date,
                         'metta-uuid': '1234',
                         'indices': ['entity_id'],
-                        'matrix_type': 'test'
+                        'matrix_type': 'test',
+                        'as_of_date_frequency': '1month'
                     }
                 )
                 for as_of_date in as_of_dates
@@ -123,9 +124,6 @@ def test_integration():
                         predictions_proba,
                         test_store,
                         model_id,
-                        as_of_date,
-                        as_of_date,
-                        '6month'
                     )
 
             # assert

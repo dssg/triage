@@ -6,3 +6,4 @@ testing.postgresql
 pytest==3.2.5
 pytest-cov
 moto==1.0.1
+fakeredis

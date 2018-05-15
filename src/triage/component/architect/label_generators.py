@@ -56,7 +56,7 @@ class LabelGenerator(object):
             logging.warning(
                 'Done creating labels, but no rows in labels table!')
         else:
-            logging.info('Rows in labels table: %s', nrows)
+            logging.info('Done creating labels table %s: rows: %s', labels_table, nrows)
 
     def generate(self, start_date, label_timespan, labels_table):
         """Generate labels table using a query

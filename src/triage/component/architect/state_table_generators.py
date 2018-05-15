@@ -69,6 +69,8 @@ class StateTableGeneratorBase(ABC):
         if not table_has_data(self.sparse_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
 
+        logging.info('Sparse states table generated at %s', self.sparse_table_name)
+
     def clean_up(self):
         self.db_engine.execute(
             'drop table if exists {}'.format(self.sparse_table_name)
