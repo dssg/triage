@@ -47,6 +47,12 @@
      <changefreq>daily</changefreq>
     </url>
         
+    <url>
+     <loc>/experiments/upgrade-to-v5/</loc>
+     <lastmod>2018-05-15</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
     
 
 </urlset>
