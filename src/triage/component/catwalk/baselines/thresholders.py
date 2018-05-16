@@ -10,8 +10,8 @@ REQUIRED_KEYS = frozenset(['feature_name', 'operator', 'threshold'])
 class SimpleThresholder(object):
     """ The simple thresholder applies a set of predetermined logical rules to a
     test matrix to classify entities. By default, it will classify entities as 1
-    if they satisfy any of the rules. When 'or' is set as the logical_operator
-    attribute, it will classify entities as 1 if they pass *all* of the rules.
+    if they satisfy any of the rules. When 'and' is set as the logical_operator,
+    it will classify entities as 1 only if they pass *all* of the rules.
 
     Rules are passed as either strings in the format 'x1 > 5' or dictionaries in
     the format {feature_name: 'x1', operator: '>', threshold: 5}. The
