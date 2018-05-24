@@ -97,7 +97,7 @@ class Matrix(Base):
     matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
     matrix_type = Column(String) # 'train' or 'test'
     labeling_window = Column(Interval)
-    n_examples = Column(Integer)
+    num_observations = Column(Integer)
     creation_time = Column(DateTime(timezone=True), server_default=func.now())
     lookback_duration = Column(Interval)
     feature_start_time = Column(DateTime)
