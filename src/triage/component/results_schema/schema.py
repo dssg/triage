@@ -66,7 +66,7 @@ class ModelGroup(Base):
 
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
-    model_parameters = Column(JSONB)
+    hyperparameters = Column(JSONB)
     feature_list = Column(ARRAY(Text))
     model_config = Column(JSONB)
 
@@ -116,7 +116,7 @@ class Model(Base):
     run_time = Column(DateTime)
     batch_run_time = Column(DateTime)
     model_type = Column(String)
-    model_parameters = Column(JSONB)
+    hyperparameters = Column(JSONB)
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
