@@ -57,7 +57,7 @@ class ModelEvaluator(object):
 
     def __init__(
         self,
-        metric_groups,
+        testing_metric_groups,
         training_metric_groups,
         db_engine,
         sort_seed=None,
@@ -65,7 +65,7 @@ class ModelEvaluator(object):
     ):
         """
         Args:
-            metric_groups (list) A list of groups of metric/configurations
+            testing_metric_groups (list) A list of groups of metric/configurations
                 to use for evaluating all given models
 
                 Each entry is a dict, with a list of metrics, and potentially
@@ -74,7 +74,7 @@ class ModelEvaluator(object):
 
                 Examples:
 
-                metric_groups = [{
+                testing_metric_groups = [{
                     'metrics': ['precision@', 'recall@'],
                     'thresholds': {
                         'percentiles': [5.0, 10.0],
@@ -87,7 +87,7 @@ class ModelEvaluator(object):
                     'parameters': [{'beta': 0.75}, {'beta': 1.25}]
                 }]
             training_metric_groups (list) metrics to be calculated on training set,
-                in the same form as metric_groups
+                in the same form as testing_metric_groups
             db_engine (sqlalchemy.engine)
             custom_metrics (dict) Functions to generate metrics
                 not available by default
@@ -95,7 +95,7 @@ class ModelEvaluator(object):
                 (predictions_proba, predictions_binary, labels, parameters)
                 and return a numeric score
         """
-        self.metric_groups = metric_groups
+        self.testing_metric_groups = testing_metric_groups
         self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
         self.sort_seed = sort_seed or int(time.time())
@@ -339,7 +339,7 @@ class ModelEvaluator(object):
         evaluations = []
         matrix_type = matrix_store.matrix_type
         if matrix_type.is_test:
-            metric_groups_to_compute = self.metric_groups
+            metric_groups_to_compute = self.testing_metric_groups
         else:
             metric_groups_to_compute = self.training_metric_groups
         for group in metric_groups_to_compute:

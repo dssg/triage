@@ -19,7 +19,7 @@ def test_evaluating_early_warning():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
-        metric_groups = [{
+        testing_metric_groups = [{
             'metrics': ['precision@',
                         'recall@',
                         'true positives@',
@@ -45,7 +45,7 @@ def test_evaluating_early_warning():
 
         custom_metrics = {'mediocre': always_half}
 
-        model_evaluator = ModelEvaluator(metric_groups, training_metric_groups, db_engine,
+        model_evaluator = ModelEvaluator(testing_metric_groups, training_metric_groups, db_engine,
             custom_metrics=custom_metrics
         )
 
@@ -134,7 +134,7 @@ def test_model_scoring_inspections():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
-        metric_groups = [{
+        testing_metric_groups = [{
             'metrics': ['precision@', 'recall@', 'fpr@'],
             'thresholds': {'percentiles': [50.0], 'top_n': [3]}
         }, {
@@ -143,7 +143,7 @@ def test_model_scoring_inspections():
         }]
         training_metric_groups = [{'metrics': ['accuracy'], 'thresholds': {'percentiles': [50.0]}}]
 
-        model_evaluator = ModelEvaluator(metric_groups, training_metric_groups, db_engine)
+        model_evaluator = ModelEvaluator(testing_metric_groups, training_metric_groups, db_engine)
 
         testing_labels = numpy.array([True, False, numpy.nan, True, False])
         testing_prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])

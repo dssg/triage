@@ -63,7 +63,7 @@ class MockMatrixStore(InMemoryMatrixStore):
         }
         metadata_overrides = metadata_overrides or {}
         base_metadata.update(metadata_overrides)
-        if matrix is None: 
+        if matrix is None:
             matrix = pandas.DataFrame.from_dict({
                 'entity_id': [1, 2],
                 'feature_one': [3, 4],
@@ -320,7 +320,7 @@ def sample_config():
     }
 
     scoring_config = {
-        'metric_groups': [
+        'testing_metric_groups': [
             {'metrics': ['precision@'], 'thresholds': {'top_n': [2]}}
         ],
         'training_metric_groups': [
