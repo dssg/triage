@@ -162,7 +162,7 @@ class FeatureImportance(Base):
 
 class TestPrediction(Base):
 
-    __tablename__ = 'test_predictions'
+    __tablename__ = 'predictions'
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -179,7 +179,7 @@ class TestPrediction(Base):
 
 class TrainPrediction(Base):
 
-    __tablename__ = 'train_predictions'
+    __tablename__ = 'predictions'
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -213,7 +213,7 @@ class IndividualImportance(Base):
 
 class TestEvaluation(Base):
 
-    __tablename__ = 'test_evaluations'
+    __tablename__ = 'evaluations'
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -233,7 +233,7 @@ class TestEvaluation(Base):
 
 class TrainEvaluation(Base):
 
-    __tablename__ = 'train_evaluations'
+    __tablename__ = 'evaluations'
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
