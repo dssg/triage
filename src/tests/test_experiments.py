@@ -131,7 +131,7 @@ def test_simple_experiment(experiment_class):
 
         # 9. Checking the proper matrices created and stored
         matrices = [row for row in db_engine.execute('''
-            select matrix_type, n_examples from model_metadata.matrices''')]
+            select matrix_type, num_observations from model_metadata.matrices''')]
         types = [i[0] for i in matrices]
         counts = [i[1] for i in matrices]
         assert types.count('train') == 2

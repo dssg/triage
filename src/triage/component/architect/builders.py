@@ -334,7 +334,7 @@ class CSVBuilder(BuilderBase):
                 matrix_uuid=matrix_uuid,
                 matrix_type=matrix_type,
                 labeling_window=matrix_metadata["label_timespan"],
-                n_examples=len(output),
+                num_observations=len(output),
                 lookback_duration=lookback,
                 feature_start_time=matrix_metadata["feature_start_time"],
                 matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)

@@ -330,7 +330,7 @@ def basic_integration_test(
 
             # super basic assertion: did matrices we expect get created?
             matrices_records = list(db_engine.execute(
-                    '''select matrix_uuid, n_examples, matrix_type
+                    '''select matrix_uuid, num_observations, matrix_type
                     from model_metadata.matrices
                     '''
                 ))
@@ -350,9 +350,9 @@ def basic_integration_test(
                     metadata = yaml.load(f)
                     feature_group_name_lists.append(metadata['feature_groups'])
 
-            for matrix_uuid, n_examples, matrix_type in matrices_records:
+            for matrix_uuid, num_observations, matrix_type in matrices_records:
                 assert matrix_uuid in matrix_build_tasks #the hashes of the matrices
-                assert type(n_examples) is int
+                assert type(num_observations) is int
                 assert matrix_type == matrix_build_tasks[matrix_uuid]['matrix_type']
             def deep_unique_tuple(l): return set([tuple(i) for i in l])
             assert deep_unique_tuple(
