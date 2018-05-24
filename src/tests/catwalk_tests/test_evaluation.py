@@ -69,7 +69,7 @@ def test_evaluating_early_warning():
             row[0] for row in
             db_engine.execute(
                 '''select distinct(metric || parameter)
-                from test_results.test_evaluations
+                from test_results.evaluations
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
@@ -120,7 +120,7 @@ def test_evaluating_early_warning():
             row[0] for row in
             db_engine.execute(
                 '''select distinct(metric || parameter)
-                from train_results.train_evaluations
+                from train_results.evaluations
                 where model_id = %s and
                 evaluation_start_time = %s
                 order by 1''',
@@ -167,7 +167,7 @@ def test_model_scoring_inspections():
             model_id,
         )
         for record in db_engine.execute(
-            '''select * from test_results.test_evaluations
+            '''select * from test_results.evaluations
             where model_id = %s and evaluation_start_time = %s
             order by 1''',
             (model_id, fake_test_matrix_store.as_of_dates[0])
@@ -188,7 +188,7 @@ def test_model_scoring_inspections():
                     model_id,
         )
         for record in db_engine.execute(
-            '''select * from train_results.train_evaluations
+            '''select * from train_results.evaluations
             where model_id = %s and evaluation_start_time = %s
             order by 1''',
             (model_id, fake_train_matrix_store.as_of_dates[0])

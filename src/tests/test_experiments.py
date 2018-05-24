@@ -25,9 +25,9 @@ from triage.experiments import (
 
 def num_linked_evaluations(db_engine):
     ((result,),) = db_engine.execute('''
-        select count(*) from test_results.test_evaluations e
+        select count(*) from test_results.evaluations e
         join model_metadata.models using (model_id)
-        join test_results.test_predictions p on (
+        join test_results.predictions p on (
             e.model_id = p.model_id and
             e.evaluation_start_time <= p.as_of_date and
             e.evaluation_end_time >= p.as_of_date)
@@ -78,7 +78,7 @@ def test_simple_experiment(experiment_class):
         for set_type in ("train", "test"):
             num_predictions = len([
                 row for row in db_engine.execute('''
-                    select * from {}_results.{}_predictions
+                    select * from {}_results.predictions
                     join model_metadata.models using (model_id)'''.format(set_type, set_type))
             ])
             assert num_predictions > 0
@@ -89,7 +89,7 @@ def test_simple_experiment(experiment_class):
                 row for row in db_engine.execute('''
                     select * from {}_results.{}_evaluations e
                     join model_metadata.models using (model_id)
-                    join {}_results.{}_predictions p on (
+                    join {}_results.predictions p on (
                         e.model_id = p.model_id and
                         e.evaluation_start_time <= p.as_of_date and
                         e.evaluation_end_time >= p.as_of_date)
@@ -340,7 +340,7 @@ def test_baselines_with_missing_features(experiment_class):
         # 3. predictions, linked to models
         num_predictions = len([
             row for row in db_engine.execute('''
-                select * from test_results.test_predictions
+                select * from test_results.predictions
                 join model_metadata.models using (model_id)''')
         ])
         assert num_predictions > 0
@@ -348,9 +348,9 @@ def test_baselines_with_missing_features(experiment_class):
         # 4. evaluations linked to predictions linked to models
         num_evaluations = len([
             row for row in db_engine.execute('''
-                select * from test_results.test_evaluations e
+                select * from test_results.evaluations e
                 join model_metadata.models using (model_id)
-                join test_results.test_predictions p on (
+                join test_results.predictions p on (
                     e.model_id = p.model_id and
                     e.evaluation_start_time <= p.as_of_date and
                     e.evaluation_end_time >= p.as_of_date)

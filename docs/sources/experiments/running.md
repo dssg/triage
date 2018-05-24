@@ -133,7 +133,7 @@ Here's an example query, which returns the top 10 model groups by precision at t
     	max(test_evaluations.value) as max_precision
     from model_metadata.model_groups
     	join model_metadata.models using (model_group_id)
-    	join test_results.test_evaluations using (model_id)
+    	join test_results.evaluations using (model_id)
     where
     	metric = 'precision@'
     	and parameter = '100_abs'
