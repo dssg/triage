@@ -87,13 +87,13 @@ def test_simple_experiment(experiment_class):
         for set_type in ("train", "test"):
             num_evaluations = len([
                 row for row in db_engine.execute('''
-                    select * from {}_results.{}_evaluations e
+                    select * from {}_results.evaluations e
                     join model_metadata.models using (model_id)
                     join {}_results.predictions p on (
                         e.model_id = p.model_id and
                         e.evaluation_start_time <= p.as_of_date and
                         e.evaluation_end_time >= p.as_of_date)
-                '''.format(set_type, set_type, set_type, set_type))
+                '''.format(set_type, set_type, set_type))
             ])
             assert num_evaluations > 0
 
