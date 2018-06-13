@@ -41,7 +41,7 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
         model = schema.ModelGroup
         sqlalchemy_session = session
     model_type = 'sklearn.ensemble.RandomForestClassifier'
-    model_parameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
+    hyperparameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
     feature_list = ['feature1', 'feature2', 'feature3']
     model_config = {}
 
@@ -60,7 +60,7 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     run_time = factory.LazyFunction(lambda: datetime.now())
     batch_run_time = factory.LazyFunction(lambda: datetime.now())
     model_type = 'sklearn.ensemble.RandomForestClassifier'
-    model_parameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
+    hyperparameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
     model_comment = ''
     batch_comment = ''
     config = {}

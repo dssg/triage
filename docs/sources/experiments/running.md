@@ -93,7 +93,7 @@ This will run the entire experiment. This could take a while, so we recommend ch
 
 If you would like to run parts of the Experiment one by one and look at their outputs, you can do so. To reproduce the entire Experiment piece by piece, you can run the following:
 
-- `experiment.split_definitions` will parse temporal config and create time splits. 
+- `experiment.split_definitions` will parse temporal config and create time splits.
 
 - `experiment.generate_sparse_states()` will use the cohort config and as of dates from the temporal config to generate an internal table keeping track of what entities are in the cohort on different dates.
 
@@ -129,11 +129,11 @@ Here's an example query, which returns the top 10 model groups by precision at t
     select
     	model_groups.model_group_id,
     	model_groups.model_type,
-    	model_groups.model_parameters,
+    	model_groups.hyperparameters,
     	max(test_evaluations.value) as max_precision
     from model_metadata.model_groups
     	join model_metadata.models using (model_group_id)
-    	join test_results.test_evaluations using (model_id)
+    	join test_results.evaluations using (model_id)
     where
     	metric = 'precision@'
     	and parameter = '100_abs'
@@ -160,4 +160,3 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 - *SingleThreadedExperiment*: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.
 - *MultiCoreExperiment*: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
 - *RQExperiment*: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( `pip install triage[rq]` )
-

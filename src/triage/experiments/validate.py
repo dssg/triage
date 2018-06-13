@@ -546,8 +546,8 @@ class GridConfigValidator(Validator):
 
 class ScoringConfigValidator(Validator):
     def run(self, scoring_config):
-        if 'metric_groups' not in scoring_config:
-            logging.warning('Section: scoring - No metric_groups configured. ' +
+        if 'testing_metric_groups' not in scoring_config:
+            logging.warning('Section: scoring - No testing_metric_groups configured. ' +
                             'Your experiment may run, but you will not have any ' +
                             'evaluation metrics computed'
                             )
@@ -557,7 +557,7 @@ class ScoringConfigValidator(Validator):
                             )
         metric_lookup = catwalk.evaluation.ModelEvaluator.available_metrics
         available_metrics = set(metric_lookup.keys())
-        for group in ('metric_groups', 'training_metric_groups'):
+        for group in ('testing_metric_groups', 'training_metric_groups'):
             for metric_group in scoring_config[group]:
                 given_metrics = set(metric_group['metrics'])
                 bad_metrics = given_metrics - available_metrics

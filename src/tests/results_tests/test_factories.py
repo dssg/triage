@@ -41,7 +41,7 @@ def test_evaluation_factories():
                 e.metric,
                 e.value
             from
-                test_results.test_evaluations e
+                test_results.evaluations e
                 join model_metadata.models m using (model_id)
         ''')
         for model_group_id, model_id, metric, value in results:
@@ -84,7 +84,7 @@ def test_prediction_factories():
         results = engine.execute('''
             select m.*, p.*
             from
-                test_results.test_predictions p
+                test_results.predictions p
                 join model_metadata.models m using (model_id)
                 join test_results.individual_importances i using (model_id, entity_id, as_of_date)
         ''')

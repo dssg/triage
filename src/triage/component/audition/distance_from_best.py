@@ -55,7 +55,7 @@ class DistanceFromBestTable(object):
                 row should be a dict with keys:
                         'metric' (e.g. 'precision@')
                         'parameter' (e.g. '100_abs')
-                All models should have the test_results.test_evaluations table populated
+                All models should have the test_results.evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
         """
         for metric in metrics:
@@ -66,7 +66,7 @@ class DistanceFromBestTable(object):
                         PARTITION BY model_id
                         ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
                         ) AS eval_rn
-                    FROM test_results.test_evaluations
+                    FROM test_results.evaluations
                     WHERE metric='{metric}' AND parameter='{parameter}'
                 ),
                 model_ranks AS (
@@ -166,7 +166,7 @@ class DistanceFromBestTable(object):
                 row should be a dict with keys:
                         'metric' (e.g. 'precision@')
                         'parameter' (e.g. '100_abs')
-                All models should have the test_results.test_evaluations table populated
+                All models should have the test_results.evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
             delete (boolean, optional) Delete any previous version of the
                 distance table if it exists

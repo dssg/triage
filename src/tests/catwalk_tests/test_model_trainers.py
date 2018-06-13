@@ -299,7 +299,7 @@ def test_n_jobs_not_new_model(sample_matrix_store):
                 trainer.process_train_task(**train_task)
 
             for row in db_engine.execute(
-                'select model_parameters from model_metadata.model_groups'
+                'select hyperparameters from model_metadata.model_groups'
             ):
                 assert 'n_jobs' not in row[0]
 

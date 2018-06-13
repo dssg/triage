@@ -66,7 +66,7 @@ class ModelGroup(Base):
 
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
-    model_parameters = Column(JSONB)
+    hyperparameters = Column(JSONB)
     feature_list = Column(ARRAY(Text))
     model_config = Column(JSONB)
 
@@ -97,7 +97,7 @@ class Matrix(Base):
     matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
     matrix_type = Column(String) # 'train' or 'test'
     labeling_window = Column(Interval)
-    n_examples = Column(Integer)
+    num_observations = Column(Integer)
     creation_time = Column(DateTime(timezone=True), server_default=func.now())
     lookback_duration = Column(Interval)
     feature_start_time = Column(DateTime)
@@ -116,7 +116,7 @@ class Model(Base):
     run_time = Column(DateTime)
     batch_run_time = Column(DateTime)
     model_type = Column(String)
-    model_parameters = Column(JSONB)
+    hyperparameters = Column(JSONB)
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
@@ -162,7 +162,7 @@ class FeatureImportance(Base):
 
 class TestPrediction(Base):
 
-    __tablename__ = 'test_predictions'
+    __tablename__ = 'predictions'
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -179,7 +179,7 @@ class TestPrediction(Base):
 
 class TrainPrediction(Base):
 
-    __tablename__ = 'train_predictions'
+    __tablename__ = 'predictions'
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -213,7 +213,7 @@ class IndividualImportance(Base):
 
 class TestEvaluation(Base):
 
-    __tablename__ = 'test_evaluations'
+    __tablename__ = 'evaluations'
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)
@@ -233,7 +233,7 @@ class TestEvaluation(Base):
 
 class TrainEvaluation(Base):
 
-    __tablename__ = 'train_evaluations'
+    __tablename__ = 'evaluations'
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(Integer, ForeignKey('model_metadata.models.model_id'), primary_key=True)

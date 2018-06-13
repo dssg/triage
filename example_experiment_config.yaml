@@ -322,7 +322,7 @@ grid_config:
 # MODEL SCORING
 # How each trained model is scored
 #
-# Each entry in 'metric_groups' needs a list of one of the metrics defined in
+# Each entry in 'testing_metric_groups' needs a list of one of the metrics defined in
 # catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!)
 # Depending on the metric, either thresholds or parameters
 #
@@ -338,7 +338,7 @@ grid_config:
 # are sorted
 scoring:
     sort_seed: 5
-    metric_groups:
+    testing_metric_groups:
         -
             metrics: [precision@, recall@]
             thresholds:
@@ -353,7 +353,7 @@ scoring:
                     beta: 0.75
                 -
                     beta: 1.25
-      training_metric_groups:
+    training_metric_groups:
         -
             metrics: [accuracy]
 

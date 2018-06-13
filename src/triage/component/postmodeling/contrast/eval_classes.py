@@ -16,7 +16,7 @@
 # across the top vs rest of a list. It also contains a few utility methods, such as for fetching
 # train and test matrices from an S3 bucket.
 
-# In addition to the modules required here, database credentials must be loaded into environment variables 
+# In addition to the modules required here, database credentials must be loaded into environment variables
 # and fetching matrices from S3 requires AWS credentials in either ~/.boto or environment vars
 
 
@@ -35,7 +35,7 @@ import pandas as pd
 import numpy as np
 from sklearn import metrics
 
-if sys.version_info[0] < 3: 
+if sys.version_info[0] < 3:
     from StringIO import StringIO
 else:
     from io import StringIO
@@ -52,7 +52,7 @@ logging.getLogger('s3transfer').setLevel(logging.WARN)
 def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id',
               title='', x_label='', y_label='', cmap_name='Vega10',
               figsize=[12,6], x_ticks = None, y_ticks = None,
-              legend_loc=None, legend_fontsize=12, 
+              legend_loc=None, legend_fontsize=12,
               label_fontsize=12, title_fontsize=16,
               label_fcn=None):
     """Plot a line plot with each line colored by a category variable.
@@ -78,7 +78,7 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
     """
 
     fig, ax = plt.subplots(1,1,figsize=figsize)
-    
+
     # function for parsing cat_col values into more readable legend lables
     if label_fcn is None and cat_col=='model_type':
         label_fcn = lambda x: x.split('.')[-1]
@@ -113,9 +113,9 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
     # have to set the legend manually since we don't want one legend
     # entry per line on the plot, just one per model type.
 
-    # I had to upgrade matplotlib to get handles working, otherwise 
+    # I had to upgrade matplotlib to get handles working, otherwise
     # had to call like this with plot_labs as a separate list
-    # plt.legend(plot_patches, plot_labs, loc=4, fontsize=10)    
+    # plt.legend(plot_patches, plot_labs, loc=4, fontsize=10)
 
     plot_lines = []
     # plot_labs = []
@@ -134,7 +134,7 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
     ax.set_xlabel(x_label, fontsize=label_fontsize)
 
     plt.show()
-    
+
 
 
 # cut bins in a 0-1 range with nice, sortable names
@@ -185,21 +185,21 @@ def recombine_categorical(df_dest, df_source, prefix, suffix='', entity_col='ent
         cat_col = prefix+suffix+'_CATEGORIES'
         df_dest[cat_col] = np.NaN
         df_dest[cat_col] = df_dest[cat_col].astype('category')
-        
+
         for col in df_source.columns[df_source.columns.str.startswith(prefix) & df_source.columns.str.endswith(suffix)]:
             cat_val = col.replace(prefix, '').replace(suffix, '')
             df_dest[cat_col].cat.add_categories([cat_val], inplace=True)
             cat_entities = df_source.loc[df_source[col]==1][entity_col]
             df_dest.loc[df_dest[entity_col].isin(cat_entities), cat_col] = cat_val
-        
+
         return (df_dest, cat_col)
 
 
 
 class ModelEvaluation(object):
     """The ModelEvaluation class contains methods for looking at the performance of an individual model:
-       ROC curves, precision/recall curves, recall/fpr curves, feature importances, and feature 
-       distributions across the top vs rest of a list. It also contains a few utility methods, such as 
+       ROC curves, precision/recall curves, recall/fpr curves, feature importances, and feature
+       distributions across the top vs rest of a list. It also contains a few utility methods, such as
        for fetching train and test matrices from an S3 bucket
     """
     def __init__(self, model_id, models_table='models'):
@@ -216,7 +216,7 @@ class ModelEvaluation(object):
         # note that older models may not have a train matrix uuid available in the db
         sel = """
                 SELECT m.model_group_id, m.run_time, m.batch_run_time, m.train_end_time,
-                       mg.model_type, mg.model_parameters, mg.model_config,
+                       mg.model_type, mg.hyperparameters, mg.model_config,
                        m.train_matrix_uuid
                 FROM results.{} m
                 JOIN results.model_groups mg USING(model_group_id)
@@ -228,7 +228,7 @@ class ModelEvaluation(object):
         self.model_group_id = m.loc[0, 'model_group_id']
 
         self.model_type = m.loc[0, 'model_type']
-        self.model_parameters = json.loads(m.loc[0, 'model_parameters'])
+        self.hyperparameters = json.loads(m.loc[0, 'hyperparameters'])
         self.model_config = json.loads(m.loc[0, 'model_config'])
 
         self.run_time = m.loc[0, 'run_time']
@@ -308,7 +308,7 @@ class ModelEvaluation(object):
     def _fetch_matrix_from_s3(self, matrix_hash,
                              aws_region='us-west-2', bucket_name='dsapp-economic-development',
                              bucket_path='san_jose_housing/matrices/'):
-        """Utility function to download a matrix from S3 and load it into a pandas DataFrame. 
+        """Utility function to download a matrix from S3 and load it into a pandas DataFrame.
            The matrix is expected to be in CSV format and contain a header row.
 
            Note: Requires AWS credentials in ~/.boto or environment variables.
@@ -323,7 +323,7 @@ class ModelEvaluation(object):
         """
 
         ## Download the matrix from S3 and read into a dataframe
-        
+
         # url_root = 'http://s3-{}.amazonaws.com/'.format(aws_region)
         file_name = '{}.csv'.format(matrix_hash)
         key_name = bucket_path + file_name
@@ -338,11 +338,11 @@ class ModelEvaluation(object):
         mat = pd.read_csv(body_io)
         del(body, body_io)
         return mat
-        
-        
+
+
     # expects aws cred in ~/.boto or environment vars and database creds in environment vars
     def fetch_features_and_pred_matrix(self, entity_col='entity_id', **aws_args):
-        """Fetch the prediction matrix from S3, scores and label values from the database, 
+        """Fetch the prediction matrix from S3, scores and label values from the database,
             and feature importances. The prediction matrix from S3 is merged with the scores
             and labels from the database and the result stored into self.pred_matrix.
 
@@ -355,9 +355,9 @@ class ModelEvaluation(object):
             raise ValueError("Prediction matrix hash undefined. Set it with set_pred_matrix_hash()")
 
         mat = self._fetch_matrix_from_s3(self.pred_matrix_hash, **aws_args)
-        
+
         # fetch the lables and the feature importances from the database
-        
+
         if self.features is None:
             self._get_features()
 
@@ -366,9 +366,9 @@ class ModelEvaluation(object):
 
         # merge the scores onto the feature matrix
         mat = mat.merge(self.preds, on=[entity_col], how='inner', suffixes=('mat', 'pred'))
-        
+
         self.pred_matrix = mat
-        
+
 
     def fetch_train_matrix(self, **aws_args):
         """Fetch the training matrix from S3 and store it in the object.
@@ -439,7 +439,7 @@ class ModelEvaluation(object):
         """Plot an ROC curve for this model and label it with AUC
         """
 
-        # TODO: Allow plot formatting arguments to be passed through 
+        # TODO: Allow plot formatting arguments to be passed through
 
         if self.preds is None:
             self._get_preds()
@@ -464,7 +464,7 @@ class ModelEvaluation(object):
            (esentially just a deconstructed ROC curve) along with optimal bounds.
         """
 
-        # TODO: Allow plot formatting arguments to be passed through 
+        # TODO: Allow plot formatting arguments to be passed through
 
         if self.preds is None:
             self._get_preds()
@@ -505,12 +505,12 @@ class ModelEvaluation(object):
 
         plt.title("fpr-recall at x-proportion")
         plt.show()
-        
+
     def plot_precision_recall_n(self):
         """Plot recall and precision curves against depth into the list.
         """
 
-        # TODO: Allow plot formatting arguments to be passed through 
+        # TODO: Allow plot formatting arguments to be passed through
 
         if self.preds is None:
             self._get_preds()
@@ -527,7 +527,7 @@ class ModelEvaluation(object):
         pr_thresholds = np.insert(pr_thresholds, 0, 0)
         precision_curve = np.insert(precision_curve, 0, precision_curve[0])
         recall_curve = np.insert(recall_curve, 0, recall_curve[0])
-        
+
         pct_above_per_thresh = []
         number_scored = len(y_score)
         for value in pr_thresholds:
@@ -587,7 +587,7 @@ class ModelEvaluation(object):
         grouped.sort_index(axis=1, inplace=True)
         colors = ['#E59141', '#557BA5', 'royalblue', 'darkorchid', 'peru', 'red', 'yellow', 'green', 'darkblue']
         colors = colors[:grouped.shape[1]]
-        ax = grouped.plot(kind='bar', stacked=False, width=0.9, 
+        ax = grouped.plot(kind='bar', stacked=False, width=0.9,
                      color=colors, alpha=1.00,
                      figsize=figsize, fontsize=figfontsize, rot=0)
         ax.set_xlabel('')
@@ -611,7 +611,7 @@ class ModelEvaluation(object):
 
         plt.show()
 
-        
+
         # perform a chi-squared test if we only have 2 groups (e.g. above vs below threshold or by label)
         if grouped.shape[1]==2:
             # chi-squared test for independence above vs below threshold
@@ -627,7 +627,7 @@ class ModelEvaluation(object):
         """Plot the distribution of a continuous variable across a grouping variable,
            for instance, to compare the distribution of a feature across entities
            above and below a score threshold. Additionally, prints summary statistics
-           for each group and, if there are only 2 groups, runs a t-test for independence 
+           for each group and, if there are only 2 groups, runs a t-test for independence
            of the distribution across the groups.
 
         Arguments:
@@ -647,11 +647,11 @@ class ModelEvaluation(object):
 
         # unique group values (np.unique() returns a sorted array)
         grp_vals = np.unique(frame[grp_col])
-        
+
         # histograms
         fig, ax = plt.subplots(figsize=figsize)
         # use numpy to calculate a reasonable set of bins across the entire range
-        # to ensure plots are comparable (using 1/10 the smallest group bins if 
+        # to ensure plots are comparable (using 1/10 the smallest group bins if
         # not specified in the arguments)
         if nbins is None:
             nbins = frame.groupby(grp_col)[grp_col].count().min()/10
@@ -690,7 +690,7 @@ class ModelEvaluation(object):
 
         # perform a t-test if we only have 2 groups (e.g. above vs below threshold or by label)
         if len(grp_vals)==2:
-        
+
             # mean diff, t-stat, p-value
             # could also consider test for difference in distributions?
             t_stat, p_val = scs.ttest_ind(
@@ -709,7 +709,7 @@ class ModelEvaluation(object):
     # TODO: allow the cut params to optionally be either a single cut-point or
     #       a (top, bottom) tuple to ignore entities in the middle
     def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
-                      score_col='score', entity_col='entity_id', 
+                      score_col='score', entity_col='entity_id',
                       cut_n=None, cut_frac=None, cut_score=None,
                       nbins=None, thresh_labels=['Above Threshold', 'Below Threshold'],
                       figsize=[9,5], figtitle=None, xticks_map=None,
@@ -721,7 +721,7 @@ class ModelEvaluation(object):
         the top n (e.g., cut_n=300), top x% (e.g. cut_frac=0.10 for 10%), or a specific score
         cut-off to use (e.g., cut_score=0.4815). Since our matrices have integer values for all
         features, you'll need to specify the type of feature.
-        
+
         Arguments:
             feature_type:   one of ['continuous', 'categorical', 'boolean']
                             note that categorical columns are assumed mutually exclusive
@@ -742,7 +742,7 @@ class ModelEvaluation(object):
             figtitlesize:   font size to use for the plot title
             **aws_args:     arguments to pass through to fetch_features_and_pred_matrix()
         """
-        
+
         if self.pred_matrix is None:
             self.fetch_features_and_pred_matrix(entity_col, **aws_args)
 
@@ -753,31 +753,31 @@ class ModelEvaluation(object):
             df_sorted.sort_values([score_col, 'sort_random'], ascending=[False, False], inplace=True)
 
         # for categoricals, combine columns into one categorical column
-        # NOTE: assumes the categoricals are mutually exclusive 
+        # NOTE: assumes the categoricals are mutually exclusive
         elif feature_type == 'categorical':
             df_sorted = self.pred_matrix[[entity_col, score_col]].copy()
             df_sorted['sort_random'] = np.random.random(len(df_sorted))
             df_sorted.sort_values([score_col, 'sort_random'], ascending=[False, False], inplace=True)
 
             df_sorted, cat_col = recombine_categorical(df_sorted, self.pred_matrix, name_or_prefix, suffix, entity_col)
-                
+
         else:
             raise ValueError('feature_type must be one of continuous, boolean, or categorical')
-        
+
 
         # calculate the other two cut variables depending on which is specified
         if cut_n:
             cut_score = df_sorted[:cut_n][score_col].min()
             cut_frac = 1.0*cut_n / len(df_sorted)
-            
+
         elif cut_frac:
             cut_n = int(np.ceil(len(df_sorted)*cut_frac))
             cut_score = df_sorted[:cut_n][score_col].min()
-        
+
         elif cut_score:
             cut_n = len(df_sorted.loc[df_sorted[score_col] >= cut_score])
             cut_frac = 1.0*cut_n / len(df_sorted)
-        
+
         else:
             raise ValueError('Must specify one of cut_n, cut_frac, or cut_score')
 
@@ -785,21 +785,21 @@ class ModelEvaluation(object):
         df_sorted.reset_index(inplace=True)
         df_sorted['above_thresh'] = df_sorted.index < cut_n
         df_sorted['above_thresh'] = df_sorted['above_thresh'].map({True: thresh_labels[0], False: thresh_labels[1]})
-        
+
 
         # for booleans and categoricals, plot the discrete distributions and calculate chi-squared stats
         if feature_type in ['categorical', 'boolean']:
             if feature_type == 'boolean':
                 cat_col = name_or_prefix
-            
-            self.categorical_plot_and_stats(df_sorted, cat_col, 'above_thresh', 
+
+            self.categorical_plot_and_stats(df_sorted, cat_col, 'above_thresh',
                                             y_axis_pct=True, figsize=figsize, figtitle=figtitle,
                                             xticks_map=xticks_map,
                                             figfontsize=figfontsize, figtitlesize=figtitlesize)
-            
+
         # for continuous variables, plot histograms and calculate some stats
         else:
-            self.continuous_plot_and_stats(df_sorted, name_or_prefix, 'above_thresh', nbins, 
+            self.continuous_plot_and_stats(df_sorted, name_or_prefix, 'above_thresh', nbins,
                                            y_axis_pct=True, figsize=figsize, figtitle=figtitle,
                                            figfontsize=figfontsize, figtitlesize=figtitlesize)
 
@@ -808,8 +808,8 @@ class ModelEvaluation(object):
 
 
 class ModelGroupEvaluation(object):
-    """The ModelGroupEvaluation class contains methods for looking at the performance of a 
-       single model group, including stack ranking plots an score histograms pooled across 
+    """The ModelGroupEvaluation class contains methods for looking at the performance of a
+       single model group, including stack ranking plots an score histograms pooled across
        the models in the group.
     """
     def __init__(self, model_group_id, models_table='models'):
@@ -822,7 +822,7 @@ class ModelGroupEvaluation(object):
 
         # grab model group metadata from the database
         sel = """
-                SELECT model_type, model_parameters, model_config
+                SELECT model_type, hyperparameters, model_config
                 FROM results.model_groups
                 WHERE model_group_id = {}
             """.format(model_group_id)
@@ -832,7 +832,7 @@ class ModelGroupEvaluation(object):
         mg = pd.read_sql(sel, engine)
 
         self.model_type = mg.loc[0, 'model_type']
-        self.model_parameters = json.loads(mg.loc[0, 'model_parameters'])
+        self.hyperparameters = json.loads(mg.loc[0, 'hyperparameters'])
         self.model_config = json.loads(mg.loc[0, 'model_config'])
 
         self.models = self._get_models(engine)
@@ -873,8 +873,8 @@ class ModelGroupEvaluation(object):
         return self.models.sort_values('train_end_time', ascending=False).head(1)
 
     def _get_all_preds(self):
-        """Fetch all of the predictions for entities with labels associated with 
-           models in this group and store them in the object, along with some 
+        """Fetch all of the predictions for entities with labels associated with
+           models in this group and store them in the object, along with some
            ntile cuts and bins on the scores.
         """
 
@@ -904,7 +904,7 @@ class ModelGroupEvaluation(object):
            the score distribution.
 
         Arguments:
-            plot_type (string) -- how to bin the score in the test set for plotting, 
+            plot_type (string) -- how to bin the score in the test set for plotting,
                                   may be ['bins', 'decile', 'vigintile', 'quintile']
             y_axis_pct (bool) -- label the y-axis as a percent (as opposed to as a fraction)
             figsize (tuple) -- figure size to pass to matplotlib
@@ -960,13 +960,13 @@ class ModelGroupEvaluation(object):
 
 
 class ExperimentEvaluation(object):
-    """The ExperimentEvaluation class contains methods for looking at metrics accross model 
-       groups, including Jaccard Similarity of top N lists, plotting evaluation metrics over 
-       time by model type or hyperparameters, and identifying model configurations that are 
+    """The ExperimentEvaluation class contains methods for looking at metrics accross model
+       groups, including Jaccard Similarity of top N lists, plotting evaluation metrics over
+       time by model type or hyperparameters, and identifying model configurations that are
        consistently performing well.
     """
 
-    def __init__(self, model_groups, min_batch_date, 
+    def __init__(self, model_groups, min_batch_date,
                  default_metric=None, default_metric_param=None,
                  models_table='models'):
         self.model_groups = model_groups
@@ -1046,7 +1046,7 @@ class ExperimentEvaluation(object):
         elif hyperparam == 'feature_hash':
             hyperparam_sql = "md5(mg.feature_list::VARCHAR) AS hyperparam,"
         else:
-            hyperparam_sql = "COALESCE(mg.model_parameters->>'{}', mg.model_config->>'{}') AS hyperparam,".format(hyperparam, hyperparam)
+            hyperparam_sql = "COALESCE(mg.hyperparameters->>'{}', mg.model_config->>'{}') AS hyperparam,".format(hyperparam, hyperparam)
 
         return hyperparam_sql
 
@@ -1107,7 +1107,7 @@ class ExperimentEvaluation(object):
         #   * the final select rolls up the raction of models in the group that are within x pp of the best value across train_end_times
         sel = """
                 WITH model_ranks AS (
-                  SELECT m.model_group_id, m.model_id, m.model_type, m.train_end_time, ev.value, 
+                  SELECT m.model_group_id, m.model_id, m.model_type, m.train_end_time, ev.value,
                          {hyperparam_sql}
                          row_number() OVER (PARTITION BY m.train_end_time ORDER BY ev.value DESC, RANDOM()) AS rank
                   FROM results.evaluations ev
@@ -1162,10 +1162,10 @@ class ExperimentEvaluation(object):
         """Generates a plot of the percentage of time that a model group is within X percentage points
            of the best-performing model group using a given metric. At each point in time that a set of
            model groups is evaluated, the performance of the best model is calculated and the difference
-           in performace for all other models found relative to this. An (x,y) point for a given model 
+           in performace for all other models found relative to this. An (x,y) point for a given model
            group on the plot generated by this method means that across all of those tets sets, the model
            from that model group performed within X percentage points of the best model in y% of the test
-           sets. 
+           sets.
 
            The plot will contain a line for each model group in the ExperimentEvaluation object
            representing the cumulative percent of the time that the group is within Xpp of the best group
@@ -1209,7 +1209,7 @@ class ExperimentEvaluation(object):
           **plt_format_args)
 
 
-    def plot_metric_over_time(self, metric=None, metric_param=None, min_support=0, 
+    def plot_metric_over_time(self, metric=None, metric_param=None, min_support=0,
                               hyperparam=None, **plt_format_args):
         """Generate a time-series plot for a given metric, optionally restricting only to observations
            with a certain amount of support (e.g., number of labeled examples above the threshold) and
@@ -1273,7 +1273,7 @@ class ExperimentEvaluation(object):
         df_ts = pd.read_sql(sel, engine)
 
         plot_cats(df_ts, 'evaluation_start_time', 'value', cat_col=cat_col,
-          title='Model Group {} {} Over Time'.format(metric, metric_param), 
+          title='Model Group {} {} Over Time'.format(metric, metric_param),
           x_label='Evaluation Start Time',
           y_label='{} {}'.format(metric, metric_param),
           **plt_format_args)
@@ -1285,7 +1285,7 @@ class ExperimentEvaluation(object):
 
     def best_model_groups(self, bestdist_cut, n_groups=10, info=False):
         """Return the top model groups from the best distance data frame looking at a certain slice
-           of that data set (in terms of the percentage point difference from the best group). 
+           of that data set (in terms of the percentage point difference from the best group).
 
            Note that this method currently only returns the best model groups for the bestdist data
            frame currently stored in the ExperimentEvaluation object, which may vary based on the
@@ -1312,7 +1312,7 @@ class ExperimentEvaluation(object):
 
         print("Returning best distance model groups for parameters: {}".format(str(self.bestdist_params)))
 
-        # look at the desired slice of the data set and rank model groups by percent of time they're that 
+        # look at the desired slice of the data set and rank model groups by percent of time they're that
         # distance from the best group
         cut_sorted = self.df_bestdist[self.df_bestdist['pct_diff']==bestdist_cut].sort_values('pct_of_time', ascending=False)
 
@@ -1330,7 +1330,7 @@ class ExperimentEvaluation(object):
            identified from the best distance criteria.
 
            This method doesn't actually assume a single prediction per model and entity (as is done
-           elsewhere), but rather assumes a single prediction per (model_id, entity_id, as_of_date) 
+           elsewhere), but rather assumes a single prediction per (model_id, entity_id, as_of_date)
            tuple and picks the one with the first as_of_date.
 
         Arguments:
@@ -1416,7 +1416,3 @@ class ExperimentEvaluation(object):
         sns.heatmap(df_jac, cmap='Greens', vmin=0, vmax=1, annot=True, linewidth=0.1)
 
         engine.dispose()
-
-
-
-

@@ -211,7 +211,7 @@ class ModelTrainer(object):
             model = Model(
                 model_hash=model_hash,
                 model_type=class_path,
-                model_parameters=parameters,
+                hyperparameters=parameters,
                 model_group_id=model_group_id,
                 experiment_hash=self.experiment_hash,
                 model_size=model_size,

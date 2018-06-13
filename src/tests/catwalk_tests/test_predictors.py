@@ -87,7 +87,7 @@ def test_predictor():
                 records = [
                     row for row in
                     db_engine.execute('''select entity_id, as_of_date
-                    from {}_results.{}_predictions
+                    from {}_results.predictions
                     join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
                 ]
                 assert len(records) == 2
@@ -143,7 +143,7 @@ def test_predictor():
                 records = [
                     row for row in
                     db_engine.execute('''select entity_id, as_of_date
-                    from {}_results.{}_predictions
+                    from {}_results.predictions
                     join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
                 ]
                 assert len(records) == 4
@@ -212,7 +212,7 @@ def test_predictor_composite_index():
             records = [
                 row for row in
                 db_engine.execute('''select entity_id, as_of_date
-                from {}_results.{}_predictions
+                from {}_results.predictions
                 join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
             ]
             assert len(records) == 4
@@ -259,7 +259,7 @@ def test_predictor_get_train_columns():
                 records = [
                     row for row in
                     db_engine.execute('''select entity_id, as_of_date
-                    from {}_results.{}_predictions
+                    from {}_results.predictions
                     join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
                 ]
                 assert len(records) > 0
