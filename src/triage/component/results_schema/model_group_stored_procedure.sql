@@ -5,16 +5,17 @@ CREATE TABLE model_metadata.model_groups
 (
   model_group_id    SERIAL PRIMARY KEY,
   model_type        TEXT,
-  model_parameters  JSONB,
+  hyperparameters   JSONB,
   feature_list      TEXT []
   model_config		JSONB
 );
 -----------
 populates the table and returns the IDs
 */
-CREATE OR REPLACE FUNCTION public.get_model_group_id(in_model_type        TEXT, in_model_parameters JSONB,
-                                              in_feature_list      TEXT [],
-                                              in_model_config      JSONB)
+CREATE OR REPLACE FUNCTION public.get_model_group_id(in_model_type        TEXT,
+                                             in_hyperparameters   JSONB,
+                                             in_feature_list      TEXT [],
+                                             in_model_config      JSONB)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -29,13 +30,13 @@ BEGIN
   FROM model_metadata.model_groups
   WHERE
     model_type = in_model_type
-    AND model_parameters = in_model_parameters
+    AND hyperparameters = in_hyperparameters
     AND feature_list = ARRAY(Select unnest(in_feature_list) ORDER BY 1)
     AND model_config = in_model_config ;
   IF NOT FOUND
   THEN
-    INSERT INTO model_metadata.model_groups (model_group_id, model_type, model_parameters, feature_list, model_config)
-    VALUES (DEFAULT, in_model_type, in_model_parameters, ARRAY(Select unnest(in_feature_list) ORDER BY 1), in_model_config)
+    INSERT INTO model_metadata.model_groups (model_group_id, model_type, hyperparameters, feature_list, model_config)
+    VALUES (DEFAULT, in_model_type, in_hyperparameters, ARRAY(Select unnest(in_feature_list) ORDER BY 1), in_model_config)
     RETURNING model_group_id
       INTO model_group_return_id;
   END IF;
