@@ -28,6 +28,8 @@ def feature_list(feature_dictionary):
 
     Returns: sorted list of feature names
     """
+    if not feature_dictionary:
+        return []
     return sorted(
         functools.reduce(
             operator.concat,

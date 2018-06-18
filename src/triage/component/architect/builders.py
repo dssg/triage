@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 from triage.component import metta
 from triage.component.results_schema import Matrix
+from triage.database_reflection import table_has_data
 
 
 class BuilderBase(object):
@@ -189,7 +190,6 @@ class BuilderBase(object):
             timespan=label_timespan,
             times=as_of_time_strings
         )
-
         return query
 
     def _all_valid_entity_dates_query(self, state, as_of_time_strings):
@@ -204,6 +204,8 @@ class BuilderBase(object):
             state_string=state,
             times=as_of_time_strings
         )
+        if not table_has_data(self.db_config['sparse_state_table_name'], self.db_engine):
+            raise ValueError('Required sparse state table does not exist')
         return query
 
 
@@ -243,6 +245,17 @@ class CSVBuilder(BuilderBase):
         :rtype: none
         """
         logging.info('popped matrix %s build off the queue', matrix_uuid)
+        if not table_has_data(self.db_config['sparse_state_table_name'], self.db_engine):
+            logging.warning('cohort table is not populated, cannot build matrix')
+            return
+        if not table_has_data("{}.{}".format(
+                self.db_config['labels_schema_name'],
+                self.db_config['labels_table_name']
+        ),
+                              self.db_engine):
+            logging.warning('labels table is not populated, cannot build matrix')
+            return
+
         matrix_filename = os.path.join(
             matrix_directory,
             '{}.csv'.format(matrix_uuid)
@@ -268,15 +281,22 @@ class CSVBuilder(BuilderBase):
         logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
         # make the entity time table and query the labels and features tables
         logging.info('Making entity date table for matrix %s', matrix_uuid)
-        entity_date_table_name = self.make_entity_date_table(
-            as_of_times,
-            label_name,
-            label_type,
-            matrix_metadata['state'],
-            matrix_type,
-            matrix_uuid,
-            matrix_metadata['label_timespan']
-        )
+        try:
+            entity_date_table_name = self.make_entity_date_table(
+                as_of_times,
+                label_name,
+                label_type,
+                matrix_metadata['state'],
+                matrix_type,
+                matrix_uuid,
+                matrix_metadata['label_timespan']
+            )
+        except ValueError as e:
+            logging.warning(
+                'Not able to build entity-date table due to: %s - will not build matrix',
+                str(e)
+            )
+            return
         logging.info('Extracting feature group data from database into file '
                      'for matrix %s', matrix_uuid)
         features_csv_names = self.write_features_data(

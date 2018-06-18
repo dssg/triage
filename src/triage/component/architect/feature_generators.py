@@ -564,6 +564,15 @@ class FeatureGenerator(object):
             table_tasks[imp_tbl_name] = {}
             return table_tasks
 
+        if not aggregation.state_table:
+            logging.warning(
+                'No state table available to aggregation, cannot create imputation table for %s',
+                imp_tbl_name
+            )
+            table_tasks[imp_tbl_name] = {}
+            return table_tasks
+
+
         # excute query to find columns with null values and create lists of columns
         # that do and do not need imputation when creating the imputation table
         with self.db_engine.begin() as conn:

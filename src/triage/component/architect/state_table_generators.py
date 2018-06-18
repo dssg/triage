@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from triage.component.architect.database_reflection import table_has_data
+from triage.database_reflection import table_row_count
 
 
 DEFAULT_ACTIVE_STATE = 'active'
@@ -70,6 +71,10 @@ class StateTableGeneratorBase(ABC):
             raise ValueError(self._empty_table_message(as_of_dates))
 
         logging.info('Sparse states table generated at %s', self.sparse_table_name)
+        logging.info('Generating stats on %s', self.sparse_table_name)
+        logging.info('Row count of %s: %s',
+                     self.sparse_table_name,
+                     table_row_count(self.sparse_table_name, self.db_engine))
 
     def clean_up(self):
         self.db_engine.execute(

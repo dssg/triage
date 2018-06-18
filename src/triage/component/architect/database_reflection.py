@@ -68,14 +68,14 @@ def table_exists(table_name, db_engine):
 def table_has_data(table_name, db_engine):
     """Check whether the table contains any data
 
-    The table is expected to exist.
-
     Args:
         table_name (string) A table name (with schema)
         db_engine (sqlalchemy.engine)
 
     Returns: (boolean) Whether or not the table has any data
     """
+    if not table_exists(table_name, db_engine):
+        return False
     results = [
         row for row in
         db_engine.execute('select * from {} limit 1'.format(table_name))

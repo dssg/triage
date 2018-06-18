@@ -68,20 +68,39 @@ def table_exists(table_name, db_engine):
 def table_has_data(table_name, db_engine):
     """Check whether the table contains any data
 
-    The table is expected to exist.
-
     Args:
         table_name (string) A table name (with schema)
         db_engine (sqlalchemy.engine)
 
     Returns: (boolean) Whether or not the table has any data
     """
+    if not table_exists(table_name, db_engine):
+        return False
     result = [
         row for row in
         db_engine.execute('select 1 from {} limit 1'.format(table_name))
     ]
 
     return any(result)
+
+
+def table_row_count(table_name, db_engine):
+    """Return the length of the table.
+
+    The table is expected to exist.
+
+    Args:
+        table_name (string) A table name (with schema)
+        db_engine (sqlalchemy.engine)
+
+    Returns: (int) The number of rows in the table
+    """
+    result = [
+        row for row in
+        db_engine.execute('select count(*) from {}'.format(table_name))
+    ]
+
+    return result[0]
 
 
 def table_has_column(table_name, column, db_engine):
@@ -114,3 +133,9 @@ def column_type(table_name, column, db_engine):
         sqlalchemy.types.Boolean
     """
     return type(reflected_table(table_name, db_engine).columns[column].type)
+
+
+def schema_tables(schema_name, db_engine):
+    meta = MetaData(schema=schema_name, bind=db_engine)
+    meta.reflect()
+    return meta.tables
