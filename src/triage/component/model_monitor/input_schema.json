@@ -1,0 +1,100 @@
+{
+    "models": [
+        {
+            "name": "model_id",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "model_group_id",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "train_end_date",
+            "nullable": "false",
+            "dtype": "str"
+        }
+    ],
+    "model_groups": [
+        {
+            "name": "model_group_id",
+            "nullable": "false",
+            "dtype": "str"
+        },
+        {
+            "name": "model_type",
+            "nullable": "false",
+            "dtype": "str"
+        },
+        {
+            "name": "model_parameters",
+            "nullable": "true",
+            "dtype": "str"
+        }
+    ],
+    "predictions": [
+        {
+            "name": "model_id",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "entity_id",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "as_of_date",
+            "nullable": "false",
+            "dtype": "str"
+        },
+        {
+            "name": "score",
+            "nullable": "true",
+            "dtype": "float"
+        },
+        {
+            "name": "label_value",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "rank_abs",
+            "nullable": "true",
+            "dtype": "int"
+        },
+        {
+            "name": "rank_pct",
+            "nullable": "true",
+            "dtype": "float"
+        }
+    ],
+    "feature_importances": [
+        {
+            "name": "model_id",
+            "nullable": "false",
+            "dtype": "int"
+        },
+        {
+            "name": "feature",
+            "nullable": "false",
+            "dtype": "str"
+        },
+        {
+            "name": "feature_importance",
+            "nullable": "true",
+            "dtype": "float"
+        },
+        {
+            "name": "rank_abs",
+            "nullable": "true",
+            "dtype": "int"
+        },
+        {
+            "name": "rank_pct",
+            "nullable": "true",
+            "dtype": "float"
+        }
+    ]
+}

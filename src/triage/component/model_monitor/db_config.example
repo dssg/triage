@@ -1,0 +1,8 @@
+
+# SERVER CONFIG
+PG_PORT: 5432
+PG_HOST:  "pg_host"
+PG_DATABASE:  "pg_db"
+PG_USER: "pg_user"
+PG_PASSWORD:  "pg_pwd"
+PG_SCHEMA_SEARCH_PATH: "production"
