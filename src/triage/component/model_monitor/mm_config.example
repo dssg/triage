@@ -1,0 +1,52 @@
+## EXAMPLE CONFIGURATION FILE
+
+# Models and model groups - which models do you want to monitor?
+model_targets:
+    # specify either a subset of model_group_ids...
+    model_groups: [1, 2, 3]
+    # or specify all model groups by setting below to True
+    model_groups_no_subset: False
+
+    # specify either a subset of model_ids...
+    model_ids: []
+    # or specify all model_ids by setting below to True
+    model_groups_no_subset: True
+
+# Model group differences - how do the model groups vary?
+model_group_differences:
+    # for each model_type...
+    sklearn.tree.DecisionTreeClassifier:
+        # ...define tracked_parameters
+        tracked_parameters: ['criterion', 'max_depth']
+
+    sklearn.ensemble.RandomForestClassifier:
+        tracked_parameters: ['criterion', 'max_features']
+
+# Prediction metrics - which prediction metrics do you want to monitor?
+prediction_metrics:
+
+    # specify comparison intervals for each metric below
+    compare_intervals: ['1d', '10d','30d', '60d']
+
+    # for subsets of entities...
+    subset_entities:
+        # for the top-scoring entities...
+        top_entities:
+            # define thresholds for the top k entities
+            # NOTE: k > 1 values are absolute ranks, 0 < k < 1 values are percentile ranks
+            thresholds: [50, 100, .5, .10]
+            # define metrics for the top k entities
+            metrics: ['spearman', 'jaccard']
+
+        # for the bottom-scoring entities...
+        bottom_entities:
+            # define thresholds for the bottom k entities
+            # NOTE: k > 1 values are absolute ranks, 0 < k < 1 values are percentile ranks
+            thresholds: [50, 100, .5, .10]
+            # define metrics for the bottom k entities
+            metrics: ['spearman', 'jaccard']
+
+    # for all entities...
+    all_entities:
+        # define metrics to apply to all entities
+        metrics: ['spearman']
