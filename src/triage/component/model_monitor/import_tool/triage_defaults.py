@@ -17,7 +17,7 @@ class TriageImportTool(object):
 
         self.model_group_id_params = {
             'model_groups': self._mm_config['model_targets']['model_groups'],
-            'no_model_group_subset': self._mm_config['model_targets']['no_model_group_subset']'
+            'no_model_group_subset': self._mm_config['model_targets']['no_model_group_subset']
         }
 
         self.model_id_params = {
@@ -72,7 +72,7 @@ class TriageImportTool(object):
         # execute
         return pd.read_sql(query, con=self._engine, params=params)
 
-    def select_model_groups(self, start_date, end_date):
+    def select_model_groups(self):
         # fetch query
         query = self._read_triage_query('predictions')
 
