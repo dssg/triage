@@ -1,7 +1,6 @@
-import numpy as np
 import pandas as pd
 import itertools
-from ..metrics import jaccard_similarity, spearman_rank_corr, kendall_tau
+from triage.component.model_monitor.calc.metrics import jaccard_similarity, spearman_rank_corr, kendall_tau
 
 
 def extract_date_lags(df, lag, join_keys=('model_id',)):
@@ -131,8 +130,3 @@ def create_prediction_stability_calcs(prediction_df,
                                                  'metric_value'])
 
         return odf
-
-
-
-
-

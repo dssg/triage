@@ -5,12 +5,12 @@ model_targets:
     # specify either a subset of model_group_ids...
     model_groups: [1, 2, 3]
     # or specify all model groups by setting below to True
-    model_groups_no_subset: False
+    no_model_group_subset: False
 
     # specify either a subset of model_ids...
     model_ids: []
     # or specify all model_ids by setting below to True
-    model_groups_no_subset: True
+    no_model_id_subset: True
 
 # Model group differences - how do the model groups vary?
 model_group_differences:

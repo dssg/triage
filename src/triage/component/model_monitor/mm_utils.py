@@ -1,4 +1,5 @@
 import os
+import yaml
 import inspect
 import logging
 import datetime
@@ -45,3 +46,11 @@ def get_default_args(obj_name):
     return {k: v.default
             for k, v in signature.parameters.items()
             if v.default is not inspect.Parameter.empty}
+
+
+def get_mm_config(fpath=None):
+    if not fpath:
+        fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             "mm_config.yaml")
+    with open(fpath, mode='r') as f:
+        return yaml.load(f)

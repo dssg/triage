@@ -43,3 +43,10 @@ def spearman_rank_corr(x1, x2, weights=None):
         rank2 = stats.mstats.rankdata(x2)
         return weighted_corr(rank1, rank2, weights)
 
+
+def kendall_tau(x1, x2, weights=None):
+    if not weights:
+        return stats.kendalltau(x1, x2)
+    else:
+        raise NotImplementedError("Weighted Kendalls tau not implemented yet")
+
