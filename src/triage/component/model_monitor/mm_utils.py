@@ -33,7 +33,14 @@ def get_logger(log_level='DEBUG'):
     return logger
 
 
-def get_default_args(obj):
+def get_default_args(obj_name):
+    # dynamically parse and import the target object
+    module_name = '.'.join(obj_name.split('.')[:-1])
+    class_name = obj_name.split('.')[-1]
+    mod = __import__(module_name, fromlist=[class_name])
+    obj = getattr(mod, class_name)
+
+    # inspect and return components
     signature = inspect.signature(obj)
     return {k: v.default
             for k, v in signature.parameters.items()

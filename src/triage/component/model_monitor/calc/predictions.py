@@ -4,9 +4,6 @@ import itertools
 from ..metrics import jaccard_similarity, spearman_rank_corr, kendall_tau
 
 
-# if querying directly from SQL results schema, then apply date parsing there
-# else, apply to full dataframe
-
 def extract_date_lags(df, lag, join_keys=('model_id',)):
     # create timedelta from lag
 
