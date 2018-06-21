@@ -7,31 +7,35 @@ Store results of modeling runs in a relational database
 
 `pip install git+https://github.com/dssg/triage.git`
 
-2. Create a YAML file with your database credentials (see example_db_config.yaml), or an environment variable 'DBURL' with a connection string. The database must be created already.
+2. You can do the initial schema and table creation a couple of different ways, with a couple of different options for passing database credentials.
 
-3. Call 'upgrade_db' function from Python console or script
+	- *Triage cli script*. Assuming you have triage installed from pip: `triage upgrade_db -d dbcredentials.yaml`, or just `triage upgrade_db` if you have a database credentials file at `database.yaml` (the default)
+	- *From Python code*. If you are in a Python console or notebook, you can call `upgrade_db` with either sqlalchemy engine pointing to your database, or a filename similar to what's used to launch the cli script.
 
-```
->>> from triage.component.results_schema import upgrade_db
->>> upgrade_db('my_db_config.yaml')
-```
+	```
+	>>> from triage.component.results_schema import upgrade_db
+	>>> upgrade_db(engine)
+	>>> upgrade_db('database.yaml')
+	```
 
 This command will create a 'results' schema and the necessary tables.
 
 
 ## Modifying the schema
 
-[Alembic](http://alembic.zzzcomputing.com/en/latest/tutorial.html) is a schema migrations library written in Python. It allows us to auto-generate migrations to run incremental database schema changes, such as adding or removing a column. This is done by comparing the definition of a schema in code with that of a live database. There are many valid ways to create migrations, which you can read about in [Alembic's documentation](http://alembic.zzzcomputing.com/en/latest/tutorial.html). But here is a common workflow we will use to modify the schema.
+To make modifications to the schema, you should be working in a cloned version of the repository.
 
-1. Have a candidate database for comparison. You can use a toy database for this that you upgrade to the current master, or use your project database if the results schema has not been manually modified.
+[Alembic](http://alembic.zzzcomputing.com/en/latest/tutorial.html) is a schema migrations library written in Python. It allows us to auto-generate migrations to run incremental database schema changes, such as adding or removing a column. This is done by comparing the definition of a schema in code with that of a live database. There are many valid ways to create migrations, which you can read about in [Alembic's documentation](http://alembic.zzzcomputing.com/en/latest/tutorial.html). But here is a common workflow we will use to modify the schema. Throughout, we'll use a wrapper script, `manage alembic`, bundled in the triage repository that wraps calls to the 'alembic' command with the correct options for running within triage. We'll only have a few examples here, but this script just passes all arguments to the 'alembic' command so if you know your way around alembic you can perform whatever operations you want there.
+
+1. Create a candidate database for comparison if you don't have one already. You can use a toy database for this, or use your project database if the results schema has not been manually modified. Populate `database.yaml` in the repo root with the credentials, and upgrade it to the current HEAD: `manage alembic upgrade head`
 
 2. Make the desired modifications to [results_schema.schema](src/triage/component/results_schema/schema.py).
 
-3. From within the results schema directory, autogenerate a migration: `PYTHONPATH='../../../' alembic -c results_schema/alembic.ini -x db_config_file=my_db_config.yaml revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
+3. From within the results schema directory, autogenerate a migration: `manage alembic revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
 
 4. Inspect the file generated in step 3 and make sure that the changes it is suggesting make sense. Make any modifications you want; the autogenerate functionality is just meant as a guideline.
 
-5. Upgrade the database: `PYTHONPATH='../../../' alembic -c alembic.ini -x db_config_file=my_db_config.yaml upgrade head`
+5. Upgrade the database: `manage alembic upgrade head`
 
 6. Update the [factories file](src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 

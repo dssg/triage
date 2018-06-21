@@ -28,7 +28,7 @@ from triage.component.architect.state_table_generators import (
     StateTableGeneratorNoOp
 )
 from triage.component.timechop import Timechop
-from triage.component.catwalk.db import ensure_db
+from triage.component.results_schema import upgrade_db
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
@@ -92,7 +92,7 @@ class ExperimentBase(ABC):
         self.matrix_store_class = CSVMatrixStore  # can't be configurable until Architect obeys
         self.project_path = project_path
         self.replace = replace
-        ensure_db(self.db_engine)
+        upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = 'features'
         if project_path:
