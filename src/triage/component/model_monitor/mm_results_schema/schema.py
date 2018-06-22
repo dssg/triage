@@ -26,16 +26,6 @@ event.listen(
     DDL("CREATE SCHEMA IF NOT EXISTS model_monitor;")
 )
 
-for sql_function in DEFAULT_SQL_FUNCTIONS:
-    with open(os.path.join(DEFAULT_QUERY_LOC, sql_function), mode='r') as f:
-        sql_function_def = f.read()
-
-    event.listen(
-        Base.metadata,
-        'before_create',
-        DDL(sql_function_def)
-    )
-
 
 class ModelGroupParameters(Base):
     __tablename__ = 'model_group_parameters'
@@ -58,7 +48,7 @@ class ModelParameters(Base):
 
 
 class PredictionMetricDefs(Base):
-    __tablename__ = 'prediction_metric_def'
+    __tablename__ = 'prediction_metric_defs'
     __table_args = {'schema': 'model_monitor'}
 
     prediction_metric_id = Column(Integer, primary_key=True)
@@ -80,7 +70,7 @@ class PredictionMetrics(Base):
 
 
 class FeatureImportanceMetricDefs(Base):
-    __tablename__ = 'prediction_metric_def'
+    __tablename__ = 'feature_metric_defs'
     __table_args = {'schema': 'model_monitor'}
 
     feature_metric_id = Column(Integer, primary_key=True)
@@ -92,7 +82,7 @@ class FeatureImportanceMetricDefs(Base):
 
 
 class FeatureImportanceMetrics(Base):
-    __tablename__ = 'prediction_metrics'
+    __tablename__ = 'feature_metrics'
     __table_args__ = {'schema': 'model_monitor'}
 
     feature_metric_id = Column(Integer, primary_key=True)
