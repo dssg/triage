@@ -55,7 +55,7 @@ setup(
     include_package_data=True,
     install_requires=REQUIREMENTS,
     entry_points={
-        'console_scripts': ['triage = triage.manage:execute'],
+        'console_scripts': ['triage = triage.cli:execute'],
     },
     extras_require={'rq': RQ_REQUIREMENTS},
     license=LICENSE_PATH.read_text(),
