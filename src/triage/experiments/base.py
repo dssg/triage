@@ -7,7 +7,11 @@ from descriptors import cachedproperty
 from timeout import timeout
 from sqlalchemy.engine import Engine
 
-from triage.component.architect.label_generators import LabelGenerator, DEFAULT_LABEL_NAME
+from triage.component.architect.label_generators import (
+    LabelGenerator,
+    LabelGeneratorNoOp,
+    DEFAULT_LABEL_NAME,
+)
 
 from triage.component.architect.features import (
     FeatureGenerator,
@@ -20,7 +24,8 @@ from triage.component.architect.builders import HighMemoryCSVBuilder
 from triage.component.architect.state_table_generators import (
     StateTableGeneratorFromDense,
     StateTableGeneratorFromEntities,
-    StateTableGeneratorFromQuery
+    StateTableGeneratorFromQuery,
+    StateTableGeneratorNoOp
 )
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
@@ -69,7 +74,7 @@ class ExperimentBase(ABC):
         model_storage_class=FSModelStorageEngine,
         project_path=None,
         replace=True,
-        cleanup=True,
+        cleanup=False,
         cleanup_timeout=None,
     ):
         self._check_config_version(config)
@@ -161,6 +166,7 @@ class ExperimentBase(ABC):
             )
         else:
             logging.warning('cohort_config missing or unrecognized. Without a cohort, you will not be able to make matrices or perform feature imputation.')
+            self.state_table_generator = StateTableGeneratorNoOp()
 
         if 'label_config' in self.config:
             self.label_generator = LabelGenerator(
@@ -169,6 +175,7 @@ class ExperimentBase(ABC):
                 db_engine=self.db_engine,
             )
         else:
+            self.label_generator = LabelGeneratorNoOp()
             logging.warning('label_config missing or unrecognized. Without labels, you will not be able to make matrices.')
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
@@ -333,10 +340,7 @@ class ExperimentBase(ABC):
 
         """
         logging.info('Creating collate aggregations')
-        if hasattr(self, 'state_table_generator'):
-            cohort_table = self.state_table_generator.sparse_table_name
-        else:
-            cohort_table = None
+        cohort_table = self.state_table_generator.sparse_table_name
         if 'feature_aggregations' not in self.config:
             logging.warning('No feature_aggregation config is available')
             return []
@@ -475,9 +479,6 @@ class ExperimentBase(ABC):
 
         Results are stored in the database, not returned
         """
-        if not hasattr(self, 'label_generator'):
-            logging.warning('No label configuration is available, so no labels will be created')
-            return
         self.label_generator.generate_all_labels(
             self.labels_table_name,
             self.all_as_of_times,
@@ -485,9 +486,6 @@ class ExperimentBase(ABC):
         )
 
     def generate_cohort(self):
-        if not hasattr(self, 'state_table_generator'):
-            logging.warning('No cohort configuration is available, so no cohort will be created')
-            return
         self.state_table_generator.generate_sparse_table(
             as_of_dates=self.all_as_of_times
         )
@@ -610,13 +608,15 @@ class ExperimentBase(ABC):
             self.generate_matrices()
         finally:
             if self.cleanup:
-                logging.info('Cleaning up state table')
-                with timeout(self.cleanup_timeout):
-                    if hasattr(self, 'state_table_generator'):
-                        self.state_table_generator.clean_up()
-                    self.db_engine.execute('drop table if exists {}'.format(self.labels_table_name))
+                self.clean_up_tables()
 
         self.train_and_test_models()
+
+    def clean_up_tables(self):
+        logging.info('Cleaning up state and labels tables')
+        with timeout(self.cleanup_timeout):
+            self.state_table_generator.clean_up()
+            self.label_generator.clean_up(self.labels_table_name)
 
     def run(self):
         try:

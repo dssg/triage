@@ -294,7 +294,7 @@ class CSVBuilder(BuilderBase):
         except ValueError as e:
             logging.warning(
                 'Not able to build entity-date table due to: %s - will not build matrix',
-                str(e)
+                exc_info=True
             )
             return
         logging.info('Extracting feature group data from database into file '

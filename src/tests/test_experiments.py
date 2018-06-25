@@ -53,7 +53,8 @@ def test_simple_experiment(experiment_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir, 'inspections')
+                project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
             ).run()
 
         # assert
@@ -152,6 +153,7 @@ def test_restart_experiment(experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True
             )
             experiment.run()
 
@@ -163,6 +165,7 @@ def test_restart_experiment(experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
                 replace=False
             )
             experiment.make_entity_date_table = mock.Mock()
