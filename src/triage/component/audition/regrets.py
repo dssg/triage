@@ -65,7 +65,8 @@ class SelectionRulePicker(object):
                 bound_selection_rule,
                 model_group_ids,
                 train_end_time
-            )[0]
+            )
+            model_group_id = model_group_id[0]
             choice = df[
                 (df['model_group_id'] == model_group_id) &
                 (df['train_end_time'] == train_end_time) &
@@ -110,8 +111,9 @@ class SelectionRulePlotter(object):
     Args:
         selection_rule_picker (.SelectionRulePicker)
     """
-    def __init__(self, selection_rule_picker):
+    def __init__(self, selection_rule_picker, directory=None):
         self.selection_rule_picker = selection_rule_picker
+        self.directory = directory
 
     def plot_bounds(self, metric, parameter):
         """Compute the plot bounds for a given metric and parameter
@@ -218,6 +220,11 @@ class SelectionRulePlotter(object):
                      .format(regret_metric, regret_parameter))
         (plot_min, plot_max) = self.plot_bounds(regret_metric, regret_parameter)
 
+        if self.directory:
+            path_to_save = self.directory + f'/regret_distance_from_best_rules_{regret_metric}{regret_parameter}.png'
+        else:
+            path_to_save = self.directory
+
         plot_cats(
             frame=df_regrets,
             x_col='regret',
@@ -227,5 +234,6 @@ class SelectionRulePlotter(object):
             title=plt_title,
             x_label='distance from best {} next time'.format(regret_metric),
             y_label='fraction of models',
-            x_lim=self.plot_bounds(regret_metric, regret_parameter)
+            x_lim=self.plot_bounds(regret_metric, regret_parameter),
+            path_to_save=path_to_save
         )

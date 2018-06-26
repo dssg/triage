@@ -9,7 +9,7 @@ from .utils import str_in_sql
 
 class ModelGroupPerformancePlotter(object):
 
-    def __init__(self, distance_from_best_table):
+    def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the performance of a model group over time
 
         Args:
@@ -17,6 +17,7 @@ class ModelGroupPerformancePlotter(object):
                 A pre-populated distance-from-best database table
         """
         self.distance_from_best_table = distance_from_best_table
+        self.directory = directory
 
     def plot_all(self, metric_filters, model_group_ids, train_end_times):
         """For each metric, plot the value of that metric over time
@@ -45,7 +46,8 @@ class ModelGroupPerformancePlotter(object):
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
                 df_metric=df,
-                train_end_times=train_end_times
+                train_end_times=train_end_times,
+                directory=self.directory
             )
 
     def generate_plot_data(self, metric, parameter, model_group_ids, train_end_times):
@@ -97,7 +99,7 @@ class ModelGroupPerformancePlotter(object):
         ]
         return df
 
-    def plot(self, metric, parameter, df_metric, train_end_times, **plt_format_args):
+    def plot(self, metric, parameter, df_metric, train_end_times, directory, **plt_format_args):
         """Draw the plot representing the given data
 
         Arguments:
@@ -126,6 +128,10 @@ class ModelGroupPerformancePlotter(object):
                     '{} (given time) does not equal {} (matrix time)'
                     .format(given_time_as_numpy, matrix_time)
                 )
+        if directory:
+            path_to_save = directory + f'/metric_over_time_{metric}{parameter}.png'
+        else:
+            path_to_save = directory
 
         plot_cats(
             frame=df_metric,
@@ -137,5 +143,6 @@ class ModelGroupPerformancePlotter(object):
             x_label='train end time',
             y_label='value of {}'.format(metric),
             x_ticks=train_end_times,
+            path_to_save=path_to_save,
             **plt_format_args
         )

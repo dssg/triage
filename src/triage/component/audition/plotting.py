@@ -120,11 +120,11 @@ def _no_op(arg):
 
 
 def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id',
-              highlight_grp=None, title='', x_label='', y_label='', cmap_name='Vega10',
+              highlight_grp=None, title='', x_label='', y_label='', cmap_name='tab10',
               figsize=[12, 6], x_ticks=None, y_ticks=None, x_lim=None, y_lim=None,
               legend_loc=None, legend_fontsize=12,
               label_fontsize=12, title_fontsize=16,
-              label_fcn=None):
+              label_fcn=None, path_to_save=None):
     """Plot a line plot with each line colored by a category variable.
 
     Arguments:
@@ -192,3 +192,6 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
     )
 
     plt.show()
+
+    if path_to_save:
+        plt.savefig(path_to_save)
