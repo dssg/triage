@@ -121,6 +121,6 @@ class FeatureGroupCreator(object):
 
                 subsets.append(subset)
         if not any(subset for subset in subsets if any(subset)):
-            raise Exception('No matching feature groups found!')
+            logging.warning('No matching feature groups available.')
         logging.info('Found %s total feature subsets', len(subsets))
         return subsets

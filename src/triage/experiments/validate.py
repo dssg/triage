@@ -20,13 +20,22 @@ from triage.validation_primitives import (
 
 class Validator(object):
 
-    def __init__(self, db_engine=None):
+    def __init__(self, db_engine=None, strict=True):
         self.db_engine = db_engine
+        self.strict = strict
 
+    def run(self, *args, **kwargs):
+        try:
+            self._run(*args, **kwargs)
+        except ValueError as e:
+            if self.strict:
+                raise ValueError(e)
+            else:
+                logging.warning('Validation error hit, not running in strict mode so continuing on: %s', str(e))
 
 class TemporalValidator(Validator):
 
-    def run(self, temporal_config):
+    def _run(self, temporal_config):
         def dt_from_str(dt_str):
             return datetime.strptime(dt_str, '%Y-%m-%d')
         splits = []
@@ -257,7 +266,7 @@ class FeatureAggregationsValidator(Validator):
         self._validate_groups(aggregation_config['groups'])
         self._validate_imputations(aggregation_config)
 
-    def run(self, feature_aggregation_config):
+    def _run(self, feature_aggregation_config):
         """Validate a feature aggregation config applied to this object
 
         The validations range from basic type checks, key presence checks,
@@ -312,7 +321,7 @@ class LabelConfigValidator(Validator):
             The key must be either absent, or a boolean value True or False
             Triage only supports binary labels at this time.'''.format(missing_label_flag)))
 
-    def run(self, label_config):
+    def _run(self, label_config):
         if not label_config:
             raise ValueError(dedent('''
             Section: label_config -
@@ -329,7 +338,7 @@ class LabelConfigValidator(Validator):
 
 
 class CohortConfigValidator(Validator):
-    def run(self, cohort_config):
+    def _run(self, cohort_config):
         mutex_keys = set(['dense_states', 'entities_table', 'query'])
         available_keys = mutex_keys | set(['name'])
         used_keys = set(cohort_config.keys())
@@ -397,7 +406,7 @@ class CohortConfigValidator(Validator):
 
 
 class FeatureGroupDefinitionValidator(Validator):
-    def run(self, feature_group_definition, feature_aggregation_config):
+    def _run(self, feature_group_definition, feature_aggregation_config):
         if not isinstance(feature_group_definition, dict):
             raise ValueError(dedent('''
             Section: feature_group_definition -
@@ -448,7 +457,7 @@ class FeatureGroupDefinitionValidator(Validator):
 
 
 class FeatureGroupStrategyValidator(Validator):
-    def run(self, feature_group_strategies):
+    def _run(self, feature_group_strategies):
         if not isinstance(feature_group_strategies, list):
             raise ValueError(dedent('''
             Section: feature_group_strategies -
@@ -467,7 +476,7 @@ class FeatureGroupStrategyValidator(Validator):
 
 
 class UserMetadataValidator(Validator):
-    def run(self, user_metadata):
+    def _run(self, user_metadata):
         if not isinstance(user_metadata, dict):
             raise ValueError(dedent('''
             Section: user_metadata -
@@ -475,7 +484,7 @@ class UserMetadataValidator(Validator):
 
 
 class ModelGroupKeysValidator(Validator):
-    def run(self, model_group_keys, user_metadata):
+    def _run(self, model_group_keys, user_metadata):
         if not isinstance(model_group_keys, list):
             raise ValueError(dedent('''
             Section: model_group_keys -
@@ -523,7 +532,11 @@ class ModelGroupKeysValidator(Validator):
 
 
 class GridConfigValidator(Validator):
-    def run(self, grid_config):
+    def _run(self, grid_config):
+        if not grid_config:
+            raise ValueError(dedent('''
+            Section: grid_config -
+            Section not found. You must define a grid_config.'''))
         for classpath, parameter_config in grid_config.items():
             try:
                 module_name, class_name = classpath.rsplit(".", 1)
@@ -545,7 +558,7 @@ class GridConfigValidator(Validator):
 
 
 class ScoringConfigValidator(Validator):
-    def run(self, scoring_config):
+    def _run(self, scoring_config):
         if 'testing_metric_groups' not in scoring_config:
             logging.warning('Section: scoring - No testing_metric_groups configured. ' +
                             'Your experiment may run, but you will not have any ' +
@@ -558,7 +571,7 @@ class ScoringConfigValidator(Validator):
         metric_lookup = catwalk.evaluation.ModelEvaluator.available_metrics
         available_metrics = set(metric_lookup.keys())
         for group in ('testing_metric_groups', 'training_metric_groups'):
-            for metric_group in scoring_config[group]:
+            for metric_group in scoring_config.get(group, {}):
                 given_metrics = set(metric_group['metrics'])
                 bad_metrics = given_metrics - available_metrics
                 if bad_metrics:
@@ -579,32 +592,35 @@ class ScoringConfigValidator(Validator):
 
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
-        TemporalValidator().run(experiment_config.get('temporal_config', {}))
-        FeatureAggregationsValidator(self.db_engine)\
+        TemporalValidator(strict=self.strict).run(experiment_config.get('temporal_config', {}))
+        FeatureAggregationsValidator(self.db_engine, strict=self.strict)\
             .run(experiment_config.get('feature_aggregations', {}))
-        LabelConfigValidator(self.db_engine).run(
+        LabelConfigValidator(self.db_engine, strict=self.strict).run(
             experiment_config.get('label_config', None))
-        CohortConfigValidator(self.db_engine).run(
+        CohortConfigValidator(self.db_engine, strict=self.strict).run(
             experiment_config.get('cohort_config', {}))
-        FeatureGroupDefinitionValidator().run(
+        FeatureGroupDefinitionValidator(strict=self.strict).run(
             experiment_config.get('feature_group_definition', {}),
-            experiment_config['feature_aggregations']
+            experiment_config.get('feature_aggregations', {})
         )
-        FeatureGroupStrategyValidator().run(
+        FeatureGroupStrategyValidator(strict=self.strict).run(
             experiment_config.get('feature_group_strategies', []),
         )
-        UserMetadataValidator().run(
+        UserMetadataValidator(strict=self.strict).run(
             experiment_config.get('user_metadata', {})
         )
-        ModelGroupKeysValidator().run(
+        ModelGroupKeysValidator(strict=self.strict).run(
             experiment_config.get('model_group_keys', []),
             experiment_config.get('user_metadata', {})
         )
-        GridConfigValidator().run(experiment_config.get('grid_config', {}))
-        ScoringConfigValidator().run(experiment_config.get('scoring', {}))
+        GridConfigValidator(strict=self.strict).run(experiment_config.get('grid_config', {}))
+        ScoringConfigValidator(strict=self.strict).run(experiment_config.get('scoring', {}))
 
         # show the success message in the console as well as the logger
         # as we don't really know how they have configured logging
-        success_message = 'Experiment validation ran to completion with no errors'
+        if self.strict:
+            success_message = 'Experiment validation ran to completion with no errors'
+        else:
+            success_message = 'Experiment validation complete. All configuration problems have been displayed as warnings'
         logging.info(success_message)
         print(success_message)

@@ -53,7 +53,8 @@ def test_simple_experiment(experiment_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
-                project_path=os.path.join(temp_dir, 'inspections')
+                project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
             ).run()
 
         # assert
@@ -152,6 +153,7 @@ def test_restart_experiment(experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True
             )
             experiment.run()
 
@@ -163,6 +165,7 @@ def test_restart_experiment(experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
                 replace=False
             )
             experiment.make_entity_date_table = mock.Mock()
@@ -216,6 +219,7 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
             )
             with pytest.raises(TimeoutError):
@@ -234,6 +238,7 @@ def test_build_error(experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
             )
 
             with mock.patch.object(experiment, 'generate_matrices') as build_mock:
@@ -258,6 +263,7 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
                 db_engine=db_engine,
                 model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
+                cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
             )
 

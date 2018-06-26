@@ -5,6 +5,17 @@ import textwrap
 DEFAULT_LABEL_NAME = 'outcome'
 
 
+class LabelGeneratorNoOp(object):
+    def generate_all_labels(self, labels_table, as_of_dates, label_timespans):
+        logging.warning('No label configuration is available, so no labels will be created')
+
+    def generate(self, start_date, label_timespan, labels_table):
+        logging.warning('No label configuration is available, so no labels will be created')
+
+    def clean_up(self, labels_table_name):
+        pass
+
+
 class LabelGenerator(object):
     def __init__(self, db_engine, query, label_name=None):
         self.db_engine = db_engine
@@ -101,3 +112,6 @@ class LabelGenerator(object):
         self.db_engine.execute(
             full_insert_query,
         )
+
+    def clean_up(self, labels_table_name):
+        self.db_engine.execute('drop table if exists {}'.format(labels_table_name))

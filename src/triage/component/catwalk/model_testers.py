@@ -25,8 +25,8 @@ class ModelTester(object):
         self.evaluator = ModelEvaluator(
             db_engine=db_engine,
             sort_seed=evaluator_config.get('sort_seed', None),
-            testing_metric_groups=evaluator_config['testing_metric_groups'],
-            training_metric_groups=evaluator_config['training_metric_groups']
+            testing_metric_groups=evaluator_config.get('testing_metric_groups', []),
+            training_metric_groups=evaluator_config.get('training_metric_groups', [])
         )
 
     def generate_model_test_tasks(self, split, train_store, model_ids, matrix_store_creator):

@@ -58,9 +58,20 @@ With that in mind, a more full version of the experiment instantiation might loo
     )
 ```
 
+## Running an Experiment
+
+Once you're at this point, running the experiment is simple:
+
+```
+    experiment.run()
+```
+
+This will run the entire experiment. This could take a while, so we recommend checking logging messages (INFO level will catch a lot of useful information) and keeping an eye on its progress.
+
+
 ## Validating an Experiment
 
-Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So we recommend running the `.validate()` method on the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
+Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, we recommend running the `.validate()` method on the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
 
 ```
     experiment.validate()
@@ -76,36 +87,36 @@ Configuring an experiment is very complicated, and running an experiment can tak
 
 If the validation runs without any errors, you should see a success message (either in your log or console). At this point, the Experiment should be ready to run.
 
+By default, the `validate` method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call `validate(strict=False)` and all of the errors will be changed to warnings.
+
 We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](triage/experiments/validate.py) and submitting a pull request!
 
 
-## Running an Experiment
-
-Once you're at this point, running the experiment is simple:
-
-```
-    experiment.run()
-```
-
-This will run the entire experiment. This could take a while, so we recommend checking logging messages (INFO level will catch a lot of useful information) and keeping an eye on its progress.
-
 ## Running parts of an Experiment
 
-If you would like to run parts of the Experiment one by one and look at their outputs, you can do so. To reproduce the entire Experiment piece by piece, you can run the following:
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
 
-- `experiment.split_definitions` will parse temporal config and create time splits.
 
-- `experiment.generate_sparse_states()` will use the cohort config and as of dates from the temporal config to generate an internal table keeping track of what entities are in the cohort on different dates.
+1. `experiment.run()` will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with `cleanup=False`, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.
 
-- `experiment.generate_labels()` will use the label config and as of dates from the temporal config to generate an internal labels table.
+	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
+	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
 
-- `experiment.generate_preimputation_features()` will use the feature aggregation config and as of dates from the temporal config to generate internal features tables.
+2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](example_experiment_config.yaml) to be passed:
 
-- `experiment.generate_imputed_features()` will use the imputation sections of the feature aggregation config and the results from the preimputed features to create internal imputed features tables
+	- `experiment.split_definitions` will parse temporal config and create time splits. It only requires `temporal_config`.
 
-- `experiment.build_matrices()` will use all of the internal tables generated before this point, along with feature grouping config, to generate all needed matrices.
+	- `experiment.generate_cohort()` will use the cohort config and as of dates from the temporal config to generate an internal table keeping track of what entities are in the cohort on different dates. It requires `temporal_config` and `cohort_config`.
 
-- `experiment.train_and_test_models()` will use the generated matrices, grid config and evaluation metric config to train and test all needed models.
+	- `experiment.generate_labels()` will use the label config and as of dates from the temporal config to generate an internal labels table. It requires `temporal_config` and `label_config`.
+
+	- `experiment.generate_preimputation_features()` will use the feature aggregation config and as of dates from the temporal config to generate internal features tables. It requires `temporal_config` and `feature_aggregations`.
+
+	- `experiment.generate_imputed_features()` will use the imputation sections of the feature aggregation config and the results from the preimputed features to create internal imputed features tables. It requires `temporal_config` and `feature_aggregations`.
+
+	- `experiment.build_matrices()` will use all of the internal tables generated before this point, along with feature grouping config, to generate all needed matrices.  It requires `temporal_config`, `cohort_config`, `label_config`, and `feature_aggregations`, though it will also use `feature_group_definitions`, `feature_group_strategies`, and `user_metadata` if present.
+
+	- `experiment.train_and_test_models()` will use the generated matrices, grid config and evaluation metric config to train and test all needed models. It requires all configuration keys.
 
 
 ## Evaluating results of an Experiment

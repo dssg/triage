@@ -7,7 +7,11 @@ from descriptors import cachedproperty
 from timeout import timeout
 from sqlalchemy.engine import Engine
 
-from triage.component.architect.label_generators import LabelGenerator, DEFAULT_LABEL_NAME
+from triage.component.architect.label_generators import (
+    LabelGenerator,
+    LabelGeneratorNoOp,
+    DEFAULT_LABEL_NAME,
+)
 
 from triage.component.architect.features import (
     FeatureGenerator,
@@ -20,7 +24,8 @@ from triage.component.architect.builders import HighMemoryCSVBuilder
 from triage.component.architect.state_table_generators import (
     StateTableGeneratorFromDense,
     StateTableGeneratorFromEntities,
-    StateTableGeneratorFromQuery
+    StateTableGeneratorFromQuery,
+    StateTableGeneratorNoOp
 )
 from triage.component.timechop import Timechop
 from triage.component.catwalk.db import ensure_db
@@ -28,11 +33,12 @@ from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import save_experiment_and_get_hash
-from triage.component.catwalk.storage import CSVMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, FSModelStorageEngine
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
 
+from triage.database_reflection import table_has_data
 from triage.util.db import create_engine
 
 
@@ -65,9 +71,10 @@ class ExperimentBase(ABC):
         self,
         config,
         db_engine,
-        model_storage_class=None,
+        model_storage_class=FSModelStorageEngine,
         project_path=None,
         replace=True,
+        cleanup=False,
         cleanup_timeout=None,
     ):
         self._check_config_version(config)
@@ -98,6 +105,11 @@ class ExperimentBase(ABC):
         self.labels_table_name = 'labels_{}'.format(self.experiment_hash)
         self.initialize_components()
 
+        self.cleanup = cleanup
+        if self.cleanup:
+            logging.info('cleanup is set to True, so intermediate tables (labels and states) will be removed after matrix creation')
+        else:
+            logging.info('cleanup is set to False, so intermediate tables (labels and states) will not be removed after matrix creation')
         self.cleanup_timeout = (self.cleanup_timeout if cleanup_timeout is None
                                 else cleanup_timeout)
 
@@ -153,13 +165,18 @@ class ExperimentBase(ABC):
                 dense_state_table=cohort_config['dense_states']['table_name']
             )
         else:
-            raise ValueError('Cohort config missing or unrecognized')
+            logging.warning('cohort_config missing or unrecognized. Without a cohort, you will not be able to make matrices or perform feature imputation.')
+            self.state_table_generator = StateTableGeneratorNoOp()
 
-        self.label_generator = LabelGenerator(
-            label_name=self.config['label_config'].get('name', None),
-            query=self.config['label_config']['query'],
-            db_engine=self.db_engine,
-        )
+        if 'label_config' in self.config:
+            self.label_generator = LabelGenerator(
+                label_name=self.config['label_config'].get('name', None),
+                query=self.config['label_config']['query'],
+                db_engine=self.db_engine,
+            )
+        else:
+            self.label_generator = LabelGeneratorNoOp()
+            logging.warning('label_config missing or unrecognized. Without labels, you will not be able to make matrices.')
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name=self.features_schema_name,
@@ -200,11 +217,10 @@ class ExperimentBase(ABC):
                 # TODO: have planner/builder take state table later on, so we
                 # can grab it from the StateTableGenerator instead of
                 # duplicating it here
-                'sparse_state_table_name': 'tmp_sparse_states_{}'
-                                           .format(self.experiment_hash),
+                'sparse_state_table_name': self.sparse_states_table_name,
             },
             matrix_directory=self.matrices_directory,
-            include_missing_labels_in_train_as=self.config['label_config']
+            include_missing_labels_in_train_as=self.config.get('label_config', {})
             .get('include_missing_labels_in_train_as', None),
             engine=self.db_engine,
             replace=self.replace
@@ -227,6 +243,10 @@ class ExperimentBase(ABC):
             individual_importance_config=self.config.get('individual_importance', {}),
             evaluator_config=self.config.get('scoring', {})
         )
+
+    @property
+    def sparse_states_table_name(self):
+        return 'tmp_sparse_states_{}'.format(self.experiment_hash)
 
     @cachedproperty
     def split_definitions(self):
@@ -261,16 +281,13 @@ class ExperimentBase(ABC):
         split_definitions = self.chopper.chop_time()
         logging.info('Computed and stored split definitions: %s',
                      split_definitions)
-        return split_definitions
-
-    def print_time_split_summary(self):
-        print('\n----TIME SPLIT SUMMARY----\n')
-        print('Number of time splits: {}'.format(len(self.split_definitions)))
-        for split_index, split in enumerate(self.split_definitions):
+        logging.info('\n----TIME SPLIT SUMMARY----\n')
+        logging.info('Number of time splits: {}'.format(len(split_definitions)))
+        for split_index, split in enumerate(split_definitions):
             train_times = split['train_matrix']['as_of_times']
             test_times = [as_of_time for test_matrix in split['test_matrices']
                           for as_of_time in test_matrix['as_of_times']]
-            print('''Split index {}:
+            logging.info('''Split index {}:
             Training as_of_time_range: {} to {} ({} total)
             Testing as_of_time range: {} to {} ({} total)\n\n'''.format(
                 split_index,
@@ -281,8 +298,8 @@ class ExperimentBase(ABC):
                 max(test_times),
                 len(test_times)
             ))
-        print('For more detailed information on your time splits, '
-              'inspect the experiment `split_definitions` property')
+
+        return split_definitions
 
     @cachedproperty
     def all_as_of_times(self):
@@ -296,10 +313,10 @@ class ExperimentBase(ABC):
         all_as_of_times = []
         for split in self.split_definitions:
             all_as_of_times.extend(split['train_matrix']['as_of_times'])
-            logging.info('Adding as_of_times from train matrix: %s',
+            logging.debug('Adding as_of_times from train matrix: %s',
                          split['train_matrix']['as_of_times'])
             for test_matrix in split['test_matrices']:
-                logging.info('Adding as_of_times from test matrix: %s',
+                logging.debug('Adding as_of_times from test matrix: %s',
                              test_matrix['as_of_times'])
                 all_as_of_times.extend(test_matrix['as_of_times'])
 
@@ -312,6 +329,7 @@ class ExperimentBase(ABC):
             'Computed %s distinct as_of_times for label and feature generation',
             len(distinct_as_of_times)
         )
+        logging.info('You can view all as_of_times by inspecting `.all_as_of_times` on this Experiment')
         return distinct_as_of_times
 
     @cachedproperty
@@ -322,10 +340,14 @@ class ExperimentBase(ABC):
 
         """
         logging.info('Creating collate aggregations')
+        cohort_table = self.state_table_generator.sparse_table_name
+        if 'feature_aggregations' not in self.config:
+            logging.warning('No feature_aggregation config is available')
+            return []
         return self.feature_generator.aggregations(
             feature_aggregation_config=self.config['feature_aggregations'],
             feature_dates=self.all_as_of_times,
-            state_table=self.state_table_generator.sparse_table_name,
+            state_table=cohort_table
         )
 
     @cachedproperty
@@ -407,6 +429,12 @@ class ExperimentBase(ABC):
         Returns: (list) of dicts
 
         """
+        if not table_has_data(self.sparse_states_table_name, self.db_engine):
+            logging.warning('cohort table is not populated, cannot build any matrices')
+            return {}
+        if not table_has_data(self.labels_table_name, self.db_engine):
+            logging.warning('labels table is not populated, cannot build any matrices')
+            return {}
         (
             updated_split_definitions,
             matrix_build_tasks
@@ -457,7 +485,7 @@ class ExperimentBase(ABC):
             self.all_label_timespans
         )
 
-    def generate_sparse_states(self):
+    def generate_cohort(self):
         self.state_table_generator.generate_sparse_table(
             as_of_dates=self.all_as_of_times
         )
@@ -503,26 +531,36 @@ class ExperimentBase(ABC):
 
     def generate_preimputation_features(self):
         self.process_query_tasks(self.feature_aggregation_table_tasks)
+        logging.info('Finished running preimputation feature queries. The final results are in tables: %s',
+                     ','.join(agg.get_table_name() for agg in self.collate_aggregations)
+                     )
 
-    def generate_imputed_features(self):
+    def impute_missing_features(self):
         self.process_query_tasks(self.feature_imputation_table_tasks)
+        logging.info('Finished running postimputation feature queries. The final results are in tables: %s',
+                     ','.join(agg.get_table_name(imputed=True) for agg in self.collate_aggregations)
+                     )
 
     def build_matrices(self):
         self.process_matrix_build_tasks(self.matrix_build_tasks)
 
     def generate_matrices(self):
-        logging.info('Creating sparse states')
-        self.generate_sparse_states()
+        logging.info('Creating cohort')
+        self.generate_cohort()
         logging.info('Creating labels')
         self.generate_labels()
         logging.info('Creating feature aggregation tables')
         self.generate_preimputation_features()
         logging.info('Creating feature imputation tables')
-        self.generate_imputed_features()
+        self.impute_missing_features()
         logging.info('Building all matrices')
         self.build_matrices()
 
     def train_and_test_models(self):
+        if 'grid_config' not in self.config:
+            logging.warning('No grid_config was passed in the experiment config. No models will be trained')
+            return
+
         for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
             train_store = self.matrix_store(split['train_uuid'])
@@ -561,21 +599,24 @@ class ExperimentBase(ABC):
 
             self.process_model_test_tasks(test_tasks)
 
-    def validate(self):
-        ExperimentValidator(self.db_engine).run(self.config)
-        self.print_time_split_summary()
+    def validate(self, strict=True):
+        ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
         try:
             logging.info('Generating matrices')
             self.generate_matrices()
         finally:
-            logging.info('Cleaning up state table')
-            with timeout(self.cleanup_timeout):
-                self.state_table_generator.clean_up()
-                self.db_engine.execute('drop table if exists {}'.format(self.labels_table_name))
+            if self.cleanup:
+                self.clean_up_tables()
 
         self.train_and_test_models()
+
+    def clean_up_tables(self):
+        logging.info('Cleaning up state and labels tables')
+        with timeout(self.cleanup_timeout):
+            self.state_table_generator.clean_up()
+            self.label_generator.clean_up(self.labels_table_name)
 
     def run(self):
         try:
