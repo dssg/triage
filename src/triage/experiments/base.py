@@ -599,8 +599,8 @@ class ExperimentBase(ABC):
 
             self.process_model_test_tasks(test_tasks)
 
-    def validate(self):
-        ExperimentValidator(self.db_engine).run(self.config)
+    def validate(self, strict=True):
+        ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
         try:

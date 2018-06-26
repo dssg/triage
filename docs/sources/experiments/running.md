@@ -68,6 +68,30 @@ Once you're at this point, running the experiment is simple:
 
 This will run the entire experiment. This could take a while, so we recommend checking logging messages (INFO level will catch a lot of useful information) and keeping an eye on its progress.
 
+
+## Validating an Experiment
+
+Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, we recommend running the `.validate()` method on the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
+
+```
+    experiment.validate()
+
+    (Pdb) experiment.validate()
+    *** ValueError: from_obj query does not run.
+    from_obj: "cat_complaints"
+    Full error: (psycopg2.ProgrammingError) relation "cat_complaints" does not exist
+    LINE 1: explain select * from cat_complaints
+                                  ^
+     [SQL: 'explain select * from cat_complaints']
+```
+
+If the validation runs without any errors, you should see a success message (either in your log or console). At this point, the Experiment should be ready to run.
+
+By default, the `validate` method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call `validate(strict=False)` and all of the errors will be changed to warnings.
+
+We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](triage/experiments/validate.py) and submitting a pull request!
+
+
 ## Running parts of an Experiment
 
 If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
@@ -93,29 +117,6 @@ If you would like incrementally build, or just incrementally run parts of the Ex
 	- `experiment.build_matrices()` will use all of the internal tables generated before this point, along with feature grouping config, to generate all needed matrices.  It requires `temporal_config`, `cohort_config`, `label_config`, and `feature_aggregations`, though it will also use `feature_group_definitions`, `feature_group_strategies`, and `user_metadata` if present.
 
 	- `experiment.train_and_test_models()` will use the generated matrices, grid config and evaluation metric config to train and test all needed models. It requires all configuration keys.
-
-
-## Validating an Experiment
-
-Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, we recommend running the `.validate()` method on the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
-
-```
-    experiment.validate()
-
-    (Pdb) experiment.validate()
-    *** ValueError: from_obj query does not run.
-    from_obj: "cat_complaints"
-    Full error: (psycopg2.ProgrammingError) relation "cat_complaints" does not exist
-    LINE 1: explain select * from cat_complaints
-                                  ^
-     [SQL: 'explain select * from cat_complaints']
-```
-
-If the validation runs without any errors, you should see a success message (either in your log or console). At this point, the Experiment should be ready to run.
-
-We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](triage/experiments/validate.py) and submitting a pull request!
-
-
 
 
 ## Evaluating results of an Experiment
