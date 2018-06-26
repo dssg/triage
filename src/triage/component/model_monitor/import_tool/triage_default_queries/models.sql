@@ -17,5 +17,7 @@ SELECT
     test,
     train_label_window
 FROM models
-WHERE (:no_model_group_subset OR model_group_id IN (:model_group_ids))
-AND (:no_model_id_subset OR model_id IN (:model_ids));
+WHERE ({no_model_group_subset} OR model_group_id IN
+    (SELECT(UNNEST(ARRAY{model_group_ids}::INTEGER[]))))
+AND ({no_model_id_subset} OR model_id IN
+    (SELECT(UNNEST(ARRAY{model_ids}::INTEGER[]))));

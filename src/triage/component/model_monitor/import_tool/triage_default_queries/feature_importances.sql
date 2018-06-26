@@ -18,7 +18,9 @@ SELECT
 FROM feature_importances fimp
 INNER JOIN model_ids mods
 ON mods.model_id = fimp.model_id
-WHERE mods.train_end_time >= :start_date
-AND mods.train_end_time <= :end_date
-AND (:no_model_group_subset OR model_group_id IN (:model_group_ids))
-AND (:no_model_id_subset OR model_id IN (:model_ids));
+WHERE mods.train_end_time >= {start_date}
+AND mods.train_end_time <= {end_date}
+AND ({no_model_group_subset} OR model_group_id IN
+    (SELECT(UNNEST(ARRAY{model_group_ids}::INTEGER[]))))
+AND ({no_model_id_subset} OR model_id IN
+    (SELECT(UNNEST(ARRAY{model_ids}::INTEGER[]))));

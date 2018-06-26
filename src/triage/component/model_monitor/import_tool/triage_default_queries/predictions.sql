@@ -15,7 +15,9 @@ SELECT
     rank_abs,
     rank_pct
 FROM predictions
-WHERE as_of_date >= :start_date
-AND as_of_date <= :end_date
-AND (:no_model_group_subset OR model_group_id IN (:model_group_ids))
-AND (:no_model_id_subset OR model_id IN (:model_ids));
+WHERE as_of_date >= {start_date}
+AND as_of_date <= {end_date}
+AND ({no_model_group_subset} OR model_group_id IN
+    (SELECT(UNNEST(ARRAY{model_group_ids}::INTEGER[]))))
+AND ({no_model_id_subset} OR model_id IN
+    (SELECT(UNNEST(ARRAY{model_ids}::INTEGER[]))));

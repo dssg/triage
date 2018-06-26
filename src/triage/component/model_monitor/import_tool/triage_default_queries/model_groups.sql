@@ -12,4 +12,5 @@ SELECT
     feature_list,
     model_config
 FROM model_groups
-WHERE (:no_model_group_subset OR model_group_id IN (:model_group_ids));
+WHERE ({no_model_group_subset} OR model_group_id IN
+    (SELECT(UNNEST(ARRAY{model_group_ids}::INTEGER[]))));
