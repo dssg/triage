@@ -100,8 +100,6 @@ def test_Audition(mock_getcwd):
 
         session.commit()
 
-        # Audition(config_dict=config, db_engine=db_engine, directory='tmp/').run()
-
         with tempfile.TemporaryDirectory() as td:
             mock_getcwd.return_value = td
             Audition(config_dict=config, db_engine=db_engine, directory=td).run()

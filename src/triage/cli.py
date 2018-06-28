@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 import yaml
-from argcmdr import RootCommand, Command, main
+import argparse
+import os
+from descriptors import cachedproperty
+from argcmdr import RootCommand, Command, main, cmdmethod
+from sqlalchemy.engine.url import URL
 from triage.experiments import CONFIG_VERSION
 from triage.component.audition import Audition as AuditionRunner
-from triage import create_engine
+from triage.util.db import create_engine
+
 
 class Triage(RootCommand):
     """manage Triage database and experiments"""
@@ -12,8 +17,22 @@ class Triage(RootCommand):
         parser.add_argument(
             '-d', '--dbfile',
             default='database.yaml',
+            type=argparse.FileType('r'),
             help="database connection file",
         )
+
+    @cachedproperty
+    def db_url(self):
+        dbconfig = yaml.load(self.args.dbfile)
+        db_url = URL(
+                'postgres',
+                host=dbconfig['host'],
+                username=dbconfig['user'],
+                database=dbconfig['db'],
+                password=dbconfig['pass'],
+                port=dbconfig['port'],
+            )
+        return db_url
 
 
 @Triage.register
@@ -27,59 +46,40 @@ class ConfigVersion(Command):
 class Audition(Command):
     """ Audition command to run or validate the config file
     """
-    class Run(Command):
-        """Run Audition
-        """
-        def __init__(self, parser):
-            parser.add_argument(
-                '-c', '--config',
-                default='audition_config.yaml',
-                help="config file for audition",
-            )
+    def __init__(self, parser):
+        parser.add_argument(
+            '-c', '--config',
+            type=argparse.FileType('r'),
+            default='audition_config.yaml',
+            help="config file for audition",
+        )
+        parser.set_defaults(
+            directory=None,
+            validate=True,
+        )
 
-            parser.add_argument(
-                '-d', '--directory',
-                default='some path',
-                help="directory to store the result plots from audition",
-            )
+    @cachedproperty
+    def runner(self):
+        db_url = self.root.db_url
+        dir_plot = self.args.directory
+        config = yaml.load(self.args.config)
+        db_engine = create_engine(db_url)
+        print(db_engine)
+        return AuditionRunner(config, db_engine, dir_plot)
 
-            self.db_engine = create_engine()
+    def __call__(self, args):
+        self['run'](args)
 
-        def __call__(self, args):
-            """A function/script to run the whole thing in Audition
-            """
-            dir_plot = args.directory
-            config_fname = args.config
-            try:
-                with open(config_fname) as fd:
-                    config = yaml.load(fd)
-            except Exception as err:
-                raise err
+    @cmdmethod('-d', '--directory', default=os.getcwd(), help="directory to store the result plots from audition")
+    @cmdmethod('-v', '--validate', action='store_true', help="validate first")
+    def run(self, args):
+        if args.validate:
+            self['validate']()
+        self.runner.run()
 
-            AuditionRunner(config, dir_plot).run()
-
-    class Validate(Command):
-        """Validate the config file for audition
-        """
-        def __init__(self, parser):
-            parser.add_argument(
-                '-c', '--config',
-                default='audition_config.yaml',
-                help="config file for audition",
-            )
-
-        def __call__(self, args):
-            """A function/script to run the validate the config file
-            """
-            config_fname = args.config
-            try:
-                with open(config_fname) as fd:
-                    config = yaml.load(fd)
-                    self.config = config
-            except Exception as err:
-                raise err
-
-            AuditionRunner(config_fname).validate()
+    @cmdmethod('-v', '--validate', action='store_true')
+    def validate(self, args):
+        self.runner.validate()
 
 
 def execute():

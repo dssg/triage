@@ -1,5 +1,5 @@
 import logging
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -358,9 +358,9 @@ def plot_best_dist(metric, parameter, df_best_dist, directory=None, **plt_format
     plt_title = 'Fraction of models X pp worse than best {} {}'.format(metric, parameter)
 
     if directory:
-        path_to_save = directory + f'/distance_from_best_{metric}{parameter}.png'
+        path_to_save = os.path.join(directory + f'/distance_from_best_{metric}{parameter}.png')
     else:
-        path_to_save = directory
+        path_to_save = None
 
     plot_cats(
         frame=df_best_dist,

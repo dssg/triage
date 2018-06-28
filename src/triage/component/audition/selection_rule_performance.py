@@ -1,5 +1,5 @@
 import pandas
-
+import os
 from .plotting import plot_cats
 
 
@@ -122,7 +122,7 @@ class SelectionRulePerformancePlotter(object):
         if self.directory:
             path_to_save = self.directory + f'/regret_over_time_{metric}{parameter}.png'
         else:
-            path_to_save = self.directory
+            path_to_save = None
         plot_cats(
             frame=df,
             x_col='train_end_time',
@@ -151,9 +151,9 @@ class SelectionRulePerformancePlotter(object):
         cat_col = 'selection_rule'
         plt_title = '{} {} next time'.format(metric, parameter)
         if self.directory:
-            path_to_save = self.directory + f'/{metric}{parameter}_next_time.png'
+            path_to_save = os.path.join(self.directory, f'{metric}{parameter}_next_time.png')
         else:
-            path_to_save = self.directory
+            path_to_save = None
         plot_cats(
             frame=df,
             x_col='train_end_time',
