@@ -64,23 +64,29 @@ class Audition(Command):
         dir_plot = self.args.directory
         config = yaml.load(self.args.config)
         db_engine = create_engine(db_url)
-        print(db_engine)
         return AuditionRunner(config, db_engine, dir_plot)
 
     def __call__(self, args):
         self['run'](args)
 
-    @cmdmethod('-d', '--directory', default=os.getcwd(), help="directory to store the result plots from audition")
-    @cmdmethod('-v', '--validate', action='store_true', help="validate first")
+    @cmdmethod('-d', '--directory', default=None, help="directory to store the result plots from audition")
+    @cmdmethod('-v', '--validate', action='store_true', help="validate before running audition")
+    @cmdmethod('--no-validate', action='store_false', dest='validate', help="run audtion without validation")
+    @cmdmethod('--validate-only', action='store_true', help="only validate the config file not running audition")
     def run(self, args):
-        if args.validate:
-            self['validate']()
-        self.runner.run()
-
-    @cmdmethod('-v', '--validate', action='store_true')
-    def validate(self, args):
-        self.runner.validate()
-
+        if args.validate_only:
+            try:
+                self.runner.validate()
+            except Exception as err:
+                raise(err)
+        elif args.validate:
+            try:
+                self.runner.validate()
+                self.runner.run()
+            except Exception as err:
+                raise(err)
+        else:
+            self.runner.run()
 
 def execute():
     main(Triage)

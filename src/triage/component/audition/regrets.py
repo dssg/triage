@@ -221,7 +221,7 @@ class SelectionRulePlotter(object):
         (plot_min, plot_max) = self.plot_bounds(regret_metric, regret_parameter)
 
         if self.directory:
-            path_to_save = os.path.join(self.directory + f'/regret_distance_from_best_rules_{regret_metric}{regret_parameter}.png')
+            path_to_save = os.path.join(self.directory, f'/regret_distance_from_best_rules_{regret_metric}{regret_parameter}.png')
         else:
             path_to_save = None
 

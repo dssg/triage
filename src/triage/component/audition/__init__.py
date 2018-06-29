@@ -384,4 +384,7 @@ class Audition(object):
         logging.info(f"Audition ran! Results are stored in {self.dir}.")
 
     def validate(self):
-        raise NotImplementedError("To be implemented")
+        try:
+            print("Validate")
+        except Exception as err:
+            raise err

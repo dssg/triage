@@ -120,7 +120,7 @@ class SelectionRulePerformancePlotter(object):
         cat_col = 'selection_rule'
         plt_title = 'Regret for {} {} over time'.format(metric, parameter)
         if self.directory:
-            path_to_save = self.directory + f'/regret_over_time_{metric}{parameter}.png'
+            path_to_save = os.path.join(self.directory, f'/regret_over_time_{metric}{parameter}.png')
         else:
             path_to_save = None
         plot_cats(
