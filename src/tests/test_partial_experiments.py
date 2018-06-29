@@ -25,7 +25,6 @@ logging.basicConfig(level=logging.INFO)
 def prepare_experiment(config):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
             experiment = SingleThreadedExperiment(
