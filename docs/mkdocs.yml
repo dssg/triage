@@ -16,6 +16,6 @@ pages:
     - Defining an Experiment: experiments/defining.md
     - Running an Experiment: experiments/running.md
     - Temporal Validation Deep Dive: experiments/temporal-validation.md
-    - Feature Definition Deep Dive: experiments/features.md
+    - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
