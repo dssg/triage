@@ -1,16 +1,33 @@
 from sqlalchemy import create_engine
-import json
-import os
+import logging
 
-def get_engine():
 
-    with open(os.path.join(os.path.dirname(os.path.dirname(
-              os.path.abspath(__file__))), 'database_credentials.json'), 'r') as f:
-       
-        creds = json.load(f)
-    
-    conn_str = "postgresql://{user}:{password}@{host}:{port}/{dbname}".format(
-            **creds)
+def get_conn_engine(dbfile):
+    """
+    Returns connection engine for postgresql
 
-    return create_engine(conn_str)
+    Parameters
+    ----------
+    dbfile: file
+        yaml file of db creds
 
+    Returns
+    -------
+    conn_engine: str
+        connection engine for postgres
+    """
+
+    try:
+        with open(db_credentials_file) as f:
+            dbdict = yaml.load(f)
+        conn_string = '{dbtype}://{user}:{password}@{host}:{port}/{db}'.format(
+            dbtype='postgresql',
+            user=dbdict['user'],
+            password=dbdict['password'],
+            host=dbdict['host'],
+            port=dbdict['port'],
+            db=dbdict['database'])
+    except FileNotFoundError:
+        logging.error('Cannot find file {}'.format(db_credentials_file))
+
+    return create_engine(conn_string)
