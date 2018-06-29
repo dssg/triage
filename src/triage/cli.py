@@ -6,7 +6,7 @@ from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 from triage.experiments import CONFIG_VERSION
-from triage.component.audition import Audition as AuditionRunner
+from triage.component.audition import AuditionRunner
 from triage.util.db import create_engine
 
 

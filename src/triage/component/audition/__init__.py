@@ -349,10 +349,9 @@ class Auditioner(object):
             yaml.dump({'selection_rule_model_groups': self.selection_rule_model_group_ids}, f)
 
 
-class Audition(object):
+class AuditionRunner(object):
     def __init__(self, config_dict, db_engine, directory=None):
         self.dir = directory
-        print(self.dir)
         self.config = config_dict
         self.db_engine = db_engine
 
@@ -386,6 +385,6 @@ class Audition(object):
 
     def validate(self):
         try:
-            print("Validate")
+            logging.info("Validate!")
         except Exception as err:
             raise err

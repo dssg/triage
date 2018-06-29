@@ -8,7 +8,7 @@ import factory
 import testing.postgresql
 from sqlalchemy import create_engine
 
-from triage.component.audition import Auditioner, Audition
+from triage.component.audition import Auditioner, AuditionRunner
 from triage.component.catwalk.db import ensure_db
 
 from tests.results_tests.factories import (
@@ -100,10 +100,9 @@ def test_Audition(mock_getcwd):
 
         session.commit()
 
-
         with tempfile.TemporaryDirectory() as td:
             mock_getcwd.return_value = td
-            Audition(config_dict=config, db_engine=db_engine, directory=td).run()
+            AuditionRunner(config_dict=config, db_engine=db_engine, directory=td).run()
             assert len(os.listdir(os.getcwd())) == 6
 
 
