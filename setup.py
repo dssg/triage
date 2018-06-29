@@ -71,4 +71,5 @@ setup(
     ],
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST,
+    scripts=['./src/triage/component/postmodeling/contrast/postmodeling_cli.py']
 )
