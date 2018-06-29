@@ -1,7 +1,6 @@
 from __future__ import with_statement
 
 import os
-from logging.config import fileConfig
 
 import yaml
 from alembic import context
@@ -16,10 +15,6 @@ from triage.component.results_schema import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-fileConfig(config.config_file_name)
-
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
@@ -31,7 +26,13 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-url = os.environ.get('DBURL', None)
+url = None
+
+if 'url' in config.attributes:
+    url = config.attributes['url']
+
+if not url:
+    url = os.environ.get('DBURL', None)
 
 if not url:
     db_config_file = (context.get_x_argument('db_config_file')

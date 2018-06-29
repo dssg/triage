@@ -10,7 +10,6 @@ import pytest
 import testing.postgresql
 from triage import create_engine
 
-from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import FSModelStorageEngine
 
 from tests.utils import sample_config, populate_source_data
@@ -46,7 +45,6 @@ parametrize_experiment_classes = pytest.mark.parametrize(('experiment_class',), 
 def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
             experiment_class(
@@ -145,7 +143,6 @@ def test_simple_experiment(experiment_class):
 def test_restart_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
@@ -180,7 +177,6 @@ class TestConfigVersion(TestCase):
         experiment_config['config_version'] = CONFIG_VERSION
         with testing.postgresql.Postgresql() as postgresql:
             db_engine = create_engine(postgresql.url())
-            ensure_db(db_engine)
             with TemporaryDirectory() as temp_dir:
                 experiment = SingleThreadedExperiment(
                     config=experiment_config,
@@ -211,7 +207,6 @@ class TestConfigVersion(TestCase):
 def test_cleanup_timeout(_clean_up_mock, experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
@@ -230,7 +225,6 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
 def test_build_error(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
 
         with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
@@ -255,7 +249,6 @@ def test_build_error(experiment_class):
 def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
 
         with TemporaryDirectory() as temp_dir:
             experiment = experiment_class(
@@ -282,7 +275,6 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
 def test_custom_label_name(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         config = sample_config()
         config['label_config']['name'] = 'custom_label_name'
         with TemporaryDirectory() as temp_dir:
@@ -300,7 +292,6 @@ def test_custom_label_name(experiment_class):
 def test_baselines_with_missing_features(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
         populate_source_data(db_engine)
 
         # set up the config with the baseline model and feature group mixing
