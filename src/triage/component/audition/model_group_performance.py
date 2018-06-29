@@ -129,7 +129,7 @@ class ModelGroupPerformancePlotter(object):
                     .format(given_time_as_numpy, matrix_time)
                 )
         if directory:
-            path_to_save = os.path.join(directory, f'/metric_over_time_{metric}{parameter}.png')
+            path_to_save = os.path.join(directory, f'metric_over_time_{metric}{parameter}.png')
         else:
             path_to_save = None
 

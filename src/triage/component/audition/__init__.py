@@ -352,6 +352,7 @@ class Auditioner(object):
 class Audition(object):
     def __init__(self, config_dict, db_engine, directory=None):
         self.dir = directory
+        print(self.dir)
         self.config = config_dict
         self.db_engine = db_engine
 
