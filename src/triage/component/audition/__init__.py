@@ -1,6 +1,8 @@
 import logging
 
 import yaml
+import json
+import os
 from smart_open import smart_open
 
 from .distance_from_best import DistanceFromBestTable, BestDistancePlotter
@@ -9,10 +11,9 @@ from .regrets import SelectionRulePicker, SelectionRulePlotter
 from .selection_rule_performance import SelectionRulePerformancePlotter
 from .model_group_performance import ModelGroupPerformancePlotter
 from .selection_rule_grid import make_selection_rule_grid
-
+from .pre_audition import PreAudition
 
 class Auditioner(object):
-
     def __init__(
         self,
         db_engine,
@@ -21,6 +22,7 @@ class Auditioner(object):
         initial_metric_filters,
         models_table=None,
         distance_table=None,
+        directory=None,
     ):
         """Filter model groups using a two-step process:
 
@@ -74,7 +76,7 @@ class Auditioner(object):
         self.metric_filters = initial_metric_filters
         # sort the train end times so we can reliably pick off the last time later
         self.train_end_times = sorted(train_end_times)
-
+        self.directory = directory
         models_table = models_table or 'models'
         distance_table = distance_table or 'best_distance'
         self.distance_from_best_table = DistanceFromBestTable(
@@ -82,7 +84,7 @@ class Auditioner(object):
             models_table=models_table,
             distance_table=distance_table
         )
-        self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table)
+        self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table, self.directory)
         self.model_group_thresholder = ModelGroupThresholder(
             distance_from_best_table=self.distance_from_best_table,
             train_end_times=train_end_times,
@@ -90,12 +92,12 @@ class Auditioner(object):
             initial_metric_filters=initial_metric_filters
         )
         self.model_group_performance_plotter = \
-            ModelGroupPerformancePlotter(self.distance_from_best_table)
+            ModelGroupPerformancePlotter(self.distance_from_best_table, self.directory)
 
         self.selection_rule_picker = SelectionRulePicker(self.distance_from_best_table)
-        self.selection_rule_plotter = SelectionRulePlotter(self.selection_rule_picker)
+        self.selection_rule_plotter = SelectionRulePlotter(self.selection_rule_picker, self.directory)
         self.selection_rule_performance_plotter = \
-            SelectionRulePerformancePlotter(self.selection_rule_picker)
+            SelectionRulePerformancePlotter(self.selection_rule_picker, directory)
 
         self.distance_from_best_table.create_and_populate(
             model_group_ids,
@@ -157,6 +159,10 @@ class Auditioner(object):
                 model_group_ids[selection_rule.descriptive_name]
             )
         return model_group_ids
+
+    def save_result_model_group_ids(self, fname='results_model_group_ids.json'):
+        with open(os.path.join(self.directory, fname), 'w') as f:
+            f.write(json.dumps(self.selection_rule_model_group_ids))
 
     def plot_model_groups(self):
         """Display model group plots, one of the below for each configured metric.
@@ -341,3 +347,44 @@ class Auditioner(object):
         logging.info('Writing final model group ids to export to Tyra')
         with smart_open(write_path, 'w') as f:
             yaml.dump({'selection_rule_model_groups': self.selection_rule_model_group_ids}, f)
+
+
+class AuditionRunner(object):
+    def __init__(self, config_dict, db_engine, directory=None):
+        self.dir = directory
+        self.config = config_dict
+        self.db_engine = db_engine
+
+    def run(self):
+        pre_aud = PreAudition(self.db_engine)
+        model_group_ids = pre_aud.get_model_groups(self.config['model_groups']['query'])
+        query_end_times = self.config['time_stamps']['query'].format(', '.join(map(str, model_group_ids)))
+        end_times = pre_aud.get_train_end_times(query=query_end_times)
+
+        aud = Auditioner(
+            db_engine=self.db_engine,
+            model_group_ids=model_group_ids,
+            train_end_times=end_times,
+            initial_metric_filters=[
+                {'metric': self.config['filter']['metric'],
+                 'parameter': self.config['filter']['parameter'],
+                 'max_from_best': self.config['filter']['max_from_best'],
+                 'threshold_value': self.config['filter']['threshold_value']
+                }
+            ],
+            models_table=self.config['filter']['models_table'],
+            distance_table=self.config['filter']['distance_table'],
+            directory=self.dir
+        )
+
+        aud.plot_model_groups()
+        aud.register_selection_rule_grid(rule_grid=self.config['rules'], plot=True)
+        aud.save_result_model_group_ids()
+
+        logging.info(f"Audition ran! Results are stored in {self.dir}.")
+
+    def validate(self):
+        try:
+            logging.info("Validate!")
+        except Exception as err:
+            raise err

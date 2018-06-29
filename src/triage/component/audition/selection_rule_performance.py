@@ -1,5 +1,5 @@
 import pandas
-
+import os
 from .plotting import plot_cats
 
 
@@ -14,9 +14,10 @@ class SelectionRulePerformancePlotter(object):
         selection_rule_picker (audition.SelectionRulePicker) An object that can
             simulate the effects of picking a selection rule
     """
-    def __init__(self, selection_rule_picker):
+    def __init__(self, selection_rule_picker, directory=None):
         self.selection_rule_picker = selection_rule_picker
         self.results_for_rule = None
+        self.directory = directory
 
     def plot(
         self,
@@ -118,6 +119,10 @@ class SelectionRulePerformancePlotter(object):
         """
         cat_col = 'selection_rule'
         plt_title = 'Regret for {} {} over time'.format(metric, parameter)
+        if self.directory:
+            path_to_save = os.path.join(self.directory, f'regret_over_time_{metric}{parameter}.png')
+        else:
+            path_to_save = None
         plot_cats(
             frame=df,
             x_col='train_end_time',
@@ -128,6 +133,7 @@ class SelectionRulePerformancePlotter(object):
             x_label='train end time',
             y_label='regret in {}'.format(metric),
             x_lim=(df['train_end_time'].min(), df['train_end_time'].max()),
+            path_to_save=path_to_save,
             **plt_format_args
         )
 
@@ -144,6 +150,10 @@ class SelectionRulePerformancePlotter(object):
         """
         cat_col = 'selection_rule'
         plt_title = '{} {} next time'.format(metric, parameter)
+        if self.directory:
+            path_to_save = os.path.join(self.directory, f'{metric}{parameter}_next_time.png')
+        else:
+            path_to_save = None
         plot_cats(
             frame=df,
             x_col='train_end_time',
@@ -154,5 +164,6 @@ class SelectionRulePerformancePlotter(object):
             x_label='train end time',
             y_label='value of {} next time'.format(metric),
             x_lim=(df['train_end_time'].min(), df['train_end_time'].max()),
+            path_to_save=path_to_save,
             **plt_format_args
         )

@@ -1,12 +1,14 @@
 from datetime import datetime
 import tempfile
+import yaml
+import os
+import mock
 
 import factory
 import testing.postgresql
-import yaml
 from sqlalchemy import create_engine
 
-from triage.component.audition import Auditioner
+from triage.component.audition import Auditioner, AuditionRunner
 from triage.component.catwalk.db import ensure_db
 
 from tests.results_tests.factories import (
@@ -17,6 +19,91 @@ from tests.results_tests.factories import (
     session,
     MatrixFactory
 )
+
+config = {
+    'filter': {'distance_table': 'distance_table',
+    'max_from_best': 1.0,
+    'metric': 'precision@',
+    'models_table': 'models',
+    'parameter': '50_abs',
+    'threshold_value': 0.0},
+    'model_groups': {'query': 'SELECT DISTINCT(model_group_id) FROM model_metadata.model_groups'},
+    'rules':
+        [
+            {
+                'selection_rules': [
+                    {'name': 'best_current_value', 'n': 3},
+                    {'name': 'best_average_value', 'n': 3},
+                    {'name': 'lowest_metric_variance', 'n': 3},
+                    {'dist_from_best_case': [0.05], 'name': 'most_frequent_best_dist', 'n': 3}
+                    ],
+                'shared_parameters': [
+                    {'metric': 'precision@', 'parameter': '50_abs'},
+                    ]
+            },
+            {
+                'selection_rules': [
+                    {'metric1_weight': 0.5, 'metric2': 'recall@','name': 'best_average_two_metrics', 'n': 3, 'parameter2': '50_abs'}
+                    ],
+                'shared_parameters': [
+                    {'metric1': 'precision@', 'parameter1': '50_abs'}
+                    ]
+            }
+        ],
+    'time_stamps': {'query': "SELECT DISTINCT train_end_time FROM model_metadata.models WHERE model_group_id IN ({}) AND EXTRACT(DAY FROM train_end_time) IN (1) AND train_end_time >= '2012-01-01'"}
+}
+
+@mock.patch('os.getcwd')
+def test_Audition(mock_getcwd):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        init_engine(db_engine)
+
+        num_model_groups = 10
+        model_types = [
+            'classifier type {}'.format(i)
+            for i in range(0, num_model_groups)
+        ]
+        model_groups = [
+            ModelGroupFactory(model_type=model_type)
+            for model_type in model_types
+        ]
+        train_end_times = [
+            datetime(2013, 1, 1),
+            datetime(2014, 1, 1),
+            datetime(2015, 1, 1),
+            datetime(2016, 1, 1),
+        ]
+
+        models = [
+            ModelFactory(model_group_rel=model_group, train_end_time=train_end_time)
+            for model_group in model_groups
+            for train_end_time in train_end_times
+        ]
+        metrics = [
+            ('precision@', '100_abs'),
+            ('recall@', '100_abs'),
+            ('precision@', '50_abs'),
+            ('recall@', '50_abs'),
+            ('fpr@', '10_pct'),
+        ]
+
+        class ImmediateEvalFactory(EvaluationFactory):
+            evaluation_start_time = factory.LazyAttribute(lambda o: o.model_rel.train_end_time)
+
+        for model in models:
+            for (metric, parameter) in metrics:
+                ImmediateEvalFactory(model_rel=model,
+                                     metric=metric,
+                                     parameter=parameter)
+
+        session.commit()
+
+        with tempfile.TemporaryDirectory() as td:
+            mock_getcwd.return_value = td
+            AuditionRunner(config_dict=config, db_engine=db_engine, directory=td).run()
+            assert len(os.listdir(os.getcwd())) == 6
 
 
 def test_Auditioner():

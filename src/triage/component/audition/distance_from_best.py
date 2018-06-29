@@ -1,5 +1,5 @@
 import logging
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -208,7 +208,7 @@ class DistanceFromBestTable(object):
 
 
 class BestDistancePlotter(object):
-    def __init__(self, distance_from_best_table):
+    def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the effect of different below-best maximum
         thresholds across the dataset.
 
@@ -217,6 +217,7 @@ class BestDistancePlotter(object):
                 A pre-populated distance-from-best database table
         """
         self.distance_from_best_table = distance_from_best_table
+        self.directory = directory
 
     def plot_bounds(self, metric, parameter):
         observed_min, observed_max = \
@@ -317,14 +318,16 @@ class BestDistancePlotter(object):
                 model_group_ids=model_group_ids,
                 train_end_times=train_end_times
             )
+
             plot_best_dist(
                 metric=metric_filter['metric'],
                 parameter=metric_filter['parameter'],
-                df_best_dist=df
+                df_best_dist=df,
+                directory=self.directory
             )
 
 
-def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):
+def plot_best_dist(metric, parameter, df_best_dist, directory=None, **plt_format_args):
     """Generates a plot of the percentage of time that a model group is
     within X percentage points of the best-performing model group using a
     given metric. At each point in time that a set of model groups is
@@ -354,6 +357,11 @@ def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):
     cat_col = 'model_type'
     plt_title = 'Fraction of models X pp worse than best {} {}'.format(metric, parameter)
 
+    if directory:
+        path_to_save = os.path.join(directory, f'distance_from_best_{metric}{parameter}.png')
+    else:
+        path_to_save = None
+
     plot_cats(
         frame=df_best_dist,
         x_col='distance',
@@ -363,5 +371,6 @@ def plot_best_dist(metric, parameter, df_best_dist, **plt_format_args):
         x_label='distance from best {}'.format(metric),
         y_label='fraction of models',
         x_ticks=np.arange(0, 1.1, 0.1),
+        path_to_save=path_to_save,
         **plt_format_args
     )
