@@ -11,6 +11,8 @@ The command-line interface for testing features takes in two arguments:
 	- A feature config file. Refer to [example_feature_config.yaml](example_feature_config.yaml). Essentially this is the content of the [example_experiment_config.yaml](example_experiment_config.yaml)'s `feature_aggregations` section. It consists of a YAML list, with one or more feature_aggregation rows present.
 	- An as-of-date. This should be in the format `2016-01-01`.
 
+Example: `triage experiment featuretest example_feature_config.yaml 2016-01-01`
+
 All given feature aggregations will be processed for the given date. You will see a bunch of queries pass by in your terminal, populating tables in the `features_test` schema which you can inspect afterwards.
 
 ![triage feature test result](featuretest-result.png)
