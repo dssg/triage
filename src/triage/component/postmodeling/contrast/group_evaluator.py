@@ -19,12 +19,15 @@ from matplotlib import pyplot as plt
 from sklearn import metrics
 from collections import namedtuple
 from itertools import starmap
+from scipy.spatial.distance import squareform, pdist
+import seaborn as sns
 
 from utils.file_helpers import download_s3
 from utils.test_conn import db_engine
 from utils.aux_funcs import recombine_categorical, pd_int_var
 
 # Get indivual model information/metadata from Audition output
+
 
 class ModelGroup(object):
     '''
@@ -86,6 +89,7 @@ class ModelGroup(object):
         # Add metadata attributes to model
         self.model_id = model_metadata['model_id']
         self.model_type = model_metadata['model_type']
+        self.train_end_time = model_metadata['train_end_time']
         self.hyperparameters = model_metadata['hyperparameters']
         self.model_hash = model_metadata['model_hash']
         self.train_matrix_uuid = model_metadata['train_matrix_uuid']
@@ -219,5 +223,44 @@ class ModelGroup(object):
         '''
         if self.train_matrix is None:
             self.train_matrix = self._fetch_matrix(self.train_matrix_uuid, *path)
+ 
+    def plot_jaccard(self, 
+                     figsize=(12, 16), 
+                     fontsize=20,
+                     top_n=100,
+                     model_subset=None):
+ 
+        if model_subset is None:
+            model_subset = self.model_id
+
+        if self.preds is None:
+            self._load_predictions()
+
+
+        # Call predicitons (this has to be filtered to comparable models)
+        df_sim = self.preds
+        df_sim['above_tresh'] = (df_sim['score'] <= top_n).astype(int)
+        df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
+
+        # Calculate Jaccard Similarity for the selected models
+        res = pdist(df_sim_piv[model_subset].T, 'jaccard')
+        df_jac = pd.DataFrame(1-squareform(res), 
+                              index=model_subset,
+                              columns=model_subset)
+
+        # Plot matrix heatmap
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_xlabel('Model Id', fontsize=fontsize)
+        ax.set_ylabel('Model Id', fontsize=fontsize)
+        plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
+        sns.heatmap(df_jac, cmap='Greens', vmin=0, vmax=1, annot=True, linewidth=0.1)
+
+
+
+
+
+
+
+
 
 
