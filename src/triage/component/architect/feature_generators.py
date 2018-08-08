@@ -363,8 +363,7 @@ class FeatureGenerator(object):
             task_type='aggregation'
         )
         logging.info('Generated a total of %s table tasks', len(all_tasks))
-        for i, task in enumerate(all_tasks.values()):
-            task_num = i + 1
+        for task_num, task in enumerate(all_tasks.values(), 1):
             prepares = task.get('prepare', [])
             inserts = task.get('inserts', [])
             finalize = task.get('finalize', [])
@@ -376,20 +375,21 @@ class FeatureGenerator(object):
             logging.info('------------------')
             logging.info('PREPARATION QUERIES')
             logging.info('------------------')
-            for i, query in enumerate(prepares):
+            for query_num, query in enumerate(prepares, 1):
                 logging.info('')
+                logging.info('prepare query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
             logging.info('------------------')
             logging.info('INSERT QUERIES')
             logging.info('------------------')
-            for i, query in enumerate(inserts):
+            for query_num, query in enumerate(inserts, 1):
                 logging.info('')
-                logging.info('insert query %s: %s', i + 1, sqlparse.format(str(query), reindent=True))
+                logging.info('insert query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
             logging.info('------------------')
             logging.info('FINALIZE QUERIES')
             logging.info('------------------')
-            for i, query in enumerate(finalize):
+            for query_num, query in enumerate(finalize, 1):
                 logging.info('')
-                logging.info('finalize query %s: %s', i + 1, sqlparse.format(str(query), reindent=True))
+                logging.info('finalize query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
             self.process_table_task(task)
 
     def create_all_tables(self, feature_aggregation_config, feature_dates, state_table):
