@@ -5,7 +5,7 @@ from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
-from triage.experiments import CONFIG_VERSION
+from triage.experiments import CONFIG_VERSION, MultiCoreExperiment, SingleThreadedExperiment
 from triage.component.audition import AuditionRunner
 from triage.util.db import create_engine
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
@@ -43,10 +43,92 @@ class Triage(RootCommand):
 @Triage.register
 class Experiment(Command):
     """Validate and run experiments, manage experiment database"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            '-c', '--config',
+            type=argparse.FileType('r'),
+            help="config file for Experiment",
+        )
+        parser.add_argument(
+            '--n-db-processes',
+            type=int,
+            default=1,
+            help="number of concurrent database connections to use"
+        )
+        parser.add_argument(
+            '--n-processes',
+            type=int,
+            default=1,
+            help="number of cores to use"
+        )
+        parser.add_argument(
+            '--project-path',
+            type=str,
+            help="path to store matrices and trained models"
+        )
+        parser.add_argument(
+            '--replace',
+            dest='replace',
+            action='store_true'
+        )
+        parser.add_argument(
+            '--no-replace',
+            dest='replace',
+            action='store_false'
+        )
+        parser.set_defaults(
+            validate=True,
+            validate_only=False,
+            replace=False,
+        )
+
+    @cachedproperty
+    def experiment(self):
+        db_url = self.root.db_url
+        config = yaml.load(self.args.config)
+        db_engine = create_engine(db_url)
+        common_kwargs = {
+            'db_engine': db_engine,
+            'project_path': self.args.project_path,
+            'config': config,
+            'replace': self.args.replace,
+        }
+        if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+            experiment = MultiCoreExperiment(
+                n_db_processes=self.args.n_db_processes,
+                n_processes=self.args.n_processes,
+                **common_kwargs
+            )
+        else:
+            experiment = SingleThreadedExperiment(**common_kwargs)
+        return experiment
+
     @cmdmethod
     def upgradedb(self, args):
         """Upgrade triage results database"""
         upgrade_db(args.dbfile)
+
+    @cmdmethod('-v', '--validate', action='store_true', help="validate before running audition")
+    @cmdmethod('--no-validate', action='store_false', dest='validate', help="run experiment without validation")
+    @cmdmethod('--validate-only', action='store_true', help="only validate the config file not running Experiment")
+    def run(self, args):
+        if args.validate_only:
+            try:
+                self.experiment.validate()
+            except Exception as err:
+                raise(err)
+        elif args.validate:
+            try:
+                self.experiment.validate()
+                self.experiment.run()
+            except Exception as err:
+                raise(err)
+        else:
+            self.experiment.run()
+
+    def __call__(self, args):
+        self['run'](args)
 
     @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
     def stampdb(self, args):

@@ -14,7 +14,7 @@ class MultiCoreExperiment(ExperimentBase):
         super(MultiCoreExperiment, self).__init__(*args, **kwargs)
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
-        if kwargs['model_storage_class'] == InMemoryModelStorageEngine:
+        if kwargs.get('model_storage_class', None) == InMemoryModelStorageEngine:
             raise ValueError('''
                 InMemoryModelStorageEngine not compatible with MultiCoreExperiment
             ''')

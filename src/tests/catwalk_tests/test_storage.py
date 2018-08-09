@@ -11,7 +11,8 @@ from triage.component.catwalk.storage import (
     CSVMatrixStore,
     FSStore,
     HDFMatrixStore,
-    InMemoryMatrixStore,
+    ModelStore,
+    MatrixStore,
     MemoryStore,
     S3Store,
 )
@@ -29,10 +30,10 @@ def test_S3Store():
         client.create_bucket(Bucket='test_bucket', ACL='public-read-write')
         store = S3Store(path=f"s3://test_bucket/a_path")
         assert not store.exists()
-        store.write(SomeClass('val'))
+        store.write('val'.encode('utf-8'))
         assert store.exists()
         newVal = store.load()
-        assert newVal.val == 'val'
+        assert newVal.decode('utf-8') == 'val'
         store.delete()
         assert not store.exists()
 
@@ -42,10 +43,10 @@ def test_FSStore():
         tmpfile = os.path.join(tmpdir, 'tmpfile')
         store = FSStore(tmpfile)
         assert not store.exists()
-        store.write(SomeClass('val'))
+        store.write('val'.encode('utf-8'))
         assert store.exists()
         newVal = store.load()
-        assert newVal.val == 'val'
+        assert newVal.decode('utf-8') == 'val'
         store.delete()
         assert not store.exists()
 
@@ -53,10 +54,10 @@ def test_FSStore():
 def test_MemoryStore():
     store = MemoryStore(None)
     assert not store.exists()
-    store.write(SomeClass('val'))
+    store.write('val'.encode('utf-8'))
     assert store.exists()
     newVal = store.load()
-    assert newVal.val == 'val'
+    assert newVal.decode('utf-8') == 'val'
     store.delete()
     assert not store.exists()
 
@@ -70,13 +71,14 @@ class MatrixStoreTest(unittest.TestCase):
             ('m_feature', [0.4, 0.5]),
             ('label', [0, 1])
         ])
-        df = pd.DataFrame.from_dict(data_dict)
+        df = pd.DataFrame.from_dict(data_dict).set_index(['entity_id'])
         metadata = {
             'label_name': 'label',
             'indices': ['entity_id'],
         }
 
-        inmemory = InMemoryMatrixStore(matrix=df, metadata=metadata)
+        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://', matrix=df, metadata=metadata)
+        inmemory.save()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpcsv = os.path.join(tmpdir, 'df.csv')
@@ -175,12 +177,11 @@ class MatrixStoreTest(unittest.TestCase):
             'feature_one': [0.5, 0.6],
             'feature_two': [0.5, 0.6],
         }
-        matrix = InMemoryMatrixStore(
-            matrix=pd.DataFrame.from_dict(data),
-            metadata={'end_time': '2016-01-01', 'indices': ['entity_id']}
-        )
+        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://')
+        inmemory.matrix = pd.DataFrame.from_dict(data)
+        inmemory.metadata = {'end_time': '2016-01-01', 'indices': ['entity_id']}
 
-        self.assertEqual(matrix.as_of_dates, ['2016-01-01'])
+        self.assertEqual(inmemory.as_of_dates, ['2016-01-01'])
 
     def test_as_of_dates_entity_date_index(self):
         data = {
@@ -189,26 +190,30 @@ class MatrixStoreTest(unittest.TestCase):
             'feature_two': [0.5, 0.6, 0.5, 0.6],
             'as_of_date': ['2016-01-01', '2016-01-01', '2017-01-01', '2017-01-01']
         }
-        matrix = InMemoryMatrixStore(
-            matrix=pd.DataFrame.from_dict(data),
-            metadata={'indices': ['entity_id', 'as_of_date']}
-        )
+        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://')
+        inmemory.matrix = pd.DataFrame.from_dict(data).set_index(['entity_id', 'as_of_date'])
+        inmemory.metadata = {'indices': ['entity_id', 'as_of_date']}
 
-        self.assertEqual(matrix.as_of_dates, ['2016-01-01', '2017-01-01'])
+        self.assertEqual(inmemory.as_of_dates, ['2016-01-01', '2017-01-01'])
 
     def test_s3_save(self):
         with mock_s3():
             import boto3
             client = boto3.client('s3')
             client.create_bucket(Bucket='fake-matrix-bucket', ACL='public-read-write')
+            example = self.matrix_store()[0]
+            
+            tosave = CSVMatrixStore(
+                matrix_path='s3://fake-matrix-bucket/test.csv',
+                metadata_path='s3://fake-matrix-bucket/test.yaml'
+            )
+            tosave.matrix = example.matrix
+            tosave.metadata = example.metadata
+            tosave.save()
 
-            matrix_store_list = self.matrix_store()
-
-            for matrix_store in matrix_store_list:
-                if isinstance(matrix_store, CSVMatrixStore):
-                    matrix_store.save(project_path='s3://fake-matrix-bucket', name='test')
-                    # CSV
-                    csv = CSVMatrixStore(matrix_path='s3://fake-matrix-bucket/test.csv', metadata_path='s3://fake-matrix-bucket/test.yaml')
-
-                    assert csv.metadata == matrix_store_list[0].metadata
-                    assert csv.matrix.to_dict() == matrix_store_list[0].matrix.to_dict()
+            tocheck = CSVMatrixStore(
+                matrix_path='s3://fake-matrix-bucket/test.csv',
+                metadata_path='s3://fake-matrix-bucket/test.yaml'
+            )
+            assert tocheck.metadata == example.metadata
+            assert tocheck.matrix.to_dict() == example.matrix.to_dict()
