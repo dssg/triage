@@ -72,7 +72,7 @@ class Experiment(Command):
         db_engine = create_engine(self.root.db_url)
         feature_config = yaml.load(args.feature_config_file)
 
-        FeatureGenerator(db_engine, 'features_test').create_preimputed_features(
+        FeatureGenerator(db_engine, 'features_test').create_features_before_imputation(
             feature_aggregation_config=feature_config,
             feature_dates=[args.as_of_date]
         )

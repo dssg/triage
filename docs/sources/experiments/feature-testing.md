@@ -18,7 +18,7 @@ All given feature aggregations will be processed for the given date. You will se
 ![triage feature test result](featuretest-result.png)
 
 ## Using Python Code
-If you'd like to call this from a notebook or from any other Python code, the arguments look similar but are a bit different. You have to supply your own sqlalchemy database engine to create a 'FeatureGenerator' object, and then call the `create_preimputed_features` method with your feature config as a list of dictionaries, along with an as-of-date as a string. Make sure your logging level is set to INFO if you want to see all of the queries.
+If you'd like to call this from a notebook or from any other Python code, the arguments look similar but are a bit different. You have to supply your own sqlalchemy database engine to create a 'FeatureGenerator' object, and then call the `create_features_before_imputation` method with your feature config as a list of dictionaries, along with an as-of-date as a string. Make sure your logging level is set to INFO if you want to see all of the queries.
 
 ```
 from triage.component.architect.feature_generators import FeatureGenerator
@@ -52,7 +52,7 @@ feature_config = [{
 	'from_obj': 'data'
 }]
 
-FeatureGenerator(db_engine, 'features_test').create_preimputed_features(
+FeatureGenerator(db_engine, 'features_test').create_features_before_imputation(
 	feature_aggregation_config=feature_config,
 	feature_dates=['2016-01-01']
 )
