@@ -5,10 +5,11 @@ from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
-from triage.experiments import CONFIG_VERSION
+from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.audition import AuditionRunner
-from triage.util.db import create_engine
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
+from triage.experiments import CONFIG_VERSION
+from triage.util.db import create_engine
 
 import logging
 
@@ -64,6 +65,19 @@ class Experiment(Command):
         """Return the experiment config version compatible with this installation of Triage"""
         print(CONFIG_VERSION)
 
+    @cmdmethod('as_of_date', help='The date as of which to run features')
+    @cmdmethod('feature_config_file', type=argparse.FileType('r'), help='Feature config YAML file, containing a list of feature_aggregation objects')
+    def featuretest(self, args):
+        """Run a feature aggregation for an as-of-date"""
+        db_engine = create_engine(self.root.db_url)
+        feature_config = yaml.load(args.feature_config_file)
+
+        FeatureGenerator(db_engine, 'features_test').create_features_before_imputation(
+            feature_aggregation_config=feature_config,
+            feature_dates=[args.as_of_date]
+        )
+        logging.info('Features created for feature_config %s and date %s', feature_config, args.as_of_date)
+
 
 @Triage.register
 class Audition(Command):
@@ -110,6 +124,7 @@ class Audition(Command):
                 raise(err)
         else:
             self.runner.run()
+
 
 def execute():
     main(Triage)
