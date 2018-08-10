@@ -1,7 +1,7 @@
 import logging
 
 from .metric_directionality import is_better_operator
-
+from .pre_audition import PreAudition
 
 def _past_threshold(df, metric_filter):
     return df[is_better_operator(metric_filter['metric'])(
@@ -21,6 +21,43 @@ def _of_metric(df, metric_filter):
     ]
 
 
+class ModelGroupChecker(object):
+    def __init__(
+        self,
+        train_end_times,
+        initial_model_group_ids,
+        distance_table,
+        db_engine
+    ):
+        self.train_end_times = train_end_times
+        self._initial_model_group_ids = initial_model_group_ids
+        self.distance_table = distance_table
+        self.db_engine = db_engine
+
+    def have_same_train_end_times(self):
+        logging.info("Checking if all model groups have the same train end times")
+        pre_aud = PreAudition(self.db_engine)
+        end_times_str = [end_time.strftime('%Y-%m-%d') for end_time in self.train_end_times]
+        logging.info(f"Found {len(self._initial_model_group_ids)} total model groups")
+        query = f"""
+           SELECT model_group_id
+           FROM (
+               SELECT model_group_id,
+               array_agg(distinct train_end_time::date::text) as train_end_time_list
+               FROM {self.distance_table}
+               WHERE model_group_id in {tuple(self._initial_model_group_ids)}
+               GROUP BY model_group_id
+           ) as t
+           WHERE train_end_time_list = ARRAY{end_times_str}
+           """
+        model_group_ids = pre_aud.get_model_groups(query)
+        dropped_model_groups = len(self._initial_model_group_ids) - len(model_group_ids)
+        logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
+        logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
+
+        return model_group_ids
+
+
 class ModelGroupThresholder(object):
 
     def __init__(
@@ -28,7 +65,7 @@ class ModelGroupThresholder(object):
         distance_from_best_table,
         train_end_times,
         initial_model_group_ids,
-        initial_metric_filters
+        initial_metric_filters,
     ):
         """Iteratively narrow down a list of model groups by changing thresholds
         for max below best model and minimum absolute value with respect to
@@ -46,6 +83,7 @@ class ModelGroupThresholder(object):
         self.train_end_times = train_end_times
         self._initial_model_group_ids = initial_model_group_ids
         self._metric_filters = initial_metric_filters
+
 
     def _filter_model_groups(self, df, filter_func):
         """Filter model groups by ensuring each of their metrics meets the given
@@ -129,6 +167,7 @@ class ModelGroupThresholder(object):
             len(total_model_groups)
         )
         return total_model_groups
+
 
     def update_filters(self, new_metric_filters):
         """Update the saved metric filters.

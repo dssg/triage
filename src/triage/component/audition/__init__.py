@@ -6,7 +6,7 @@ import os
 from smart_open import smart_open
 
 from .distance_from_best import DistanceFromBestTable, BestDistancePlotter
-from .thresholding import ModelGroupThresholder
+from .thresholding import ModelGroupChecker, ModelGroupThresholder
 from .regrets import SelectionRulePicker, SelectionRulePlotter
 from .selection_rule_performance import SelectionRulePerformancePlotter
 from .model_group_performance import ModelGroupPerformancePlotter
@@ -82,13 +82,24 @@ class Auditioner(object):
         self.distance_from_best_table = DistanceFromBestTable(
             db_engine=db_engine,
             models_table=models_table,
-            distance_table=distance_table
+            distance_table=distance_table,
         )
+
         self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table, self.directory)
+
+        self.model_group_checker = ModelGroupChecker(
+            train_end_times = train_end_times,
+            initial_model_group_ids = model_group_ids,
+            distance_table = distance_table,
+            db_engine = db_engine
+        )
+
+        self.first_pass_model_groups = self.model_group_checker.have_same_train_end_times()
+
         self.model_group_thresholder = ModelGroupThresholder(
             distance_from_best_table=self.distance_from_best_table,
             train_end_times=train_end_times,
-            initial_model_group_ids=model_group_ids,
+            initial_model_group_ids=self.first_pass_model_groups,
             initial_metric_filters=initial_metric_filters
         )
         self.model_group_performance_plotter = \
@@ -100,7 +111,7 @@ class Auditioner(object):
             SelectionRulePerformancePlotter(self.selection_rule_picker, directory)
 
         self.distance_from_best_table.create_and_populate(
-            model_group_ids,
+            self.first_pass_model_groups,
             self.train_end_times,
             self.metrics
         )
