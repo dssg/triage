@@ -16,10 +16,10 @@ import pandas as pd
 import numpy as np
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
-from sklearn import metrics
 from collections import namedtuple
-from itertools import starmap
+from itertools import starmap, combinations
 from scipy.spatial.distance import squareform, pdist
+from scipy.stats import spearmanr
 import seaborn as sns
 
 from utils.file_helpers import download_s3
@@ -130,13 +130,10 @@ class ModelGroup(object):
     def _load_feature_importances(self):
         features = pd.read_sql("""
                SELECT model_id,
-                      entity_id,
-                      as_of_date,
                       feature,
-                      method,
-                      feature_value,
-                      importance_score
-               FROM test_results.individual_importances
+                      feature_importance,
+                      rank_abs
+               FROM train_results.feature_importances 
                WHERE model_id IN {}
                """.format(tuple(self.model_id)),
                con=db_engine)
@@ -157,73 +154,72 @@ class ModelGroup(object):
                 con=db_engine)
         self.model_metrics = model_metrics
 
-    def _fetch_matrix(self, matrix_hash, path):
+    def _rank_corr_df(self,
+                      model_pair,
+                      top_n,
+                      type):
         '''
-        Load matrices into object (Beware!)
-        This can be a memory intensive process. This function will use the
-        stored model parameters to load matrices from a .csv file. If the path
-        is a s3 path, the method will use s3fs to open it. If the path is a local
-        machine path, it will be opened as a pandas dataframe.
-
-        Arguments:
-            - PATH <s3 path or local path>
-        '''
-        if 's3' in path:
-            mat = download_s3(str(path + self.train_matrix_uuid))
-        else:
-            mat = pd.read_csv(str(path + self.train_matrix_uuid + '.csv'))
-
-        return(mat)
-
-    def load_features_preds_matrix(self, *path):
-        '''
-        Load predicion matrix (from s3 or system file) and merge with
-        label values from the test_results.predictions tables. The outcome
-        is a pandas dataframe with a matrix for each entity_id, its predicted
-        label, scores, and the feature matrix. This last object will be store
-        as the pred_matrix attribute of the class.
-
-        Arguments:
-            - Arguments inherited from _fetch_matrices: 
-                - path: relative path to the triage matrices folder or s3 path
+        Calculates ranked correlations for ranked observations and features
+        using the stats.spearmanr scipy module.
+        Arguments: 
+            - model_pair (tuple): tuple with model_ids
+              observations or features
+            - top_n (int): number of rows to rank (top-k model)
         '''
 
-        if self.train_matrix is None:
-            mat = [self._fetch_matrix(hash_, *path) for hash_ in self.pred_matrix_uuid]
-            mat_tuple = zip(mat, self.model_id)
-            mat_named = list(starmap(pd_int_var(df, m_id, 'model_id'), mat_tuple))
+        if type not in ['predictions', 'features']:
+            raise Exception('Wrong type! Rank correlation is not available'
+                    + '\n for {}. Try the following options:'.format(type) 
+                    + '\n predictions and features')
 
-        if self.preds is None:
-            self._load_predictions()
+        if type is 'predictions':
 
-        if self.feature_importances is None:
-            self._load_feature_importances()
+            # Split df for each model_id 
+            model_1 = self.preds[self.preds['model_id'] == model_pair[0]]
+            model_2 = self.preds[self.preds['model_id'] == model_pair[1]]
 
-        if self.pred_matrix is None:
-            # There is probably a less memory intense way of doing this
-            pred_mat_tuple = zip(mat_named, self.preds)
+            # Slice df to take top-n observations
+            top_model_1 = model_1.sort_values('rank_abs', axis=0)[:top_n].set_index('entity_id')
+            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:top_n].set_index('entity_id')
 
-            # Merge feature/prediction matrix with predictions
-            merged_df_list = list(starmap(lambda m, p:
-                                          m.merge(p,
-                                                  on='entity_id',
-                                                  how='inner',
-                                                  suffixes=('test', 'pred')),
-                                            pred_mat_tuple))
-            self.pred_matrix = merged_df_list
+            # Merge df's by entity_id and calculate corr
+            df_pair_merge = top_model_1.merge(top_model_2, 
+                                              how='inner',
+                                              left_index=True,
+                                              right_index=True,
+                                              suffixes=['_1', '_2'])
 
-    def load_train_matrix(self, *path):
-        '''
-        Load training metrix (from s3 or system file). This object will be store 
-        as the train_matrix object of the class.
+            df_pair_filter = df_pair_merge.filter(regex='rank_abs*')
+            rank_corr = spearmanr(df_pair_filter.iloc[:, 0], df_pair_filter.iloc[:, 1])
 
-        Arguments:
-            - Arguments inherited from _fecth_matrices:
-                - path: relative path to the triage matrices folder or s3 path
-        '''
-        if self.train_matrix is None:
-            self.train_matrix = self._fetch_matrix(self.train_matrix_uuid, *path)
- 
+            # Return corr value (not p-value)
+            return rank_corr[0]
+
+        if type is 'features':
+
+            # Split df for each model_id 
+            model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
+            model_2 = self.feature_importances[self.feature_importances['model_id'] == model_pair[1]]
+
+            # Slice df to take top-n observations
+            top_model_1 = model_1.sort_values('rank_abs', axis=0)[:top_n].set_index('feature')
+            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:top_n].set_index('feature')
+
+            # Merge df's by entity_id and calculate corr
+            df_pair_merge = top_model_1.merge(top_model_2, 
+                                              how='inner',
+                                              left_index=True,
+                                              right_index=True,
+                                              suffixes=['_1', '_2'])
+
+            df_pair_filter = df_pair_merge.filter(regex='rank_abs*')
+            rank_corr = spearmanr(df_pair_filter.iloc[:, 0], df_pair_filter.iloc[:, 1])
+
+            # Return corr value (not p-value)
+            return rank_corr[0]
+     
+
+
     def plot_jaccard(self, 
                      figsize=(12, 16), 
                      fontsize=20,
@@ -235,7 +231,6 @@ class ModelGroup(object):
 
         if self.preds is None:
             self._load_predictions()
-
 
         # Call predicitons (this has to be filtered to comparable models)
         df_sim = self.preds
@@ -255,12 +250,76 @@ class ModelGroup(object):
         plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
         sns.heatmap(df_jac, cmap='Greens', vmin=0, vmax=1, annot=True, linewidth=0.1)
 
+    def plot_ranked_corrlelation(self, 
+                                 figsize=(12, 16),
+                                 fontsize=20,
+                                 top_n=100,
+                                 model_subset=None,
+                                 type=None,
+                                 ids=None):
 
+        if model_subset is None:
+            model_subset = self.model_id
 
+        if type is 'predictions':
+            if self.preds is None:
+                self._load_predictions()
 
+            # Calculate rank correlations for predictions
+            corrs = [self._rank_corr_df(pair,
+                                        type=type,
+                                        top_n=top_n) for pair in combinations(model_subset, 2)]
 
+            # Store results in dataframe using tuples
+            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+            for pair, corr in zip(combinations(model_subset, 2), corrs):
+                corr_matrix.loc[pair] = corr
 
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
 
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title('Top-{} Predictions Rank Correlation'.format(top_n), fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)
+    
+        if type is 'features':
+            if self.feature_importances is None:
+                self._load_feature_importances()
 
+            # Calculate rank correlations for predictions
+            corrs = [self._rank_corr_df(pair,
+                                        type=type,
+                                        top_n=top_n) for pair in combinations(model_subset, 2)]
 
+            # Store results in dataframe using tuples
+            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+            for pair, corr in zip(combinations(model_subset, 2), corrs):
+                corr_matrix.loc[pair] = corr
+
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
+
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title('Top-{} Feature Rank Correlation'.format(top_n), fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)
 
