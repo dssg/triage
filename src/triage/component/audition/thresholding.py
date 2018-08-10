@@ -26,25 +26,48 @@ class ModelGroupChecker(object):
         self,
         train_end_times,
         initial_model_group_ids,
-        distance_table,
+        models_table,
         db_engine
     ):
+        """Before create the distance table, we want to check if the model_group_ids
+        and train_end_times passed in are reasonable to prevent incomparable model groups
+        from being populated to the distance table.
+
+        Args:
+            train_end_times (list) The set of train end times to consider during iteration
+            initial_model_group_ids (list) The initial list of model group ids to narrow down
+            models_table (string) The name of the results schema
+            db_engine (sqlalchemy.engine) A database engine with access to a results schema
+                of a completed modeling run
+        """
         self.train_end_times = train_end_times
         self._initial_model_group_ids = initial_model_group_ids
-        self.distance_table = distance_table
+        self.models_table = models_table
         self.db_engine = db_engine
 
+    def _check_list_of_string(self, obj):
+        return bool(obj) and all(isinstance(element, str) for element in obj)
+
     def have_same_train_end_times(self):
+        """Returns the model groups which have the same train end times as the
+        input train end times
+
+        Returns:
+            (set) The model group ids have the same train end times
+        """
         logging.info("Checking if all model groups have the same train end times")
         pre_aud = PreAudition(self.db_engine)
-        end_times_str = [end_time.strftime('%Y-%m-%d') for end_time in self.train_end_times]
+        if self._check_list_of_string(self.train_end_times):
+            end_times_str = self.train_end_times
+        else:
+            end_times_str = [end_time.strftime('%Y-%m-%d') for end_time in self.train_end_times]
         logging.info(f"Found {len(self._initial_model_group_ids)} total model groups")
         query = f"""
            SELECT model_group_id
            FROM (
                SELECT model_group_id,
                array_agg(distinct train_end_time::date::text) as train_end_time_list
-               FROM {self.distance_table}
+               FROM model_metadata.{self.models_table}
                WHERE model_group_id in {tuple(self._initial_model_group_ids)}
                GROUP BY model_group_id
            ) as t
@@ -55,7 +78,7 @@ class ModelGroupChecker(object):
         logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
         logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
-        return model_group_ids
+        return set(model_group_ids)
 
 
 class ModelGroupThresholder(object):
@@ -65,7 +88,7 @@ class ModelGroupThresholder(object):
         distance_from_best_table,
         train_end_times,
         initial_model_group_ids,
-        initial_metric_filters,
+        initial_metric_filters
     ):
         """Iteratively narrow down a list of model groups by changing thresholds
         for max below best model and minimum absolute value with respect to

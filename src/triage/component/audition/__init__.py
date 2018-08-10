@@ -84,13 +84,12 @@ class Auditioner(object):
             models_table=models_table,
             distance_table=distance_table,
         )
-
         self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table, self.directory)
 
         self.model_group_checker = ModelGroupChecker(
             train_end_times = train_end_times,
             initial_model_group_ids = model_group_ids,
-            distance_table = distance_table,
+            models_table = models_table,
             db_engine = db_engine
         )
 
