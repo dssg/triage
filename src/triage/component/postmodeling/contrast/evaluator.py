@@ -41,6 +41,7 @@ def get_models_ids(audited_model_group_ids):
 
 # Get indivual model information/metadata from Audition output
 
+
 class Model(object):
     '''
     ModelExtractor class calls the model metadata from the database
@@ -133,13 +134,10 @@ class Model(object):
     def _load_feature_importances(self):
         features = pd.read_sql("""
                SELECT model_id,
-                      entity_id,
-                      as_of_date,
                       feature,
-                      method,
-                      feature_value,
-                      importance_score
-               FROM test_results.individual_importances
+                      feature_importance,
+                      rank_abs
+               FROM train_results.feature_importances
                WHERE model_id = {}
                """.format(self.model_id),
                con=db_engine)
@@ -292,16 +290,16 @@ class Model(object):
         if self.feature_importances is None:
             self._load_feature_importances()
 
-        importances = self.feature_importances.filter(items=['feature', 'feature_value'])
+        importances = self.feature_importances.filter(items=['feature', 'feature_importance'])
         importances = importances.set_index('feature')
 
         # Sort by the absolute value of the importance of the feature
-        importances['sort'] = abs(importances['feature_value'])
+        importances['sort'] = abs(importances['feature_importance'])
         importances = importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
         importances = importances[0:n_features]
 
         # Show the most important positive feature at the top of the graph
-        importances = importances.sort_values(by='feature_value', ascending=True)
+        importances = importances.sort_values(by='feature_importance', ascending=True)
 
         fig, ax = plt.subplots(figsize=figsize)
         ax.tick_params(labelsize=16)
