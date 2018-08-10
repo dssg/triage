@@ -175,8 +175,6 @@ def test_Auditioner():
             model_group_ids,
             train_end_times,
             no_filtering,
-            distance_table='distance_table',
-
         )
         assert len(auditioner.thresholded_model_group_ids) == num_model_groups
         auditioner.plot_model_groups()
