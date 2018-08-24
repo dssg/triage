@@ -1,7 +1,9 @@
 import logging
 
 from .metric_directionality import is_better_operator
-from .pre_audition import PreAudition
+# from .pre_audition import PreAudition
+import pandas as pd
+from datetime import datetime
 
 def _past_threshold(df, metric_filter):
     return df[is_better_operator(metric_filter['metric'])(
@@ -21,64 +23,62 @@ def _of_metric(df, metric_filter):
     ]
 
 
-class ModelGroupChecker(object):
-    def __init__(
-        self,
-        train_end_times,
-        initial_model_group_ids,
-        models_table,
-        db_engine
-    ):
-        """Before create the distance table, we want to check if the model_group_ids
-        and train_end_times passed in are reasonable to prevent incomparable model groups
-        from being populated to the distance table.
+def model_groups_filter(
+    train_end_times,
+    initial_model_group_ids,
+    models_table,
+    db_engine
+):
+    """Before creating the distance table, we want to filter the model_group_ids
+    and train_end_times only if they are reasonable -- every model group should
+    have the same train_end_times -- to prevent incomparable model groups from
+    being populated to the distance table.
 
-        Args:
-            train_end_times (list) The set of train end times to consider during iteration
-            initial_model_group_ids (list) The initial list of model group ids to narrow down
-            models_table (string) The name of the results schema
-            db_engine (sqlalchemy.engine) A database engine with access to a results schema
-                of a completed modeling run
+    Args:
+        train_end_times (list) The set of train_end_times to consider during
+                               the iteration
+        initial_model_group_ids (list) The initial list of model group ids to
+                                       narrow down
+        models_table (string) The name of the results schema
+        db_engine (sqlalchemy.engine) A database engine with access to results
+                                      schema of a completed modeling run
+    """
+
+    if not isinstance(train_end_times, list) or not all(isinstance(e, str) for e in train_end_times):
+        raise TypeError("train_end_times should be a list of str or timestamp")
+
+    if not bool(train_end_times):
+        raise ValueError("train_end_times shouldn't be an empty list")
+
+    end_times_sql = "ARRAY[{}]".format(
+        ', '.join(
+            "'{}'".format(
+                end_time.strftime('%Y -%m-%d') if isinstance(end_time, datetime) else end_time
+            ) for end_time in train_end_times
+        )
+    )
+    logging.info("Checking if all model groups have the same train end times")
+    logging.info(f"Found {len(initial_model_group_ids)} total model groups")
+    query = f"""
+        SELECT model_group_id
+        FROM (
+            SELECT
+                model_group_id,
+                array_agg(distinct train_end_time::date::text) as train_end_time_list
+            FROM model_metadata.{models_table}
+            WHERE model_group_id in {tuple(initial_model_group_ids)}
+            GROUP BY model_group_id
+        ) as t
+        WHERE train_end_time_list = {end_times_sql}
         """
-        self.train_end_times = train_end_times
-        self._initial_model_group_ids = initial_model_group_ids
-        self.models_table = models_table
-        self.db_engine = db_engine
+    model_groups_df = pd.read_sql(query, con=db_engine)
+    model_group_ids = list(model_groups_df['model_group_id'])
 
-    def _check_list_of_string(self, obj):
-        return bool(obj) and all(isinstance(element, str) for element in obj)
+    dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
+    logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
+    logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
-    def have_same_train_end_times(self):
-        """Returns the model groups which have the same train end times as the
-        input train end times
-
-        Returns:
-            (set) The model group ids have the same train end times
-        """
-        logging.info("Checking if all model groups have the same train end times")
-        pre_aud = PreAudition(self.db_engine)
-        if self._check_list_of_string(self.train_end_times):
-            end_times_str = self.train_end_times
-        else:
-            end_times_str = [end_time.strftime('%Y-%m-%d') for end_time in self.train_end_times]
-        logging.info(f"Found {len(self._initial_model_group_ids)} total model groups")
-        query = f"""
-           SELECT model_group_id
-           FROM (
-               SELECT model_group_id,
-               array_agg(distinct train_end_time::date::text) as train_end_time_list
-               FROM model_metadata.{self.models_table}
-               WHERE model_group_id in {tuple(self._initial_model_group_ids)}
-               GROUP BY model_group_id
-           ) as t
-           WHERE train_end_time_list = ARRAY{end_times_str}
-           """
-        model_group_ids = pre_aud.get_model_groups(query)
-        dropped_model_groups = len(self._initial_model_group_ids) - len(model_group_ids)
-        logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
-        logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
-
-        return set(model_group_ids)
+    return set(model_group_ids)
 
 
 class ModelGroupThresholder(object):

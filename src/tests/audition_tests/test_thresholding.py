@@ -4,13 +4,13 @@ import testing.postgresql
 from sqlalchemy import create_engine
 
 from triage.component.audition.distance_from_best import DistanceFromBestTable
-from triage.component.audition.thresholding import ModelGroupChecker, ModelGroupThresholder
+from triage.component.audition.thresholding import model_groups_filter, ModelGroupThresholder
 from triage.component.catwalk.db import ensure_db
 
 from tests.results_tests.factories import ModelFactory, ModelGroupFactory, init_engine, session
 
-class ModelGroupCheckerTest(TestCase):
-    def setup_data(self, engine):
+class ModelGroupFilterTest(TestCase):
+    def filter_same_train_end_times(self, engine):
         ensure_db(engine)
         init_engine(engine)
         mg1 = ModelGroupFactory(model_group_id=1, model_type='modelType1')
@@ -36,20 +36,19 @@ class ModelGroupCheckerTest(TestCase):
         session.commit()
         train_end_times = ['2014-01-01', '2015-01-01', '2016-01-01', '2017-01-01']
         model_groups = [1, 2, 3, 4]
-        model_group_checker = ModelGroupChecker(
+        model_group_ids = model_groups_filter(
              train_end_times=train_end_times,
              initial_model_group_ids=model_groups,
              models_table='models',
              db_engine=engine
         )
 
-        return model_group_checker
+        return model_group_ids
 
     def test_have_same_train_end_times(self):
         with testing.postgresql.Postgresql() as postgresql:
             engine = create_engine(postgresql.url())
-            model_group_checker = self.setup_data(engine)
-            pass_model_groups = model_group_checker.have_same_train_end_times()
+            pass_model_groups = self.filter_same_train_end_times(engine)
             assert pass_model_groups == {1, 3}
 
 
