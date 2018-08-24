@@ -87,7 +87,7 @@ class Auditioner(object):
         self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table, self.directory)
 
         self.first_pass_model_groups = model_groups_filter(
-                train_end_times-train_end_times,
+                train_end_times=train_end_times,
                 initial_model_group_ids=model_group_ids,
                 models_table=models_table,
                 db_engine=db_engine

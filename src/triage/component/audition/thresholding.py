@@ -1,7 +1,6 @@
 import logging
 
 from .metric_directionality import is_better_operator
-# from .pre_audition import PreAudition
 import pandas as pd
 from datetime import datetime
 
@@ -44,7 +43,7 @@ def model_groups_filter(
                                       schema of a completed modeling run
     """
 
-    if not isinstance(train_end_times, list) or not all(isinstance(e, str) for e in train_end_times):
+    if isinstance(train_end_times, str) or not hasattr(train_end_times, '__iter__'):
         raise TypeError("train_end_times should be a list of str or timestamp")
 
     if not bool(train_end_times):
@@ -53,7 +52,7 @@ def model_groups_filter(
     end_times_sql = "ARRAY[{}]".format(
         ', '.join(
             "'{}'".format(
-                end_time.strftime('%Y -%m-%d') if isinstance(end_time, datetime) else end_time
+                end_time.strftime('%Y-%m-%d') if isinstance(end_time, datetime) else end_time
             ) for end_time in train_end_times
         )
     )
@@ -79,7 +78,6 @@ def model_groups_filter(
     logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
     return set(model_group_ids)
-
 
 class ModelGroupThresholder(object):
 
