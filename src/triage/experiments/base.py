@@ -60,7 +60,6 @@ class ExperimentBase(ABC):
     Args:
         config (dict)
         db_engine (triage.util.db.SerializableDbEngine or sqlalchemy.engine.Engine)
-        model_storage_class (triage.component.catwalk.storage.ModelStorageEngine)
         project_path (string)
         replace (bool)
         cleanup_timeout (int)

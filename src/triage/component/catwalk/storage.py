@@ -3,6 +3,7 @@
 from io import BytesIO
 import os
 from os.path import dirname
+import pathlib
 import logging
 from sklearn.externals import joblib
 from urllib.parse import urlparse
@@ -51,11 +52,9 @@ class S3Store(Store):
         s3 = s3fs.S3FileSystem()
         s3.rm(self.path)
 
-    @contextmanager
     def open(self, *args, **kwargs):
         s3 = s3fs.S3FileSystem()
-        with s3.open(self.path, *args, **kwargs) as f:
-            yield f
+        return s3.open(self.path, *args, **kwargs)
 
 
 class FSStore(Store):
@@ -65,11 +64,9 @@ class FSStore(Store):
     def delete(self):
         os.remove(self.path)
 
-    @contextmanager
     def open(self, *args, **kwargs):
         os.makedirs(dirname(self.path), exist_ok=True)
-        with open(self.path, *args, **kwargs) as f:
-            yield f
+        return open(self.path, *args, **kwargs)
 
 
 class MemoryStore(Store):
@@ -123,7 +120,7 @@ class ModelStorageEngine(object):
 
 class S3ModelStorageEngine(ModelStorageEngine):
     def get_store(self, model_hash):
-        return ModelStore(S3Store('/'.join([self.project_path, self.model_dir, model_hash])))
+        return ModelStore(S3Store(pathlib.PurePosixPath(self.project_path, self.model_dir, model_hash)))
 
 
 class FSModelStorageEngine(ModelStorageEngine):

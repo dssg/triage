@@ -41,6 +41,27 @@ class Triage(RootCommand):
 
 
 @Triage.register
+class Db(Command):
+    """Manage experiment database"""
+
+    @cmdmethod
+    def upgrade(self, args):
+        """Upgrade triage results database"""
+        upgrade_db(args.dbfile)
+
+    @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
+    def stamp(self, args):
+        """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
+        
+        Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
+        """
+        revision = REVISION_MAPPING[args.configversion]
+        print(f"Based on config version {args.configversion} "
+              f"we think your results schema is version {revision} and are upgrading to it")
+        stamp_db(revision, args.dbfile)
+
+
+@Triage.register
 class Experiment(Command):
     """Validate and run experiments, manage experiment database"""
 
@@ -49,6 +70,7 @@ class Experiment(Command):
             '-c', '--config',
             type=argparse.FileType('r'),
             help="config file for Experiment",
+            required=True
         )
         parser.add_argument(
             '--n-db-processes',
@@ -72,15 +94,9 @@ class Experiment(Command):
             dest='replace',
             action='store_true'
         )
-        parser.add_argument(
-            '--no-replace',
-            dest='replace',
-            action='store_false'
-        )
         parser.set_defaults(
             validate=True,
             validate_only=False,
-            replace=False,
         )
 
     @cachedproperty
@@ -104,42 +120,20 @@ class Experiment(Command):
             experiment = SingleThreadedExperiment(**common_kwargs)
         return experiment
 
-    @cmdmethod
-    def upgradedb(self, args):
-        """Upgrade triage results database"""
-        upgrade_db(args.dbfile)
-
     @cmdmethod('-v', '--validate', action='store_true', help="validate before running audition")
     @cmdmethod('--no-validate', action='store_false', dest='validate', help="run experiment without validation")
     @cmdmethod('--validate-only', action='store_true', help="only validate the config file not running Experiment")
     def run(self, args):
         if args.validate_only:
-            try:
-                self.experiment.validate()
-            except Exception as err:
-                raise(err)
+            self.experiment.validate()
         elif args.validate:
-            try:
-                self.experiment.validate()
-                self.experiment.run()
-            except Exception as err:
-                raise(err)
+            self.experiment.validate()
+            self.experiment.run()
         else:
             self.experiment.run()
 
     def __call__(self, args):
         self['run'](args)
-
-    @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
-    def stampdb(self, args):
-        """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
-        
-        Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
-        """
-        revision = REVISION_MAPPING[args.configversion]
-        print(f"Based on config version {args.configversion} "
-              f"we think your results schema is version {revision} and are upgrading to it")
-        stamp_db(revision, args.dbfile)
 
     @cmdmethod
     def configversion(self, args):

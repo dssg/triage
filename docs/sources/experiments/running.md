@@ -41,7 +41,7 @@ from triage.experiments import SingleThreadedExperiment
 
 experiment = SingleThreadedExperiment(
     config=experiment_config, # a dictionary
-    db_engine=create_engine(...),
+    db_engine=create_engine(...), # http://docs.sqlalchemy.org/en/latest/core/engines.html
     project_path='/path/to/directory/to/save/data'
 )
 experiment.run()
@@ -61,7 +61,7 @@ triage experiment -c example_experiment_config.yaml --project-path '/path/to/dir
 
 ### Python
 
-In Python, you can use the `MultiCoreExperiment` instead of the `SingleThreadedExperiment`, and similarly pass the `n_processes` and `n_db_processes` parameters. We also recommend using `triage.create_engine`. It will create a serializable version of the engine that will be fully reconstructed in multiprocess contexts. If you pass a regular SQLAlchemy engine, in these contexts the engine will be reconstructed with the *URL only*, which may cancel other settings you have used to configure your engine.
+In Python, you can use the `MultiCoreExperiment` instead of the `SingleThreadedExperiment`, and similarly pass the `n_processes` and `n_db_processes` parameters. We also recommend using `triage.create_engine`. It will create a serializable version of the engine that will be fully reconstructed in multiprocess contexts. If you pass a regular SQLAlchemy engine, in these contexts the engine will be reconstructed with the [database URL only](http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls), which may cancel other settings you have used to configure your engine.
 
 ```python
 

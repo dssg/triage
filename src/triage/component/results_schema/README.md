@@ -9,7 +9,7 @@ Store results of modeling runs in a relational database
 
 2. You can do the initial schema and table creation a couple of different ways, with a couple of different options for passing database credentials.
 
-	- *Triage cli script*. Assuming you have triage installed from pip: `triage upgrade_db -d dbcredentials.yaml`, or just `triage upgrade_db` if you have a database credentials file at `database.yaml` (the default)
+	- *Triage cli script*. Assuming you have triage installed from pip: `triage db upgrade -d dbcredentials.yaml`, or just `triage db upgrade` if you have a database credentials file at `database.yaml` (the default)
 	- *From Python code*. If you are in a Python console or notebook, you can call `upgrade_db` with either sqlalchemy engine pointing to your database, or a filename similar to what's used to launch the cli script.
 
 	```
