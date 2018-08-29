@@ -1,13 +1,55 @@
 from unittest import TestCase
-
+from datetime import datetime
 import testing.postgresql
 from sqlalchemy import create_engine
 
 from triage.component.audition.distance_from_best import DistanceFromBestTable
-from triage.component.audition.thresholding import ModelGroupThresholder
+from triage.component.audition.thresholding import model_groups_filter, ModelGroupThresholder
 from triage.component.catwalk.db import ensure_db
 
-from tests.results_tests.factories import ModelGroupFactory, init_engine, session
+from tests.results_tests.factories import ModelFactory, ModelGroupFactory, init_engine, session
+
+class ModelGroupFilterTest(TestCase):
+    def filter_same_train_end_times(self, engine):
+        ensure_db(engine)
+        init_engine(engine)
+        mg1 = ModelGroupFactory(model_group_id=1, model_type='modelType1')
+        mg2 = ModelGroupFactory(model_group_id=2, model_type='modelType2')
+        mg3 = ModelGroupFactory(model_group_id=3, model_type='modelType3')
+        mg4 = ModelGroupFactory(model_group_id=4, model_type='modelType4')
+        # model group 1
+        ModelFactory(model_group_rel=mg1, train_end_time=datetime(2014, 1, 1))
+        ModelFactory(model_group_rel=mg1, train_end_time=datetime(2015, 1, 1))
+        ModelFactory(model_group_rel=mg1, train_end_time=datetime(2016, 1, 1))
+        ModelFactory(model_group_rel=mg1, train_end_time=datetime(2017, 1, 1))
+        # model group 2 only has three timestamps, should not pass
+        ModelFactory(model_group_rel=mg2, train_end_time=datetime(2014, 1, 1))
+        # model group 3
+        ModelFactory(model_group_rel=mg3, train_end_time=datetime(2014, 1, 1))
+        ModelFactory(model_group_rel=mg3, train_end_time=datetime(2015, 1, 1))
+        ModelFactory(model_group_rel=mg3, train_end_time=datetime(2016, 1, 1))
+        ModelFactory(model_group_rel=mg3, train_end_time=datetime(2017, 1, 1))
+        # model group 4 only has three timestamps, should not pass
+        ModelFactory(model_group_rel=mg4, train_end_time=datetime(2015, 1, 1))
+        ModelFactory(model_group_rel=mg4, train_end_time=datetime(2016, 1, 1))
+
+        session.commit()
+        train_end_times = ['2014-01-01', '2015-01-01', '2016-01-01', '2017-01-01']
+        model_groups = [1, 2, 3, 4]
+        model_group_ids = model_groups_filter(
+             train_end_times=train_end_times,
+             initial_model_group_ids=model_groups,
+             models_table='models',
+             db_engine=engine
+        )
+
+        return model_group_ids
+
+    def test_have_same_train_end_times(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            engine = create_engine(postgresql.url())
+            pass_model_groups = self.filter_same_train_end_times(engine)
+            assert pass_model_groups == {1, 3}
 
 
 class ModelGroupThresholderTest(TestCase):

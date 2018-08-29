@@ -58,6 +58,7 @@ class DistanceFromBestTable(object):
                 All models should have the test_results.evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
         """
+        logging.info("Polulating data to distance table")
         for metric in metrics:
             self.db_engine.execute('''
                 insert into {new_table}
