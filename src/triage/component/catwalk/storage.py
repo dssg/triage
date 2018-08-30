@@ -9,7 +9,6 @@ from sklearn.externals import joblib
 from urllib.parse import urlparse
 from triage.component.results_schema import TestEvaluation, TrainEvaluation, \
     TestPrediction, TrainPrediction
-from contextlib import contextmanager
 
 import pandas as pd
 import s3fs
@@ -83,7 +82,6 @@ class MemoryStore(Store):
     def delete(self):
         self.store = None
 
-    @contextmanager
     def open(self, *args, **kwargs):
         return BytesIO()
 
