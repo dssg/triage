@@ -12,6 +12,10 @@ from triage.experiments import ExperimentBase
 class MultiCoreExperiment(ExperimentBase):
     def __init__(self, n_processes=1, n_db_processes=1, *args, **kwargs):
         super(MultiCoreExperiment, self).__init__(*args, **kwargs)
+        if n_processes < 1:
+            raise ValueError('n_processes must be 1 or greater')
+        if n_db_processes < 1:
+            raise ValueError('n_db_processes must be 1 or greater')
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
         if isinstance(self.model_storage_engine, InMemoryModelStorageEngine):
