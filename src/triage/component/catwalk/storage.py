@@ -85,7 +85,7 @@ class MemoryStore(Store):
 
     @contextmanager
     def open(self, *args, **kwargs):
-        return BytesIO(*args, **kwargs)
+        return BytesIO()
 
 
 class ModelStore():
