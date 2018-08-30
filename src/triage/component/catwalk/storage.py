@@ -118,7 +118,7 @@ class ModelStorageEngine(object):
 
 class S3ModelStorageEngine(ModelStorageEngine):
     def get_store(self, model_hash):
-        return ModelStore(S3Store(pathlib.PurePosixPath(self.project_path, self.model_dir, model_hash)))
+        return ModelStore(S3Store(str(pathlib.PurePosixPath(self.project_path, self.model_dir, model_hash))))
 
 
 class FSModelStorageEngine(ModelStorageEngine):
