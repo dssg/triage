@@ -15,6 +15,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
+def natural_number(value):
+    natural = int(value)
+    if natural <= 0:
+        raise argparse.ArgumentTypeError(f"{value} is an invalid natural number")
+    return natural
+
+
 class Triage(RootCommand):
     """manage Triage database and experiments"""
 
@@ -74,13 +81,13 @@ class Experiment(Command):
         )
         parser.add_argument(
             '--n-db-processes',
-            type=int,
+            type=natural_number,
             default=1,
             help="number of concurrent database connections to use"
         )
         parser.add_argument(
             '--n-processes',
-            type=int,
+            type=natural_number,
             default=1,
             help="number of cores to use"
         )
