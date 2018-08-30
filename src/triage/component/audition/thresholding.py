@@ -1,7 +1,8 @@
 import logging
 
 from .metric_directionality import is_better_operator
-
+import pandas as pd
+from datetime import datetime
 
 def _past_threshold(df, metric_filter):
     return df[is_better_operator(metric_filter['metric'])(
@@ -20,6 +21,63 @@ def _of_metric(df, metric_filter):
         (df['parameter'] == metric_filter['parameter'])
     ]
 
+
+def model_groups_filter(
+    train_end_times,
+    initial_model_group_ids,
+    models_table,
+    db_engine
+):
+    """Before creating the distance table, we want to filter the model_group_ids
+    and train_end_times only if they are reasonable -- every model group should
+    have the same train_end_times -- to prevent incomparable model groups from
+    being populated to the distance table.
+
+    Args:
+        train_end_times (list) The set of train_end_times to consider during
+                               the iteration
+        initial_model_group_ids (list) The initial list of model group ids to
+                                       narrow down
+        models_table (string) The name of the results schema
+        db_engine (sqlalchemy.engine) A database engine with access to results
+                                      schema of a completed modeling run
+    """
+
+    if isinstance(train_end_times, str) or not hasattr(train_end_times, '__iter__'):
+        raise TypeError("train_end_times should be a list of str or timestamp")
+
+    if not bool(train_end_times):
+        raise ValueError("train_end_times shouldn't be an empty list")
+
+    end_times_sql = "ARRAY[{}]".format(
+        ', '.join(
+            "'{}'".format(
+                end_time.strftime('%Y-%m-%d') if isinstance(end_time, datetime) else end_time
+            ) for end_time in train_end_times
+        )
+    )
+    logging.info("Checking if all model groups have the same train end times")
+    logging.info(f"Found {len(initial_model_group_ids)} total model groups")
+    query = f"""
+        SELECT model_group_id
+        FROM (
+            SELECT
+                model_group_id,
+                array_agg(distinct train_end_time::date::text) as train_end_time_list
+            FROM model_metadata.{models_table}
+            WHERE model_group_id in {tuple(initial_model_group_ids)}
+            GROUP BY model_group_id
+        ) as t
+        WHERE train_end_time_list = {end_times_sql}
+        """
+    model_groups_df = pd.read_sql(query, con=db_engine)
+    model_group_ids = list(model_groups_df['model_group_id'])
+
+    dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
+    logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
+    logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
+
+    return set(model_group_ids)
 
 class ModelGroupThresholder(object):
 
@@ -46,6 +104,7 @@ class ModelGroupThresholder(object):
         self.train_end_times = train_end_times
         self._initial_model_group_ids = initial_model_group_ids
         self._metric_filters = initial_metric_filters
+
 
     def _filter_model_groups(self, df, filter_func):
         """Filter model groups by ensuring each of their metrics meets the given
@@ -129,6 +188,7 @@ class ModelGroupThresholder(object):
             len(total_model_groups)
         )
         return total_model_groups
+
 
     def update_filters(self, new_metric_filters):
         """Update the saved metric filters.

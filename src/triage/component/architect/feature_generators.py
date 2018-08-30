@@ -2,6 +2,7 @@ import logging
 from collections import OrderedDict
 
 import sqlalchemy
+import sqlparse
 
 from triage.util.conf import convert_str_to_relativedelta
 
@@ -351,6 +352,46 @@ class FeatureGenerator(object):
         logging.info('Created %s tables', len(table_tasks.keys()))
         return table_tasks
 
+    def create_features_before_imputation(self, feature_aggregation_config, feature_dates):
+        """Create features before imputation for a set of dates"""
+        all_tasks = self.generate_all_table_tasks(
+            self.aggregations(
+                feature_aggregation_config,
+                feature_dates,
+                state_table=None
+            ),
+            task_type='aggregation'
+        )
+        logging.info('Generated a total of %s table tasks', len(all_tasks))
+        for task_num, task in enumerate(all_tasks.values(), 1):
+            prepares = task.get('prepare', [])
+            inserts = task.get('inserts', [])
+            finalize = task.get('finalize', [])
+            logging.info('------------------')
+            logging.info('TASK %s ', task_num)
+            logging.info('%s prepare queries, %s insert queries, %s finalize queries', len(prepares), len(inserts), len(finalize))
+            logging.info('------------------')
+            logging.info('')
+            logging.info('------------------')
+            logging.info('PREPARATION QUERIES')
+            logging.info('------------------')
+            for query_num, query in enumerate(prepares, 1):
+                logging.info('')
+                logging.info('prepare query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
+            logging.info('------------------')
+            logging.info('INSERT QUERIES')
+            logging.info('------------------')
+            for query_num, query in enumerate(inserts, 1):
+                logging.info('')
+                logging.info('insert query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
+            logging.info('------------------')
+            logging.info('FINALIZE QUERIES')
+            logging.info('------------------')
+            for query_num, query in enumerate(finalize, 1):
+                logging.info('')
+                logging.info('finalize query %s: %s', query_num, sqlparse.format(str(query), reindent=True))
+            self.process_table_task(task)
+
     def create_all_tables(self, feature_aggregation_config, feature_dates, state_table):
         """Create all feature tables.
 
@@ -408,12 +449,15 @@ class FeatureGenerator(object):
 
         return impute_keys
 
+    def process_table_task(self, task):
+        self.run_commands(task.get('prepare', []))
+        self.run_commands(task.get('inserts', []))
+        self.run_commands(task.get('finalize', []))
+
     def process_table_tasks(self, table_tasks):
         for table_name, task in table_tasks.items():
             logging.info('Running feature table queries for %s', table_name)
-            self.run_commands(task.get('prepare', []))
-            self.run_commands(task.get('inserts', []))
-            self.run_commands(task.get('finalize', []))
+            self.process_table_task(task)
         return table_tasks.keys()
 
     def _explain_selects(self, aggregations):
@@ -571,7 +615,6 @@ class FeatureGenerator(object):
             )
             table_tasks[imp_tbl_name] = {}
             return table_tasks
-
 
         # excute query to find columns with null values and create lists of columns
         # that do and do not need imputation when creating the imputation table

@@ -14,6 +14,7 @@ pages:
   - Home: index.md
   - Experiment Documentation:
     - Defining an Experiment: experiments/defining.md
+    - Testing Feature Configuration: experiments/feature-testing.md
     - Running an Experiment: experiments/running.md
     - Temporal Validation Deep Dive: experiments/temporal-validation.md
     - Feature Generation Recipe Book: experiments/features.md
