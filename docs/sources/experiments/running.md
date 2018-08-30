@@ -16,20 +16,26 @@ You may run a Triage experiment two ways: through the Triage command line tool, 
 
 ## Simple Example
 
-To run an experiment, you need to tell triage at a minimum where to find the experiment file (in YAML format), how to connect to the database, and where to save trained matrices and models. In this simple example, we're assuming that the experiment will be run with only one process, and that the output should be stored on the local filesystem.
+To run an experiment, you need to tell triage at a minimum where to find the experiment file (in YAML format), and how to connect to the database, In this simple example, we're assuming that the experiment will be run with only one process, and that the matrices and models should be stored on the local filesystem.
 
 ### CLI
 
-The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. 
+The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
+triage experiment example_experiment_config.yaml
 ```
 
 If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:
 
 ```bash
-triage -d mydbconfig.yaml experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
+triage -d mydbconfig.yaml experiment example_experiment_config.yaml'
+```
+
+Assuming you want the matrices and models stored somewhere else, pass it as the `--project-path`:
+
+```bash
+triage -d mydbconfig.yaml experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
 ```
 
 ### Python
@@ -56,7 +62,7 @@ Triage also offers the ability to parallelize both CPU-heavy and database-heavy 
 The Triage CLI allows parallelization to be specified through the `--n-processes` and `--n-db-processes` parameters.
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
+triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
 ```
 
 ### Python
@@ -87,7 +93,7 @@ Triage can operate on different storage engines for matrices and models, and bes
 ### CLI
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
+triage experiment example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
 ```
 
 ### Python
@@ -114,11 +120,11 @@ Configuring an experiment is very complicated, and running an experiment can tak
 The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it *only* validate.
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
+triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
 ```
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
+triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
 ```
 
 #### Python
@@ -142,7 +148,7 @@ If an experiment fails for any reason, you can restart it. Each matrix and each 
 ### CLI
 
 ```bash
-triage experiment -c example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
+triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
 ```
 
 ### Python

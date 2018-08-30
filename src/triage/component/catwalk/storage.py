@@ -37,7 +37,6 @@ class Store(object):
         with self.open('wb') as f:
             f.write(bytestream)
 
-    @contextmanager
     def open(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -86,8 +85,7 @@ class MemoryStore(Store):
 
     @contextmanager
     def open(self, *args, **kwargs):
-        with BytesIO() as f:
-            yield f
+        return BytesIO(*args, **kwargs)
 
 
 class ModelStore():

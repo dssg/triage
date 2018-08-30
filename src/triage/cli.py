@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from datetime import datetime
 import yaml
 import argparse
 from descriptors import cachedproperty
@@ -21,6 +22,13 @@ def natural_number(value):
     if natural <= 0:
         raise argparse.ArgumentTypeError(f"{value} is an invalid natural number")
     return natural
+
+
+def valid_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value} is an invalid date (format: YYYY-MM-DD)")
 
 
 class Triage(RootCommand):
@@ -47,6 +55,11 @@ class Triage(RootCommand):
             )
         return db_url
 
+    @cmdmethod
+    def configversion(self, args):
+        """Return the experiment config version compatible with this installation of Triage"""
+        print(CONFIG_VERSION)
+
 
 @Triage.register
 class Db(Command):
@@ -71,14 +84,18 @@ class Db(Command):
 
 @Triage.register
 class Experiment(Command):
-    """Validate and run experiments, manage experiment database"""
+    """Validate and run experiments"""
 
     def __init__(self, parser):
         parser.add_argument(
-            '-c', '--config',
+            'config',
             type=argparse.FileType('r'),
-            help="config file for Experiment",
-            required=True
+            help="config file for Experiment"
+        )
+        parser.add_argument(
+            '--project-path',
+            default='./',
+            help="path to store matrices and trained models"
         )
         parser.add_argument(
             '--n-db-processes',
@@ -93,15 +110,27 @@ class Experiment(Command):
             help="number of cores to use"
         )
         parser.add_argument(
-            '--project-path',
-            type=str,
-            help="path to store matrices and trained models"
-        )
-        parser.add_argument(
             '--replace',
             dest='replace',
             action='store_true'
         )
+        parser.add_argument(
+            '-v', '--validate',
+            action='store_true',
+            help='validate before running experiment'
+        )
+        parser.add_argument(
+            '--no-validate',
+            action='store_false',
+            dest='validate',
+            help="run experiment without validation"
+        )
+        parser.add_argument(
+            '--validate-only',
+            action='store_true',
+            help="only validate the config file not running Experiment"
+        )
+
         parser.set_defaults(
             validate=True,
             validate_only=False,
@@ -128,10 +157,7 @@ class Experiment(Command):
             experiment = SingleThreadedExperiment(**common_kwargs)
         return experiment
 
-    @cmdmethod('-v', '--validate', action='store_true', help="validate before running audition")
-    @cmdmethod('--no-validate', action='store_false', dest='validate', help="run experiment without validation")
-    @cmdmethod('--validate-only', action='store_true', help="only validate the config file not running Experiment")
-    def run(self, args):
+    def __call__(self, args):
         if args.validate_only:
             self.experiment.validate()
         elif args.validate:
@@ -140,17 +166,22 @@ class Experiment(Command):
         else:
             self.experiment.run()
 
+
+@Triage.register
+class FeatureTest(Command):
+    def __init__(self, parser):
+        parser.add_argument(
+            'as_of_date',
+            type=valid_date,
+            help='The date as of which to run features. Format YYYY-MM-DD'
+        )
+        parser.add_argument(
+            'feature_config_file',
+            type=argparse.FileType('r'),
+            help='Feature config YAML file, containing a list of feature_aggregation objects'
+        )
+
     def __call__(self, args):
-        self['run'](args)
-
-    @cmdmethod
-    def configversion(self, args):
-        """Return the experiment config version compatible with this installation of Triage"""
-        print(CONFIG_VERSION)
-
-    @cmdmethod('as_of_date', help='The date as of which to run features')
-    @cmdmethod('feature_config_file', type=argparse.FileType('r'), help='Feature config YAML file, containing a list of feature_aggregation objects')
-    def featuretest(self, args):
         """Run a feature aggregation for an as-of-date"""
         db_engine = create_engine(self.root.db_url)
         feature_config = yaml.load(args.feature_config_file)
