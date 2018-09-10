@@ -16,6 +16,10 @@ class MultiCoreExperiment(ExperimentBase):
             raise ValueError('n_processes must be 1 or greater')
         if n_db_processes < 1:
             raise ValueError('n_db_processes must be 1 or greater')
+        if n_db_processes == 1 and n_processes == 1:
+            logging.warning('Both n_processes and n_db_processes were set to 1. '
+                            'If you only wish to use one process to run the experiment,'
+                            'consider using the SingleThreadedExperiment class instead')
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
         if isinstance(self.model_storage_engine, InMemoryModelStorageEngine):

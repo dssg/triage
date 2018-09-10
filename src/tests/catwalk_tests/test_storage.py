@@ -5,14 +5,12 @@ import yaml
 from collections import OrderedDict
 
 import pandas as pd
-from moto import mock_s3, mock_s3_deprecated
+from moto import mock_s3
 
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
     FSStore,
     HDFMatrixStore,
-    ModelStore,
-    MatrixStore,
     MemoryStore,
     S3Store,
 )
@@ -63,56 +61,56 @@ def test_MemoryStore():
 
 
 class MatrixStoreTest(unittest.TestCase):
+    data_dict = OrderedDict([
+        ('entity_id', [1, 2]),
+        ('k_feature', [0.5, 0.4]),
+        ('m_feature', [0.4, 0.5]),
+        ('label', [0, 1])
+    ])
 
-    def matrix_store(self):
-        data_dict = OrderedDict([
-            ('entity_id', [1, 2]),
-            ('k_feature', [0.5, 0.4]),
-            ('m_feature', [0.4, 0.5]),
-            ('label', [0, 1])
-        ])
-        df = pd.DataFrame.from_dict(data_dict).set_index(['entity_id'])
-        metadata = {
-            'label_name': 'label',
-            'indices': ['entity_id'],
-        }
+    metadata = {
+        'label_name': 'label',
+        'indices': ['entity_id'],
+    }
 
-        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://', matrix=df, metadata=metadata)
-        inmemory.save()
+    def matrix_stores(self):
+        df = pd.DataFrame.from_dict(self.data_dict).set_index(['entity_id'])
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpcsv = os.path.join(tmpdir, 'df.csv')
             tmpyaml = os.path.join(tmpdir, 'metadata.yaml')
             tmphdf = os.path.join(tmpdir, 'df.h5')
             with open(tmpyaml, 'w') as outfile:
-                yaml.dump(metadata, outfile, default_flow_style=False)
+                yaml.dump(self.metadata, outfile, default_flow_style=False)
                 df.to_csv(tmpcsv)
                 df.to_hdf(tmphdf, 'matrix')
                 csv = CSVMatrixStore(matrix_path=tmpcsv, metadata_path=tmpyaml)
                 hdf = HDFMatrixStore(matrix_path=tmphdf, metadata_path=tmpyaml)
+                assert csv.matrix.equals(hdf.matrix)
+                yield from [csv, hdf]
 
-                assert csv.matrix.to_dict() == inmemory.matrix.to_dict()
-                assert hdf.matrix.to_dict() == inmemory.matrix.to_dict()
+    def test_MatrixStore_empty(self):
+        for matrix_store in self.matrix_stores():
+            assert not matrix_store.empty
 
-                assert csv.metadata == inmemory.metadata
-                assert hdf.metadata == inmemory.metadata
+    def test_MatrixStore_metadata(self):
+        for matrix_store in self.matrix_stores():
+            assert matrix_store.metadata == self.metadata
 
-                assert csv.head_of_matrix.to_dict() == inmemory.head_of_matrix.to_dict()
-                assert hdf.head_of_matrix.to_dict() == inmemory.head_of_matrix.to_dict()
+    def test_MatrixStore_head_of_matrix(self):
+        for matrix_store in self.matrix_stores():
+            assert matrix_store.head_of_matrix.to_dict() == {
+                'k_feature': {1: 0.5},
+                'm_feature': {1: 0.4},
+                'label': {1: 0}
+            }
 
-                assert csv.empty == inmemory.empty
-                assert hdf.empty == inmemory.empty
-
-                assert csv.labels().to_dict() == inmemory.labels().to_dict()
-                assert hdf.labels().to_dict() == inmemory.labels().to_dict()
-
-        matrix_store = [inmemory, csv, hdf]
-
-        return matrix_store
+    def test_MatrixStore_columns(self):
+        for matrix_store in self.matrix_stores():
+            assert matrix_store.columns() == ['k_feature', 'm_feature']
 
     def test_MatrixStore_resort_columns(self):
-        matrix_store_list = self.matrix_store()
-        for matrix_store in matrix_store_list:
+        for matrix_store in self.matrix_stores():
             result = matrix_store.\
                 matrix_with_sorted_columns(
                     ['m_feature', 'k_feature']
@@ -126,8 +124,7 @@ class MatrixStoreTest(unittest.TestCase):
             self.assertEqual(expected, result)
 
     def test_MatrixStore_already_sorted_columns(self):
-        matrix_store_list = self.matrix_store()
-        for matrix_store in matrix_store_list:
+        for matrix_store in self.matrix_stores():
             result = matrix_store.\
                 matrix_with_sorted_columns(
                     ['k_feature', 'm_feature']
@@ -142,8 +139,7 @@ class MatrixStoreTest(unittest.TestCase):
 
     def test_MatrixStore_sorted_columns_subset(self):
         with self.assertRaises(ValueError):
-            matrix_store_list = self.matrix_store()
-            for matrix_store in matrix_store_list:
+            for matrix_store in self.matrix_stores():
                 matrix_store.\
                     matrix_with_sorted_columns(['m_feature'])\
                     .values\
@@ -151,8 +147,7 @@ class MatrixStoreTest(unittest.TestCase):
 
     def test_MatrixStore_sorted_columns_superset(self):
         with self.assertRaises(ValueError):
-            matrix_store_list = self.matrix_store()
-            for matrix_store in matrix_store_list:
+            for matrix_store in self.matrix_stores():
                 matrix_store.\
                     matrix_with_sorted_columns(
                         ['k_feature', 'l_feature', 'm_feature']
@@ -162,8 +157,7 @@ class MatrixStoreTest(unittest.TestCase):
 
     def test_MatrixStore_sorted_columns_mismatch(self):
         with self.assertRaises(ValueError):
-            matrix_store_list = self.matrix_store()
-            for matrix_store in matrix_store_list:
+            for matrix_store in self.matrix_stores():
                 matrix_store.\
                     matrix_with_sorted_columns(
                         ['k_feature', 'l_feature']
@@ -177,7 +171,7 @@ class MatrixStoreTest(unittest.TestCase):
             'feature_one': [0.5, 0.6],
             'feature_two': [0.5, 0.6],
         }
-        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://')
+        inmemory = CSVMatrixStore(matrix_path='memory://', metadata_path='memory://')
         inmemory.matrix = pd.DataFrame.from_dict(data)
         inmemory.metadata = {'end_time': '2016-01-01', 'indices': ['entity_id']}
 
@@ -190,7 +184,7 @@ class MatrixStoreTest(unittest.TestCase):
             'feature_two': [0.5, 0.6, 0.5, 0.6],
             'as_of_date': ['2016-01-01', '2016-01-01', '2017-01-01', '2017-01-01']
         }
-        inmemory = MatrixStore(matrix_path='memory://', metadata_path='memory://')
+        inmemory = CSVMatrixStore(matrix_path='memory://', metadata_path='memory://')
         inmemory.matrix = pd.DataFrame.from_dict(data).set_index(['entity_id', 'as_of_date'])
         inmemory.metadata = {'indices': ['entity_id', 'as_of_date']}
 
@@ -201,8 +195,8 @@ class MatrixStoreTest(unittest.TestCase):
             import boto3
             client = boto3.client('s3')
             client.create_bucket(Bucket='fake-matrix-bucket', ACL='public-read-write')
-            example = self.matrix_store()[0]
-            
+            example = next(self.matrix_stores())
+
             tosave = CSVMatrixStore(
                 matrix_path='s3://fake-matrix-bucket/test.csv',
                 metadata_path='s3://fake-matrix-bucket/test.yaml'

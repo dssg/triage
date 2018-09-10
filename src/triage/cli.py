@@ -94,7 +94,7 @@ class Experiment(Command):
         )
         parser.add_argument(
             '--project-path',
-            default='./',
+            default=os.path.curdir,
             help="path to store matrices and trained models"
         )
         parser.add_argument(

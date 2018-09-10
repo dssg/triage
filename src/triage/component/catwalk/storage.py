@@ -29,12 +29,12 @@ class Store(object):
         raise NotImplementedError
 
     def load(self):
-        with self.open('rb') as f:
-            return f.read()
+        with self.open('rb') as fd:
+            return fd.read()
 
     def write(self, bytestream):
-        with self.open('wb') as f:
-            f.write(bytestream)
+        with self.open('wb') as fd:
+            fd.write(bytestream)
 
     def open(self, *args, **kwargs):
         raise NotImplementedError
@@ -73,17 +73,18 @@ class MemoryStore(Store):
     def exists(self):
         return self.store is not None
 
+    def delete(self):
+        self.store = None
+
     def write(self, bytestream):
         self.store = bytestream
 
     def load(self):
         return self.store
 
-    def delete(self):
-        self.store = None
-
     def open(self, *args, **kwargs):
-        return BytesIO()
+        raise ValueError('MemoryStore objects cannot be opened and closed like files'
+                         'Use write/load methods instead.')
 
 
 class ModelStore():
@@ -91,12 +92,12 @@ class ModelStore():
         self.store = store
 
     def write(self, obj):
-        with self.store.open('wb') as f:
-            joblib.dump(obj, f, compress=True)
+        with self.store.open('wb') as fd:
+            joblib.dump(obj, fd, compress=True)
 
     def load(self):
-        with self.store.open('rb') as f:
-            return joblib.load(f)
+        with self.store.open('rb') as fd:
+            return joblib.load(fd)
 
     def exists(self):
         return self.store.exists()
@@ -173,7 +174,6 @@ class MatrixStore(object):
 
         self.matrix = matrix
         self.metadata = metadata
-        self.head_of_matrix = None
 
     @property
     def matrix(self):
@@ -195,18 +195,9 @@ class MatrixStore(object):
     def metadata(self, metadata):
         self.__metadata = metadata
 
-    def _get_head_of_matrix(self):
-        return self.matrix.head(1)
-
     @property
     def head_of_matrix(self):
-        if self.__head_of_matrix is None:
-            self.__head_of_matrix = self._get_head_of_matrix()
-        return self.__head_of_matrix
-
-    @head_of_matrix.setter
-    def head_of_matrix(self, head_of_matrix):
-        self.__head_of_matrix = head_of_matrix
+        return self.matrix.head(1)
 
     @property
     def empty(self):
@@ -286,14 +277,11 @@ class MatrixStore(object):
                 ''', columnset ^ desired_columnset)
 
     def load_metadata(self):
-        with self.metadata_base_store.open('rb') as f:
-            return yaml.load(f.read())
+        with self.metadata_base_store.open('rb') as fd:
+            return yaml.load(fd)
 
     def save(self):
-        self.matrix_base_store.write(self.matrix)
-
-        with self.metadata_base_store.open('wb') as f:
-            yaml.dump(self.metadata, f, encoding='utf-8')
+        raise NotImplementedError
 
     def __getstate__(self):
         # when we serialize (say, for multiprocessing),
@@ -302,7 +290,6 @@ class MatrixStore(object):
         self.matrix = None
         self._labels = None
         self.metadata = None
-        self.head_of_matrix = None
         return self.__dict__.copy()
 
 
@@ -314,7 +301,8 @@ class HDFMatrixStore(MatrixStore):
             raise ValueError('HDFMatrixStore cannot be used with S3')
         self.metadata = self.load_metadata()
 
-    def _get_head_of_matrix(self):
+    @property
+    def head_of_matrix(self):
         try:
             head_of_matrix = pd.read_hdf(self.matrix_path, start=0, stop=1)
             # Is the index already in place?
@@ -335,11 +323,11 @@ class HDFMatrixStore(MatrixStore):
         return matrix
 
     def save(self):
-        with self.matrix_base_store.open('wb') as f:
-            self.matrix.to_hdf(f, format='table', mode='wb')
+        with self.matrix_base_store.open('wb') as fd:
+            self.matrix.to_hdf(fd, format='table', mode='wb')
 
-        with self.metadata_base_store.open('wb') as f:
-            yaml.dump(self.metadata, f, encoding='utf-8')
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(self.metadata, fd, encoding='utf-8')
 
 
 class CSVMatrixStore(MatrixStore):
@@ -347,10 +335,11 @@ class CSVMatrixStore(MatrixStore):
     def __init__(self, matrix_path=None, metadata_path=None):
         super().__init__(matrix_path, metadata_path)
 
-    def _get_head_of_matrix(self):
+    @property
+    def head_of_matrix(self):
         try:
-            with self.matrix_base_store.open('rb') as f:
-                head_of_matrix = pd.read_csv(f, nrows=1)
+            with self.matrix_base_store.open('rb') as fd:
+                head_of_matrix = pd.read_csv(fd, nrows=1)
                 head_of_matrix.set_index(self.metadata['indices'], inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
@@ -360,21 +349,17 @@ class CSVMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        with self.matrix_base_store.open('rb') as f:
-            matrix = pd.read_csv(f)
+        with self.matrix_base_store.open('rb') as fd:
+            matrix = pd.read_csv(fd)
 
         matrix.set_index(self.metadata['indices'], inplace=True)
 
         return matrix
 
     def save(self):
-        if isinstance(self.matrix_base_store, S3Store):
-            self.matrix_base_store.write(self.matrix.to_csv(None).encode('utf-8'))
-        else:
-            with self.matrix_base_store.open('wb') as f:
-                self.matrix.to_csv(f)
-        with self.metadata_base_store.open('wb') as f:
-            yaml.dump(self.metadata, f, encoding='utf-8')
+        self.matrix_base_store.write(self.matrix.to_csv(None).encode('utf-8'))
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(self.metadata, fd, encoding='utf-8')
 
 
 class TestMatrixType(object):

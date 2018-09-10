@@ -29,7 +29,7 @@ triage experiment example_experiment_config.yaml
 If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:
 
 ```bash
-triage -d mydbconfig.yaml experiment example_experiment_config.yaml'
+triage -d mydbconfig.yaml experiment example_experiment_config.yaml
 ```
 
 Assuming you want the matrices and models stored somewhere else, pass it as the `--project-path`:
@@ -112,7 +112,16 @@ experiment.run()
 
 ## Validating an Experiment
 
-Configuring an experiment is very complicated, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the 'cat_complaints' table in a feature aggregation but it doesn't exist, I'll see something like this:
+Configuring an experiment is complex, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the `cat_complaints` table in a feature aggregation but it doesn't exist, I'll see something like this:
+
+```
+*** ValueError: from_obj query does not run.
+from_obj: "cat_complaints"
+Full error: (psycopg2.ProgrammingError) relation "cat_complaints" does not exist
+LINE 1: explain select * from cat_complaints
+                              ^
+ [SQL: 'explain select * from cat_complaints']
+```
 
 
 ### CLI
