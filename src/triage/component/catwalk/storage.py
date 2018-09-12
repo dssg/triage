@@ -19,6 +19,20 @@ class Store(object):
     def __init__(self, path):
         self.path = path
 
+    @classmethod
+    def factory(self, path):
+        path_parsed = urlparse(path)
+        scheme = path_parsed.scheme
+
+        if scheme in ('', 'file'):
+            return FSStore(path)
+        elif scheme == 's3':
+            return S3Store(path)
+        elif scheme == 'memory':
+            return MemoryStore(path)
+        else:
+            raise ValueError('Unable to infer correct Store from project path')
+
     def __str__(self):
         return f"{self.__class__.__name__}(path={self.path})"
 
@@ -111,6 +125,21 @@ class ModelStorageEngine(object):
         self.project_path = project_path
         self.model_dir = 'trained_models'
 
+    @classmethod
+    def factory(self, path):
+        path_parsed = urlparse(path)
+        scheme = path_parsed.scheme
+
+        if scheme in ('', 'file'):
+            return FSModelStorageEngine(path)
+        elif scheme == 's3':
+            return S3ModelStorageEngine(path)
+        elif scheme == 'memory':
+            return InMemoryModelStorageEngine(path)
+        else:
+            raise ValueError('Unable to infer correct ModelStorageEngine from path')
+
+
     def get_store(self, model_hash):
         pass
 
@@ -122,7 +151,7 @@ class S3ModelStorageEngine(ModelStorageEngine):
 
 class FSModelStorageEngine(ModelStorageEngine):
     def get_store(self, model_hash):
-        return ModelStore(FSStore(os.path.join(self.project_path, self.model_dir, model_hash)))
+        return ModelStore(FSStore(pathlib.Path(self.project_path, self.model_dir, model_hash)))
 
 
 class InMemoryModelStorageEngine(ModelStorageEngine):
@@ -134,34 +163,6 @@ class InMemoryModelStorageEngine(ModelStorageEngine):
         return self.stores[model_hash]
 
 
-def create_model_storage_engine(project_path):
-    path_parsed = urlparse(project_path)
-    scheme = path_parsed.scheme
-
-    if scheme in ('', 'file'):
-        return FSModelStorageEngine(project_path)
-    elif scheme == 's3':
-        return S3ModelStorageEngine(project_path)
-    elif scheme == 'memory':
-        return InMemoryModelStorageEngine(project_path)
-    else:
-        raise ValueError('Unable to infer correct ModelStorageEngine from project path')
-
-
-def create_store(path):
-    path_parsed = urlparse(path)
-    scheme = path_parsed.scheme
-
-    if scheme in ('', 'file'):
-        return FSStore(path)
-    elif scheme == 's3':
-        return S3Store(path)
-    elif scheme == 'memory':
-        return MemoryStore(path)
-    else:
-        raise ValueError('Unable to infer correct Store from project path')
-
-
 class MatrixStore(object):
     _labels = None
 
@@ -169,8 +170,8 @@ class MatrixStore(object):
         self.matrix_path = matrix_path
         self.metadata_path = metadata_path
 
-        self.matrix_base_store = create_store(self.matrix_path)
-        self.metadata_base_store = create_store(self.metadata_path)
+        self.matrix_base_store = Store.factory(self.matrix_path)
+        self.metadata_base_store = Store.factory(self.metadata_path)
 
         self.matrix = matrix
         self.metadata = metadata

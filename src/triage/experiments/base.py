@@ -33,7 +33,7 @@ from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import save_experiment_and_get_hash
-from triage.component.catwalk.storage import CSVMatrixStore, create_model_storage_engine
+from triage.component.catwalk.storage import CSVMatrixStore, ModelStorageEngine
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -84,7 +84,7 @@ class ExperimentBase(ABC):
         else:
             self.db_engine = db_engine
 
-        self.model_storage_engine = create_model_storage_engine(project_path=project_path)
+        self.model_storage_engine = ModelStorageEngine.factory(project_path)
         self.matrix_store_class = CSVMatrixStore  # can't be configurable until Architect obeys
         self.project_path = project_path
         self.replace = replace
