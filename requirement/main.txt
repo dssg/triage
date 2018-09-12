@@ -5,10 +5,10 @@ psycopg2
 python-dateutil
 scipy
 scikit-learn
-tables==3.3.0
-matplotlib<2.2
+tables==3.3.0 # pyup: ignore
+matplotlib<2.2 # pyup: ignore
 pandas
-boto3<1.8
+boto3<1.8 # pyup: ignore
 click
 inflection
 numpy>=1.12
