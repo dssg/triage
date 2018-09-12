@@ -11,7 +11,7 @@ import yaml
 from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, InMemoryMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, MatrixStore
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from triage.component.catwalk.storage import TrainMatrixType, TestMatrixType
@@ -49,8 +49,9 @@ class MockTrainedModel(object):
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
-class MockMatrixStore(InMemoryMatrixStore):
+class MockMatrixStore(MatrixStore):
     def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=None, metadata_overrides=None, matrix=None):
+        super().__init__()
         base_metadata = {
             'feature_start_time': datetime.date(2014, 1, 1),
             'end_time': datetime.date(2015, 1, 1),
@@ -70,10 +71,10 @@ class MockMatrixStore(InMemoryMatrixStore):
                 'feature_two': [5, 6],
                 'label': [7, 8]
             }).set_index('entity_id')
-        super().__init__(matrix=matrix, metadata=base_metadata)
         if init_labels is None:
             init_labels = []
-
+        self.matrix = matrix
+        self.metadata = base_metadata
         self.label_count = label_count
         self.init_labels = init_labels
         self.matrix_uuid = matrix_uuid

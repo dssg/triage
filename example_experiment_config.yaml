@@ -301,13 +301,13 @@ grid_config:
     # automatically scale the train data prior to fitting the model
     # and then use the same scaling for the test data
     'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
-        penalty: ['l1', 'l2'],
+        penalty: ['l1', 'l2']
         C: [0.01, 1]
     # catwalk's PercentileRankOneFeature baseline will score each entity as
     # as its percentile on the named feature. This is useful for comparing
     # predictive models to simply ranking entities on a single feature.
     'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
-        feature: ['feature_one', 'feature_two'],
+        feature: ['feature_one', 'feature_two']
         descend: True
     # catwalk's SimpleThresholder baseline will evaluate each entity against
     # a list of rules and classify entities as 1 based on whether they meet

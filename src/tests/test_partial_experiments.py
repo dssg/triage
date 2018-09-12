@@ -6,7 +6,6 @@ import testing.postgresql
 from triage import create_engine
 
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.storage import FSModelStorageEngine
 
 from tests.utils import sample_config, populate_source_data
 
@@ -30,7 +29,6 @@ def prepare_experiment(config):
             experiment = SingleThreadedExperiment(
                 config=config,
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=False
             )

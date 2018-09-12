@@ -13,7 +13,7 @@ from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.storage import InMemoryModelStorageEngine,\
-    S3ModelStorageEngine, InMemoryMatrixStore
+    S3ModelStorageEngine, MatrixStore
 from .utils import sample_matrix_store, sample_metadata
 from tests.results_tests.factories import init_engine, session, MatrixFactory
 
@@ -102,10 +102,8 @@ def test_model_trainer(sample_matrix_store, grid_config):
                 'entity_id': [3, 4],
                 'feature_one': [4, 4],
                 'feature_two': [6, 5],
-            })
+            }).set_index('entity_id')
 
-            test_matrix = InMemoryMatrixStore(matrix=test_matrix, metadata=sample_metadata())\
-                .matrix
 
             for model_pickle in model_pickles:
                 predictions = model_pickle.predict(test_matrix)

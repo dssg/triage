@@ -12,7 +12,7 @@ import yaml
 from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, InMemoryMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, MatrixStore
 from triage.component.results_schema import Model
 
 
@@ -93,11 +93,11 @@ def sample_df():
         'feature_one': [3, 4],
         'feature_two': [5, 6],
         'label': ['good', 'bad']
-    })
+    }).set_index('entity_id')
 
 @pytest.fixture
 def sample_matrix_store():
-   return InMemoryMatrixStore(sample_df(), sample_metadata())
+    return MatrixStore(matrix=sample_df(), metadata=sample_metadata())
 
 
 def sample_metta_csv_diff_order(directory):

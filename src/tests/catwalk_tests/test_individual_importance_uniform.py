@@ -3,7 +3,7 @@ import testing.postgresql
 from sqlalchemy import create_engine
 
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.storage import InMemoryMatrixStore
+from triage.component.catwalk.storage import MatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
 from triage.component.results_schema import Matrix
 
@@ -32,8 +32,8 @@ def test_uniform_distribution_entity_id_index():
         data_dict = {'entity_id': [1, 2]}
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
-        test_store = InMemoryMatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict),
+        test_store = MatrixStore(
+            matrix=pandas.DataFrame.from_dict(data_dict).set_index('entity_id'),
             metadata=sample_metadata()
         )
 
@@ -75,8 +75,8 @@ def test_uniform_distribution_entity_date_index():
             data_dict[imp.feature] = [0.5, 0.5]
         metadata = sample_metadata()
         metadata['indices'] = ['entity_id', 'as_of_date']
-        test_store = InMemoryMatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict),
+        test_store = MatrixStore(
+            matrix=pandas.DataFrame.from_dict(data_dict).set_index(metadata['indices']),
             metadata=metadata
         )
 

@@ -17,9 +17,11 @@ from tests.utils import sample_config, populate_source_data
 from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
-    RQExperiment,
-    CONFIG_VERSION,
+    CONFIG_VERSION
 )
+
+from triage.experiments.rq import RQExperiment
+
 
 
 def num_linked_evaluations(db_engine):
@@ -50,7 +52,6 @@ def test_simple_experiment(experiment_class):
             experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True,
             ).run()
@@ -148,7 +149,6 @@ def test_restart_experiment(experiment_class):
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True
             )
@@ -160,7 +160,6 @@ def test_restart_experiment(experiment_class):
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True,
                 replace=False
@@ -181,7 +180,6 @@ class TestConfigVersion(TestCase):
                 experiment = SingleThreadedExperiment(
                     config=experiment_config,
                     db_engine=db_engine,
-                    model_storage_class=FSModelStorageEngine,
                     project_path=os.path.join(temp_dir, 'inspections'),
                 )
 
@@ -195,7 +193,6 @@ class TestConfigVersion(TestCase):
                 SingleThreadedExperiment(
                     config=experiment_config,
                     db_engine=None,
-                    model_storage_class=FSModelStorageEngine,
                     project_path=os.path.join(temp_dir, 'inspections'),
                 )
 
@@ -212,7 +209,6 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
@@ -230,7 +226,6 @@ def test_build_error(experiment_class):
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True,
             )
@@ -254,7 +249,6 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
             experiment = experiment_class(
                 config=sample_config(),
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
                 cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
@@ -281,7 +275,6 @@ def test_custom_label_name(experiment_class):
             experiment = experiment_class(
                 config=config,
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections'),
             )
             assert experiment.label_generator.label_name == 'custom_label_name'
@@ -312,7 +305,6 @@ def test_baselines_with_missing_features(experiment_class):
             experiment_class(
                 config=config,
                 db_engine=db_engine,
-                model_storage_class=FSModelStorageEngine,
                 project_path=os.path.join(temp_dir, 'inspections')
             ).run()
 

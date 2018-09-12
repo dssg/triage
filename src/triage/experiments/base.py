@@ -33,7 +33,7 @@ from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import save_experiment_and_get_hash
-from triage.component.catwalk.storage import CSVMatrixStore, FSModelStorageEngine
+from triage.component.catwalk.storage import CSVMatrixStore, ModelStorageEngine
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -60,7 +60,6 @@ class ExperimentBase(ABC):
     Args:
         config (dict)
         db_engine (triage.util.db.SerializableDbEngine or sqlalchemy.engine.Engine)
-        model_storage_class (triage.component.catwalk.storage.ModelStorageEngine)
         project_path (string)
         replace (bool)
         cleanup_timeout (int)
@@ -71,7 +70,6 @@ class ExperimentBase(ABC):
         self,
         config,
         db_engine,
-        model_storage_class=FSModelStorageEngine,
         project_path=None,
         replace=True,
         cleanup=False,
@@ -86,20 +84,14 @@ class ExperimentBase(ABC):
         else:
             self.db_engine = db_engine
 
-        if model_storage_class:
-            self.model_storage_engine = model_storage_class(
-                project_path=project_path)
+        self.model_storage_engine = ModelStorageEngine.factory(project_path)
         self.matrix_store_class = CSVMatrixStore  # can't be configurable until Architect obeys
         self.project_path = project_path
         self.replace = replace
         upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = 'features'
-        if project_path:
-            self.matrices_directory = os.path.join(self.project_path, 'matrices')
-            if not os.path.exists(self.matrices_directory):
-                os.makedirs(self.matrices_directory)
-
+        self.matrices_directory = os.path.join(self.project_path, 'matrices')
         self.experiment_hash = save_experiment_and_get_hash(self.config,
                                                             self.db_engine)
         self.labels_table_name = 'labels_{}'.format(self.experiment_hash)

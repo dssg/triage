@@ -3,7 +3,7 @@ from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.evaluation import ModelEvaluator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.storage import S3ModelStorageEngine, InMemoryMatrixStore
+from triage.component.catwalk.storage import S3ModelStorageEngine, MatrixStore
 from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 import boto3
@@ -48,7 +48,7 @@ def test_integration():
             MatrixFactory(matrix_uuid = "1234")
             session.commit()
 
-            train_store = InMemoryMatrixStore(train_matrix, sample_metadata())
+            train_store = MatrixStore(matrix=train_matrix, metadata=sample_metadata())
 
             as_of_dates = [
                 datetime.date(2016, 12, 21),
@@ -56,14 +56,14 @@ def test_integration():
             ]
 
             test_stores = [
-                InMemoryMatrixStore(
-                    pandas.DataFrame.from_dict({
+                MatrixStore(
+                    matrix=pandas.DataFrame.from_dict({
                         'entity_id': [3],
                         'feature_one': [8],
                         'feature_two': [5],
                         'label': [5]
-                    }),
-                    {
+                    }).set_index(['entity_id']),
+                    metadata={
                         'label_name': 'label',
                         'label_timespan': '1y',
                         'end_time': as_of_date,

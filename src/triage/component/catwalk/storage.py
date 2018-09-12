@@ -1,6 +1,9 @@
 # coding: utf-8
 
+from io import BytesIO
 import os
+from os.path import dirname
+import pathlib
 import logging
 from sklearn.externals import joblib
 from urllib.parse import urlparse
@@ -9,13 +12,26 @@ from triage.component.results_schema import TestEvaluation, TrainEvaluation, \
 
 import pandas as pd
 import s3fs
-import sys
 import yaml
 
 
 class Store(object):
     def __init__(self, path):
         self.path = path
+
+    @classmethod
+    def factory(self, path):
+        path_parsed = urlparse(path)
+        scheme = path_parsed.scheme
+
+        if scheme in ('', 'file'):
+            return FSStore(path)
+        elif scheme == 's3':
+            return S3Store(path)
+        elif scheme == 'memory':
+            return MemoryStore(path)
+        else:
+            raise ValueError('Unable to infer correct Store from project path')
 
     def __str__(self):
         return f"{self.__class__.__name__}(path={self.path})"
@@ -27,9 +43,14 @@ class Store(object):
         raise NotImplementedError
 
     def load(self):
-        raise NotImplementedError
+        with self.open('rb') as fd:
+            return fd.read()
 
-    def write(self, obj):
+    def write(self, bytestream):
+        with self.open('wb') as fd:
+            fd.write(bytestream)
+
+    def open(self, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -39,36 +60,25 @@ class S3Store(Store):
         s3 = s3fs.S3FileSystem()
         return s3.exists(self.path)
 
-    def write(self, obj):
-        s3 = s3fs.S3FileSystem()
-        with s3.open(self.path, 'wb') as f:
-            joblib.dump(obj, f, compress=True)
-
-    def load(self):
-        s3 = s3fs.S3FileSystem()
-        with s3.open(self.path, 'rb') as f:
-            return joblib.load(f)
-
     def delete(self):
         s3 = s3fs.S3FileSystem()
         s3.rm(self.path)
+
+    def open(self, *args, **kwargs):
+        s3 = s3fs.S3FileSystem()
+        return s3.open(self.path, *args, **kwargs)
 
 
 class FSStore(Store):
     def exists(self):
         return os.path.isfile(self.path)
 
-    def write(self, obj):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, 'w+b') as f:
-            joblib.dump(obj, f, compress=True)
-
-    def load(self):
-        with open(self.path, 'rb') as f:
-            return joblib.load(f)
-
     def delete(self):
         os.remove(self.path)
+
+    def open(self, *args, **kwargs):
+        os.makedirs(dirname(self.path), exist_ok=True)
+        return open(self.path, *args, **kwargs)
 
 
 class MemoryStore(Store):
@@ -77,44 +87,71 @@ class MemoryStore(Store):
     def exists(self):
         return self.store is not None
 
-    def write(self, obj):
-        self.store = obj
+    def delete(self):
+        self.store = None
+
+    def write(self, bytestream):
+        self.store = bytestream
 
     def load(self):
         return self.store
 
+    def open(self, *args, **kwargs):
+        raise ValueError('MemoryStore objects cannot be opened and closed like files'
+                         'Use write/load methods instead.')
+
+
+class ModelStore():
+    def __init__(self, store):
+        self.store = store
+
+    def write(self, obj):
+        with self.store.open('wb') as fd:
+            joblib.dump(obj, fd, compress=True)
+
+    def load(self):
+        with self.store.open('rb') as fd:
+            return joblib.load(fd)
+
+    def exists(self):
+        return self.store.exists()
+
     def delete(self):
-        self.store = None
+        return self.store.delete()
 
 
 class ModelStorageEngine(object):
     def __init__(self, project_path):
         self.project_path = project_path
+        self.model_dir = 'trained_models'
+
+    @classmethod
+    def factory(self, path):
+        path_parsed = urlparse(path)
+        scheme = path_parsed.scheme
+
+        if scheme in ('', 'file'):
+            return FSModelStorageEngine(path)
+        elif scheme == 's3':
+            return S3ModelStorageEngine(path)
+        elif scheme == 'memory':
+            return InMemoryModelStorageEngine(path)
+        else:
+            raise ValueError('Unable to infer correct ModelStorageEngine from path')
+
 
     def get_store(self, model_hash):
         pass
 
 
 class S3ModelStorageEngine(ModelStorageEngine):
-    def __init__(self, *args, **kwargs):
-        super(S3ModelStorageEngine, self).__init__(*args, **kwargs)
-
     def get_store(self, model_hash):
-        full_path = os.path.join(self.project_path, 'trained_models', model_hash)
-        return S3Store(path=full_path)
+        return ModelStore(S3Store(str(pathlib.PurePosixPath(self.project_path, self.model_dir, model_hash))))
 
 
 class FSModelStorageEngine(ModelStorageEngine):
-    def __init__(self, *args, **kwargs):
-        super(FSModelStorageEngine, self).__init__(*args, **kwargs)
-        os.makedirs(os.path.join(self.project_path, 'trained_models'), exist_ok=True)
-
     def get_store(self, model_hash):
-        return FSStore('/'.join([
-            self.project_path,
-            'trained_models',
-            model_hash
-        ]))
+        return ModelStore(FSStore(pathlib.Path(self.project_path, self.model_dir, model_hash)))
 
 
 class InMemoryModelStorageEngine(ModelStorageEngine):
@@ -129,12 +166,15 @@ class InMemoryModelStorageEngine(ModelStorageEngine):
 class MatrixStore(object):
     _labels = None
 
-    def __init__(self, matrix_path=None, metadata_path=None):
+    def __init__(self, matrix_path='memory://', metadata_path='memory://', matrix=None, metadata=None):
         self.matrix_path = matrix_path
         self.metadata_path = metadata_path
-        self.matrix = None
-        self.metadata = None
-        self.head_of_matrix = None
+
+        self.matrix_base_store = Store.factory(self.matrix_path)
+        self.metadata_base_store = Store.factory(self.metadata_path)
+
+        self.matrix = matrix
+        self.metadata = metadata
 
     @property
     def matrix(self):
@@ -158,22 +198,11 @@ class MatrixStore(object):
 
     @property
     def head_of_matrix(self):
-        if self.__head_of_matrix is None:
-            self.__head_of_matrix = self._get_head_of_matrix()
-        return self.__head_of_matrix
-
-    @head_of_matrix.setter
-    def head_of_matrix(self, head_of_matrix):
-        self.__head_of_matrix = head_of_matrix
+        return self.matrix.head(1)
 
     @property
     def empty(self):
-        path_parsed = urlparse(self.matrix_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-
-        if scheme in ('', 'file') and (not os.path.exists(self.matrix_path)):
-            return True
-        elif scheme == 's3' and (not s3fs.S3FileSystem().exists(self.matrix_path)):
+        if not self.matrix_base_store.exists():
             return True
         else:
             head_of_matrix = self.head_of_matrix
@@ -248,39 +277,12 @@ class MatrixStore(object):
                     Columnset and desired columnset mismatch. Unique items: %s
                 ''', columnset ^ desired_columnset)
 
-    def save_metadata(self, df, project_path, name):
-        path_parsed = urlparse(project_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-        if not scheme or scheme == 'file':  # Local file
-            with open(os.path.join(project_path, name + ".yaml"), "wb") as f:
-                yaml.dump(df, f, encoding='utf-8')
-        elif scheme == 's3':
-            s3 = s3fs.S3FileSystem()
-            with s3.open(os.path.join(project_path, name + ".yaml"), "wb") as f:
-                yaml.dump(df, f, encoding='utf-8')
-        else:
-            raise ValueError(f"""
-                  URL scheme not supported:
-                  {scheme} (from {os.path.join(project_path, name + '.yaml')})
-            """)
-
     def load_metadata(self):
-        path_parsed = urlparse(self.metadata_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-        if not scheme or scheme == 'file':  # Local file
-            with open(self.metadata_path, "r", encoding='utf-8') as f:
-                metadata = yaml.load(f.read())
-        elif scheme == 's3':
-            s3 = s3fs.S3FileSystem()
-            with s3.open(self.metadata_path, 'rb', encoding='utf-8') as f:
-                metadata = yaml.load(f.read())
-        else:
-            raise ValueError(f"""
-                  URL scheme not supported:
-                  {scheme} (from {self.metadata_path})"
-            """)
+        with self.metadata_base_store.open('rb') as fd:
+            return yaml.load(fd)
 
-        return metadata
+    def save(self):
+        raise NotImplementedError
 
     def __getstate__(self):
         # when we serialize (say, for multiprocessing),
@@ -289,7 +291,6 @@ class MatrixStore(object):
         self.matrix = None
         self._labels = None
         self.metadata = None
-        self.head_of_matrix = None
         return self.__dict__.copy()
 
 
@@ -297,9 +298,12 @@ class HDFMatrixStore(MatrixStore):
 
     def __init__(self, matrix_path=None, metadata_path=None):
         super().__init__(matrix_path, metadata_path)
+        if isinstance(self.matrix_base_store, S3Store):
+            raise ValueError('HDFMatrixStore cannot be used with S3')
         self.metadata = self.load_metadata()
 
-    def _get_head_of_matrix(self):
+    @property
+    def head_of_matrix(self):
         try:
             head_of_matrix = pd.read_hdf(self.matrix_path, start=0, stop=1)
             # Is the index already in place?
@@ -311,36 +315,20 @@ class HDFMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        path_parsed = urlparse(self.matrix_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+        matrix = pd.read_hdf(self.matrix_path)
 
-        if scheme in ('', 'file'):  # Local file
-            matrix = pd.read_hdf(self.matrix_path)
-        else:
-            raise ValueError(f"""
-                  URL scheme not supported:
-                  {scheme} (from {self.matrix_path})
-            """)
         # Is the index already in place?
         if matrix.index.name not in self.metadata['indices']:
             matrix.set_index(self.metadata['indices'], inplace=True)
 
         return matrix
 
-    def save(self, project_path, name):
-        path_parsed = urlparse(project_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
+    def save(self):
+        with self.matrix_base_store.open('wb') as fd:
+            self.matrix.to_hdf(fd, format='table', mode='wb')
 
-        if self.scheme in ('', 'file'):  # Local file
-            with open(os.path.join(project_path, name + ".h5"), "w") as f:
-                self.matrix.to_hdf(f, format='table', mode='w')
-        else:
-            raise ValueError(f"""
-                  URL scheme not supported:
-                  {scheme} (from {os.path.join(project_path, name + '.h5')})
-            """)
-
-        self.save_metadata(self.metadata, project_path, name)
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(self.metadata, fd, encoding='utf-8')
 
 
 class CSVMatrixStore(MatrixStore):
@@ -348,23 +336,12 @@ class CSVMatrixStore(MatrixStore):
     def __init__(self, matrix_path=None, metadata_path=None):
         super().__init__(matrix_path, metadata_path)
 
-    def _get_head_of_matrix(self):
-        path_parsed = urlparse(self.matrix_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-
+    @property
+    def head_of_matrix(self):
         try:
-            if scheme in ('', 'file'):  # Local file
-                with open(self.matrix_path, "r") as f:
-                    head_of_matrix = pd.read_csv(f, nrows=1)
-            elif scheme == 's3':
-                s3 = s3fs.S3FileSystem()
-                with s3.open(self.matrix_path, 'rb') as f:
-                    head_of_matrix = pd.read_csv(f, nrows=1)
-            else:
-                raise ValueError(f"URL scheme not supported: {scheme} (from {self.matrix_path})")
-
-            head_of_matrix.set_index(self.metadata['indices'], inplace=True)
-
+            with self.matrix_base_store.open('rb') as fd:
+                head_of_matrix = pd.read_csv(fd, nrows=1)
+                head_of_matrix.set_index(self.metadata['indices'], inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
             logging.exception("Returning Empty data frame")
@@ -373,60 +350,17 @@ class CSVMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        path_parsed = urlparse(self.matrix_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-
-        if scheme in ('', 'file'):  # Local file
-            with open(self.matrix_path, "r") as f:
-                matrix = pd.read_csv(f)
-        elif scheme == 's3':
-            s3 = s3fs.S3FileSystem()
-            with s3.open(self.matrix_path, 'rb') as f:
-                matrix = pd.read_csv(f)
+        with self.matrix_base_store.open('rb') as fd:
+            matrix = pd.read_csv(fd)
 
         matrix.set_index(self.metadata['indices'], inplace=True)
 
         return matrix
 
-    def save(self, project_path, name):
-        path_parsed = urlparse(project_path)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-
-        if not scheme or scheme == 'file':  # Local file
-            with open(os.path.join(project_path, name + ".csv"), "w") as f:
-                self.matrix.to_csv(f)
-        elif scheme == 's3':
-            bytes_to_write = self.matrix.to_csv(None).encode()
-            s3 = s3fs.S3FileSystem()
-            with s3.open(os.path.join(project_path, name + ".csv"), "wb") as f:
-                f.write(bytes_to_write)
-        else:
-            raise ValueError(f"URL scheme not supported: {scheme} "
-                             "(from {os.path.join(project_path, name + '.csv')})")
-
-        self.save_metadata(self.metadata, project_path, name)
-
-
-class InMemoryMatrixStore(MatrixStore):
-    def __init__(self, matrix, metadata, labels=None):
-        super().__init__()
-        self.matrix = matrix
-        self.metadata = metadata
-        if self.matrix.index.names != self.metadata['indices']:
-            self.matrix.set_index(self.metadata['indices'], inplace=True)
-        self._labels = labels
-        self.head_of_matrix = None
-
-    def _get_head_of_matrix(self):
-        return self.matrix.head(n=1)
-
-    @property
-    def empty(self):
-        head_of_matrix = self.head_of_matrix
-        return head_of_matrix.empty
-
-    def save(self, project_path, name):
-        return None
+    def save(self):
+        self.matrix_base_store.write(self.matrix.to_csv(None).encode('utf-8'))
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(self.metadata, fd, encoding='utf-8')
 
 
 class TestMatrixType(object):

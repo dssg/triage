@@ -18,7 +18,8 @@ from tests.utils import fake_trained_model, sample_metta_csv_diff_order
 from triage.component.catwalk.storage import (
     InMemoryModelStorageEngine,
     S3ModelStorageEngine,
-    InMemoryMatrixStore )
+    MatrixStore
+    )
 from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 
@@ -65,7 +66,9 @@ def test_predictor():
                 # Create the matrix to be tested and store in db
                 metadata['matrix_type'] = mat_type
 
-                matrix_store = InMemoryMatrixStore(matrix, metadata)
+                matrix_store = MatrixStore()
+                matrix_store.matrix = matrix
+                matrix_store.metadata = metadata
 
                 # Note, the first time 'matrix' is used, the label column is popped.
                 # It must be added back in to 'matrix' to create another matrix_store.
@@ -123,7 +126,9 @@ def test_predictor():
                 # Create the matrix to be tested and store in db
                 new_metadata['matrix_type'] = mat_type
 
-                new_matrix_store = InMemoryMatrixStore(new_matrix, new_metadata)
+                new_matrix_store = MatrixStore()
+                new_matrix_store.matrix = new_matrix
+                new_matrix_store.metadata = new_metadata
 
                 # Adding 'label' column back into new_matrix
                 new_matrix['label'] = [7, 8]
@@ -191,7 +196,9 @@ def test_predictor_composite_index():
 
             # Create the matrix to be tested and store in db
             metadata['matrix_type'] = mat_type
-            matrix_store = InMemoryMatrixStore(matrix, metadata)
+            matrix_store = MatrixStore()
+            matrix_store.matrix = matrix
+            matrix_store.metadata = metadata
 
             # Adding 'label' column back into matrix
             matrix['label'] = [7, 8, 8, 7]
@@ -301,7 +308,9 @@ def test_predictor_retrieve():
             'matrix_type': 'test'
         }
 
-        matrix_store = InMemoryMatrixStore(matrix, metadata)
+        matrix_store = MatrixStore()
+        matrix_store.matrix = matrix
+        matrix_store.metadata = metadata
 
         predict_proba = predictor.predict(
             model_id,
