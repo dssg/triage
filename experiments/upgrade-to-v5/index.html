@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../img/favicon.ico">
-  <title>Feature Generation Recipe Book - Triage Documentation</title>
+  <title>Upgrading your experiment configuration to v5 - Triage Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
@@ -17,8 +17,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Feature Generation Recipe Book";
-    var mkdocs_page_input_path = "experiments/features.md";
+    var mkdocs_page_name = "Upgrading your experiment configuration to v5";
+    var mkdocs_page_input_path = "experiments/upgrade-to-v5.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -73,21 +73,9 @@
                     
     <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
                 </li>
-                <li class=" current">
+                <li class="">
                     
-    <a class="current" href="./">Feature Generation Recipe Book</a>
-    <ul class="subnav">
-            
-    <li class="toctree-l3"><a href="#feature-generation-recipe-book">Feature Generation Recipe Book</a></li>
-    
-        <ul>
-        
-            <li><a class="toctree-l4" href="#age">Age</a></li>
-        
-        </ul>
-    
-
-    </ul>
+    <a class="" href="../features/">Feature Generation Recipe Book</a>
                 </li>
                 <li class="">
                     
@@ -121,15 +109,11 @@
     <li><a href="../..">Docs</a> &raquo;</li>
     
       
-        
-          <li>Experiment Documentation &raquo;</li>
-        
-      
     
-    <li>Feature Generation Recipe Book</li>
+    <li>Upgrading your experiment configuration to v5</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="http://github.com/dssg/triage/blob/master/docs/templates/experiments/features.md"
+        <a href="http://github.com/dssg/triage/blob/master/docs/templates/experiments/upgrade-to-v5.md"
           class="icon icon-github"> Edit on GitHub</a>
       
     </li>
@@ -139,37 +123,81 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="feature-generation-recipe-book">Feature Generation Recipe Book</h1>
-<p>This document is a collection of 'collate' aggregate features that we have found useful to create in Triage that may not be apparent at first.</p>
-<p>For an introduction to feature generation in Triage, refer to <a href="https://dssg.github.io/dirtyduck/#orgaae2e66">Dirty Duck Feature Generation</a></p>
-<h2 id="age">Age</h2>
-<p>You can calculate age from a date of birth column using the <code>collate_date</code> special variable. This variable is marked as a placeholder in the feature quantity input, but is replaced with each as-of-date when features are being calculated. Combined with the Postgres <code>age</code> function, this calculates a person's age at each as-of-date as a feature.</p>
-<p>For this example, let's assume you have a column called 'dob' that is a timestamp (or anything that can be cast to a date) in your source table. The <code>feature_aggregation</code>'s quantity would be: </p>
-<p><code>EXTRACT(YEAR FROM AGE('{collate_date}'::DATE, dob::DATE))</code></p>
-<p>If Triage is calculating this for the as-of-date '2016-01-01', it will internally expand the <code>collate_date</code> out to:
-<code>EXTRACT(YEAR FROM AGE('2016-01-01'::DATE, dob::DATE))</code></p>
-<p>In context, a feature aggregate that uses age may look more like:</p>
-<pre><code>    aggregates:
-      - # age in years 
-        quantity:
-          age: &quot;EXTRACT(YEAR FROM AGE('{collate_date}'::DATE, dob::DATE))&quot;
-        metrics: ['max']
+                <h1 id="upgrading-your-experiment-configuration-to-v5">Upgrading your experiment configuration to v5</h1>
+<p>This document details the steps needed to update a triage v3 or v4 configuration to v5, mimicing the old behavior (as opposed to taking advantage of new options) as much as possible.</p>
+<p>In the experiment configuration v5, several things were changed:</p>
+<ul>
+<li><code>state_config</code> becomes <code>cohort_config</code>, and receives new options</li>
+<li><code>label_config</code> is changed to take a parameterized query</li>
+<li><code>model_group_keys</code> is changed to have more robust defaults, and values specified in the config file act as overrides for the defaults instead of additions to them.</li>
+</ul>
+<h2 id="state_config-cohort_config">state_config -&gt; cohort_config</h2>
+<p>Upgrading the state config is fairly straightforward, as no functionality was removed. The key at which the state table-based configuration can be passed has changed. Before it resided at the top-level <code>state_config</code> key, whereas now it is in the optional <code>dense_states</code> key within the top-level <code>cohort_config</code> key.</p>
+<p>Old:</p>
+<pre><code>state_config:
+    table_name: 'states'
+    state_filters:
+        - 'state_one AND state_two'
+        - '(state_one OR state_two) AND state_three'
 </code></pre>
 
-<p>Here, we call the feature 'age' and since everything in collate is defined as an aggregate, we pick 'max'; Any records for the same person and as-of-date should have the same 'dob', so there are many aggregates you can use that will arrive at the same answer (e.g. 'min', 'avg'). In these cases 'max' is the standard aggregate metric of choice in Triage.</p>
+<p>New:</p>
+<pre><code>cohort_config:
+   dense_states:
+        table_name: 'states'
+        state_filters:
+        - 'state_one AND state_two'
+        - '(state_one OR state_two) AND state_three'
+</code></pre>
+
+<h2 id="label_config">label_config</h2>
+<p>The label config has had functionality changed, so there is more conversion that needs to happen. Instead of taking in an 'events' table and making assumptions suitable for inspections tasks based on that table, for transparency and flexibility this now takes a parameterized query, as well as an optional <code>include_missing_labels_in_train_as</code> boolean. Leaving out this boolean value reproduces the inspections behavior (missing labels are treated as null), so to upgrade old configurations it is not needed.</p>
+<p>Old:</p>
+<pre><code>events_table: 'events'
+</code></pre>
+
+<p>New:</p>
+<pre><code>label_config:
+    query: |
+        select
+        events.entity_id,
+        bool_or(outcome::bool)::integer as outcome
+        from events
+        where '{as_of_date}' &lt;= outcome_date
+            and outcome_date &lt; '{as_of_date}'::timestamp + interval '{label_timespan}'
+            group by entity_id
+</code></pre>
+
+<h2 id="model_group_keys">model_group_keys</h2>
+<p>The model group configuration was changed quite a bit. Before, the Experiment defined a few default grouping keys and would treat anything included in the config as additional. In practice, there were many keys that were almost always included as additional model group keys, and these are now default. There are also other keys that generally make sense if certain things are iterated on (e.g. feature groups). The goal is for most projects to simply leave out this configuration value entirely. If possible, this is the recommended route to go. But for the purposes of this guide, this change should duplicate the old behavior exactly.</p>
+<p>Old (empty, using defaults):</p>
+<pre><code></code></pre>
+
+<p>New:</p>
+<pre><code>model_group_keys: ['class_path', 'parameters', 'feature_names']
+</code></pre>
+
+<p>Old (more standard in practice, adding some temporal parameters):</p>
+<pre><code>model_group_keys: ['label_timespan', 'as_of_date_frequency', 'max_training_history']
+</code></pre>
+
+<p>New:</p>
+<pre><code>model_group_keys: ['class_path', 'parameters', 'feature_names', 'label_timespan', 'as_of_date_frequency', 'max_training_history']
+</code></pre>
+
+<h2 id="upgrading-the-experiment-config-version">Upgrading the experiment config version</h2>
+<p>At this point, you should be able to bump the top-level experiment config version to v5:</p>
+<p>Old:</p>
+<pre><code>config_version: 'v4'
+</code></pre>
+
+<p>New:</p>
+<pre><code>config_version: 'v5'
+</code></pre>
               
             </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../algorithm/" class="btn btn-neutral float-right" title="Experiment Algorithm">Next <span class="icon icon-circle-arrow-right"></span></a>
-      
-      
-        <a href="../temporal-validation/" class="btn btn-neutral" title="Temporal Validation Deep Dive"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
@@ -195,10 +223,6 @@
           <a href="http://github.com/dssg/triage/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../temporal-validation/" style="color: #fcfcfc;">&laquo; Previous</a></span>
-      
-      
-        <span style="margin-left: 15px"><a href="../algorithm/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

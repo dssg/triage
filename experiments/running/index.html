@@ -1,160 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Documentation for Triage.">
-        
-        
-        <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>Running an Experiment - Triage Documentation</title>
-        <link href="../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
-        <link href="../../css/font-awesome.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="../../css/highlight.css">
-        <link href="../../css/base.css" rel="stylesheet">
-        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-        <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.3/html5shiv.js"></script>
-            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-        <![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Running an Experiment - Triage Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
-        <script src="../../js/jquery-1.10.2.min.js"></script>
-        <script src="../../js/bootstrap-3.3.7.min.js"></script>
-        <script src="../../js/highlight.pack.js"></script>
-         
-    </head>
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Running an Experiment";
+    var mkdocs_page_input_path = "experiments/running.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
 
-    <body>
+<body class="wy-body-for-nav" role="document">
 
-        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    <div class="container">
+  <div class="wy-grid-for-nav">
 
-        <!-- Collapsed navigation -->
-        <div class="navbar-header">
-            <!-- Expander button -->
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="../..">Triage Documentation</a>
-        </div>
-
-        <!-- Expanded navigation -->
-        <div class="navbar-collapse collapse">
-            <!-- Main navigation -->
-            <ul class="nav navbar-nav">
-            
-            
-                <li >
-                    <a href="../..">Home</a>
-                </li>
-            
-            
-            
-                <li class="dropdown active">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Experiment Documentation <b class="caret"></b></a>
-                    <ul class="dropdown-menu">
-                    
-                        <li >
-                            <a href="../defining/">Defining an Experiment</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../feature-testing/">Testing Feature Configuration</a>
-                        </li>
-                    
-                        <li class="active">
-                            <a href="./">Running an Experiment</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../temporal-validation/">Temporal Validation Deep Dive</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../features/">Feature Generation Recipe Book</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../algorithm/">Experiment Algorithm</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../architecture/">Experiment Architecture</a>
-                        </li>
-                    
-                    </ul>
-                </li>
-            
-            
-            </ul>
-
-            <!-- Search, Navigation and Repo links -->
-            <ul class="nav navbar-nav navbar-right">
-                    <li >
-                        <a rel="next" href="../feature-testing/">
-                            <i class="fa fa-arrow-left"></i> Previous
-                        </a>
-                    </li>
-                    <li >
-                        <a rel="prev" href="../temporal-validation/">
-                            Next <i class="fa fa-arrow-right"></i>
-                        </a>
-                    </li>
-                
-                <li>
-                    <a href="http://github.com/dssg/triage/">
-                        
-                            <i class="fa fa-github"></i>
-                        
-                        GitHub
-                    </a>
-                </li>
-                
-            </ul>
-        </div>
-    </div>
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Triage Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
 </div>
+      </div>
 
-        <div class="container">
-                <div class="row">
-                    <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
-    <ul class="nav bs-sidenav">
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment Documentation</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../defining/">Defining an Experiment</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../feature-testing/">Testing Feature Configuration</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Running an Experiment</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#running-an-experiment">Running an Experiment</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#prerequisites">Prerequisites</a></li>
+        
+            <li><a class="toctree-l4" href="#simple-example">Simple Example</a></li>
+        
+            <li><a class="toctree-l4" href="#multicore-example">Multicore example</a></li>
+        
+            <li><a class="toctree-l4" href="#using-s3-to-store-matrices-and-models">Using S3 to store matrices and models</a></li>
+        
+            <li><a class="toctree-l4" href="#validating-an-experiment">Validating an Experiment</a></li>
+        
+            <li><a class="toctree-l4" href="#restarting-an-experiment">Restarting an Experiment</a></li>
+        
+            <li><a class="toctree-l4" href="#running-parts-of-an-experiment">Running parts of an Experiment</a></li>
+        
+            <li><a class="toctree-l4" href="#evaluating-results-of-an-experiment">Evaluating results of an Experiment</a></li>
+        
+            <li><a class="toctree-l4" href="#inspecting-an-experiment-before-running">Inspecting an Experiment before running</a></li>
+        
+            <li><a class="toctree-l4" href="#experiment-classes">Experiment Classes</a></li>
+        
+        </ul>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../features/">Feature Generation Recipe Book</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../algorithm/">Experiment Algorithm</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../architecture/">Experiment Architecture</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Triage Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Experiment Documentation &raquo;</li>
+        
       
     
-        <li class="main active"><a href="#running-an-experiment">Running an Experiment</a></li>
-        
-            <li><a href="#prerequisites">Prerequisites</a></li>
-        
-            <li><a href="#simple-example">Simple Example</a></li>
-        
-            <li><a href="#multicore-example">Multicore example</a></li>
-        
-            <li><a href="#using-s3-to-store-matrices-and-models">Using S3 to store matrices and models</a></li>
-        
-            <li><a href="#validating-an-experiment">Validating an Experiment</a></li>
-        
-            <li><a href="#restarting-an-experiment">Restarting an Experiment</a></li>
-        
-            <li><a href="#running-parts-of-an-experiment">Running parts of an Experiment</a></li>
-        
-            <li><a href="#evaluating-results-of-an-experiment">Evaluating results of an Experiment</a></li>
-        
-            <li><a href="#inspecting-an-experiment-before-running">Inspecting an Experiment before running</a></li>
-        
-            <li><a href="#experiment-classes">Experiment Classes</a></li>
-        
-    
-    
-    </ul>
-</div></div>
-                    <div class="col-md-9" role="main">
-
-<h2 id="running-an-experiment">Running an Experiment<a class="headerlink" href="#running-an-experiment" title="Permanent link">&para;</a></h2>
-<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+    <li>Running an Experiment</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="http://github.com/dssg/triage/blob/master/docs/templates/experiments/running.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="running-an-experiment">Running an Experiment</h1>
+<h2 id="prerequisites">Prerequisites</h2>
 <p>To use a Triage experiment, you first need:</p>
 <ul>
 <li>Python 3.5</li>
@@ -163,9 +167,9 @@
 <li>An experiment definition (see <a href="../defining/">Defining an Experiment</a>)</li>
 </ul>
 <p>You may run a Triage experiment two ways: through the Triage command line tool, or through instantiating an Experiment object in your own Python code and running it. The rest of this document will introduce experiment runs of increasing complexity, through both the CLI and Python interfaces.</p>
-<h3 id="simple-example">Simple Example<a class="headerlink" href="#simple-example" title="Permanent link">&para;</a></h3>
+<h2 id="simple-example">Simple Example</h2>
 <p>To run an experiment, you need to tell triage at a minimum where to find the experiment file (in YAML format), and how to connect to the database, In this simple example, we're assuming that the experiment will be run with only one process, and that the matrices and models should be stored on the local filesystem.</p>
-<h4 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h4>
+<h3 id="cli">CLI</h3>
 <p>The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:</p>
 <pre><code class="bash">triage experiment example_experiment_config.yaml
 </code></pre>
@@ -178,7 +182,7 @@
 <pre><code class="bash">triage -d mydbconfig.yaml experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
 </code></pre>
 
-<h4 id="python">Python<a class="headerlink" href="#python" title="Permanent link">&para;</a></h4>
+<h3 id="python">Python</h3>
 <p>When running an experiment in Python, the database information is passed in the form of a SQLAlchemy database engine, and the experiment information is passed as a dictionary rather as YAML specifically.</p>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
@@ -190,14 +194,14 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 </code></pre>
 
-<h3 id="multicore-example">Multicore example<a class="headerlink" href="#multicore-example" title="Permanent link">&para;</a></h3>
+<h2 id="multicore-example">Multicore example</h2>
 <p>Triage also offers the ability to parallelize both CPU-heavy and database-heavy tasks. Triage uses the multiprocessing library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.</p>
-<h4 id="cli_1">CLI<a class="headerlink" href="#cli_1" title="Permanent link">&para;</a></h4>
+<h3 id="cli_1">CLI</h3>
 <p>The Triage CLI allows parallelization to be specified through the <code>--n-processes</code> and <code>--n-db-processes</code> parameters.</p>
 <pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
 </code></pre>
 
-<h4 id="python_1">Python<a class="headerlink" href="#python_1" title="Permanent link">&para;</a></h4>
+<h3 id="python_1">Python</h3>
 <p>In Python, you can use the <code>MultiCoreExperiment</code> instead of the <code>SingleThreadedExperiment</code>, and similarly pass the <code>n_processes</code> and <code>n_db_processes</code> parameters. We also recommend using <code>triage.create_engine</code>. It will create a serializable version of the engine that will be fully reconstructed in multiprocess contexts. If you pass a regular SQLAlchemy engine, in these contexts the engine will be reconstructed with the <a href="http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls">database URL only</a>, which may cancel other settings you have used to configure your engine.</p>
 <pre><code class="python">
 from triage.experiments import MultiCoreExperiment
@@ -214,13 +218,13 @@ experiment.run()
 
 </code></pre>
 
-<h3 id="using-s3-to-store-matrices-and-models">Using S3 to store matrices and models<a class="headerlink" href="#using-s3-to-store-matrices-and-models" title="Permanent link">&para;</a></h3>
+<h2 id="using-s3-to-store-matrices-and-models">Using S3 to store matrices and models</h2>
 <p>Triage can operate on different storage engines for matrices and models, and besides the standard filesystem engine comes with S3 support out of the box. To use this, just use the <code>s3://</code> scheme for your <code>project_path</code> (this is similar for both Python and the CLI).</p>
-<h4 id="cli_2">CLI<a class="headerlink" href="#cli_2" title="Permanent link">&para;</a></h4>
+<h3 id="cli_2">CLI</h3>
 <pre><code class="bash">triage experiment example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
 </code></pre>
 
-<h4 id="python_2">Python<a class="headerlink" href="#python_2" title="Permanent link">&para;</a></h4>
+<h3 id="python_2">Python</h3>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
 experiment = SingleThreadedExperiment(
@@ -232,7 +236,7 @@ experiment.run()
 
 </code></pre>
 
-<h3 id="validating-an-experiment">Validating an Experiment<a class="headerlink" href="#validating-an-experiment" title="Permanent link">&para;</a></h3>
+<h2 id="validating-an-experiment">Validating an Experiment</h2>
 <p>Configuring an experiment is complex, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the <code>cat_complaints</code> table in a feature aggregation but it doesn't exist, I'll see something like this:</p>
 <pre><code>*** ValueError: from_obj query does not run.
 from_obj: &quot;cat_complaints&quot;
@@ -242,7 +246,7 @@ LINE 1: explain select * from cat_complaints
  [SQL: 'explain select * from cat_complaints']
 </code></pre>
 
-<h4 id="cli_3">CLI<a class="headerlink" href="#cli_3" title="Permanent link">&para;</a></h4>
+<h3 id="cli_3">CLI</h3>
 <p>The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it <em>only</em> validate.</p>
 <pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
 </code></pre>
@@ -250,20 +254,20 @@ LINE 1: explain select * from cat_complaints
 <pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
 </code></pre>
 
-<h5 id="python_3">Python<a class="headerlink" href="#python_3" title="Permanent link">&para;</a></h5>
+<h4 id="python_3">Python</h4>
 <p>Experiments expose a <code>validate</code> method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.</p>
 <pre><code class="python">experiment.validate()
 </code></pre>
 
 <p>By default, the <code>validate</code> method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call <code>validate(strict=False)</code> and all of the errors will be changed to warnings.</p>
-<p>We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the <a href="../triage/experiments/validate.py">validation module</a> and submitting a pull request!</p>
-<h3 id="restarting-an-experiment">Restarting an Experiment<a class="headerlink" href="#restarting-an-experiment" title="Permanent link">&para;</a></h3>
+<p>We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the <a href="https://github.com/dssg/triage/blob/master/src/triage/experiments/validate.py">validation module</a> and submitting a pull request!</p>
+<h2 id="restarting-an-experiment">Restarting an Experiment</h2>
 <p>If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set the 'replace' flag. </p>
-<h4 id="cli_4">CLI<a class="headerlink" href="#cli_4" title="Permanent link">&para;</a></h4>
+<h3 id="cli_4">CLI</h3>
 <pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
 </code></pre>
 
-<h4 id="python_4">Python<a class="headerlink" href="#python_4" title="Permanent link">&para;</a></h4>
+<h3 id="python_4">Python</h3>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
 experiment = SingleThreadedExperiment(
@@ -275,10 +279,10 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 </code></pre>
 
-<h3 id="running-parts-of-an-experiment">Running parts of an Experiment<a class="headerlink" href="#running-parts-of-an-experiment" title="Permanent link">&para;</a></h3>
-<p>If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the <a href="../example_experiment_config.yaml">experiment config</a> to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.</p>
+<h2 id="running-parts-of-an-experiment">Running parts of an Experiment</h2>
+<p>If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the <a href="https://github.com/dssg/triage/blob/master/example_experiment_config.yaml">experiment config</a> to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.</p>
 <p>Running parts of an experiment is only supported through the Python interface.</p>
-<h4 id="python_5">Python<a class="headerlink" href="#python_5" title="Permanent link">&para;</a></h4>
+<h3 id="python_5">Python</h3>
 <ol>
 <li>
 <p><code>experiment.run()</code> will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with <code>cleanup=False</code>, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.</p>
@@ -288,7 +292,7 @@ experiment.run()
 </ul>
 </li>
 <li>
-<p>To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of <a href="../example_experiment_config.yaml">experiment config</a> to be passed:</p>
+<p>To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of <a href="https://github.com/dssg/triage/blob/master/example_experiment_config.yaml">experiment config</a> to be passed:</p>
 <ul>
 <li>
 <p><code>experiment.split_definitions</code> will parse temporal config and create time splits. It only requires <code>temporal_config</code>.</p>
@@ -314,7 +318,7 @@ experiment.run()
 </ul>
 </li>
 </ol>
-<h3 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment<a class="headerlink" href="#evaluating-results-of-an-experiment" title="Permanent link">&para;</a></h3>
+<h2 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment</h2>
 <p>After the experiment run, a variety of schemas and tables will be created and populated in the configured database:</p>
 <ul>
 <li>model_metadata.experiments - The experiment configuration and a hash</li>
@@ -345,29 +349,67 @@ experiment.run()
     limit 10
 </code></pre>
 
-<h3 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running<a class="headerlink" href="#inspecting-an-experiment-before-running" title="Permanent link">&para;</a></h3>
+<h2 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running</h2>
 <p>Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:</p>
 <ul>
 <li><code>experiment.all_as_of_times</code> for debugging temporal config. This will show all dates that features and labels will be calculated at.</li>
 <li><code>experiment.feature_dicts</code> will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment</li>
 <li><code>experiment.matrix_build_tasks</code> will output a list representing each matrix that will be built.</li>
 </ul>
-<h3 id="experiment-classes">Experiment Classes<a class="headerlink" href="#experiment-classes" title="Permanent link">&para;</a></h3>
+<h2 id="experiment-classes">Experiment Classes</h2>
 <ul>
 <li><em>SingleThreadedExperiment</em>: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.</li>
 <li><em>MultiCoreExperiment</em>: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
 <li><em>RQExperiment</em>: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( <code>pip install triage[rq]</code> )</li>
-</ul></div>
-                </div>
-        </div>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../temporal-validation/" class="btn btn-neutral float-right" title="Temporal Validation Deep Dive">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../feature-testing/" class="btn btn-neutral" title="Testing Feature Configuration"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
 
-    <hr>
-    <footer class="container">
-        
-        <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
-    </footer>
-        <script src="../../js/base.js"></script>
-        <script src="../../search/require.js"></script>
-        <script src="../../search/search.js"></script>
-    </body>
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="http://github.com/dssg/triage/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../feature-testing/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../temporal-validation/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
 </html>
