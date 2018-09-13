@@ -1,7 +1,7 @@
 -r include/lint.txt
 -r include/test-management.txt
 csvkit==1.0.3
-factory_boy
+factory_boy==2.11.1
 testing.postgresql
 pytest==3.2.5
 pytest-cov
