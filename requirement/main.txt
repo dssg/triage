@@ -1,4 +1,4 @@
-alembic
+alembic==1.0.0
 SQLAlchemy
 PyYAML
 psycopg2
