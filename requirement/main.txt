@@ -1,6 +1,6 @@
 alembic==1.0.0
 SQLAlchemy==1.2.11
-PyYAML
+PyYAML==3.13
 psycopg2
 python-dateutil
 scipy
