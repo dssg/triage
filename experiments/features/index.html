@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>Feature Definition Deep Dive - Triage Documentation</title>
+        <title>Feature Generation Recipe Book - Triage Documentation</title>
         <link href="../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link rel="stylesheet" href="../../css/highlight.css">
@@ -63,6 +63,10 @@
                         </li>
                     
                         <li >
+                            <a href="../feature-testing/">Testing Feature Configuration</a>
+                        </li>
+                    
+                        <li >
                             <a href="../running/">Running an Experiment</a>
                         </li>
                     
@@ -71,7 +75,7 @@
                         </li>
                     
                         <li class="active">
-                            <a href="./">Feature Definition Deep Dive</a>
+                            <a href="./">Feature Generation Recipe Book</a>
                         </li>
                     
                         <li >
@@ -80,10 +84,6 @@
                     
                         <li >
                             <a href="../architecture/">Experiment Architecture</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../upgrade-to-v5/">Upgrading Experiment to v5</a>
                         </li>
                     
                     </ul>
@@ -125,7 +125,9 @@
     <ul class="nav bs-sidenav">
       
     
-        <li class="main active"><a href="#experiment-features-deep-dive">Experiment Features Deep Dive</a></li>
+        <li class="main active"><a href="#feature-generation-recipe-book">Feature Generation Recipe Book</a></li>
+        
+            <li><a href="#age">Age</a></li>
         
     
     
@@ -133,8 +135,24 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h2 id="experiment-features-deep-dive">Experiment Features Deep Dive<a class="headerlink" href="#experiment-features-deep-dive" title="Permanent link">&para;</a></h2>
-<p>This doc is coming soon</p></div>
+<h2 id="feature-generation-recipe-book">Feature Generation Recipe Book<a class="headerlink" href="#feature-generation-recipe-book" title="Permanent link">&para;</a></h2>
+<p>This document is a collection of 'collate' aggregate features that we have found useful to create in Triage that may not be apparent at first.</p>
+<p>For an introduction to feature generation in Triage, refer to <a href="https://dssg.github.io/dirtyduck/#orgaae2e66">Dirty Duck Feature Generation</a></p>
+<h3 id="age">Age<a class="headerlink" href="#age" title="Permanent link">&para;</a></h3>
+<p>You can calculate age from a date of birth column using the <code>collate_date</code> special variable. This variable is marked as a placeholder in the feature quantity input, but is replaced with each as-of-date when features are being calculated. Combined with the Postgres <code>age</code> function, this calculates a person's age at each as-of-date as a feature.</p>
+<p>For this example, let's assume you have a column called 'dob' that is a timestamp (or anything that can be cast to a date) in your source table. The <code>feature_aggregation</code>'s quantity would be: </p>
+<p><code>EXTRACT(YEAR FROM AGE('{collate_date}'::DATE, dob::DATE))</code></p>
+<p>If Triage is calculating this for the as-of-date '2016-01-01', it will internally expand the <code>collate_date</code> out to:
+<code>EXTRACT(YEAR FROM AGE('2016-01-01'::DATE, dob::DATE))</code></p>
+<p>In context, a feature aggregate that uses age may look more like:</p>
+<pre><code>    aggregates:
+      - # age in years 
+        quantity:
+          age: &quot;EXTRACT(YEAR FROM AGE('{collate_date}'::DATE, dob::DATE))&quot;
+        metrics: ['max']
+</code></pre>
+
+<p>Here, we call the feature 'age' and since everything in collate is defined as an aggregate, we pick 'max'; Any records for the same person and as-of-date should have the same 'dob', so there are many aggregates you can use that will arrive at the same answer (e.g. 'min', 'avg'). In these cases 'max' is the standard aggregate metric of choice in Triage.</p></div>
                 </div>
         </div>
 

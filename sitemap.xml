@@ -1,58 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-    
     <url>
      <loc>/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
-        
     <url>
      <loc>/experiments/defining/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
+    <url>
+     <loc>/experiments/feature-testing/</loc>
+     <lastmod>2018-09-13</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
     <url>
      <loc>/experiments/running/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
     <url>
      <loc>/experiments/temporal-validation/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
     <url>
      <loc>/experiments/features/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
     <url>
      <loc>/experiments/algorithm/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
     <url>
      <loc>/experiments/architecture/</loc>
-     <lastmod>2018-05-15</lastmod>
+     <lastmod>2018-09-13</lastmod>
      <changefreq>daily</changefreq>
     </url>
-        
-    <url>
-     <loc>/experiments/upgrade-to-v5/</loc>
-     <lastmod>2018-05-15</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    
-
 </urlset>

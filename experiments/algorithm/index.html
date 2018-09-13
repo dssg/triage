@@ -63,6 +63,10 @@
                         </li>
                     
                         <li >
+                            <a href="../feature-testing/">Testing Feature Configuration</a>
+                        </li>
+                    
+                        <li >
                             <a href="../running/">Running an Experiment</a>
                         </li>
                     
@@ -71,7 +75,7 @@
                         </li>
                     
                         <li >
-                            <a href="../features/">Feature Definition Deep Dive</a>
+                            <a href="../features/">Feature Generation Recipe Book</a>
                         </li>
                     
                         <li class="active">
@@ -80,10 +84,6 @@
                     
                         <li >
                             <a href="../architecture/">Experiment Architecture</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../upgrade-to-v5/">Upgrading Experiment to v5</a>
                         </li>
                     
                     </ul>
@@ -401,11 +401,11 @@ A few methods are queried to attempt to compute feature importances:
 <h4 id="test-matrix">Test Matrix<a class="headerlink" href="#test-matrix" title="Permanent link">&para;</a></h4>
 <p>For each test matrix, predictions, individual importances, and the user-specified testing evaluation metrics are written to the 'test_results' schema. For each train matrix, predictions and the user-specified training evaluation metrics are written to the 'train_results' schema.</p>
 <h5 id="predictions">Predictions<a class="headerlink" href="#predictions" title="Permanent link">&para;</a></h5>
-<p>The trained model's prediction probabilities (<code>predict_proba()</code>) are computed both for the matrix it was trained on and any testing matrices. The predictions for the training matrix are saved in <code>train_results.train_predictions</code> and those for the testing matrices are saved in the <code>test_results.test_predictions</code>. More specifically, <code>predict_proba</code> returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the <code>{train or test}_predictions</code> table. The <code>entity_id</code> and <code>as_of_date</code> are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.</p>
+<p>The trained model's prediction probabilities (<code>predict_proba()</code>) are computed both for the matrix it was trained on and any testing matrices. The predictions for the training matrix are saved in <code>train_results.predictions</code> and those for the testing matrices are saved in the <code>test_results.predictions</code>. More specifically, <code>predict_proba</code> returns the probabilities for each label (false and true), but in this case only the probabilities for the true label are saved in the <code>{train or test}_predictions</code> table. The <code>entity_id</code> and <code>as_of_date</code> are retrieved from the matrix's index, and stored in the database table along with the probability score, label value (if it has one), as well as other metadata.</p>
 <h4 id="individual-feature-importance">Individual Feature Importance<a class="headerlink" href="#individual-feature-importance" title="Permanent link">&para;</a></h4>
 <p>Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the <code>test_results.individual_importances</code> table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the <code>individual_importances</code> table.</p>
 <h5 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h5>
-<p>Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the <code>train_results.train_evaluations</code> table or the <code>test_results.test_evaluations</code>. Triage defines a number of <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58">Evaluation Metrics</a> metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.</p>
+<p>Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the <code>train_results.evaluations</code> table or the <code>test_results.evaluations</code>. Triage defines a number of <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58">Evaluation Metrics</a> metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.</p>
 <p>Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.</p>
 <ul>
 <li><code>num_labeled_examples</code> - The number of rows in the test matrix that have labels</li>
