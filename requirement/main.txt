@@ -20,4 +20,4 @@ smart_open==1.6.0
 s3fs==0.1.6
 wrapt==1.10.11
 argcmdr==0.6.0
-sqlparse
+sqlparse==0.2.4
