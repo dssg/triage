@@ -10,7 +10,7 @@ matplotlib<2.2 # pyup: ignore
 pandas==0.23.4
 boto3<1.8 # pyup: ignore
 click==6.7
-inflection
+inflection==0.3.1
 numpy>=1.12
 sqlalchemy-postgres-copy
 retrying
