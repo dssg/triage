@@ -261,15 +261,15 @@ class Model(object):
         plt.axvline(df_preds_1.score.mean(),
                     color='orange',
                     linestyle='dashed')
-
         plt.legend(bbox_to_anchor=(0., 1.005, 1., .102),
                    loc=8,
                    ncol=2,
                    borderaxespad=0.,
-                   fontsize=fontsize)
+                   fontsize=fontsize-2)
         ax.set_xlabel('Frequency', fontsize=fontsize)
         ax.set_ylabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution across Predicted Labels')
+        plt.title('Score Distribution across Predicted Labels', y =1.2, 
+                  fontsize=fontsize)
         plt.show()
 
         if save_file:

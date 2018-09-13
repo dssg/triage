@@ -242,13 +242,21 @@ class ModelGroup(object):
         df_jac = pd.DataFrame(1-squareform(res), 
                               index=model_subset,
                               columns=model_subset)
+        mask = np.zeros_like(df_jac)
+        mask[np.triu_indices_from(mask, k=1)] = True
 
         # Plot matrix heatmap
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_xlabel('Model Id', fontsize=fontsize)
         ax.set_ylabel('Model Id', fontsize=fontsize)
         plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
-        sns.heatmap(df_jac, cmap='Greens', vmin=0, vmax=1, annot=True, linewidth=0.1)
+        sns.heatmap(df_jac,
+                    mask=mask,
+                    cmap='Greens', 
+                    vmin=0, 
+                    vmax=1, 
+                    annot=True, 
+                    linewidth=0.1)
 
     def plot_ranked_corrlelation(self, 
                                  figsize=(12, 16),
