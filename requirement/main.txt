@@ -1,7 +1,7 @@
 alembic==1.0.0
 SQLAlchemy==1.2.11
 PyYAML==3.13
-psycopg2
+psycopg2==2.7.5
 python-dateutil
 scipy
 scikit-learn
