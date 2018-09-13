@@ -2,7 +2,7 @@ alembic==1.0.0
 SQLAlchemy==1.2.11
 PyYAML==3.13
 psycopg2==2.7.5
-python-dateutil
+python-dateutil==2.7.3
 scipy
 scikit-learn
 tables==3.3.0 # pyup: ignore
