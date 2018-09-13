@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from triage.util.conf import convert_str_to_relativedelta
+from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 
 from . import utils
 
@@ -45,13 +45,13 @@ class Timechop(object):
         test_durations,
         test_label_timespans
     ):
-        self.feature_start_time = feature_start_time  # earliest time included in any feature
-        self.feature_end_time = feature_end_time  # all data included in features are < this time
+        self.feature_start_time = dt_from_str(feature_start_time)  # earliest time included in any feature
+        self.feature_end_time = dt_from_str(feature_end_time)  # all data included in features are < this time
         if self.feature_start_time > self.feature_end_time:
             raise ValueError('Feature start time after feature end time.')
 
-        self.label_start_time = label_start_time  # earliest time included in any label
-        self.label_end_time = label_end_time  # all data in any label are < this time
+        self.label_start_time = dt_from_str(label_start_time)  # earliest time included in any label
+        self.label_end_time = dt_from_str(label_end_time)  # all data in any label are < this time
         if self.label_start_time > self.label_end_time:
             raise ValueError('Label start time after label end time.')
 
