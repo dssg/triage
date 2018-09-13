@@ -1,14 +1,9 @@
 site_name: Triage Documentation
-theme: bootstrap
+theme: readthedocs
 docs_dir: sources
 repo_url: http://github.com/dssg/triage
 edit_uri: blob/master/docs/templates
 site_description: 'Documentation for Triage.'
-
-markdown_extensions:
-    - toc:
-        permalink: True
-        baselevel: 2
 
 pages:
   - Home: index.md

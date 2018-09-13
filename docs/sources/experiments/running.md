@@ -146,7 +146,7 @@ experiment.validate()
 
 By default, the `validate` method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call `validate(strict=False)` and all of the errors will be changed to warnings.
 
-We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](triage/experiments/validate.py) and submitting a pull request!
+We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the [validation module](https://github.com/dssg/triage/blob/master/src/triage/experiments/validate.py) and submitting a pull request!
 
 
 ## Restarting an Experiment
@@ -176,7 +176,7 @@ experiment.run()
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
 
 Running parts of an experiment is only supported through the Python interface.
 
@@ -188,7 +188,7 @@ Running parts of an experiment is only supported through the Python interface.
 	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
 	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
 
-2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](example_experiment_config.yaml) to be passed:
+2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be passed:
 
 	- `experiment.split_definitions` will parse temporal config and create time splits. It only requires `temporal_config`.
 
