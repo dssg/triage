@@ -220,43 +220,77 @@ class ModelGroup(object):
      
 
 
-    def plot_jaccard(self, 
+    def plot_jaccard(self,
                      figsize=(12, 16), 
                      fontsize=20,
                      top_n=100,
-                     model_subset=None):
+                     model_subset=None,
+                     temporal_comparison=False):
  
         if model_subset is None:
             model_subset = self.model_id
 
         if self.preds is None:
             self._load_predictions()
+            
+        if temporal_comparison == True:
+            as_of_dates =  self.preds['as_of_date'].unique()
+            dfs_dates = [self.preds[self.preds['as_of_date']==date] 
+                         for date in as_of_dates]
 
-        # Call predicitons (this has to be filtered to comparable models)
-        df_sim = self.preds
-        df_sim['above_tresh'] = (df_sim['score'] <= top_n).astype(int)
-        df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
+            for preds_df in dfs_dates:
+                df_sim = preds_df
+                df_sim['above_tresh'] = (df_sim.loc[:,('rank_abs')] <= top_n).astype(int)
+                df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
 
-        # Calculate Jaccard Similarity for the selected models
-        res = pdist(df_sim_piv[model_subset].T, 'jaccard')
-        df_jac = pd.DataFrame(1-squareform(res), 
-                              index=model_subset,
-                              columns=model_subset)
-        mask = np.zeros_like(df_jac)
-        mask[np.triu_indices_from(mask, k=1)] = True
+                # Calculate Jaccard Similarity for the selected models
+                res = pdist(df_sim_piv[preds_df.model_id.unique()].T, 'jaccard')
+                df_jac = pd.DataFrame(1-squareform(res), 
+                                      index=preds_df.model_id.unique(),
+                                      columns=preds_df.model_id.unique())
+                mask = np.zeros_like(df_jac)
+                mask[np.triu_indices_from(mask, k=1)] = True
 
-        # Plot matrix heatmap
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_xlabel('Model Id', fontsize=fontsize)
-        ax.set_ylabel('Model Id', fontsize=fontsize)
-        plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
-        sns.heatmap(df_jac,
-                    mask=mask,
-                    cmap='Greens', 
-                    vmin=0, 
-                    vmax=1, 
-                    annot=True, 
-                    linewidth=0.1)
+                # Plot matrix heatmap
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.set_xlabel('Model Id', fontsize=fontsize)
+                ax.set_ylabel('Model Id', fontsize=fontsize)
+                plt.title('Jaccard Similarity Matrix Plot (as_of_date:{})'.format(preds_df.as_of_date.unique()), fontsize=fontsize)
+                sns.heatmap(df_jac,
+                            mask=mask,
+                            cmap='Greens', 
+                            vmin=0, 
+                            vmax=1, 
+                            annot=True, 
+                            linewidth=0.1)
+
+        else:
+
+                # Call predicitons (this has to be filtered to comparable models)
+                df_sim = self.preds
+                df_sim['above_tresh'] = (df_sim['rank_abs'] <= top_n).astype(int)
+                df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
+
+                # Calculate Jaccard Similarity for the selected models
+                res = pdist(df_sim_piv[model_subset].T, 'jaccard')
+                df_jac = pd.DataFrame(1-squareform(res), 
+                                      index=model_subset,
+                                      columns=model_subset)
+                mask = np.zeros_like(df_jac)
+                mask[np.triu_indices_from(mask, k=1)] = True
+
+                # Plot matrix heatmap
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.set_xlabel('Model Id', fontsize=fontsize)
+                ax.set_ylabel('Model Id', fontsize=fontsize)
+                plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
+                sns.heatmap(df_jac,
+                            mask=mask,
+                            cmap='Greens', 
+                            vmin=0, 
+                            vmax=1, 
+                            annot=True, 
+                            linewidth=0.1)
 
     def plot_ranked_corrlelation(self, 
                                  figsize=(12, 16),
