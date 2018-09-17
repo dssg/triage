@@ -18,7 +18,8 @@ from triage.component.architect.features import (
 from triage.component.architect.label_generators import LabelGenerator
 from triage.component.architect.state_table_generators import StateTableGeneratorFromDense
 from triage.component.architect.planner import Planner
-from triage.component.architect.builders import HighMemoryCSVBuilder
+from triage.component.architect.builders import MatrixBuilder
+from triage.component.catwalk.storage import ProjectStorage
 
 from tests.utils import sample_config
 
@@ -210,17 +211,16 @@ def basic_integration_test(
                 feature_group_create_rules)
 
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
-
+            project_storage = ProjectStorage(temp_dir)
             planner = Planner(
                 feature_start_time=datetime(2010, 1, 1),
                 label_names=['outcome'],
                 label_types=['binary'],
-                matrix_directory=os.path.join(temp_dir, 'matrices'),
                 states=state_filters,
                 user_metadata={},
             )
 
-            builder = HighMemoryCSVBuilder(
+            builder = MatrixBuilder(
                 engine=db_engine,
                 db_config={
                     'features_schema_name': 'features',
@@ -228,7 +228,7 @@ def basic_integration_test(
                     'labels_table_name': 'labels',
                     'sparse_state_table_name': 'tmp_sparse_states_abcd',
                 },
-                matrix_directory=os.path.join(temp_dir, 'matrices'),
+                matrix_storage_engine=project_storage.matrix_storage_engine(),
                 replace=True
             )
 

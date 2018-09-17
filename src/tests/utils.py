@@ -1,20 +1,19 @@
 import datetime
-import os
 import random
 import tempfile
-from collections import OrderedDict
 from contextlib import contextmanager
 
 import numpy
 import pandas
 import yaml
 from sqlalchemy.orm import sessionmaker
-
-from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, MatrixStore
+from sqlalchemy import create_engine
+import testing.postgresql
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
-from triage.component.catwalk.storage import TrainMatrixType, TestMatrixType
+from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 
 @contextmanager
@@ -51,7 +50,6 @@ class MockTrainedModel(object):
 
 class MockMatrixStore(MatrixStore):
     def __init__(self, matrix_type, matrix_uuid, label_count, db_engine, init_labels=None, metadata_overrides=None, matrix=None):
-        super().__init__()
         base_metadata = {
             'feature_start_time': datetime.date(2014, 1, 1),
             'end_time': datetime.date(2015, 1, 1),
@@ -89,91 +87,110 @@ class MockMatrixStore(MatrixStore):
             return self.init_labels
 
 
-
-def fake_trained_model(project_path, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
+def fake_trained_model(db_engine, train_matrix_uuid='efgh'):
     """Creates and stores a trivial trained model and training matrix
 
     Args:
-        project_path (string) a desired fs/s3 project path
-        model_storage_engine (triage.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
 
     Returns:
         (int) model id for database retrieval
     """
     session = sessionmaker(db_engine)()
-    session.add(Matrix(matrix_uuid=train_matrix_uuid))
+    session.merge(Matrix(matrix_uuid=train_matrix_uuid))
 
     # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
-    model_storage_engine.get_store('abcd').write(trained_model)
     db_model = Model(model_hash='abcd', train_matrix_uuid=train_matrix_uuid)
     session.add(db_model)
     session.commit()
     return trained_model, db_model.model_id
 
 
-def sample_metta_csv_diff_order(directory):
-    """Stores matrix and metadata in a metta-data-like form
-
-    The train and test matrices will have different column orders
+def matrix_metadata_creator(**override_kwargs):
+    """Create a sample valid matrix metadata with optional overrides
 
     Args:
-        directory (str)
+    **override_kwargs: Keys and values to override in the metadata
+
+    Returns: (dict)
     """
-    train_dict = OrderedDict([
-        ('entity_id', [1, 2]),
-        ('k_feature', [0.5, 0.4]),
-        ('m_feature', [0.4, 0.5]),
-        ('label', [0, 1])
-    ])
-    train_matrix = pandas.DataFrame.from_dict(train_dict)
-    train_metadata = {
-        'feature_start_time': datetime.date(2014, 1, 1),
-        'end_time': datetime.date(2015, 1, 1),
-        'matrix_id': 'train_matrix',
+    base_metadata = {
+        'feature_start_time': datetime.date(2012, 12, 20),
+        'end_time': datetime.date(2016, 12, 20),
         'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-        'matrix_type': 'train'
+        'as_of_date_frequency': '1w',
+        'max_training_history': '5y',
+        'state': 'default',
+        'cohort_name': 'default',
+        'label_timespan': '1y',
+        'metta-uuid': '1234',
+        'matrix_type': 'test',
+        'feature_names': ['ft1', 'ft2'],
+        'feature_groups': ['all: True'],
+        'indices': ['entity_id', 'as_of_date'],
     }
+    for override_key, override_value in override_kwargs.items():
+        base_metadata[override_key] = override_value
 
-    test_dict = OrderedDict([
-        ('entity_id', [3, 4]),
-        ('m_feature', [0.4, 0.5]),
-        ('k_feature', [0.5, 0.4]),
-        ('label', [0, 1])
-    ])
+    return base_metadata
 
-    test_matrix = pandas.DataFrame.from_dict(test_dict)
-    test_metadata = {
-        'feature_start_time': datetime.date(2015, 1, 1),
-        'end_time': datetime.date(2016, 1, 1),
-        'matrix_id': 'test_matrix',
-        'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-        'matrix_type': 'test'
+
+def matrix_creator(index=None):
+    """Return a sample matrix.
+
+    Args:
+        index (list, optional): The matrix index column names. Defaults to ['entity_id', 'date']
+    """
+    if not index:
+        index = ['entity_id', 'as_of_date']
+    source_dict = {
+        'entity_id': [1, 2],
+        'feature_one': [3, 4],
+        'feature_two': [5, 6],
+        'label': [0, 1]
     }
+    if 'as_of_date' in index:
+        source_dict['as_of_date'] = [datetime.datetime(2016, 1, 1), datetime.datetime(2016, 1, 1)]
+    return pandas.DataFrame.from_dict(source_dict).set_index(index)
 
-    train_uuid, test_uuid = metta.archive_train_test(
-        train_config=train_metadata,
-        df_train=train_matrix,
-        test_config=test_metadata,
-        df_test=test_matrix,
-        directory=directory,
-        format='csv'
-    )
 
-    train_store = CSVMatrixStore(
-        matrix_path=os.path.join(directory, '{}.csv'.format(train_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
-    )
-    test_store = CSVMatrixStore(
-        matrix_path=os.path.join(directory, '{}.csv'.format(test_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
-    )
-    return train_store, test_store
+def get_matrix_store(project_storage, matrix=None, metadata=None):
+    """Return a matrix store associated with the given project storage. Also adds an entry in the matrices table if it doesn't exist already
+
+    Args:
+        project_storage (triage.component.catwalk.storage.ProjectStorage) A project's storage
+        matrix (dataframe, optional): A matrix to store. Defaults to the output of matrix_creator()
+        metadata (dict, optional): matrix metadata. defaults to the output of matrix_metadata_creator()
+    """
+    if matrix is None:
+        matrix = matrix_creator()
+    if not metadata:
+        metadata = matrix_metadata_creator()
+    matrix_store = project_storage.matrix_storage_engine().get_store(metadata['metta-uuid'])
+    matrix_store.matrix = matrix
+    matrix_store.metadata = metadata
+    matrix_store.save()
+    if session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count() == 0:
+        MatrixFactory(matrix_uuid=matrix_store.uuid)
+        session.commit()
+    return matrix_store
+
+
+@contextmanager
+def rig_engines():
+    """Set up a db engine and project storage engine
+
+    Yields (tuple) (database engine, project storage engine)
+    """
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        init_engine(db_engine)
+        project_path = 'econ-dev/inspections'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_storage = ProjectStorage(temp_dir)
+            yield db_engine, project_storage
 
 
 def populate_source_data(db_engine):

@@ -176,7 +176,7 @@ class Matrices(TestCase):
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            matrices_path = experiment.matrices_directory
+            matrices_path = join(experiment.project_path, 'matrices')
             matrices_and_metadata = [f for f in os.listdir(matrices_path) if isfile(join(matrices_path, f))]
             matrices = experiment.matrix_build_tasks
             assert len(matrices) > 0

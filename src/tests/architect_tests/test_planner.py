@@ -77,7 +77,6 @@ def test_Planner():
         cohort_name='prior_bookings',
         states=['state_one AND state_two'],
         user_metadata={},
-        matrix_directory='',  # this test won't write anything
     )
 
     updated_matrix_definitions, build_tasks = \
@@ -97,7 +96,6 @@ def test_Planner():
 
     assert sum(1 for task in build_tasks if task['matrix_type'] == 'train') == 4
     assert sum(1 for task in build_tasks if task['matrix_type'] == 'test') == 4
-    assert all(task for task in build_tasks if task['matrix_directory'] == '')
     assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_one) == 4
     assert sum(1 for task in build_tasks if task['feature_dictionary'] == feature_dict_two) == 4
     assert sum(

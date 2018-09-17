@@ -6,7 +6,6 @@ import numpy
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
-from triage.component.catwalk.storage import InMemoryModelStorageEngine
 import datetime
 
 
@@ -53,11 +52,7 @@ def test_evaluating_early_warning():
         fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, labels)
         fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, labels)
 
-        trained_model, model_id = fake_trained_model(
-            'myproject',
-            InMemoryModelStorageEngine('myproject'),
-            db_engine
-        )
+        trained_model, model_id = fake_trained_model(db_engine)
 
         # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
@@ -154,11 +149,7 @@ def test_model_scoring_inspections():
         fake_train_matrix_store = MockMatrixStore('train', 'efgh', 5, db_engine, training_labels)
         fake_test_matrix_store = MockMatrixStore('test', '1234', 5, db_engine, testing_labels)
 
-        trained_model, model_id = fake_trained_model(
-            'myproject',
-            InMemoryModelStorageEngine('myproject'),
-            db_engine
-        )
+        trained_model, model_id = fake_trained_model(db_engine)
 
         # Evaluate testing matrix and test the results
         model_evaluator.evaluate(

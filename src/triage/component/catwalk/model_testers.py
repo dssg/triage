@@ -7,11 +7,11 @@ from triage.component.catwalk.evaluation import ModelEvaluator
 
 
 class ModelTester(object):
-    def __init__(self, db_engine, project_path, model_storage_engine, replace, evaluator_config, individual_importance_config):
+    def __init__(self, db_engine, model_storage_engine, matrix_storage_engine, replace, evaluator_config, individual_importance_config):
+        self.matrix_storage_engine = matrix_storage_engine
         self.predictor = Predictor(
             db_engine=db_engine,
             model_storage_engine=model_storage_engine,
-            project_path=project_path,
             replace=replace
         )
 
@@ -29,13 +29,13 @@ class ModelTester(object):
             training_metric_groups=evaluator_config.get('training_metric_groups', [])
         )
 
-    def generate_model_test_tasks(self, split, train_store, model_ids, matrix_store_creator):
+    def generate_model_test_tasks(self, split, train_store, model_ids):
         test_tasks = []
         for test_matrix_def, test_uuid in zip(
             split['test_matrices'],
             split['test_uuids']
         ):
-            test_store = matrix_store_creator(test_uuid)
+            test_store = self.matrix_storage_engine.get_store(test_uuid)
 
             if test_store.empty:
                 logging.warning('''Test matrix for uuid %s

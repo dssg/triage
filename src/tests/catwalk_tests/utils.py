@@ -12,7 +12,7 @@ import yaml
 from sqlalchemy.orm import sessionmaker
 
 from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, MatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, MatrixStore, ProjectStorage
 from triage.component.results_schema import Model
 
 
@@ -44,31 +44,6 @@ def fake_labels(length):
     return numpy.array([random.choice([True, False]) for i in range(0, length)])
 
 
-class MockTrainedModel(object):
-    def predict_proba(self, dataset):
-        return numpy.random.rand(len(dataset), len(dataset))
-
-
-def fake_trained_model(project_path, model_storage_engine, db_engine, train_matrix_uuid='efgh'):
-    """Creates and stores a trivial trained model
-
-    Args:
-        project_path (string) a desired fs/s3 project path
-        model_storage_engine (catwalk.storage.ModelStorageEngine)
-        db_engine (sqlalchemy.engine)
-
-    Returns:
-        (int) model id for database retrieval
-    """
-    trained_model = MockTrainedModel()
-    model_storage_engine.get_store('abcd').write(trained_model)
-    session = sessionmaker(db_engine)()
-    db_model = Model(model_hash='abcd', train_matrix_uuid=train_matrix_uuid)
-    session.add(db_model)
-    session.commit()
-    return trained_model, db_model.model_id
-
-
 @pytest.fixture
 def sample_metadata():
     return {
@@ -97,126 +72,9 @@ def sample_df():
 
 @pytest.fixture
 def sample_matrix_store():
-    return MatrixStore(matrix=sample_df(), metadata=sample_metadata())
-
-
-def sample_metta_csv_diff_order(directory):
-    """Stores matrix and metadata in a metta-data-like form
-
-    The train and test matrices will have different column orders
-
-    Args:
-        directory (str)
-    """
-    train_dict = OrderedDict([
-        ('entity_id', [1, 2]),
-        ('k_feature', [0.5, 0.4]),
-        ('m_feature', [0.4, 0.5]),
-        ('label', [0, 1])
-    ])
-    train_matrix = pandas.DataFrame.from_dict(train_dict)
-    train_metadata = {
-        'feature_start_time': datetime.date(2014, 1, 1),
-        'end_time': datetime.date(2015, 1, 1),
-        'matrix_id': 'train_matrix',
-        'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-    }
-
-    test_dict = OrderedDict([
-        ('entity_id', [3, 4]),
-        ('m_feature', [0.4, 0.5]),
-        ('k_feature', [0.5, 0.4]),
-        ('label', [0, 1])
-    ])
-
-    test_matrix = pandas.DataFrame.from_dict(test_dict)
-    test_metadata = {
-        'feature_start_time': datetime.date(2015, 1, 1),
-        'end_time': datetime.date(2016, 1, 1),
-        'matrix_id': 'test_matrix',
-        'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-    }
-
-    train_uuid, test_uuid = metta.archive_train_test(
-        train_config=train_metadata,
-        df_train=train_matrix,
-        test_config=test_metadata,
-        df_test=test_matrix,
-        directory=directory,
-        format='csv'
-    )
-
-    train_store = CSVMatrixStore(
-        matrix_path=os.path.join(directory, '{}.csv'.format(train_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
-    )
-    test_store = CSVMatrixStore(
-        matrix_path=os.path.join(directory, '{}.csv'.format(test_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
-    )
-    return train_store, test_store
-
-
-def sample_metta_hdf_diff_order(directory):
-    """Stores matrix and metadata in a metta-data-like form
-
-    The train and test matrices will have different column orders
-
-    Args:
-        directory (str)
-    """
-    train_dict = OrderedDict([
-        ('entity_id', [1, 2]),
-        ('k_feature', [0.5, 0.4]),
-        ('m_feature', [0.4, 0.5]),
-        ('label', [0, 1])
-    ])
-    train_matrix = pandas.DataFrame.from_dict(train_dict)
-    train_metadata = {
-        'feature_start_time': datetime.date(2014, 1, 1),
-        'end_time': datetime.date(2015, 1, 1),
-        'matrix_id': 'train_matrix',
-        'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-    }
-
-    test_dict = OrderedDict([
-        ('entity_id', [3, 4]),
-        ('m_feature', [0.4, 0.5]),
-        ('k_feature', [0.5, 0.4]),
-        ('label', [0, 1])
-    ])
-
-    test_matrix = pandas.DataFrame.from_dict(test_dict)
-    test_metadata = {
-        'feature_start_time': datetime.date(2015, 1, 1),
-        'end_time': datetime.date(2016, 1, 1),
-        'matrix_id': 'test_matrix',
-        'label_name': 'label',
-        'label_timespan': '3month',
-        'indices': ['entity_id'],
-    }
-
-    train_uuid, test_uuid = metta.archive_train_test(
-        train_config=train_metadata,
-        df_train=train_matrix,
-        test_config=test_metadata,
-        df_test=test_matrix,
-        directory=directory,
-        format='hdf'
-    )
-
-    train_store = HDFMatrixStore(
-        matrix_path=os.path.join(directory, '{}.h5'.format(train_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(train_uuid))
-    )
-    test_store = HDFMatrixStore(
-        matrix_path=os.path.join(directory, '{}.h5'.format(test_uuid)),
-        metadata_path=os.path.join(directory, '{}.yaml'.format(test_uuid))
-    )
-    return train_store, test_store
+    with tempfile.TemporaryDirectory() as tempdir:
+        project_storage = ProjectStorage(tempdir)
+        store = project_storage.matrix_storage_engine().get_store('1234')
+        store.matrix = sample_df()
+        store.metadata = sample_metadata()
+        return store

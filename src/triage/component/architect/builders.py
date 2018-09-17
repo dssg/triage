@@ -2,14 +2,9 @@ import io
 import json
 import logging
 import pandas
-import os
 
-import s3fs
 from sqlalchemy.orm import sessionmaker
-from urllib.parse import urlparse
 
-
-from triage.component import metta
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
 
@@ -18,13 +13,13 @@ class BuilderBase(object):
     def __init__(
         self,
         db_config,
-        matrix_directory,
+        matrix_storage_engine,
         engine,
         replace=True,
         include_missing_labels_in_train_as=None,
     ):
         self.db_config = db_config
-        self.matrix_directory = matrix_directory
+        self.matrix_storage_engine = matrix_storage_engine
         self.db_engine = engine
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
@@ -209,14 +204,13 @@ class BuilderBase(object):
         return query
 
 
-class CSVBuilder(BuilderBase):
+class MatrixBuilder(BuilderBase):
     def build_matrix(
         self,
         as_of_times,
         label_name,
         label_type,
         feature_dictionary,
-        matrix_directory,
         matrix_metadata,
         matrix_uuid,
         matrix_type
@@ -228,7 +222,6 @@ class CSVBuilder(BuilderBase):
         :param label_type: the type of label to be used
         :param feature_dictionary: a dictionary of feature tables and features
                                    to be included in the matrix
-        :param matrix_directory: the directory in which to store the matrix
         :param matrix_metadata: a dictionary of metadata about the matrix
         :param matrix_uuid: a unique id for the matrix
         :param matrix_type: the type (train/test) of matrix
@@ -236,7 +229,6 @@ class CSVBuilder(BuilderBase):
         :type label_name: str
         :type label_type: str
         :type feature_dictionary: dict
-        :type matrix_directory: str
         :type matrix_metadata: dict
         :type matrix_uuid: str
         :type matrix_type: str
@@ -256,29 +248,12 @@ class CSVBuilder(BuilderBase):
             logging.warning('labels table is not populated, cannot build matrix')
             return
 
-        matrix_filename = os.path.join(
-            matrix_directory,
-            '{}.csv'.format(matrix_uuid)
-        )
+        matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
+        if not self.replace and matrix_store.exists:
+            logging.info('Skipping %s because matrix already exists', matrix_uuid)
+            return
 
-        # The output directory is local or in s3
-        path_parsed = urlparse(matrix_filename)
-        scheme = path_parsed.scheme  # If '' of 'file' is a regular file or 's3'
-
-        if scheme in ('', 'file'):
-            if not self.replace and os.path.exists(matrix_filename):
-                logging.info('Skipping %s because matrix already exists', matrix_filename)
-                return
-        elif scheme == 's3':
-            if not self.replace and s3fs.S3FileSystem().exists(matrix_filename):
-                logging.info('Skipping %s because matrix already exists', matrix_filename)
-                return
-        else:
-            raise ValueError(f"""URL scheme not supported:
-              {scheme} (from {matrix_filename})
-            """)
-
-        logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_filename)
+        logging.info('Creating matrix %s > %s', matrix_metadata['matrix_id'], matrix_store.matrix_base_store.path)
         # make the entity time table and query the labels and features tables
         logging.info('Making entity date table for matrix %s', matrix_uuid)
         try:
@@ -299,77 +274,61 @@ class CSVBuilder(BuilderBase):
             return
         logging.info('Extracting feature group data from database into file '
                      'for matrix %s', matrix_uuid)
-        features_csv_names = self.write_features_data(
+        dataframes = self.load_features_data(
             as_of_times,
             feature_dictionary,
             entity_date_table_name,
             matrix_uuid
         )
         logging.info(f"Feature data extracted for matrix {matrix_uuid}")
-        try:
-            logging.info('Extracting label data from database into file for '
-                         'matrix %s', matrix_uuid)
-            labels_csv_name = self.write_labels_data(
-                label_name,
-                label_type,
-                entity_date_table_name,
-                matrix_uuid,
-                matrix_metadata['label_timespan']
-            )
-            features_csv_names.insert(0, labels_csv_name)
+        logging.info('Extracting label data from database into file for '
+                     'matrix %s', matrix_uuid)
+        labels_df = self.load_labels_data(
+            label_name,
+            label_type,
+            entity_date_table_name,
+            matrix_uuid,
+            matrix_metadata['label_timespan']
+        )
+        dataframes.insert(0, labels_df)
 
-            logging.info(f"Label data extracted for matrix {matrix_uuid}")
-            # stitch together the csvs
-            logging.info('Merging feature files for matrix %s', matrix_uuid)
-            output = self.merge_feature_csvs(
-                features_csv_names,
-                matrix_directory,
-                matrix_uuid
-            )
-            logging.info(f"Features data merged for matrix {matrix_uuid}")
-        finally:
-            # clean up files and database before finishing
-            for csv_name in features_csv_names:
-                self.remove_file(csv_name)
-        try:
-            # store the matrix
-            logging.info('Archiving matrix %s with metta', matrix_uuid)
-            metta.archive_matrix(
-                matrix_config=matrix_metadata,
-                df_matrix=output,
-                overwrite=True,
-                directory=self.matrix_directory,
-                format='csv'
-            )
-            logging.info("Matrix {matrix_uuid} archived (using metta)")
-            # If completely archived, save its information to matrices table
-            # At this point, existence of matrix already tested, so no need to delete from db
-            if matrix_type == 'train':
-                lookback = matrix_metadata["max_training_history"]
-            else:
-                lookback = matrix_metadata["test_duration"]
+        logging.info(f"Label data extracted for matrix {matrix_uuid}")
+        # stitch together the csvs
+        logging.info('Merging feature files for matrix %s', matrix_uuid)
+        output = self.merge_feature_csvs(
+            dataframes,
+            matrix_uuid
+        )
+        logging.info(f"Features data merged for matrix {matrix_uuid}")
 
-            matrix = Matrix(
-                matrix_id=matrix_metadata["matrix_id"],
-                matrix_uuid=matrix_uuid,
-                matrix_type=matrix_type,
-                labeling_window=matrix_metadata["label_timespan"],
-                num_observations=len(output),
-                lookback_duration=lookback,
-                feature_start_time=matrix_metadata["feature_start_time"],
-                matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)
-            )
-            session = self.sessionmaker()
-            session.add(matrix)
-            session.commit()
-            session.close()
+        # store the matrix
+        matrix_store.matrix = output
+        matrix_store.metadata = matrix_metadata
+        matrix_store.save()
+        logging.info("Matrix {matrix_uuid} saved")
+        # If completely archived, save its information to matrices table
+        # At this point, existence of matrix already tested, so no need to delete from db
+        if matrix_type == 'train':
+            lookback = matrix_metadata["max_training_history"]
+        else:
+            lookback = matrix_metadata["test_duration"]
 
-        finally:
-            if isinstance(output, str):
-                os.remove(output)
+        matrix = Matrix(
+            matrix_id=matrix_metadata["matrix_id"],
+            matrix_uuid=matrix_uuid,
+            matrix_type=matrix_type,
+            labeling_window=matrix_metadata["label_timespan"],
+            num_observations=len(output),
+            lookback_duration=lookback,
+            feature_start_time=matrix_metadata["feature_start_time"],
+            matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)
+        )
+        session = self.sessionmaker()
+        session.add(matrix)
+        session.commit()
+        session.close()
 
-
-    def write_labels_data(
+    def load_labels_data(
         self,
         label_name,
         label_type,
@@ -394,10 +353,6 @@ class CSVBuilder(BuilderBase):
         :return: name of csv containing labels
         :rtype: str
         """
-        csv_name = os.path.join(
-            self.matrix_directory,
-            '{}-{}.csv'.format(matrix_uuid, self.db_config['labels_table_name'])
-        )
         if self.include_missing_labels_in_train_as is None:
             label_predicate = 'r.label'
         elif self.include_missing_labels_in_train_as is False:
@@ -432,10 +387,9 @@ class CSVBuilder(BuilderBase):
             )
         )
 
-        self.write_to_csv(labels_query, csv_name)
-        return(csv_name)
+        return self.query_to_df(labels_query)
 
-    def write_features_data(
+    def load_features_data(
         self,
         as_of_times,
         feature_dictionary,
@@ -461,13 +415,9 @@ class CSVBuilder(BuilderBase):
         :rtype: tuple
         """
         # iterate! for each table, make query, write csv, save feature & file names
-        features_csv_names = []
+        feature_dfs = []
         for feature_table_name, feature_names in feature_dictionary.items():
             logging.info('Retrieving feature data from %s', feature_table_name)
-            csv_name = os.path.join(
-                self.matrix_directory,
-                '{}-{}.csv'.format(matrix_uuid, feature_table_name)
-            )
             features_query = self._outer_join_query(
                 right_table_name='{schema}.{table}'.format(
                     schema=self.db_config['features_schema_name'],
@@ -483,12 +433,11 @@ class CSVBuilder(BuilderBase):
                 # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names]
             )
-            self.write_to_csv(features_query, csv_name)
-            features_csv_names.append(csv_name)
+            feature_dfs.append(self.query_to_df(features_query))
 
-        return(features_csv_names)
+        return feature_dfs
 
-    def write_to_csv(self, query_string, file_name, header='HEADER'):
+    def query_to_df(self, query_string, header='HEADER'):
         """ Given a query, write the requested data to csv.
 
         :param query_string: query to send
@@ -502,43 +451,21 @@ class CSVBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        matrix_csv = self.open_fh_for_writing(file_name)
         logging.debug('Copying to CSV query %s', query_string)
-        try:
-            copy_sql = 'COPY ({query}) TO STDOUT WITH CSV {head}'.format(
-                query=query_string,
-                head=header
-            )
-            conn = self.db_engine.raw_connection()
-            cur = conn.cursor()
-            cur.copy_expert(copy_sql, matrix_csv)
-        finally:
-            self.close_filehandle(file_name)
+        copy_sql = 'COPY ({query}) TO STDOUT WITH CSV {head}'.format(
+            query=query_string,
+            head=header
+        )
+        conn = self.db_engine.raw_connection()
+        cur = conn.cursor()
+        out = io.StringIO()
+        cur.copy_expert(copy_sql, out)
+        out.seek(0)
+        df = pandas.read_csv(out, parse_dates=['as_of_date'])
+        df.set_index(['entity_id', 'as_of_date'], inplace=True)
+        return df
 
-
-class HighMemoryCSVBuilder(CSVBuilder):
-    def __init__(self, *args, **kwargs):
-        super(HighMemoryCSVBuilder, self).__init__(*args, **kwargs)
-        self.filehandles = {}
-
-    def open_fh_for_writing(self, filename):
-        self.filehandles[filename] = io.StringIO()
-        return self.filehandles[filename]
-
-    def open_fh_for_reading(self, filename):
-        self.filehandles[filename].seek(0)
-        return self.filehandles[filename]
-
-    def close_filehandles(self):
-        pass
-
-    def close_filehandle(self, filename):
-        pass
-
-    def remove_file(self, filename):
-        del self.filehandles[filename]
-
-    def merge_feature_csvs(self, source_filenames, matrix_directory, matrix_uuid):
+    def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs
         Assumptions:
         - The first and second columns of each CSV are
@@ -562,13 +489,9 @@ class HighMemoryCSVBuilder(CSVBuilder):
         :raises: ValueError if the first two columns in every CSV don't match
         """
 
-        source_filehandles = [self.open_fh_for_reading(fname) for fname in source_filenames]
-        dataframes = []
-        for i, filehandle in enumerate(source_filehandles):
-            df = pandas.read_csv(filehandle)
-            df.set_index(['entity_id', 'as_of_date'], inplace=True)
-            dataframes.append(df)
-
+        for i, df in enumerate(dataframes):
+            if df.index.names != ['entity_id', 'as_of_date']:
+                raise ValueError(f'index must be entity_id and as_of_date, value was {df.index}')
             # check for any nulls. the labels, understood to be the first file,
             # can have nulls but no features should. therefore, skip the first dataframe
             if i > 0:

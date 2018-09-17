@@ -1,11 +1,6 @@
-from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.individual_importance import IndividualImportanceCalculator
-from triage.component.catwalk.storage import InMemoryModelStorageEngine
-from tests.utils import fake_trained_model, sample_metta_csv_diff_order
+from tests.utils import rig_engines, fake_trained_model, matrix_creator, matrix_metadata_creator, get_matrix_store
 
-import tempfile
-from sqlalchemy import create_engine
-import testing.postgresql
 from unittest.mock import patch
 
 
@@ -34,40 +29,42 @@ def sample_individual_importance_strategy(
     {'sample': sample_individual_importance_strategy}
 )
 def test_calculate_and_save():
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        project_path = 'econ-dev/inspections'
-        with tempfile.TemporaryDirectory() as temp_dir:
-            train_store, test_store = sample_metta_csv_diff_order(temp_dir)
-            model_storage_engine = InMemoryModelStorageEngine(project_path)
-            calculator = IndividualImportanceCalculator(db_engine, methods=['sample'], replace=False)
-            # given a trained model
-            # and a test matrix
-            _, model_id = \
-                fake_trained_model(
-                    project_path,
-                    model_storage_engine,
-                    db_engine,
-                    train_matrix_uuid=train_store.uuid
-                )
-            # i expect to be able to call calculate and save
-            calculator.calculate_and_save_all_methods_and_dates(model_id, test_store)
-            # and find individual importances in the results schema afterwards
-            records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
-                from test_results.individual_importances
-                join model_metadata.models using (model_id)''')
-            ]
-            assert len(records) > 0
-            # and that when run again, has the same result
-            calculator.calculate_and_save_all_methods_and_dates(model_id, test_store)
-            new_records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
-                from test_results.individual_importances
-                join model_metadata.models using (model_id)''')
-            ]
-            assert len(records) == len(new_records)
-            assert records == new_records
+    with rig_engines() as (db_engine, project_storage):
+        train_store = get_matrix_store(
+            project_storage,
+            matrix_creator(),
+            matrix_metadata_creator(matrix_type='train'),
+        )
+        test_store = get_matrix_store(
+            project_storage,
+            matrix_creator(),
+            matrix_metadata_creator(matrix_type='test'),
+        )
+        calculator = IndividualImportanceCalculator(db_engine, methods=['sample'], replace=False)
+        # given a trained model
+        # and a test matrix
+        _, model_id = \
+            fake_trained_model(
+                db_engine,
+                train_matrix_uuid=train_store.uuid
+            )
+        # i expect to be able to call calculate and save
+        calculator.calculate_and_save_all_methods_and_dates(model_id, test_store)
+        # and find individual importances in the results schema afterwards
+        records = [
+            row for row in
+            db_engine.execute('''select entity_id, as_of_date
+            from test_results.individual_importances
+            join model_metadata.models using (model_id)''')
+        ]
+        assert len(records) > 0
+        # and that when run again, has the same result
+        calculator.calculate_and_save_all_methods_and_dates(model_id, test_store)
+        new_records = [
+            row for row in
+            db_engine.execute('''select entity_id, as_of_date
+            from test_results.individual_importances
+            join model_metadata.models using (model_id)''')
+        ]
+        assert len(records) == len(new_records)
+        assert records == new_records

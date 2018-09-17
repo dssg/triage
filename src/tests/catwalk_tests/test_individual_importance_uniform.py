@@ -6,6 +6,7 @@ from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import MatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
 from triage.component.results_schema import Matrix
+from tests.utils import rig_engines, get_matrix_store, matrix_metadata_creator
 
 from tests.results_tests.factories import (
     ModelFactory,
@@ -15,15 +16,9 @@ from tests.results_tests.factories import (
     MatrixFactory
 )
 
-from .utils import sample_metadata
-
 
 def test_uniform_distribution_entity_id_index():
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        init_engine(db_engine)
-
+    with rig_engines() as (db_engine, project_storage):
         model = ModelFactory()
         feature_importances = [
             FeatureImportanceFactory(model_rel=model, feature='feature_{}'.format(i))
@@ -32,12 +27,12 @@ def test_uniform_distribution_entity_id_index():
         data_dict = {'entity_id': [1, 2]}
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
-        test_store = MatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict).set_index('entity_id'),
-            metadata=sample_metadata()
+        metadata = matrix_metadata_creator(indices='entity_id')
+        test_store = get_matrix_store(
+            project_storage,
+            pandas.DataFrame.from_dict(data_dict).set_index(metadata['indices']),
+            metadata
         )
-
-        session.commit()
         results = uniform_distribution(
             db_engine,
             model_id=model.model_id,
@@ -60,11 +55,7 @@ def test_uniform_distribution_entity_id_index():
 
 
 def test_uniform_distribution_entity_date_index():
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        init_engine(db_engine)
-
+    with rig_engines() as (db_engine, project_storage):
         model = ModelFactory()
         feature_importances = [
             FeatureImportanceFactory(model_rel=model, feature='feature_{}'.format(i))
@@ -73,14 +64,12 @@ def test_uniform_distribution_entity_date_index():
         data_dict = {'entity_id': [1, 1], 'as_of_date': ['2016-01-01', '2017-01-01']}
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
-        metadata = sample_metadata()
-        metadata['indices'] = ['entity_id', 'as_of_date']
-        test_store = MatrixStore(
-            matrix=pandas.DataFrame.from_dict(data_dict).set_index(metadata['indices']),
-            metadata=metadata
+        metadata = matrix_metadata_creator()
+        test_store = get_matrix_store(
+            project_storage,
+            pandas.DataFrame.from_dict(data_dict).set_index(metadata['indices']),
+            metadata
         )
-
-        session.commit()
         results = uniform_distribution(
             db_engine,
             model_id=model.model_id,
