@@ -17,7 +17,9 @@ import numpy as np
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from sklearn import metrics
+from sklearn import tree 
 from collections import namedtuple
+import graphviz
 
 from utils.file_helpers import download_s3
 from utils.test_conn import db_engine
@@ -99,6 +101,7 @@ class Model(object):
         self.model_hash = model_metadata.loc[0, 'model_hash']
         self.train_matrix_uuid = model_metadata.loc[0, 'train_matrix_uuid']
         self.pred_matrix_uuid = model_metadata.loc[0, 'matrix_uuid']
+        self.train_end_time = model_metadata.loc[0, 'train_end_time']
         self.train_matrix = None
         self.pred_matrix = None
         self.preds = None
@@ -109,6 +112,7 @@ class Model(object):
         s = 'Model object for model_id: {}'.format(self.model_id)
         s += '\n Model Group: {}'.format(self.model_group_id)
         s += '\n Model type: {}'.format(self.model_type)
+        s += '\n Train End Time: {}'.format(self.train_end_time)
         s += '\n Model hyperparameters: {}'.format(self.hyperparameters)
         s += '\Matrix hashes (train,test): {}'.format([self.train_matrix_uuid,
                                                       self.pred_matrix_uuid])
@@ -176,7 +180,9 @@ class Model(object):
 
         return(mat)
 
-    def load_features_preds_matrix(self, *path):
+    def load_features_preds_matrix(self, 
+                                   top_n=None, 
+                                   *path):
         '''
         Load predicion matrix (from s3 or system file) and merge with
         label values from the test_results.predictions tables. The outcome
@@ -185,6 +191,8 @@ class Model(object):
         as the pred_matrix attribute of the class.
 
         Arguments:
+            - top_n: Only retrieve predicitions for the top_n observations
+            based in score
             - Arguments inherited from _fetch_matrices: 
                 - path: relative path to the triage matrices folder or s3 path
         '''
@@ -195,10 +203,7 @@ class Model(object):
         if self.preds is None:
             self._load_predictions()
 
-        if self.feature_importances is None:
-            self._load_feature_importances()
-
-        if self.pred_matrix is None:
+        if top_n is None: 
             # Merge feature/prediction matrix with predictions
             merged_df = mat.merge(self.preds,
                                   on='entity_id',
@@ -206,6 +211,19 @@ class Model(object):
                                   suffixes=('test', 'pred'))
 
             self.pred_matrix = merged_df
+
+        else:
+            # Filter predictions to the top_n entities
+            self.preds['above_tresh'] = np.where(self.preds['rank_abs'] <=
+                                                   top_n, 1, 0)
+
+            # Merge features with top_n predicted scores
+            merged_df = mat.merge(self.preds,
+                                on='entity_id',
+                                how='inner',
+                                suffixes=('test','pred'))
+            self.pred_matrix = merged_df
+
 
     def load_train_matrix(self, *path):
         '''
@@ -442,6 +460,58 @@ class Model(object):
         plt.ylim([0.0, 1.05])
         plt.title("Precision-recall at x-proportion", fontsize=fontsize)
         plt.show()
+
+    
+    def error_trees(self,
+                    top_n=None,
+                    max_depth=5,
+                    *path):
+        '''
+        Explore the underlying causes of errors using decision trees to explain the
+        residuals base on the same feature space used in the model. This
+        exploration will get the most relevant features that determine y - y_hat
+        distance and may help to understand the outomes of some models. 
+
+        Arguments:
+            - top_n: size of the list to label predicted values.abs
+            - *path: path local/s3 where the matrix are stored. More information in
+            the load_features_preds_matrix method. 
+           - *args: other arguments passed to sklearn.treee
+        '''
+
+        if self.pred_matrix is None:
+            self.load_features_preds_matrix(top_n, *path)
+
+        # Calculate residuals/errors
+        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
+
+        # Define feature space to model: get the list of feature names
+        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
+        feature_names_vector = list(test_matrix.columns.values)
+
+        # Build error matrix and label vector
+        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
+                                                                         1])]
+        labels =  error_matrix.error
+        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
+
+        # Remove matrix (we can change that by only reading the first line of
+        # the .csv, that's a todo).
+        del(test_matrix)
+
+        # Model the decision trees
+        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = error_classifier.fit(error_matrix, 
+                                                labels)
+
+        # Plot tree and export
+        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
+                                       feature_names=error_matrix.columns.values,
+                                       filled=True,
+                                       rounded=True,
+                                       special_characters=True)
+        plot_tree = graphviz.Source(tree_viz)
+        return(plot_tree)
 
     def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
                            score_col='score', 
