@@ -1,7 +1,6 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from datetime import datetime
 
 from descriptors import cachedproperty
 from timeout import timeout
@@ -39,11 +38,8 @@ from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
 
 from triage.database_reflection import table_has_data
+from triage.util.conf import dt_from_str
 from triage.util.db import create_engine
-
-
-def dt_from_str(dt_str):
-    return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
 class ExperimentBase(ABC):
@@ -123,19 +119,7 @@ class ExperimentBase(ABC):
     def initialize_components(self):
         split_config = self.config['temporal_config']
 
-        self.chopper = Timechop(
-            feature_start_time=dt_from_str(split_config['feature_start_time']),
-            feature_end_time=dt_from_str(split_config['feature_end_time']),
-            label_start_time=dt_from_str(split_config['label_start_time']),
-            label_end_time=dt_from_str(split_config['label_end_time']),
-            model_update_frequency=split_config['model_update_frequency'],
-            training_label_timespans=split_config['training_label_timespans'],
-            test_label_timespans=split_config['test_label_timespans'],
-            training_as_of_date_frequencies=split_config['training_as_of_date_frequencies'],
-            test_as_of_date_frequencies=split_config['test_as_of_date_frequencies'],
-            max_training_histories=split_config['max_training_histories'],
-            test_durations=split_config['test_durations'],
-        )
+        self.chopper = Timechop(**split_config)
 
         cohort_config = self.config.get('cohort_config', {})
         if 'query' in cohort_config:

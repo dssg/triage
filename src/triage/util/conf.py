@@ -1,6 +1,13 @@
 import re
 import warnings
 from dateutil.relativedelta import relativedelta
+from datetime import datetime
+
+
+def dt_from_str(dt_str):
+    if isinstance(dt_str, datetime):
+        return dt_str
+    return datetime.strptime(dt_str, '%Y-%m-%d')
 
 
 def parse_delta_string(delta_string):

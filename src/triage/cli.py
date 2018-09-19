@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 from datetime import datetime
+import os
 import yaml
 import argparse
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
+import logging
+
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
+from triage.component.timechop import Timechop
+from triage.component.timechop.plotting import visualize_chops
 from triage.experiments import CONFIG_VERSION, MultiCoreExperiment, SingleThreadedExperiment
 from triage.util.db import create_engine
-
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -57,34 +60,59 @@ class Triage(RootCommand):
 
     @cmdmethod
     def configversion(self, args):
-        """Return the experiment config version compatible with this installation of Triage"""
+        """Check the experiment config version compatible with this installation of Triage"""
         print(CONFIG_VERSION)
 
 
 @Triage.register
-class Db(Command):
-    """Manage experiment database"""
+class ShowTimeChops(Command):
+    """Visualize time chops (temporal cross-validation blocks')"""
+    def __init__(self, parser):
+        parser.add_argument(
+            'config',
+            type=argparse.FileType('r'),
+            help="YAML file containing temporal_config (for instance, an Experiment config)"
+        )
 
-    @cmdmethod
-    def upgrade(self, args):
-        """Upgrade triage results database"""
-        upgrade_db(args.dbfile)
+    def __call__(self, args):
+        experiment_config = yaml.load(args.config)
+        if 'temporal_config' not in experiment_config:
+            raise ValueError('Passed configuration must have `temporal_config` key '
+                             'in order to visualize time chops')
+        chopper = Timechop(**(experiment_config['temporal_config']))
+        logging.info('Visualizing time chops')
+        visualize_chops(chopper)
 
-    @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
-    def stamp(self, args):
-        """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
-        
-        Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
-        """
-        revision = REVISION_MAPPING[args.configversion]
-        print(f"Based on config version {args.configversion} "
-              f"we think your results schema is version {revision} and are upgrading to it")
-        stamp_db(revision, args.dbfile)
+
+@Triage.register
+class FeatureTest(Command):
+    """Test a feature aggregation by running it for one date"""
+    def __init__(self, parser):
+        parser.add_argument(
+            'as_of_date',
+            type=valid_date,
+            help='The date as of which to run features. Format YYYY-MM-DD'
+        )
+        parser.add_argument(
+            'feature_config_file',
+            type=argparse.FileType('r'),
+            help='Feature config YAML file, containing a list of feature_aggregation objects'
+        )
+
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+        feature_config = yaml.load(args.feature_config_file)
+
+        FeatureGenerator(db_engine, 'features_test').create_features_before_imputation(
+            feature_aggregation_config=feature_config,
+            feature_dates=[args.as_of_date]
+        )
+        logging.info('Features created for feature_config %s and date %s', feature_config, args.as_of_date)
 
 
 @Triage.register
 class Experiment(Command):
-    """Validate and run experiments"""
+    """Run a full modeling experiment"""
 
     def __init__(self, parser):
         parser.add_argument(
@@ -168,34 +196,8 @@ class Experiment(Command):
 
 
 @Triage.register
-class FeatureTest(Command):
-    def __init__(self, parser):
-        parser.add_argument(
-            'as_of_date',
-            type=valid_date,
-            help='The date as of which to run features. Format YYYY-MM-DD'
-        )
-        parser.add_argument(
-            'feature_config_file',
-            type=argparse.FileType('r'),
-            help='Feature config YAML file, containing a list of feature_aggregation objects'
-        )
-
-    def __call__(self, args):
-        """Run a feature aggregation for an as-of-date"""
-        db_engine = create_engine(self.root.db_url)
-        feature_config = yaml.load(args.feature_config_file)
-
-        FeatureGenerator(db_engine, 'features_test').create_features_before_imputation(
-            feature_aggregation_config=feature_config,
-            feature_dates=[args.as_of_date]
-        )
-        logging.info('Features created for feature_config %s and date %s', feature_config, args.as_of_date)
-
-
-@Triage.register
 class Audition(Command):
-    """ Audition command to run or validate the config file
+    """Audition models from a completed experiment to pick a smaller group of promising models
     """
     def __init__(self, parser):
         parser.add_argument(
@@ -238,6 +240,27 @@ class Audition(Command):
                 raise(err)
         else:
             self.runner.run()
+
+
+@Triage.register
+class Db(Command):
+    """Manage experiment database"""
+
+    @cmdmethod
+    def upgrade(self, args):
+        """Upgrade triage results database"""
+        upgrade_db(args.dbfile)
+
+    @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
+    def stamp(self, args):
+        """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
+        
+        Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
+        """
+        revision = REVISION_MAPPING[args.configversion]
+        print(f"Based on config version {args.configversion} "
+              f"we think your results schema is version {revision} and are upgrading to it")
+        stamp_db(revision, args.dbfile)
 
 
 def execute():
