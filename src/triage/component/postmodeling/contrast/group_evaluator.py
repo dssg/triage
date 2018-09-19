@@ -225,26 +225,29 @@ class ModelGroup(object):
                      fontsize=20,
                      top_n=100,
                      model_subset=None,
-                     temporal_comparison=False):
+                     temporal_comparison=True):
  
         if model_subset is None:
             model_subset = self.model_id
 
         if self.preds is None:
             self._load_predictions()
-            
+
         if temporal_comparison == True:
             as_of_dates =  self.preds['as_of_date'].unique()
             dfs_dates = [self.preds[self.preds['as_of_date']==date] 
                          for date in as_of_dates]
 
             for preds_df in dfs_dates:
-                df_sim = preds_df
-                df_sim['above_tresh'] = (df_sim.loc[:,('rank_abs')] <= top_n).astype(int)
-                df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
+               # Filter predictions dataframe by individual dates 
+                df_preds_date = preds_df.copy() 
+                df_preds_date['above_tresh'] = np.where(df_preds_date['rank_abs'] <= top_n, 1, 0) 
+                df_sim_piv = df_preds_date.pivot(index='entity_id',
+                                                 columns='model_id',
+                                                 values='above_tresh')
 
                 # Calculate Jaccard Similarity for the selected models
-                res = pdist(df_sim_piv[preds_df.model_id.unique()].T, 'jaccard')
+                res = pdist(df_sim_piv.T, 'jaccard')
                 df_jac = pd.DataFrame(1-squareform(res), 
                                       index=preds_df.model_id.unique(),
                                       columns=preds_df.model_id.unique())
@@ -266,14 +269,16 @@ class ModelGroup(object):
 
         else:
 
-                # Call predicitons (this has to be filtered to comparable models)
+                # Call predicitons
                 df_sim = self.preds
-                df_sim['above_tresh'] = (df_sim['rank_abs'] <= top_n).astype(int)
-                df_sim_piv = df_sim.pivot(index='entity_id', columns='model_id', values='above_tresh')
+                df_sim['above_tresh_'] = (df_sim.rank_abs <= top_n).astype(int)
+                df_sim_piv = df_sim.pivot(index='entity_id',
+                                          columns='model_id',
+                                          values='above_tresh_')
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv[model_subset].T, 'jaccard')
-                df_jac = pd.DataFrame(1-squareform(res), 
+                df_jac = pd.DataFrame(1-squareform(res),
                                       index=model_subset,
                                       columns=model_subset)
                 mask = np.zeros_like(df_jac)
