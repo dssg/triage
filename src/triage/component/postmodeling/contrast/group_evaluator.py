@@ -24,7 +24,7 @@ import seaborn as sns
 
 from utils.file_helpers import download_s3
 from utils.test_conn import db_engine
-from utils.aux_funcs import recombine_categorical, pd_int_var
+from utils.aux_funcs import recombine_categorical
 
 # Get indivual model information/metadata from Audition output
 
