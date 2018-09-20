@@ -1,0 +1,12 @@
+  shared_parameters:
+      
+    metrics:
+      metric: 'precision@'
+      top_k: '50_abs'
+      max_depth: 5
+      top_n: 50
+      feature_groups: []
+      
+    aesthetics:
+      figsize: (12,12)
+      

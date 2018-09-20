@@ -14,10 +14,11 @@ To run most of this routines you will need:
 
 import pandas as pd
 import numpy as np
+import yaml
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from sklearn import metrics
-from sklearn import tree 
+from sklearn import tree
 from collections import namedtuple
 import graphviz
 
@@ -25,26 +26,10 @@ from utils.file_helpers import download_s3
 from utils.test_conn import db_engine
 from utils.aux_funcs import recombine_categorical
 
-# Get individual model_ids from Audition outcome
-
-
-def get_models_ids(audited_model_group_ids):
-    query = db_engine.execute(text("""
-    SELECT model_group_id,
-           model_id
-    FROM model_metadata.models
-    WHERE model_group_id = ANY(:ids);
-    """), ids=audited_model_group_ids)
-
-    ModelTuple = namedtuple('Model', ['model_group_id', 'model_id'])
-    l = [ModelTuple(*i) for i in query]
-
-    return(l)
-
 # Get indivual model information/metadata from Audition output
 
 
-class Model(object):
+class ModelEvaluator(object):
     '''
     ModelExtractor class calls the model metadata from the database
     and hold model_id metadata features on each of the class attibutes.
@@ -59,8 +44,8 @@ class Model(object):
         self.model_group_id = model_group_id
 
         # Retrive model_id metadata from the model_metadata schema
-        model_metadata = pd.read_sql("""
-        WITH
+        model_metadata = pd.read_sql(
+        f'''WITH
         individual_model_ids_metadata AS(
         SELECT m.model_id,
                m.model_group_id,
@@ -75,8 +60,8 @@ class Model(object):
             FROM model_metadata.models m
             JOIN model_metadata.model_groups mg
             USING (model_group_id)
-            WHERE model_group_id = {}
-            AND model_id = {}
+            WHERE model_group_id = {self.model_group_id}
+            AND model_id = {self.model_id}
         ),
         individual_model_id_matrices AS(
         SELECT DISTINCT ON (matrix_uuid)
@@ -91,9 +76,7 @@ class Model(object):
         SELECT metadata.*, test.*
         FROM individual_model_ids_metadata AS metadata
         LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);
-        """.format(self.model_group_id, self.model_id),
-                   con=db_engine)
+        USING(model_id);''', con=db_engine)
 
         # Add metadata attributes to model
         self.model_type = model_metadata.loc[0, 'model_type']
@@ -108,58 +91,62 @@ class Model(object):
         self.feature_importances = None
         self.model_metrics = None
 
-    def __str__(self):
-        s = 'Model object for model_id: {}'.format(self.model_id)
-        s += '\n Model Group: {}'.format(self.model_group_id)
-        s += '\n Model type: {}'.format(self.model_type)
-        s += '\n Train End Time: {}'.format(self.train_end_time)
-        s += '\n Model hyperparameters: {}'.format(self.hyperparameters)
-        s += '\Matrix hashes (train,test): {}'.format([self.train_matrix_uuid,
-                                                      self.pred_matrix_uuid])
-        return s
+    def __repr__(self):
+        return (
+        f'Model object for model_id: {self.model_id}\n'
+        f'Model Group: {self.model_group_id}\n'
+        f'Model type: {self.model_type}\n'
+        f'Train End Time: {self.train_end_time}\n'
+        f'Model hyperparameters: {self.hyperparameters}\n'
+        f'''Matrix hashes (train,test): [{self.train_matrix_uuid},
+                                        {self.pred_matrix_uuid}]'''
+        )
 
     def _load_predictions(self):
-        preds = pd.read_sql("""
-                SELECT model_id,
-                       entity_id,
-                       as_of_date,
-                       score,
-                       label_value,
-                       COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                       rank_pct,
-                       test_label_timespan
-                FROM test_results.predictions
-                WHERE model_id = {}
-                AND label_value IS NOT NULL
-                """.format(self.model_id),
-                con=db_engine)
+        preds = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   entity_id,
+                   as_of_date,
+                   score,
+                   label_value,
+                   COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
+                   rank_pct,
+                   test_label_timespan
+            FROM test_results.predictions
+            WHERE model_id = {self.model_id}
+            AND label_value IS NOT NULL
+            ''', con=db_engine)
+
         self.preds = preds
 
     def _load_feature_importances(self):
-        features = pd.read_sql("""
-               SELECT model_id,
-                      feature,
-                      feature_importance,
-                      rank_abs
-               FROM train_results.feature_importances
-               WHERE model_id = {}
-               """.format(self.model_id),
-               con=db_engine)
+        features = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   feature,
+                   feature_importance,
+                   rank_abs
+            FROM train_results.feature_importances
+            WHERE model_id = {self.model_id}
+            ''', con=db_engine)
+
         self.feature_importances = features
 
     def _load_metrics(self):
-        model_metrics = pd.read_sql("""
-                SELECT model_id,
-                       metric,
-                       metric_parameter,
-                       value,
-                       num_labeled_examples,
-                       num_labeled_above_treshold,
-                       num_positive_labels
-                FROM test_results.evaluation
-                WHERE model_id = {}
-                """.format(self.model_id),
-                con=db_engine)
+        model_metrics = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   metric,
+                   metric_parameter,
+                   value,
+                   num_labeled_examples,
+                   num_labeled_above_treshold,
+                   num_positive_labels
+            FROM test_results.evaluation
+            WHERE model_id = {self.model_id}
+            ''', con=db_engine)
+
         self.model_metrics = model_metrics
 
     def _fetch_matrix(self, matrix_hash, path):
@@ -567,12 +554,10 @@ class Model(object):
             df_sorted = self.pred_matrix[[entity_col, score_col]].copy()
             df_sorted['sort_random'] = np.random.random(len(df_sorted))
             df_sorted.sort_values([score_col, 'sort_random'], ascending=[False, False], inplace=True)
-
             df_sorted, cat_col = recombine_categorical(df_sorted, self.pred_matrix, name_or_prefix, suffix, entity_col)
 
         else:
             raise ValueError('feature_type must be one of continuous, boolean, or categorical')
-
 
         # calculate the other two cut variables depending on which is specified
         if cut_n:
