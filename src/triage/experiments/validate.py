@@ -392,17 +392,17 @@ class CohortConfigValidator(Validator):
                 If 'query' is used as cohort_config,
                 {as_of_date} must be present'''))
             dated_query = query.replace(
-                '{as_of_date}', '2016-01-01::timestamp')
+                '{as_of_date}', '2016-01-01')
             conn = self.db_engine.connect()
             logging.info('Validating cohort query')
             try:
-                conn.execute('explain {}'.format(dated_query))
+                conn.execute(f'explain {dated_query}')
             except Exception as e:
-                raise ValueError(dedent('''
+                raise ValueError(dedent(f'''
                     Section: cohort_config -
                     given query can not be run with a sample as_of_date .
-                    query: "{}"
-                    Full error: {}'''.format(query, e)))
+                    query: "{query}"
+                    Full error: {e}'''))
 
 
 class FeatureGroupDefinitionValidator(Validator):
