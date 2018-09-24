@@ -19,6 +19,8 @@ from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
 
+import importlib
+
 
 def natural_number(value):
     natural = int(value)
@@ -44,6 +46,18 @@ class Triage(RootCommand):
             type=argparse.FileType('r'),
             help="database connection file",
         )
+        parser.add_argument(
+            '-s', '--setup',
+            help="triage setup file",
+        )
+
+    def __call__(self, args):
+        if self.args.setup is not None:
+            logging.info(f"Loading configurations from {self.args.setup}")
+            importlib.import_module(
+                self.args.setup.rsplit('.', maxsplit=1)[-1]
+            )
+
 
     @cachedproperty
     def db_url(self):
@@ -254,7 +268,7 @@ class Db(Command):
     @cmdmethod('configversion', choices=REVISION_MAPPING.keys(), help='config version of last experiment you ran')
     def stamp(self, args):
         """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
-        
+
         Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
         """
         revision = REVISION_MAPPING[args.configversion]
