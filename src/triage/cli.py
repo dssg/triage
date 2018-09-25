@@ -19,7 +19,7 @@ from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
 
-import importlib
+import importlib.util
 
 
 def natural_number(value):
@@ -54,9 +54,10 @@ class Triage(RootCommand):
     def __call__(self, args):
         if self.args.setup is not None:
             logging.info(f"Loading configurations from {self.args.setup}")
-            importlib.import_module(
-                self.args.setup.rsplit('.', maxsplit=1)[0]
-            )
+            spec = importlib.util.spec_from_file_location("triage_config", self.args.setup)
+            triage_config = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(triage_config)
+            logging.info(f"Configuration loaded")
 
 
     @cachedproperty
