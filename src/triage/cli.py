@@ -55,7 +55,7 @@ class Triage(RootCommand):
         if self.args.setup is not None:
             logging.info(f"Loading configurations from {self.args.setup}")
             importlib.import_module(
-                self.args.setup.rsplit('.', maxsplit=1)[-1]
+                self.args.setup.rsplit('.', maxsplit=1)[0]
             )
 
 
