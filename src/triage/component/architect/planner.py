@@ -15,7 +15,6 @@ class Planner(object):
         label_names,
         label_types,
         states,
-        matrix_directory,
         user_metadata,
         cohort_name='default',
     ):
@@ -24,7 +23,6 @@ class Planner(object):
         self.label_types = label_types
         self.cohort_name = cohort_name
         self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
-        self.matrix_directory = matrix_directory
         self.user_metadata = user_metadata
 
     def _generate_build_task(
@@ -39,7 +37,6 @@ class Planner(object):
             'label_name': matrix_metadata['label_name'],
             'label_type': matrix_metadata['label_type'],
             'feature_dictionary': feature_dictionary,
-            'matrix_directory': self.matrix_directory,
             'matrix_uuid': matrix_uuid,
             'matrix_metadata': matrix_metadata,
             'matrix_type': matrix_metadata['matrix_type']

@@ -8,11 +8,13 @@ import pandas as pd
 import testing.postgresql
 from mock import Mock
 from sqlalchemy import create_engine
+from contextlib import contextmanager
 
 from triage.component import metta
 from triage.component.architect.feature_group_creator import FeatureGroup
-from triage.component.architect import builders
+from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import ProjectStorage, HDFMatrixStore
 
 from .utils import (
     create_schemas,
@@ -234,7 +236,13 @@ db_config = {
 }
 
 
-def test_write_to_csv():
+@contextmanager
+def get_matrix_storage_engine():
+    with TemporaryDirectory() as temp_dir:
+        yield ProjectStorage(temp_dir).matrix_storage_engine()
+
+
+def test_query_to_df():
     """ Test the write_to_csv function by checking whether the csv contains the
     correct number of lines.
     """
@@ -248,24 +256,22 @@ def test_write_to_csv():
             states=states
         )
 
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=engine,
             )
 
             # for each table, check that corresponding csv has the correct # of rows
             for table in features_tables:
-                builder.write_to_csv(
+                df = builder.query_to_df(
                     '''
                         select *
                         from features.features{}
-                    '''.format(features_tables.index(table)),
-                    'test_csv.csv'
+                    '''.format(features_tables.index(table))
                 )
-                reader = csv.reader(builder.open_fh_for_reading('test_csv.csv'))
-                assert(len([row for row in reader]) == len(table) + 1)
+                assert(len(df) == len(table))
 
 
 def test_make_entity_date_table():
@@ -298,10 +304,10 @@ def test_make_entity_date_table():
             states=states
         )
 
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=engine
             )
             engine.execute(
@@ -365,10 +371,10 @@ def test_make_entity_date_table_include_missing_labels():
             states=states
         )
 
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 include_missing_labels_in_train_as=False,
                 engine=engine
             )
@@ -397,7 +403,7 @@ def test_make_entity_date_table_include_missing_labels():
             assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
 
 
-def test_write_features_data():
+def test_load_features_data():
     dates = [datetime.datetime(2016, 1, 1, 0, 0),
              datetime.datetime(2016, 2, 1, 0, 0)]
 
@@ -425,7 +431,7 @@ def test_write_features_data():
                 right=temp_df,
                 how='left',
                 on=['entity_id', 'as_of_date']
-            )
+            ).set_index(['entity_id', 'as_of_date'])
         )
 
     # create an engine and generate a table with fake feature data
@@ -438,10 +444,10 @@ def test_write_features_data():
             states=states
         )
 
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=engine,
             )
 
@@ -460,7 +466,7 @@ def test_write_features_data():
                 ('features{}'.format(i), feature_list) for i, feature_list in enumerate(features)
             )
 
-            features_csv_names = builder.write_features_data(
+            returned_features_dfs = builder.load_features_data(
                 as_of_times=dates,
                 feature_dictionary=feature_dictionary,
                 entity_date_table_name=entity_date_table_name,
@@ -468,18 +474,13 @@ def test_write_features_data():
             )
 
             # get the queries and test them
-            for feature_csv_name, df in zip(sorted(features_csv_names), features_dfs):
-                df = df.reset_index()
-
-                result = pd.read_csv(builder.open_fh_for_reading(feature_csv_name))\
-                    .reset_index()
-                result['as_of_date'] = convert_string_column_to_date(result['as_of_date'])
+            for result, df in zip(returned_features_dfs, features_dfs):
                 test = (result == df)
                 assert(test.all().all())
 
 
-def test_write_labels_data():
-    """ Test the write_labels_data function by checking whether the query
+def test_load_labels_data():
+    """ Test the load_labels_data function by checking whether the query
     produces the correct labels
     """
     # set up labeling config variables
@@ -511,10 +512,10 @@ def test_write_labels_data():
             labels,
             states
         )
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=engine,
             )
 
@@ -529,7 +530,7 @@ def test_write_labels_data():
                 label_timespan='1 month'
             )
 
-            csv_filename = builder.write_labels_data(
+            result = builder.load_labels_data(
                 label_name=label_name,
                 label_type=label_type,
                 label_timespan='1 month',
@@ -538,18 +539,16 @@ def test_write_labels_data():
             )
             df = pd.DataFrame.from_dict({
                 'entity_id': [2, 3, 4, 4],
-                'as_of_date': ['2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
+                'as_of_date': [dates[1], dates[1], dates[0], dates[1]],
                 'booking': [0, 0, 1, 0],
             }).set_index(['entity_id', 'as_of_date'])
 
-            result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
-                .set_index(['entity_id', 'as_of_date'])
             test = (result == df)
             assert(test.all().all())
 
 
-def test_write_labels_data_include_missing_labels_as_false():
-    """ Test the write_labels_data function by checking whether the query
+def test_load_labels_data_include_missing_labels_as_false():
+    """ Test the load_labels_data function by checking whether the query
     produces the correct labels
     """
     # set up labeling config variables
@@ -557,7 +556,7 @@ def test_write_labels_data_include_missing_labels_as_false():
              datetime.datetime(2016, 2, 1, 0, 0),
              datetime.datetime(2016, 6, 1, 0, 0)]
 
-    # same as the other write_labels_data test, except we include an extra date, 2016-06-01
+    # same as the other load_labels_data test, except we include an extra date, 2016-06-01
     # this date does have entity 0 included via the states table, but no labels
 
     # make a dataframe of labels to test against
@@ -585,10 +584,10 @@ def test_write_labels_data_include_missing_labels_as_false():
             labels,
             states
         )
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=engine,
                 include_missing_labels_in_train_as=False,
             )
@@ -604,7 +603,7 @@ def test_write_labels_data_include_missing_labels_as_false():
                 label_timespan='1 month'
             )
 
-            csv_filename = builder.write_labels_data(
+            result = builder.load_labels_data(
                 label_name=label_name,
                 label_type=label_type,
                 label_timespan='1 month',
@@ -613,66 +612,80 @@ def test_write_labels_data_include_missing_labels_as_false():
             )
             df = pd.DataFrame.from_dict({
                 'entity_id': [0, 2, 3, 4, 4],
-                'as_of_date': ['2016-06-01', '2016-02-01', '2016-02-01', '2016-01-01', '2016-02-01'],
+                'as_of_date': [dates[2], dates[1], dates[1], dates[0], dates[1]],
                 'booking': [0, 0, 0, 1, 0],
             }).set_index(['entity_id', 'as_of_date'])
             # the first row would not be here if we had not configured the Builder
             # to include missing labels as false
 
-            result = pd.read_csv(builder.open_fh_for_reading(csv_filename))\
-                .set_index(['entity_id', 'as_of_date'])
             test = (result == df)
             assert(test.all().all())
-
 
 class TestMergeFeatureCSVs(TestCase):
     def test_badinput(self):
         """We assert column names, so replacing 'date' with 'as_of_date'
         should result in an error"""
-        with TemporaryDirectory() as temp_dir:
-            builder = builders.HighMemoryCSVBuilder(
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
                 db_config=db_config,
-                matrix_directory=temp_dir,
+                matrix_storage_engine=matrix_storage_engine,
                 engine=None,
             )
-            rowlists = [
-                [
-                    ('entity_id', 'date', 'f1'),
+            dataframes = [
+                pd.DataFrame.from_records([
                     (1, 3, 3),
                     (4, 5, 6),
                     (7, 8, 9),
-                ],
-                [
-                    ('entity_id', 'date', 'f2'),
+                ], columns=('entity_id', 'date', 'f1'), index=['entity_id', 'date']),
+                pd.DataFrame.from_records([
                     (1, 2, 3),
                     (4, 5, 9),
                     (7, 8, 15),
-                ],
-                [
-                    ('entity_id', 'date', 'f3'),
+                ], columns=('entity_id', 'date', 'f3'), index=['entity_id', 'date']),
+                pd.DataFrame.from_records([
                     (1, 2, 2),
                     (4, 5, 20),
                     (7, 8, 56),
-                ],
+                ], columns=('entity_id', 'date', 'f3'), index=['entity_id', 'date']),
             ]
 
-            filekeys = []
-            for rows in rowlists:
-                filekey = uuid.uuid4()
-                builder.open_fh_for_writing(filekey)
-                filekeys.append(filekey)
-                writer = csv.writer(builder.filehandles[filekey])
-                for row in rows:
-                    writer.writerow(row)
-            with self.assertRaises(KeyError):
-                builder.merge_feature_csvs(
-                    filekeys,
-                    matrix_directory=temp_dir,
-                    matrix_uuid='1234'
-                )
+            with self.assertRaises(ValueError):
+                builder.merge_feature_csvs(dataframes, matrix_uuid='1234')
 
 
 class TestBuildMatrix(TestCase):
+    @property
+    def good_metadata(self):
+        return {
+            'matrix_id': 'hi',
+            'state': 'state_one AND state_two',
+            'label_name': 'booking',
+            'end_time': datetime.datetime(2016, 3, 1, 0, 0),
+            'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
+            'label_timespan': '1 month',
+            'max_training_history': '1 month',
+            'test_duration': '1 month',
+            'indices': ['entity_id', 'as_of_date'],
+        }
+
+    @property
+    def good_feature_dictionary(self):
+        return FeatureGroup(
+            name='mygroup',
+            features_by_table={
+                'features0': ['f1', 'f2'],
+                'features1': ['f3', 'f4'],
+            }
+        )
+
+    @property
+    def good_dates(self):
+        return [
+            datetime.datetime(2016, 1, 1, 0, 0),
+            datetime.datetime(2016, 2, 1, 0, 0),
+            datetime.datetime(2016, 3, 1, 0, 0)
+        ]
+
     def test_train_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
@@ -685,51 +698,24 @@ class TestBuildMatrix(TestCase):
                 states=states
             )
 
-            dates = [datetime.datetime(2016, 1, 1, 0, 0),
-                     datetime.datetime(2016, 2, 1, 0, 0),
-                     datetime.datetime(2016, 3, 1, 0, 0)]
 
-            with TemporaryDirectory() as temp_dir:
-                builder = builders.HighMemoryCSVBuilder(
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                builder = MatrixBuilder(
                     db_config=db_config,
-                    matrix_directory=temp_dir,
+                    matrix_storage_engine=matrix_storage_engine,
                     engine=engine
                 )
-                feature_dictionary = FeatureGroup(
-                    name='mygroup',
-                    features_by_table={
-                        'features0': ['f1', 'f2'],
-                        'features1': ['f3', 'f4'],
-                    }
-                )
-                matrix_metadata = {
-                    'matrix_id': 'hi',
-                    'state': 'state_one AND state_two',
-                    'label_name': 'booking',
-                    'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month',
-                    'max_training_history': '1 month'
-                }
-                uuid = metta.generate_uuid(matrix_metadata)
+                uuid = metta.generate_uuid(self.good_metadata)
                 builder.build_matrix(
-                    as_of_times=dates,
+                    as_of_times=self.good_dates,
                     label_name='booking',
                     label_type='binary',
-                    feature_dictionary=feature_dictionary,
-                    matrix_directory=temp_dir,
-                    matrix_metadata=matrix_metadata,
+                    feature_dictionary=self.good_feature_dictionary,
+                    matrix_metadata=self.good_metadata,
                     matrix_uuid=uuid,
                     matrix_type='train'
                 )
-
-                matrix_filename = os.path.join(
-                    temp_dir,
-                    '{}.csv'.format(uuid)
-                )
-                with open(matrix_filename, 'r') as f:
-                    reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 6)
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
@@ -743,49 +729,58 @@ class TestBuildMatrix(TestCase):
                 states=states
             )
 
-            dates = [datetime.datetime(2016, 1, 1, 0, 0),
-                     datetime.datetime(2016, 2, 1, 0, 0),
-                     datetime.datetime(2016, 3, 1, 0, 0)]
-
-            with TemporaryDirectory() as temp_dir:
-                builder = builders.HighMemoryCSVBuilder(
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                builder = MatrixBuilder(
                     db_config=db_config,
-                    matrix_directory=temp_dir,
+                    matrix_storage_engine=matrix_storage_engine,
                     engine=engine
                 )
 
-                feature_dictionary = {
-                    'features0': ['f1', 'f2'],
-                    'features1': ['f3', 'f4'],
-                }
-                matrix_metadata = {
-                    'matrix_id': 'hi',
-                    'state': 'state_one AND state_two',
-                    'label_name': 'booking',
-                    'end_time': datetime.datetime(2016, 3, 1, 0, 0),
-                    'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
-                    'label_timespan': '1 month',
-                    'test_duration': '1 month'
-                }
-                uuid = metta.generate_uuid(matrix_metadata)
+                uuid = metta.generate_uuid(self.good_metadata)
                 builder.build_matrix(
-                    as_of_times=dates,
+                    as_of_times=self.good_dates,
                     label_name='booking',
                     label_type='binary',
-                    feature_dictionary=feature_dictionary,
-                    matrix_directory=temp_dir,
-                    matrix_metadata=matrix_metadata,
+                    feature_dictionary=self.good_feature_dictionary,
+                    matrix_metadata=self.good_metadata,
                     matrix_uuid=uuid,
                     matrix_type='test'
                 )
-                matrix_filename = os.path.join(
-                    temp_dir,
-                    '{}.csv'.format(uuid)
+
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+
+    def test_hdf_matrix(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            ensure_db(engine)
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
+
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                matrix_storage_engine.matrix_storage_class = HDFMatrixStore
+                builder = MatrixBuilder(
+                    db_config=db_config,
+                    matrix_storage_engine=matrix_storage_engine,
+                    engine=engine
                 )
 
-                with open(matrix_filename, 'r') as f:
-                    reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 6)
+                uuid = metta.generate_uuid(self.good_metadata)
+                builder.build_matrix(
+                    as_of_times=self.good_dates,
+                    label_name='booking',
+                    label_type='binary',
+                    feature_dictionary=self.good_feature_dictionary,
+                    matrix_metadata=self.good_metadata,
+                    matrix_uuid=uuid,
+                    matrix_type='test'
+                )
+
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
 
     def test_nullcheck(self):
         f0_dict = {(r[0], r[1]): r for r in features0_pre}
@@ -810,10 +805,10 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 2, 1, 0, 0),
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
-            with TemporaryDirectory() as temp_dir:
-                builder = builders.HighMemoryCSVBuilder(
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                builder = MatrixBuilder(
                     db_config=db_config,
-                    matrix_directory=temp_dir,
+                    matrix_storage_engine=matrix_storage_engine,
                     engine=engine
                 )
 
@@ -828,7 +823,8 @@ class TestBuildMatrix(TestCase):
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month',
-                    'test_duration': '1 month'
+                    'test_duration': '1 month',
+                    'indices': ['entity_id', 'as_of_date'],
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 with self.assertRaises(ValueError):
@@ -837,7 +833,6 @@ class TestBuildMatrix(TestCase):
                         label_name='booking',
                         label_type='binary',
                         feature_dictionary=feature_dictionary,
-                        matrix_directory=temp_dir,
                         matrix_metadata=matrix_metadata,
                         matrix_uuid=uuid,
                         matrix_type='test'
@@ -859,10 +854,10 @@ class TestBuildMatrix(TestCase):
                      datetime.datetime(2016, 2, 1, 0, 0),
                      datetime.datetime(2016, 3, 1, 0, 0)]
 
-            with TemporaryDirectory() as temp_dir:
-                builder = builders.HighMemoryCSVBuilder(
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                builder = MatrixBuilder(
                     db_config=db_config,
-                    matrix_directory=temp_dir,
+                    matrix_storage_engine=matrix_storage_engine,
                     engine=engine,
                     replace=False
                 )
@@ -878,7 +873,8 @@ class TestBuildMatrix(TestCase):
                     'end_time': datetime.datetime(2016, 3, 1, 0, 0),
                     'feature_start_time': datetime.datetime(2016, 1, 1, 0, 0),
                     'label_timespan': '1 month',
-                    'test_duration': '1 month'
+                    'test_duration': '1 month',
+                    'indices': ['entity_id', 'as_of_date'],
                 }
                 uuid = metta.generate_uuid(matrix_metadata)
                 builder.build_matrix(
@@ -886,21 +882,12 @@ class TestBuildMatrix(TestCase):
                     label_name='booking',
                     label_type='binary',
                     feature_dictionary=feature_dictionary,
-                    matrix_directory=temp_dir,
                     matrix_metadata=matrix_metadata,
                     matrix_uuid=uuid,
                     matrix_type='test'
                 )
 
-                matrix_filename = os.path.join(
-                    temp_dir,
-                    '{}.csv'.format(uuid)
-                )
-
-                with open(matrix_filename, 'r') as f:
-                    reader = csv.reader(f)
-                    assert(len([row for row in reader]) == 6)
-
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
                 # rerun
                 builder.make_entity_date_table = Mock()
                 builder.build_matrix(
@@ -908,7 +895,6 @@ class TestBuildMatrix(TestCase):
                     label_name='booking',
                     label_type='binary',
                     feature_dictionary=feature_dictionary,
-                    matrix_directory=temp_dir,
                     matrix_metadata=matrix_metadata,
                     matrix_uuid=uuid,
                     matrix_type='test'

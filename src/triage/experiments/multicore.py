@@ -4,7 +4,6 @@ from functools import partial
 from multiprocessing import Pool
 
 from triage.component.catwalk.utils import Batch
-from triage.component.catwalk.storage import InMemoryModelStorageEngine
 
 from triage.experiments import ExperimentBase
 
@@ -22,10 +21,6 @@ class MultiCoreExperiment(ExperimentBase):
                             'consider using the SingleThreadedExperiment class instead')
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
-        if isinstance(self.model_storage_engine, InMemoryModelStorageEngine):
-            raise ValueError('''
-                InMemoryModelStorageEngine not compatible with MultiCoreExperiment
-            ''')
 
     def generated_chunked_parallelized_results(
         self,

@@ -19,7 +19,7 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.planner import Planner
-from triage.component.architect.builders import HighMemoryCSVBuilder
+from triage.component.architect.builders import MatrixBuilder
 from triage.component.architect.state_table_generators import (
     StateTableGeneratorFromDense,
     StateTableGeneratorFromEntities,
@@ -32,7 +32,7 @@ from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import save_experiment_and_get_hash
-from triage.component.catwalk.storage import CSVMatrixStore, ModelStorageEngine
+from triage.component.catwalk.storage import CSVMatrixStore, ModelStorageEngine, ProjectStorage, MatrixStorageEngine
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -67,6 +67,7 @@ class ExperimentBase(ABC):
         config,
         db_engine,
         project_path=None,
+        matrix_storage_class=CSVMatrixStore,
         replace=True,
         cleanup=False,
         cleanup_timeout=None,
@@ -80,14 +81,14 @@ class ExperimentBase(ABC):
         else:
             self.db_engine = db_engine
 
-        self.model_storage_engine = ModelStorageEngine.factory(project_path)
-        self.matrix_store_class = CSVMatrixStore  # can't be configurable until Architect obeys
+        self.project_storage = ProjectStorage(project_path)
+        self.model_storage_engine = ModelStorageEngine(self.project_storage)
+        self.matrix_storage_engine = MatrixStorageEngine(self.project_storage, matrix_storage_class)
         self.project_path = project_path
         self.replace = replace
         upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = 'features'
-        self.matrices_directory = os.path.join(self.project_path, 'matrices')
         self.experiment_hash = save_experiment_and_get_hash(self.config,
                                                             self.db_engine)
         self.labels_table_name = 'labels_{}'.format(self.experiment_hash)
@@ -178,14 +179,13 @@ class ExperimentBase(ABC):
             feature_start_time=dt_from_str(split_config['feature_start_time']),
             label_names=[self.config.get('label_config', {}).get('name', DEFAULT_LABEL_NAME)],
             label_types=['binary'],
-            matrix_directory=self.matrices_directory,
             cohort_name=self.config.get('cohort_config', {}).get('name', None),
             states=self.config.get('cohort_config', {}).get('dense_states', {})
             .get('state_filters', []),
             user_metadata=self.config.get('user_metadata', {}),
         )
 
-        self.matrix_builder = HighMemoryCSVBuilder(
+        self.matrix_builder = MatrixBuilder(
             db_config={
                 'features_schema_name': self.features_schema_name,
                 'labels_schema_name': 'public',
@@ -195,7 +195,7 @@ class ExperimentBase(ABC):
                 # duplicating it here
                 'sparse_state_table_name': self.sparse_states_table_name,
             },
-            matrix_directory=self.matrices_directory,
+            matrix_storage_engine=self.matrix_storage_engine,
             include_missing_labels_in_train_as=self.config.get('label_config', {})
             .get('include_missing_labels_in_train_as', None),
             engine=self.db_engine,
@@ -203,7 +203,6 @@ class ExperimentBase(ABC):
         )
 
         self.trainer = ModelTrainer(
-            project_path=self.project_path,
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
             model_grouper=ModelGrouper(self.config.get('model_group_keys', [])),
@@ -213,7 +212,7 @@ class ExperimentBase(ABC):
 
         self.tester = ModelTester(
             model_storage_engine=self.model_storage_engine,
-            project_path=self.project_path,
+            matrix_storage_engine=self.matrix_storage_engine,
             replace=self.replace,
             db_engine=self.db_engine,
             individual_importance_config=self.config.get('individual_importance', {}),
@@ -475,24 +474,6 @@ class ExperimentBase(ABC):
             split['train_matrix']['matrix_info_end_time'],
         )
 
-    def matrix_store(self, matrix_uuid):
-        """Construct a matrix store for a given matrix uuid, using the Experiment's #matrix_store_class
-
-        Args:
-            matrix_uuid (string) A uuid for a matrix
-        """
-        matrix_store = self.matrix_store_class(
-            matrix_path=os.path.join(
-                self.matrices_directory,
-                '{}.csv'.format(matrix_uuid)
-            ),
-            metadata_path=os.path.join(
-                self.matrices_directory,
-                '{}.yaml'.format(matrix_uuid)
-            )
-        )
-        return matrix_store
-
     @abstractmethod
     def process_train_tasks(self, train_tasks):
         pass
@@ -539,7 +520,7 @@ class ExperimentBase(ABC):
 
         for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
-            train_store = self.matrix_store(split['train_uuid'])
+            train_store = self.matrix_storage_engine.get_store(split['train_uuid'])
             if train_store.empty:
                 logging.warning('''Train matrix for split %s was empty,
                 no point in training this model. Skipping
@@ -569,7 +550,6 @@ class ExperimentBase(ABC):
                 split=split,
                 train_store=train_store,
                 model_ids=model_ids,
-                matrix_store_creator=self.matrix_store
             )
             logging.info('Found %s non-empty test matrices for split %s', len(test_tasks), split_num)
 

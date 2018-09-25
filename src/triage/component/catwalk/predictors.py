@@ -23,7 +23,6 @@ class Predictor(object):
 
     def __init__(
         self,
-        project_path,
         model_storage_engine,
         db_engine,
         replace=True
@@ -32,12 +31,10 @@ class Predictor(object):
         dataset and storing the results
 
         Args:
-            project_path (string) the path under which to store project data
             model_storage_engine (catwalk.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
 
         """
-        self.project_path = project_path
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
         self.replace = replace
@@ -75,9 +72,8 @@ class Predictor(object):
 
         model_hash = self._retrieve_model_hash(model_id)
         logging.info('Checking for model_hash %s in store', model_hash)
-        model_store = self.model_storage_engine.get_store(model_hash)
-        if model_store.exists():
-            return model_store.load()
+        if self.model_storage_engine.exists(model_hash):
+            return self.model_storage_engine.load(model_hash)
 
     @db_retry
     def delete_model(self, model_id):
@@ -87,8 +83,7 @@ class Predictor(object):
             model_id (int) The id of a given model in the database
         """
         model_hash = self._retrieve_model_hash(model_id)
-        model_store = self.model_storage_engine.get_store(model_hash)
-        model_store.delete()
+        self.model_storage_engine.delete(model_hash)
 
     @db_retry
     def _existing_predictions(self, Prediction_obj, session, model_id, matrix_store):
@@ -112,18 +107,15 @@ class Predictor(object):
         for prediction in existing_predictions:
             score_lookup[(
                 prediction.entity_id,
-                prediction.as_of_date.date().isoformat()
+                prediction.as_of_date.date()
             )] = prediction.score
         if 'as_of_date' in index.names:
             score_iterator = (
-                score_lookup[(
-                    entity_id,
-                    datetime.strptime(dt, self.expected_matrix_ts_format).date().isoformat()
-                )]
+                score_lookup[(entity_id, dt.date())]
                 for (entity_id, dt) in index
             )
         else:
-            as_of_date = matrix_store.metadata['end_time'].date().isoformat()
+            as_of_date = matrix_store.metadata['end_time'].date()
             score_iterator = (score_lookup[(row, as_of_date)] for row in index)
         return numpy.fromiter(score_iterator, float)
 
