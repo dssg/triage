@@ -46,19 +46,6 @@ class Triage(RootCommand):
             type=argparse.FileType('r'),
             help="database connection file",
         )
-        parser.add_argument(
-            '-s', '--setup',
-            help="python module to import before running the command",
-        )
-
-    def __call__(self, args):
-        if self.args.setup is not None:
-            logging.info(f"Loading configurations from {self.args.setup}")
-            spec = importlib.util.spec_from_file_location("triage_config", self.args.setup)
-            triage_config = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(triage_config)
-            logging.info(f"Configuration loaded")
-
 
     @cachedproperty
     def db_url(self):
@@ -174,6 +161,11 @@ class Experiment(Command):
             help="only validate the config file not running Experiment"
         )
 
+        parser.add_argument(
+            '-s', '--setup',
+            help="python module to import before running the command",
+        )
+
         parser.set_defaults(
             validate=True,
             validate_only=False,
@@ -201,6 +193,14 @@ class Experiment(Command):
         return experiment
 
     def __call__(self, args):
+
+        if args.setup is not None:
+            logging.info(f"Loading configurations from {args.setup}")
+            spec = importlib.util.spec_from_file_location("triage_config", args.setup)
+            triage_config = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(triage_config)
+            logging.info(f"Configuration loaded")
+
         if args.validate_only:
             self.experiment.validate()
         elif args.validate:
