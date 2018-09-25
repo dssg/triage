@@ -1,12 +1,18 @@
-  shared_parameters:
-      
-    metrics:
-      metric: 'precision@'
-      top_k: '50_abs'
-      max_depth: 5
-      top_n: 50
-      feature_groups: []
-      
-    aesthetics:
-      figsize: (12,12)
+# Postmodeling Configuration File
+#
+# - "metrics" contain all the modeling parameters 
+#   passed to the postmodeling functions.
+# - "aesthetics" contain all ploting parameters 
+#   passed to the ploting methods in postmodeling.
+#
+
+  audited_models: [19, 43, 55]
+
+  metric: 'precision@'
+  parameter: '50_abs'
+  max_depth: 5
+  top_n: 50
+  feature_groups: []
+
+  figsize: (12,12)
       

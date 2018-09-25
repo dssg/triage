@@ -29,7 +29,7 @@ from utils.aux_funcs import recombine_categorical
 # Get indivual model information/metadata from Audition output
 
 
-class ModelGroup(object):
+class ModelGroupEvaluator(object):
     '''
     ModelGroup class calls the model group metadata from the database
     and hold metadata features on each of the class attibutes.
