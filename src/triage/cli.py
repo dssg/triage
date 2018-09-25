@@ -127,6 +127,12 @@ class Experiment(Command):
             default=os.path.curdir,
             help="path to store matrices and trained models"
         )
+
+        parser.add_argument(
+            '-s', '--setup',
+            help="python module to import before running the Experiment",
+        )
+
         parser.add_argument(
             '--n-db-processes',
             type=natural_number,
@@ -159,11 +165,6 @@ class Experiment(Command):
             '--validate-only',
             action='store_true',
             help="only validate the config file not running Experiment"
-        )
-
-        parser.add_argument(
-            '-s', '--setup',
-            help="python module to import before running the command",
         )
 
         parser.set_defaults(
