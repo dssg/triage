@@ -151,22 +151,20 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
         """
 
         self.db_engine.execute(
-            '''create table {sparse_state_table} (
+            f'''create table {self.sparse_table_name} (
                 entity_id integer,
                 as_of_date timestamp,
-                {active_state} boolean
+                {DEFAULT_ACTIVE_STATE} boolean
             )
-            '''.format(
-                sparse_state_table=self.sparse_table_name,
-                active_state=DEFAULT_ACTIVE_STATE
-            )
+            '''
         )
         logging.info('Created sparse state table, now inserting rows')
+
         for as_of_date in as_of_dates:
-            formatted_date = f"'{as_of_date.isoformat()}'"
+            formatted_date = f"{as_of_date.isoformat()}"
             dated_query = self.query.replace('{as_of_date}', formatted_date)
-            full_query = f'''insert into {self.sparse_state_table}
-                select q.entity_id, {formatted_date}::timestamp, true
+            full_query = f'''insert into {self.sparse_table_name}
+                select q.entity_id, '{formatted_date}'::timestamp, true
                 from ({dated_query}) q
                 group by 1, 2, 3
             '''
