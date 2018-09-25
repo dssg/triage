@@ -46,6 +46,21 @@ class Triage(RootCommand):
             type=argparse.FileType('r'),
             help="database connection file",
         )
+        parser.add_argument(
+            '-s', '--setup',
+            help="file path to Python module to import before running the Experiment",
+        )
+
+    @cachedproperty
+    def setup(self):
+        setup_path = self.args.setup or os.path.exists('experiment.py')
+        if setup_path is not None:
+            logging.info(f"Loading configurations from {setup_path}")
+            spec = importlib.util.spec_from_file_location("triage_config", setup_path)
+            triage_config = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(triage_config)
+            logging.info(f"Configuration loaded")
+        return None
 
     @cachedproperty
     def db_url(self):
@@ -102,6 +117,7 @@ class FeatureTest(Command):
         )
 
     def __call__(self, args):
+        _ = self.root.setup  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
         feature_config = yaml.load(args.feature_config_file)
 
@@ -121,10 +137,6 @@ class Experiment(Command):
             'config',
             type=argparse.FileType('r'),
             help="config file for Experiment"
-        )
-        parser.add_argument(
-            '-s', '--setup',
-            help="python module to import before running the Experiment",
         )
         parser.add_argument(
             '--project-path',
@@ -172,6 +184,7 @@ class Experiment(Command):
 
     @cachedproperty
     def experiment(self):
+        _ = self.root.setup  # Loading configuration (if exists)
         db_url = self.root.db_url
         config = yaml.load(self.args.config)
         db_engine = create_engine(db_url)
@@ -192,14 +205,6 @@ class Experiment(Command):
         return experiment
 
     def __call__(self, args):
-
-        if args.setup is not None:
-            logging.info(f"Loading configurations from {args.setup}")
-            spec = importlib.util.spec_from_file_location("triage_config", args.setup)
-            triage_config = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(triage_config)
-            logging.info(f"Configuration loaded")
-
         if args.validate_only:
             self.experiment.validate()
         elif args.validate:
@@ -227,6 +232,7 @@ class Audition(Command):
 
     @cachedproperty
     def runner(self):
+        _ = self.root.setup # Loading configuration (if exists)
         db_url = self.root.db_url
         dir_plot = self.args.directory
         config = yaml.load(self.args.config)
