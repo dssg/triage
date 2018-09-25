@@ -123,16 +123,14 @@ class Experiment(Command):
             help="config file for Experiment"
         )
         parser.add_argument(
+            '-s', '--setup',
+            help="python module to import before running the Experiment",
+        )
+        parser.add_argument(
             '--project-path',
             default=os.path.curdir,
             help="path to store matrices and trained models"
         )
-
-        parser.add_argument(
-            '-s', '--setup',
-            help="python module to import before running the Experiment",
-        )
-
         parser.add_argument(
             '--n-db-processes',
             type=natural_number,
