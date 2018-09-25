@@ -48,7 +48,7 @@ class Triage(RootCommand):
         )
         parser.add_argument(
             '-s', '--setup',
-            help="triage setup file",
+            help="python module to import before running the command",
         )
 
     def __call__(self, args):
