@@ -9,7 +9,7 @@ file.abs
 """
 
 import yaml
-
+import ast
 
 class PostmodelParameters(object):
     '''
@@ -24,6 +24,6 @@ class PostmodelParameters(object):
         with open(path_params) as f:
             params = yaml.load(f)
         self.__dict__.update(params)
-
+        self.figsize = ast.literal_eval(self.figsize)
 
 

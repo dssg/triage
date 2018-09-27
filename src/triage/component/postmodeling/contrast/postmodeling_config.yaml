@@ -5,14 +5,22 @@
 # - "aesthetics" contain all ploting parameters 
 #   passed to the ploting methods in postmodeling.
 #
-
-  audited_models: [19, 43, 55]
+  path: '../../../../../../triage_output/output'
+  audited_models: 
+        - 19 
+        - 43
+        - 55
 
   metric: 'precision@'
   parameter: '50_abs'
   max_depth: 5
   top_n: 50
-  feature_groups: []
+  n_features: 10
+  feature_groups: 
+        - 'entity_id' 
+        - 'zip_code' 
+        - 'facility_type'
 
   figsize: (12,12)
+  fontsize: 20
       

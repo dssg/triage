@@ -9,22 +9,23 @@ project, or other postmodeling approaches.
 To run most of this routines you will need:
     - S3 credentials (if used) or specify the path to both feature and
     prediction matrices.
-    - Working database db_engine.
+    - Working database conn.
 """
 
 import pandas as pd
 import numpy as np
 import yaml
+import boto
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
+from descriptors import cachedproperty
 from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
 import graphviz
 
-from utils.file_helpers import download_s3
-from utils.test_conn import db_engine
-from utils.aux_funcs import recombine_categorical
+from utils.aux_funcs import * 
+
 
 # Get indivual model information/metadata from Audition output
 
@@ -76,7 +77,7 @@ class ModelEvaluator(object):
         SELECT metadata.*, test.*
         FROM individual_model_ids_metadata AS metadata
         LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);''', con=db_engine)
+        USING(model_id);''', con=conn)
 
         # Add metadata attributes to model
         self.model_type = model_metadata.loc[0, 'model_type']
@@ -85,11 +86,6 @@ class ModelEvaluator(object):
         self.train_matrix_uuid = model_metadata.loc[0, 'train_matrix_uuid']
         self.pred_matrix_uuid = model_metadata.loc[0, 'matrix_uuid']
         self.train_end_time = model_metadata.loc[0, 'train_end_time']
-        self.train_matrix = None
-        self.pred_matrix = None
-        self.preds = None
-        self.feature_importances = None
-        self.model_metrics = None
 
     def __repr__(self):
         return (
@@ -102,7 +98,8 @@ class ModelEvaluator(object):
                                         {self.pred_matrix_uuid}]'''
         )
 
-    def _load_predictions(self):
+    @cachedproperty
+    def predictions(self):
         preds = pd.read_sql(
             f'''
             SELECT model_id,
@@ -116,11 +113,12 @@ class ModelEvaluator(object):
             FROM test_results.predictions
             WHERE model_id = {self.model_id}
             AND label_value IS NOT NULL
-            ''', con=db_engine)
+            ''', con=conn)
 
-        self.preds = preds
+        return preds
 
-    def _load_feature_importances(self):
+    @cachedproperty
+    def feature_importances(self):
         features = pd.read_sql(
             f'''
             SELECT model_id,
@@ -129,47 +127,29 @@ class ModelEvaluator(object):
                    rank_abs
             FROM train_results.feature_importances
             WHERE model_id = {self.model_id}
-            ''', con=db_engine)
+            ''', con=conn)
+        return features
 
-        self.feature_importances = features
-
-    def _load_metrics(self):
+    @cachedproperty
+    def metrics(self):
         model_metrics = pd.read_sql(
             f'''
             SELECT model_id,
                    metric,
-                   metric_parameter,
+                   parameter,
                    value,
                    num_labeled_examples,
-                   num_labeled_above_treshold,
+                   num_labeled_above_threshold,
                    num_positive_labels
-            FROM test_results.evaluation
+            FROM test_results.evaluations
             WHERE model_id = {self.model_id}
-            ''', con=db_engine)
+            ''', con=conn)
+        return model_metrics
 
-        self.model_metrics = model_metrics
-
-    def _fetch_matrix(self, matrix_hash, path):
-        '''
-        Load matrices into object (Beware!)
-        This can be a memory intensive process. This function will use the
-        stored model parameters to load matrices from a .csv file. If the path
-        is a s3 path, the method will use s3fs to open it. If the path is a local
-        machine path, it will be opened as a pandas dataframe.
-
-        Arguments:
-            - PATH <s3 path or local path>
-        '''
-        if 's3' in path:
-            mat = download_s3(str(path + self.train_matrix_uuid))
-        else:
-            mat = pd.read_csv(str(path + self.train_matrix_uuid + '.csv'))
-
-        return(mat)
-
-    def load_features_preds_matrix(self, 
-                                   top_n=None, 
-                                   *path):
+    @cachedproperty
+    def preds_matrix(self,
+                     path,
+                     top_n=None):
         '''
         Load predicion matrix (from s3 or system file) and merge with
         label values from the test_results.predictions tables. The outcome
@@ -177,42 +157,49 @@ class ModelEvaluator(object):
         label, scores, and the feature matrix. This last object will be store
         as the pred_matrix attribute of the class.
 
+        For using s3 you have to define a bucket name and a path inside that
+        bucket to allow boto3 to retrieve the file and read it without having
+        to copy into memory (pandas will read it)
+
         Arguments:
             - top_n: Only retrieve predicitions for the top_n observations
             based in score
             - Arguments inherited from _fetch_matrices: 
                 - path: relative path to the triage matrices folder or s3 path
         '''
+        if 's3' in path:
+            fs = s3fs.S3FileSystem()
+            try:
+                with fs.open(path) as s3_file:
+                    mat = pd.read_csv(s3_file)
+            except FileNotFoundError:
+                print('No file in Bucket')
 
-        if self.train_matrix is None:
-            mat = self._fetch_matrix(self.pred_matrix_uuid, *path)
-
-        if self.preds is None:
-            self._load_predictions()
+        else:
+            mat = pd.read_csv(path)
 
         if top_n is None: 
             # Merge feature/prediction matrix with predictions
-            merged_df = mat.merge(self.preds,
+            merged_df = mat.merge(self.predictions,
                                   on='entity_id',
                                   how='inner',
                                   suffixes=('test', 'pred'))
-
-            self.pred_matrix = merged_df
+            return merged_df
 
         else:
             # Filter predictions to the top_n entities
-            self.preds['above_tresh'] = np.where(self.preds['rank_abs'] <=
+            self.predictions['above_tresh'] = np.where(self.preds['rank_abs'] <=
                                                    top_n, 1, 0)
 
             # Merge features with top_n predicted scores
-            merged_df = mat.merge(self.preds,
+            merged_df = mat.merge(self.predictions,
                                 on='entity_id',
                                 how='inner',
                                 suffixes=('test','pred'))
-            self.pred_matrix = merged_df
+            return merged_df
 
-
-    def load_train_matrix(self, *path):
+    @cachedproperty
+    def train_matrix(self, *path):
         '''
         Load training metrix (from s3 or system file). This object will be store 
         as the train_matrix object of the class.
@@ -221,8 +208,55 @@ class ModelEvaluator(object):
             - Arguments inherited from _fecth_matrices:
                 - path: relative path to the triage matrices folder or s3 path
         '''
-        if self.train_matrix is None:
-            self.train_matrix = self._fetch_matrix(self.train_matrix_uuid, *path)
+        if 's3' in path:
+            fs = s3fs.S3FileSystem()
+            try:
+                with fs.open(path) as s3_file:
+                    mat = pd.read_csv(s3_file)
+            except FileNotFoundError:
+                print('No file in Bucket')
+
+        else:
+            mat = pd.read_csv(path)
+
+        return mat
+
+    def plot_score_distribution(self,
+                               save_file=False,
+                               name_file=None,
+                               figsize=(16,12),
+                               fontsize=20):
+        '''
+        Generate an histograms with the raw distribution of the predicted
+        scores for all entities. 
+            - Arguments:
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - label_names(tuple): define custom label names for class.
+                - figsize (tuple): specify size of plot. 
+                - fontsize (int): define custom fontsize. 20 is set by default.
+ 
+        '''
+
+        df_preds = self.preds.filter(items=['score']) 
+
+        fig, ax = plt.subplots(1, figsize=figsize)
+        plt.hist(df_preds.score,
+                 bins=20,
+                 normed=True,
+                 alpha=0.5,
+                 color='blue')
+        plt.axvline(df_preds.score.mean(),
+                    color='black',
+                    linestyle='dashed')
+        ax.set_ylabel('Frequency', fontsize=fontsize)
+        ax.set_xlabel('Score', fontsize=fontsize)
+        plt.title('Score Distribution', y =1.2, 
+                  fontsize=fontsize)
+        plt.show()
+
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
 
     def plot_score_label_distributions(self, 
                                        save_file=False, 
@@ -271,9 +305,9 @@ class ModelEvaluator(object):
                    ncol=2,
                    borderaxespad=0.,
                    fontsize=fontsize-2)
-        ax.set_xlabel('Frequency', fontsize=fontsize)
-        ax.set_ylabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution across Predicted Labels', y =1.2, 
+        ax.set_ylabel('Frequency', fontsize=fontsize)
+        ax.set_xlabel('Score', fontsize=fontsize)
+        plt.title('Score Distribution across Labels', y =1.2, 
                   fontsize=fontsize)
         plt.show()
 
@@ -289,7 +323,7 @@ class ModelEvaluator(object):
         Arguments:
         - n_features (int): number of top features to plot
         - figsize (tuple): figure size to pass to matplotlib
-        - fontsize (int): define custom fontsize for labels and legends. 20 is default.
+        - fontsize (int): define custom fontsize for labels and legends.
         '''
 
         if self.feature_importances is None:
@@ -314,6 +348,26 @@ class ModelEvaluator(object):
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
         plt.title('Top {} Feature Importances'.format(n_features), fontsize=fontsize).set_position([.5, 0.99])
+
+    def plot_feature_importances_std_err(self,
+                                         n_features=30,
+                                         figsize=(16,21),
+                                         fontsize=20,
+                                         *path):
+        '''
+        Generate a bar chart of the top n features importances showing the
+        error bars.
+        Arguments:
+            - n_features (int): number of top features to plot.
+            - figsize (tuple): figuresize to pass to matplotlib.
+            - fontsize (int): define a custom fontsize for labels and legends.
+            - *path: path to retrieve model pickle
+        '''
+        
+        if self.feature_importances is None:
+            self._load_feature_importances()
+    
+        
 
     def compute_AUC(self):
         '''
