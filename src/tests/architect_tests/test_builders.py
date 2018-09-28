@@ -15,6 +15,7 @@ from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import ProjectStorage, HDFMatrixStore
+from triage.component.results_schema.schema import Matrix
 
 from .utils import (
     create_schemas,
@@ -22,6 +23,9 @@ from .utils import (
     convert_string_column_to_date,
     TemporaryDirectory,
 )
+
+from tests.utils import matrix_metadata_creator
+
 
 # make some fake features data
 
@@ -838,7 +842,7 @@ class TestBuildMatrix(TestCase):
                         matrix_type='test'
                     )
 
-    def test_replace(self):
+    def test_replace_false_rerun(self):
         with testing.postgresql.Postgresql() as postgresql:
             # create an engine and generate a table with fake feature data
             engine = create_engine(postgresql.url())
@@ -900,3 +904,55 @@ class TestBuildMatrix(TestCase):
                     matrix_type='test'
                 )
                 assert not builder.make_entity_date_table.called
+
+    def test_replace_true_rerun(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            # create an engine and generate a table with fake feature data
+            engine = create_engine(postgresql.url())
+            ensure_db(engine)
+            create_schemas(
+                engine=engine,
+                features_tables=features_tables,
+                labels=labels,
+                states=states
+            )
+            matrix_metadata = matrix_metadata_creator(
+                state='state_one and state_two',
+                test_duration='1month'
+            )
+
+            dates = [datetime.datetime(2016, 1, 1, 0, 0),
+                     datetime.datetime(2016, 2, 1, 0, 0),
+                     datetime.datetime(2016, 3, 1, 0, 0)]
+
+            feature_dictionary = {
+                'features0': ['f1', 'f2'],
+                'features1': ['f3', 'f4'],
+            }
+            uuid = metta.generate_uuid(matrix_metadata)
+            build_args = dict(
+                as_of_times=dates,
+                label_name='booking',
+                label_type='binary',
+                feature_dictionary=feature_dictionary,
+                matrix_metadata=matrix_metadata,
+                matrix_uuid=uuid,
+                matrix_type='test'
+            )
+
+            with get_matrix_storage_engine() as matrix_storage_engine:
+                builder = MatrixBuilder(
+                    db_config=db_config,
+                    matrix_storage_engine=matrix_storage_engine,
+                    engine=engine,
+                    replace=True
+                )
+
+                builder.build_matrix(**build_args)
+
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert builder.sessionmaker().query(Matrix).get(uuid)
+                # rerun
+                builder.build_matrix(**build_args)
+                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert builder.sessionmaker().query(Matrix).get(uuid)

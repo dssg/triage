@@ -324,7 +324,7 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str)
         )
         session = self.sessionmaker()
-        session.add(matrix)
+        session.merge(matrix)
         session.commit()
         session.close()
 
