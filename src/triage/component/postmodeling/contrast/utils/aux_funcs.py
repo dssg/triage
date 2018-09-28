@@ -100,4 +100,7 @@ def recombine_categorical(df_dest, df_source, prefix, suffix='', entity_col='ent
 
         return (df_dest, cat_col)
 
+if __name__ == "utils.aux_funcs":
+    conn = create_pgconn('db_credentials.yaml')
+
 

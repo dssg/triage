@@ -16,13 +16,16 @@ import pandas as pd
 import numpy as np
 import yaml
 import s3fs
+import pickle
+import graphviz
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from descriptors import cachedproperty
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
 from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
-import graphviz
 
 from utils.aux_funcs import *
 
@@ -203,10 +206,10 @@ class ModelEvaluator(object):
                                 suffixes=('test','pred'))
 
         cache[path, top_n] = merged_df
-        return merged_df
+        self.preds_matrix = merged_df
+        #return merged_df
 
 
-    @cachedproperty
     def train_matrix(self, *path):
         '''
         Load training metrix (from s3 or system file). This object will be store 
@@ -216,18 +219,26 @@ class ModelEvaluator(object):
             - Arguments inherited from _fecth_matrices:
                 - path: relative path to the triage matrices folder or s3 path
         '''
-        if 's3' in path:
-            fs = s3fs.S3FileSystem()
-            try:
-                with fs.open(path) as s3_file:
-                    mat = pd.read_csv(s3_file)
-            except FileNotFoundError:
-                print('No file in Bucket')
+        cache = self.__dict__.setdefault('_preds_matrix_cache', {})
+        try:
+            return cache[path, top_n]
+        except KeyError:
+            pass
+
+        matrix_path = path + self.train_matrix + '.csv'
+        if 's3' in matrix_path:
+                fs = s3fs.S3FileSystem()
+                try:
+                    with fs.open(path) as s3_file:
+                        mat = pd.read_csv(s3_file)
+                except FileNotFoundError:
+                    print('No file in Bucket')
 
         else:
-            mat = pd.read_csv(path)
+            mat = pd.read_csv(matrix_path)
 
-        return mat
+        cache[path, top_n] = mat
+        self.train_matrix  = mat 
 
     def plot_score_distribution(self,
                                save_file=False,
@@ -366,6 +377,12 @@ class ModelEvaluator(object):
             - fontsize (int): define a custom fontsize for labels and legends.
             - *path: path to retrieve model pickle
         '''
+        model_path = path + self.model_hash
+        with open(model_path) as m:
+            model = joblib.load(m)
+
+    # Load feature importances and calculate errors
+
 
     def compute_AUC(self):
         '''

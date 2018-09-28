@@ -9,7 +9,7 @@ project, or other postmodeling approaches.
 To run most of this routines you will need:
     - S3 credentials (if used) or specify the path to both feature and
     prediction matrices.
-    - Working database db_engine.
+    - Working database conn.
 """
 
 import pandas as pd
@@ -22,9 +22,8 @@ from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
 import seaborn as sns
 
-from utils.file_helpers import download_s3
-from utils.test_conn import db_engine
-from utils.aux_funcs import recombine_categorical
+
+from utils.aux_funcs import * 
 
 # Get indivual model information/metadata from Audition output
 
@@ -40,6 +39,8 @@ class ModelGroupEvaluator(object):
     '''
     def __init__(self, model_group_id):
         self.model_group_id = model_group_id
+
+        conn = create_pgconn('db_credentials.yaml')
 
         # Retrive model_id metadata from the model_metadata schema
         model_metadata = pd.read_sql("""
@@ -84,7 +85,7 @@ class ModelGroupEvaluator(object):
         LEFT JOIN individual_model_id_matrices AS test
         USING(model_id);
         """.format(self.model_group_id),
-                   con=db_engine).to_dict('list')
+                   con=conn).to_dict('list')
 
         # Add metadata attributes to model
         self.model_id = model_metadata['model_id']
@@ -124,7 +125,7 @@ class ModelGroupEvaluator(object):
                 WHERE model_id IN {}
                 AND label_value IS NOT NULL
                 """.format(tuple(self.model_id)),
-                con=db_engine)
+                con=conn)
         self.preds = preds
 
     def _load_feature_importances(self):
@@ -136,7 +137,7 @@ class ModelGroupEvaluator(object):
                FROM train_results.feature_importances 
                WHERE model_id IN {}
                """.format(tuple(self.model_id)),
-               con=db_engine)
+               con=conn)
         self.feature_importances = features
 
     def _load_metrics(self):
@@ -151,7 +152,7 @@ class ModelGroupEvaluator(object):
                 FROM test_results.evaluations
                 WHERE model_id IN {}
                 """.format(tuple(self.model_id)),
-                con=db_engine)
+                con=conn)
         self.model_metrics = model_metrics
 
     def _rank_corr_df(self,
