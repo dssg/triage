@@ -207,7 +207,6 @@ class ModelEvaluator(object):
 
         cache[path, top_n] = merged_df
         self.preds_matrix = merged_df
-        #return merged_df
 
 
     def train_matrix(self, *path):
