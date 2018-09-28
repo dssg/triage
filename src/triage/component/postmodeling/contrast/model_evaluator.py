@@ -15,7 +15,7 @@ To run most of this routines you will need:
 import pandas as pd
 import numpy as np
 import yaml
-import boto
+import s3fs
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from descriptors import cachedproperty
@@ -24,7 +24,7 @@ from sklearn import tree
 from collections import namedtuple
 import graphviz
 
-from utils.aux_funcs import * 
+from utils.aux_funcs import *
 
 
 # Get indivual model information/metadata from Audition output
@@ -35,10 +35,10 @@ class ModelEvaluator(object):
     ModelExtractor class calls the model metadata from the database
     and hold model_id metadata features on each of the class attibutes.
     This class will contain any information about the model, and will be
-    used to make comparisons and calculations across models. 
+    used to make comparisons and calculations across models.
 
     A pair of (model_group_id, model_id) is needed to instate the class. These
-    can be feeded from the get models_ids. 
+    can be feeded from the get models_ids.
     '''
     def __init__(self, model_group_id, model_id):
         self.model_id = model_id
@@ -146,13 +146,12 @@ class ModelEvaluator(object):
             ''', con=conn)
         return model_metrics
 
-    @cachedproperty
     def preds_matrix(self,
                      path,
                      top_n=None):
         '''
         Load predicion matrix (from s3 or system file) and merge with
-        label values from the test_results.predictions tables. The outcome
+        label values from the test_results. tables. The outcome
         is a pandas dataframe with a matrix for each entity_id, its predicted
         label, scores, and the feature matrix. This last object will be store
         as the pred_matrix attribute of the class.
@@ -167,28 +166,34 @@ class ModelEvaluator(object):
             - Arguments inherited from _fetch_matrices: 
                 - path: relative path to the triage matrices folder or s3 path
         '''
-        if 's3' in path:
+        cache = self.__dict__.setdefault('_preds_matrix_cache', {})
+        try:
+            return cache[path, top_n]
+        except KeyError:
+            pass
+
+        matrix_path = path + self.pred_matrix_uuid + '.csv'
+        if 's3' in matrix_path:
             fs = s3fs.S3FileSystem()
             try:
-                with fs.open(path) as s3_file:
+                with fs.open(matrix_path) as s3_file:
                     mat = pd.read_csv(s3_file)
             except FileNotFoundError:
                 print('No file in Bucket')
 
         else:
-            mat = pd.read_csv(path)
+            mat = pd.read_csv(matrix_path)
 
         if top_n is None: 
-            # Merge feature/prediction matrix with predictions
+            # Merge feature/prediction matrix with 
             merged_df = mat.merge(self.predictions,
                                   on='entity_id',
                                   how='inner',
                                   suffixes=('test', 'pred'))
-            return merged_df
 
         else:
-            # Filter predictions to the top_n entities
-            self.predictions['above_tresh'] = np.where(self.preds['rank_abs'] <=
+            # Filter  to the top_n entities
+            self.predictions['above_tresh'] = np.where(self.predictions['rank_abs'] <=
                                                    top_n, 1, 0)
 
             # Merge features with top_n predicted scores
@@ -196,7 +201,10 @@ class ModelEvaluator(object):
                                 on='entity_id',
                                 how='inner',
                                 suffixes=('test','pred'))
-            return merged_df
+
+        cache[path, top_n] = merged_df
+        return merged_df
+
 
     @cachedproperty
     def train_matrix(self, *path):
@@ -238,15 +246,15 @@ class ModelEvaluator(object):
  
         '''
 
-        df_preds = self.preds.filter(items=['score']) 
+        df_ = self.predictions.filter(items=['score']) 
 
         fig, ax = plt.subplots(1, figsize=figsize)
-        plt.hist(df_preds.score,
+        plt.hist(df_.score,
                  bins=20,
                  normed=True,
                  alpha=0.5,
                  color='blue')
-        plt.axvline(df_preds.score.mean(),
+        plt.axvline(df_.score.mean(),
                     color='black',
                     linestyle='dashed')
         ax.set_ylabel('Frequency', fontsize=fontsize)
@@ -274,30 +282,28 @@ class ModelEvaluator(object):
                 - figsize (tuple): specify size of plot. 
                 - fontsize (int): define custom fontsize. 20 is set by default.
         '''
-        if self.preds is None:
-            self._load_predictions()
 
-        df_preds = self.preds.filter(items=['score', 'label_value'])
-        df_preds_0 = df_preds[df_preds.label_value == 0]
-        df_preds_1 = df_preds[df_preds.label_value == 1]
+        df_predictions = self.predictions.filter(items=['score', 'label_value'])
+        df__0 = df_predictions[df_predictions.label_value == 0]
+        df__1 = df_predictions[df_predictions.label_value == 1]
 
         fig, ax = plt.subplots(1, figsize=figsize)
-        plt.hist(df_preds_0.score,
+        plt.hist(df__0.score,
                  bins=20,
                  normed=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
-        plt.hist(list(df_preds_1.score),
+        plt.hist(list(df__1.score),
                  bins=20,
                  normed=True,
                  alpha=0.5,
                  color='orange',
                  label=label_names[1])
-        plt.axvline(df_preds_0.score.mean(),
+        plt.axvline(df__0.score.mean(),
                     color='skyblue',
                     linestyle='dashed')
-        plt.axvline(df_preds_1.score.mean(),
+        plt.axvline(df__1.score.mean(),
                     color='orange',
                     linestyle='dashed')
         plt.legend(bbox_to_anchor=(0., 1.005, 1., .102),
@@ -325,9 +331,6 @@ class ModelEvaluator(object):
         - figsize (tuple): figure size to pass to matplotlib
         - fontsize (int): define custom fontsize for labels and legends.
         '''
-
-        if self.feature_importances is None:
-            self._load_feature_importances()
 
         importances = self.feature_importances.filter(items=['feature', 'feature_importance'])
         importances = importances.set_index('feature')
@@ -363,11 +366,6 @@ class ModelEvaluator(object):
             - fontsize (int): define a custom fontsize for labels and legends.
             - *path: path to retrieve model pickle
         '''
-        
-        if self.feature_importances is None:
-            self._load_feature_importances()
-    
-        
 
     def compute_AUC(self):
         '''
@@ -376,13 +374,10 @@ class ModelEvaluator(object):
             - (false positive rate, true positive rate, thresholds, AUC)
         '''
 
-        if self.preds is None:
-            self._load_predictions()
-
-        label_preds = self.preds.label_value
-        score_preds = self.preds.score
+        label_ = self.predictions.label_value
+        score_ = self.predictions.score
         fpr, tpr, thresholds = metrics.roc_curve(
-            label_preds, score_preds, pos_label=1)
+            label_, score_predictions, pos_label=1)
 
         return (fpr, tpr, thresholds, metrics.auc(fpr, tpr))
 
@@ -396,9 +391,6 @@ class ModelEvaluator(object):
             - figsize (tuple): figure size to pass to matplotlib
             - fontsize (int): fontsize for title. Default is 20.
         '''
-
-        if self.preds is None:
-            self._load_predictions()
 
         fpr, tpr, thresholds, auc = self.compute_AUC()
         auc = "%.2f" % auc
@@ -426,10 +418,8 @@ class ModelEvaluator(object):
             - fontsize (int): define a custom font size to labels and axes 
         '''
 
-        if self.preds is None:
-            self._load_predictions()
 
-        preds_labels = self.preds.filter(items=['label_value', 'score'])
+        _labels = self.predictions.filter(items=['label_value', 'score'])
 
         # since tpr and recall are different names for the same metric, we can just
         # grab fpr and tpr from the sklearn function for ROC
@@ -437,9 +427,9 @@ class ModelEvaluator(object):
 
         # turn the thresholds into percent of the list traversed from top to bottom
         pct_above_per_thresh = []
-        num_scored = float(len(preds_labels.score))
+        num_scored = float(len(_labels.score))
         for value in thresholds:
-            num_above_thresh = len(preds_labels.loc[preds_labels.score >= value, 'score'])
+            num_above_thresh = len(_labels.loc[predictions_labels.score >= value, 'score'])
             pct_above_thresh = num_above_thresh / num_scored
             pct_above_per_thresh.append(pct_above_thresh)
         pct_above_per_thresh = np.array(pct_above_per_thresh)
@@ -448,8 +438,8 @@ class ModelEvaluator(object):
         # given the proportion of positive labels
         plt.clf()
         fig, ax1 = plt.subplots(figsize=figsize)
-        ax1.plot([preds_labels.label_value.mean(), 1], [0, 1], '--', color='gray')
-        ax1.plot([0, preds_labels.label_value.mean()], [0, 0], '--', color='gray')
+        ax1.plot([_labels.label_value.mean(), 1], [0, 1], '--', color='gray')
+        ax1.plot([0, _labels.label_value.mean()], [0, 0], '--', color='gray')
         ax1.plot(pct_above_per_thresh, fpr, "#000099")
         plt.title('Deconstructed ROC Curve\nRecall and FPR vs. Depth',fontsize=fontsize)
         ax1.set_xlabel('Proportion of Population', fontsize=fontsize)
@@ -462,14 +452,12 @@ class ModelEvaluator(object):
         """Plot recall and precision curves against depth into the list.
         """
 
-        if self.preds is None:
-            self._load_predictions()
 
-        preds_labels = self.preds.filter(items=['label_value', 'score'])
+        _labels = self.predictions.filter(items=['label_value', 'score'])
 
-        y_score = preds_labels.score
+        y_score = _labels.score
         precision_curve, recall_curve, pr_thresholds = \
-            metrics.precision_recall_curve(preds_labels.label_value, y_score)
+            metrics.precision_recall_curve(_labels.label_value, y_score)
 
         precision_curve = precision_curve[:-1]
         recall_curve = recall_curve[:-1]
@@ -521,7 +509,7 @@ class ModelEvaluator(object):
         '''
 
         if self.pred_matrix is None:
-            self.load_features_preds_matrix(top_n, *path)
+            self.load_features__matrix(top_n, *path)
 
         # Calculate residuals/errors
         self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
@@ -594,7 +582,7 @@ class ModelEvaluator(object):
         '''
 
         if self.pred_matrix is None:
-            self.load_features_preds_matrix(*path)
+            self.load_features__matrix(*path)
 
         # sort and select columns we'll need
         if feature_type in ['continuous', 'boolean']:

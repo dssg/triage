@@ -5,7 +5,7 @@
 # - "aesthetics" contain all ploting parameters 
 #   passed to the ploting methods in postmodeling.
 #
-  path: '../../../../../../triage_output/output'
+  path: '../../../../../../triage_output/output/matrices/'
   audited_models: 
         - 19 
         - 43
