@@ -9,7 +9,7 @@ tables==3.3.0 # pyup: ignore
 matplotlib<2.2 # pyup: ignore
 pandas==0.23.4
 boto3<1.8 # pyup: ignore
-click==6.7
+click==7.0
 inflection==0.3.1
 numpy>=1.12
 sqlalchemy-postgres-copy==0.5.0
