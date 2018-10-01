@@ -4,7 +4,7 @@ PyYAML==3.13
 psycopg2==2.7.5
 python-dateutil==2.7.3
 scipy==1.1.0
-scikit-learn==0.19.2
+scikit-learn==0.20.0
 tables==3.3.0 # pyup: ignore
 matplotlib<2.2 # pyup: ignore
 pandas==0.23.4
