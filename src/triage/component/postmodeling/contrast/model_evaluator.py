@@ -558,6 +558,110 @@ class ModelEvaluator(object):
         plot_tree = graphviz.Source(tree_viz)
         return(plot_tree)
 
+    def error_trees(self,
+                    top_n=None,
+                    max_depth=5,
+                    *path):
+        '''
+        Explore the underlying causes of errors using decision trees to explain the
+        residuals base on the same feature space used in the model. This
+        exploration will get the most relevant features that determine y - y_hat
+        distance and may help to understand the outomes of some models. 
+
+        Arguments:
+            - top_n: size of the list to label predicted values.abs
+            - *path: path local/s3 where the matrix are stored. More information in
+            the load_features_preds_matrix method. 
+           - *args: other arguments passed to sklearn.treee
+        '''
+
+        if self.pred_matrix is None:
+            self.load_features__matrix(top_n, *path)
+
+        # Calculate residuals/errors
+        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
+
+        # Define feature space to model: get the list of feature names
+        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
+        feature_names_vector = list(test_matrix.columns.values)
+
+        # Build error matrix and label vector
+        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
+                                                                         1])]
+        labels =  error_matrix.error
+        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
+
+        # Remove matrix (we can change that by only reading the first line of
+        # the .csv, that's a todo).
+        del(test_matrix)
+
+        # Model the decision trees
+        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = error_classifier.fit(error_matrix, 
+                                                labels)
+
+        # Plot tree and export
+        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
+                                       feature_names=error_matrix.columns.values,
+                                       filled=True,
+                                       rounded=True,
+                                       special_characters=True)
+        plot_tree = graphviz.Source(tree_viz)
+        return(plot_tree)
+
+    def error_trees(self,
+                    top_n=None,
+                    max_depth=5,
+                    *path):
+        '''
+        Explore the underlying causes of errors using decision trees to explain the
+        residuals base on the same feature space used in the model. This
+        exploration will get the most relevant features that determine y - y_hat
+        distance and may help to understand the outomes of some models. 
+
+        Arguments:
+            - top_n: size of the list to label predicted values.abs
+            - *path: path local/s3 where the matrix are stored. More information in
+            the load_features_preds_matrix method. 
+           - *args: other arguments passed to sklearn.treee
+        '''
+
+        if self.pred_matrix is None:
+            self.load_features__matrix(top_n, *path)
+
+        # Calculate residuals/errors
+        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
+
+        # Define feature space to model: get the list of feature names
+        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
+        feature_names_vector = list(test_matrix.columns.values)
+
+        # Build error matrix and label vector
+        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
+                                                                         1])]
+        labels =  error_matrix.error
+        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
+
+        # Remove matrix (we can change that by only reading the first line of
+        # the .csv, that's a todo).
+        del(test_matrix)
+
+        # Model the decision trees
+        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = error_classifier.fit(error_matrix, 
+                                                labels)
+
+        # Plot tree and export
+        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
+                                       feature_names=error_matrix.columns.values,
+                                       filled=True,
+                                       rounded=True,
+                                       special_characters=True)
+        plot_tree = graphviz.Source(tree_viz)
+        return(plot_tree)
+
+
+
     def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
                            score_col='score', 
                            entity_col='entity_id',
