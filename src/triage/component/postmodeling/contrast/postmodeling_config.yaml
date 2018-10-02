@@ -6,21 +6,22 @@
 #   passed to the ploting methods in postmodeling.
 #
   path: '../../../../../../triage_output/output/matrices/'
-  audited_models: 
+  model_group_id: 
         - 19 
         - 43
         - 55
 
-  metric: 'precision@'
-  parameter: '50_abs'
-  max_depth: 5
-  top_n: 50
-  n_features: 10
+  thresholds: 
+        rank_abs: [10, 20, 50]
+        rank_pct: []
+        
+  max_depth_error_tree: 5
+  n_features_plots: 10
   feature_groups: 
         - 'entity_id' 
         - 'zip_code' 
         - 'facility_type'
 
-  figsize: (12,12)
+  figsize: [12,12]
   fontsize: 20
       

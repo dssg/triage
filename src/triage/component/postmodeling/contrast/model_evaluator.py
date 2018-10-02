@@ -26,7 +26,7 @@ from sklearn.externals import joblib
 from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
-
+from triage.component.catwalk.storage import ProjectStorage, MatrixStore
 from utils.aux_funcs import *
 
 
@@ -148,6 +148,23 @@ class ModelEvaluator(object):
             WHERE model_id = {self.model_id}
             ''', con=conn)
         return model_metrics
+
+    @cachedproperty
+    def crosstabs(self):
+        model_crosstabs = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   as_of_date,
+                   metric,
+                   feature_column,
+                   value,
+                   threshold_unit,
+                   threshold_value
+            FROM test_results.crosstabs_test
+            WHERE model_id = {self.model_id}
+            ''', con=conn)
+
+        return model_crosstabs
 
     def preds_matrix(self,
                      path,
@@ -331,13 +348,13 @@ class ModelEvaluator(object):
             plt.savefig(str(name_file + '.png'))
 
     def plot_feature_importances(self,
-                                 n_features=30,
+                                 n_features_plots=30,
                                  figsize=(16, 12),
                                  fontsize=20):
         '''
         Generate a bar chart of the top n feature importances (by absolute value)
         Arguments:
-        - n_features (int): number of top features to plot
+        - n_features_plots (int): number of top features to plot
         - figsize (tuple): figure size to pass to matplotlib
         - fontsize (int): define custom fontsize for labels and legends.
         '''
@@ -348,7 +365,7 @@ class ModelEvaluator(object):
         # Sort by the absolute value of the importance of the feature
         importances['sort'] = abs(importances['feature_importance'])
         importances = importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
-        importances = importances[0:n_features]
+        importances = importances[0:n_features_plots]
 
         # Show the most important positive feature at the top of the graph
         importances = importances.sort_values(by='feature_importance', ascending=True)
@@ -360,10 +377,10 @@ class ModelEvaluator(object):
         ax.set_xlabel('Score', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
-        plt.title('Top {} Feature Importances'.format(n_features), fontsize=fontsize).set_position([.5, 0.99])
+        plt.title('Top {} Feature Importances'.format(n_features_plots), fontsize=fontsize).set_position([.5, 0.99])
 
     def plot_feature_importances_std_err(self,
-                                         n_features=30,
+                                         n_features_plots=30,
                                          figsize=(16,21),
                                          fontsize=20,
                                          *path):
@@ -371,7 +388,7 @@ class ModelEvaluator(object):
         Generate a bar chart of the top n features importances showing the
         error bars.
         Arguments:
-            - n_features (int): number of top features to plot.
+            - n_features_plots (int): number of top features to plot.
             - figsize (tuple): figuresize to pass to matplotlib.
             - fontsize (int): define a custom fontsize for labels and legends.
             - *path: path to retrieve model pickle
@@ -393,7 +410,7 @@ class ModelEvaluator(object):
         label_ = self.predictions.label_value
         score_ = self.predictions.score
         fpr, tpr, thresholds = metrics.roc_curve(
-            label_, score_predictions, pos_label=1)
+            label_, score_, pos_label=1)
 
         return (fpr, tpr, thresholds, metrics.auc(fpr, tpr))
 
@@ -445,7 +462,7 @@ class ModelEvaluator(object):
         pct_above_per_thresh = []
         num_scored = float(len(_labels.score))
         for value in thresholds:
-            num_above_thresh = len(_labels.loc[predictions_labels.score >= value, 'score'])
+            num_above_thresh = len(_labels.loc[_labels.score >= value, 'score'])
             pct_above_thresh = num_above_thresh / num_scored
             pct_above_per_thresh.append(pct_above_thresh)
         pct_above_per_thresh = np.array(pct_above_per_thresh)
@@ -465,7 +482,8 @@ class ModelEvaluator(object):
     def plot_precision_recall_n(self,
                                 figsize=(16, 12),
                                 fontsize=20):
-        """Plot recall and precision curves against depth into the list.
+        """
+        Plot recall and precision curves against depth into the list.
         """
 
 
@@ -509,7 +527,7 @@ class ModelEvaluator(object):
     
     def error_trees(self,
                     top_n=None,
-                    max_depth=5,
+                    max_depth_error_tree=5,
                     *path):
         '''
         Explore the underlying causes of errors using decision trees to explain the
@@ -545,7 +563,7 @@ class ModelEvaluator(object):
         del(test_matrix)
 
         # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
         error_classifier = error_classifier.fit(error_matrix, 
                                                 labels)
 
@@ -558,9 +576,9 @@ class ModelEvaluator(object):
         plot_tree = graphviz.Source(tree_viz)
         return(plot_tree)
 
-    def error_trees(self,
+    def error_trees_fpr(self,
                     top_n=None,
-                    max_depth=5,
+                    max_depth_error_tree=5,
                     *path):
         '''
         Explore the underlying causes of errors using decision trees to explain the
@@ -596,7 +614,7 @@ class ModelEvaluator(object):
         del(test_matrix)
 
         # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
         error_classifier = error_classifier.fit(error_matrix, 
                                                 labels)
 
@@ -609,9 +627,9 @@ class ModelEvaluator(object):
         plot_tree = graphviz.Source(tree_viz)
         return(plot_tree)
 
-    def error_trees(self,
+    def error_trees_fnr(self,
                     top_n=None,
-                    max_depth=5,
+                    max_depth_error_tree=5,
                     *path):
         '''
         Explore the underlying causes of errors using decision trees to explain the
@@ -647,7 +665,7 @@ class ModelEvaluator(object):
         del(test_matrix)
 
         # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth=max_depth)
+        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
         error_classifier = error_classifier.fit(error_matrix, 
                                                 labels)
 
@@ -659,6 +677,13 @@ class ModelEvaluator(object):
                                        special_characters=True)
         plot_tree = graphviz.Source(tree_viz)
         return(plot_tree)
+
+    def crosstabs_ratio_plot(self, 
+                             n_features_plots=30):
+        crosstabs_ratio = self.crosstabs.loc[self.crosstabs.metric ==
+                                             'ratio_predicted_positive_over_predicted_negative', :]
+        crosstabs_ratio_subset = crosstabs_ratio.sort_values(by=['value'],
+                                                             ascending=False)[:n_features_plots]
 
 
 

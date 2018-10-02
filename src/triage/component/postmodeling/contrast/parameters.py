@@ -24,6 +24,6 @@ class PostmodelParameters(object):
         with open(path_params) as f:
             params = yaml.load(f)
         self.__dict__.update(params)
-        self.figsize = ast.literal_eval(self.figsize)
+        self.figsize = tuple(self.figsize)
 
 
