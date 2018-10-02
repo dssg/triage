@@ -9,7 +9,6 @@ file.abs
 """
 
 import yaml
-import ast
 
 class PostmodelParameters(object):
     '''

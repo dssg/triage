@@ -26,7 +26,7 @@ from sklearn.externals import joblib
 from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
-from triage.component.catwalk.storage import ProjectStorage, MatrixStore
+from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
 from utils.aux_funcs import *
 
 
@@ -165,96 +165,73 @@ class ModelEvaluator(object):
             ''', con=conn)
 
         return model_crosstabs
-
-    def preds_matrix(self,
-                     path,
-                     top_n=None):
+    
+    def preds_matrix(self, path):
         '''
-        Load predicion matrix (from s3 or system file) and merge with
-        label values from the test_results. tables. The outcome
-        is a pandas dataframe with a matrix for each entity_id, its predicted
-        label, scores, and the feature matrix. This last object will be store
-        as the pred_matrix attribute of the class.
+        Load predictions matrices using the catwalk.storage.ProjectStorage.
+        This class allow the user to define a project path that can be either a
+        system local path or an s3 path and it will handle itself this
+        different infrastructures. 
 
-        For using s3 you have to define a bucket name and a path inside that
-        bucket to allow boto3 to retrieve the file and read it without having
-        to copy into memory (pandas will read it)
+        Once defined, we can pass this object to the MatrixStorageEngine that
+        will read this object and return a MatrixSotre object with a set of
+        handy methods to handle matrices
 
         Arguments:
-            - top_n: Only retrieve predicitions for the top_n observations
-            based in score
-            - Arguments inherited from _fetch_matrices: 
-                - path: relative path to the triage matrices folder or s3 path
+            path: project path to initiate the ProjectStorage object
         '''
         cache = self.__dict__.setdefault('_preds_matrix_cache', {})
         try:
-            return cache[path, top_n]
+            return cache[path]
         except KeyError:
             pass
 
-        matrix_path = path + self.pred_matrix_uuid + '.csv'
-        if 's3' in matrix_path:
-            fs = s3fs.S3FileSystem()
-            try:
-                with fs.open(matrix_path) as s3_file:
-                    mat = pd.read_csv(s3_file)
-            except FileNotFoundError:
-                print('No file in Bucket')
+        storage = ProjectStorage(path)
+        matrix_storage = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
+        mat = matrix_storage.matrix
 
-        else:
-            mat = pd.read_csv(matrix_path)
+        # Merge with predictions table and return complete matrix
+        merged_df = mat.merge(self.predictions,
+                             on='entity_id',
+                             how='inner',
+                             suffixes=('test', 'pred'))
 
-        if top_n is None: 
-            # Merge feature/prediction matrix with 
-            merged_df = mat.merge(self.predictions,
-                                  on='entity_id',
-                                  how='inner',
-                                  suffixes=('test', 'pred'))
-
-        else:
-            # Filter  to the top_n entities
-            self.predictions['above_tresh'] = np.where(self.predictions['rank_abs'] <=
-                                                   top_n, 1, 0)
-
-            # Merge features with top_n predicted scores
-            merged_df = mat.merge(self.predictions,
-                                on='entity_id',
-                                how='inner',
-                                suffixes=('test','pred'))
-
-        cache[path, top_n] = merged_df
+        cache[path] = merged_df
         self.preds_matrix = merged_df
 
-
-    def train_matrix(self, *path):
+    def train_matrix(self, path):
         '''
-        Load training metrix (from s3 or system file). This object will be store 
-        as the train_matrix object of the class.
+        Load predictions matrices using the catwalk.storage.ProjectStorage.
+        This class allow the user to define a project path that can be either a
+        system local path or an s3 path and it will handle itself this
+        different infrastructures. 
+
+        Once defined, we can pass this object to the MatrixStorageEngine that
+        will read this object and return a MatrixSotre object with a set of
+        handy methods to handle matrices
 
         Arguments:
-            - Arguments inherited from _fecth_matrices:
-                - path: relative path to the triage matrices folder or s3 path
+            path: project path to initiate the ProjectStorage object
         '''
         cache = self.__dict__.setdefault('_preds_matrix_cache', {})
         try:
-            return cache[path, top_n]
+            return cache[path]
         except KeyError:
             pass
 
-        matrix_path = path + self.train_matrix + '.csv'
-        if 's3' in matrix_path:
-                fs = s3fs.S3FileSystem()
-                try:
-                    with fs.open(path) as s3_file:
-                        mat = pd.read_csv(s3_file)
-                except FileNotFoundError:
-                    print('No file in Bucket')
+        storage = ProjectStorage(path)
+        matrix_storage =
+        MatrixStorageEngine(storage).get_store(self.train_matrix_uuid)
+        mat = matrix_storage.matrix
 
-        else:
-            mat = pd.read_csv(matrix_path)
+        # Merge with predictions table and return complete matrix
+        merged_df = mat.merge(self.predictions,
+                             on='entity_id',
+                             how='inner',
+                             suffixes=('test', 'pred'))
 
-        cache[path, top_n] = mat
-        self.train_matrix  = mat 
+        cache[path] = mat
+        self.train_matrix = mat
 
     def plot_score_distribution(self,
                                save_file=False,
