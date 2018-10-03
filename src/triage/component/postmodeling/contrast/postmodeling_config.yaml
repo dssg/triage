@@ -5,7 +5,7 @@
 # - "aesthetics" contain all ploting parameters 
 #   passed to the ploting methods in postmodeling.
 #
-  path: '../../../../../../triage_output/output/'
+  project_path: '../../../../../../triage_output/output/'
   model_group_id: 
         - 19 
         - 43

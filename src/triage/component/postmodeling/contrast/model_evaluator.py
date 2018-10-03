@@ -196,7 +196,6 @@ class ModelEvaluator(object):
                              suffixes=('test', 'pred'))
 
         cache[path] = merged_df
-        self.preds_matrix = merged_df
 
     def train_matrix(self, path):
         '''
@@ -229,7 +228,6 @@ class ModelEvaluator(object):
                              suffixes=('test', 'pred'))
 
         cache[path] = mat
-        self.train_matrix = mat
 
     def plot_score_distribution(self,
                                save_file=False,
@@ -397,7 +395,7 @@ class ModelEvaluator(object):
         importances_sort = importances_df.sort_values(['feature_importance'],
                                                        ascending=False)
         importances_filter = importances_sort[:n_features_plots]
-        
+ 
         # Plot features in order
         importances_ordered = importances_filter.sort_values(['feature_importance'], ascending=True)
 
@@ -555,17 +553,27 @@ class ModelEvaluator(object):
             - top_n: threshold values to label 
             - path: path for the ProjectStorage class object
         '''
-        
 
-        if self.pred_matrix is None:
-            self.load_features__matrix(top_n, *path)
+        test_matrix = self.preds_matrix(path)
 
         # Calculate residuals/errors
-        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
+        test_matrix_thresh = test_matrix.sort_values(['rank_abs'],
+                                                              ascending=True)[:top_n]
+        test_matrix_thresh['above_threshold'] = 1
+        test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_tresh']
+
+        # Define labels using the errors
+        error_class = [
+            (test_matrix_thresh['label_value'] == 0) &
+            (test_matrix_thresh['above_tresh'] == 1),
+            (test_matrix_thresh['label_value'] == 1) &
+            (test_matrix_thresh['above_tresh'] == 0)]
+        error_label = ['fpr','fnr']
 
         # Define feature space to model: get the list of feature names
-        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
-        feature_names_vector = list(test_matrix.columns.values)
+        storage = ProjectStorage(path)
+        matrix_storage = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
+        feature_columns = matrix_storage.columns()
 
         # Build error matrix and label vector
         error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
@@ -591,10 +599,10 @@ class ModelEvaluator(object):
         plot_tree = graphviz.Source(tree_viz)
         return(plot_tree)
 
-    def error_trees_fpr(self,
-                    top_n=None,
-                    max_depth_error_tree=5,
-                    *path):
+    def error_trees_modeler(self,
+                            top_n=None,
+                            max_depth_error_tree=5,
+                            *path):
         '''
         Explore the underlying causes of errors using decision trees to explain the
         residuals base on the same feature space used in the model. This
@@ -607,77 +615,6 @@ class ModelEvaluator(object):
             the load_features_preds_matrix method. 
            - *args: other arguments passed to sklearn.treee
         '''
-
-        if self.pred_matrix is None:
-            self.load_features__matrix(top_n, *path)
-
-        # Calculate residuals/errors
-        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
-
-        # Define feature space to model: get the list of feature names
-        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
-        feature_names_vector = list(test_matrix.columns.values)
-
-        # Build error matrix and label vector
-        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
-                                                                         1])]
-        labels =  error_matrix.error
-        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
-
-        # Remove matrix (we can change that by only reading the first line of
-        # the .csv, that's a todo).
-        del(test_matrix)
-
-        # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
-        error_classifier = error_classifier.fit(error_matrix, 
-                                                labels)
-
-        # Plot tree and export
-        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
-                                       feature_names=error_matrix.columns.values,
-                                       filled=True,
-                                       rounded=True,
-                                       special_characters=True)
-        plot_tree = graphviz.Source(tree_viz)
-        return(plot_tree)
-
-    def error_trees_fnr(self,
-                    top_n=None,
-                    max_depth_error_tree=5,
-                    *path):
-        '''
-        Explore the underlying causes of errors using decision trees to explain the
-        residuals base on the same feature space used in the model. This
-        exploration will get the most relevant features that determine y - y_hat
-        distance and may help to understand the outomes of some models. 
-
-        Arguments:
-            - top_n: size of the list to label predicted values.abs
-            - *path: path local/s3 where the matrix are stored. More information in
-            the load_features_preds_matrix method. 
-           - *args: other arguments passed to sklearn.treee
-        '''
-
-        if self.pred_matrix is None:
-            self.load_features__matrix(top_n, *path)
-
-        # Calculate residuals/errors
-        self.pred_matrix['error'] = self.pred_matrix['label_value'] - self.pred_matrix['above_tresh']
-
-        # Define feature space to model: get the list of feature names
-        test_matrix = self._fetch_matrix(self.pred_matrix_uuid, *path)
-        feature_names_vector = list(test_matrix.columns.values)
-
-        # Build error matrix and label vector
-        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
-                                                                         1])]
-        labels =  error_matrix.error
-        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
-
-        # Remove matrix (we can change that by only reading the first line of
-        # the .csv, that's a todo).
-        del(test_matrix)
 
         # Model the decision trees
         error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
