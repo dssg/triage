@@ -190,7 +190,7 @@ def test_sparse_states_from_query():
         engine = create_engine(postgresql.url())
         utils.create_binary_outcome_events(engine, 'events', input_data)
         table_generator = StateTableGeneratorFromQuery(
-            query=f"select entity_id from events where outcome_date < '{as_of_date}'::date",
+            query="select entity_id from events where outcome_date < '{as_of_date}'::date",
             db_engine=engine,
             experiment_hash='exp_hash',
         )
