@@ -22,7 +22,6 @@ from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from descriptors import cachedproperty
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.externals import joblib
 from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
@@ -88,7 +87,7 @@ class ModelEvaluator(object):
         self.model_hash = model_metadata.loc[0, 'model_hash']
         self.train_matrix_uuid = model_metadata.loc[0, 'train_matrix_uuid']
         self.pred_matrix_uuid = model_metadata.loc[0, 'matrix_uuid']
-        self.train_end_time = model_metadata.loc[0, 'train_end_time']
+        self.as_of_date = model_metadata.loc[0, 'train_end_time']
 
     def __repr__(self):
         return (
@@ -220,8 +219,7 @@ class ModelEvaluator(object):
             pass
 
         storage = ProjectStorage(path)
-        matrix_storage =
-        MatrixStorageEngine(storage).get_store(self.train_matrix_uuid)
+        matrix_storage = MatrixStorageEngine(storage).get_store(self.train_matrix_uuid)
         mat = matrix_storage.matrix
 
         # Merge with predictions table and return complete matrix
@@ -325,15 +323,19 @@ class ModelEvaluator(object):
             plt.savefig(str(name_file + '.png'))
 
     def plot_feature_importances(self,
+                                 save_file=False,
+                                 name_file=None,
                                  n_features_plots=30,
                                  figsize=(16, 12),
                                  fontsize=20):
         '''
         Generate a bar chart of the top n feature importances (by absolute value)
         Arguments:
-        - n_features_plots (int): number of top features to plot
-        - figsize (tuple): figure size to pass to matplotlib
-        - fontsize (int): define custom fontsize for labels and legends.
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - n_features_plots (int): number of top features to plot
+                - figsize (tuple): figure size to pass to matplotlib
+                - fontsize (int): define custom fontsize for labels and legends.
         '''
 
         importances = self.feature_importances.filter(items=['feature', 'feature_importance'])
@@ -355,27 +357,64 @@ class ModelEvaluator(object):
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
         plt.title('Top {} Feature Importances'.format(n_features_plots), fontsize=fontsize).set_position([.5, 0.99])
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
 
     def plot_feature_importances_std_err(self,
+                                         path,
+                                         save_file=False,
+                                         name_file=None,
                                          n_features_plots=30,
                                          figsize=(16,21),
-                                         fontsize=20,
-                                         *path):
+                                         fontsize=20):
         '''
         Generate a bar chart of the top n features importances showing the
         error bars.
         Arguments:
-            - n_features_plots (int): number of top features to plot.
-            - figsize (tuple): figuresize to pass to matplotlib.
-            - fontsize (int): define a custom fontsize for labels and legends.
-            - *path: path to retrieve model pickle
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - n_features_plots (int): number of top features to plot.
+                - figsize (tuple): figuresize to pass to matplotlib.
+                - fontsize (int): define a custom fontsize for labels and legends.
+                - *path: path to retrieve model pickle
         '''
-        model_path = path + self.model_hash
-        with open(model_path) as m:
-            model = joblib.load(m)
+        storage = ProjectStorage(path)
+        model_object = ModelStorageEngine(storage).load(self.model_hash)
+        matrix_object = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
 
-    # Load feature importances and calculate errors
+        # Calculate errors from model
+        importances = model_object.feature_importances_
+        std = np.std([tree.feature_importances_ for tree in model_object.estimators_],
+                    axis=0)
+        # Create dataframe and sort select the most relevant features (defined
+        # by n_features_plot) 
+        importances_df = pd.DataFrame({
+            'feature_name': matrix_object.columns(),
+            'std': std,
+            'feature_importance': importances
+        }).set_index('feature_name')
 
+        importances_sort = importances_df.sort_values(['feature_importance'],
+                                                       ascending=False)
+        importances_filter = importances_sort[:n_features_plots]
+        
+        # Plot features in order
+        importances_ordered = importances_filter.sort_values(['feature_importance'], ascending=True)
+
+        # Plot features with sd bars
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.tick_params(labelsize=16)
+        importances_ordered['feature_importance'].plot.barh(legend=False, ax=ax,
+                                               xerr=importances_ordered['std'])
+        ax.set_frame_on(False)
+        ax.set_xlabel('Score', fontsize=20)
+        ax.set_ylabel('Feature', fontsize=20)
+        plt.tight_layout()
+        plt.title(f'Top {n_features_plots} Feature Importances with SD',
+                  fontsize=fontsize).set_position([.5, 0.99])
+
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
 
     def compute_AUC(self):
         '''
@@ -502,10 +541,10 @@ class ModelEvaluator(object):
         plt.show()
 
     
-    def error_trees(self,
-                    top_n=None,
-                    max_depth_error_tree=5,
-                    *path):
+    def error_trees_labeler(self,
+                            path,
+                            top_n=None,
+                            max_depth_error_tree=5):
         '''
         Explore the underlying causes of errors using decision trees to explain the
         residuals base on the same feature space used in the model. This
@@ -513,11 +552,10 @@ class ModelEvaluator(object):
         distance and may help to understand the outomes of some models. 
 
         Arguments:
-            - top_n: size of the list to label predicted values.abs
-            - *path: path local/s3 where the matrix are stored. More information in
-            the load_features_preds_matrix method. 
-           - *args: other arguments passed to sklearn.treee
+            - top_n: threshold values to label 
+            - path: path for the ProjectStorage class object
         '''
+        
 
         if self.pred_matrix is None:
             self.load_features__matrix(top_n, *path)
