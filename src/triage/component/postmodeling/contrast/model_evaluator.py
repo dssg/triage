@@ -537,12 +537,10 @@ class ModelEvaluator(object):
         plt.ylim([0.0, 1.05])
         plt.title("Precision-recall at x-proportion", fontsize=fontsize)
         plt.show()
-
-    
-    def error_trees_labeler(self,
-                            path,
-                            top_n=None,
-                            max_depth_error_tree=5):
+ 
+    def error_labeler(self,
+                      path,
+                      top_n=None):
         '''
         Explore the underlying causes of errors using decision trees to explain the
         residuals base on the same feature space used in the model. This
@@ -553,22 +551,24 @@ class ModelEvaluator(object):
             - top_n: threshold values to label 
             - path: path for the ProjectStorage class object
         '''
-
+        self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
 
         # Calculate residuals/errors
-        test_matrix_thresh = test_matrix.sort_values(['rank_abs'],
-                                                              ascending=True)[:top_n]
-        test_matrix_thresh['above_threshold'] = 1
-        test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_tresh']
+        test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)[:top_n]
+        test_matrix_thresh['above_thresh'] = 1
+        test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
 
         # Define labels using the errors
+        # By design 
         error_class = [
             (test_matrix_thresh['label_value'] == 0) &
-            (test_matrix_thresh['above_tresh'] == 1),
+            (test_matrix_thresh['above_thresh'] == 1),
             (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_tresh'] == 0)]
-        error_label = ['fpr','fnr']
+            (test_matrix_thresh['above_thresh'] == 0)]
+        
+        # Create label iterator
+        Y = (np.where(condition, 1, -1) for condition in error_class)
 
         # Define feature space to model: get the list of feature names
         storage = ProjectStorage(path)
@@ -576,59 +576,32 @@ class ModelEvaluator(object):
         feature_columns = matrix_storage.columns()
 
         # Build error matrix and label vector
-        error_matrix = self.pred_matrix.loc[self.pred_matrix.error.isin([-1,
-                                                                         1])]
-        labels =  error_matrix.error
-        error_matrix = error_matrix[feature_names_vector[2:len(feature_names_vector)-1]]
+        X = test_matrix_thresh[feature_columns]
 
-        # Remove matrix (we can change that by only reading the first line of
-        # the .csv, that's a todo).
-        del(test_matrix)
+        return(X, Y)
 
-        # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
-        error_classifier = error_classifier.fit(error_matrix, 
-                                                labels)
+    def error_modeler(self,
+                      depth=None,
+                      **kwargs):
+        
 
-        # Plot tree and export
-        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
-                                       feature_names=error_matrix.columns.values,
-                                       filled=True,
-                                       rounded=True,
-                                       special_characters=True)
-        plot_tree = graphviz.Source(tree_viz)
-        return(plot_tree)
-
-    def error_trees_modeler(self,
-                            top_n=None,
-                            max_depth_error_tree=5,
-                            *path):
-        '''
-        Explore the underlying causes of errors using decision trees to explain the
-        residuals base on the same feature space used in the model. This
-        exploration will get the most relevant features that determine y - y_hat
-        distance and may help to understand the outomes of some models. 
-
-        Arguments:
-            - top_n: size of the list to label predicted values.abs
-            - *path: path local/s3 where the matrix are stored. More information in
-            the load_features_preds_matrix method. 
-           - *args: other arguments passed to sklearn.treee
-        '''
+        # Get matrices from the labeler
+        X, Y = self.error_labeler(path=kwargs['path'], top_n=kwargs['top_n'])
 
         # Model the decision trees
-        error_classifier = tree.DecisionTreeClassifier(max_depth_error_tree=max_depth_error_tree)
-        error_classifier = error_classifier.fit(error_matrix, 
-                                                labels)
+        classifier = tree.DecisionTreeClassifier(max_depth=depth)
+        error_classifiers = [classifier.fit(X, label) for label in Y] 
 
         # Plot tree and export
-        tree_viz = tree.export_graphviz(error_classifier, out_file=None,
-                                       feature_names=error_matrix.columns.values,
-                                       filled=True,
-                                       rounded=True,
-                                       special_characters=True)
-        plot_tree = graphviz.Source(tree_viz)
-        return(plot_tree)
+        for fitted_model in error_classifiers:
+            tree_viz = tree.export_graphviz(fitted_model, 
+                                            out_file=None,
+                                            feature_names=X.columns.values,
+                                            filled=True,
+                                            rounded=True,
+                                            special_characters=True)
+            plot_tree = graphviz.Source(tree_viz)
+            return(plot_tree)
 
     def crosstabs_ratio_plot(self, 
                              n_features_plots=30):
