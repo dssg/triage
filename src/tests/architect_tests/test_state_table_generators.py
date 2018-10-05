@@ -190,7 +190,7 @@ def test_sparse_states_from_query():
         engine = create_engine(postgresql.url())
         utils.create_binary_outcome_events(engine, 'events', input_data)
         table_generator = StateTableGeneratorFromQuery(
-            query='select entity_id from events where outcome_date < {as_of_date}',
+            query="select entity_id from events where outcome_date < '{as_of_date}'::date",
             db_engine=engine,
             experiment_hash='exp_hash',
         )
@@ -234,4 +234,3 @@ def test_sparse_states_from_query():
         assert results == expected_output
         utils.assert_index(engine, table_generator.sparse_table_name, 'entity_id')
         utils.assert_index(engine, table_generator.sparse_table_name, 'as_of_date')
-
