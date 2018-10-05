@@ -28,9 +28,6 @@ def create_pgconn(credentials_yaml):
     except:
         print("Error connecting to db.")
 
-    conn.execute("SET ROLE " + configs['role'])
-    return conn
-
 def read_parameters(postmodeling_parameters):
     '''
     Read YAML file with post-modeling parameters. 
