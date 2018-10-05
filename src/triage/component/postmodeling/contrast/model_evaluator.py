@@ -545,7 +545,12 @@ class ModelEvaluator(object):
         Explore the underlying causes of errors using decision trees to explain the
         residuals base on the same feature space used in the model. This
         exploration will get the most relevant features that determine y - y_hat
-        distance and may help to understand the outomes of some models. 
+        distance and may help to understand the outomes of some models.
+
+        This function will label the errors and return two elements relevant to
+        model these. First, a feature matrix (X) with all the features used by
+        the model. Second, a generator with different labeled errors: FPR, FRR,
+        and the general error. 
 
         Arguments:
             - top_n: threshold values to label 
@@ -555,8 +560,8 @@ class ModelEvaluator(object):
         test_matrix = self.preds_matrix(path)
 
         # Calculate residuals/errors
-        test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)[:top_n]
-        test_matrix_thresh['above_thresh'] = 1
+        test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)
+        test_matrix_thresh['above_thresh'] =np.where(test_matrix_thresh['rank_abs'] <= top_n, 1, 0)
         test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
 
         # Define labels using the errors
@@ -583,25 +588,34 @@ class ModelEvaluator(object):
     def error_modeler(self,
                       depth=None,
                       **kwargs):
-        
+       '''
+       Model labeled errors (residuals) by the error_labeler (FPR, FNR, and
+       general residual) using a RandomForestClassifier. This function will
+       yield a plot tree for each of the label numpy arrays return by the
+       error_labeler (Y).
+       Arguments:
+           - depth = max number of tree partitions. This is passed directly to
+             the classifier.
+           - **kwargs: more arguments passed to the labeler: top_n indicating
+           the threshold value, and the path to the ProjectStorage. 
+       '''
+       # Get matrices from the labeler
+       X, Y = self.error_labeler(path=kwargs['path'], top_n=kwargs['top_n'])
 
-        # Get matrices from the labeler
-        X, Y = self.error_labeler(path=kwargs['path'], top_n=kwargs['top_n'])
+       # Model the decision trees
+       classifier = tree.DecisionTreeClassifier(max_depth=depth)
+       error_classifiers = [classifier.fit(X, label) for label in Y] 
 
-        # Model the decision trees
-        classifier = tree.DecisionTreeClassifier(max_depth=depth)
-        error_classifiers = [classifier.fit(X, label) for label in Y] 
-
-        # Plot tree and export
-        for fitted_model in error_classifiers:
-            tree_viz = tree.export_graphviz(fitted_model, 
-                                            out_file=None,
-                                            feature_names=X.columns.values,
-                                            filled=True,
-                                            rounded=True,
-                                            special_characters=True)
-            plot_tree = graphviz.Source(tree_viz)
-            return(plot_tree)
+       # Plot tree and export
+       for fitted_model in error_classifiers:
+           tree_viz = tree.export_graphviz(fitted_model, 
+                                           out_file=None,
+                                           feature_names=X.columns.values,
+                                           filled=True,
+                                           rounded=True,
+                                           special_characters=True)
+           graph = graphviz.Source(tree_viz)
+           return graph
 
     def crosstabs_ratio_plot(self, 
                              n_features_plots=30):
