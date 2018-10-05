@@ -224,9 +224,30 @@ class Audition(Command):
             default='audition_config.yaml',
             help="config file for audition",
         )
+        parser.add_argument(
+            '-v', '--validate',
+            action='store_true',
+            help='validate before running audition'
+        )
+        parser.add_argument(
+            '--no-validate',
+            action='store_false',
+            dest='validate',
+            help="run audition without validation"
+        )
+        parser.add_argument(
+            '--validate-only',
+            action='store_true',
+            help="only validate the config file not running audition"
+        )
+        parser.add_argument(
+            '-d', '--directory',
+            help='directory to store the result plots from audition',
+        )
         parser.set_defaults(
             directory=None,
             validate=True,
+            validate_only=False,
         )
 
     @cachedproperty
@@ -239,24 +260,11 @@ class Audition(Command):
         return AuditionRunner(config, db_engine, dir_plot)
 
     def __call__(self, args):
-        self['run'](args)
-
-    @cmdmethod('-d', '--directory', default=None, help="directory to store the result plots from audition")
-    @cmdmethod('-v', '--validate', action='store_true', help="validate before running audition")
-    @cmdmethod('--no-validate', action='store_false', dest='validate', help="run audtion without validation")
-    @cmdmethod('--validate-only', action='store_true', help="only validate the config file not running audition")
-    def run(self, args):
         if args.validate_only:
-            try:
-                self.runner.validate()
-            except Exception as err:
-                raise(err)
+            self.runner.validate()
         elif args.validate:
-            try:
-                self.runner.validate()
-                self.runner.run()
-            except Exception as err:
-                raise(err)
+            self.runner.validate()
+            self.runner.run()
         else:
             self.runner.run()
 
