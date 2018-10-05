@@ -1,0 +1,57 @@
+model_groups:
+    query: |
+        SELECT DISTINCT(model_group_id)
+        FROM results.model_groups
+
+time_stamps:
+    query: |
+        SELECT DISTINCT train_end_time
+        FROM results.models
+        WHERE model_group_id IN ({})
+        AND EXTRACT(DAY FROM train_end_time) IN (1)
+        AND train_end_time >= '2012-01-01'
+
+filter:
+    metric: 'precision@'
+    parameter: '50_abs'
+    max_from_best: 1.0
+    threshold_value: 0.0
+    distance_table: 'distance_table'
+    models_table: 'models'
+
+rules:
+    -
+        shared_parameters:
+            -
+                metric: 'precision@'
+                parameter: '50_abs'
+            -
+                metric: 'recall@'
+                parameter: '50_abs'
+        selection_rules:
+            -
+                name: 'best_current_value'
+                num: 3
+            -
+                name: 'best_average_value'
+                num: 3
+            -
+                name: 'lowest_metric_variance'
+                num: 3
+            -
+                name: 'most_frequent_best_dist'
+                dist_from_best_case: [0.05]
+                num: 3
+
+    -
+        shared_parameters:
+            -
+                metric1: 'precision@'
+                parameter1: '50_abs'
+        selection_rules:
+            -
+                name: 'best_average_two_metrics'
+                metric2: 'recall@'
+                parameter2: '50_abs'
+                metric1_weight: 0.5
+                num: 3
