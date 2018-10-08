@@ -7,7 +7,6 @@ from triage.component.catwalk.db import ensure_db
 from sqlalchemy import create_engine
 import testing.postgresql
 import datetime
-import logging
 import re
 
 

@@ -1,11 +1,6 @@
-import numpy
-
-import warnings
-
 import pytest
 
 from triage.component.catwalk.feature_importances import (
-    _ad_hoc_feature_importances,
     get_feature_importances,
 )
 
@@ -13,7 +8,7 @@ from sklearn import datasets
 from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.linear_model import LogisticRegression
 
 from sklearn.model_selection import train_test_split
 
@@ -70,7 +65,7 @@ def test_throwing_warning_if_SVC_wo_linear_kernel(trained_models):
 def test_correct_feature_importances_for_lr(trained_models):
     feature_importances = get_feature_importances(trained_models["LR"])
 
-    ## It returns the intercept, too
+    # It returns the intercept, too
     assert feature_importances.shape == (30,)
 
 

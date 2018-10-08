@@ -1,7 +1,5 @@
 import numpy as np
 
-import warnings
-
 import pytest
 
 from triage.component.catwalk.estimators.transformers import CutOff

@@ -124,9 +124,8 @@ class SelectionRulePlotter(object):
         Returns: (number, number) A minimum and maximum x value for the plot
         """
 
-        observed_min, observed_max = self.selection_rule_picker.distance_from_best_table.observed_bounds[
-            (metric, parameter)
-        ]
+        observed_min, observed_max = \
+            self.selection_rule_picker.distance_from_best_table.observed_bounds[(metric, parameter)]
         return plot_bounds(observed_min, observed_max)
 
     def regret_threshold_dist(self, plot_min, plot_max):

@@ -140,8 +140,8 @@ def downgrade():
 
     op.execute(
         """ALTER TABLE model_metadata.models DROP CONSTRAINT "matrix_uuid_for_models";
-                  ALTER TABLE test_results.test_predictions DROP CONSTRAINT "matrix_uuid_for_testpred";
-                  ALTER TABLE train_results.train_predictions DROP CONSTRAINT "matrix_uuid_for_trainpred"; """
+        ALTER TABLE test_results.test_predictions DROP CONSTRAINT "matrix_uuid_for_testpred";
+        ALTER TABLE train_results.train_predictions DROP CONSTRAINT "matrix_uuid_for_trainpred"; """
     )
 
     op.execute(

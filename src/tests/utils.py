@@ -172,12 +172,14 @@ def matrix_creator(index=None):
 
 
 def get_matrix_store(project_storage, matrix=None, metadata=None):
-    """Return a matrix store associated with the given project storage. Also adds an entry in the matrices table if it doesn't exist already
+    """Return a matrix store associated with the given project storage.
+    Also adds an entry in the matrices table if it doesn't exist already
 
     Args:
         project_storage (triage.component.catwalk.storage.ProjectStorage) A project's storage
         matrix (dataframe, optional): A matrix to store. Defaults to the output of matrix_creator()
-        metadata (dict, optional): matrix metadata. defaults to the output of matrix_metadata_creator()
+        metadata (dict, optional): matrix metadata.
+            defaults to the output of matrix_metadata_creator()
     """
     if matrix is None:
         matrix = matrix_creator()
@@ -208,7 +210,6 @@ def rig_engines():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         init_engine(db_engine)
-        project_path = "econ-dev/inspections"
         with tempfile.TemporaryDirectory() as temp_dir:
             project_storage = ProjectStorage(temp_dir)
             yield db_engine, project_storage

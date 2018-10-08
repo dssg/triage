@@ -139,7 +139,4 @@ def fpr(_, predictions_binary, labels, parameters):
 class UnknownMetricError(ValueError):
     """Signifies that a metric name was passed, but no matching computation
     function is available
-
     """
-
-    pass

@@ -1,11 +1,11 @@
 import tempfile
 import random
 from contextlib import contextmanager
-import os
 
 import pandas as pd
 import requests
 from tqdm import tqdm
+import re
 
 
 @contextmanager

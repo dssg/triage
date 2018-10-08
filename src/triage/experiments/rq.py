@@ -7,7 +7,8 @@ try:
     from rq import Queue
 except ImportError:
     print(
-        "rq not available. To use RQExperiment, install triage with the RQ extension: pip install triage[rq]"
+        "rq not available. To use RQExperiment, install triage with the RQ extension: "
+        "pip install triage[rq]"
     )
     raise
 
@@ -22,11 +23,15 @@ class RQExperiment(ExperimentBase):
 
     http://python-rq.org/
 
-    For this experiment to complete, you need some amount of RQ workers running the Triage codebase (either on the same machine as the experiment or elsewhere), and a Redis instance that both the experiment process and RQ workers can access.
+    For this experiment to complete, you need some amount of RQ workers running the Triage codebase
+    (either on the same machine as the experiment or elsewhere),
+    and a Redis instance that both the experiment process and RQ workers can access.
 
     Args:
-        redis_connection (redis.connection): A connection to a Redis instance that some rq workers can also access
-        sleep_time (int, default 5) How many seconds the process should sleep while waiting for RQ results
+        redis_connection (redis.connection): A connection to a Redis instance that
+            some rq workers can also access
+        sleep_time (int, default 5) How many seconds the process should sleep while
+            waiting for RQ results
         queue_kwargs (dict, default {}) Any extra keyword arguments to pass to Queue creation
     """
 
@@ -72,10 +77,12 @@ class RQExperiment(ExperimentBase):
     def process_query_tasks(self, query_tasks):
         """Run queries by table
 
-        Will run preparation (e.g. create table) and finalize (e.g. create index) tasks in the main process,
+        Will run preparation (e.g. create table) and finalize (e.g. create index) tasks
+        in the main process,
         but delegate inserts to rq Jobs in batches of 25
 
-        Args: query_tasks (dict) - keys should be table names and values should be dicts. Each inner dict should have up to three keys, each with a list of queries:
+        Args: query_tasks (dict) - keys should be table names and values should be dicts.
+            Each inner dict should have up to three keys, each with a list of queries:
             'prepare' (setting up the table),
             'inserts' (insert commands to populate the table),
             'finalize' (finishing table setup after all inserts have run)
@@ -83,7 +90,10 @@ class RQExperiment(ExperimentBase):
             Example: {
                 'table_one': {
                     'prepare': ['create table table_one (col1 varchar)'],
-                    'inserts': ['insert into table_one values (\'a\')', 'insert into table_one values (\'b'\')']
+                    'inserts': [
+                        'insert into table_one values (\'a\')',
+                        'insert into table_one values (\'b'\')'
+                    ]
                     'finalize': ['create index on table_one (col1)']
                 }
             }
@@ -114,7 +124,9 @@ class RQExperiment(ExperimentBase):
         """Run matrix build tasks using RQ
 
         Args:
-            matrix_build_tasks (dict) Keys should be matrix uuids (though not used here), values should be dictionaries suitable as kwargs for sending to self.matrix_builder.build_matrix
+            matrix_build_tasks (dict) Keys should be matrix uuids (though not used here),
+                values should be dictionaries suitable as kwargs for sending
+                to self.matrix_builder.build_matrix
 
         Returns: (list) of job results for each given task
         """
@@ -134,7 +146,8 @@ class RQExperiment(ExperimentBase):
         """Run train tasks using RQ
 
         Args:
-            train_tasks (list) of dictionaries, each representing kwargs suitable for self.trainer.process_train_task
+            train_tasks (list) of dictionaries, each representing kwargs suitable
+                for self.trainer.process_train_task
         Returns: (list) of job results for each given task
         """
         jobs = [
@@ -153,7 +166,8 @@ class RQExperiment(ExperimentBase):
         """Run test tasks using RQ
 
         Args:
-            test_tasks (list) of dictionaries, each representing kwargs suitable for self.tester.process_model_test_task
+            test_tasks (list) of dictionaries, each representing kwargs suitable
+                for self.tester.process_model_test_task
         Returns: (list) of job results for each given task
         """
         jobs = [

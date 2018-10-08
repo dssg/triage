@@ -4,8 +4,8 @@ import yaml
 import matplotlib
 
 matplotlib.use("Agg")
-from triage.component.timechop import Timechop
-from triage.component.timechop.plotting import visualize_chops
+from triage.component.timechop import Timechop # noqa
+from triage.component.timechop.plotting import visualize_chops # noqa
 
 
 class VisualizeChopTest(TestCase):

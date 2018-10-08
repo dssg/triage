@@ -4,9 +4,17 @@
 Unit tests for `collate.imputations` module.
 
 """
-import pytest
 
-from triage.component.collate.imputations import *
+from triage.component.collate.imputations import (
+    BaseImputation,
+    ImputeMean,
+    ImputeConstant,
+    ImputeZero,
+    ImputeZeroNoFlag,
+    ImputeNullCategory,
+    ImputeBinaryMode,
+    ImputeError
+)
 
 
 def test_impute_flag():
@@ -112,7 +120,8 @@ def test_impute_binary_mode():
     imp = ImputeBinaryMode(column="a", coltype="aggregate", partitionby="date")
     assert (
         imp.to_sql()
-        == 'COALESCE("a", CASE WHEN AVG("a") OVER (PARTITION BY date) > 0.5 THEN 1 ELSE 0 END, 0) AS "a" '
+        == 'COALESCE("a", CASE WHEN AVG("a") OVER (PARTITION BY date) > 0.5 '
+        'THEN 1 ELSE 0 END, 0) AS "a" '
     )
 
     try:

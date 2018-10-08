@@ -3,7 +3,6 @@ from triage.component.audition.selection_rules import BoundSelectionRule
 from triage.component.audition.selection_rule_grid import make_selection_rule_grid
 
 from triage.component.audition.rules_maker import (
-    BaseRules,
     SimpleRuleMaker,
     RandomGroupRuleMaker,
     TwoMetricsRuleMaker,

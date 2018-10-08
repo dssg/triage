@@ -792,7 +792,8 @@ class ScoringConfigValidator(Validator):
                     raise ValueError(
                         dedent(
                             """Section: scoring -
-                        The following given metrics '{}' are unavailable. Available metrics are: '{}'
+                        The following given metrics '{}' are unavailable.
+                        Available metrics are: '{}'
                         """.format(
                                 bad_metrics, available_metrics
                             )
@@ -854,6 +855,7 @@ class ExperimentValidator(Validator):
         if self.strict:
             success_message = "Experiment validation ran to completion with no errors"
         else:
-            success_message = "Experiment validation complete. All configuration problems have been displayed as warnings"
+            success_message = "Experiment validation complete. "
+            "All configuration problems have been displayed as warnings"
         logging.info(success_message)
         print(success_message)

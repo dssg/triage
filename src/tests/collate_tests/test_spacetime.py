@@ -109,8 +109,8 @@ def test_basic_spacetime():
         assert rows[2]["events_entity_id_all_outcome::int_avg"] == 0.5
         assert rows[3]["entity_id"] == 2
         assert rows[3]["as_of_date"] == date(2016, 1, 1)
-        assert rows[3]["events_entity_id_1y_outcome::int_sum"] == None
-        assert rows[3]["events_entity_id_1y_outcome::int_avg"] == None
+        assert rows[3]["events_entity_id_1y_outcome::int_sum"] is None
+        assert rows[3]["events_entity_id_1y_outcome::int_avg"] is None
         assert rows[3]["events_entity_id_2y_outcome::int_sum"] == 0
         assert rows[3]["events_entity_id_2y_outcome::int_avg"] == 0
         assert rows[3]["events_entity_id_all_outcome::int_sum"] == 1

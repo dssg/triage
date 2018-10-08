@@ -8,9 +8,6 @@ from contextlib import contextmanager
 import pandas as pd
 import yaml
 import numpy
-from sqlalchemy.orm import sessionmaker
-
-from triage.component.results_schema import Model
 
 
 def convert_string_column_to_date(column):

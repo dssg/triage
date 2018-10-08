@@ -2,7 +2,6 @@ import csv
 import logging
 import math
 import tempfile
-from datetime import datetime
 
 import numpy
 import pandas

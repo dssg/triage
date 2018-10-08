@@ -11,7 +11,6 @@ from .factories import (
     IndividualImportanceFactory,
     init_engine,
     session,
-    MatrixFactory,
 )
 
 

@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 import testing.postgresql
 from triage import create_engine
 
-from triage.component.catwalk.db import ensure_db
 
 from tests.utils import sample_config, populate_source_data
 

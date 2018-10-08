@@ -782,4 +782,3 @@ class Aggregation(object):
         This is done against an active SQL connection in order to enable
         validation of the SQL itself.
         """
-        pass

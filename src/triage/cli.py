@@ -23,7 +23,7 @@ from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
 
-import importlib.util
+import importlib.util # noqa
 
 
 def natural_number(value):
@@ -291,9 +291,11 @@ class Db(Command):
         help="config version of last experiment you ran",
     )
     def stamp(self, args):
-        """Instruct the triage results database to mark itself as updated to a known version without doing any upgrading.
+        """Instruct the triage results database to mark itself as updated to a
+        known version without doing any upgrading.
 
-        Use this if the database was created without an 'alembic_version' table. Uses the config version of your experiment to infer what database version is suitable.
+        Use this if the database was created without an 'alembic_version' table.
+        Uses the config version of your experiment to infer what database version is suitable.
         """
         revision = REVISION_MAPPING[args.configversion]
         print(

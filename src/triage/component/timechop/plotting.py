@@ -12,7 +12,8 @@ def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True):
 
     Args:
         chopper (triage.component.timechop.Timechop) A fully-configured Timechop object
-        show_as_of_times (bool, default True) Whether or not to draw horizontal lines for as-of-times
+        show_as_of_times (bool, default True) Whether or not to draw horizontal lines
+            for as-of-times
         show_boundaries (bool, default True) Whether or not to show a rectangle around matrices
             and dashed lines around feature/label boundaries
     """

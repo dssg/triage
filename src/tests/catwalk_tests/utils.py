@@ -1,24 +1,16 @@
 import datetime
-import os
 import random
 import tempfile
-from collections import OrderedDict
 from contextlib import contextmanager
 import pytest
 
 import numpy
 import pandas
 import yaml
-from sqlalchemy.orm import sessionmaker
 
-from triage.component import metta
 from triage.component.catwalk.storage import (
-    CSVMatrixStore,
-    HDFMatrixStore,
-    MatrixStore,
     ProjectStorage,
 )
-from triage.component.results_schema import Model
 
 
 @contextmanager

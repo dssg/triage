@@ -2,13 +2,9 @@ from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.evaluation import ModelEvaluator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
-from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import (
-    ProjectStorage,
     ModelStorageEngine,
-    MatrixStore,
 )
-from tests.results_tests.factories import init_engine, session, MatrixFactory
 from tests.utils import (
     rig_engines,
     get_matrix_store,
@@ -16,14 +12,8 @@ from tests.utils import (
     matrix_metadata_creator,
 )
 
-import boto3
-import testing.postgresql
-
-from moto import mock_s3
-from sqlalchemy import create_engine
 import datetime
 import pandas
-from .utils import sample_metadata
 
 
 def test_integration():

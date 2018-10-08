@@ -1,5 +1,4 @@
 import logging
-import os
 from abc import ABC, abstractmethod
 
 from descriptors import cachedproperty
@@ -83,7 +82,8 @@ class ExperimentBase(ABC):
 
         if isinstance(db_engine, Engine):
             logging.warning(
-                "Raw, unserializable SQLAlchemy engine passed. URL will be used, other options may be lost in multi-process environments"
+                "Raw, unserializable SQLAlchemy engine passed. "
+                "URL will be used, other options may be lost in multi-process environments"
             )
             self.db_engine = create_engine(db_engine.url)
         else:
@@ -106,11 +106,13 @@ class ExperimentBase(ABC):
         self.cleanup = cleanup
         if self.cleanup:
             logging.info(
-                "cleanup is set to True, so intermediate tables (labels and states) will be removed after matrix creation"
+                "cleanup is set to True, so intermediate tables (labels and states) "
+                "will be removed after matrix creation"
             )
         else:
             logging.info(
-                "cleanup is set to False, so intermediate tables (labels and states) will not be removed after matrix creation"
+                "cleanup is set to False, so intermediate tables (labels and states) "
+                "will not be removed after matrix creation"
             )
         self.cleanup_timeout = (
             self.cleanup_timeout if cleanup_timeout is None else cleanup_timeout
@@ -158,7 +160,8 @@ class ExperimentBase(ABC):
             )
         else:
             logging.warning(
-                "cohort_config missing or unrecognized. Without a cohort, you will not be able to make matrices or perform feature imputation."
+                "cohort_config missing or unrecognized. Without a cohort, "
+                "you will not be able to make matrices or perform feature imputation."
             )
             self.state_table_generator = StateTableGeneratorNoOp()
 
@@ -171,7 +174,8 @@ class ExperimentBase(ABC):
         else:
             self.label_generator = LabelGeneratorNoOp()
             logging.warning(
-                "label_config missing or unrecognized. Without labels, you will not be able to make matrices."
+                "label_config missing or unrecognized. Without labels, "
+                "you will not be able to make matrices."
             )
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(

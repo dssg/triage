@@ -66,7 +66,8 @@ class ModelTester(object):
     def process_model_test_task(self, test_store, train_store, model_ids):
         as_of_times = test_store.metadata["as_of_times"]
         logging.info(
-            "Testing and scoring all model ids with test matrix %s. as_of_times min: %s max: %s num: %s",
+            "Testing and scoring all model ids with test matrix %s. "
+            "as_of_times min: %s max: %s num: %s",
             test_store.uuid,
             min(as_of_times),
             max(as_of_times),

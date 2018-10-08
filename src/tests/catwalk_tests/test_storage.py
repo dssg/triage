@@ -12,7 +12,6 @@ from triage.component.catwalk.storage import (
     FSStore,
     HDFMatrixStore,
     S3Store,
-    MatrixStorageEngine,
     ProjectStorage,
 )
 

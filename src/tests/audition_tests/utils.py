@@ -6,7 +6,6 @@ from tests.results_tests.factories import (
     ModelGroupFactory,
     init_engine,
     session,
-    MatrixFactory,
 )
 
 

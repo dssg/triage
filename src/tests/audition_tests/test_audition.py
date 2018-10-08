@@ -17,7 +17,6 @@ from tests.results_tests.factories import (
     ModelGroupFactory,
     init_engine,
     session,
-    MatrixFactory,
 )
 
 config = {
@@ -60,7 +59,9 @@ config = {
         },
     ],
     "time_stamps": {
-        "query": "SELECT DISTINCT train_end_time FROM model_metadata.models WHERE model_group_id IN ({}) AND EXTRACT(DAY FROM train_end_time) IN (1) AND train_end_time >= '2012-01-01'"
+        "query": "SELECT DISTINCT train_end_time FROM model_metadata.models "
+        "WHERE model_group_id IN ({}) AND EXTRACT(DAY FROM train_end_time) IN (1) "
+        "AND train_end_time >= '2012-01-01'"
     },
 }
 

@@ -354,7 +354,7 @@ def basic_integration_test(
 
 
 def test_integration_simple():
-    matrices_records = basic_integration_test(
+    basic_integration_test(
         state_filters=["state_one OR state_two"],
         feature_group_create_rules={"all": [True]},
         feature_group_mix_rules=["all"],
@@ -366,7 +366,7 @@ def test_integration_simple():
 
 
 def test_integration_more_state_filtering():
-    matrices_records = basic_integration_test(
+    basic_integration_test(
         state_filters=["state_one OR state_two", "state_one", "state_two"],
         feature_group_create_rules={"all": [True]},
         feature_group_mix_rules=["all"],
@@ -377,11 +377,12 @@ def test_integration_more_state_filtering():
 
 
 def test_integration_feature_grouping():
-    matrices_records = basic_integration_test(
+    basic_integration_test(
         state_filters=["state_one OR state_two"],
         feature_group_create_rules={"prefix": ["cat", "dog"]},
         feature_group_mix_rules=["leave-one-out", "all"],
-        # 3 feature groups (cat/dog/cat+dog), so the # of matrices should be each train/test split *3
+        # 3 feature groups (cat/dog/cat+dog),
+        # so the # of matrices should be each train/test split *3
         expected_matrix_multiplier=3,
         expected_group_lists=[
             ["prefix: cat"],

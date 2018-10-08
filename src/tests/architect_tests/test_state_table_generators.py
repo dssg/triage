@@ -40,7 +40,8 @@ def test_sparse_state_table_generator():
         results = [
             row
             for row in engine.execute(
-                "select entity_id, as_of_date, injail, permitted from {} order by entity_id, as_of_date".format(
+                "select entity_id, as_of_date, injail, permitted from {} "
+                "order by entity_id, as_of_date".format(
                     table_generator.sparse_table_name
                 )
             )

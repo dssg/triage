@@ -6,7 +6,6 @@ import numpy
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
-import datetime
 
 
 @Metric(greater_is_better=True)

@@ -1,6 +1,5 @@
 # coding: utf-8
 
-from io import BytesIO
 import os
 from os.path import dirname
 import pathlib
@@ -71,7 +70,7 @@ class Store(object):
 
 class S3Store(Store):
     """Store an object in S3.
-    
+
     Example:
     ```
     store = S3Store('s3://my-bucket', 'models', 'model.pkl')
@@ -103,7 +102,7 @@ class S3Store(Store):
 
 class FSStore(Store):
     """Store an object on the local filesystem.
-    
+
     Example:
     ```
     store = FSStore('/mnt', 'models', 'model.pkl')
@@ -111,7 +110,7 @@ class FSStore(Store):
     ```
 
     Args:
-        *pathparts: A variable length list of components of the path, to be processed in order. 
+        *pathparts: A variable length list of components of the path, to be processed in order.
             All components will be joined using pathlib.Path to create the final path
                 using the correct separator for the operating system. However, if you pass
                 components that already contain a separator, those separators won't be modified
@@ -133,7 +132,7 @@ class FSStore(Store):
 
 class ProjectStorage(object):
     """Store and access files associated with a project.
-    
+
     Args:
         project_path (string): The base path for all files in the project.
             The scheme prefix of the path will determine the storage medium.
@@ -181,9 +180,9 @@ class ModelStorageEngine(object):
     """Store arbitrary models in a given project storage using joblib
 
     Args:
-        project_storage (triage.component.catwalk.storage.ProjectStorage) A project file storage engine
+        project_storage (triage.component.catwalk.storage.ProjectStorage)
+            A project file storage engine
         model_directory (string, optional) A directory name for models. Defaults to 'trained_models'
-    
     """
 
     def __init__(self, project_storage, model_directory=None):
@@ -237,7 +236,8 @@ class MatrixStorageEngine(object):
     """Store matrices in a given project storage
 
     Args:
-        project_storage (triage.component.catwalk.storage.ProjectStorage) A project file storage engine
+        project_storage (triage.component.catwalk.storage.ProjectStorage)
+            A project file storage engine
         matrix_storage_class (class) A subclass of MatrixStore
         matrix_directory (string, optional) A directory to store matrices. Defaults to 'matrices'
     """
@@ -269,11 +269,14 @@ class MatrixStore(object):
         and implement the _load, save, and head_of_matrix methods for that storage format
 
     Args:
-        project_storage (triage.component.catwalk.storage.ProjectStorage) A project file storage engine
+        project_storage (triage.component.catwalk.storage.ProjectStorage)
+            A project file storage engine
         directories (list): A list of subdirectories
         matrix_uuid (string): A unique identifier within the project for a matrix.
-        matrix (pandas.DataFrame, optional): The raw matrix. Defaults to None, which means it will be loaded from storage on demand
-        metadata (dict, optional). The matrix' metadata. Defaults to None, which means it will be loaded from storage on demand.
+        matrix (pandas.DataFrame, optional): The raw matrix.
+            Defaults to None, which means it will be loaded from storage on demand
+        metadata (dict, optional). The matrix' metadata.
+            Defaults to None, which means it will be loaded from storage on demand.
     """
 
     _labels = None
@@ -442,7 +445,7 @@ class MatrixStore(object):
         raise NotImplementedError
 
     def __getstate__(self):
-        """Remove object of a large size upon serialization. 
+        """Remove object of a large size upon serialization.
 
         This helps in a multiprocessing context.
         """

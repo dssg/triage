@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 import pytest
-from unittest.mock import MagicMock
 from unittest import TestCase
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
@@ -48,7 +47,7 @@ def rules(request):
 class TestRankOneFeature(TestCase):
     def test_fit(self):
         ranker = PercentileRankOneFeature(feature="x3")
-        assert ranker.feature_importances_ == None
+        assert ranker.feature_importances_ is None
         ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
         np.testing.assert_array_equal(
             ranker.feature_importances_, np.array([0, 0, 1, 0])
@@ -95,7 +94,7 @@ class TestSimpleThresholder(TestCase):
 
     def test_fit(self):
         thresholder = SimpleThresholder(self.rules, "or")
-        assert thresholder.feature_importances_ == None
+        assert thresholder.feature_importances_ is None
         thresholder.fit(x=self.data["X_train"], y=self.data["y_train"])
         np.testing.assert_array_equal(
             thresholder.feature_importances_, np.array([1, 1, 0, 0])

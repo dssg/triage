@@ -120,8 +120,10 @@ def test_compare_dicts():
         "long_column_name",
         "=",
         {
-            "really long string key that is similar to others": "really long string value that is similar to others",
-            "really long string key that is like others": "really long string value that is like others",
+            "really long string key that is similar to others":
+                "really long string value that is similar to others",
+            "really long string key that is like others":
+                "really long string value that is like others",
             "different key": "really long string value that is quite alike to others",
             "ni": "really long string value that is also like everything else",
         },
@@ -176,4 +178,4 @@ def test_categorical_nones():
     ).quantities
     assert d1 == d2
     d3 = Categorical("col", ["a", "b", "c", None], [], {}).quantities
-    assert sorted(d1.values()) == sorted(d2.values())
+    assert sorted(d1.values()) == sorted(d3.values())

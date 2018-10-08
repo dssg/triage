@@ -13,7 +13,6 @@ from sqlalchemy import (
     Float,
     Text,
     ForeignKey,
-    MetaData,
     DDL,
     event,
 )
@@ -132,8 +131,8 @@ class Model(Base):
     def delete(self, session):
         # basically implement a cascade, in case cascade is not implemented
         (session.query(FeatureImportance).filter_by(model_id=self.model_id).delete())
-        (session.query(Evaluation).filter_by(model_id=self.model_id).delete())
-        (session.query(Prediction).filter_by(model_id=self.model_id).delete())
+        (session.query(TestEvaluation).filter_by(model_id=self.model_id).delete())
+        (session.query(TestPrediction).filter_by(model_id=self.model_id).delete())
         session.delete(self)
 
 

@@ -1,19 +1,11 @@
 import pandas
-import testing.postgresql
-from sqlalchemy import create_engine
 
-from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.storage import MatrixStore
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
-from triage.component.results_schema import Matrix
 from tests.utils import rig_engines, get_matrix_store, matrix_metadata_creator
 
 from tests.results_tests.factories import (
     ModelFactory,
     FeatureImportanceFactory,
-    init_engine,
-    session,
-    MatrixFactory,
 )
 
 
