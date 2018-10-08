@@ -34,7 +34,6 @@ class Metric(object):
         self.greater_is_better = greater_is_better
 
     def __call__(self, function, *params, **kwparams):
-
         class DecoratedMetric(object):
             def __init__(self, greater_is_better, function):
                 self.greater_is_better = greater_is_better
@@ -142,4 +141,5 @@ class UnknownMetricError(ValueError):
     function is available
 
     """
+
     pass

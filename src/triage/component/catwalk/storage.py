@@ -7,8 +7,12 @@ import pathlib
 import logging
 from sklearn.externals import joblib
 from urllib.parse import urlparse
-from triage.component.results_schema import TestEvaluation, TrainEvaluation, \
-    TestPrediction, TrainPrediction
+from triage.component.results_schema import (
+    TestEvaluation,
+    TrainEvaluation,
+    TestPrediction,
+    TrainPrediction,
+)
 
 import pandas as pd
 import s3fs
@@ -28,6 +32,7 @@ class Store(object):
     Implements write/load methods for interacting directly using bytestreams,
         plus an open method that works as an open filehandle.
     """
+
     def __init__(self, *pathparts):
         self.pathparts = pathparts
 
@@ -36,12 +41,12 @@ class Store(object):
         path_parsed = urlparse(pathparts[0])
         scheme = path_parsed.scheme
 
-        if scheme in ('', 'file'):
+        if scheme in ("", "file"):
             return FSStore(*pathparts)
-        elif scheme == 's3':
+        elif scheme == "s3":
             return S3Store(*pathparts)
         else:
-            raise ValueError('Unable to infer correct Store from project path')
+            raise ValueError("Unable to infer correct Store from project path")
 
     def __str__(self):
         return f"{self.__class__.__name__}(path={self.path})"
@@ -53,11 +58,11 @@ class Store(object):
         raise NotImplementedError
 
     def load(self):
-        with self.open('rb') as fd:
+        with self.open("rb") as fd:
             return fd.read()
 
     def write(self, bytestream):
-        with self.open('wb') as fd:
+        with self.open("wb") as fd:
             fd.write(bytestream)
 
     def open(self, *args, **kwargs):
@@ -77,8 +82,11 @@ class S3Store(Store):
         *pathparts: A variable length list of components of the path, to be processed in order.
             All components will be joined using PurePosixPath to create the final path.
     """
+
     def __init__(self, *pathparts):
-        self.path = str(pathlib.PurePosixPath(pathparts[0].replace('s3://', ''), *pathparts[1:]))
+        self.path = str(
+            pathlib.PurePosixPath(pathparts[0].replace("s3://", ""), *pathparts[1:])
+        )
 
     def exists(self):
         s3 = s3fs.S3FileSystem()
@@ -108,6 +116,7 @@ class FSStore(Store):
                 using the correct separator for the operating system. However, if you pass
                 components that already contain a separator, those separators won't be modified
     """
+
     def __init__(self, *pathparts):
         self.path = pathlib.Path(*pathparts)
         os.makedirs(dirname(self.path), exist_ok=True)
@@ -129,6 +138,7 @@ class ProjectStorage(object):
         project_path (string): The base path for all files in the project.
             The scheme prefix of the path will determine the storage medium.
     """
+
     def __init__(self, project_path):
         self.project_path = project_path
         self.storage_class = Store.factory(self.project_path).__class__
@@ -144,7 +154,7 @@ class ProjectStorage(object):
             triage.component.catwalk.storage.Store object
         """
         return self.storage_class(self.project_path, *directories, leaf_filename)
-   
+
     def matrix_storage_engine(self, matrix_storage_class=None, matrix_directory=None):
         """Return a matrix storage engine bound to this project's storage
 
@@ -175,9 +185,10 @@ class ModelStorageEngine(object):
         model_directory (string, optional) A directory name for models. Defaults to 'trained_models'
     
     """
+
     def __init__(self, project_storage, model_directory=None):
         self.project_storage = project_storage
-        self.directories = [model_directory or 'trained_models']
+        self.directories = [model_directory or "trained_models"]
 
     def write(self, obj, model_hash):
         """Persist a model object using joblib. Also performs compression
@@ -186,7 +197,7 @@ class ModelStorageEngine(object):
             obj (object) A picklable model object
             model_hash (string) An identifier, unique within this project, for the model
         """
-        with self._get_store(model_hash).open('wb') as fd:
+        with self._get_store(model_hash).open("wb") as fd:
             joblib.dump(obj, fd, compress=True)
 
     def load(self, model_hash):
@@ -197,7 +208,7 @@ class ModelStorageEngine(object):
 
         Returns: (object) A model object
         """
-        with self._get_store(model_hash).open('rb') as fd:
+        with self._get_store(model_hash).open("rb") as fd:
             return joblib.load(fd)
 
     def exists(self, model_hash):
@@ -230,10 +241,13 @@ class MatrixStorageEngine(object):
         matrix_storage_class (class) A subclass of MatrixStore
         matrix_directory (string, optional) A directory to store matrices. Defaults to 'matrices'
     """
-    def __init__(self, project_storage, matrix_storage_class=None, matrix_directory=None):
+
+    def __init__(
+        self, project_storage, matrix_storage_class=None, matrix_directory=None
+    ):
         self.project_storage = project_storage
         self.matrix_storage_class = matrix_storage_class or CSVMatrixStore
-        self.directories = [matrix_directory or 'matrices']
+        self.directories = [matrix_directory or "matrices"]
 
     def get_store(self, matrix_uuid):
         """Return a storage object for a given matrix uuid.
@@ -243,7 +257,9 @@ class MatrixStorageEngine(object):
 
         Returns: (MatrixStore) a reference to the matrix and its companion metadata
         """
-        return self.matrix_storage_class(self.project_storage, self.directories, matrix_uuid)
+        return self.matrix_storage_class(
+            self.project_storage, self.directories, matrix_uuid
+        )
 
 
 class MatrixStore(object):
@@ -259,12 +275,19 @@ class MatrixStore(object):
         matrix (pandas.DataFrame, optional): The raw matrix. Defaults to None, which means it will be loaded from storage on demand
         metadata (dict, optional). The matrix' metadata. Defaults to None, which means it will be loaded from storage on demand.
     """
+
     _labels = None
 
-    def __init__(self, project_storage, directories, matrix_uuid, matrix=None, metadata=None):
+    def __init__(
+        self, project_storage, directories, matrix_uuid, matrix=None, metadata=None
+    ):
         self.matrix_uuid = matrix_uuid
-        self.matrix_base_store = project_storage.get_store(directories, f'{matrix_uuid}.{self.suffix}')
-        self.metadata_base_store = project_storage.get_store(directories, f'{matrix_uuid}.yaml')
+        self.matrix_base_store = project_storage.get_store(
+            directories, f"{matrix_uuid}.{self.suffix}"
+        )
+        self.metadata_base_store = project_storage.get_store(
+            directories, f"{matrix_uuid}.yaml"
+        )
 
         self.matrix = matrix
         self.metadata = metadata
@@ -317,19 +340,16 @@ class MatrixStore(object):
         if include_label:
             return columns
         else:
-            return [
-                col for col in columns
-                if col != self.metadata['label_name']
-            ]
+            return [col for col in columns if col != self.metadata["label_name"]]
 
     def labels(self):
         """The matrix's label column."""
         if self._labels is not None:
-            logging.debug('using stored labels')
+            logging.debug("using stored labels")
             return self._labels
         else:
-            logging.debug('popping labels from matrix')
-            self._labels = self.matrix.pop(self.metadata['label_name'])
+            logging.debug("popping labels from matrix")
+            self._labels = self.matrix.pop(self.metadata["label_name"])
             return self._labels
 
     @property
@@ -340,18 +360,22 @@ class MatrixStore(object):
     @property
     def as_of_dates(self):
         """The list of as-of-dates in the matrix"""
-        if 'as_of_date' in self.matrix.index.names:
-            return sorted(list(set([as_of_date for entity_id, as_of_date in self.matrix.index])))
+        if "as_of_date" in self.matrix.index.names:
+            return sorted(
+                list(set([as_of_date for entity_id, as_of_date in self.matrix.index]))
+            )
         else:
-            return [self.metadata['end_time']]
+            return [self.metadata["end_time"]]
 
     @property
     def num_entities(self):
         """The number of entities in the matrix"""
-        if self.matrix.index.names == ['entity_id']:
+        if self.matrix.index.names == ["entity_id"]:
             return len(self.matrix.index.values)
-        elif 'entity_id' in self.matrix.index.names:
-            return len(self.matrix.index.levels[self.matrix.index.names.index('entity_id')])
+        elif "entity_id" in self.matrix.index.names:
+            return len(
+                self.matrix.index.levels[self.matrix.index.names.index("entity_id")]
+            )
 
     @property
     def matrix_type(self):
@@ -361,13 +385,17 @@ class MatrixStore(object):
             prediction ORM class
             a boolean `is_test`
         """
-        if self.metadata['matrix_type'] == 'train':
+        if self.metadata["matrix_type"] == "train":
             return TrainMatrixType
-        elif self.metadata['matrix_type'] == 'test':
+        elif self.metadata["matrix_type"] == "test":
             return TestMatrixType
         else:
-            raise Exception('''matrix metadata for matrix {} must contain 'matrix_type'
-             = "train" or "test" '''.format(self.uuid))
+            raise Exception(
+                """matrix metadata for matrix {} must contain 'matrix_type'
+             = "train" or "test" """.format(
+                    self.uuid
+                )
+            )
 
     def matrix_with_sorted_columns(self, columns):
         """Return the matrix with columns sorted in the given column order
@@ -380,25 +408,34 @@ class MatrixStore(object):
         desired_columnset = set(columns)
         if columnset == desired_columnset:
             if self.columns() != columns:
-                logging.warning('Column orders not the same, re-ordering')
+                logging.warning("Column orders not the same, re-ordering")
             return self.matrix[columns]
         else:
             if columnset.issuperset(desired_columnset):
-                raise ValueError('''
+                raise ValueError(
+                    """
                     Columnset is superset of desired columnset. Extra items: %s
-                ''', columnset - desired_columnset)
+                """,
+                    columnset - desired_columnset,
+                )
             elif columnset.issubset(desired_columnset):
-                raise ValueError('''
+                raise ValueError(
+                    """
                     Columnset is subset of desired columnset. Extra items: %s
-                ''', desired_columnset - columnset)
+                """,
+                    desired_columnset - columnset,
+                )
             else:
-                raise ValueError('''
+                raise ValueError(
+                    """
                     Columnset and desired columnset mismatch. Unique items: %s
-                ''', columnset ^ desired_columnset)
+                """,
+                    columnset ^ desired_columnset,
+                )
 
     def load_metadata(self):
         """Load metadata from storage"""
-        with self.metadata_base_store.open('rb') as fd:
+        with self.metadata_base_store.open("rb") as fd:
             return yaml.load(fd)
 
     def save(self):
@@ -417,20 +454,21 @@ class MatrixStore(object):
 
 class HDFMatrixStore(MatrixStore):
     """Store and access matrices using HDF"""
-    suffix = 'h5'
+
+    suffix = "h5"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if isinstance(self.matrix_base_store, S3Store):
-            raise ValueError('HDFMatrixStore cannot be used with S3')
+            raise ValueError("HDFMatrixStore cannot be used with S3")
 
     @property
     def head_of_matrix(self):
         try:
             head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=1)
             # Is the index already in place?
-            if head_of_matrix.index.names != self.metadata['indices']:
-                head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+            if head_of_matrix.index.names != self.metadata["indices"]:
+                head_of_matrix.set_index(self.metadata["indices"], inplace=True)
         except pd.errors.EmptyDataError:
             head_of_matrix = None
 
@@ -440,34 +478,37 @@ class HDFMatrixStore(MatrixStore):
         matrix = pd.read_hdf(self.matrix_base_store.path)
 
         # Is the index already in place?
-        if matrix.index.names != self.metadata['indices']:
-            matrix.set_index(self.metadata['indices'], inplace=True)
+        if matrix.index.names != self.metadata["indices"]:
+            matrix.set_index(self.metadata["indices"], inplace=True)
 
         return matrix
 
     def save(self):
-        hdf = pd.HDFStore(self.matrix_base_store.path,
-                          mode='w',
-                          complevel=4,
-                          complib="zlib",
-                          format='table')
+        hdf = pd.HDFStore(
+            self.matrix_base_store.path,
+            mode="w",
+            complevel=4,
+            complib="zlib",
+            format="table",
+        )
         hdf.put(self.matrix_uuid, self.matrix.apply(pd.to_numeric), data_columns=True)
         hdf.close()
 
-        with self.metadata_base_store.open('wb') as fd:
-            yaml.dump(self.metadata, fd, encoding='utf-8')
+        with self.metadata_base_store.open("wb") as fd:
+            yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
 class CSVMatrixStore(MatrixStore):
     """Store and access matrices using CSV"""
-    suffix = 'csv'
+
+    suffix = "csv"
 
     @property
     def head_of_matrix(self):
         try:
-            with self.matrix_base_store.open('rb') as fd:
+            with self.matrix_base_store.open("rb") as fd:
                 head_of_matrix = pd.read_csv(fd, nrows=1)
-                head_of_matrix.set_index(self.metadata['indices'], inplace=True)
+                head_of_matrix.set_index(self.metadata["indices"], inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
             logging.exception("Returning Empty data frame")
@@ -476,29 +517,31 @@ class CSVMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        parse_dates_argument = ['as_of_date'] if 'as_of_date' in self.metadata['indices'] else False
-        with self.matrix_base_store.open('rb') as fd:
+        parse_dates_argument = (
+            ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
+        )
+        with self.matrix_base_store.open("rb") as fd:
             matrix = pd.read_csv(fd, parse_dates=parse_dates_argument)
 
-        matrix.set_index(self.metadata['indices'], inplace=True)
+        matrix.set_index(self.metadata["indices"], inplace=True)
 
         return matrix
 
     def save(self):
-        self.matrix_base_store.write(self.matrix.to_csv(None).encode('utf-8'))
-        with self.metadata_base_store.open('wb') as fd:
-            yaml.dump(self.metadata, fd, encoding='utf-8')
+        self.matrix_base_store.write(self.matrix.to_csv(None).encode("utf-8"))
+        with self.metadata_base_store.open("wb") as fd:
+            yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType(object):
-    string_name = 'test'
+    string_name = "test"
     evaluation_obj = TestEvaluation
     prediction_obj = TestPrediction
     is_test = True
 
 
 class TrainMatrixType(object):
-    string_name = 'train'
+    string_name = "train"
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction
     is_test = False

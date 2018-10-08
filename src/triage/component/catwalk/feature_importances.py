@@ -45,10 +45,10 @@ def get_feature_importances(model):
     """
     feature_importances = None
 
-    if hasattr(model, 'feature_importances_'):
+    if hasattr(model, "feature_importances_"):
         feature_importances = model.feature_importances_
 
-    elif isinstance(model, (SVC)) and (model.get_params()['kernel'] == 'linear'):
+    elif isinstance(model, (SVC)) and (model.get_params()["kernel"] == "linear"):
         feature_importances = model.coef_.squeeze()
 
     else:

@@ -2,7 +2,4 @@
 from .planner import Planner
 from . import builders
 
-__all__ = (
-    'Planner',
-    'builders',
-)
+__all__ = ("Planner", "builders")

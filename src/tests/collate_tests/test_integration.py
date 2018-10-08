@@ -10,14 +10,15 @@ from triage.component.collate.spacetime import SpacetimeAggregation
 from . import initialize_db
 
 
-IMPUTE_RULES={
-    'coltype': 'aggregate',
-    'count': {'type': 'mean'},
-    'mode': {'type': 'mean'}
+IMPUTE_RULES = {
+    "coltype": "aggregate",
+    "count": {"type": "mean"},
+    "mode": {"type": "mean"},
 }
 
-Postgresql = testing.postgresql.PostgresqlFactory(cache_initialized_db=True,
-                                                  on_initialized=initialize_db.handler)
+Postgresql = testing.postgresql.PostgresqlFactory(
+    cache_initialized_db=True, on_initialized=initialize_db.handler
+)
 
 
 def teardown_module():
@@ -32,20 +33,18 @@ def test_engine():
 
 
 def test_st_explicit_execute():
-    agg = Aggregate({'F': "results='Fail'"}, ["count"], IMPUTE_RULES)
+    agg = Aggregate({"F": "results='Fail'"}, ["count"], IMPUTE_RULES)
     mode = Aggregate("", "mode", IMPUTE_RULES, order="zip")
     st = SpacetimeAggregation(
-        [agg, agg+agg, mode],
-        from_obj = ex.table('food_inspections'),
-        groups = {'license':ex.column('license_no'),
-                  'zip':ex.column('zip')},
-        intervals = {'license' : ["1 year", "2 years", "all"],
-                     'zip' : ["1 year"]},
-        dates = ['2016-08-30', '2015-11-06'],
-        state_table = 'inspection_states',
-        state_group = 'license_no',
-        date_column = 'inspection_date',
-        prefix='food_inspections'
+        [agg, agg + agg, mode],
+        from_obj=ex.table("food_inspections"),
+        groups={"license": ex.column("license_no"), "zip": ex.column("zip")},
+        intervals={"license": ["1 year", "2 years", "all"], "zip": ["1 year"]},
+        dates=["2016-08-30", "2015-11-06"],
+        state_table="inspection_states",
+        state_group="license_no",
+        date_column="inspection_date",
+        prefix="food_inspections",
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -56,14 +55,13 @@ def test_st_lazy_execute():
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
-        from_obj = 'food_inspections',
-        groups = ['license_no', 'zip'],
-        intervals = {'license_no':["1 year", "2 years", "all"],
-                           'zip' : ["1 year"]},
-        dates = ['2016-08-30', '2015-11-06'],
-        state_table = 'inspection_states',
-        state_group = 'license_no',
-        date_column = '"inspection_date"'
+        from_obj="food_inspections",
+        groups=["license_no", "zip"],
+        intervals={"license_no": ["1 year", "2 years", "all"], "zip": ["1 year"]},
+        dates=["2016-08-30", "2015-11-06"],
+        state_table="inspection_states",
+        state_group="license_no",
+        date_column='"inspection_date"',
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -74,13 +72,13 @@ def test_st_execute_broadcast_intervals():
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
-        from_obj = 'food_inspections',
-        groups = ['license_no', 'zip'],
-        intervals = ["1 year", "2 years", "all"],
-        dates = ['2016-08-30', '2015-11-06'],
-        state_table = 'inspection_states',
-        state_group = 'license_no',
-        date_column = '"inspection_date"'
+        from_obj="food_inspections",
+        groups=["license_no", "zip"],
+        intervals=["1 year", "2 years", "all"],
+        dates=["2016-08-30", "2015-11-06"],
+        state_table="inspection_states",
+        state_group="license_no",
+        date_column='"inspection_date"',
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -91,10 +89,10 @@ def test_execute():
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = Aggregation(
         [agg],
-        from_obj = 'food_inspections',
-        groups = ['license_no', 'zip'],
-        state_table = 'all_licenses',
-        state_group = 'license_no',
+        from_obj="food_inspections",
+        groups=["license_no", "zip"],
+        state_table="all_licenses",
+        state_group="license_no",
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -105,16 +103,15 @@ def test_execute_schema_output_date_column():
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
-        from_obj = 'food_inspections',
-        groups = ['license_no', 'zip'],
-        intervals = {'license_no':["1 year", "2 years", "all"],
-                           'zip' : ["1 year"]},
-        dates = ['2016-08-30', '2015-11-06'],
-        state_table = 'inspection_states_diff_colname',
-        state_group = 'license_no',
-        schema = "agg",
-        date_column = '"inspection_date"',
-        output_date_column = "aggregation_date"
+        from_obj="food_inspections",
+        groups=["license_no", "zip"],
+        intervals={"license_no": ["1 year", "2 years", "all"], "zip": ["1 year"]},
+        dates=["2016-08-30", "2015-11-06"],
+        state_table="inspection_states_diff_colname",
+        state_group="license_no",
+        schema="agg",
+        date_column='"inspection_date"',
+        output_date_column="aggregation_date",
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())

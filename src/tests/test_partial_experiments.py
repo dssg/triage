@@ -17,6 +17,7 @@ from contextlib import contextmanager
 
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -29,16 +30,16 @@ def prepare_experiment(config):
             experiment = SingleThreadedExperiment(
                 config=config,
                 db_engine=db_engine,
-                project_path=os.path.join(temp_dir, 'inspections'),
-                cleanup=False
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=False,
             )
             yield experiment
 
 
 class GetSplits(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
@@ -58,15 +59,17 @@ class GetSplits(TestCase):
 
 class Cohort(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'cohort_config': sample_config()['cohort_config'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "cohort_config": sample_config()["cohort_config"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            table_should_have_data(experiment.sparse_states_table_name, experiment.db_engine)
+            table_should_have_data(
+                experiment.sparse_states_table_name, experiment.db_engine
+            )
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:
@@ -80,9 +83,9 @@ class Cohort(TestCase):
 
 class Labels(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'label_config': sample_config()['label_config'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "label_config": sample_config()["label_config"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
@@ -102,9 +105,9 @@ class Labels(TestCase):
 
 class PreimputationFeatures(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'feature_aggregations': sample_config()['feature_aggregations'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "feature_aggregations": sample_config()["feature_aggregations"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
@@ -113,13 +116,12 @@ class PreimputationFeatures(TestCase):
             generated_tables = [
                 table
                 for table in schema_tables(
-                    experiment.features_schema_name,
-                    experiment.db_engine
+                    experiment.features_schema_name, experiment.db_engine
                 ).keys()
-                if '_aggregation' in table
+                if "_aggregation" in table
             ]
 
-            assert len(generated_tables) == len(sample_config()['feature_aggregations'])
+            assert len(generated_tables) == len(sample_config()["feature_aggregations"])
             for table in generated_tables:
                 table_should_have_data(table, experiment.db_engine)
 
@@ -135,10 +137,10 @@ class PreimputationFeatures(TestCase):
 
 class PostimputationFeatures(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'feature_aggregations': sample_config()['feature_aggregations'],
-        'cohort_config': sample_config()['cohort_config'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "feature_aggregations": sample_config()["feature_aggregations"],
+        "cohort_config": sample_config()["cohort_config"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
@@ -146,11 +148,13 @@ class PostimputationFeatures(TestCase):
             experiment.run()
             generated_tables = [
                 table
-                for table in schema_tables(experiment.features_schema_name, experiment.db_engine).keys()
-                if '_aggregation_imputed' in table
+                for table in schema_tables(
+                    experiment.features_schema_name, experiment.db_engine
+                ).keys()
+                if "_aggregation_imputed" in table
             ]
 
-            assert len(generated_tables) == len(sample_config()['feature_aggregations'])
+            assert len(generated_tables) == len(sample_config()["feature_aggregations"])
             for table in generated_tables:
                 table_should_have_data(table, experiment.db_engine)
 
@@ -166,23 +170,25 @@ class PostimputationFeatures(TestCase):
 
 class Matrices(TestCase):
     config = {
-        'temporal_config': sample_config()['temporal_config'],
-        'feature_aggregations': sample_config()['feature_aggregations'],
-        'cohort_config': sample_config()['cohort_config'],
-        'label_config': sample_config()['label_config'],
-        'config_version': sample_config()['config_version']
+        "temporal_config": sample_config()["temporal_config"],
+        "feature_aggregations": sample_config()["feature_aggregations"],
+        "cohort_config": sample_config()["cohort_config"],
+        "label_config": sample_config()["label_config"],
+        "config_version": sample_config()["config_version"],
     }
 
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            matrices_path = join(experiment.project_path, 'matrices')
-            matrices_and_metadata = [f for f in os.listdir(matrices_path) if isfile(join(matrices_path, f))]
+            matrices_path = join(experiment.project_path, "matrices")
+            matrices_and_metadata = [
+                f for f in os.listdir(matrices_path) if isfile(join(matrices_path, f))
+            ]
             matrices = experiment.matrix_build_tasks
             assert len(matrices) > 0
             for matrix in matrices:
-                assert '{}.csv'.format(matrix) in matrices_and_metadata
-                assert '{}.yaml'.format(matrix) in matrices_and_metadata
+                assert "{}.csv".format(matrix) in matrices_and_metadata
+                assert "{}.yaml".format(matrix) in matrices_and_metadata
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:

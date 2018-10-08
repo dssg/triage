@@ -7,7 +7,6 @@ from .plotting import plot_cats, plot_bounds
 
 
 class SelectionRulePicker(object):
-
     def __init__(self, distance_from_best_table):
         """Runs simulations of different model group selection rules
 
@@ -30,7 +29,7 @@ class SelectionRulePicker(object):
         model_group_ids,
         train_end_times,
         regret_metric,
-        regret_parameter
+        regret_parameter,
     ):
         """Calculate the regrets, or distance between the chosen model and
             the maximum value next test time
@@ -62,22 +61,22 @@ class SelectionRulePicker(object):
         for train_end_time in train_end_times:
             # When plotting rules, we use only the best one model group id
             model_group_id = self.model_group_from_rule(
-                bound_selection_rule,
-                model_group_ids,
-                train_end_time
+                bound_selection_rule, model_group_ids, train_end_time
             )
             model_group_id = model_group_id[0]
             choice = df[
-                (df['model_group_id'] == model_group_id) &
-                (df['train_end_time'] == train_end_time) &
-                (df['metric'] == regret_metric) &
-                (df['parameter'] == regret_parameter)
+                (df["model_group_id"] == model_group_id)
+                & (df["train_end_time"] == train_end_time)
+                & (df["metric"] == regret_metric)
+                & (df["parameter"] == regret_parameter)
             ]
             assert len(choice) == 1
             choices.append(choice.squeeze().to_dict())
         return choices
 
-    def model_group_from_rule(self, bound_selection_rule, model_group_ids, train_end_time):
+    def model_group_from_rule(
+        self, bound_selection_rule, model_group_ids, train_end_time
+    ):
         """Pick a model group that best selects the given selection rule
 
         In here, we create a subset of the distance from best table dataframe,
@@ -97,10 +96,8 @@ class SelectionRulePicker(object):
         Returns: (int) The model group id chosen by the input selection rule
         """
         df = self.distance_from_best_table.as_dataframe(model_group_ids)
-        localized_df = copy.deepcopy(
-            df[df['train_end_time'] <= train_end_time]
-        )
-        del localized_df['dist_from_best_case_next_time']
+        localized_df = copy.deepcopy(df[df["train_end_time"] <= train_end_time])
+        del localized_df["dist_from_best_case_next_time"]
 
         return bound_selection_rule.pick(localized_df, train_end_time)
 
@@ -111,6 +108,7 @@ class SelectionRulePlotter(object):
     Args:
         selection_rule_picker (.SelectionRulePicker)
     """
+
     def __init__(self, selection_rule_picker, directory=None):
         self.selection_rule_picker = selection_rule_picker
         self.directory = directory
@@ -126,14 +124,14 @@ class SelectionRulePlotter(object):
         Returns: (number, number) A minimum and maximum x value for the plot
         """
 
-        observed_min, observed_max = self.selection_rule_picker\
-            .distance_from_best_table\
-            .observed_bounds[(metric, parameter)]
+        observed_min, observed_max = self.selection_rule_picker.distance_from_best_table.observed_bounds[
+            (metric, parameter)
+        ]
         return plot_bounds(observed_min, observed_max)
 
     def regret_threshold_dist(self, plot_min, plot_max):
         dist = plot_max - plot_min
-        return dist/100.0
+        return dist / 100.0
 
     def regret_thresholds(self, regret_metric, regret_parameter):
         plot_min, plot_max = self.plot_bounds(regret_metric, regret_parameter)
@@ -146,7 +144,7 @@ class SelectionRulePlotter(object):
         model_group_ids,
         train_end_times,
         regret_metric,
-        regret_parameter
+        regret_parameter,
     ):
         """Create a dataframe suitable for plotting selection rule regrets
 
@@ -168,22 +166,26 @@ class SelectionRulePlotter(object):
         accumulator = []
         for selection_rule in bound_selection_rules:
             regrets = [
-                result['dist_from_best_case_next_time']
+                result["dist_from_best_case_next_time"]
                 for result in self.selection_rule_picker.results_for_rule(
                     selection_rule,
                     model_group_ids,
                     train_end_times,
                     regret_metric,
-                    regret_parameter
+                    regret_parameter,
                 )
             ]
-            for regret_threshold in self.regret_thresholds(regret_metric, regret_parameter):
+            for regret_threshold in self.regret_thresholds(
+                regret_metric, regret_parameter
+            ):
                 distro = [int(regret < regret_threshold) for regret in regrets]
-                accumulator.append({
-                    'regret': regret_threshold,
-                    'pct_of_time': numpy.mean(distro),
-                    'selection_rule': selection_rule.descriptive_name,
-                })
+                accumulator.append(
+                    {
+                        "regret": regret_threshold,
+                        "pct_of_time": numpy.mean(distro),
+                        "selection_rule": selection_rule.descriptive_name,
+                    }
+                )
         return pandas.DataFrame.from_records(accumulator)
 
     def plot_all_selection_rules(
@@ -192,7 +194,7 @@ class SelectionRulePlotter(object):
         model_group_ids,
         train_end_times,
         regret_metric,
-        regret_parameter
+        regret_parameter,
     ):
         """Plot the regrets of all given selection rules
 
@@ -213,27 +215,31 @@ class SelectionRulePlotter(object):
             model_group_ids,
             train_end_times,
             regret_metric,
-            regret_parameter
+            regret_parameter,
         )
-        cat_col = 'selection_rule'
-        plt_title = ('Fraction of models X pp worse than best {} {} next time'
-                     .format(regret_metric, regret_parameter))
+        cat_col = "selection_rule"
+        plt_title = "Fraction of models X pp worse than best {} {} next time".format(
+            regret_metric, regret_parameter
+        )
         (plot_min, plot_max) = self.plot_bounds(regret_metric, regret_parameter)
 
         if self.directory:
-            path_to_save = os.path.join(self.directory, f'regret_distance_from_best_rules_{regret_metric}{regret_parameter}.png')
+            path_to_save = os.path.join(
+                self.directory,
+                f"regret_distance_from_best_rules_{regret_metric}{regret_parameter}.png",
+            )
         else:
             path_to_save = None
 
         plot_cats(
             frame=df_regrets,
-            x_col='regret',
-            y_col='pct_of_time',
+            x_col="regret",
+            y_col="pct_of_time",
             cat_col=cat_col,
-            grp_col='selection_rule',
+            grp_col="selection_rule",
             title=plt_title,
-            x_label='distance from best {} next time'.format(regret_metric),
-            y_label='fraction of models',
+            x_label="distance from best {} next time".format(regret_metric),
+            y_label="fraction of models",
             x_lim=self.plot_bounds(regret_metric, regret_parameter),
-            path_to_save=path_to_save
+            path_to_save=path_to_save,
         )

@@ -2,14 +2,19 @@ import logging
 import time
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
+
 try:
     from rq import Queue
 except ImportError:
-    print('rq not available. To use RQExperiment, install triage with the RQ extension: pip install triage[rq]')
+    print(
+        "rq not available. To use RQExperiment, install triage with the RQ extension: pip install triage[rq]"
+    )
     raise
 
 
-DEFAULT_TIMEOUT = '365d'  # We want to basically invalidate RQ's timeouts by setting them each to one year
+DEFAULT_TIMEOUT = (
+    "365d"
+)  # We want to basically invalidate RQ's timeouts by setting them each to one year
 
 
 class RQExperiment(ExperimentBase):
@@ -24,7 +29,10 @@ class RQExperiment(ExperimentBase):
         sleep_time (int, default 5) How many seconds the process should sleep while waiting for RQ results
         queue_kwargs (dict, default {}) Any extra keyword arguments to pass to Queue creation
     """
-    def __init__(self, redis_connection, sleep_time=5, queue_kwargs=None, *args, **kwargs):
+
+    def __init__(
+        self, redis_connection, sleep_time=5, queue_kwargs=None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.redis_connection = redis_connection
         if queue_kwargs is None:
@@ -45,18 +53,20 @@ class RQExperiment(ExperimentBase):
         while True:
             num_done = sum(1 for job in jobs if job.is_finished)
             num_failed = sum(1 for job in jobs if job.is_failed)
-            num_pending = sum(1 for job in jobs if not job.is_finished and not job.is_failed)
+            num_pending = sum(
+                1 for job in jobs if not job.is_finished and not job.is_failed
+            )
             logging.info(
-                'Report: jobs %s done, %s failed, %s pending',
+                "Report: jobs %s done, %s failed, %s pending",
                 num_done,
                 num_failed,
-                num_pending
+                num_pending,
             )
             if num_pending == 0:
-                logging.info('All jobs completed or failed, returning')
+                logging.info("All jobs completed or failed, returning")
                 return [job.result for job in jobs]
             else:
-                logging.info('Sleeping for %s seconds', self.sleep_time)
+                logging.info("Sleeping for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
 
     def process_query_tasks(self, query_tasks):
@@ -79,12 +89,11 @@ class RQExperiment(ExperimentBase):
             }
         """
         for table_name, tasks in query_tasks.items():
-            logging.info('Processing features for %s', table_name)
-            self.feature_generator.run_commands(tasks.get('prepare', []))
+            logging.info("Processing features for %s", table_name)
+            self.feature_generator.run_commands(tasks.get("prepare", []))
 
             insert_batches = [
-                list(task_batch)
-                for task_batch in Batch(tasks.get('inserts', []), 25)
+                list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
             ]
             jobs = [
                 self.queue.enqueue(
@@ -98,8 +107,8 @@ class RQExperiment(ExperimentBase):
             ]
             self.wait_for(jobs)
 
-            self.feature_generator.run_commands(tasks.get('finalize', []))
-            logging.info('%s completed', table_name)
+            self.feature_generator.run_commands(tasks.get("finalize", []))
+            logging.info("%s completed", table_name)
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ

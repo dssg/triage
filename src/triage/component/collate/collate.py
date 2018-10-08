@@ -5,17 +5,24 @@ import sqlalchemy.sql.expression as ex
 import re
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
-from .imputations import ImputeMean, ImputeConstant, ImputeZero, \
-    ImputeZeroNoFlag, ImputeNullCategory, ImputeBinaryMode, ImputeError
+from .imputations import (
+    ImputeMean,
+    ImputeConstant,
+    ImputeZero,
+    ImputeZeroNoFlag,
+    ImputeNullCategory,
+    ImputeBinaryMode,
+    ImputeError,
+)
 
 available_imputations = {
-    'mean': ImputeMean,
-    'constant': ImputeConstant,
-    'zero': ImputeZero,
-    'zero_noflag': ImputeZeroNoFlag,
-    'null_category': ImputeNullCategory,
-    'binary_mode': ImputeBinaryMode,
-    'error': ImputeError
+    "mean": ImputeMean,
+    "constant": ImputeConstant,
+    "zero": ImputeZero,
+    "zero_noflag": ImputeZeroNoFlag,
+    "null_category": ImputeNullCategory,
+    "binary_mode": ImputeBinaryMode,
+    "error": ImputeError,
 }
 
 
@@ -33,7 +40,7 @@ DISTINCT_REGEX = re.compile(r"distinct[ (]")
 def split_distinct(quantity):
     # Only support distinct clauses with one-argument quantities
     if len(quantity) != 1:
-        return ('', quantity)
+        return ("", quantity)
     q = quantity[0]
     if DISTINCT_REGEX.match(q):
         return "distinct ", (q[8:].lstrip(" "),)
@@ -42,8 +49,15 @@ def split_distinct(quantity):
 
 
 class AggregateExpression(object):
-    def __init__(self, aggregate1, aggregate2, operator,
-                 cast=None, operator_str=None, expression_template=None):
+    def __init__(
+        self,
+        aggregate1,
+        aggregate2,
+        operator,
+        cast=None,
+        operator_str=None,
+        expression_template=None,
+    ):
         """
         Args:
             aggregate1: first aggregate
@@ -59,8 +73,9 @@ class AggregateExpression(object):
         self.operator = operator
         self.cast = cast if cast else ""
         self.operator_str = operator if operator_str else operator
-        self.expression_template = expression_template \
-            if expression_template else "{name1}{operator}{name2}"
+        self.expression_template = (
+            expression_template if expression_template else "{name1}{operator}{name2}"
+        )
 
     def column_imputation_lookup(self, prefix=None):
         lookup1 = self.aggregate1.column_imputation_lookup()
@@ -68,10 +83,13 @@ class AggregateExpression(object):
 
         return dict(
             (
-                prefix + self.expression_template.format(
-                    name1=c1, operator=self.operator_str, name2=c2),
-                lookup1[c1]
-            ) for c1, c2 in product(lookup1.keys(), lookup2.keys())
+                prefix
+                + self.expression_template.format(
+                    name1=c1, operator=self.operator_str, name2=c2
+                ),
+                lookup1[c1],
+            )
+            for c1, c2 in product(lookup1.keys(), lookup2.keys())
         )
 
     def alias(self, expression_template):
@@ -90,11 +108,15 @@ class AggregateExpression(object):
         columns2 = self.aggregate2.get_columns(when)
 
         for c1, c2 in product(columns1, columns2):
-            c = ex.literal_column("({}{} {} {})".format(
-                    c1, self.cast, self.operator, c2))
-            yield c.label(prefix + self.expression_template.format(
-                name1=c1.name, operator=self.operator_str, name2=c2.name,
-            ))
+            c = ex.literal_column(
+                "({}{} {} {})".format(c1, self.cast, self.operator, c2)
+            )
+            yield c.label(
+                prefix
+                + self.expression_template.format(
+                    name1=c1.name, operator=self.operator_str, name2=c2.name
+                )
+            )
 
     def __add__(self, other):
         return AggregateExpression(self, other, "+")
@@ -140,6 +162,7 @@ class Aggregate(AggregateExpression):
     """
     An object representing one or more SQL aggregate columns in a groupby
     """
+
     def __init__(self, quantity, function, impute_rules, order=None):
         """
         Args:
@@ -199,21 +222,28 @@ class Aggregate(AggregateExpression):
             filter_template = " FILTER (WHERE {when})"
 
         for function, (quantity_name, quantity), order in product(
-                self.functions, self.quantities.items(), self.orders):
+            self.functions, self.quantities.items(), self.orders
+        ):
             distinct, quantity = split_distinct(quantity)
-            args = str.join(", ", (arg_template.format(quantity=q)
-                                   for q in quantity))
+            args = str.join(", ", (arg_template.format(quantity=q) for q in quantity))
             order_clause = order_template.format(order=order)
             filter = filter_template.format(when=when)
 
             if order is not None:
                 if len(quantity_name) > 0:
-                    quantity_name += '_'
+                    quantity_name += "_"
                 quantity_name += to_sql_name(order)
 
-            kwargs = dict(function=function, args=args, prefix=prefix,
-                          distinct=distinct, order_clause=order_clause,
-                          quantity_name=quantity_name, filter=filter, **format_kwargs)
+            kwargs = dict(
+                function=function,
+                args=args,
+                prefix=prefix,
+                distinct=distinct,
+                order_clause=order_clause,
+                quantity_name=quantity_name,
+                filter=filter,
+                **format_kwargs
+            )
 
             column = column_template.format(**kwargs).format(**format_kwargs)
             name = name_template.format(**kwargs)
@@ -234,15 +264,15 @@ class Aggregate(AggregateExpression):
 
         lkup = {}
         for function, (quantity_name, quantity), order in product(
-                self.functions, self.quantities.items(), self.orders):
+            self.functions, self.quantities.items(), self.orders
+        ):
 
             if order is not None:
                 if len(quantity_name) > 0:
-                    quantity_name += '_'
+                    quantity_name += "_"
                 quantity_name += to_sql_name(order)
 
-            kwargs = dict(function=function, prefix=prefix,
-                          quantity_name=quantity_name)
+            kwargs = dict(function=function, prefix=prefix, quantity_name=quantity_name)
 
             name = name_template.format(**kwargs)
 
@@ -250,20 +280,21 @@ class Aggregate(AggregateExpression):
             # type used by the aggregate (or catch-all with 'all')
             try:
                 lkup[name] = dict(
-                    self.impute_rules.get(function) or self.impute_rules['all'],
-                    coltype=self.impute_rules['coltype']
-                    )
+                    self.impute_rules.get(function) or self.impute_rules["all"],
+                    coltype=self.impute_rules["coltype"],
+                )
             except KeyError as err:
                 raise ValueError(
-                    "Must provide an imputation rule for every aggregation " +
-                    "function (or 'all'). No rule found for %s" % name
-                    ) from err
+                    "Must provide an imputation rule for every aggregation "
+                    + "function (or 'all'). No rule found for %s" % name
+                ) from err
 
         return lkup
 
 
 def maybequote(elt, quote_override=None):
     "Quote for passing to SQL if necessary, based upon the python type"
+
     def quote_string(string):
         return "'{}'".format(string)
 
@@ -282,9 +313,20 @@ class Compare(Aggregate):
     """
     A simple shorthand to automatically create many comparisons against one column
     """
-    def __init__(self, col, op, choices, function, impute_rules,
-                 order=None, include_null=False, maxlen=None, op_in_name=True,
-                 quote_choices=None):
+
+    def __init__(
+        self,
+        col,
+        op,
+        choices,
+        function,
+        impute_rules,
+        order=None,
+        include_null=False,
+        maxlen=None,
+        op_in_name=True,
+        quote_choices=None,
+    ):
         """
         Args:
             col: the column name (or equivalent SQL expression)
@@ -319,17 +361,20 @@ class Compare(Aggregate):
         """
         if type(choices) is not dict:
             choices = {k: k for k in choices}
-        opname = '_{}_'.format(op) if op_in_name else '_'
-        d = {'{}{}{}'.format(col, opname, nickname):
-             "({} {} {})::INT".format(col, op, maybequote(choice, quote_choices))
-             for nickname, choice in choices.items()}
+        opname = "_{}_".format(op) if op_in_name else "_"
+        d = {
+            "{}{}{}".format(col, opname, nickname): "({} {} {})::INT".format(
+                col, op, maybequote(choice, quote_choices)
+            )
+            for nickname, choice in choices.items()
+        }
         if include_null is True:
-            include_null = '_NULL'
+            include_null = "_NULL"
         if include_null:
-            d['{}_{}'.format(col, include_null)] = '({} is NULL)::INT'.format(col)
+            d["{}_{}".format(col, include_null)] = "({} is NULL)::INT".format(col)
         if maxlen is not None and any(len(k) > maxlen for k in d.keys()):
             for i, k in enumerate(list(d.keys())):
-                d['%s_%02d' % (k[:maxlen-3], i)] = d.pop(k)
+                d["%s_%02d" % (k[: maxlen - 3], i)] = d.pop(k)
 
         Aggregate.__init__(self, d, function, impute_rules, order)
 
@@ -338,8 +383,17 @@ class Categorical(Compare):
     """
     A simple shorthand to automatically create many equality comparisons against one column
     """
-    def __init__(self, col, choices, function, impute_rules,
-                 order=None, op_in_name=False, **kwargs):
+
+    def __init__(
+        self,
+        col,
+        choices,
+        function,
+        impute_rules,
+        order=None,
+        op_in_name=False,
+        **kwargs
+    ):
         """
         Create a Compare object with an equality operator, ommitting the `=`
         from the generated aggregation names. See Compare for more details.
@@ -349,20 +403,38 @@ class Categorical(Compare):
         None values are ignored.
         """
         if None in choices:
-            kwargs['include_null'] = True
+            kwargs["include_null"] = True
             choices.remove(None)
         elif type(choices) is dict and None in choices.values():
             ks = [k for k, v in choices.items() if v is None]
             for k in ks:
                 choices.pop(k)
-                kwargs['include_null'] = str(k)
-        Compare.__init__(self, col, '=', choices, function, impute_rules,
-                         order, op_in_name=op_in_name, **kwargs)
+                kwargs["include_null"] = str(k)
+        Compare.__init__(
+            self,
+            col,
+            "=",
+            choices,
+            function,
+            impute_rules,
+            order,
+            op_in_name=op_in_name,
+            **kwargs
+        )
 
 
 class Aggregation(object):
-    def __init__(self, aggregates, groups, from_obj, state_table,
-                 state_group=None, prefix=None, suffix=None, schema=None):
+    def __init__(
+        self,
+        aggregates,
+        groups,
+        from_obj,
+        state_table,
+        state_group=None,
+        prefix=None,
+        suffix=None,
+        schema=None,
+    ):
         """
         Args:
             aggregates: collection of Aggregate objects.
@@ -386,7 +458,9 @@ class Aggregation(object):
         """
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.text)
-        self.groups = groups if isinstance(groups, dict) else {str(g): g for g in groups}
+        self.groups = (
+            groups if isinstance(groups, dict) else {str(g): g for g in groups}
+        )
         self.state_table = state_table
         self.state_group = state_group if state_group else "entity_id"
         self.prefix = prefix if prefix else str(from_obj)
@@ -400,11 +474,9 @@ class Aggregation(object):
             group: group clause, for naming columns
         Returns: collection of aggregate column SQL strings
         """
-        prefix = "{prefix}_{group}_".format(
-                prefix=self.prefix, group=group)
+        prefix = "{prefix}_{group}_".format(prefix=self.prefix, group=group)
 
-        return chain(*[a.get_columns(prefix=prefix)
-                       for a in self.aggregates])
+        return chain(*[a.get_columns(prefix=prefix) for a in self.aggregates])
 
     def get_selects(self):
         """
@@ -421,8 +493,9 @@ class Aggregation(object):
             columns += self._get_aggregates_sql(group)
 
             gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=self.from_obj)\
-                      .group_by(gb_clause)
+            query = ex.select(columns=columns, from_obj=self.from_obj).group_by(
+                gb_clause
+            )
 
             queries[group] = [query]
 
@@ -437,8 +510,7 @@ class Aggregation(object):
         """
         imprules = {}
         for group, groupby in self.groups.items():
-            prefix = "{prefix}_{group}_".format(
-                    prefix=self.prefix, group=group)
+            prefix = "{prefix}_{group}_".format(prefix=self.prefix, group=group)
             for a in self.aggregates:
                 imprules.update(a.column_imputation_lookup(prefix=prefix))
         return imprules
@@ -450,12 +522,12 @@ class Aggregation(object):
         if group is None and not imputed:
             name = '"%s_%s"' % (self.prefix, self.suffix)
         elif group is None and imputed:
-            name = '"%s_%s_%s"' % (self.prefix, self.suffix, 'imputed')
+            name = '"%s_%s_%s"' % (self.prefix, self.suffix, "imputed")
         elif imputed:
-            name = '"%s"' % to_sql_name("%s_%s_%s" % (self.prefix, group, 'imputed'))
+            name = '"%s"' % to_sql_name("%s_%s_%s" % (self.prefix, group, "imputed"))
         else:
             name = '"%s"' % to_sql_name("%s_%s" % (self.prefix, group))
-        schema = '"%s".' % self.schema if self.schema else ''
+        schema = '"%s".' % self.schema if self.schema else ""
         return "%s%s" % (schema, name)
 
     def get_creates(self):
@@ -471,9 +543,10 @@ class Aggregation(object):
                 group are the same keys as groups
                 create is a CreateTableAs object
         """
-        return {group: CreateTableAs(self.get_table_name(group),
-                                     next(iter(sels)).limit(0))
-                for group, sels in self.get_selects().items()}
+        return {
+            group: CreateTableAs(self.get_table_name(group), next(iter(sels)).limit(0))
+            for group, sels in self.get_selects().items()
+        }
 
     def get_inserts(self):
         """
@@ -488,8 +561,10 @@ class Aggregation(object):
                 group are the same keys as groups
                 inserts is a list of InsertFromSelect objects
         """
-        return {group: [InsertFromSelect(self.get_table_name(group), sel) for sel in sels]
-                for group, sels in self.get_selects().items()}
+        return {
+            group: [InsertFromSelect(self.get_table_name(group), sel) for sel in sels]
+            for group, sels in self.get_selects().items()
+        }
 
     def get_drops(self):
         """
@@ -499,8 +574,10 @@ class Aggregation(object):
             group are the same keys as groups
             drop is a raw drop table query for the corresponding table
         """
-        return {group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
-                for group in self.groups}
+        return {
+            group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
+            for group in self.groups
+        }
 
     def get_indexes(self):
         """
@@ -510,16 +587,18 @@ class Aggregation(object):
             group are the same keys as groups
             index is a raw create index query for the corresponding table
         """
-        return {group: "CREATE INDEX ON %s (%s);" %
-                (self.get_table_name(group), groupby)
-                for group, groupby in self.groups.items()}
+        return {
+            group: "CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby)
+            for group, groupby in self.groups.items()
+        }
 
     def get_join_table(self):
         """
         Generate a query for a join table
         """
-        return ex.Select(columns=self.groups.values(), from_obj=self.from_obj)\
-                 .group_by(*self.groups.values())
+        return ex.Select(columns=self.groups.values(), from_obj=self.from_obj).group_by(
+            *self.groups.values()
+        )
 
     def get_create(self, join_table=None):
         """
@@ -528,12 +607,11 @@ class Aggregation(object):
         Returns: a CREATE TABLE AS query
         """
         if not join_table:
-            join_table = '(%s) t1' % self.get_join_table()
+            join_table = "(%s) t1" % self.get_join_table()
 
         query = "SELECT * FROM %s\n" % join_table
         for group, groupby in self.groups.items():
-            query += "LEFT JOIN %s USING (%s)" % (
-                    self.get_table_name(group), groupby)
+            query += "LEFT JOIN %s USING (%s)" % (self.get_table_name(group), groupby)
 
         return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
 
@@ -562,17 +640,21 @@ class Aggregation(object):
             FROM {state_tbl} t1
             LEFT JOIN {aggs_tbl} t2 USING({group})
             """
-        cols_sql = ',\n'.join([
-            """SUM(CASE WHEN "{col}" IS NULL THEN 1 ELSE 0 END) AS "{col}" """.format(col=column)
-            for column in self.get_imputation_rules().keys()
-            ])
+        cols_sql = ",\n".join(
+            [
+                """SUM(CASE WHEN "{col}" IS NULL THEN 1 ELSE 0 END) AS "{col}" """.format(
+                    col=column
+                )
+                for column in self.get_imputation_rules().keys()
+            ]
+        )
 
         return query_template.format(
-                cols=cols_sql,
-                state_tbl=self.state_table,
-                aggs_tbl=self.get_table_name(imputed=imputed),
-                group=self.state_group
-            )
+            cols=cols_sql,
+            state_tbl=self.state_table,
+            aggs_tbl=self.get_table_name(imputed=imputed),
+            group=self.state_group,
+        )
 
     def _get_impute_select(self, impute_cols, nonimpute_cols, partitionby=None):
 
@@ -582,7 +664,7 @@ class Aggregation(object):
         # exception if we are
         missing_cols = set(imprules.keys()) - set(nonimpute_cols + impute_cols)
         if len(missing_cols) > 0:
-            raise ValueError('Missing columns in get_impute_create: %s' % missing_cols)
+            raise ValueError("Missing columns in get_impute_create: %s" % missing_cols)
 
         # key columns and date column
         query = ""
@@ -600,21 +682,20 @@ class Aggregation(object):
                 impute_rule = imprules[col]
 
                 try:
-                    imputer = available_imputations[impute_rule['type']]
+                    imputer = available_imputations[impute_rule["type"]]
                 except KeyError as err:
                     raise ValueError(
-                        'Invalid imputation type %s for column %s' % (
-                            impute_rule.get('type', ''), col
-                            )
-                        ) from err
+                        "Invalid imputation type %s for column %s"
+                        % (impute_rule.get("type", ""), col)
+                    ) from err
 
                 imputer = imputer(column=col, partitionby=partitionby, **impute_rule)
 
-                query += '\n,%s' % imputer.to_sql()
+                query += "\n,%s" % imputer.to_sql()
                 if not imputer.noflag:
                     # Add an imputation flag for non-categorical columns (this is handeled
                     # for categorical columns with a separate NULL category)
-                    query += '\n,%s' % imputer.imputed_flag_sql()
+                    query += "\n,%s" % imputer.imputed_flag_sql()
 
         return query
 
@@ -630,7 +711,7 @@ class Aggregation(object):
         """
 
         # key columns and date column
-        query = "SELECT %s" % ', '.join(map(str, self.groups.values()))
+        query = "SELECT %s" % ", ".join(map(str, self.groups.values()))
 
         # columns with imputation filling as needed
         query += self._get_impute_select(impute_cols, nonimpute_cols)
@@ -639,8 +720,8 @@ class Aggregation(object):
         query += "\nFROM %s t1" % self.state_table
         query += "\nLEFT JOIN %s t2 USING(%s)" % (
             self.get_table_name(),
-            self.state_group
-            )
+            self.state_group,
+        )
 
         return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)
 
@@ -686,9 +767,8 @@ class Aggregation(object):
         # sql to drop and create the imputation table
         drop_imp = self.get_drop(imputed=True)
         create_imp = self.get_impute_create(
-                    impute_cols=impute_cols,
-                    nonimpute_cols=nonimpute_cols
-                    )
+            impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
+        )
 
         # create the imputation table
         conn.execute(drop_imp)
