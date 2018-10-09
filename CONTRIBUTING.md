@@ -26,6 +26,18 @@ Triage could always use more documentation, whether as part of the
 official Triage docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
+The [documentation site](https://dssg.github.io/triage) runs on [mkdocs](https://www.mkdocs.org) and is controlled by the [docs/sources](docs/sources) directory. We recommend building the docs locally to preview any documentation pages. The python dependencies for this are handled by [requirements/dev.txt](requirements/dev.txt):
+
+```
+pip install -r requirements/dev.txt
+```
+
+Once this is done, you can modify any of the pages under the documentation root directory, and change general doc site configuration in [docs/mkdocs.yml](docs/mkdocs.yml). While modifying a documentation page, you can preview your changes by running the mkdocs dev server:
+```
+cd docs
+mkdocs serve
+```
+
 ### Submit Feedback
 
 The best way to send feedback is to file an issue at
@@ -37,28 +49,21 @@ If you are proposing a feature:
 -   Keep the scope as narrow as possible, to make it easier to
     implement.
 
-Get Started!
-------------
 
-Ready to contribute? Here's how to set up triage for local development.
+### Write Code
 
-1.  Fork the triage repo on GitHub.
-2.  Clone your fork locally:
+Triage always has a backlog of issues. Want to help out? Here's how to set up triage for local development.
 
-        $ git clone git@github.com:your_name_here/triage.git
 
-3.  Install your local copy. You can control the environment any way you'd like (virtualenv, pyenv, etc), but the directions below are for virtualenvwrapper.
-    Regardless of your Python environment, we do recommend installing `triage` as a module in development mode, via `python setup.py develop` or `pip install -e .`
+1. [Set up your development environment if you haven't already](#triage-development-environment)
 
-        $ mkvirtualenv triage
-        $ cd triage/
-        $ python setup.py develop
+2.  Assign yourself the issue on the issues page, to let the team know you're working on it.
 
-4.  Create a branch for local development:
+3.  Create a branch for local development:
 
         $ git checkout -b name-of-your-bugfix-or-feature
 
-5.  Make your changes.
+4.  Make the necessary changes to tests and code.
 
     Triage has several code standards that are worth mentioning here. The write-ups are too long to include in the body of this list, so click the links to view them below on this page.
 
@@ -69,16 +74,15 @@ Ready to contribute? Here's how to set up triage for local development.
     - [Experiment Versioning](#experiment-versioning)
     - [Documentation](#documentation)
 
-6.  When you're done making changes, check that your changes pass flake8
+5.  When you're done making changes, check that your changes pass flake8
     and the tests, including testing other Python versions with tox:
 
+        $ pip install -r requirement/test.txt
         $ flake8 triage tests
         $ python setup.py test or py.test
         $ tox
 
-    To get flake8 and tox, just pip install them into your virtualenv.
-
-7.  Commit your changes and push your branch to GitHub. If you've made multiple commits, squash them into one. Each pull request should be one commit (unless there are multiple logical places to split up the code, for instance a big reformatting commit followed by a smaller commit that actually changes behavior). To make the pull request easier to create, the last commit on the branch should be formatted like the following.
+6.  Commit your changes and push your branch to GitHub. If you've made multiple commits, squash them into one. Each pull request should be one commit (unless there are multiple logical places to split up the code, for instance a big reformatting commit followed by a smaller commit that actually changes behavior). To make the pull request easier to create, the last commit on the branch should be formatted like the following.
 
     ```
     One-line summary [Resolves #issueno]
@@ -97,8 +101,25 @@ Ready to contribute? Here's how to set up triage for local development.
 
     And [write the commit message in your favorite text editor](https://help.github.com/articles/associating-text-editors-with-git/)
 
-8.  Submit a pull request through the GitHub website.  If you are working directly with the DSaPP team, *assign somebody*! Pull requests should not linger be out for a long time. And tell them that you assigned them.
+7.  Submit a pull request through the GitHub website.  If you are working directly with the DSaPP team, *assign somebody*! Pull requests should not linger for a long time. And tell them that you assigned them. If you aren't working with DSaPP, that's okay, the team will see your pull request.
 
+
+Triage Development Environment
+------------------------------
+
+This section describes the initial setup of a Triage development environment that you'll need to run before writing any code.
+
+1.  Fork the triage repo on GitHub.
+2.  Clone your fork locally:
+
+        $ git clone git@github.com:your_name_here/triage.git
+
+3.  Install your local copy. You can control the environment any way you'd like (virtualenv, pyenv, etc), but the directions below are for virtualenvwrapper.
+    Regardless of your Python environment, we do recommend installing `triage` as a module in development mode, via `python setup.py develop` or `pip install -e .`
+
+        $ mkvirtualenv triage
+        $ cd triage/
+        $ python setup.py develop
 
 
 Small Changes
@@ -108,13 +129,33 @@ Pull Requests take a lot of time to read. Finding defects is not the only reason
 
 Testing
 -------
-Triage has an extensive test suite that is run with every commit by travis-ci. Any pull request will be rejected if it breaks the travis-ci build. To help prevent yourself from encountering annoying test failures at pull request time, we strongly recommend utilizing 'Test-Driven Development' (TDD) to introduce tests along with code.
+Triage has an extensive test suite that is run with every commit by travis-ci. Any pull request will be rejected if it breaks the travis-ci build. To help prevent yourself from encountering annoying test failures at pull request time, we strongly recommend utilizing 'Test-Driven Development' (TDD) to introduce tests along with code. To read up on TDD in general, check out:
+
+- [Wikipedia Page](https://en.wikipedia.org/wiki/Test-driven_development)
+- [Test Driven Development: what it is, and what it is not](https://medium.freecodecamp.org/test-driven-development-what-it-is-and-what-it-is-not-41fa6bca02a2)
+
+In addition to any requirements needed by the main library (which should be installed when you ran `python setup.py develop` to gain access to Triage itself), you can ensure all testing requirements are installed with:
+
+```
+pip install -r requirement/test.txt
+```
+
+This is mentioned in the main setup section, but you may have to rerun it over time as test requirements change.
 
 Many of the tests require a Postgres server, so you need the Postgres server executable installed on the system you're developing on. You don't need to create any databases, or even have the server running; the tests that need it take care of starting a server, creating databases, and tearing it all down when they're done.
 
 For a general workflow applying TDD to Triage, consider this example:
 
 Let's say I have decided to change the behavior of the LabelGenerator class in [src/triage/component/architect/label_generators.py](src/triage/component/architect/label_generators.py). The unit test, following the standard within `triage`, will be in [src/tests/architect_tests/test_label_generators.py](src/tests/architect_tests/test_label_generators.py).
+
+If you haven't written any tests in Triage yet, don't worry! There are plenty of examples and helpers for you to refer to and use.
+
+- [src/tests/utils.py](https://github.com/dssg/triage/blob/master/src/tests/utils.py) contains lots of setup utilities to enable you to make your tests as concise as possible without boilerplate. See `rig_engine` (set up a temporary database and project storage) and `get_matrix_store` (create an example matrix and metadata in the format the Triage uses internally).
+- [src/tests/architect_tests/test_label_generators.py](src/tests/architect_tests/test_label_generators.py) is a pared-down example of testing database-driven code: both the input data and output data are in a database, which is a common pattern in Triage.
+- [src/tests/timechop_tests/test_plotting.py](src/tests/timechop_tests/test_plotting.py) shows an example of how to block out code we don't want to test (internals of the plotting library) but make sure that our code that calls the plotting library is sane enough to run.
+- [src/tests/timechop_tests/test_timechop.py](src/tests/timechop_tests/test_timechop.py), while long, shows the testing of various known edge cases that are expected to error. There are no database dependencies here, so all input and output is simply passed in or returned to the client code.
+- [src/tests/catwalk_tests/test_integration.py](src/tests/catwalk_tests/test_integration.py) is an example of code that tests an entire subsystem: in this case, the model training/testing/evaluation loop. It makes use of multiple smaller components and of test utils to build the expected input from earlier subsystems.
+
 
 ### 1. Run the test first
 Before making any code changes, I run this specific test with:
@@ -139,11 +180,12 @@ Now I enter the original code file and modify it so that the code reflects my up
 
 ### 4. Repeat with all known affected pieces of code
 
-Some changes only affect one class or function, and that's great! However, sometimes I know up-front that you need to change more than one file. For instance, if I add a required argument to the constructor of the LabelGenerator class, it will need to be added to anything that instantiates a LabelGenerator, such as the Experiment.  The Experiment tests should actually fail at this point, so I can fix that code and run the Experiment test to make sure it works.
+Some changes only affect one class or function, and that's great! However, sometimes I know up-front that I need to change more than one file. For instance, if I add a required argument to the constructor of the LabelGenerator class, it will need to be added to anything that instantiates a LabelGenerator, such as the Experiment.  The Experiment tests should actually fail at this point, so I can fix that code and run the Experiment test to make sure it works.
 
 ### 5. Run the whole suite
 
 There may be side effects of code changes that I don't know about at first. The test suite takes a while to run, so I don't want to run it after every code change I make, but it is a good idea to run it as a sanity check when I'm done with my changes and am ready to pull request.
+
 
 Code Style
 ----------
