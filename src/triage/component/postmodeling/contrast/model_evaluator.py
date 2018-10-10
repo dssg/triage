@@ -110,7 +110,7 @@ class ModelEvaluator(object):
                    score,
                    label_value,
                    COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   rank_pct,
+                   COALESCE(rank_pct, percent_rank() OVER(ORDER BY score DESC)) * 100 as rank_pct, 
                    test_label_timespan
             FROM test_results.predictions
             WHERE model_id = {self.model_id}
@@ -540,7 +540,8 @@ class ModelEvaluator(object):
  
     def error_labeler(self,
                       path,
-                      top_n=None):
+                      param=None,
+                      param_type=None):
         '''
         Explore the underlying causes of errors using decision trees to explain the
         residuals base on the same feature space used in the model. This
@@ -553,19 +554,34 @@ class ModelEvaluator(object):
         and the general error. 
 
         Arguments:
-            - top_n: threshold values to label 
+            - param_type: (str) type of parameter to define a threshold. Possible
+            values come from triage evaluations: rank_abs, or rank_pct
+            - param: (int) value 
             - path: path for the ProjectStorage class object
         '''
         self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
 
-        # Calculate residuals/errors
-        test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)
-        test_matrix_thresh['above_thresh'] =np.where(test_matrix_thresh['rank_abs'] <= top_n, 1, 0)
-        test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
+        if param_type is 'rank_abs':
+            # Calculate residuals/errors
+            test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)
+            test_matrix_thresh['above_thresh'] =np.where(test_matrix_thresh['rank_abs'] <= top_n, 1, 0)
+            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
+
+        elif param_type is 'rank_pct':
+            # Calculate residuals/errors
+            test_matrix_thresh = test_matrix.sort_values(['rank_pct'], ascending=True)
+            test_matrix_thresh['above_thresh'] = \
+            np.where(test_matrix_thresh['rank_pct'] <= top_n, 1, 0)
+            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
+
+        else:
+            raise AttributeError('''Error! You have to define a parameter type to
+                                 set up a threshold
+                                 ''')
 
         # Define labels using the errors
-        # By design 
+        # By design the order is FPR and FNR 
         error_class = [
             (test_matrix_thresh['label_value'] == 0) &
             (test_matrix_thresh['above_thresh'] == 1),
@@ -588,7 +604,7 @@ class ModelEvaluator(object):
     def error_modeler(self,
                       depth=None,
                       **kwargs):
-       '''
+       '''  
        Model labeled errors (residuals) by the error_labeler (FPR, FNR, and
        general residual) using a RandomForestClassifier. This function will
        yield a plot tree for each of the label numpy arrays return by the
