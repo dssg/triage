@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
+from triage.util.pandas import downcast_matrix
 
 
 class BuilderBase(object):
@@ -465,7 +466,7 @@ class MatrixBuilder(BuilderBase):
         out.seek(0)
         df = pandas.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
-        return df
+        return downcast_matrix(df)
 
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs

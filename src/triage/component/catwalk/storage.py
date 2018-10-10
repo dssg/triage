@@ -12,6 +12,7 @@ from triage.component.results_schema import (
     TestPrediction,
     TrainPrediction,
 )
+from triage.util.pandas import downcast_matrix
 
 import pandas as pd
 import s3fs
@@ -300,6 +301,11 @@ class MatrixStore(object):
         """The raw matrix. Will load from storage into memory if not already loaded"""
         if self.__matrix is None:
             self.__matrix = self._load()
+            # Is the index already in place?
+            if self.__matrix.index.names != self.metadata['indices']:
+                self.__matrix.set_index(self.metadata['indices'], inplace=True)
+
+            self.__matrix = downcast_matrix(self.__matrix)
         return self.__matrix
 
     @matrix.setter
@@ -478,13 +484,7 @@ class HDFMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        matrix = pd.read_hdf(self.matrix_base_store.path)
-
-        # Is the index already in place?
-        if matrix.index.names != self.metadata["indices"]:
-            matrix.set_index(self.metadata["indices"], inplace=True)
-
-        return matrix
+        return pd.read_hdf(self.matrix_base_store.path)
 
     def save(self):
         hdf = pd.HDFStore(
@@ -524,11 +524,7 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            matrix = pd.read_csv(fd, parse_dates=parse_dates_argument)
-
-        matrix.set_index(self.metadata["indices"], inplace=True)
-
-        return matrix
+            return pd.read_csv(fd, parse_dates=parse_dates_argument)
 
     def save(self):
         self.matrix_base_store.write(self.matrix.to_csv(None).encode("utf-8"))

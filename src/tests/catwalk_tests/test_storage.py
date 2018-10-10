@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import pandas as pd
 from moto import mock_s3
+from numpy.testing import assert_almost_equal
 
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -105,7 +106,7 @@ class MatrixStoreTest(unittest.TestCase):
                 ["m_feature", "k_feature"]
             ).values.tolist()
             expected = [[0.4, 0.5], [0.5, 0.4]]
-            self.assertEqual(expected, result)
+            assert_almost_equal(expected, result)
 
     def test_MatrixStore_already_sorted_columns(self):
         for matrix_store in self.matrix_stores():
@@ -113,7 +114,7 @@ class MatrixStoreTest(unittest.TestCase):
                 ["k_feature", "m_feature"]
             ).values.tolist()
             expected = [[0.5, 0.4], [0.4, 0.5]]
-            self.assertEqual(expected, result)
+            assert_almost_equal(expected, result)
 
     def test_MatrixStore_sorted_columns_subset(self):
         with self.assertRaises(ValueError):
@@ -138,7 +139,9 @@ class MatrixStoreTest(unittest.TestCase):
         for matrix_store in self.matrix_stores():
             original_dict = matrix_store.matrix.to_dict()
             matrix_store.save()
-            assert matrix_store._load().to_dict() == original_dict
+            # nuke the cache to force reload
+            matrix_store.matrix = None
+            assert matrix_store.matrix.to_dict() == original_dict
 
     def test_as_of_dates_entity_index(self):
         data = {
