@@ -13,7 +13,7 @@
 
   thresholds: 
         rank_abs: [10, 20, 50]
-        rank_pct: []
+        rank_pct: [10, 20, 50]
         
   max_depth_error_tree: 5
   n_features_plots: 10
@@ -24,4 +24,3 @@
 
   figsize: [12, 12]
   fontsize: 20
-      

@@ -4,11 +4,35 @@ Postmodeling parameters
 This script contain the parameters Class that will be used across all the
 postmodeling functions within the ModelEvaluator and ModelGroupEvaluator
 classes. This class will be initialized using the 'postmodeling_parameters.yaml' 
-file.abs
+file
 
 """
 
 import yaml
+
+class  ThresholdIterator(dict):
+    '''
+    Take a dictionary of parameters and create an interator class that store
+    the metric, and the parameters, for instance:
+        {'rank_abs': [10, 20, 50], 'rank_pct': [10, 20, 50]}
+        and yield a iterator that contains the key dict as identifier, and the
+        values as iterators. 
+    '''
+    def __init__(self, dict):
+        super().__init__(dict)
+
+        pairs_thresholds = [(iter(v), k) for (k, v) in dict.items()]
+        self.elements = lst = [] 
+        for param, metric in pairs_thresholds:
+            for threshold in param:
+                lst.append((metric, threshold))
+
+    def __iter__(self):
+        return iter(self.elements)
+
+    def __len__(self):
+        return len(self.elements)
+
 
 class PostmodelParameters(object):
     '''
@@ -22,7 +46,10 @@ class PostmodelParameters(object):
 
         with open(path_params) as f:
             params = yaml.load(f)
+        
+        # Assign dict elements to Parameters object and flatten 
+        # thresholds
         self.__dict__.update(params)
-        self.figsize = tuple(self.figsize)
-
+        self.figsize = tuple(self.figsize) 
+        self.thresholds_iterator = ThresholdIterator(self.thresholds)
 
