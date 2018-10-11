@@ -9,7 +9,6 @@ from .plotting import plot_cats, plot_bounds
 
 
 class DistanceFromBestTable(object):
-
     def __init__(self, db_engine, models_table, distance_table):
         """A database table that stores the distance from models and the
         best model for that train end time for a variety of chosen metrics
@@ -26,13 +25,12 @@ class DistanceFromBestTable(object):
 
     def _delete(self):
         """Delete the distance-from-best table if it exists"""
-        self.db_engine.execute(
-            'drop table if exists {}'.format(self.distance_table)
-        )
+        self.db_engine.execute("drop table if exists {}".format(self.distance_table))
 
     def _create(self):
         """Create the distance-from-best table"""
-        self.db_engine.execute('''create table {} (
+        self.db_engine.execute(
+            """create table {} (
             model_group_id int,
             model_id int,
             train_end_time timestamp,
@@ -43,7 +41,10 @@ class DistanceFromBestTable(object):
             dist_from_best_case float,
             raw_value_next_time float,
             dist_from_best_case_next_time float
-        )'''.format(self.distance_table))
+        )""".format(
+                self.distance_table
+            )
+        )
 
     def _populate(self, model_group_ids, train_end_times, metrics):
         """Populate the distance table with the given model groups, times, and metrics
@@ -60,7 +61,8 @@ class DistanceFromBestTable(object):
         """
         logging.info("Polulating data to distance table")
         for metric in metrics:
-            self.db_engine.execute('''
+            self.db_engine.execute(
+                """
                 insert into {new_table}
                 WITH first_evals AS (
                     SELECT *, row_number() OVER (
@@ -123,19 +125,20 @@ class DistanceFromBestTable(object):
                     ) dist_from_best_case_next_time
                 from current_best_vals
                 order by train_end_time
-            '''.format(
-                model_group_ids=str_in_sql(model_group_ids),
-                train_end_times=str_in_sql(train_end_times),
-                models_table=self.models_table,
-                metric=metric['metric'],
-                parameter=metric['parameter'],
-                metric_value_order=sql_rank_order(metric['metric']),
-                new_table=self.distance_table
-            ))
+            """.format(
+                    model_group_ids=str_in_sql(model_group_ids),
+                    train_end_times=str_in_sql(train_end_times),
+                    models_table=self.models_table,
+                    metric=metric["metric"],
+                    parameter=metric["parameter"],
+                    metric_value_order=sql_rank_order(metric["metric"]),
+                    new_table=self.distance_table,
+                )
+            )
 
     @property
     def observed_bounds(self):
-        query = '''
+        query = """
             SELECT
                 metric,
                 parameter,
@@ -143,19 +146,16 @@ class DistanceFromBestTable(object):
                 max(raw_value)
             FROM {distance_table} dist
             GROUP BY metric, parameter
-        '''.format(distance_table=self.distance_table)
+        """.format(
+            distance_table=self.distance_table
+        )
         return dict(
             ((metric, parameter), (minimum, maximum))
-            for metric, parameter, minimum, maximum
-            in self.db_engine.execute(query)
+            for metric, parameter, minimum, maximum in self.db_engine.execute(query)
         )
 
     def create_and_populate(
-        self,
-        model_group_ids,
-        train_end_times,
-        metrics,
-        delete=True
+        self, model_group_ids, train_end_times, metrics, delete=True
     ):
         """Creates and populates the distance table with the
             given model groups, times, and metrics
@@ -187,11 +187,10 @@ class DistanceFromBestTable(object):
             to those model group ids
         """
         return pd.read_sql(
-            'select * from {} where model_group_id in ({})'.format(
-                self.distance_table,
-                str_in_sql(model_group_ids)
+            "select * from {} where model_group_id in ({})".format(
+                self.distance_table, str_in_sql(model_group_ids)
             ),
-            self.db_engine
+            self.db_engine,
         )
 
     def dataframe_as_of(self, model_group_ids, train_end_time):
@@ -205,7 +204,7 @@ class DistanceFromBestTable(object):
             to those model group ids and train end time
         """
         base_df = self.as_dataframe(model_group_ids)
-        return base_df[base_df['train_end_time'] == train_end_time]
+        return base_df[base_df["train_end_time"] == train_end_time]
 
 
 class BestDistancePlotter(object):
@@ -221,21 +220,16 @@ class BestDistancePlotter(object):
         self.directory = directory
 
     def plot_bounds(self, metric, parameter):
-        observed_min, observed_max = \
-            self.distance_from_best_table.observed_bounds[(metric, parameter)]
+        observed_min, observed_max = self.distance_from_best_table.observed_bounds[
+            (metric, parameter)
+        ]
         return plot_bounds(observed_min, observed_max)
 
     def plot_tick_dist(self, plot_min, plot_max):
         dist = plot_max - plot_min
-        return dist/100.0
+        return dist / 100.0
 
-    def generate_plot_data(
-        self,
-        metric,
-        parameter,
-        model_group_ids,
-        train_end_times,
-    ):
+    def generate_plot_data(self, metric, parameter, model_group_ids, train_end_times):
         """Fetch data necessary for producing the plot from the distance table
 
         Arguments:
@@ -248,22 +242,24 @@ class BestDistancePlotter(object):
         Returns: (pandas.DataFrame) The relevant models and the percentage of time
             each was within various thresholds of the best model at that time
         """
-        model_group_union_sql = ' union all '.join([
-            '(select {} as model_group_id)'.format(model_group_id)
-            for model_group_id in model_group_ids
-        ])
+        model_group_union_sql = " union all ".join(
+            [
+                "(select {} as model_group_id)".format(model_group_id)
+                for model_group_id in model_group_ids
+            ]
+        )
         plot_min, plot_max = self.plot_bounds(metric, parameter)
         plot_tick_dist = self.plot_tick_dist(plot_min, plot_max)
         sel_params = {
-            'metric': metric,
-            'parameter': parameter,
-            'model_group_union_sql': model_group_union_sql,
-            'distance_table': self.distance_from_best_table.distance_table,
-            'model_group_str': str_in_sql(model_group_ids),
-            'train_end_str': str_in_sql(train_end_times),
-            'series_start': plot_min,
-            'series_end': plot_max,
-            'series_tick': plot_tick_dist,
+            "metric": metric,
+            "parameter": parameter,
+            "model_group_union_sql": model_group_union_sql,
+            "distance_table": self.distance_from_best_table.distance_table,
+            "model_group_str": str_in_sql(model_group_ids),
+            "train_end_str": str_in_sql(train_end_times),
+            "series_start": plot_min,
+            "series_end": plot_max,
+            "series_tick": plot_tick_dist,
         }
         sel = """\
             with model_group_ids as ({model_group_union_sql}),
@@ -289,10 +285,13 @@ class BestDistancePlotter(object):
                 and model_group_id in ({model_group_str})
                 and train_end_time in ({train_end_str})
             GROUP BY 1,2,3
-        """.format(**sel_params)
+        """.format(
+            **sel_params
+        )
 
-        return (pd.read_sql(sel, self.distance_from_best_table.db_engine)
-                .sort_values(['model_group_id', 'distance']))
+        return pd.read_sql(sel, self.distance_from_best_table.db_engine).sort_values(
+            ["model_group_id", "distance"]
+        )
 
     def plot_all_best_dist(self, metric_filters, model_group_ids, train_end_times):
         """For each metric, plot the percentage of time that a model group is
@@ -311,20 +310,23 @@ class BestDistancePlotter(object):
 
         """
         for metric_filter in metric_filters:
-            logging.info('Building best distance plot for %s and %s',
-                         metric_filter, train_end_times)
+            logging.info(
+                "Building best distance plot for %s and %s",
+                metric_filter,
+                train_end_times,
+            )
             df = self.generate_plot_data(
-                metric=metric_filter['metric'],
-                parameter=metric_filter['parameter'],
+                metric=metric_filter["metric"],
+                parameter=metric_filter["parameter"],
                 model_group_ids=model_group_ids,
-                train_end_times=train_end_times
+                train_end_times=train_end_times,
             )
 
             plot_best_dist(
-                metric=metric_filter['metric'],
-                parameter=metric_filter['parameter'],
+                metric=metric_filter["metric"],
+                parameter=metric_filter["parameter"],
                 df_best_dist=df,
-                directory=self.directory
+                directory=self.directory,
             )
 
 
@@ -355,23 +357,27 @@ def plot_best_dist(metric, parameter, df_best_dist, directory=None, **plt_format
         **plt_format_args -- formatting arguments passed through to plot_cats()
     """
 
-    cat_col = 'model_type'
-    plt_title = 'Fraction of models X pp worse than best {} {}'.format(metric, parameter)
+    cat_col = "model_type"
+    plt_title = "Fraction of models X pp worse than best {} {}".format(
+        metric, parameter
+    )
 
     if directory:
-        path_to_save = os.path.join(directory, f'distance_from_best_{metric}{parameter}.png')
+        path_to_save = os.path.join(
+            directory, f"distance_from_best_{metric}{parameter}.png"
+        )
     else:
         path_to_save = None
 
     plot_cats(
         frame=df_best_dist,
-        x_col='distance',
-        y_col='pct_of_time',
+        x_col="distance",
+        y_col="pct_of_time",
         cat_col=cat_col,
         title=plt_title,
-        x_label='distance from best {}'.format(metric),
-        y_label='fraction of models',
+        x_label="distance from best {}".format(metric),
+        y_label="fraction of models",
         x_ticks=np.arange(0, 1.1, 0.1),
         path_to_save=path_to_save,
-        **plt_format_args
+        **plt_format_args,
     )

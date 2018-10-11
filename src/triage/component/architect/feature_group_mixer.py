@@ -49,10 +49,11 @@ def all_features(feature_groups):
 class FeatureGroupMixer(object):
     """Generates different combinations of feature groups
     based on a list of strategies"""
+
     strategy_lookup = {
-        'leave-one-out': leave_one_out,
-        'leave-one-in': leave_one_in,
-        'all': all_features,
+        "leave-one-out": leave_one_out,
+        "leave-one-in": leave_one_in,
+        "all": all_features,
     }
 
     def __init__(self, strategies):
@@ -71,9 +72,11 @@ class FeatureGroupMixer(object):
         """
         final_results = []
         for strategy in self.strategies:
-            logging.info('Mixing feature groups %s using strategy %s', feature_groups, strategy)
+            logging.info(
+                "Mixing feature groups %s using strategy %s", feature_groups, strategy
+            )
             results = self.strategy_lookup[strategy](feature_groups)
-            logging.info('Mixing found new feature groups %s', results)
+            logging.info("Mixing found new feature groups %s", results)
             final_results += results
 
         return final_results

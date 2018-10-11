@@ -10,13 +10,13 @@ def split_table(table_name):
 
     Returns: (tuple) of schema and table name
     """
-    table_parts = table_name.split('.')
+    table_parts = table_name.split(".")
     if len(table_parts) == 2:
         return tuple(table_parts)
     elif len(table_parts) == 1:
         return (None, table_parts[0])
     else:
-        raise ValueError('Table name in unknown format')
+        raise ValueError("Table name in unknown format")
 
 
 def table_object(table_name, db_engine):
@@ -77,8 +77,7 @@ def table_has_data(table_name, db_engine):
     if not table_exists(table_name, db_engine):
         return False
     results = [
-        row for row in
-        db_engine.execute('select * from {} limit 1'.format(table_name))
+        row for row in db_engine.execute("select * from {} limit 1".format(table_name))
     ]
 
     return len(results) > 0

@@ -9,8 +9,9 @@ class FeatureDictionaryCreator(object):
 
     def _tables_to_include(self, feature_table_names):
         return [
-            feature_table for feature_table in feature_table_names
-            if 'aggregation_imputed' in feature_table
+            feature_table
+            for feature_table in feature_table_names
+            if "aggregation_imputed" in feature_table
         ]
 
     def feature_dictionary(self, feature_table_names, index_column_lookup):
@@ -25,21 +26,20 @@ class FeatureDictionaryCreator(object):
         # iterate! store each table name + features names as key-value pair
         for feature_table_name in self._tables_to_include(feature_table_names):
             feature_names = [
-                row[0] for row in
-                self.db_engine.execute(
+                row[0]
+                for row in self.db_engine.execute(
                     self._build_feature_names_query(
-                        feature_table_name,
-                        index_column_lookup[feature_table_name]
+                        feature_table_name, index_column_lookup[feature_table_name]
                     )
                 )
             ]
             logging.info(
-                'Feature names found for table %s: %s',
+                "Feature names found for table %s: %s",
                 feature_table_name,
-                feature_names
+                feature_names,
             )
             feature_dictionary[feature_table_name] = feature_names
-        return(feature_dictionary)
+        return feature_dictionary
 
     def _build_feature_names_query(self, table_name, index_columns):
         """ For a given feature table, get the names of the feature columns.
@@ -61,12 +61,12 @@ class FeatureDictionaryCreator(object):
         """.format(
             table=table_name,
             schema=self.features_schema_name,
-            index_columns=str_in_sql(index_columns)
+            index_columns=str_in_sql(index_columns),
         )
         logging.info(
-            'Extracting all possible feature names for table %s with query %s',
+            "Extracting all possible feature names for table %s with query %s",
             table_name,
-            feature_names_query
+            feature_names_query,
         )
 
-        return(feature_names_query)
+        return feature_names_query

@@ -18,10 +18,12 @@ class BaseRules(object):
             self.selection_rules.append(rule_dict)
 
     def create(self):
-        return [{
-            'shared_parameters': self.shared_parameters,
-            'selection_rules': self.selection_rules
-        }]
+        return [
+            {
+                "shared_parameters": self.shared_parameters,
+                "selection_rules": self.selection_rules,
+            }
+        ]
 
 
 class SimpleRuleMaker(BaseRules):
@@ -30,8 +32,8 @@ class SimpleRuleMaker(BaseRules):
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': self._metric, 'parameter': self._parameter}
-        rule_dict = {'name': 'best_current_value', 'n': n}
+        params_dict = {"metric": self._metric, "parameter": self._parameter}
+        rule_dict = {"name": "best_current_value", "n": n}
         self._append(params_dict, rule_dict)
         return self.create()
 
@@ -40,8 +42,8 @@ class SimpleRuleMaker(BaseRules):
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': self._metric, 'parameter': self._parameter}
-        rule_dict = {'name': 'best_average_value', 'n': n}
+        params_dict = {"metric": self._metric, "parameter": self._parameter}
+        rule_dict = {"name": "best_average_value", "n": n}
         self._append(params_dict, rule_dict)
         return self.create()
 
@@ -50,52 +52,65 @@ class SimpleRuleMaker(BaseRules):
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': self._metric, 'parameter': self._parameter}
-        rule_dict = {'name': 'lowest_metric_variance', 'n': n}
+        params_dict = {"metric": self._metric, "parameter": self._parameter}
+        rule_dict = {"name": "lowest_metric_variance", "n": n}
         self._append(params_dict, rule_dict)
         return self.create()
 
-    def add_rule_most_frequent_best_dist(self, metric=None, parameter=None, n=1,
-                                         dist_from_best_case=[0.01, 0.05, 0.1, 0.15]):
+    def add_rule_most_frequent_best_dist(
+        self,
+        metric=None,
+        parameter=None,
+        n=1,
+        dist_from_best_case=[0.01, 0.05, 0.1, 0.15],
+    ):
         if metric is not None:
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': self._metric, 'parameter': self._parameter}
+        params_dict = {"metric": self._metric, "parameter": self._parameter}
         rule_dict = {
-            'name': 'most_frequent_best_dist',
-            'dist_from_best_case': dist_from_best_case,
-            'n': n
+            "name": "most_frequent_best_dist",
+            "dist_from_best_case": dist_from_best_case,
+            "n": n,
         }
         self._append(params_dict, rule_dict)
         return self.create()
 
-    def add_rule_best_avg_recency_weight(self, metric=None, parameter=None, n=1,
-                                         curr_weight=[1.5, 2.0, 5.0], decay_type=['linear']):
+    def add_rule_best_avg_recency_weight(
+        self,
+        metric=None,
+        parameter=None,
+        n=1,
+        curr_weight=[1.5, 2.0, 5.0],
+        decay_type=["linear"],
+    ):
         if metric is not None:
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': metric, 'parameter': parameter}
+        params_dict = {"metric": metric, "parameter": parameter}
         rule_dict = {
-            'name': 'best_avg_recency_weight',
-            'curr_weight': curr_weight,
-            'decay_type': decay_type,
-            'n': n
+            "name": "best_avg_recency_weight",
+            "curr_weight": curr_weight,
+            "decay_type": decay_type,
+            "n": n,
         }
         self._append(params_dict, rule_dict)
         return self.create()
 
-    def add_rule_best_avg_var_penalized(self, metric=None, parameter=None, stdev_penalty=0.5, n=1):
+    def add_rule_best_avg_var_penalized(
+        self, metric=None, parameter=None, stdev_penalty=0.5, n=1
+    ):
         if metric is not None:
             self._metric = metric
         if parameter is not None:
             self._parameter = parameter
-        params_dict = {'metric': metric, 'parameter': parameter}
+        params_dict = {"metric": metric, "parameter": parameter}
         rule_dict = {
-            'name': 'best_avg_var_penalized',
-            'stdev_penalty': stdev_penalty,
-            'n': n
+            "name": "best_avg_var_penalized",
+            "stdev_penalty": stdev_penalty,
+            "n": n,
         }
         self._append(params_dict, rule_dict)
         return self.create()
@@ -104,23 +119,26 @@ class SimpleRuleMaker(BaseRules):
 class RandomGroupRuleMaker(BaseRules):
     def __init__(self, n=1):
         self.shared_parameters = [{}]
-        self.selection_rules = [{'name': 'random_model_group', 'n': n}]
+        self.selection_rules = [{"name": "random_model_group", "n": n}]
 
 
 class TwoMetricsRuleMaker(BaseRules):
-    def add_rule_best_average_two_metrics(self, metric1='precision@', parameter1='100_abs',
-                                          metric2='recall@', parameter2='300_abs',
-                                          metric1_weight=[0.5], n=1):
-        params_dict = {
-            'metric1': metric1,
-            'parameter1': parameter1
-        }
+    def add_rule_best_average_two_metrics(
+        self,
+        metric1="precision@",
+        parameter1="100_abs",
+        metric2="recall@",
+        parameter2="300_abs",
+        metric1_weight=[0.5],
+        n=1,
+    ):
+        params_dict = {"metric1": metric1, "parameter1": parameter1}
         rule_dict = {
-            'name': 'best_average_two_metrics',
-            'metric1_weight': metric1_weight,
-            'metric2': [metric2],
-            'parameter2': [parameter2],
-            'n': n
+            "name": "best_average_two_metrics",
+            "metric1_weight": metric1_weight,
+            "metric2": [metric2],
+            "parameter2": [parameter2],
+            "n": n,
         }
         self._append(params_dict, rule_dict)
 

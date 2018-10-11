@@ -11,14 +11,14 @@ def ensure_db(engine):
 
 
 def connect(poolclass=QueuePool):
-    with open('database.yaml') as fd:
+    with open("database.yaml") as fd:
         config = yaml.load(fd)
         dburl = URL(
-            'postgres',
-            host=config['host'],
-            username=config['user'],
-            database=config['db'],
-            password=config['pass'],
-            port=config['port'],
+            "postgres",
+            host=config["host"],
+            username=config["user"],
+            database=config["db"],
+            password=config["pass"],
+            port=config["port"],
         )
         return create_engine(dburl, poolclass=poolclass)
