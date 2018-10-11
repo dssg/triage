@@ -34,7 +34,7 @@ checks:
     config:
       threshold: 3
 exclude_patterns:
-	- "src/triage/component/results_schema/alembic/versions"
-	- "src/triage/component/results_schema/alembic/env.py"
-	- "src/triage/component/results_schema/schema.py"
-	- "docs/md_autogen.py"
+  - "src/triage/component/results_schema/alembic/versions"
+  - "src/triage/component/results_schema/alembic/env.py"
+  - "src/triage/component/results_schema/schema.py"
+  - "docs/md_autogen.py"
