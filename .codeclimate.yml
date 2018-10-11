@@ -5,7 +5,7 @@ plugins:
 checks:
   argument-count:
     config:
-      threshold: 4
+      threshold: 5
   complex-logic:
     config:
       threshold: 4
@@ -28,13 +28,11 @@ checks:
     config:
       threshold: 4
   similar-code:
-    config:
-      threshold: 3
+    enabled: false
   identical-code:
-    config:
-      threshold: 3
+    enabled: false
 exclude_patterns:
   - "src/triage/component/results_schema/alembic/versions"
   - "src/triage/component/results_schema/alembic/env.py"
   - "src/triage/component/results_schema/schema.py"
-  - "docs/md_autogen.py"
+  - "docs/"
