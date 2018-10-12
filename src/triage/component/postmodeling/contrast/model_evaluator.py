@@ -26,10 +26,8 @@ from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
+from parameters import ThresholdIterator, PostmodelParameters
 from utils.aux_funcs import *
-
-
-# Get indivual model information/metadata from Audition output
 
 
 class ModelEvaluator(object):
@@ -538,7 +536,7 @@ class ModelEvaluator(object):
         plt.title("Precision-recall at x-proportion", fontsize=fontsize)
         plt.show()
  
-    def error_labeler(self,
+    def _error_labeler(self,
                       path,
                       param=None,
                       param_type=None):
@@ -550,7 +548,7 @@ class ModelEvaluator(object):
 
         This function will label the errors and return two elements relevant to
         model these. First, a feature matrix (X) with all the features used by
-        the model. Second, a generator with different labeled errors: FPR, FRR,
+        the model. Second, an iterator with different labeled errors: FPR, FRR,
         and the general error. 
 
         Arguments:
@@ -565,14 +563,15 @@ class ModelEvaluator(object):
         if param_type is 'rank_abs':
             # Calculate residuals/errors
             test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)
-            test_matrix_thresh['above_thresh'] =np.where(test_matrix_thresh['rank_abs'] <= top_n, 1, 0)
+            test_matrix_thresh['above_thresh'] = \
+                    np.where(test_matrix_thresh['rank_abs'] <= param, 1, 0)
             test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
 
         elif param_type is 'rank_pct':
             # Calculate residuals/errors
             test_matrix_thresh = test_matrix.sort_values(['rank_pct'], ascending=True)
             test_matrix_thresh['above_thresh'] = \
-            np.where(test_matrix_thresh['rank_pct'] <= top_n, 1, 0)
+                    np.where(test_matrix_thresh['rank_pct'] <= param, 1, 0)
             test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
 
         else:
@@ -582,14 +581,15 @@ class ModelEvaluator(object):
 
         # Define labels using the errors
         # By design the order is FPR and FNR 
-        error_class = [
+        error_class = zip([
             (test_matrix_thresh['label_value'] == 0) &
             (test_matrix_thresh['above_thresh'] == 1),
             (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_thresh'] == 0)]
+            (test_matrix_thresh['above_thresh'] == 0)],
+            ['FPR', 'FNR'])
         
         # Create label iterator
-        Y = (np.where(condition, 1, -1) for condition in error_class)
+        Y = ((np.where(condition, 1, -1), error_type) for condition, error_type in error_class)
 
         # Define feature space to model: get the list of feature names
         storage = ProjectStorage(path)
@@ -601,7 +601,7 @@ class ModelEvaluator(object):
 
         return(X, Y)
 
-    def error_modeler(self,
+    def _error_modeler_(self,
                       depth=None,
                       **kwargs):
        '''  
@@ -612,26 +612,34 @@ class ModelEvaluator(object):
        Arguments:
            - depth = max number of tree partitions. This is passed directly to
              the classifier.
-           - **kwargs: more arguments passed to the labeler: top_n indicating
-           the threshold value, and the path to the ProjectStorage. 
+           - **kwargs: more arguments passed to the labeler: param indicating
+           the threshold value, param_type indicating the type of threshold,
+           and the path to the ProjectStorage. 
        '''
+
        # Get matrices from the labeler
-       X, Y = self.error_labeler(path=kwargs['path'], top_n=kwargs['top_n'])
+       X, Y = self._error_labeler(param_type = kwargs['param_type'],
+                                 param = kwargs['param'],
+                                 path=kwargs['path'])
 
-       # Model the decision trees
-       classifier = tree.DecisionTreeClassifier(max_depth=depth)
-       error_classifiers = [classifier.fit(X, label) for label in Y] 
+       # Model tree and output tree plot
+       for error_label, error_type in Y:
 
-       # Plot tree and export
-       for fitted_model in error_classifiers:
-           tree_viz = tree.export_graphviz(fitted_model, 
+           dot_path = 'error_analysis' + \
+                      str(error_type) + \
+                      str(self.model_id) + \
+                      '.gv' 
+
+           clf = tree.DecisionTreeClassifier(max_depth=depth)
+           clf_fit = clf.fit(X, error_label)
+           tree_viz = tree.export_graphviz(clf_fit,
                                            out_file=None,
                                            feature_names=X.columns.values,
                                            filled=True,
                                            rounded=True,
                                            special_characters=True)
            graph = graphviz.Source(tree_viz)
-           return graph
+           graph.save(dot_path)
 
     def crosstabs_ratio_plot(self, 
                              n_features_plots=30):
