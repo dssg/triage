@@ -137,6 +137,7 @@ class ModelGroupEvaluator(object):
            ''', con=conn)
         return features
 
+    @cachedproperty 
     def metrics(self):
         model_metrics = pd.read_sql(
             f'''
@@ -154,8 +155,10 @@ class ModelGroupEvaluator(object):
 
     def _rank_corr_df(self,
                       model_pair,
-                      top_n,
-                      type):
+                      param: None,
+                      param_type: None,
+                      corr_type: None,
+                      top_n_features: None):
         '''
         Calculates ranked correlations for ranked observations and features
         using the stats.spearmanr scipy module.
@@ -165,20 +168,20 @@ class ModelGroupEvaluator(object):
             - top_n (int): number of rows to rank (top-k model)
         '''
 
-        if type not in ['predictions', 'features']:
+        if corr_type not in ['predictions', 'features']:
             raise Exception('Wrong type! Rank correlation is not available'
                     + '\n for {}. Try the following options:'.format(type) 
                     + '\n predictions and features')
 
-        if type is 'predictions':
+        if corr_type is 'predictions':
 
             # Split df for each model_id 
             model_1 = self.predictions[self.preds['model_id'] == model_pair[0]]
             model_2 = self.predictions[self.preds['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
-            top_model_1 = model_1.sort_values('rank_abs', axis=0)[:top_n].set_index('entity_id')
-            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:top_n].set_index('entity_id')
+            top_model_1 = model_1.sort_values(param_type, axis=0)[:param].set_index('entity_id')
+            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:param].set_index('entity_id')
 
             # Merge df's by entity_id and calculate corr
             df_pair_merge = top_model_1.merge(top_model_2, 
@@ -193,15 +196,17 @@ class ModelGroupEvaluator(object):
             # Return corr value (not p-value)
             return rank_corr[0]
 
-        if type is 'features':
+        if corr_type is 'features':
 
             # Split df for each model_id 
             model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
             model_2 = self.feature_importances[self.feature_importances['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
-            top_model_1 = model_1.sort_values('rank_abs', axis=0)[:top_n].set_index('feature')
-            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:top_n].set_index('feature')
+            top_model_1 = model_1.sort_values('rank_abs', \
+                                              axis=0)[:top_n_features].set_index('feature')
+            top_model_2 = model_2.sort_values('rank_abs', \
+                                              axis=0)[:top_n_features].set_index('feature')
 
             # Merge df's by entity_id and calculate corr
             df_pair_merge = top_model_1.merge(top_model_2, 
@@ -214,9 +219,79 @@ class ModelGroupEvaluator(object):
             rank_corr = spearmanr(df_pair_filter.iloc[:, 0], df_pair_filter.iloc[:, 1])
 
             # Return corr value (not p-value)
-            return rank_corr[0]
-     
+            return rank_corr[0] 
 
+    def plot_ranked_corrlelation(self, 
+                                 figsize=(12, 16),
+                                 fontsize=20,
+                                 model_subset=None,
+                                 corr_type=None,
+                                 **kwargs):
+        '''
+        Plot ranked correlation between model_id's using the _rank_corr_df
+        method. The plot will visualize the selected correlation matrix
+        including all the models
+        Arguments:
+            - figzise (tuple): tuple with figure size. Default is (12, 16)
+            - fontsize (int): Fontsize for plot labels and titles. Default is
+              20
+            - model_subset (list): subset to only include a subset of model_ids
+            - corr_type (str): correlation type. Two options are available:
+                features and predictions. 
+            - **kwargs: other parameters passed to the _rank_corr_df method
+        '''
+
+        if model_subset is None:
+            model_subset = self.model_id
+
+        if corr_type  == 'predictions':
+
+            # Calculate rank correlations for predictions
+            corrs = [self._rank_corr_df(pair,
+                                        type_corr=type_corr,
+                                        param = kwargs['param'],
+                                        param_type = kwargs['param_type']
+                                       ) for pair in combinations(model_subset, 2)]
+
+            # Store results in dataframe using tuples
+            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+            for pair, corr in zip(combinations(model_subset, 2), corrs):
+                corr_matrix.loc[pair] = corr
+        elif corr_type == 'features':
+
+            # Calculate rank correlations for predictions
+            corrs = [self._rank_corr_df(pair,
+                                        corr_type=corr_type,
+                                        top_n_features = kwargs \
+                                        ['top_n_features']
+                                       ) for pair in combinations(model_subset, 2)]
+
+            # Store results in dataframe using tuples
+            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+            for pair, corr in zip(combinations(model_subset, 2), corrs):
+                corr_matrix.loc[pair] = corr
+        else:
+            pass
+
+
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
+
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title(f'''{corr_type} Rank Correlation for 
+                      {param_type}@{param}
+                     ''', fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)
 
     def plot_jaccard(self,
                      figsize=(12, 16), 
@@ -253,7 +328,9 @@ class ModelGroupEvaluator(object):
                 fig, ax = plt.subplots(figsize=figsize)
                 ax.set_xlabel('Model Id', fontsize=fontsize)
                 ax.set_ylabel('Model Id', fontsize=fontsize)
-                plt.title('Jaccard Similarity Matrix Plot (as_of_date:{})'.format(preds_df.as_of_date.unique()), fontsize=fontsize)
+                plt.title(f'''Jaccard Similarity Matrix Plot \
+                          (as_of_date:{preds_df.as_of_date.unique()})
+                          ''', fontsize=fontsize)
                 sns.heatmap(df_jac,
                             mask=mask,
                             cmap='Greens', 
@@ -291,74 +368,4 @@ class ModelGroupEvaluator(object):
                             annot=True, 
                             linewidth=0.1)
 
-    def plot_ranked_corrlelation(self, 
-                                 figsize=(12, 16),
-                                 fontsize=20,
-                                 top_n=100,
-                                 model_subset=None,
-                                 type=None,
-                                 ids=None):
-
-        if model_subset is None:
-            model_subset = self.model_id
-
-        if type is 'predictions':
-
-            # Calculate rank correlations for predictions
-            corrs = [self._rank_corr_df(pair,
-                                        type=type,
-                                        top_n=top_n) for pair in combinations(model_subset, 2)]
-
-            # Store results in dataframe using tuples
-            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
-            for pair, corr in zip(combinations(model_subset, 2), corrs):
-                corr_matrix.loc[pair] = corr
-
-            # Process data for plot: mask repeated tuples
-            corr_matrix_t = corr_matrix.T
-            mask = np.zeros_like(corr_matrix_t)
-            mask[np.triu_indices_from(mask, k=1)] = True
-
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_xlabel('Model Id', fontsize=fontsize)
-            ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title('Top-{} Predictions Rank Correlation'.format(top_n), fontsize=fontsize)
-            sns.heatmap(corr_matrix_t.fillna(1),
-                        mask=mask,
-                        vmax=1,
-                        vmin=0,
-                        cmap='YlGnBu',
-                        annot=True,
-                        square=True)
-    
-        if type is 'features':
-            if self.feature_importances is None:
-                self._load_feature_importances()
-
-            # Calculate rank correlations for predictions
-            corrs = [self._rank_corr_df(pair,
-                                        type=type,
-                                        top_n=top_n) for pair in combinations(model_subset, 2)]
-
-            # Store results in dataframe using tuples
-            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
-            for pair, corr in zip(combinations(model_subset, 2), corrs):
-                corr_matrix.loc[pair] = corr
-
-            # Process data for plot: mask repeated tuples
-            corr_matrix_t = corr_matrix.T
-            mask = np.zeros_like(corr_matrix_t)
-            mask[np.triu_indices_from(mask, k=1)] = True
-
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_xlabel('Model Id', fontsize=fontsize)
-            ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title('Top-{} Feature Rank Correlation'.format(top_n), fontsize=fontsize)
-            sns.heatmap(corr_matrix_t.fillna(1),
-                        mask=mask,
-                        vmax=1,
-                        vmin=0,
-                        cmap='YlGnBu',
-                        annot=True,
-                        square=True)
-
+   
