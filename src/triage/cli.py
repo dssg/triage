@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-from datetime import datetime
-import os
-import yaml
 import argparse
+import importlib.util
+import logging
+import os.path
+import yaml
+from datetime import datetime
+
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
-
-import logging
 
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.audition import AuditionRunner
@@ -22,9 +23,6 @@ from triage.experiments import (
 from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
-
-import importlib.util # noqa
-
 
 def natural_number(value):
     natural = int(value)
@@ -45,6 +43,8 @@ def valid_date(value):
 class Triage(RootCommand):
     """manage Triage database and experiments"""
 
+    SETUP_FILE_DEFAULT = os.path.abspath('experiment.py')
+
     def __init__(self, parser):
         parser.add_argument(
             "-d",
@@ -54,20 +54,21 @@ class Triage(RootCommand):
             help="database connection file",
         )
         parser.add_argument(
-            "-s",
-            "--setup",
-            help="file path to Python module to import before running the Experiment",
+            '-s', '--setup',
+            help=f"file path to Python module to import before running the "
+                 f"Experiment (default: {self.SETUP_FILE_DEFAULT})",
         )
 
     def setup(self):
-        setup_path = self.args.setup or os.path.abspath("experiment.py")
-        if setup_path is not None:
-            logging.info(f"Loading configurations from {setup_path}")
-            spec = importlib.util.spec_from_file_location("triage_config", setup_path)
-            triage_config = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(triage_config)
-            logging.info(f"Configuration loaded")
-        return None
+        if not self.args.setup and not os.path.exists(self.SETUP_FILE_DEFAULT):
+            return
+
+        setup_path = self.args.setup or self.SETUP_FILE_DEFAULT
+        logging.info("Loading setup module at %s", setup_path)
+        spec = importlib.util.spec_from_file_location("triage_config", setup_path)
+        triage_config = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(triage_config)
+        logging.info(f"Setup module loaded")
 
     @cachedproperty
     def db_url(self):
@@ -128,7 +129,7 @@ class FeatureTest(Command):
         )
 
     def __call__(self, args):
-        self.root.setup  # Loading configuration (if exists)
+        self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
         feature_config = yaml.load(args.feature_config_file)
 
@@ -190,7 +191,7 @@ class Experiment(Command):
 
     @cachedproperty
     def experiment(self):
-        self.root.setup  # Loading configuration (if exists)
+        self.root.setup()  # Loading configuration (if exists)
         db_url = self.root.db_url
         config = yaml.load(self.args.config)
         db_engine = create_engine(db_url)
@@ -259,7 +260,7 @@ class Audition(Command):
 
     @cachedproperty
     def runner(self):
-        self.root.setup  # Loading configuration (if exists)
+        self.root.setup() # Loading configuration (if exists)
         db_url = self.root.db_url
         dir_plot = self.args.directory
         config = yaml.load(self.args.config)
