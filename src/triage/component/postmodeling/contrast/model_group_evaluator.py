@@ -14,6 +14,7 @@ To run most of this routines you will need:
 
 import pandas as pd
 import numpy as np
+from descriptors import cachedproperty
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from collections import namedtuple
@@ -43,8 +44,8 @@ class ModelGroupEvaluator(object):
         conn = create_pgconn('db_credentials.yaml')
 
         # Retrive model_id metadata from the model_metadata schema
-        model_metadata = pd.read_sql("""
-        WITH
+        model_metadata = pd.read_sql(
+        f'''WITH
         individual_model_ids_metadata AS(
         SELECT m.model_id,
                m.model_group_id,
@@ -59,7 +60,7 @@ class ModelGroupEvaluator(object):
             FROM model_metadata.models m
             JOIN model_metadata.model_groups mg
             USING (model_group_id)
-            WHERE model_group_id IN {}
+            WHERE model_group_id IN {self.model_group_id}
         ),
         individual_model_id_matrices AS(
         SELECT DISTINCT ON (matrix_uuid)
@@ -83,9 +84,7 @@ class ModelGroupEvaluator(object):
                test.matrix_uuid AS test_matrix_uuid
         FROM individual_model_ids_metadata AS metadata
         LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);
-        """.format(self.model_group_id),
-                   con=conn).to_dict('list')
+        USING(model_id);''', con=conn).to_dict('list')
 
         # Add metadata attributes to model
         self.model_id = model_metadata['model_id']
@@ -95,65 +94,63 @@ class ModelGroupEvaluator(object):
         self.model_hash = model_metadata['model_hash']
         self.train_matrix_uuid = model_metadata['train_matrix_uuid']
         self.test_matrix_uuid = model_metadata['test_matrix_uuid']
-        self.train_matrix = None
-        self.pred_matrix = None
-        self.preds = None
-        self.feature_importances = None
-        self.model_metrics = None
 
-    def __str__(self):
-        s = 'Model collection object for model_ids: {}'.format(self.model_id)
-        s += '\n Model Groups: {}'.format(self.model_group_id)
-        s += '\n Model types: {}'.format(self.model_type)
-        s += '\n Model hyperparameters: {}'.format(self.hyperparameters)
-        s += '\Matrix hashes (train,test): {}'.format((self.train_matrix_uuid,
-                                                      self.test_matrix_uuid))
-        return s
+    def __repr__(self):
+        return (
+        f'Model collection object for model_ids:{self.model_id}\n'
+        f'Model Groups: {self.model_group_id}\n'
+        f'Model types: {self.model_type}\n'
+        f'Model hyperparameters: {self.hyperparameters}\n'
+        f'''Matrix hashes (train,test): [{self.train_matrix_uuid}, 
+                                      {self.test_matrix_uuid}]'''
+        )
 
-    def _load_predictions(self):
-        preds = pd.read_sql("""
-                SELECT model_id,
-                       entity_id,
-                       as_of_date,
-                       score,
-                       label_value,
-                       COALESCE(rank_abs, RANK() 
-                       OVER(PARTITION BY model_id ORDER BY score DESC)) AS rank_abs,
-                       rank_pct,
-                       test_label_timespan
-                FROM test_results.predictions
-                WHERE model_id IN {}
-                AND label_value IS NOT NULL
-                """.format(tuple(self.model_id)),
-                con=conn)
-        self.preds = preds
+    @cachedproperty
+    def predictions(self):
+        preds = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   entity_id,
+                   as_of_date,
+                   score,
+                   label_value,
+                   COALESCE(rank_abs, RANK() 
+                   OVER(PARTITION BY model_id ORDER BY score DESC)) AS rank_abs,
+                   rank_pct,
+                   test_label_timespan
+            FROM test_results.predictions
+            WHERE model_id IN {tuple(self.model_id)}
+            AND label_value IS NOT NULL
+            ''', con=conn)
+        return preds
 
-    def _load_feature_importances(self):
-        features = pd.read_sql("""
-               SELECT model_id,
-                      feature,
-                      feature_importance,
-                      rank_abs
-               FROM train_results.feature_importances 
-               WHERE model_id IN {}
-               """.format(tuple(self.model_id)),
-               con=conn)
-        self.feature_importances = features
+    @cachedproperty
+    def feature_importances(self):
+        features = pd.read_sql(
+           f'''
+           SELECT model_id,
+                  feature,
+                  feature_importance,
+                  rank_abs
+           FROM train_results.feature_importances 
+           WHERE model_id IN {tuple(self.model_id)}
+           ''', con=conn)
+        return features
 
-    def _load_metrics(self):
-        model_metrics = pd.read_sql("""
-                SELECT model_id,
-                       metric,
-                       parameter,
-                       value,
-                       num_labeled_examples,
-                       num_labeled_above_threshold
-                       num_positive_labels
-                FROM test_results.evaluations
-                WHERE model_id IN {}
-                """.format(tuple(self.model_id)),
-                con=conn)
-        self.model_metrics = model_metrics
+    def metrics(self):
+        model_metrics = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   metric,
+                   parameter,
+                   value,
+                   num_labeled_examples,
+                   num_labeled_above_threshold
+                   num_positive_labels
+            FROM test_results.evaluations
+            WHERE model_id IN {tuple(self.model_id)}
+            ''', con=conn)
+        return model_metrics
 
     def _rank_corr_df(self,
                       model_pair,
@@ -176,8 +173,8 @@ class ModelGroupEvaluator(object):
         if type is 'predictions':
 
             # Split df for each model_id 
-            model_1 = self.preds[self.preds['model_id'] == model_pair[0]]
-            model_2 = self.preds[self.preds['model_id'] == model_pair[1]]
+            model_1 = self.predictions[self.preds['model_id'] == model_pair[0]]
+            model_2 = self.predictions[self.preds['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
             top_model_1 = model_1.sort_values('rank_abs', axis=0)[:top_n].set_index('entity_id')
@@ -231,12 +228,9 @@ class ModelGroupEvaluator(object):
         if model_subset is None:
             model_subset = self.model_id
 
-        if self.preds is None:
-            self._load_predictions()
-
         if temporal_comparison == True:
-            as_of_dates =  self.preds['as_of_date'].unique()
-            dfs_dates = [self.preds[self.preds['as_of_date']==date] 
+            as_of_dates =  self.predictions['as_of_date'].unique()
+            dfs_dates = [self.predictions[self.predictions['as_of_date']==date] 
                          for date in as_of_dates]
 
             for preds_df in dfs_dates:
@@ -269,9 +263,8 @@ class ModelGroupEvaluator(object):
                             linewidth=0.1)
 
         else:
-
                 # Call predicitons
-                df_sim = self.preds
+                df_sim = self.predictions
                 df_sim['above_tresh_'] = (df_sim.rank_abs <= top_n).astype(int)
                 df_sim_piv = df_sim.pivot(index='entity_id',
                                           columns='model_id',
@@ -291,7 +284,7 @@ class ModelGroupEvaluator(object):
                 ax.set_ylabel('Model Id', fontsize=fontsize)
                 plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
                 sns.heatmap(df_jac,
-                            mask=mask,
+                            mask=mask, 
                             cmap='Greens', 
                             vmin=0, 
                             vmax=1, 
@@ -310,8 +303,6 @@ class ModelGroupEvaluator(object):
             model_subset = self.model_id
 
         if type is 'predictions':
-            if self.preds is None:
-                self._load_predictions()
 
             # Calculate rank correlations for predictions
             corrs = [self._rank_corr_df(pair,
