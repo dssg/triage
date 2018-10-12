@@ -2,7 +2,7 @@ import matplotlib
 import numpy as np
 import matplotlib.lines as mlines
 
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
@@ -19,7 +19,7 @@ def plot_bounds(observed_min, observed_max):
         plot_min, plot_max = (0.0, 1.0)
     else:
         # 10% padding on the high end
-        padding = 0.1*(observed_max - float(observed_min))
+        padding = 0.1 * (observed_max - float(observed_min))
         plot_min = observed_min
         plot_max = observed_max + padding
 
@@ -33,11 +33,11 @@ def category_colordict(cmap_name, categories, highlight_grp=None):
     # enough times to ensure we cover all our categories
     cmap = plt.get_cmap(cmap_name)
     categories_with_colors = [cat for cat in categories if cat != highlight_grp]
-    ncyc = int(np.ceil(1.0*len(categories_with_colors) / cmap.N))
-    colors = (cmap.colors * ncyc)[:len(categories_with_colors)]
+    ncyc = int(np.ceil(1.0 * len(categories_with_colors) / cmap.N))
+    colors = (cmap.colors * ncyc)[: len(categories_with_colors)]
     base_colors = dict(zip(categories_with_colors, colors))
     if highlight_grp:
-        base_colors[highlight_grp] = '#000000'
+        base_colors[highlight_grp] = "#000000"
     return base_colors
 
 
@@ -52,7 +52,9 @@ def category_styledict(colordict, highlight_grp):
 
     Returns: (dict) A mapping of categories to matplotlib styles
     """
-    return dict((key, '--' if key == highlight_grp else '-') for key in colordict.keys())
+    return dict(
+        (key, "--" if key == highlight_grp else "-") for key in colordict.keys()
+    )
 
 
 def _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict):
@@ -61,7 +63,9 @@ def _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict)
     for grp_val in np.unique(frame[grp_col]):
         df = frame.loc[frame[grp_col] == grp_val]
         cat = df.iloc[0][cat_col]
-        df.plot(x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False)
+        df.plot(
+            x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False
+        )
 
 
 def generate_plot_lines(colordict, label_fcn, styledict):
@@ -74,7 +78,7 @@ def generate_plot_lines(colordict, label_fcn, styledict):
             ydata=[],
             linestyle=styledict[cat_val],
             color=colordict[cat_val],
-            label=label_fcn(cat_val)
+            label=label_fcn(cat_val),
         )
         plot_lines.append(lin)
         # plot_labs.append(mt)
@@ -91,7 +95,7 @@ def _config_axes(
     title_fontsize,
     x_label,
     y_label,
-    label_fontsize
+    label_fontsize,
 ):
     if x_ticks is not None:
         ax.set_xticks(x_ticks)
@@ -112,19 +116,36 @@ def _config_axes(
 
 
 def _get_leaf(path):
-    return path.rsplit('.', 1)[-1]
+    return path.rsplit(".", 1)[-1]
 
 
 def _no_op(arg):
     return arg
 
 
-def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id',
-              highlight_grp=None, title='', x_label='', y_label='', cmap_name='tab10',
-              figsize=[12, 6], x_ticks=None, y_ticks=None, x_lim=None, y_lim=None,
-              legend_loc=None, legend_fontsize=12,
-              label_fontsize=12, title_fontsize=16,
-              label_fcn=None, path_to_save=None):
+def plot_cats(
+    frame,
+    x_col,
+    y_col,
+    cat_col="model_type",
+    grp_col="model_group_id",
+    highlight_grp=None,
+    title="",
+    x_label="",
+    y_label="",
+    cmap_name="tab10",
+    figsize=[12, 6],
+    x_ticks=None,
+    y_ticks=None,
+    x_lim=None,
+    y_lim=None,
+    legend_loc=None,
+    legend_fontsize=12,
+    label_fontsize=12,
+    title_fontsize=16,
+    label_fcn=None,
+    path_to_save=None,
+):
     """Plot a line plot with each line colored by a category variable.
 
     Arguments:
@@ -157,7 +178,7 @@ def plot_cats(frame, x_col, y_col, cat_col='model_type', grp_col='model_group_id
 
     # function for parsing cat_col values into more readable legend lables
     if label_fcn is None:
-        label_fcn = _get_leaf if cat_col == 'model_type' else _no_op
+        label_fcn = _get_leaf if cat_col == "model_type" else _no_op
 
     categories = np.unique(frame[cat_col])
 

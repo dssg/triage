@@ -13,6 +13,7 @@ from .model_group_performance import ModelGroupPerformancePlotter
 from .selection_rule_grid import make_selection_rule_grid
 from .pre_audition import PreAudition
 
+
 class Auditioner(object):
     def __init__(
         self,
@@ -77,47 +78,51 @@ class Auditioner(object):
         # sort the train end times so we can reliably pick off the last time later
         self.train_end_times = sorted(train_end_times)
         self.directory = directory
-        models_table = models_table or 'models'
-        distance_table = distance_table or 'best_distance'
+        models_table = models_table or "models"
+        distance_table = distance_table or "best_distance"
         self.distance_from_best_table = DistanceFromBestTable(
             db_engine=db_engine,
             models_table=models_table,
             distance_table=distance_table,
         )
-        self.best_distance_plotter = BestDistancePlotter(self.distance_from_best_table, self.directory)
+        self.best_distance_plotter = BestDistancePlotter(
+            self.distance_from_best_table, self.directory
+        )
 
         self.first_pass_model_groups = model_groups_filter(
-                train_end_times=train_end_times,
-                initial_model_group_ids=model_group_ids,
-                models_table=models_table,
-                db_engine=db_engine
+            train_end_times=train_end_times,
+            initial_model_group_ids=model_group_ids,
+            models_table=models_table,
+            db_engine=db_engine,
         )
 
         self.model_group_thresholder = ModelGroupThresholder(
             distance_from_best_table=self.distance_from_best_table,
             train_end_times=train_end_times,
             initial_model_group_ids=self.first_pass_model_groups,
-            initial_metric_filters=initial_metric_filters
+            initial_metric_filters=initial_metric_filters,
         )
-        self.model_group_performance_plotter = \
-            ModelGroupPerformancePlotter(self.distance_from_best_table, self.directory)
+        self.model_group_performance_plotter = ModelGroupPerformancePlotter(
+            self.distance_from_best_table, self.directory
+        )
 
         self.selection_rule_picker = SelectionRulePicker(self.distance_from_best_table)
-        self.selection_rule_plotter = SelectionRulePlotter(self.selection_rule_picker, self.directory)
-        self.selection_rule_performance_plotter = \
-            SelectionRulePerformancePlotter(self.selection_rule_picker, directory)
+        self.selection_rule_plotter = SelectionRulePlotter(
+            self.selection_rule_picker, self.directory
+        )
+        self.selection_rule_performance_plotter = SelectionRulePerformancePlotter(
+            self.selection_rule_picker, directory
+        )
 
         self.distance_from_best_table.create_and_populate(
-            self.first_pass_model_groups,
-            self.train_end_times,
-            self.metrics
+            self.first_pass_model_groups, self.train_end_times, self.metrics
         )
         self.results_for_rule = {}
 
     @property
     def metrics(self):
         return [
-            {'metric': f['metric'], 'parameter': f['parameter']}
+            {"metric": f["metric"], "parameter": f["parameter"]}
             for f in self.metric_filters
         ]
 
@@ -135,10 +140,12 @@ class Auditioner(object):
     def average_regret_for_rules(self):
         result = dict()
         for k in self.results_for_rule.keys():
-            result[k] = self.results_for_rule[k]\
-                .groupby('selection_rule')['regret']\
-                .mean()\
+            result[k] = (
+                self.results_for_rule[k]
+                .groupby("selection_rule")["regret"]
+                .mean()
                 .to_dict()
+            )
         return result
 
     @property
@@ -148,28 +155,29 @@ class Auditioner(object):
         Returns: (dict) keys are selection rule descriptive names, values are the model group id
             chosen by them
         """
-        logging.info('Calculating selection rule picks for all rules')
+        logging.info("Calculating selection rule picks for all rules")
         model_group_ids = dict()
         thresholded_ids = self.thresholded_model_group_ids
         for selection_rule in self.selection_rules:
-            logging.info('Calculating selection rule picks for %s', selection_rule)
-            model_group_ids[selection_rule.descriptive_name] =\
-                self.selection_rule_picker.model_group_from_rule(
-                    bound_selection_rule=selection_rule,
-                    model_group_ids=thresholded_ids,
-                    # evaluate the selection rules for the most recent
-                    # time period and use those as candidate model groups
-                    train_end_time=self.train_end_times[-1],
-                )
+            logging.info("Calculating selection rule picks for %s", selection_rule)
+            model_group_ids[
+                selection_rule.descriptive_name
+            ] = self.selection_rule_picker.model_group_from_rule(
+                bound_selection_rule=selection_rule,
+                model_group_ids=thresholded_ids,
+                # evaluate the selection rules for the most recent
+                # time period and use those as candidate model groups
+                train_end_time=self.train_end_times[-1],
+            )
             logging.info(
-                'For rule %s, model group %s was picked',
+                "For rule %s, model group %s was picked",
                 selection_rule,
-                model_group_ids[selection_rule.descriptive_name]
+                model_group_ids[selection_rule.descriptive_name],
             )
         return model_group_ids
 
-    def save_result_model_group_ids(self, fname='results_model_group_ids.json'):
-        with open(os.path.join(self.directory, fname), 'w') as f:
+    def save_result_model_group_ids(self, fname="results_model_group_ids.json"):
+        with open(os.path.join(self.directory, fname), "w") as f:
             f.write(json.dumps(self.selection_rule_model_group_ids))
 
     def plot_model_groups(self):
@@ -181,30 +189,31 @@ class Auditioner(object):
         2. A performance-over-time plot showing the value for the given
         metric over time for each thresholded model group
         """
-        logging.info('Showing best distance plots for all metrics')
+        logging.info("Showing best distance plots for all metrics")
         thresholded_model_group_ids = self.thresholded_model_group_ids
         if len(thresholded_model_group_ids) == 0:
-            logging.warning('Zero model group ids found that passed configured thresholds. '
-                            'Nothing to plot')
+            logging.warning(
+                "Zero model group ids found that passed configured thresholds. "
+                "Nothing to plot"
+            )
             return
         self.best_distance_plotter.plot_all_best_dist(
-            self.metrics,
-            thresholded_model_group_ids,
-            self.train_end_times
+            self.metrics, thresholded_model_group_ids, self.train_end_times
         )
-        logging.info('Showing model group performance plots for all metrics')
+        logging.info("Showing model group performance plots for all metrics")
         self.model_group_performance_plotter.plot_all(
             metric_filters=self.metric_filters,
             model_group_ids=thresholded_model_group_ids,
-            train_end_times=self.train_end_times
+            train_end_times=self.train_end_times,
         )
 
     def set_one_metric_filter(
-            self,
-            metric='precision@',
-            parameter='100_abs',
-            max_from_best=0.05,
-            threshold_value=0.1):
+        self,
+        metric="precision@",
+        parameter="100_abs",
+        max_from_best=0.05,
+        threshold_value=0.1,
+    ):
         """Set one thresholding metric filter
         If one wnats to update multiple filters, one should use `update_metric_filters()` instead.
 
@@ -217,17 +226,17 @@ class Auditioner(object):
             plot (boolean, default True) Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
-        new_filters = [{'metric': metric,
-                        'parameter': parameter,
-                        'max_from_best': max_from_best,
-                        'threshold_value': threshold_value
-                        }]
+        new_filters = [
+            {
+                "metric": metric,
+                "parameter": parameter,
+                "max_from_best": max_from_best,
+                "threshold_value": threshold_value,
+            }
+        ]
         self.update_metric_filters(new_filters)
 
-    def update_metric_filters(
-            self,
-            new_filters=None,
-            plot=True):
+    def update_metric_filters(self, new_filters=None, plot=True):
         """Update the thresholding metric filters
 
         Args:
@@ -245,10 +254,10 @@ class Auditioner(object):
             plot (boolean, default True) Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
-        logging.info('Updating metric filters with new config %s', new_filters)
+        logging.info("Updating metric filters with new config %s", new_filters)
         self.model_group_thresholder.update_filters(new_filters)
         if plot:
-            logging.info('After config update, plotting model groups')
+            logging.info("After config update, plotting model groups")
             self.plot_model_groups()
 
     def plot_selection_rules(self):
@@ -267,8 +276,8 @@ class Auditioner(object):
         for metric_definition in self.metrics:
             common_kwargs = dict(
                 bound_selection_rules=self.selection_rules,
-                regret_metric=metric_definition['metric'],
-                regret_parameter=metric_definition['parameter'],
+                regret_metric=metric_definition["metric"],
+                regret_parameter=metric_definition["parameter"],
                 model_group_ids=self.thresholded_model_group_ids,
                 train_end_times=self.train_end_times[:-1],
                 # We can't calculate regrets for the most recent train end time,
@@ -277,19 +286,21 @@ class Auditioner(object):
             )
             self.selection_rule_plotter.plot_all_selection_rules(**common_kwargs)
 
-            df = self.selection_rule_performance_plotter.generate_plot_data(**common_kwargs)
+            df = self.selection_rule_performance_plotter.generate_plot_data(
+                **common_kwargs
+            )
             self.selection_rule_performance_plotter.regret_plot_from_dataframe(
-                metric=metric_definition['metric'],
-                parameter=metric_definition['parameter'],
-                df=df
+                metric=metric_definition["metric"],
+                parameter=metric_definition["parameter"],
+                df=df,
             )
             self.selection_rule_performance_plotter.raw_next_time_plot_from_dataframe(
-                metric=metric_definition['metric'],
-                parameter=metric_definition['parameter'],
-                df=df
+                metric=metric_definition["metric"],
+                parameter=metric_definition["parameter"],
+                df=df,
             )
 
-            key = metric_definition['metric'] + metric_definition['parameter']
+            key = metric_definition["metric"] + metric_definition["parameter"]
             self.results_for_rule[key] = df
 
     def register_selection_rule_grid(self, rule_grid, plot=True):
@@ -352,9 +363,11 @@ class Auditioner(object):
             write_path (string) The smart_open-ready path to a file where
                 the resulting YAML file should go.
         """
-        logging.info('Writing final model group ids to export to Tyra')
-        with smart_open(write_path, 'w') as f:
-            yaml.dump({'selection_rule_model_groups': self.selection_rule_model_group_ids}, f)
+        logging.info("Writing final model group ids to export to Tyra")
+        with smart_open(write_path, "w") as f:
+            yaml.dump(
+                {"selection_rule_model_groups": self.selection_rule_model_group_ids}, f
+            )
 
 
 class AuditionRunner(object):
@@ -365,8 +378,10 @@ class AuditionRunner(object):
 
     def run(self):
         pre_aud = PreAudition(self.db_engine)
-        model_group_ids = pre_aud.get_model_groups(self.config['model_groups']['query'])
-        query_end_times = self.config['time_stamps']['query'].format(', '.join(map(str, model_group_ids)))
+        model_group_ids = pre_aud.get_model_groups(self.config["model_groups"]["query"])
+        query_end_times = self.config["time_stamps"]["query"].format(
+            ", ".join(map(str, model_group_ids))
+        )
         end_times = pre_aud.get_train_end_times(query=query_end_times)
 
         aud = Auditioner(
@@ -374,19 +389,20 @@ class AuditionRunner(object):
             model_group_ids=model_group_ids,
             train_end_times=end_times,
             initial_metric_filters=[
-                {'metric': self.config['filter']['metric'],
-                 'parameter': self.config['filter']['parameter'],
-                 'max_from_best': self.config['filter']['max_from_best'],
-                 'threshold_value': self.config['filter']['threshold_value']
+                {
+                    "metric": self.config["filter"]["metric"],
+                    "parameter": self.config["filter"]["parameter"],
+                    "max_from_best": self.config["filter"]["max_from_best"],
+                    "threshold_value": self.config["filter"]["threshold_value"],
                 }
             ],
-            models_table=self.config['filter']['models_table'],
-            distance_table=self.config['filter']['distance_table'],
-            directory=self.dir
+            models_table=self.config["filter"]["models_table"],
+            distance_table=self.config["filter"]["distance_table"],
+            directory=self.dir,
         )
 
         aud.plot_model_groups()
-        aud.register_selection_rule_grid(rule_grid=self.config['rules'], plot=True)
+        aud.register_selection_rule_grid(rule_grid=self.config["rules"], plot=True)
         aud.save_result_model_group_ids()
 
         logging.info(f"Audition ran! Results are stored in {self.dir}.")

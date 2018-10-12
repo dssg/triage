@@ -1,5 +1,4 @@
-
-__all__ = ['BaselineFeatureNotInMatrix']
+__all__ = ["BaselineFeatureNotInMatrix"]
 
 
 class BaselineFeatureNotInMatrix(KeyError):

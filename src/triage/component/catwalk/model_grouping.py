@@ -2,13 +2,13 @@ import json
 import logging
 
 DEFAULT_KEYS = [
-    'label_timespan',
-    'label_name',
-    'as_of_date_frequency',
-    'max_training_history',
-    'state',
-    'cohort_name',
-    'feature_groups'
+    "label_timespan",
+    "label_name",
+    "as_of_date_frequency",
+    "max_training_history",
+    "state",
+    "cohort_name",
+    "feature_groups",
 ]
 
 
@@ -25,15 +25,11 @@ class ModelGrouper(object):
             In addition, the non-matrix attributes 'class_path' and 'parameters', referring to
             classifier training arguments, can be sent.
     """
+
     def __init__(self, model_group_keys=()):
         self.model_group_keys = frozenset(model_group_keys)
 
-    def _final_model_group_args(
-        self,
-        class_path,
-        parameters,
-        matrix_metadata,
-    ):
+    def _final_model_group_args(self, class_path, parameters, matrix_metadata):
         """Generates model grouping arguments based on input.
 
         Applies a set of default or custom grouping keys depending on the object's
@@ -60,28 +56,30 @@ class ModelGrouper(object):
         if len(self.model_group_keys) > 0:
             final = {}
             keys = set(self.model_group_keys)
-            if 'class_path' in keys:
-                final['class_path'] = class_path
-                keys.remove('class_path')
+            if "class_path" in keys:
+                final["class_path"] = class_path
+                keys.remove("class_path")
             else:
-                final['class_path'] = ''
+                final["class_path"] = ""
 
-            if 'parameters' in keys:
-                final['parameters'] = parameters
-                keys.remove('parameters')
+            if "parameters" in keys:
+                final["parameters"] = parameters
+                keys.remove("parameters")
             else:
-                final['parameters'] = {}
+                final["parameters"] = {}
 
-            if 'feature_names' in keys:
-                final['feature_names'] = matrix_metadata['feature_names']
-                keys.remove('feature_names')
+            if "feature_names" in keys:
+                final["feature_names"] = matrix_metadata["feature_names"]
+                keys.remove("feature_names")
             else:
-                final['feature_names'] = []
+                final["feature_names"] = []
 
-            final['model_config'] = {}
+            final["model_config"] = {}
 
             for model_group_key in keys:
-                final['model_config'][model_group_key] = matrix_metadata[model_group_key]
+                final["model_config"][model_group_key] = matrix_metadata[
+                    model_group_key
+                ]
 
             return final
 
@@ -94,17 +92,11 @@ class ModelGrouper(object):
             return dict(
                 class_path=class_path,
                 parameters=parameters,
-                feature_names=matrix_metadata['feature_names'],
-                model_config=model_config
+                feature_names=matrix_metadata["feature_names"],
+                model_config=model_config,
             )
 
-    def get_model_group_id(
-        self,
-        class_path,
-        parameters,
-        matrix_metadata,
-        db_engine
-    ):
+    def get_model_group_id(self, class_path, parameters, matrix_metadata, db_engine):
         """
         Returns model group id using store procedure 'get_model_group_id' which will
         return the same value for models with the same class_path, parameters,
@@ -120,16 +112,16 @@ class ModelGrouper(object):
         Returns: (int) a database id for the model group id
         """
         model_group_args = self._final_model_group_args(
-            class_path,
-            parameters,
-            matrix_metadata,
+            class_path, parameters, matrix_metadata
         )
         db_conn = db_engine.raw_connection()
         cur = db_conn.cursor()
-        cur.execute("SELECT EXISTS ( "
-                    "       SELECT * "
-                    "       FROM pg_catalog.pg_proc "
-                    "       WHERE proname = 'get_model_group_id' ) ")
+        cur.execute(
+            "SELECT EXISTS ( "
+            "       SELECT * "
+            "       FROM pg_catalog.pg_proc "
+            "       WHERE proname = 'get_model_group_id' ) "
+        )
         condition = cur.fetchone()
 
         if condition:
@@ -139,12 +131,15 @@ class ModelGrouper(object):
                 "            '{parameters}'::JSONB, "
                 "             ARRAY{feature_names}::TEXT [] , "
                 "            '{model_config}'::JSONB )".format(
-                    class_path=model_group_args['class_path'],
-                    parameters=json.dumps(model_group_args['parameters']),
-                    feature_names=model_group_args['feature_names'],
-                    model_config=json.dumps(model_group_args['model_config'], sort_keys=True))
+                    class_path=model_group_args["class_path"],
+                    parameters=json.dumps(model_group_args["parameters"]),
+                    feature_names=model_group_args["feature_names"],
+                    model_config=json.dumps(
+                        model_group_args["model_config"], sort_keys=True
+                    ),
+                )
             )
-            logging.info('Getting model group from query %s', query)
+            logging.info("Getting model group from query %s", query)
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()
@@ -155,5 +150,5 @@ class ModelGrouper(object):
             model_group_id = None
         db_conn.close()
 
-        logging.debug('Model_group_id = {}'.format(model_group_id))
+        logging.debug("Model_group_id = {}".format(model_group_id))
         return model_group_id

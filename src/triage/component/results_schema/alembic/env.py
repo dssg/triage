@@ -28,27 +28,28 @@ target_metadata = Base.metadata
 
 url = None
 
-if 'url' in config.attributes:
-    url = config.attributes['url']
+if "url" in config.attributes:
+    url = config.attributes["url"]
 
 if not url:
-    url = os.environ.get('DBURL', None)
+    url = os.environ.get("DBURL", None)
 
 if not url:
-    db_config_file = (context.get_x_argument('db_config_file')
-                      .get('db_config_file', None))
+    db_config_file = context.get_x_argument("db_config_file").get(
+        "db_config_file", None
+    )
     if not db_config_file:
-        raise ValueError('No database connection information found')
+        raise ValueError("No database connection information found")
 
     with open(db_config_file) as fd:
         config = yaml.load(fd)
         url = URL(
-            'postgres',
-            host=config['host'],
-            username=config['user'],
-            database=config['db'],
-            password=config['pass'],
-            port=config['port'],
+            "postgres",
+            host=config["host"],
+            username=config["user"],
+            database=config["db"],
+            password=config["pass"],
+            port=config["port"],
         )
 
 
@@ -68,7 +69,7 @@ def run_migrations_offline():
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        version_table='results_schema_versions'
+        version_table="results_schema_versions",
     )
 
     with context.begin_transaction():
@@ -83,19 +84,16 @@ def run_migrations_online():
 
     """
 
-    connectable = create_engine(
-        url,
-        poolclass=pool.NullPool
-    )
+    connectable = create_engine(url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table='results_schema_versions',
+            version_table="results_schema_versions",
             include_schemas=True,
         )
-        connection.execute('set search_path to "{}", public'.format('results'))
+        connection.execute('set search_path to "{}", public'.format("results"))
 
         with context.begin_transaction():
             context.run_migrations()

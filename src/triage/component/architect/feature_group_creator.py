@@ -4,11 +4,11 @@ import logging
 class FeatureGroup(dict):
     def __init__(self, *args, **kwargs):
         try:
-            self._names = [kwargs.pop('name')]
+            self._names = [kwargs.pop("name")]
         except KeyError:
             self._names = []
         try:
-            features = kwargs.pop('features_by_table')
+            features = kwargs.pop("features_by_table")
         except KeyError:
             features = {}
         super(FeatureGroup, self).__init__(*args, **features)
@@ -32,11 +32,7 @@ def table_subsetter(config_item, table, features):
 
 def prefix_subsetter(config_item, table, features):
     "Return features matching a given prefix"
-    return [
-        feature
-        for feature in features
-        if feature.startswith(config_item)
-    ]
+    return [feature for feature in features if feature.startswith(config_item)]
 
 
 def all_subsetter(config_item, table, features):
@@ -45,10 +41,11 @@ def all_subsetter(config_item, table, features):
 
 class FeatureGroupCreator(object):
     """Divides a feature dictionary into groups based on given criteria"""
+
     subsetters = {
-        'tables': table_subsetter,
-        'prefix': prefix_subsetter,
-        'all': all_subsetter,
+        "tables": table_subsetter,
+        "prefix": prefix_subsetter,
+        "all": all_subsetter,
     }
 
     def __init__(self, definition):
@@ -65,14 +62,16 @@ class FeatureGroupCreator(object):
 
         """
         if not isinstance(self.definition, dict):
-            raise ValueError('Feature Group Definition must be a dictionary')
+            raise ValueError("Feature Group Definition must be a dictionary")
 
         for subsetter_name, value in self.definition.items():
             if subsetter_name not in self.subsetters:
-                raise ValueError('Unknown subsetter %s received', subsetter_name)
-            if not hasattr(value, '__iter__') or isinstance(value, (str, bytes)):
-                raise ValueError('Each value in FeatureGroupCreator must be '
-                                 'iterable and not a string')
+                raise ValueError("Unknown subsetter %s received", subsetter_name)
+            if not hasattr(value, "__iter__") or isinstance(value, (str, bytes)):
+                raise ValueError(
+                    "Each value in FeatureGroupCreator must be "
+                    "iterable and not a string"
+                )
 
     def subsets(self, feature_dictionary):
         """Generate subsets of a feature dict
@@ -91,36 +90,37 @@ class FeatureGroupCreator(object):
             table-based structure
         """
         logging.info(
-            'Creating feature groups. config: %s, Master feature dictionary: %s',
+            "Creating feature groups. config: %s, Master feature dictionary: %s",
             self.definition,
-            feature_dictionary
+            feature_dictionary,
         )
         subsets = []
         for name, config in sorted(self.definition.items()):
             for config_item in config:
-                subset = FeatureGroup(name='{}: {}'.format(name, config_item))
+                subset = FeatureGroup(name="{}: {}".format(name, config_item))
                 for table, features in feature_dictionary.items():
-                    matching_features =\
-                        self.subsetters[name](config_item, table, features)
+                    matching_features = self.subsetters[name](
+                        config_item, table, features
+                    )
                     logging.info(
-                        'Matching features for config item %s, table %s: %s',
+                        "Matching features for config item %s, table %s: %s",
                         config_item,
                         table,
-                        matching_features
+                        matching_features,
                     )
                     if len(matching_features) > 0:
                         subset[table] = matching_features
                     else:
                         logging.warning(
-                            'No matching features found for config item %s, '
-                            'table %s, master features %s',
+                            "No matching features found for config item %s, "
+                            "table %s, master features %s",
                             config_item,
                             table,
-                            features
+                            features,
                         )
 
                 subsets.append(subset)
         if not any(subset for subset in subsets if any(subset)):
-            logging.warning('No matching feature groups available.')
-        logging.info('Found %s total feature subsets', len(subsets))
+            logging.warning("No matching feature groups available.")
+        logging.info("Found %s total feature subsets", len(subsets))
         return subsets
