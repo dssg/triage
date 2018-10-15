@@ -41,8 +41,6 @@ class ModelGroupEvaluator(object):
     def __init__(self, model_group_id):
         self.model_group_id = model_group_id
 
-        conn = create_pgconn('db_credentials.yaml')
-
         # Retrive model_id metadata from the model_metadata schema
         model_metadata = pd.read_sql(
         f'''WITH
@@ -109,16 +107,22 @@ class ModelGroupEvaluator(object):
     def predictions(self):
         preds = pd.read_sql(
             f'''
-            SELECT model_id,
-                   entity_id,
-                   as_of_date,
-                   score,
-                   label_value,
-                   COALESCE(rank_abs, RANK() 
-                   OVER(PARTITION BY model_id ORDER BY score DESC)) AS rank_abs,
-                   rank_pct,
-                   test_label_timespan
-            FROM test_results.predictions
+            SELECT 
+                   g.model_group_id,
+                   m.model_id,
+                   m.entity_id,
+                   m.as_of_date,
+                   m.score,
+                   m.label_value,
+                   COALESCE(rank_abs, RANK() OVER(PARTITION BY m.model_id
+                   ORDER BY m.score DESC)) AS rank_abs,
+                   COALESCE(m.rank_pct, percent_rank() over(ORDER BY m.score DESC)) *
+                   100 AS rank_pct,
+                   m.rank_pct,
+                   m.test_label_timespan
+            FROM test_results.predictions m
+            LEFT JOIN model_metadata.models g
+            USING (model_id)
             WHERE model_id IN {tuple(self.model_id)}
             AND label_value IS NOT NULL
             ''', con=conn)
@@ -128,11 +132,14 @@ class ModelGroupEvaluator(object):
     def feature_importances(self):
         features = pd.read_sql(
            f'''
-           SELECT model_id,
-                  feature,
-                  feature_importance,
-                  rank_abs
-           FROM train_results.feature_importances 
+           SELECT g.model_group_id,
+                  m.model_id,
+                  m.feature,
+                  m.feature_importance,
+                  m.rank_abs
+           FROM train_results.feature_importances m
+           LEFT JOIN model_metadata.models g
+           USING (model_id)
            WHERE model_id IN {tuple(self.model_id)}
            ''', con=conn)
         return features
@@ -141,24 +148,81 @@ class ModelGroupEvaluator(object):
     def metrics(self):
         model_metrics = pd.read_sql(
             f'''
-            SELECT model_id,
-                   metric,
-                   parameter,
-                   value,
-                   num_labeled_examples,
-                   num_labeled_above_threshold
-                   num_positive_labels
-            FROM test_results.evaluations
+            SELECT g.model_group_id,
+                   m.model_id,
+                   m.evaluation_end_time,
+                   m.metric,
+                   m.parameter,
+                   m.value,
+                   m.num_labeled_examples,
+                   m.num_labeled_above_threshold,
+                   m.num_positive_labels
+            FROM test_results.evaluations m
+            LEFT JOIN model_metadata.models g
+            USING (model_id)
             WHERE model_id IN {tuple(self.model_id)}
             ''', con=conn)
         return model_metrics
 
+    @cachedproperty
+    def feature_groups(self):
+        model_feature_groups = pd.read_sql(
+            f'''
+            WITH 
+            feature_groups_raw AS( 
+            SELECT 
+            model_group_id,
+            model_config->>'feature_groups' as features
+            FROM model_metadata.model_groups
+            WHERE model_type IN self.model_group_id
+            ), 
+            feature_groups_unnest AS(
+            SELECT model_group_id,
+            unnest(regexp_split_to_array(substring(features, '\[(.*?)\]'), ',')) AS group_array
+            FROM feature_groups_raw
+            ), feature_groups_array AS(
+            SELECT 
+            model_group_id,
+            array_agg(split_part(substring(group_array, '\"(.*?)\"'), ':', 2)) AS feature_group_array
+            FROM feature_groups_unnest
+            GROUP BY model_group_id
+            ), feature_groups_array_ AS(
+            SELECT
+            model_group_id,
+            feature_group_array,
+            array_length(feature_group_array, 1) AS number_feature_groups
+            FROM feature_groups_array
+            ), feature_groups_class_cases 
+            AS( 
+            SELECT
+            model_group_id,
+            feature_group_array,
+            number_feature_groups,
+            CASE WHEN number_feature_groups = 1
+            THEN 'LOI' 
+            WHEN  number_feature_groups = first_value(number_feature_groups) OVER w 
+            THEN 'All features
+            WHEN  number_feature_groups = (first_value(number_feature_groups) OVER w) - 2
+            THEN 'LOO' 
+            ELSE NULL END AS experiment_type
+            FROM feature_groups_array_
+            WINDOW w AS (ORDER BY number_feature_groups DESC)
+            ) SELECT * FROM feature_groups_class_cases
+            ''', con=conn)
+        return model_feature_groups
+
+    def perf_time(self):
+        '''
+        Plot metric for each model group across time 
+        '''
+        pass
+
     def _rank_corr_df(self,
                       model_pair,
-                      param: None,
-                      param_type: None,
                       corr_type: None,
-                      top_n_features: None):
+                      param_type: None,
+                      param: None,
+                      top_n_features: 10):
         '''
         Calculates ranked correlations for ranked observations and features
         using the stats.spearmanr scipy module.
@@ -169,15 +233,16 @@ class ModelGroupEvaluator(object):
         '''
 
         if corr_type not in ['predictions', 'features']:
-            raise Exception('Wrong type! Rank correlation is not available'
-                    + '\n for {}. Try the following options:'.format(type) 
-                    + '\n predictions and features')
+            raise Exception(
+                f'''Wrong type! Rank correlation is not available\n
+                   for {type}. Try the following options:\n 
+                   predictions and features''')
 
-        if corr_type is 'predictions':
+        if corr_type == 'predictions':
 
             # Split df for each model_id 
-            model_1 = self.predictions[self.preds['model_id'] == model_pair[0]]
-            model_2 = self.predictions[self.preds['model_id'] == model_pair[1]]
+            model_1 = self.predictions[self.predictions['model_id'] == model_pair[0]]
+            model_2 = self.predictions[self.predictions['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
             top_model_1 = model_1.sort_values(param_type, axis=0)[:param].set_index('entity_id')
@@ -195,9 +260,8 @@ class ModelGroupEvaluator(object):
 
             # Return corr value (not p-value)
             return rank_corr[0]
-
-        if corr_type is 'features':
-
+        elif corr_type == 'features':
+            
             # Split df for each model_id 
             model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
             model_2 = self.feature_importances[self.feature_importances['model_id'] == model_pair[1]]
@@ -220,6 +284,8 @@ class ModelGroupEvaluator(object):
 
             # Return corr value (not p-value)
             return rank_corr[0] 
+        else:
+            pass 
 
     def plot_ranked_corrlelation(self, 
                                  figsize=(12, 16),
@@ -245,12 +311,12 @@ class ModelGroupEvaluator(object):
             model_subset = self.model_id
 
         if corr_type  == 'predictions':
-
             # Calculate rank correlations for predictions
             corrs = [self._rank_corr_df(pair,
-                                        type_corr=type_corr,
-                                        param = kwargs['param'],
-                                        param_type = kwargs['param_type']
+                                        corr_type=corr_type,
+                                        param=kwargs['param'],
+                                        param_type=kwargs['param_type'],
+                                        top_n_features=10
                                        ) for pair in combinations(model_subset, 2)]
 
             # Store results in dataframe using tuples
@@ -262,6 +328,8 @@ class ModelGroupEvaluator(object):
             # Calculate rank correlations for predictions
             corrs = [self._rank_corr_df(pair,
                                         corr_type=corr_type,
+                                        param=kwargs['param'],
+                                        param_type=kwargs['param_type'],
                                         top_n_features = kwargs \
                                         ['top_n_features']
                                        ) for pair in combinations(model_subset, 2)]
@@ -271,27 +339,27 @@ class ModelGroupEvaluator(object):
             for pair, corr in zip(combinations(model_subset, 2), corrs):
                 corr_matrix.loc[pair] = corr
         else:
-            pass
+            raise AttributeError('Error!')
 
+       # Process data for plot: mask repeated tuples
+        corr_matrix_t = corr_matrix.T
+        mask = np.zeros_like(corr_matrix_t)
+        mask[np.triu_indices_from(mask, k=1)] = True
 
-            # Process data for plot: mask repeated tuples
-            corr_matrix_t = corr_matrix.T
-            mask = np.zeros_like(corr_matrix_t)
-            mask[np.triu_indices_from(mask, k=1)] = True
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_xlabel('Model Id', fontsize=fontsize)
+        ax.set_ylabel('Model Id', fontsize=fontsize)
+        plt.title(f'''{corr_type} Rank Correlation for 
+                  {kwargs['param_type']}@{kwargs['param']}
+                 ''', fontsize=fontsize)
+        sns.heatmap(corr_matrix_t.fillna(1),
+                    mask=mask,
+                    vmax=1,
+                    vmin=0,
+                    cmap='YlGnBu',
+                    annot=True,
+                    square=True)
 
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.set_xlabel('Model Id', fontsize=fontsize)
-            ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title(f'''{corr_type} Rank Correlation for 
-                      {param_type}@{param}
-                     ''', fontsize=fontsize)
-            sns.heatmap(corr_matrix_t.fillna(1),
-                        mask=mask,
-                        vmax=1,
-                        vmin=0,
-                        cmap='YlGnBu',
-                        annot=True,
-                        square=True)
 
     def plot_jaccard(self,
                      figsize=(12, 16), 
