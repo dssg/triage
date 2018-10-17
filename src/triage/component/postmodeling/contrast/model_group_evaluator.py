@@ -140,7 +140,7 @@ class ModelGroupEvaluator(object):
            FROM train_results.feature_importances m
            LEFT JOIN model_metadata.models g
            USING (model_id)
-           WHERE model_id IN {tuple(self.model_id)}
+           WHERE m.model_id IN {tuple(self.model_id)}
            ''', con=conn)
         return features
 
@@ -150,7 +150,7 @@ class ModelGroupEvaluator(object):
             f'''
             SELECT g.model_group_id,
                    m.model_id,
-                   m.evaluation_end_time,
+                   EXTRACT('YEAR' FROM m.evaluation_end_time) AS as_of_date_year,
                    m.metric,
                    m.parameter,
                    m.value,
@@ -160,7 +160,7 @@ class ModelGroupEvaluator(object):
             FROM test_results.evaluations m
             LEFT JOIN model_metadata.models g
             USING (model_id)
-            WHERE model_id IN {tuple(self.model_id)}
+            WHERE m.model_id IN {tuple(self.model_id)}
             ''', con=conn)
         return model_metrics
 
@@ -174,7 +174,7 @@ class ModelGroupEvaluator(object):
             model_group_id,
             model_config->>'feature_groups' as features
             FROM model_metadata.model_groups
-            WHERE model_type IN self.model_group_id
+            WHERE model_group_id IN {self.model_group_id}
             ), 
             feature_groups_unnest AS(
             SELECT model_group_id,
@@ -198,24 +198,143 @@ class ModelGroupEvaluator(object):
             model_group_id,
             feature_group_array,
             number_feature_groups,
-            CASE WHEN number_feature_groups = 1
-            THEN 'LOI' 
-            WHEN  number_feature_groups = first_value(number_feature_groups) OVER w 
-            THEN 'All features
-            WHEN  number_feature_groups = (first_value(number_feature_groups) OVER w) - 2
-            THEN 'LOO' 
-            ELSE NULL END AS experiment_type
+            CASE
+            WHEN number_feature_groups = 1
+            THEN 'LOI'
+            WHEN  number_feature_groups = first_value(number_feature_groups) OVER w
+            THEN 'All features'
+            WHEN  number_feature_groups = (first_value(number_feature_groups) OVER w) - 1
+            THEN 'LOO'
+            ELSE NULL
+            END AS experiment_type
             FROM feature_groups_array_
             WINDOW w AS (ORDER BY number_feature_groups DESC)
             ) SELECT * FROM feature_groups_class_cases
             ''', con=conn)
         return model_feature_groups
 
-    def perf_time(self):
+    def plot_prec_across_time(self,
+                              param_type=None,
+                              param=None,
+                              metric=None,
+                              baseline=False,
+                              baseline_query=None,
+                              figsize=(12,12),
+                              fontsize=20):
+        '''
+        Plot precision across time for all model_group_ids, and baseline,
+        if available.
+
+        This function plots the performance of each model_group_id following an
+        user defined performance metric. First, this function check if the
+        performance metrics are available to both the models, and the baseline.
+        Second, filter the data of interest, and lastly, plot the results as
+        timelines (model_id date). 
+        '''
+
+        # Load metrics and prepare data for analysis
+        model_metrics = self.metrics
+        model_metrics[['param', 'param_type']] = \
+                model_metrics['parameter'].str.split('_', 1, expand=True)
+        model_metrics['param'] =  model_metrics['param'].astype(str).astype(float)
+        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
+
+        # Filter model_group_id metrics and create pivot table by each
+        # model_group_id.
+        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) & 
+                                      (model_metrics['param'] == param) &
+                                      (model_metrics['param_type'] == param_type)].\
+                filter(['model_group_id', 'model_id', 'as_of_date_year',
+                        'value'])
+        model_metrics_pivot = model_metrics_filter.pivot(index='as_of_date_year',
+                                                        columns='model_group_id',
+                                                        values='value')
+        if baseline == True:
+
+            baseline_metrics = pd.read_sql(baseline_query, con=conn)
+            baseline_metrics[['param', 'param_type']] = \
+                    baseline_metrics['parameter'].str.split('_', 1, expand=True)
+            baseline_metrics['param'] = baseline_metrics['param'].astype(str).astype(float)
+            baseline_metrics['param_type'] = baseline_metrics['param_type'].apply(lambda x: 'rank_'+x)
+
+            # Filter baseline metrics and create pivot table to join with
+            # selected models metrics
+            baseline_metrics_filter =  baseline_metrics[(baseline_metrics['metric'] == metric) &
+                                                        (baseline_metrics['param'] == param) &
+                                                        (baseline_metrics['param_type'] == param_type)].\
+                filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
+
+            baseline_metrics_pivot = \
+            baseline_metrics_filter.pivot(index='as_of_date_year',
+                                          columns='model_group_id',
+                                          values='value')
+
+            # Join tables by index(as_of_date_year)
+            model_metrics_pivot = model_metrics_pivot.join(baseline_metrics_pivot,
+                                                     how='inner')
+
+        try:
+            sns.set_style('whitegrid')
+            sns.set_context('poster', font_scale=1.5)
+            fig, ax = plt.subplots(1, figsize=figsize)
+            plt.title(str(metric).capitalize() +\
+                     ' for selected model_groups in time.',
+                     fontsize=fontsize)
+            ax.set(xlabel=f'Year of prediction (as_of_date)',
+                   ylabel=f'{str(metric)+str(param_type)+str(param)}')
+            model_metrics_pivot.plot(kind='line', ax=ax)
+            plt.legend(title='model_group_id',
+                       loc='upper left')
+
+        except TypeError:
+                print(f'''
+                      Oops! model_metrics_pivot table is empty. Several problems
+                      can be creating this error:
+                      1. Check that {param_type}@{param} exists in the evaluations
+                      table 
+                      2. Check that the metric {metric} is available to the
+                      specified {param_type}@{param}.
+                      3. You basline model can have different specifications.
+                      Check those! 
+                      4. Check overlap between baseline dates and model dates.
+                      The join is using the dates for doing these, and it's
+                      possible that your timestamps differ. 
+                      ''')
+
+    def feature_loi_loo(self,
+                        model_subset=None,
+                        param_type=None,
+                        param=None,
+                        baseline=True,
+                        baseline_query=None):
         '''
         Plot metric for each model group across time 
         '''
-        pass
+
+        if model_subset is None:
+            model_subset = self.model_group_id
+
+        if baseline == True:
+            baseline_metrics = pd.read_sql(baseline_query, con = conn)
+
+        # Load feature groups and subset
+        feature_groups = self.feature_groups
+        feature_groups_filter = \
+        feature_groups[feature_groups['model_group_id'].isin(model_subset)]
+
+        # Load model metrics and subset 
+        model_metrics = self.metrics
+        model_metrics_filter = \
+        model_metrics.loc[model_metrics['model_group_id'].isin(model_subset)]
+
+        # Merge metrics and features and filter by threshold definition
+        metrics_merge = model_metrics_filter.merge(feature_groups_filter,
+                                                  how='inner',
+                                                  on='model_group_id')
+
+
+        # LOO and LOI definition
+        df_loi = metrics_merge[metrics_merge['experiment_type'] == 'LOI']
 
     def _rank_corr_df(self,
                       model_pair,
@@ -239,14 +358,13 @@ class ModelGroupEvaluator(object):
                    predictions and features''')
 
         if corr_type == 'predictions':
-
             # Split df for each model_id 
             model_1 = self.predictions[self.predictions['model_id'] == model_pair[0]]
             model_2 = self.predictions[self.predictions['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
             top_model_1 = model_1.sort_values(param_type, axis=0)[:param].set_index('entity_id')
-            top_model_2 = model_2.sort_values('rank_abs', axis=0)[:param].set_index('entity_id')
+            top_model_2 = model_2.sort_values(param_type, axis=0)[:param].set_index('entity_id')
 
             # Merge df's by entity_id and calculate corr
             df_pair_merge = top_model_1.merge(top_model_2, 
@@ -261,7 +379,6 @@ class ModelGroupEvaluator(object):
             # Return corr value (not p-value)
             return rank_corr[0]
         elif corr_type == 'features':
-            
             # Split df for each model_id 
             model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
             model_2 = self.feature_importances[self.feature_importances['model_id'] == model_pair[1]]
