@@ -592,7 +592,7 @@ class ModelEvaluator(object):
             (test_matrix_thresh['label_value'] == 1) &
             (test_matrix_thresh['above_thresh'] == 0) &
             (test_matrix_thresh['label_value'] == 0) &
-            (test_matrix_thresh['above_thresh'] == 0)]
+            (test_matrix_thresh['above_thresh'] == 0)],
             ['FPRvsOther', 'FNRvsOther', 'FPRvsTP', 'FNRvsTN'])
         
         # Create label iterator
