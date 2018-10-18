@@ -30,7 +30,11 @@ from triage.component.results_schema import upgrade_db
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.model_testers import ModelTester
-from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.utils import (
+    save_experiment_and_get_hash,
+    associate_models_with_experiment,
+    associate_matrices_with_experiment
+)
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
     ModelStorageEngine,
@@ -221,6 +225,7 @@ class ExperimentBase(ABC):
                 "sparse_state_table_name": self.sparse_states_table_name,
             },
             matrix_storage_engine=self.matrix_storage_engine,
+            experiment_hash=self.experiment_hash,
             include_missing_labels_in_train_as=self.config.get("label_config", {}).get(
                 "include_missing_labels_in_train_as", None
             ),
@@ -531,6 +536,11 @@ class ExperimentBase(ABC):
         )
 
     def build_matrices(self):
+        associate_matrices_with_experiment(
+            self.experiment_hash,
+            self.matrix_build_tasks.keys(),
+            self.db_engine
+        )
         self.process_matrix_build_tasks(self.matrix_build_tasks)
 
     def generate_matrices(self):
@@ -580,6 +590,12 @@ class ExperimentBase(ABC):
                     test=False, model_comment=self.config.get("model_comment", None)
                 ),
                 matrix_store=train_store,
+            )
+
+            associate_models_with_experiment(
+                self.experiment_hash,
+                [train_task['model_hash'] for train_task in train_tasks],
+                self.db_engine
             )
             model_ids = self.process_train_tasks(train_tasks)
 

@@ -206,4 +206,5 @@ class Planner(object):
             len(updated_definitions),
             len(build_tasks.keys()),
         )
+        logging.info("Associated all tasks with experiment in database")
         return updated_definitions, build_tasks

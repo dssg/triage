@@ -219,6 +219,7 @@ def basic_integration_test(
                     "labels_table_name": "labels",
                     "sparse_state_table_name": "tmp_sparse_states_abcd",
                 },
+                experiment_hash=None,
                 matrix_storage_engine=project_storage.matrix_storage_engine(),
                 replace=True,
             )

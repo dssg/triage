@@ -210,7 +210,10 @@ Running parts of an experiment is only supported through the Python interface.
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
 * model_metadata.experiments - The experiment configuration and a hash
+* model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
+* model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
 * model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
+* model_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
 * model_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
 * model_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
 * train_results.feature_importances - The sklearn feature importances results for each trained model

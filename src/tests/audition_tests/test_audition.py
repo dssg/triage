@@ -66,8 +66,7 @@ config = {
 }
 
 
-@mock.patch("os.getcwd")
-def test_Audition(mock_getcwd):
+def test_Audition():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
@@ -114,9 +113,10 @@ def test_Audition(mock_getcwd):
         session.commit()
 
         with tempfile.TemporaryDirectory() as td:
-            mock_getcwd.return_value = td
-            AuditionRunner(config_dict=config, db_engine=db_engine, directory=td).run()
-            assert len(os.listdir(os.getcwd())) == 6
+            with mock.patch('os.getcwd') as mock_getcwd:
+                mock_getcwd.return_value = td
+                AuditionRunner(config_dict=config, db_engine=db_engine, directory=td).run()
+                assert len(os.listdir(os.getcwd())) == 6
 
 
 def test_Auditioner():

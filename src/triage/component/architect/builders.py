@@ -16,12 +16,14 @@ class BuilderBase(object):
         db_config,
         matrix_storage_engine,
         engine,
+        experiment_hash,
         replace=True,
         include_missing_labels_in_train_as=None,
     ):
         self.db_config = db_config
         self.matrix_storage_engine = matrix_storage_engine
         self.db_engine = engine
+        self.experiment_hash = experiment_hash
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
 
@@ -332,6 +334,7 @@ class MatrixBuilder(BuilderBase):
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
+            built_by_experiment=self.experiment_hash
         )
         session = self.sessionmaker()
         session.merge(matrix)
