@@ -584,8 +584,16 @@ class ModelEvaluator(object):
             (test_matrix_thresh['label_value'] == 0) &
             (test_matrix_thresh['above_thresh'] == 1),
             (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_thresh'] == 0)],
-            ['FPR', 'FNR'])
+            (test_matrix_thresh['above_thresh'] == 0),
+            (test_matrix_thresh['label_value'] == 0) &
+            (test_matrix_thresh['above_thresh'] == 1) &
+            (test_matrix_thresh['label_value'] == 1) &
+            (test_matrix_thresh['above_thresh'] == 1),
+            (test_matrix_thresh['label_value'] == 1) &
+            (test_matrix_thresh['above_thresh'] == 0) &
+            (test_matrix_thresh['label_value'] == 0) &
+            (test_matrix_thresh['above_thresh'] == 0)]
+            ['FPRvsOther', 'FNRvsOther', 'FPRvsTP', 'FNRvsTN'])
         
         # Create label iterator
         Y = ((np.where(condition, 1, -1), error_type) for condition, error_type in error_class)
