@@ -219,8 +219,9 @@ class ModelGroupEvaluator(object):
                               metric=None,
                               baseline=False,
                               baseline_query=None,
-                              figsize=(12,12),
+                              figsize=(36,16),
                               fontsize=20):
+
         '''
         Plot precision across time for all model_group_ids, and baseline,
         if available.
@@ -246,9 +247,6 @@ class ModelGroupEvaluator(object):
                                       (model_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year',
                         'value'])
-        model_metrics_pivot = model_metrics_filter.pivot(index='as_of_date_year',
-                                                        columns='model_group_id',
-                                                        values='value')
         if baseline == True:
 
             baseline_metrics = pd.read_sql(baseline_query, con=conn)
@@ -264,27 +262,40 @@ class ModelGroupEvaluator(object):
                                                         (baseline_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
 
-            baseline_metrics_pivot = \
-            baseline_metrics_filter.pivot(index='as_of_date_year',
-                                          columns='model_group_id',
-                                          values='value')
-
+            baseline_metrics_filter['model_group_id'] = \
+                    baseline_metrics_filter.model_group_id.apply(lambda x: \
+                                                                 'baseline_' + \
+                                                                 str(x))
             # Join tables by index(as_of_date_year)
-            model_metrics_pivot = model_metrics_pivot.join(baseline_metrics_pivot,
-                                                     how='inner')
+            model_metrics_filter = \
+            model_metrics_filter.append(baseline_metrics_filter, sort=True)
+
+        model_metrics_filter['as_of_date_year'] = \
+                model_metrics_filter.as_of_date_year.astype('int')
 
         try:
             sns.set_style('whitegrid')
-            sns.set_context('poster', font_scale=1.5)
             fig, ax = plt.subplots(1, figsize=figsize)
+            
+            for model_group, df in model_metrics_filter.groupby(['model_group_id']):
+                ax = ax = df.plot(ax=ax, kind='line', 
+                                  x='as_of_date_year', 
+                                  y='value',
+                                  label=model_group)
             plt.title(str(metric).capitalize() +\
-                     ' for selected model_groups in time.',
-                     fontsize=fontsize)
-            ax.set(xlabel=f'Year of prediction (as_of_date)',
-                   ylabel=f'{str(metric)+str(param_type)+str(param)}')
-            model_metrics_pivot.plot(kind='line', ax=ax)
-            plt.legend(title='model_group_id',
-                       loc='upper left')
+                      ' for selected model_groups in time.',
+                      fontsize=fontsize)
+            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=fontsize)
+            ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
+                          fontsize=fontsize)
+            plt.xticks(model_metrics_filter.as_of_date_year.unique())
+            plt.yticks(np.arange(0,1,0.1))
+            plt.legend(bbox_to_anchor=(1.05, 1),
+                       loc=2,
+                       borderaxespad=0.,
+                       title='Model Group',
+                       fontsize=fontsize-2)
+
 
         except TypeError:
                 print(f'''
