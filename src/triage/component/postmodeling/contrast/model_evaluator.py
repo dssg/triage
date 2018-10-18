@@ -621,7 +621,6 @@ class ModelEvaluator(object):
        '''
 
        # Get matrices from the labeler
-       print(kwargs)
        X, Y = self._error_labeler(param_type = kwargs['param_type'],
                                   param = kwargs['param'],
                                   path=kwargs['path'])
@@ -675,7 +674,6 @@ class ModelEvaluator(object):
         else:
            error_modeler(param_type=kwargs['param_type'],
                          param=kwargs['param'])
-
 
 
     def crosstabs_ratio_plot(self, 
