@@ -579,24 +579,26 @@ class ModelEvaluator(object):
                                  ''')
 
         # Define labels using the errors
-        # By design the order is FPR and FNR 
-        error_class = zip([
-            (test_matrix_thresh['label_value'] == 0) &
-            (test_matrix_thresh['above_thresh'] == 1),
-            (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_thresh'] == 0),
-            (test_matrix_thresh['label_value'] == 0) &
-            (test_matrix_thresh['above_thresh'] == 1) &
-            (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_thresh'] == 1),
-            (test_matrix_thresh['label_value'] == 1) &
-            (test_matrix_thresh['above_thresh'] == 0) &
-            (test_matrix_thresh['label_value'] == 0) &
-            (test_matrix_thresh['above_thresh'] == 0)],
-            ['FPRvsOther', 'FNRvsOther', 'FPRvsTP', 'FNRvsTN'])
-        
+        dict_errors = {'FPR': (test_matrix_thresh['label_value'] == 0) & (test_matrix_thresh['above_thresh'] == 1),
+                       'PNR': (test_matrix_thresh['label_value'] == 1) & (test_matrix_thresh['above_thresh'] == 0),
+                       'TP':  (test_matrix_thresh['label_value'] == 1) & (test_matrix_thresh['above_thresh'] == 1),
+                       'TN':  (test_matrix_thresh['label_value'] == 0) & (test_matrix_thresh['above_thresh'] == 0)
+                      }
+        test_matrix_thresh['class_error'] = np.select(condlist=dict_errors.values(),
+                                                     choicelist=dict_errors.keys(),
+                                                     default=None)
+       
+        # Split data frame to explore FPR/FNR against TP and TN 
+        test_matrix_thres_0 = test_matrix_thresh['label_value'] == 0
+        test_matrix_thres_1 = test_matrix_thresh['label_value'] == 1
+
+        dict_error_class = {'FPRvsAll': (test_matrix_thresh['class_error'] == 'FPR'),
+                            'FNRvsAll': (test_matrix_thresh['class_error'] == 'FRN'),
+                            'FPRvsTP': (test_matrix_thresh_1['class_error'] == 'FPR'),
+                            'FNRvsTN': (test_matrix_thres_0['class_error'] == 'FNR')}  
+
         # Create label iterator
-        Y = ((np.where(condition, 1, -1), error_type) for condition, error_type in error_class)
+        Y = [(np.where(condition, 1, -1), label) for label, condition in dict_error_class]
 
         # Define feature space to model: get the list of feature names
         storage = ProjectStorage(path)
