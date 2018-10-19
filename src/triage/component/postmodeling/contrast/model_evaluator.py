@@ -566,49 +566,62 @@ class ModelEvaluator(object):
             test_matrix_thresh = test_matrix.sort_values(['rank_abs'], ascending=True)
             test_matrix_thresh['above_thresh'] = \
                     np.where(test_matrix_thresh['rank_abs'] <= param, 1, 0)
-            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
+            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - \
+                    test_matrix_thresh['above_thresh']
         elif param_type == 'rank_pct':
             # Calculate residuals/errors
             test_matrix_thresh = test_matrix.sort_values(['rank_pct'], ascending=True)
             test_matrix_thresh['above_thresh'] = \
                     np.where(test_matrix_thresh['rank_pct'] <= param, 1, 0)
-            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - test_matrix_thresh['above_thresh']
+            test_matrix_thresh['error'] = test_matrix_thresh['label_value'] - \
+                    test_matrix_thresh['above_thresh']
         else:
             raise AttributeError('''Error! You have to define a parameter type to
                                  set up a threshold
                                  ''')
 
         # Define labels using the errors
-        dict_errors = {'FPR': (test_matrix_thresh['label_value'] == 0) & (test_matrix_thresh['above_thresh'] == 1),
-                       'PNR': (test_matrix_thresh['label_value'] == 1) & (test_matrix_thresh['above_thresh'] == 0),
-                       'TP':  (test_matrix_thresh['label_value'] == 1) & (test_matrix_thresh['above_thresh'] == 1),
-                       'TN':  (test_matrix_thresh['label_value'] == 0) & (test_matrix_thresh['above_thresh'] == 0)
+        dict_errors = {'FPR': (test_matrix_thresh['label_value'] == 0) & 
+                              (test_matrix_thresh['above_thresh'] == 1),
+                       'FNR': (test_matrix_thresh['label_value'] == 1) & 
+                              (test_matrix_thresh['above_thresh'] == 0),
+                       'TP':  (test_matrix_thresh['label_value'] == 1) & 
+                              (test_matrix_thresh['above_thresh'] == 1),
+                       'TN':  (test_matrix_thresh['label_value'] == 0) & 
+                              (test_matrix_thresh['above_thresh'] == 0)
                       }
         test_matrix_thresh['class_error'] = np.select(condlist=dict_errors.values(),
                                                      choicelist=dict_errors.keys(),
                                                      default=None)
        
         # Split data frame to explore FPR/FNR against TP and TN 
-        test_matrix_thres_0 = test_matrix_thresh['label_value'] == 0
-        test_matrix_thres_1 = test_matrix_thresh['label_value'] == 1
+        test_matrix_thresh_0 = \
+        test_matrix_thresh[test_matrix_thresh['label_value'] == 0]
+        test_matrix_thresh_1 = \
+        test_matrix_thresh[test_matrix_thresh['label_value'] == 1]
 
         dict_error_class = {'FPRvsAll': (test_matrix_thresh['class_error'] == 'FPR'),
-                            'FNRvsAll': (test_matrix_thresh['class_error'] == 'FRN'),
-                            'FPRvsTP': (test_matrix_thresh_1['class_error'] == 'FPR'),
-                            'FNRvsTN': (test_matrix_thres_0['class_error'] == 'FNR')}  
+                            'FNRvsAll': (test_matrix_thresh['class_error'] == 'FNR'),
+                            'FNRvsTP': (test_matrix_thresh_1['class_error'] == 'FNR'),
+                            'FPRvsTN': (test_matrix_thresh_0['class_error'] == 'FPR')}  
 
         # Create label iterator
-        Y = [(np.where(condition, 1, -1), label) for label, condition in dict_error_class]
+        Y = [(np.where(condition, 1, -1), label) for label, condition in \
+             dict_error_class.items()]
 
         # Define feature space to model: get the list of feature names
         storage = ProjectStorage(path)
         matrix_storage = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
         feature_columns = matrix_storage.columns()
 
-        # Build error matrix and label vector
-        X = test_matrix_thresh[feature_columns]
+        # Build error feature matrix
+        matrices = [test_matrix_thresh, 
+                    test_matrix_thresh,
+                    test_matrix_thresh_1,
+                    test_matrix_thresh_0]
+        X = [matrix[feature_columns] for matrix in matrices]
 
-        return(X, Y)
+        return zip(Y, X)
 
     def _error_modeler(self,
                       depth=None,
@@ -631,24 +644,24 @@ class ModelEvaluator(object):
        '''
 
        # Get matrices from the labeler
-       X, Y = self._error_labeler(param_type = kwargs['param_type'],
+       zip_data = self._error_labeler(param_type = kwargs['param_type'],
                                   param = kwargs['param'],
                                   path=kwargs['path'])
 
        # Model tree and output tree plot
-       for error_label, error_type in Y:
+       for error_label, matrix in zip_data:
 
            dot_path = 'error_analysis_' + \
-                      str(error_type) + '_' + \
+                      str(error_label[1]) + '_' + \
                       str(self.model_id) + '_' + \
                       str(kwargs['param_type']) + '@'+ \
                       str(kwargs['param']) +  '.gv' 
 
            clf = tree.DecisionTreeClassifier(max_depth=depth)
-           clf_fit = clf.fit(X, error_label)
+           clf_fit = clf.fit(matrix, error_label[0])
            tree_viz = tree.export_graphviz(clf_fit,
                                            out_file=None,
-                                           feature_names=X.columns.values,
+                                           feature_names=matrix.columns.values,
                                            filled=True,
                                            rounded=True,
                                            special_characters=True)
