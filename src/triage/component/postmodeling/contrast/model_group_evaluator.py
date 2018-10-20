@@ -219,7 +219,7 @@ class ModelGroupEvaluator(object):
                               metric=None,
                               baseline=False,
                               baseline_query=None,
-                              figsize=(36,16),
+                              figsize=(12,16),
                               fontsize=20):
 
         '''
@@ -275,8 +275,7 @@ class ModelGroupEvaluator(object):
 
         try:
             sns.set_style('whitegrid')
-            fig, ax = plt.subplots(1, figsize=figsize)
-            
+            fig, ax = plt.subplots(figsize=figsize)
             for model_group, df in model_metrics_filter.groupby(['model_group_id']):
                 ax = ax = df.plot(ax=ax, kind='line', 
                                   x='as_of_date_year', 
@@ -285,17 +284,18 @@ class ModelGroupEvaluator(object):
             plt.title(str(metric).capitalize() +\
                       ' for selected model_groups in time.',
                       fontsize=fontsize)
-            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=fontsize)
+            ax.tick_params(labelsize=16)
+            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
             ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
-                          fontsize=fontsize)
+                          fontsize=20)
             plt.xticks(model_metrics_filter.as_of_date_year.unique())
             plt.yticks(np.arange(0,1,0.1))
-            plt.legend(bbox_to_anchor=(1.05, 1),
+            legend=plt.legend(bbox_to_anchor=(1.05, 1),
                        loc=2,
                        borderaxespad=0.,
                        title='Model Group',
-                       fontsize=fontsize-2)
-
+                       fontsize=fontsize)
+            legend.get_title().set_fontsize('16')
 
         except TypeError:
                 print(f'''
