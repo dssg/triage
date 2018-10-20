@@ -340,7 +340,8 @@ class ModelEvaluator(object):
 
         # Sort by the absolute value of the importance of the feature
         importances['sort'] = abs(importances['feature_importance'])
-        importances = importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
+        importances = \
+                importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
         importances = importances[0:n_features_plots]
 
         # Show the most important positive feature at the top of the graph
@@ -353,7 +354,8 @@ class ModelEvaluator(object):
         ax.set_xlabel('Score', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
-        plt.title('Top {} Feature Importances'.format(n_features_plots), fontsize=fontsize).set_position([.5, 0.99])
+        plt.title(f'Top {n_feature_plots} Feature Importances', 
+                  fontsize=fontsize).set_position([.5, 0.99])
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
@@ -391,12 +393,13 @@ class ModelEvaluator(object):
             'feature_importance': importances
         }).set_index('feature_name')
 
-        importances_sort = importances_df.sort_values(['feature_importance'],
-                                                       ascending=False)
+        importances_sort = \
+        importances_df.sort_values(['feature_importance'], ascending=False)
         importances_filter = importances_sort[:n_features_plots]
  
         # Plot features in order
-        importances_ordered = importances_filter.sort_values(['feature_importance'], ascending=True)
+        importances_ordered = \
+        importances_filter.sort_values(['feature_importance'], ascending=True)
 
         # Plot features with sd bars
         fig, ax = plt.subplots(figsize=figsize)
@@ -700,18 +703,36 @@ class ModelEvaluator(object):
 
 
     def crosstabs_ratio_plot(self, 
-                             n_features_plots=30):
+                             n_features=30,
+                             save_file=False,
+                             name_file=None,
+                            figsize=(12,16),
+                            fontsize=20):
         '''
         Plot to visualize the top-k features with the highest mean ratio. This
         plot will show the biggest quantitative differences between the labeled/predicted
         groups 
         '''
-        crosstabs_ratio = self.crosstabs.loc[self.crosstabs.metric ==
-                                             'ratio_predicted_positive_over_predicted_negative', :]
+        crosstabs_ratio = self.crosstabs.loc[self.crosstabs.metric == \
+                          'ratio_predicted_positive_over_predicted_negative']
         crosstabs_ratio_subset = crosstabs_ratio.sort_values(by=['value'],
-                                                             ascending=False)[:n_features_plots]
+                                 ascending=False)[:n_features]
+        crosstabs_ratio_plot = \
+        crosstabs_ratio_subset.filter(items=['feature_column','value']).\
+                set_index('feature_column').\
+                sort_values(['value'])
 
-
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.tick_params(labelsize=16)
+        crosstabs_ratio_plot.plot(kind="barh", legend=False, ax=ax)
+        ax.set_frame_on(False)
+        ax.set_xlabel('Ratio means (positive/negative)', fontsize=20)
+        ax.set_ylabel('Feature', fontsize=20)
+        plt.tight_layout()
+        plt.title(f'Top {n_features} features with higher mean ratio', 
+                  fontsize=fontsize).set_position([.5, 0.99])
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
 
     def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
                            score_col='score', 
