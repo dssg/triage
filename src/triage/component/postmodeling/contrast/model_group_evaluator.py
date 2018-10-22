@@ -316,8 +316,11 @@ class ModelGroupEvaluator(object):
                         model_subset=None,
                         param_type=None,
                         param=None,
-                        baseline=True,
-                        baseline_query=None):
+                        metric=None,
+                        baseline=False,
+                        baseline_query=None,
+                        figsize=(16,12),
+                        fontsize=20):
         '''
         Plot metric for each model group across time 
         '''
@@ -325,27 +328,120 @@ class ModelGroupEvaluator(object):
         if model_subset is None:
             model_subset = self.model_group_id
 
-        if baseline == True:
-            baseline_metrics = pd.read_sql(baseline_query, con = conn)
-
         # Load feature groups and subset
         feature_groups = self.feature_groups
         feature_groups_filter = \
         feature_groups[feature_groups['model_group_id'].isin(model_subset)]
 
-        # Load model metrics and subset 
+        # Format metrics columns and filter by metric of interest 
         model_metrics = self.metrics
-        model_metrics_filter = \
-        model_metrics.loc[model_metrics['model_group_id'].isin(model_subset)]
+        model_metrics[['param', 'param_type']] = \
+                model_metrics['parameter'].str.split('_', 1, expand=True)
+        model_metrics['param'] =  model_metrics['param'].astype(str).astype(float)
+        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
+
+        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) & 
+                                      (model_metrics['param'] == param) &
+                                      (model_metrics['param_type'] == param_type)].\
+                filter(['model_group_id', 'model_id', 'as_of_date_year',
+                        'value'])
 
         # Merge metrics and features and filter by threshold definition
         metrics_merge = model_metrics_filter.merge(feature_groups_filter,
                                                   how='inner',
                                                   on='model_group_id')
 
-
         # LOO and LOI definition
-        df_loi = metrics_merge[metrics_merge['experiment_type'] == 'LOI']
+        all_features = set(metrics_merge.loc[metrics_merge['experiment_type'] == 'All features'] \
+                           ['feature_group_array'][0])
+
+        metrics_merge_experimental = \
+        metrics_merge[metrics_merge['experiment_type'] != 'All features']
+
+        metrics_merge_experimental['feature_experiment'] = \
+                metrics_merge_experimental.apply(lambda row: \
+                                   list(all_features.difference(row['feature_group_array']))[0] + '_loo' \
+                                   if row['experiment_type'] == 'LOO' \
+                                   else row['feature_group_array'] + '_loi', axis=1) 
+
+        metrics_merge_experimental = \
+        metrics_merge_experimental.filter(['feature_experiment',
+                                           'as_of_date_year', 'value'])
+
+        if baseline == True:
+
+            baseline_metrics = pd.read_sql(baseline_query, con=conn)
+            baseline_metrics[['param', 'param_type']] = \
+                    baseline_metrics['parameter'].str.split('_', 1, expand=True)
+            baseline_metrics['param'] = baseline_metrics['param'].astype(str).astype(float)
+            baseline_metrics['param_type'] = baseline_metrics['param_type'].apply(lambda x: 'rank_'+x)
+
+            # Filter baseline metrics and create pivot table to join with
+            # selected models metrics
+            baseline_metrics_filter =  baseline_metrics[(baseline_metrics['metric'] == metric) &
+                                                        (baseline_metrics['param'] == param) &
+                                                        (baseline_metrics['param_type'] == param_type)].\
+                filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
+
+            baseline_metrics_filter['feature_experiment'] = \
+                    baseline_metrics_filter.model_group_id.apply(lambda x: \
+                                                                 'baseline_' + \
+                                                                 str(x))
+
+            metrics_merge_experimental = \
+                    metrics_merge_experimental.append(baseline_metrics_filter,
+                                                     sort=True)
+
+        # Plot!
+        try:
+            sns.set_style('whitegrid')
+            fig, ax = plt.subplots(figsize=figsize)
+            for feature, df in metrics_merge_experimental.groupby(['feature_experiment']):
+                ax = df.plot(ax=ax, kind='line', 
+                                  x='as_of_date_year', 
+                                  y='value',
+                                  label=feature)
+            metrics_merge[metrics_merge['experiment_type'] == 'All features']. \
+                    groupby(['experiment_type']). \
+                    plot(ax=ax, 
+                         kind='line',
+                         x='as_of_date_year',
+                         y='value',
+                         label='All features')
+            plt.title(str(metric).capitalize() +\
+                      ' for selected model_groups in time.',
+                      fontsize=fontsize)
+            ax.tick_params(labelsize=16)
+            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
+            ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
+                          fontsize=20)
+            plt.xticks(model_metrics_filter.as_of_date_year.unique())
+            plt.yticks(np.arange(0,1,0.1))
+            legend=plt.legend(bbox_to_anchor=(1.05, 1),
+                       loc=2,
+                       borderaxespad=0.,
+                       title='Experiment Type',
+                       fontsize=fontsize)
+            legend.get_title().set_fontsize('16')
+
+        except TypeError:
+                print(f'''
+                      Oops! model_metrics_pivot table is empty. Several problems
+                      can be creating this error:
+                      1. Check that {param_type}@{param} exists in the evaluations
+                      table 
+                      2. Check that the metric {metric} is available to the
+                      specified {param_type}@{param}.
+                      3. You basline model can have different specifications.
+                      Check those! 
+                      4. Check overlap between baseline dates and model dates.
+                      The join is using the dates for doing these, and it's
+                      possible that your timestamps differ. 
+                      ''')
+
+
+
+
 
     def _rank_corr_df(self,
                       model_pair,
