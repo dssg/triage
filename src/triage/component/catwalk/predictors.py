@@ -135,11 +135,15 @@ class Predictor(object):
             Prediction_obj (TrainPrediction or TestPrediction) table to store predictions to
 
         """
-        session = self.sessionmaker()
-        self._existing_predictions(
-            Prediction_obj, session, model_id, matrix_store
-        ).delete(synchronize_session=False)
-        session.expire_all()
+        try:
+            session = self.sessionmaker()
+            self._existing_predictions(
+                Prediction_obj, session, model_id, matrix_store
+            ).delete(synchronize_session=False)
+            session.expire_all()
+            session.commit()
+        finally:
+            session.close()
         db_objects = []
         test_label_timespan = matrix_store.metadata["label_timespan"]
         logging.warning(test_label_timespan)
@@ -149,8 +153,6 @@ class Predictor(object):
                 "as_of_date found as part of matrix index, using "
                 "index for table as_of_dates"
             )
-            session.commit()
-            session.close()
             with tempfile.TemporaryFile(mode="w+") as f:
                 writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
                 for index, score, label in zip(
@@ -214,9 +216,12 @@ class Predictor(object):
                     )
                 )
 
-            session.bulk_save_objects(db_objects)
-            session.commit()
-            session.close()
+            try:
+                session = self.sessionmaker()
+                session.bulk_save_objects(db_objects)
+                session.commit()
+            finally:
+                session.close()
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
@@ -236,24 +241,27 @@ class Predictor(object):
         # Setting the Prediction object type - TrainPrediction or TestPrediction
         prediction_obj = matrix_store.matrix_type.prediction_obj
 
-        session = self.sessionmaker()
         if not self.replace:
             logging.info(
                 "replace flag not set for model id %s, matrix %s, looking for old predictions",
                 model_id,
                 matrix_store.uuid,
             )
-            existing_predictions = self._existing_predictions(
-                prediction_obj, session, model_id, matrix_store
-            )
-            index = matrix_store.matrix.index
-            if existing_predictions.count() == len(index):
-                logging.info(
-                    "Found predictions for model id %s, matrix %s, returning saved versions",
-                    model_id,
-                    matrix_store.uuid,
+            try:
+                session = self.sessionmaker()
+                existing_predictions = self._existing_predictions(
+                    prediction_obj, session, model_id, matrix_store
                 )
-                return self._load_saved_predictions(existing_predictions, matrix_store)
+                index = matrix_store.matrix.index
+                if existing_predictions.count() == len(index):
+                    logging.info(
+                        "Found predictions for model id %s, matrix %s, returning saved versions",
+                        model_id,
+                        matrix_store.uuid,
+                    )
+                    return self._load_saved_predictions(existing_predictions, matrix_store)
+            finally:
+                session.close()
 
         model = self.load_model(model_id)
         logging.info("Loaded model %s", model_id)
