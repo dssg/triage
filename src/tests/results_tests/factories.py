@@ -32,6 +32,7 @@ class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Experiment
         sqlalchemy_session = session
+
     experiment_hash = factory.fuzzy.FuzzyText()
     config = {}
 
@@ -40,41 +41,48 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.ModelGroup
         sqlalchemy_session = session
-    model_type = 'sklearn.ensemble.RandomForestClassifier'
-    hyperparameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
-    feature_list = ['feature1', 'feature2', 'feature3']
+
+    model_type = "sklearn.ensemble.RandomForestClassifier"
+    hyperparameters = {"hyperparam1": "value1", "hyperparam2": "value2"}
+    feature_list = ["feature1", "feature2", "feature3"]
     model_config = {}
+
 
 class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Matrix
         sqlalchemy_session = session
+
     matrix_uuid = factory.fuzzy.FuzzyText()
+
 
 class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Model
         sqlalchemy_session = session
+
     model_group_rel = factory.SubFactory(ModelGroupFactory)
     model_hash = factory.fuzzy.FuzzyText()
     run_time = factory.LazyFunction(lambda: datetime.now())
     batch_run_time = factory.LazyFunction(lambda: datetime.now())
-    model_type = 'sklearn.ensemble.RandomForestClassifier'
-    hyperparameters = {'hyperparam1': 'value1', 'hyperparam2': 'value2'}
-    model_comment = ''
-    batch_comment = ''
+    model_type = "sklearn.ensemble.RandomForestClassifier"
+    hyperparameters = {"hyperparam1": "value1", "hyperparam2": "value2"}
+    model_comment = ""
+    batch_comment = ""
     config = {}
     matrix_rel = factory.SubFactory(MatrixFactory)
     experiment_rel = factory.SubFactory(ExperimentFactory)
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
-    train_matrix_uuid = factory.SelfAttribute('matrix_rel.matrix_uuid')
-    training_label_timespan = '1y'
+    train_matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
+    training_label_timespan = "1y"
+
 
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.FeatureImportance
         sqlalchemy_session = session
+
     model_rel = factory.SubFactory(ModelFactory)
     feature = factory.fuzzy.FuzzyText()
     feature_importance = factory.fuzzy.FuzzyDecimal(0, 1)
@@ -94,8 +102,8 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     label_value = factory.fuzzy.FuzzyInteger(0, 1)
     rank_abs = 1
     rank_pct = 1.0
-    matrix_uuid = factory.SelfAttribute('model_rel.train_matrix_uuid')
-    test_label_timespan = '3m'
+    matrix_uuid = factory.SelfAttribute("model_rel.train_matrix_uuid")
+    test_label_timespan = "3m"
 
 
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -110,13 +118,14 @@ class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     rank_abs = 1
     rank_pct = 1.0
     matrix_uuid = "efgh"
-    test_label_timespan = '3m'
+    test_label_timespan = "3m"
 
 
 class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.IndividualImportance
         sqlalchemy_session = session
+
     model_rel = factory.SubFactory(ModelFactory)
     entity_id = factory.fuzzy.FuzzyInteger(0)
     as_of_date = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
@@ -130,12 +139,13 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.TestEvaluation
         sqlalchemy_session = session
+
     model_rel = factory.SubFactory(ModelFactory)
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     evaluation_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
-    as_of_date_frequency = '3d'
-    metric = 'precision@'
-    parameter = '100_abs'
+    as_of_date_frequency = "3d"
+    metric = "precision@"
+    parameter = "100_abs"
     value = factory.fuzzy.FuzzyDecimal(0, 1)
     num_labeled_examples = 10
     num_labeled_above_threshold = 8

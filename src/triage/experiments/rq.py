@@ -2,14 +2,20 @@ import logging
 import time
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
+
 try:
     from rq import Queue
 except ImportError:
-    print('rq not available. To use RQExperiment, install triage with the RQ extension: pip install triage[rq]')
+    print(
+        "rq not available. To use RQExperiment, install triage with the RQ extension: "
+        "pip install triage[rq]"
+    )
     raise
 
 
-DEFAULT_TIMEOUT = '365d'  # We want to basically invalidate RQ's timeouts by setting them each to one year
+DEFAULT_TIMEOUT = (
+    "365d"
+)  # We want to basically invalidate RQ's timeouts by setting them each to one year
 
 
 class RQExperiment(ExperimentBase):
@@ -17,14 +23,21 @@ class RQExperiment(ExperimentBase):
 
     http://python-rq.org/
 
-    For this experiment to complete, you need some amount of RQ workers running the Triage codebase (either on the same machine as the experiment or elsewhere), and a Redis instance that both the experiment process and RQ workers can access.
+    For this experiment to complete, you need some amount of RQ workers running the Triage codebase
+    (either on the same machine as the experiment or elsewhere),
+    and a Redis instance that both the experiment process and RQ workers can access.
 
     Args:
-        redis_connection (redis.connection): A connection to a Redis instance that some rq workers can also access
-        sleep_time (int, default 5) How many seconds the process should sleep while waiting for RQ results
+        redis_connection (redis.connection): A connection to a Redis instance that
+            some rq workers can also access
+        sleep_time (int, default 5) How many seconds the process should sleep while
+            waiting for RQ results
         queue_kwargs (dict, default {}) Any extra keyword arguments to pass to Queue creation
     """
-    def __init__(self, redis_connection, sleep_time=5, queue_kwargs=None, *args, **kwargs):
+
+    def __init__(
+        self, redis_connection, sleep_time=5, queue_kwargs=None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.redis_connection = redis_connection
         if queue_kwargs is None:
@@ -45,27 +58,31 @@ class RQExperiment(ExperimentBase):
         while True:
             num_done = sum(1 for job in jobs if job.is_finished)
             num_failed = sum(1 for job in jobs if job.is_failed)
-            num_pending = sum(1 for job in jobs if not job.is_finished and not job.is_failed)
+            num_pending = sum(
+                1 for job in jobs if not job.is_finished and not job.is_failed
+            )
             logging.info(
-                'Report: jobs %s done, %s failed, %s pending',
+                "Report: jobs %s done, %s failed, %s pending",
                 num_done,
                 num_failed,
-                num_pending
+                num_pending,
             )
             if num_pending == 0:
-                logging.info('All jobs completed or failed, returning')
+                logging.info("All jobs completed or failed, returning")
                 return [job.result for job in jobs]
             else:
-                logging.info('Sleeping for %s seconds', self.sleep_time)
+                logging.info("Sleeping for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
 
     def process_query_tasks(self, query_tasks):
         """Run queries by table
 
-        Will run preparation (e.g. create table) and finalize (e.g. create index) tasks in the main process,
+        Will run preparation (e.g. create table) and finalize (e.g. create index) tasks
+        in the main process,
         but delegate inserts to rq Jobs in batches of 25
 
-        Args: query_tasks (dict) - keys should be table names and values should be dicts. Each inner dict should have up to three keys, each with a list of queries:
+        Args: query_tasks (dict) - keys should be table names and values should be dicts.
+            Each inner dict should have up to three keys, each with a list of queries:
             'prepare' (setting up the table),
             'inserts' (insert commands to populate the table),
             'finalize' (finishing table setup after all inserts have run)
@@ -73,18 +90,20 @@ class RQExperiment(ExperimentBase):
             Example: {
                 'table_one': {
                     'prepare': ['create table table_one (col1 varchar)'],
-                    'inserts': ['insert into table_one values (\'a\')', 'insert into table_one values (\'b'\')']
+                    'inserts': [
+                        'insert into table_one values (\'a\')',
+                        'insert into table_one values (\'b'\')'
+                    ]
                     'finalize': ['create index on table_one (col1)']
                 }
             }
         """
         for table_name, tasks in query_tasks.items():
-            logging.info('Processing features for %s', table_name)
-            self.feature_generator.run_commands(tasks.get('prepare', []))
+            logging.info("Processing features for %s", table_name)
+            self.feature_generator.run_commands(tasks.get("prepare", []))
 
             insert_batches = [
-                list(task_batch)
-                for task_batch in Batch(tasks.get('inserts', []), 25)
+                list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
             ]
             jobs = [
                 self.queue.enqueue(
@@ -98,14 +117,16 @@ class RQExperiment(ExperimentBase):
             ]
             self.wait_for(jobs)
 
-            self.feature_generator.run_commands(tasks.get('finalize', []))
-            logging.info('%s completed', table_name)
+            self.feature_generator.run_commands(tasks.get("finalize", []))
+            logging.info("%s completed", table_name)
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ
 
         Args:
-            matrix_build_tasks (dict) Keys should be matrix uuids (though not used here), values should be dictionaries suitable as kwargs for sending to self.matrix_builder.build_matrix
+            matrix_build_tasks (dict) Keys should be matrix uuids (though not used here),
+                values should be dictionaries suitable as kwargs for sending
+                to self.matrix_builder.build_matrix
 
         Returns: (list) of job results for each given task
         """
@@ -125,7 +146,8 @@ class RQExperiment(ExperimentBase):
         """Run train tasks using RQ
 
         Args:
-            train_tasks (list) of dictionaries, each representing kwargs suitable for self.trainer.process_train_task
+            train_tasks (list) of dictionaries, each representing kwargs suitable
+                for self.trainer.process_train_task
         Returns: (list) of job results for each given task
         """
         jobs = [
@@ -144,7 +166,8 @@ class RQExperiment(ExperimentBase):
         """Run test tasks using RQ
 
         Args:
-            test_tasks (list) of dictionaries, each representing kwargs suitable for self.tester.process_model_test_task
+            test_tasks (list) of dictionaries, each representing kwargs suitable
+                for self.tester.process_model_test_task
         Returns: (list) of job results for each given task
         """
         jobs = [

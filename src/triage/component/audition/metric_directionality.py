@@ -15,8 +15,8 @@ def greater_is_better(metric):
         return ModelEvaluator.available_metrics[metric].greater_is_better
     else:
         logging.warning(
-            'Metric %s not found in available metrics, assuming greater is better',
-            metric
+            "Metric %s not found in available metrics, assuming greater is better",
+            metric,
         )
         return True
 
@@ -29,9 +29,9 @@ def sql_rank_order(metric):
     Returns: (str) A SQL ORDER BY clause that will rank the best values first
     """
     if greater_is_better(metric):
-        return 'desc'
+        return "desc"
     else:
-        return 'asc'
+        return "asc"
 
 
 def is_better_operator(metric):
@@ -57,9 +57,9 @@ def best_in_series(metric):
         the best value
     """
     if greater_is_better(metric):
-        return 'max'
+        return "max"
     else:
-        return 'min'
+        return "min"
 
 
 def idxbest(metric):
@@ -71,6 +71,6 @@ def idxbest(metric):
         the index of the first occurrence of the best value
     """
     if greater_is_better(metric):
-        return 'idxmax'
+        return "idxmax"
     else:
-        return 'idxmin'
+        return "idxmin"

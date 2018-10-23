@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import sqlalchemy
 import wrapt
 
@@ -9,7 +11,7 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     As a result, the state won't be saved upon serialization/deserialization.
     """
 
-    __slots__ = ('url', 'creator', 'kwargs')
+    __slots__ = ("url", "creator", "kwargs")
 
     def __init__(self, url, *, creator=sqlalchemy.create_engine, **kwargs):
         self.url = url

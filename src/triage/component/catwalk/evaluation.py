@@ -9,7 +9,7 @@ from . import metrics
 from .utils import db_retry, sort_predictions_and_labels
 
 
-def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
+def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
     """Generate subset of predictions based on top% or absolute
 
     Args:
@@ -20,13 +20,12 @@ def generate_binary_at_x(test_predictions, x_value, unit='top_n'):
 
     Returns: (list) The predictions subset
     """
-    if unit == 'percentile':
+    if unit == "percentile":
         cutoff_index = int(len(test_predictions) * (x_value / 100.00))
     else:
         cutoff_index = x_value
     test_predictions_binary = [
-        1 if x < cutoff_index else 0
-        for x in range(len(test_predictions))
+        1 if x < cutoff_index else 0 for x in range(len(test_predictions))
     ]
     return test_predictions_binary
 
@@ -41,18 +40,18 @@ class ModelEvaluator(object):
     and return a numeric score
     """
     available_metrics = {
-        'precision@': metrics.precision,
-        'recall@': metrics.recall,
-        'fbeta@': metrics.fbeta,
-        'f1': metrics.f1,
-        'accuracy': metrics.accuracy,
-        'roc_auc': metrics.roc_auc,
-        'average precision score': metrics.avg_precision,
-        'true positives@': metrics.true_positives,
-        'true negatives@': metrics.true_negatives,
-        'false positives@': metrics.false_positives,
-        'false negatives@': metrics.false_negatives,
-        'fpr@': metrics.fpr,
+        "precision@": metrics.precision,
+        "recall@": metrics.recall,
+        "fbeta@": metrics.fbeta,
+        "f1": metrics.f1,
+        "accuracy": metrics.accuracy,
+        "roc_auc": metrics.roc_auc,
+        "average precision score": metrics.avg_precision,
+        "true positives@": metrics.true_positives,
+        "true negatives@": metrics.true_negatives,
+        "false positives@": metrics.false_positives,
+        "false negatives@": metrics.false_negatives,
+        "fpr@": metrics.fpr,
     }
 
     def __init__(
@@ -61,7 +60,7 @@ class ModelEvaluator(object):
         training_metric_groups,
         db_engine,
         sort_seed=None,
-        custom_metrics=None
+        custom_metrics=None,
     ):
         """
         Args:
@@ -107,24 +106,25 @@ class ModelEvaluator(object):
     def sessionmaker(self):
         return sessionmaker(bind=self.db_engine)
 
-    def _validate_metrics(
-        self,
-        custom_metrics
-    ):
+    def _validate_metrics(self, custom_metrics):
         for name, met in custom_metrics.items():
-            if not hasattr(met, 'greater_is_better'):
-                raise ValueError("Custom metric {} missing greater_is_better "
-                                 "attribute".format(name))
+            if not hasattr(met, "greater_is_better"):
+                raise ValueError(
+                    "Custom metric {} missing greater_is_better "
+                    "attribute".format(name)
+                )
             elif met.greater_is_better not in (True, False):
-                raise ValueError("For custom metric {} greater_is_better must be "
-                                 "boolean True or False".format(name))
+                raise ValueError(
+                    "For custom metric {} greater_is_better must be "
+                    "boolean True or False".format(name)
+                )
 
     def _build_parameter_string(
         self,
         threshold_unit,
         threshold_value,
         parameter_combination,
-        threshold_specified_by_user
+        threshold_specified_by_user,
     ):
         """Encode the metric parameters and threshold into a short, human-parseable string
 
@@ -140,12 +140,11 @@ class ModelEvaluator(object):
         """
         full_params = parameter_combination.copy()
         if threshold_specified_by_user:
-            short_threshold_unit = 'pct' if threshold_unit == 'percentile' else 'abs'
+            short_threshold_unit = "pct" if threshold_unit == "percentile" else "abs"
             full_params[short_threshold_unit] = threshold_value
-        parameter_string = '/'.join([
-            '{}_{}'.format(val, key)
-            for key, val in full_params.items()
-        ])
+        parameter_string = "/".join(
+            ["{}_{}".format(val, key) for key, val in full_params.items()]
+        )
         return parameter_string
 
     def _filter_nan_labels(self, predicted_classes, labels):
@@ -160,10 +159,7 @@ class ModelEvaluator(object):
         labels = numpy.array(labels)
         predicted_classes = numpy.array(predicted_classes)
         nan_mask = numpy.isfinite(labels)
-        return (
-            (predicted_classes[nan_mask]).tolist(),
-            (labels[nan_mask]).tolist()
-        )
+        return ((predicted_classes[nan_mask]).tolist(), (labels[nan_mask]).tolist())
 
     def _evaluations_for_threshold(
         self,
@@ -198,14 +194,11 @@ class ModelEvaluator(object):
 
         # using threshold configuration, convert probabilities to predicted classes
         predicted_classes = generate_binary_at_x(
-            predictions_proba,
-            threshold_value,
-            unit=threshold_unit
+            predictions_proba, threshold_value, unit=threshold_unit
         )
         # filter out null labels
         predicted_classes_with_labels, present_labels = self._filter_nan_labels(
-            predicted_classes,
-            labels,
+            predicted_classes, labels
         )
         num_labeled_examples = len(present_labels)
         num_labeled_above_threshold = predicted_classes_with_labels.count(1)
@@ -220,7 +213,7 @@ class ModelEvaluator(object):
                     predictions_proba,
                     predicted_classes_with_labels,
                     present_labels,
-                    parameter_combination
+                    parameter_combination,
                 )
 
                 # convert the thresholds/parameters into something
@@ -229,36 +222,34 @@ class ModelEvaluator(object):
                     threshold_unit=threshold_unit,
                     threshold_value=threshold_value,
                     parameter_combination=parameter_combination,
-                    threshold_specified_by_user=threshold_specified_by_user
+                    threshold_specified_by_user=threshold_specified_by_user,
                 )
 
                 logging.info(
-                    'Evaluations for %s%s, labeled examples %s '
-                    'above threshold %s, positive labels %s, value %s',
+                    "Evaluations for %s%s, labeled examples %s "
+                    "above threshold %s, positive labels %s, value %s",
                     metric,
                     parameter_string,
                     num_labeled_examples,
                     num_labeled_above_threshold,
                     num_positive_labels,
-                    value
+                    value,
                 )
-                evaluations.append(evaluation_table_obj(
-                    metric=metric,
-                    parameter=parameter_string,
-                    value=value,
-                    num_labeled_examples=num_labeled_examples,
-                    num_labeled_above_threshold=num_labeled_above_threshold,
-                    num_positive_labels=num_positive_labels,
-                    sort_seed=self.sort_seed
-                ))
+                evaluations.append(
+                    evaluation_table_obj(
+                        metric=metric,
+                        parameter=parameter_string,
+                        value=value,
+                        num_labeled_examples=num_labeled_examples,
+                        num_labeled_above_threshold=num_labeled_above_threshold,
+                        num_positive_labels=num_positive_labels,
+                        sort_seed=self.sort_seed,
+                    )
+                )
         return evaluations
 
     def _evaluations_for_group(
-        self,
-        group,
-        predictions_proba_sorted,
-        labels_sorted,
-        evaluation_table_obj,
+        self, group, predictions_proba_sorted, labels_sorted, evaluation_table_obj
     ):
         """Generate evaluations for a given metric group, and create ORM objects to hold them
 
@@ -270,37 +261,37 @@ class ModelEvaluator(object):
 
         Returns: (list) results_schema.Evaluation objects
         """
-        logging.info('Creating evaluations for metric group %s', group)
-        parameters = group.get('parameters', [{}])
+        logging.info("Creating evaluations for metric group %s", group)
+        parameters = group.get("parameters", [{}])
         generate_evaluations = functools.partial(
             self._evaluations_for_threshold,
-            metrics=group['metrics'],
+            metrics=group["metrics"],
             parameters=parameters,
             predictions_proba=predictions_proba_sorted,
             labels=labels_sorted,
-            evaluation_table_obj=evaluation_table_obj
+            evaluation_table_obj=evaluation_table_obj,
         )
         evaluations = []
-        if 'thresholds' not in group:
-            logging.info('Not a thresholded group, generating evaluation based on all predictions')
+        if "thresholds" not in group:
+            logging.info(
+                "Not a thresholded group, generating evaluation based on all predictions"
+            )
             evaluations = evaluations + generate_evaluations(
-                threshold_unit='percentile',
+                threshold_unit="percentile",
                 threshold_value=100,
-                threshold_specified_by_user=False
+                threshold_specified_by_user=False,
             )
 
-        for pct_thresh in group.get('thresholds', {}).get('percentiles', []):
-            logging.info('Processing percent threshold %s', pct_thresh)
+        for pct_thresh in group.get("thresholds", {}).get("percentiles", []):
+            logging.info("Processing percent threshold %s", pct_thresh)
             evaluations = evaluations + generate_evaluations(
-                threshold_unit='percentile',
-                threshold_value=pct_thresh
+                threshold_unit="percentile", threshold_value=pct_thresh
             )
 
-        for abs_thresh in group.get('thresholds', {}).get('top_n', []):
-            logging.info('Processing absolute threshold %s', abs_thresh)
+        for abs_thresh in group.get("thresholds", {}).get("top_n", []):
+            logging.info("Processing absolute threshold %s", abs_thresh)
             evaluations = evaluations + generate_evaluations(
-                threshold_unit='top_n',
-                threshold_value=abs_thresh
+                threshold_unit="top_n", threshold_value=abs_thresh
             )
         return evaluations
 
@@ -317,23 +308,21 @@ class ModelEvaluator(object):
         matrix_type = matrix_store.matrix_type.string_name
         evaluation_start_time = matrix_store.as_of_dates[0]
         evaluation_end_time = matrix_store.as_of_dates[-1]
-        as_of_date_frequency = matrix_store.metadata['as_of_date_frequency']
+        as_of_date_frequency = matrix_store.metadata["as_of_date_frequency"]
 
         # Specifies which evaluation table to write to: TestEvaluation or TrainEvaluation
         evaluation_table_obj = matrix_store.matrix_type.evaluation_obj
 
         logging.info(
-            'Generating evaluations for model id %s, evaluation range %s-%s, '
-            'as_of_date frequency %s',
+            "Generating evaluations for model id %s, evaluation range %s-%s, "
+            "as_of_date frequency %s",
             model_id,
             evaluation_start_time,
             evaluation_end_time,
-            as_of_date_frequency
+            as_of_date_frequency,
         )
         predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
-            predictions_proba,
-            labels,
-            self.sort_seed
+            predictions_proba, labels, self.sort_seed
         )
 
         evaluations = []
@@ -347,19 +336,19 @@ class ModelEvaluator(object):
                 group,
                 predictions_proba_sorted,
                 labels_sorted,
-                matrix_type.evaluation_obj
+                matrix_type.evaluation_obj,
             )
 
-        logging.info('Writing metrics to db: %s table', matrix_type)
+        logging.info("Writing metrics to db: %s table", matrix_type)
         self._write_to_db(
             model_id,
             evaluation_start_time,
             evaluation_end_time,
             as_of_date_frequency,
             evaluations,
-            evaluation_table_obj
+            evaluation_table_obj,
         )
-        logging.info('Done writing metrics to db: %s table', matrix_type)
+        logging.info("Done writing metrics to db: %s table", matrix_type)
 
     @db_retry
     def _write_to_db(
@@ -369,7 +358,7 @@ class ModelEvaluator(object):
         evaluation_end_time,
         as_of_date_frequency,
         evaluations,
-        evaluation_table_obj
+        evaluation_table_obj,
     ):
         """Write evaluation objects to the database
 
@@ -385,13 +374,12 @@ class ModelEvaluator(object):
         """
         session = self.sessionmaker()
 
-        session.query(evaluation_table_obj)\
-            .filter_by(
-                model_id=model_id,
-                evaluation_start_time=evaluation_start_time,
-                evaluation_end_time=evaluation_end_time,
-                as_of_date_frequency=as_of_date_frequency
-            ).delete()
+        session.query(evaluation_table_obj).filter_by(
+            model_id=model_id,
+            evaluation_start_time=evaluation_start_time,
+            evaluation_end_time=evaluation_end_time,
+            as_of_date_frequency=as_of_date_frequency,
+        ).delete()
 
         for evaluation in evaluations:
             evaluation.model_id = model_id

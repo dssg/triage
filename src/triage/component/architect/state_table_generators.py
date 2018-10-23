@@ -5,7 +5,7 @@ from triage.component.architect.database_reflection import table_has_data
 from triage.database_reflection import table_row_count
 
 
-DEFAULT_ACTIVE_STATE = 'active'
+DEFAULT_ACTIVE_STATE = "active"
 
 
 class StateTableGeneratorBase(ABC):
@@ -36,6 +36,7 @@ class StateTableGeneratorBase(ABC):
         experiment_hash (string) unique identifier for the experiment
 
     """
+
     def __init__(self, db_engine, experiment_hash):
         self.db_engine = db_engine
         self.experiment_hash = experiment_hash
@@ -50,7 +51,7 @@ class StateTableGeneratorBase(ABC):
 
     @property
     def sparse_table_name(self):
-        return 'tmp_sparse_states_{}'.format(self.experiment_hash)
+        return "tmp_sparse_states_{}".format(self.experiment_hash)
 
     def generate_sparse_table(self, as_of_dates):
         """Convert the object's input table
@@ -60,26 +61,27 @@ class StateTableGeneratorBase(ABC):
             as_of_dates (list of datetime.dates) Dates to include in the sparse
                 state table
         """
-        logging.debug('Generating sparse table using as_of_dates: %s', as_of_dates)
+        logging.debug("Generating sparse table using as_of_dates: %s", as_of_dates)
         self._create_and_populate_sparse_table(as_of_dates)
         self.db_engine.execute(
-            'create index on {} (entity_id, as_of_date)'
-            .format(self.sparse_table_name)
+            "create index on {} (entity_id, as_of_date)".format(self.sparse_table_name)
         )
-        logging.info('Indices created on entity_id and as_of_date for sparse state table')
+        logging.info(
+            "Indices created on entity_id and as_of_date for sparse state table"
+        )
         if not table_has_data(self.sparse_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
 
-        logging.info('Sparse states table generated at %s', self.sparse_table_name)
-        logging.info('Generating stats on %s', self.sparse_table_name)
-        logging.info('Row count of %s: %s',
-                     self.sparse_table_name,
-                     table_row_count(self.sparse_table_name, self.db_engine))
+        logging.info("Sparse states table generated at %s", self.sparse_table_name)
+        logging.info("Generating stats on %s", self.sparse_table_name)
+        logging.info(
+            "Row count of %s: %s",
+            self.sparse_table_name,
+            table_row_count(self.sparse_table_name, self.db_engine),
+        )
 
     def clean_up(self):
-        self.db_engine.execute(
-            'drop table if exists {}'.format(self.sparse_table_name)
-        )
+        self.db_engine.execute("drop table if exists {}".format(self.sparse_table_name))
 
 
 class StateTableGeneratorFromEntities(StateTableGeneratorBase):
@@ -107,25 +109,25 @@ class StateTableGeneratorFromEntities(StateTableGeneratorBase):
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
 
-        query = '''
+        query = """
             create table {sparse_state_table} as (
             select e.entity_id, a.as_of_date::timestamp, true {active_state}
                 from {entities_table} e
                 cross join (select unnest(ARRAY{as_of_dates}) as as_of_date) a
                 group by e.entity_id, a.as_of_date
             )
-        '''.format(
+        """.format(
             sparse_state_table=self.sparse_table_name,
             entities_table=self.entities_table,
             as_of_dates=[date.isoformat() for date in as_of_dates],
-            active_state=DEFAULT_ACTIVE_STATE
+            active_state=DEFAULT_ACTIVE_STATE,
         )
-        logging.debug('Assembled sparse state table query: %s', query)
+        logging.debug("Assembled sparse state table query: %s", query)
         self.db_engine.execute(query)
 
     def _empty_table_message(self, as_of_dates):
         return "No entities in entities table '{input_table}'".format(
-            input_table=self.entities_table,
+            input_table=self.entities_table
         )
 
 
@@ -151,34 +153,24 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
         """
 
         self.db_engine.execute(
-            '''create table {sparse_state_table} (
+            f"""create table {self.sparse_table_name} (
                 entity_id integer,
                 as_of_date timestamp,
-                {active_state} boolean
+                {DEFAULT_ACTIVE_STATE} boolean
             )
-            '''.format(
-                sparse_state_table=self.sparse_table_name,
-                active_state=DEFAULT_ACTIVE_STATE
-            )
+            """
         )
-        logging.info('Created sparse state table, now inserting rows')
+        logging.info("Created sparse state table, now inserting rows")
+
         for as_of_date in as_of_dates:
-            formatted_date = "'{}'::timestamp".format(as_of_date.isoformat())
-            dated_query = self.query.replace('{as_of_date}', formatted_date)
-            full_query = '''insert into {sparse_state_table}
-                select q.entity_id, {as_of_date}, true
-                from ({query}) q
+            formatted_date = f"{as_of_date.isoformat()}"
+            dated_query = self.query.replace("{as_of_date}", formatted_date)
+            full_query = f"""insert into {self.sparse_table_name}
+                select q.entity_id, '{formatted_date}'::timestamp, true
+                from ({dated_query}) q
                 group by 1, 2, 3
-            '''.format(
-                sparse_state_table=self.sparse_table_name,
-                query=dated_query,
-                as_of_date=formatted_date
-            )
-            logging.info(
-                'Running state query for date: %s, %s',
-                as_of_date,
-                full_query
-            )
+            """
+            logging.info(f"Running state query for date: {as_of_date}, {full_query}")
             self.db_engine.execute(full_query)
 
     def _empty_table_message(self, as_of_dates):
@@ -186,9 +178,12 @@ class StateTableGeneratorFromQuery(StateTableGeneratorBase):
             {as_of_dates}
             '{query}'""".format(
             query=self.query,
-            as_of_dates=', '.join(str(as_of_date) for as_of_date in (
-                as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
-            )),
+            as_of_dates=", ".join(
+                str(as_of_date)
+                for as_of_date in (
+                    as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ["…"]
+                )
+            ),
         )
 
 
@@ -206,29 +201,36 @@ class StateTableGeneratorFromDense(StateTableGeneratorBase):
         dense_state_table (string, optional) name of SQL table containing
             entities and state time ranges
     """
+
     def __init__(self, dense_state_table, *args, **kwargs):
         super(StateTableGeneratorFromDense, self).__init__(*args, **kwargs)
         self.dense_state_table = dense_state_table
 
     def all_known_states(self):
         all_states = [
-            row[0] for row in
-            self.db_engine.execute('''
+            row[0]
+            for row in self.db_engine.execute(
+                """
                 select distinct(state) from {} order by state
-            '''.format(self.dense_state_table))
+            """.format(
+                    self.dense_state_table
+                )
+            )
         ]
-        logging.info('Distinct states found: %s', all_states)
+        logging.info("Distinct states found: %s", all_states)
         return all_states
 
     def state_columns(self):
         state_columns = [
-            "bool_or(state = '{desired_state}') as {desired_state}"
-            .format(desired_state=state)
+            "bool_or(state = '{desired_state}') as {desired_state}".format(
+                desired_state=state
+            )
             for state in self.all_known_states()
         ]
         if not state_columns:
-            raise ValueError("Unable to identify states from table",
-                             self.dense_state_table)
+            raise ValueError(
+                "Unable to identify states from table", self.dense_state_table
+            )
         return state_columns
 
     def _create_and_populate_sparse_table(self, as_of_dates):
@@ -239,7 +241,7 @@ class StateTableGeneratorFromDense(StateTableGeneratorBase):
 
         Returns: (string) A query to produce a sparse states table
         """
-        query = '''
+        query = """
             create table {sparse_state_table} as (
             select d.entity_id, a.as_of_date::timestamp, {state_column_string}
                 from {dense_state_table} d
@@ -250,35 +252,43 @@ class StateTableGeneratorFromDense(StateTableGeneratorBase):
                 )
                 group by d.entity_id, a.as_of_date
             )
-        '''.format(
+        """.format(
             sparse_state_table=self.sparse_table_name,
             dense_state_table=self.dense_state_table,
             as_of_dates=[date.isoformat() for date in as_of_dates],
-            state_column_string=', '.join(self.state_columns())
+            state_column_string=", ".join(self.state_columns()),
         )
-        logging.debug('Assembled sparse state table query: %s', query)
+        logging.debug("Assembled sparse state table query: %s", query)
         self.db_engine.execute(query)
 
     def _empty_table_message(self, as_of_dates):
-        return \
-            "No entities in dense state table '{input_table}' define time ranges " + \
-            "that encompass any of experiment's \"as-of-dates\":\n\n" + \
-            "\t{as_of_dates}\n\n" + \
-            "Please check temporal config and dense state table".format(
+        return (
+            "No entities in dense state table '{input_table}' define time ranges "
+            + 'that encompass any of experiment\'s "as-of-dates":\n\n'
+            + "\t{as_of_dates}\n\n"
+            + "Please check temporal config and dense state table".format(
                 input_table=self.dense_state_table,
-                as_of_dates=', '.join(str(as_of_date) for as_of_date in (
-                    as_of_dates if len(as_of_dates) <= 5 else as_of_dates[:5] + ['…']
-                )),
+                as_of_dates=", ".join(
+                    str(as_of_date)
+                    for as_of_date in (
+                        as_of_dates
+                        if len(as_of_dates) <= 5
+                        else as_of_dates[:5] + ["…"]
+                    )
+                ),
             )
+        )
 
 
 class StateTableGeneratorNoOp(object):
     def generate_sparse_table(self, as_of_dates):
-        logging.warning('No cohort configuration is available, so no cohort will be created')
+        logging.warning(
+            "No cohort configuration is available, so no cohort will be created"
+        )
         return
 
     def clean_up(self):
-        logging.warning('No cohort table exists, so nothing to tear down')
+        logging.warning("No cohort table exists, so nothing to tear down")
         return
 
     @property

@@ -14,6 +14,7 @@ class SelectionRulePerformancePlotter(object):
         selection_rule_picker (audition.SelectionRulePicker) An object that can
             simulate the effects of picking a selection rule
     """
+
     def __init__(self, selection_rule_picker, directory=None):
         self.selection_rule_picker = selection_rule_picker
         self.results_for_rule = None
@@ -26,7 +27,7 @@ class SelectionRulePerformancePlotter(object):
         regret_parameter,
         model_group_ids,
         train_end_times,
-        plot_type='regret'
+        plot_type="regret",
     ):
         """Generate a selection rule performance plot for one metric
 
@@ -49,20 +50,16 @@ class SelectionRulePerformancePlotter(object):
             regret_metric=regret_metric,
             regret_parameter=regret_parameter,
         )
-        if plot_type == 'regret':
+        if plot_type == "regret":
             self.regret_plot_from_dataframe(
-                metric=regret_metric,
-                parameter=regret_parameter,
-                df=df
+                metric=regret_metric, parameter=regret_parameter, df=df
             )
-        elif plot_type == 'metric':
+        elif plot_type == "metric":
             self.raw_next_time_plot_from_dataframe(
-                metric=regret_metric,
-                parameter=regret_parameter,
-                df=df
+                metric=regret_metric, parameter=regret_parameter, df=df
             )
         else:
-            raise ValueError('Plot type must be either regret or metric')
+            raise ValueError("Plot type must be either regret or metric")
 
     def generate_plot_data(
         self,
@@ -70,7 +67,7 @@ class SelectionRulePerformancePlotter(object):
         model_group_ids,
         train_end_times,
         regret_metric,
-        regret_parameter
+        regret_parameter,
     ):
         """Create a dataframe suitable for plotting regrets over time
 
@@ -98,13 +95,15 @@ class SelectionRulePerformancePlotter(object):
                 regret_parameter,
             )
             for result in results:
-                accumulator.append({
-                    'train_end_time': result['train_end_time'],
-                    'regret': result['dist_from_best_case_next_time'],
-                    'selection_rule': selection_rule.descriptive_name,
-                    'raw_value_next_time': result['raw_value_next_time'],
-                    'model_group_id': result['model_group_id']
-                })
+                accumulator.append(
+                    {
+                        "train_end_time": result["train_end_time"],
+                        "regret": result["dist_from_best_case_next_time"],
+                        "selection_rule": selection_rule.descriptive_name,
+                        "raw_value_next_time": result["raw_value_next_time"],
+                        "model_group_id": result["model_group_id"],
+                    }
+                )
         return pandas.DataFrame.from_records(accumulator)
 
     def regret_plot_from_dataframe(self, metric, parameter, df, **plt_format_args):
@@ -117,27 +116,31 @@ class SelectionRulePerformancePlotter(object):
             df (pandas.DataFrame) -- A dataframe preresenting regrets over time.
                  Should have columns 'regret', 'train_end_time', 'selection_rule'
         """
-        cat_col = 'selection_rule'
-        plt_title = 'Regret for {} {} over time'.format(metric, parameter)
+        cat_col = "selection_rule"
+        plt_title = "Regret for {} {} over time".format(metric, parameter)
         if self.directory:
-            path_to_save = os.path.join(self.directory, f'regret_over_time_{metric}{parameter}.png')
+            path_to_save = os.path.join(
+                self.directory, f"regret_over_time_{metric}{parameter}.png"
+            )
         else:
             path_to_save = None
         plot_cats(
             frame=df,
-            x_col='train_end_time',
-            y_col='regret',
+            x_col="train_end_time",
+            y_col="regret",
             cat_col=cat_col,
-            grp_col='selection_rule',
+            grp_col="selection_rule",
             title=plt_title,
-            x_label='train end time',
-            y_label='regret in {}'.format(metric),
-            x_lim=(df['train_end_time'].min(), df['train_end_time'].max()),
+            x_label="train end time",
+            y_label="regret in {}".format(metric),
+            x_lim=(df["train_end_time"].min(), df["train_end_time"].max()),
             path_to_save=path_to_save,
-            **plt_format_args
+            **plt_format_args,
         )
 
-    def raw_next_time_plot_from_dataframe(self, metric, parameter, df, **plt_format_args):
+    def raw_next_time_plot_from_dataframe(
+        self, metric, parameter, df, **plt_format_args
+    ):
         """Generate a 'raw-value-next-time' plot from a given dataframe
 
         Args:
@@ -148,22 +151,24 @@ class SelectionRulePerformancePlotter(object):
                 over time given selection rules.
                 Should have columns 'raw_value_next_time', 'train_end_time', 'selection_rule'
         """
-        cat_col = 'selection_rule'
-        plt_title = '{} {} next time'.format(metric, parameter)
+        cat_col = "selection_rule"
+        plt_title = "{} {} next time".format(metric, parameter)
         if self.directory:
-            path_to_save = os.path.join(self.directory, f'{metric}{parameter}_next_time.png')
+            path_to_save = os.path.join(
+                self.directory, f"{metric}{parameter}_next_time.png"
+            )
         else:
             path_to_save = None
         plot_cats(
             frame=df,
-            x_col='train_end_time',
-            y_col='raw_value_next_time',
+            x_col="train_end_time",
+            y_col="raw_value_next_time",
             cat_col=cat_col,
-            grp_col='selection_rule',
+            grp_col="selection_rule",
             title=plt_title,
-            x_label='train end time',
-            y_label='value of {} next time'.format(metric),
-            x_lim=(df['train_end_time'].min(), df['train_end_time'].max()),
+            x_label="train end time",
+            y_label="value of {} next time".format(metric),
+            x_lim=(df["train_end_time"].min(), df["train_end_time"].max()),
             path_to_save=path_to_save,
-            **plt_format_args
+            **plt_format_args,
         )

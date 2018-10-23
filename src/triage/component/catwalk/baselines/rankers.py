@@ -6,7 +6,9 @@ from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 class PercentileRankOneFeature(object):
     def __init__(self, feature, descend=False):
         self.feature = feature  # which feature to rank on
-        self.descend = descend  # should feature be ranked so lower values -> higher scores
+        self.descend = (
+            descend
+        )  # should feature be ranked so lower values -> higher scores
         self.feature_importances_ = None
 
     def _set_feature_importances_(self, x):
@@ -17,12 +19,14 @@ class PercentileRankOneFeature(object):
         try:
             position = x.columns.get_loc(self.feature)
         except KeyError:
-            raise BaselineFeatureNotInMatrix((
-                'Trying to rank on a feature ({feature_name})'
-                ' not included in the training matrix!'.format(
-                    feature_name=self.feature
+            raise BaselineFeatureNotInMatrix(
+                (
+                    "Trying to rank on a feature ({feature_name})"
+                    " not included in the training matrix!".format(
+                        feature_name=self.feature
+                    )
                 )
-            ))
+            )
         feature_importances[position] = 1
         self.feature_importances_ = np.array(feature_importances)
 
@@ -53,7 +57,7 @@ class PercentileRankOneFeature(object):
         # converted to the number of entities below each value by subtracting 1
         # from each rank, yielding [0, 0, 2, 3, 3]. from here, we can calculate
         # the proportions by dividing by the length of each list.
-        method = 'min'
+        method = "min"
         subtract = 1
 
         # when descending: tied entities should get the *highest* rank, so for
@@ -67,7 +71,7 @@ class PercentileRankOneFeature(object):
         # and
         #    [1, 1, 1, 1, 1] - ([2, 2, 3, 5, 5]  / 5) = [0.6, 0.6, 0.4, 0, 0]
         if self.descend:
-            method = 'max'
+            method = "max"
             subtract = 0
 
         # get the ranks and convert to percentiles
