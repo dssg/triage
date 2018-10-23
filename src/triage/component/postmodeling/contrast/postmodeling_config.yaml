@@ -28,7 +28,7 @@
        FROM test_results.evaluations m
        LEFT JOIN model_metadata.models g
        USING(model_id)
-       WHERE g.model_group_id IN (1)
+       WHERE g.model_group_id IN (1, 2, 3)
   
   max_depth_error_tree: 5
   n_features_plots: 10

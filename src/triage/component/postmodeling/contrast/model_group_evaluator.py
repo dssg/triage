@@ -6,10 +6,6 @@ of audited models by triage.Audition. This will be a continuing list of
 routines that can be scaled up and grow according to the needs of the
 project, or other postmodeling approaches.
 
-To run most of this routines you will need:
-    - S3 credentials (if used) or specify the path to both feature and
-    prediction matrices.
-    - Working database conn.
 """
 
 import pandas as pd
@@ -219,6 +215,7 @@ class ModelGroupEvaluator(object):
                               metric=None,
                               baseline=False,
                               baseline_query=None,
+                              df=False,
                               figsize=(12,16),
                               fontsize=20):
 
@@ -230,7 +227,24 @@ class ModelGroupEvaluator(object):
         user defined performance metric. First, this function check if the
         performance metrics are available to both the models, and the baseline.
         Second, filter the data of interest, and lastly, plot the results as
-        timelines (model_id date). 
+        timelines (model_id date).
+
+        Arguments:
+            - param_type (string): A parameter string with a threshold
+            definition: rank_pct, or rank_abs. These are usually defined in the
+            postmodeling configuration file.
+            - param (int): A threshold value compatible with the param_type.
+            This value is also defined in the postmodeling configuration file. 
+            - metric (string): A string defnining the type of metric use to
+            evaluate the model, this can be 'precision@', or 'recall@'. 
+            - baseline (bool): should we include a baseline for comparison?
+            - baseline_query (str): a SQL query that returns the evaluation data from
+            the baseline models. This value can also be defined in the
+            configuration file.
+            - df (bool): If True, no plot is rendered, but a pandas DataFrame
+            is returned with the data. 
+            - figsize (tuple): tuple with figure size parameters
+            - fontsize (int): Fontsize for titles
         '''
 
         # Load metrics and prepare data for analysis
@@ -273,44 +287,48 @@ class ModelGroupEvaluator(object):
         model_metrics_filter['as_of_date_year'] = \
                 model_metrics_filter.as_of_date_year.astype('int')
 
-        try:
-            sns.set_style('whitegrid')
-            fig, ax = plt.subplots(figsize=figsize)
-            for model_group, df in model_metrics_filter.groupby(['model_group_id']):
-                ax = ax = df.plot(ax=ax, kind='line', 
-                                  x='as_of_date_year', 
-                                  y='value',
-                                  label=model_group)
-            plt.title(str(metric).capitalize() +\
-                      ' for selected model_groups in time.',
-                      fontsize=fontsize)
-            ax.tick_params(labelsize=16)
-            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
-            ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
-                          fontsize=20)
-            plt.xticks(model_metrics_filter.as_of_date_year.unique())
-            plt.yticks(np.arange(0,1,0.1))
-            legend=plt.legend(bbox_to_anchor=(1.05, 1),
-                       loc=2,
-                       borderaxespad=0.,
-                       title='Model Group',
-                       fontsize=fontsize)
-            legend.get_title().set_fontsize('16')
+        if df == True:
+            return model_metrics_filter
 
-        except TypeError:
-                print(f'''
-                      Oops! model_metrics_pivot table is empty. Several problems
-                      can be creating this error:
-                      1. Check that {param_type}@{param} exists in the evaluations
-                      table 
-                      2. Check that the metric {metric} is available to the
-                      specified {param_type}@{param}.
-                      3. You basline model can have different specifications.
-                      Check those! 
-                      4. Check overlap between baseline dates and model dates.
-                      The join is using the dates for doing these, and it's
-                      possible that your timestamps differ. 
-                      ''')
+        else:
+            try:
+                sns.set_style('whitegrid')
+                fig, ax = plt.subplots(figsize=figsize)
+                for model_group, df in model_metrics_filter.groupby(['model_group_id']):
+                    ax = ax = df.plot(ax=ax, kind='line', 
+                                      x='as_of_date_year', 
+                                      y='value',
+                                      label=model_group)
+                plt.title(str(metric).capitalize() +\
+                          ' for selected model_groups in time.',
+                          fontsize=fontsize)
+                ax.tick_params(labelsize=16)
+                ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
+                ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
+                              fontsize=20)
+                plt.xticks(model_metrics_filter.as_of_date_year.unique())
+                plt.yticks(np.arange(0,1,0.1))
+                legend=plt.legend(bbox_to_anchor=(1.05, 1),
+                           loc=2,
+                           borderaxespad=0.,
+                           title='Model Group',
+                           fontsize=fontsize)
+                legend.get_title().set_fontsize('16')
+
+            except TypeError:
+                    print(f'''
+                          Oops! model_metrics_pivot table is empty. Several problems
+                          can be creating this error:
+                          1. Check that {param_type}@{param} exists in the evaluations
+                          table 
+                          2. Check that the metric {metric} is available to the
+                          specified {param_type}@{param}.
+                          3. You basline model can have different specifications.
+                          Check those! 
+                          4. Check overlap between baseline dates and model dates.
+                          The join is using the dates for doing these, and it's
+                          possible that your timestamps differ. 
+                          ''')
 
     def feature_loi_loo(self,
                         model_subset=None,
@@ -319,11 +337,40 @@ class ModelGroupEvaluator(object):
                         metric=None,
                         baseline=False,
                         baseline_query=None,
+                        df=False,
                         figsize=(16,12),
                         fontsize=20):
         '''
-        Plot metric for each model group across time 
-        '''
+        Plot precision across time for the selected model_group_ids, and
+        include a leave-one-out, leave-one-in feature analysis to explore the
+        leverage/changes of the selected metric across different models.
+
+        This function plots the performance of each model_group_id following an
+        user defined performance metric. First, this function check if the
+        performance metrics are available to both the models, and the baseline.
+        Second, filter the data of interest, and lastly, plot the results as
+        timelines (model_id date).
+
+        Arguments:
+            -model_subset (list): A list of model_group_ids, in case you want
+            to override the selected models. 
+            - param_type (string): A parameter string with a threshold
+            definition: rank_pct, or rank_abs. These are usually defined in the
+            postmodeling configuration file.
+            - param (int): A threshold value compatible with the param_type.
+            This value is also defined in the postmodeling configuration file. 
+            - metric (string): A string defnining the type of metric use to
+            evaluate the model, this can be 'precision@', or 'recall@'. 
+            - baseline (bool): should we include a baseline for comparison?
+            - baseline_query (str): a SQL query that returns the evaluation data from
+            the baseline models. This value can also be defined in the
+            configuration file.
+            - df (bool): If True, no plot is rendered, but a pandas DataFrame
+            is returned with the data. 
+            - figsize (tuple): tuple with figure size parameters
+            - fontsize (int): Fontsize for titles
+
+    '''
 
         if model_subset is None:
             model_subset = self.model_group_id
@@ -391,57 +438,55 @@ class ModelGroupEvaluator(object):
             metrics_merge_experimental = \
                     metrics_merge_experimental.append(baseline_metrics_filter,
                                                      sort=True)
+        if df == True:
+            return metrics_merge_experimental
 
-        # Plot!
-        try:
-            sns.set_style('whitegrid')
-            fig, ax = plt.subplots(figsize=figsize)
-            for feature, df in metrics_merge_experimental.groupby(['feature_experiment']):
-                ax = df.plot(ax=ax, kind='line', 
-                                  x='as_of_date_year', 
-                                  y='value',
-                                  label=feature)
-            metrics_merge[metrics_merge['experiment_type'] == 'All features']. \
-                    groupby(['experiment_type']). \
-                    plot(ax=ax, 
-                         kind='line',
-                         x='as_of_date_year',
-                         y='value',
-                         label='All features')
-            plt.title(str(metric).capitalize() +\
-                      ' for selected model_groups in time.',
-                      fontsize=fontsize)
-            ax.tick_params(labelsize=16)
-            ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
-            ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
-                          fontsize=20)
-            plt.xticks(model_metrics_filter.as_of_date_year.unique())
-            plt.yticks(np.arange(0,1,0.1))
-            legend=plt.legend(bbox_to_anchor=(1.05, 1),
-                       loc=2,
-                       borderaxespad=0.,
-                       title='Experiment Type',
-                       fontsize=fontsize)
-            legend.get_title().set_fontsize('16')
+        else:
+            try:
+                sns.set_style('whitegrid')
+                fig, ax = plt.subplots(figsize=figsize)
+                for feature, df in metrics_merge_experimental.groupby(['feature_experiment']):
+                    ax = df.plot(ax=ax, kind='line', 
+                                      x='as_of_date_year', 
+                                      y='value',
+                                      label=feature)
+                metrics_merge[metrics_merge['experiment_type'] == 'All features']. \
+                        groupby(['experiment_type']). \
+                        plot(ax=ax, 
+                             kind='line',
+                             x='as_of_date_year',
+                             y='value',
+                             label='All features')
+                plt.title(str(metric).capitalize() +\
+                          ' for selected model_groups in time.',
+                          fontsize=fontsize)
+                ax.tick_params(labelsize=16)
+                ax.set_xlabel('Year of prediction (as_of_date)', fontsize=20)
+                ax.set_ylabel(f'{str(metric)+str(param_type)+str(param)}',
+                              fontsize=20)
+                plt.xticks(model_metrics_filter.as_of_date_year.unique())
+                plt.yticks(np.arange(0,1,0.1))
+                legend=plt.legend(bbox_to_anchor=(1.05, 1),
+                           loc=2,
+                           borderaxespad=0.,
+                           title='Experiment Type',
+                           fontsize=fontsize)
+                legend.get_title().set_fontsize('16')
 
-        except TypeError:
-                print(f'''
-                      Oops! model_metrics_pivot table is empty. Several problems
-                      can be creating this error:
-                      1. Check that {param_type}@{param} exists in the evaluations
-                      table 
-                      2. Check that the metric {metric} is available to the
-                      specified {param_type}@{param}.
-                      3. You basline model can have different specifications.
-                      Check those! 
-                      4. Check overlap between baseline dates and model dates.
-                      The join is using the dates for doing these, and it's
-                      possible that your timestamps differ. 
-                      ''')
-
-
-
-
+            except TypeError:
+                    print(f'''
+                          Oops! model_metrics_pivot table is empty. Several problems
+                          can be creating this error:
+                          1. Check that {param_type}@{param} exists in the evaluations
+                          table 
+                          2. Check that the metric {metric} is available to the
+                          specified {param_type}@{param}.
+                          3. You basline model can have different specifications.
+                          Check those! 
+                          4. Check overlap between baseline dates and model dates.
+                          The join is using the dates for doing these, and it's
+                          possible that your timestamps differ. 
+                          ''')
 
     def _rank_corr_df(self,
                       model_pair,
