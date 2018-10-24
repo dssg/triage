@@ -21,6 +21,7 @@ import collections
 from functools import partial
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
+import matplotlib.patches as mpatches
 import seaborn as sns
 from descriptors import cachedproperty
 from sklearn.ensemble import RandomForestClassifier
@@ -225,12 +226,14 @@ class ModelEvaluator(object):
         mat = matrix_storage.matrix
 
         # Merge with predictions table and return complete matrix
-        merged_df = mat.merge(self.predictions,
-                             on='entity_id',
+        merged_df = pd.merge(mat,
+                             self.predictions,
+                             on=['entity_id', 'as_of_date'],
                              how='inner',
                              suffixes=('test', 'pred'))
 
         cache[path] = merged_df
+        return merged_df
 
     def train_matrix(self, path):
         '''
@@ -544,19 +547,30 @@ class ModelEvaluator(object):
         lut = dict(zip(feature_groups.feature_group.unique(), colors))
         row_colors = feature_groups.feature_group.map(lut) 
 
-        # Plot correlation/cluster map
-        g = sns.clustermap(corr.fillna(0), 
-                           row_colors=row_colors,
-                           cmap=cmap_heatmap,
-                           figsize=figsize)
+        legend_feature_groups = \
+                [mpatches.Patch(color=value, label=key) for key,value in \
+                 lut.items()]
 
+        # Plot correlation/cluster map
+        ax = sns.clustermap(corr.fillna(0), 
+                       row_colors=row_colors,
+                       cmap=cmap_heatmap)
+        plt.title(f'Clustered Correlation matrix plot for {self.model_id}', 
+                  fontsize=fontsize)
+        plt.legend(handles=legend_feature_groups, 
+                   title= 'Feature Group',
+                   bbox_to_anchor=(0., 1.005, 1., .102), 
+                   loc=7,
+                   borderaxespad=0.)
 
     def cluster_correlation_sparsity(self,
-                                    path,
-                                    ):
+                                      path,
+                                      cmap_heatmap='YlGnBu',
+                                      figsize=(20,20),
+                                      fontsize=12):
          '''
         Plot sparcity in feature space
-        
+ 
         This function simply renders the correlation between features and uses
         hierarchical clustering to identify cluster of features. The idea bhind
         this plot is not only to explore the correlation in the space, but also
@@ -564,8 +578,6 @@ class ModelEvaluator(object):
         Arguments: 
             - path (string): Project directory where to find matrices and
             models. Usually is under 'triage/outcomes/'
-            - cmap_color_fgroups (string): matplotlib pallete to color the
-            feature groups.
             - cmap_heatmap (string):seaborn/matplotlib pallete to color the
             correlation/clustering matrix
             - figsize (tuple): define size of the plot (please use square
@@ -585,9 +597,22 @@ class ModelEvaluator(object):
 
          # Prepare and calculate feature correlation
          test_matrix = test_matrix[feature_columns]
-         feature_columns = matrix_storage.columns()
-         feature_groups = [x.split('_', 1)[0] for x in feature_columns]
 
+         # Create sparse matrix
+         # 1: Values with more than 0, and 0 to values with 0
+         sparse_feature_matrix = test_matrix.where(test_matrix == 0).fillna(1)
+         sparse_feature_matrix_filter = sparse_feature_matrix.apply(lambda x: \
+                                                            x.sort_values().values)
+
+         # Plot matric
+         fig, ax = plt.subplots(figsize=figsize)
+         plt.title(f'Feature space sparse matrix for {self.model_id}', 
+                   fontsize=fontsize)
+         ax.set_xlabel('Features', fontsize=fontsize)
+         ax.set_ylabel('Entity ID', fontsize=fontsize)
+         sns.heatmap(sparse_feature_matrix_filter, 
+                     cmap=cmap_heatmap)
+ 
  
     def compute_AUC(self):
         '''
