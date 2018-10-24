@@ -125,11 +125,45 @@ class ModelEvaluator(object):
             SELECT model_id,
                    feature,
                    feature_importance,
+                   CASE
+                   WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
+			       THEN 'No feature group' 
+		           ELSE split_part(feature, '_', 1) 
+			       END AS feature_group,
                    rank_abs
             FROM train_results.feature_importances
             WHERE model_id = {self.model_id}
             ''', con=conn)
         return features
+    
+    @cachedproperty
+    def feature_group_importances(self):
+        feature_groups = pd.read_sql(
+            f'''
+			WITH 
+			raw_importances AS(    
+			SELECT 
+			model_id,
+			feature,
+			feature_importance,
+			CASE 
+			WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
+			THEN 'No feature group' 
+			ELSE split_part(feature, '_', 1) 
+			END AS feature_group,
+			rank_abs
+			FROM train_results.feature_importances
+			WHERE model_id = {self.model_id}
+			) 
+			SELECT 
+			model_id,
+			feature_group,
+			avg(feature_importance) as importance_average,
+			FROM raw_importances
+			GROUP BY feature_group, model_id
+			ORDER BY model_id, feature_group
+            ''', con=conn)
+        return feature_groups
 
     @cachedproperty
     def metrics(self):
@@ -416,6 +450,89 @@ class ModelEvaluator(object):
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
+    def plot_feature_group_importances(self,
+                                       save_file=False,
+                                       name_file=None,
+                                       n_features_plots=30,
+                                       figsize=(16, 12),
+                                       fontsize=20):
+        '''
+        Generate a bar chart of the top n feature importances (by absolute value)
+        Arguments:
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - n_features_plots (int): number of top features to plot
+                - figsize (tuple): figure size to pass to matplotlib
+                - fontsize (int): define custom fontsize for labels and legends.
+        '''
+
+        importances = self.feature_group_importances(items=['feature_group', \
+                                                            'importance_average'])
+        importances = importances.set_index('feature_group')
+
+        # Sort by the absolute value of the importance of the feature
+        importances['sort'] = abs(importances['importance_average'])
+        importances = \
+                importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
+
+        # Show the most important positive feature at the top of the graph
+        importances = importances.sort_values(by='importance_average', ascending=True)
+
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.tick_params(labelsize=16)
+        importances.plot(kind="barh", legend=False, ax=ax)
+        ax.set_frame_on(False)
+        ax.set_xlabel('Score', fontsize=20)
+        ax.set_ylabel('Feature Group', fontsize=20)
+        plt.tight_layout()
+        plt.title(f'Feature Group Importances', 
+                  fontsize=fontsize).set_position([.5, 0.99])
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
+
+    def cluster_correlation_features(self, 
+                                     path,
+                                     cmap_color_fgroups='Accent',
+                                     cmap_heatmap='mako',
+                                     figsize=(16,16),
+                                     fontsize=12):
+        '''
+        Plot correlation of features!
+        '''
+
+        # Load Prediction Matrix
+        self.preds_matrix(path)
+        test_matrix = self.preds_matrix(path)
+
+        # Define feature space (remove predictions)
+        storage = ProjectStorage(path)
+        matrix_storage = \
+        MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
+        feature_columns = matrix_storage.columns()
+
+        # Prepare and calculate feature correlation
+        test_matrix = test_matrix[feature_columns]
+        feature_columns = matrix_storage.columns()
+        feature_groups = [x.split('_', 1)[0] for x in feature_columns]
+        corr = feature_matrix.corr() 
+
+        # Define feature groups and colors 
+        feature_groups = pd.DataFrame(feature_groups,
+                              columns = ['feature_group'],
+                              index = corr.index.tolist()) 
+
+        cmap = plt.get_cmap(cmap_color_fgroups)
+        colors = cmap(np.linspace(0, 1,
+                                  len(feature_groups.feature_group.unique()))) 
+        lut = dict(zip(feature_groups.feature_group.unique(), colors))
+        row_colors = feature_groups.feature_group.map(lut) 
+
+        # Plot correlation/cluster map
+        g = sns.clustermap(corr.fillna(0), 
+                           row_colors=row_colors,
+                           cmap=cmap_heatmap,
+                           figsize=figsize)
+
     def compute_AUC(self):
         '''
         Utility function to generate ROC and AUC data to plot ROC curve
@@ -584,9 +701,9 @@ class ModelEvaluator(object):
                                  ''')
 
         # Define labels using the errors
-        dict_errors = {'FPR': (test_matrix_thresh['label_value'] == 0) & 
+        dict_errors = {'FP': (test_matrix_thresh['label_value'] == 0) & 
                               (test_matrix_thresh['above_thresh'] == 1),
-                       'FNR': (test_matrix_thresh['label_value'] == 1) & 
+                       'FN': (test_matrix_thresh['label_value'] == 1) & 
                               (test_matrix_thresh['above_thresh'] == 0),
                        'TP':  (test_matrix_thresh['label_value'] == 1) & 
                               (test_matrix_thresh['above_thresh'] == 1),
@@ -603,10 +720,10 @@ class ModelEvaluator(object):
         test_matrix_thresh_1 = \
         test_matrix_thresh[test_matrix_thresh['label_value'] == 1]
 
-        dict_error_class = {'FPRvsAll': (test_matrix_thresh['class_error'] == 'FPR'),
-                            'FNRvsAll': (test_matrix_thresh['class_error'] == 'FNR'),
-                            'FNRvsTP': (test_matrix_thresh_1['class_error'] == 'FNR'),
-                            'FPRvsTN': (test_matrix_thresh_0['class_error'] == 'FPR')}  
+        dict_error_class = {'FPvsAll': (test_matrix_thresh['class_error'] == 'FP'),
+                            'FNvsAll': (test_matrix_thresh['class_error'] == 'FN'),
+                            'FNvsTP': (test_matrix_thresh_1['class_error'] == 'FN'),
+                            'FPvsTN': (test_matrix_thresh_0['class_error'] == 'FP')}  
 
         # Create label iterator
         Y = [(np.where(condition, 1, -1), label) for label, condition in \
