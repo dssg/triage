@@ -21,6 +21,7 @@ import collections
 from functools import partial
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
+import seaborn as sns
 from descriptors import cachedproperty
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
@@ -28,6 +29,7 @@ from sklearn import tree
 from collections import namedtuple
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
 from parameters import ThresholdIterator, PostmodelParameters
+
 from utils.aux_funcs import *
 
 
@@ -388,7 +390,7 @@ class ModelEvaluator(object):
         ax.set_xlabel('Score', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
-        plt.title(f'Top {n_feature_plots} Feature Importances', 
+        plt.title(f'Top {n_features_plots} Feature Importances', 
                   fontsize=fontsize).set_position([.5, 0.99])
         if save_file:
             plt.savefig(str(name_file + '.png'))
@@ -497,8 +499,23 @@ class ModelEvaluator(object):
                                      figsize=(16,16),
                                      fontsize=12):
         '''
-        Plot correlation of features!
-        '''
+        Plot correlation in feature space
+        
+        This function simply renders the correlation between features and uses
+        hierarchical clustering to identify cluster of features. The idea bhind
+        this plot is not only to explore the correlation in the space, but also
+        to explore is this correlation is comparable with the feature groups. 
+        Arguments: 
+            - path (string): Project directory where to find matrices and
+            models. Usually is under 'triage/outcomes/'
+            - cmap_color_fgroups (string): matplotlib pallete to color the
+            feature groups.
+            - cmap_heatmap (string):seaborn/matplotlib pallete to color the
+            correlation/clustering matrix
+            - figsize (tuple): define size of the plot (please use square
+            dimensions)
+            - fontsize (string): define size of plot title and axes.
+         '''
 
         # Load Prediction Matrix
         self.preds_matrix(path)
@@ -514,7 +531,7 @@ class ModelEvaluator(object):
         test_matrix = test_matrix[feature_columns]
         feature_columns = matrix_storage.columns()
         feature_groups = [x.split('_', 1)[0] for x in feature_columns]
-        corr = feature_matrix.corr() 
+        corr = test_matrix.corr() 
 
         # Define feature groups and colors 
         feature_groups = pd.DataFrame(feature_groups,
@@ -533,6 +550,45 @@ class ModelEvaluator(object):
                            cmap=cmap_heatmap,
                            figsize=figsize)
 
+
+    def cluster_correlation_sparsity(self,
+                                    path,
+                                    ):
+         '''
+        Plot sparcity in feature space
+        
+        This function simply renders the correlation between features and uses
+        hierarchical clustering to identify cluster of features. The idea bhind
+        this plot is not only to explore the correlation in the space, but also
+        to explore is this correlation is comparable with the feature groups. 
+        Arguments: 
+            - path (string): Project directory where to find matrices and
+            models. Usually is under 'triage/outcomes/'
+            - cmap_color_fgroups (string): matplotlib pallete to color the
+            feature groups.
+            - cmap_heatmap (string):seaborn/matplotlib pallete to color the
+            correlation/clustering matrix
+            - figsize (tuple): define size of the plot (please use square
+            dimensions)
+            - fontsize (string): define size of plot title and axes.
+         '''
+
+         # Load Prediction Matrix
+         self.preds_matrix(path)
+         test_matrix = self.preds_matrix(path)
+
+         # Define feature space (remove predictions)
+         storage = ProjectStorage(path)
+         matrix_storage = \
+         MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
+         feature_columns = matrix_storage.columns()
+
+         # Prepare and calculate feature correlation
+         test_matrix = test_matrix[feature_columns]
+         feature_columns = matrix_storage.columns()
+         feature_groups = [x.split('_', 1)[0] for x in feature_columns]
+
+ 
     def compute_AUC(self):
         '''
         Utility function to generate ROC and AUC data to plot ROC curve
