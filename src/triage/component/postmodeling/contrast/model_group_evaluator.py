@@ -19,7 +19,6 @@ from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
 import seaborn as sns
 
-
 from utils.aux_funcs import * 
 
 # Get indivual model information/metadata from Audition output
@@ -703,6 +702,4 @@ class ModelGroupEvaluator(object):
                             vmin=0, 
                             vmax=1, 
                             annot=True, 
-                            linewidth=0.1)
-
-   
+                            linewidth=0.1) 
