@@ -18,11 +18,12 @@ import yaml
 import pickle
 import graphviz
 import collections
+import matplotlib.patches as mpatches
+import seaborn as sns
+from adjustText import adjust_text
 from functools import partial
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
-import matplotlib.patches as mpatches
-import seaborn as sns
 from descriptors import cachedproperty
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
@@ -96,7 +97,7 @@ class ModelEvaluator(object):
         f'Model object for model_id: {self.model_id}\n'
         f'Model Group: {self.model_group_id}\n'
         f'Model type: {self.model_type}\n'
-        f'Train End Time: {self.train_end_time}\n'
+        f'Train End Time: {self.as_of_date}\n'
         f'Model hyperparameters: {self.hyperparameters}\n'
         f'''Matrix hashes (train,test): [{self.train_matrix_uuid},
                                         {self.pred_matrix_uuid}]'''
@@ -112,7 +113,8 @@ class ModelEvaluator(object):
                    score,
                    label_value,
                    COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   COALESCE(rank_pct, percent_rank() OVER(ORDER BY score DESC)) * 100 as rank_pct, 
+                   COALESCE(rank_pct, percent_rank() 
+                   OVER(ORDER BY score DESC)) * 100 as rank_pct, 
                    test_label_timespan
             FROM test_results.predictions
             WHERE model_id = {self.model_id}
@@ -266,6 +268,7 @@ class ModelEvaluator(object):
                              suffixes=('test', 'pred'))
 
         cache[path] = mat
+        return mat
 
     def plot_score_distribution(self,
                                save_file=False,
@@ -390,7 +393,7 @@ class ModelEvaluator(object):
         ax.tick_params(labelsize=16)
         importances.plot(kind="barh", legend=False, ax=ax)
         ax.set_frame_on(False)
-        ax.set_xlabel('Score', fontsize=20)
+        ax.set_xlabel('Feature Importance', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
         plt.title(f'Top {n_features_plots} Feature Importances', 
@@ -402,6 +405,7 @@ class ModelEvaluator(object):
                                          path,
                                          save_file=False,
                                          name_file=None,
+                                         bar=True,
                                          n_features_plots=30,
                                          figsize=(16,21),
                                          fontsize=20):
@@ -411,6 +415,8 @@ class ModelEvaluator(object):
         Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
                 - name_file (string): specify name file for saved plot.
+                - bar (bool): Should we plot a barplot or a scatter plot. If
+                true, it will print a bar plot (set True by default).
                 - n_features_plots (int): number of top features to plot.
                 - figsize (tuple): figuresize to pass to matplotlib.
                 - fontsize (int): define a custom fontsize for labels and legends.
@@ -440,17 +446,39 @@ class ModelEvaluator(object):
         importances_ordered = \
         importances_filter.sort_values(['feature_importance'], ascending=True)
 
-        # Plot features with sd bars
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.tick_params(labelsize=16)
-        importances_ordered['feature_importance'].plot.barh(legend=False, ax=ax,
-                                               xerr=importances_ordered['std'])
-        ax.set_frame_on(False)
-        ax.set_xlabel('Score', fontsize=20)
-        ax.set_ylabel('Feature', fontsize=20)
-        plt.tight_layout()
-        plt.title(f'Top {n_features_plots} Feature Importances with SD',
-                  fontsize=fontsize).set_position([.5, 0.99])
+
+        if bar == True:
+            # Plot features with sd bars
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.tick_params(labelsize=16)
+            importances_ordered['feature_importance'].plot.barh(legend=False, ax=ax,
+                                                                xerr=importances_ordered['std'],
+                                                                color='b')
+            ax.set_frame_on(False)
+            ax.set_xlabel('Feature Importance', fontsize=20)
+            ax.set_ylabel('Feature', fontsize=20)
+            plt.tight_layout()
+            plt.title(f'Top {n_features_plots} Feature Importances with SD',
+                      fontsize=fontsize).set_position([.5, 0.99])
+
+        else:
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.tick_params(labelsize=16)
+            importances_ordered.plot.scatter(x = 'std',
+                                             y = 'feature_importance',
+                                             legend=False, 
+                                             ax=ax)
+            ax.set_xlabel('Std. Error', fontsize=20)
+            ax.set_ylabel('Feature Importance', fontsize=20)
+            plt.title(f'Top {n_features_plots} Feature Importances against SD',
+                      fontsize=fontsize).set_position([.5, 0.99])
+            feature_labels = []
+            for k, v in importances_ordered.iterrows():
+                feature_labels.append(plt.text(v[0], v[1], k))
+            adjust_text(feature_labels,
+                        arrow_props=dict(arrowstype='->',
+                                        color='r',
+                                        lw=1))
 
         if save_file:
             plt.savefig(str(name_file + '.png'))
@@ -487,7 +515,7 @@ class ModelEvaluator(object):
         ax.tick_params(labelsize=16)
         importances.plot(kind="barh", legend=False, ax=ax)
         ax.set_frame_on(False)
-        ax.set_xlabel('Score', fontsize=20)
+        ax.set_xlabel('Feature Importance', fontsize=20)
         ax.set_ylabel('Feature Group', fontsize=20)
         plt.tight_layout()
         plt.title(f'Feature Group Importances', 
@@ -604,15 +632,22 @@ class ModelEvaluator(object):
          sparse_feature_matrix_filter = sparse_feature_matrix.apply(lambda x: \
                                                             x.sort_values().values)
 
-         # Plot matric
+         sparse_feature_matrix = test_matrix.where(test_matrix == 0).fillna(1)
+         sparse_feature_matrix_filter = \
+                sparse_feature_matrix.apply(lambda x: x.sort_values().values)
+         num_zeros = sparse_feature_matrix.sum(axis=0)
+         sparse_feature_matrix_filter_columns = \
+                 sparse_feature_matrix_filter[num_zeros. \
+                                              sort_values(ascending=False).index.values] 
+ 
+		 # Plot matrix
          fig, ax = plt.subplots(figsize=figsize)
          plt.title(f'Feature space sparse matrix for {self.model_id}', 
                    fontsize=fontsize)
          ax.set_xlabel('Features', fontsize=fontsize)
          ax.set_ylabel('Entity ID', fontsize=fontsize)
-         sns.heatmap(sparse_feature_matrix_filter, 
+         sns.heatmap(sparse_feature_matrix_filter_columns, 
                      cmap=cmap_heatmap)
- 
  
     def compute_AUC(self):
         '''
