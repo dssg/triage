@@ -10,6 +10,7 @@ project, or other postmodeling approaches.
 
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from descriptors import cachedproperty
 from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
@@ -17,7 +18,6 @@ from collections import namedtuple
 from itertools import starmap, combinations
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
-import seaborn as sns
 
 from utils.aux_funcs import * 
 
@@ -107,12 +107,13 @@ class ModelGroupEvaluator(object):
                    m.model_id,
                    m.entity_id,
                    m.as_of_date,
+                   EXTRACT('YEAR' from m.as_of_date) AS as_of_date_year,
                    m.score,
                    m.label_value,
                    COALESCE(rank_abs, RANK() OVER(PARTITION BY m.model_id
                    ORDER BY m.score DESC)) AS rank_abs,
-                   COALESCE(m.rank_pct, percent_rank() over(ORDER BY m.score DESC)) *
-                   100 AS rank_pct,
+                   COALESCE(m.rank_pct, percent_rank() OVER(PARTITION BY
+                   m.model_id ORDER BY m.score DESC)) * 100 AS rank_pct,
                    m.rank_pct,
                    m.test_label_timespan
             FROM test_results.predictions m
@@ -260,6 +261,7 @@ class ModelGroupEvaluator(object):
                                       (model_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year',
                         'value'])
+
         if baseline == True:
 
             baseline_metrics = pd.read_sql(baseline_query, con=conn)
@@ -285,6 +287,7 @@ class ModelGroupEvaluator(object):
 
         model_metrics_filter['as_of_date_year'] = \
                 model_metrics_filter.as_of_date_year.astype('int')
+        model_metrics_filter = model_metrics_filter.sort_values('as_of_date_year')
 
         if df == True:
             return model_metrics_filter
@@ -529,6 +532,7 @@ class ModelGroupEvaluator(object):
 
             # Return corr value (not p-value)
             return rank_corr[0]
+
         elif corr_type == 'features':
             # Split df for each model_id 
             model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
@@ -591,6 +595,7 @@ class ModelGroupEvaluator(object):
             corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
             for pair, corr in zip(combinations(model_subset, 2), corrs):
                 corr_matrix.loc[pair] = corr
+
         elif corr_type == 'features':
 
             # Calculate rank correlations for predictions
@@ -630,27 +635,44 @@ class ModelGroupEvaluator(object):
 
 
     def plot_jaccard(self,
-                     figsize=(12, 16), 
-                     fontsize=20,
-                     top_n=100,
+                     param_type=None,
+                     param=None,
                      model_subset=None,
-                     temporal_comparison=True):
+                     temporal_comparison=True,
+                     figsize=(12, 16),
+                     fontsize=20):
  
         if model_subset is None:
             model_subset = self.model_id
 
+        preds = audited_models_class.predictions
+        preds_filter = preds[preds['model_id'].isin(audited_models_class.model_id)]
+        
         if temporal_comparison == True:
-            as_of_dates =  self.predictions['as_of_date'].unique()
-            dfs_dates = [self.predictions[self.predictions['as_of_date']==date] 
+            as_of_dates = preds_filter['as_of_date_year'].unique()
+            dfs_dates = [preds_filter[preds_filter['as_of_date_year']==date] 
                          for date in as_of_dates]
 
             for preds_df in dfs_dates:
-               # Filter predictions dataframe by individual dates 
-                df_preds_date = preds_df.copy() 
-                df_preds_date['above_tresh'] = np.where(df_preds_date['rank_abs'] <= top_n, 1, 0) 
-                df_sim_piv = df_preds_date.pivot(index='entity_id',
-                                                 columns='model_id',
-                                                 values='above_tresh')
+                # Filter predictions dataframe by individual dates 
+                if param_type == 'rank_abs':
+                    df_preds_date = preds_df.copy() 
+                    df_preds_date['above_tresh'] = \
+                            np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
+                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                     columns='model_id',
+                                                     values='above_tresh')
+                elif param_type == 'rank_pct':
+                    df_preds_date = preds_df.copy() 
+                    df_preds_date['above_tresh'] = \
+                            np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
+                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                     columns='model_id',
+                                                     values='above_tresh')
+                else:
+                    raise AttributeError('''Error! You have to define a parameter type to
+                                         set up a threshold
+                                         ''')
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
