@@ -114,7 +114,6 @@ class ModelGroupEvaluator(object):
                    ORDER BY m.score DESC)) AS rank_abs,
                    COALESCE(m.rank_pct, percent_rank() OVER(PARTITION BY
                    m.model_id ORDER BY m.score DESC)) * 100 AS rank_pct,
-                   m.rank_pct,
                    m.test_label_timespan
             FROM test_results.predictions m
             LEFT JOIN model_metadata.models g
@@ -208,6 +207,19 @@ class ModelGroupEvaluator(object):
             ) SELECT * FROM feature_groups_class_cases
             ''', con=conn)
         return model_feature_groups
+
+    @cachedproperty
+    def same_time_models(self):
+        time_models = pd.read_sql(
+                      f'''
+                      SELECT
+                      train_end_time,
+                      array_agg(model_id) AS model_id_array
+                      FROM model_metadata.models
+                      WHERE model_group_id IN {self.model_group_id}
+                      GROUP BY train_end_time
+                      ''', con = conn)
+        return time_models
 
     def plot_prec_across_time(self,
                               param_type=None,
@@ -517,8 +529,8 @@ class ModelGroupEvaluator(object):
             model_2 = self.predictions[self.predictions['model_id'] == model_pair[1]]
 
             # Slice df to take top-n observations
-            top_model_1 = model_1.sort_values(param_type, axis=0)[:param].set_index('entity_id')
-            top_model_2 = model_2.sort_values(param_type, axis=0)[:param].set_index('entity_id')
+            top_model_1 = model_1[model_1[param_type] < param].set_index('entity_id')
+            top_model_2 = model_2[model_2[param_type] < param].set_index('entity_id')
 
             # Merge df's by entity_id and calculate corr
             df_pair_merge = top_model_1.merge(top_model_2, 
@@ -535,8 +547,12 @@ class ModelGroupEvaluator(object):
 
         elif corr_type == 'features':
             # Split df for each model_id 
-            model_1 = self.feature_importances[self.feature_importances['model_id'] == model_pair[0]]
-            model_2 = self.feature_importances[self.feature_importances['model_id'] == model_pair[1]]
+            model_1 = \
+                    self.feature_importances[self.feature_importances['model_id'] \
+                                             == model_pair[0]]
+            model_2 = \
+                    self.feature_importances[self.feature_importances['model_id'] \
+                                             == model_pair[1]]
 
             # Slice df to take top-n observations
             top_model_1 = model_1.sort_values('rank_abs', \
@@ -559,48 +575,138 @@ class ModelGroupEvaluator(object):
         else:
             pass 
 
-    def plot_ranked_corrlelation(self, 
-                                 figsize=(12, 16),
-                                 fontsize=20,
-                                 model_subset=None,
-                                 corr_type=None,
-                                 **kwargs):
+    def plot_ranked_corrlelation_preds(self, 
+                                       model_subset=None,
+                                       temporal_comparison=False,
+                                       figsize=(12, 16),
+                                       fontsize=20,
+                                       **kwargs):
         '''
         Plot ranked correlation between model_id's using the _rank_corr_df
         method. The plot will visualize the selected correlation matrix
         including all the models
         Arguments:
+            - model_subset (list): subset to only include a subset of model_ids
+            - corr_type (str): correlation type. Two options are available:
+                features and predictions.
+            - temporal_comparison (bool): Compare same prediction window models?
+              Default is False
             - figzise (tuple): tuple with figure size. Default is (12, 16)
             - fontsize (int): Fontsize for plot labels and titles. Default is
               20
-            - model_subset (list): subset to only include a subset of model_ids
-            - corr_type (str): correlation type. Two options are available:
-                features and predictions. 
             - **kwargs: other parameters passed to the _rank_corr_df method
         '''
-
         if model_subset is None:
             model_subset = self.model_id
 
-        if corr_type  == 'predictions':
-            # Calculate rank correlations for predictions
+        if temporal_comparison == True:
+            for key, values in \
+                self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+
+                model_subset = values[1]
+                model_as_of_date = values[0]
+
+                # Calculate rank correlations for predictions
+                corrs = [self._rank_corr_df(pair,
+                         corr_type='predictions',
+                         param=kwargs['param'],
+                         param_type=kwargs['param_type'],
+                         top_n_features=10
+                         ) for pair in combinations(model_subset, 2)]
+
+                # Store results in dataframe using tuples
+                corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+                for pair, corr in zip(combinations(model_subset, 2), corrs):
+                    corr_matrix.loc[pair] = corr
+
+                # Process data for plot: mask repeated tuples
+                corr_matrix_t = corr_matrix.T
+                mask = np.zeros_like(corr_matrix_t)
+                mask[np.triu_indices_from(mask, k=1)] = True
+
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.set_xlabel('Model Id', fontsize=fontsize)
+                ax.set_ylabel('Model Id', fontsize=fontsize)
+                plt.title(f'''Predictions Rank Correlation for 
+                          {kwargs['param_type']}@{kwargs['param']}
+                          (date: {model_as_of_date})
+                        ''', fontsize=fontsize)
+                sns.heatmap(corr_matrix_t.fillna(1),
+                            mask=mask,
+                            vmax=1,
+                            vmin=0,
+                            cmap='YlGnBu',
+                            annot=True,
+                            square=True)
+
+        else:
             corrs = [self._rank_corr_df(pair,
-                                        corr_type=corr_type,
+                                        corr_type='predictions',
                                         param=kwargs['param'],
                                         param_type=kwargs['param_type'],
                                         top_n_features=10
-                                       ) for pair in combinations(model_subset, 2)]
+                                        ) for pair in combinations(model_subset, 2)]
 
             # Store results in dataframe using tuples
             corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
             for pair, corr in zip(combinations(model_subset, 2), corrs):
                 corr_matrix.loc[pair] = corr
 
-        elif corr_type == 'features':
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
+
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title(f'''Predictions Rank Correlation for 
+                      {kwargs['param_type']}@{kwargs['param']}
+                     ''', fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)
+
+
+    def plot_ranked_correlation_features(self,
+                                         model_subset=None,
+                                         temporal_comparison=False,
+                                         figsize=(12, 16),
+                                         fontsize=20,
+                                         **kwargs):
+        '''
+        Plot ranked correlation between model_id's using the _rank_corr_df
+        method. The plot will visualize the selected correlation matrix
+        including all the models
+        Arguments:
+            - model_subset (list): subset to only include a subset of model_ids
+            - corr_type (str): correlation type. Two options are available:
+                features and predictions.
+            - temporal_comarison (bool): Compare same prediction window models?
+              Default is False
+            - figzise (tuple): tuple with figure size. Default is (12, 16)
+            - fontsize (int): Fontsize for plot labels and titles. Default is
+              20
+            - **kwargs: other parameters passed to the _rank_corr_df method
+        '''
+
+        if model_subset is None:
+            model_subset = self.model_id
+
+        if  temporal_comparison == True:
+            for key, values in \
+                    self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+
+                model_subset = values[1]
+                model_as_of_date = values[0]
 
             # Calculate rank correlations for predictions
             corrs = [self._rank_corr_df(pair,
-                                        corr_type=corr_type,
+                                        corr_type='features',
                                         param=kwargs['param'],
                                         param_type=kwargs['param_type'],
                                         top_n_features = kwargs \
@@ -611,59 +717,88 @@ class ModelGroupEvaluator(object):
             corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
             for pair, corr in zip(combinations(model_subset, 2), corrs):
                 corr_matrix.loc[pair] = corr
+
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
+
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title(f'''Feature Rank Correlation for 
+                      {kwargs['param_type']}@{kwargs['param']}
+                      (date: {model_as_of_date})
+                    ''', fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)
+
         else:
-            raise AttributeError('Error!')
+            corrs = [self._rank_corr_df(pair,
+                                        corr_type='features',
+                                        param=kwargs['param'],
+                                        param_type=kwargs['param_type'],
+                                        top_n_features=10
+                                        ) for pair in combinations(model_subset, 2)]
 
-       # Process data for plot: mask repeated tuples
-        corr_matrix_t = corr_matrix.T
-        mask = np.zeros_like(corr_matrix_t)
-        mask[np.triu_indices_from(mask, k=1)] = True
+            # Store results in dataframe using tuples
+            corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
+            for pair, corr in zip(combinations(model_subset, 2), corrs):
+                corr_matrix.loc[pair] = corr
 
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_xlabel('Model Id', fontsize=fontsize)
-        ax.set_ylabel('Model Id', fontsize=fontsize)
-        plt.title(f'''{corr_type} Rank Correlation for 
-                  {kwargs['param_type']}@{kwargs['param']}
-                 ''', fontsize=fontsize)
-        sns.heatmap(corr_matrix_t.fillna(1),
-                    mask=mask,
-                    vmax=1,
-                    vmin=0,
-                    cmap='YlGnBu',
-                    annot=True,
-                    square=True)
+            # Process data for plot: mask repeated tuples
+            corr_matrix_t = corr_matrix.T
+            mask = np.zeros_like(corr_matrix_t)
+            mask[np.triu_indices_from(mask, k=1)] = True
 
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xlabel('Model Id', fontsize=fontsize)
+            ax.set_ylabel('Model Id', fontsize=fontsize)
+            plt.title(f'''Feature Rank Correlation for 
+                      {kwargs['param_type']}@{kwargs['param']}
+                     ''', fontsize=fontsize)
+            sns.heatmap(corr_matrix_t.fillna(1),
+                        mask=mask,
+                        vmax=1,
+                        vmin=0,
+                        cmap='YlGnBu',
+                        annot=True,
+                        square=True)       
 
     def plot_jaccard(self,
                      param_type=None,
                      param=None,
                      model_subset=None,
-                     temporal_comparison=True,
+                     temporal_comparison=False,
                      figsize=(12, 16),
                      fontsize=20):
  
         if model_subset is None:
             model_subset = self.model_id
 
-        preds = audited_models_class.predictions
-        preds_filter = preds[preds['model_id'].isin(audited_models_class.model_id)]
-        
+        preds = self.predictions
+        preds_filter = preds[preds['model_id'].isin(self.model_id)]
+ 
         if temporal_comparison == True:
-            as_of_dates = preds_filter['as_of_date_year'].unique()
-            dfs_dates = [preds_filter[preds_filter['as_of_date_year']==date] 
-                         for date in as_of_dates]
-
-            for preds_df in dfs_dates:
+            for key, values in \
+            self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+                preds_filter_group = \
+                preds_filter[preds_filter['model_id'].isin(values[1])] 
                 # Filter predictions dataframe by individual dates 
                 if param_type == 'rank_abs':
-                    df_preds_date = preds_df.copy() 
+                    df_preds_date = preds_filter_group.copy() 
                     df_preds_date['above_tresh'] = \
                             np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
                     df_sim_piv = df_preds_date.pivot(index='entity_id', 
                                                      columns='model_id',
                                                      values='above_tresh')
                 elif param_type == 'rank_pct':
-                    df_preds_date = preds_df.copy() 
+                    df_preds_date = preds_filter_group.copy() 
                     df_preds_date['above_tresh'] = \
                             np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
                     df_sim_piv = df_preds_date.pivot(index='entity_id', 
@@ -676,9 +811,10 @@ class ModelGroupEvaluator(object):
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
-                df_jac = pd.DataFrame(1-squareform(res), 
-                                      index=preds_df.model_id.unique(),
-                                      columns=preds_df.model_id.unique())
+                df_jac = pd.DataFrame(1-squareform(res),
+                                      index=preds_filter_group.model_id.unique(),
+                                      columns=preds_filter_group.model_id.unique())
+
                 mask = np.zeros_like(df_jac)
                 mask[np.triu_indices_from(mask, k=1)] = True
 
@@ -686,8 +822,8 @@ class ModelGroupEvaluator(object):
                 fig, ax = plt.subplots(figsize=figsize)
                 ax.set_xlabel('Model Id', fontsize=fontsize)
                 ax.set_ylabel('Model Id', fontsize=fontsize)
-                plt.title(f'''Jaccard Similarity Matrix Plot \
-                          (as_of_date:{preds_df.as_of_date.unique()})
+                plt.title(f'''Jaccard Similarity Matrix Plot \n
+                          (as_of_date:{values[0]})
                           ''', fontsize=fontsize)
                 sns.heatmap(df_jac,
                             mask=mask,
@@ -699,11 +835,24 @@ class ModelGroupEvaluator(object):
 
         else:
                 # Call predicitons
-                df_sim = self.predictions
-                df_sim['above_tresh_'] = (df_sim.rank_abs <= top_n).astype(int)
-                df_sim_piv = df_sim.pivot(index='entity_id',
-                                          columns='model_id',
-                                          values='above_tresh_')
+                if param_type == 'rank_abs':
+                    df_preds_date = preds_filter.copy() 
+                    df_preds_date['above_tresh'] = \
+                            np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
+                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                     columns='model_id',
+                                                     values='above_tresh')
+                elif param_type == 'rank_pct':
+                    df_preds_date = preds_filter.copy() 
+                    df_preds_date['above_tresh'] = \
+                            np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
+                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                     columns='model_id',
+                                                     values='above_tresh')
+                else:
+                    raise AttributeError('''Error! You have to define a parameter type to
+                                         set up a threshold
+                                         ''')
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv[model_subset].T, 'jaccard')
