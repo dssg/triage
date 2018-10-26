@@ -593,7 +593,6 @@ class ModelEvaluator(object):
 
     def cluster_correlation_sparsity(self,
                                       path,
-                                      cmap_heatmap='YlGnBu',
                                       figsize=(20,20),
                                       fontsize=12):
          '''
@@ -646,8 +645,10 @@ class ModelEvaluator(object):
                    fontsize=fontsize)
          ax.set_xlabel('Features', fontsize=fontsize)
          ax.set_ylabel('Entity ID', fontsize=fontsize)
+         cbar_kws = {'ticks': range(2)}
          sns.heatmap(sparse_feature_matrix_filter_columns, 
-                     cmap=cmap_heatmap)
+                     cmap=sns.color_palette("hls", 2),
+                     cbar_kws=cbar_kws)
  
     def compute_AUC(self):
         '''
