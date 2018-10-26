@@ -9,6 +9,8 @@ file
 """
 
 import yaml
+import json
+import warnings
 
 class  ThresholdIterator(dict):
     '''
@@ -42,14 +44,35 @@ class PostmodelParameters(object):
     'postmodeling_parameters.yaml', but an Audition config file can be passed
     and will parse from it the needed parameters
     '''
-    def __init__(self, path_params):
+    def __init__(self, 
+                 path_params, 
+                 path_audition=None):
 
         with open(path_params) as f:
             params = yaml.load(f)
-        
+
+        try:
+            with open(path_audition) as f:
+                json_models = json.load(f)
+                list_models = [model for model_list in \
+                               json_models.values() for \
+                               model in model_list]
+
+        except FileNotFoundError: 
+            warnings.warn(f'''No audition output file {path_audition} was founded. 
+                          Please check your Audition file PATH. I will use 
+                          the models defined in the {path_params}
+                          ''')
+
         # Assign dict elements to Parameters object and flatten 
         # thresholds
         self.__dict__.update(params)
         self.figsize = tuple(self.figsize) 
         self.thresholds_iterator = ThresholdIterator(self.thresholds)
+
+        # Assign Audition models if file was passed
+        try:
+            self.model_group_id = list_models 
+        except NameError:
+            print(f'Models in {path_params} loaded into object')
 
