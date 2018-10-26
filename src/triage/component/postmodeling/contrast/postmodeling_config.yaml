@@ -6,6 +6,7 @@
 #   passed to the ploting methods in postmodeling.
 #
   project_path: '../../../../../../triage_output/output/'
+  audition_output_path: 'results_model_group_ids.json'
   model_group_id: 
         - 19 
         - 43

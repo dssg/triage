@@ -44,25 +44,10 @@ class PostmodelParameters(object):
     'postmodeling_parameters.yaml', but an Audition config file can be passed
     and will parse from it the needed parameters
     '''
-    def __init__(self, 
-                 path_params, 
-                 path_audition=None):
+    def __init__(self, path_params):
 
         with open(path_params) as f:
             params = yaml.load(f)
-
-        try:
-            with open(path_audition) as f:
-                json_models = json.load(f)
-                list_models = [model for model_list in \
-                               json_models.values() for \
-                               model in model_list]
-
-        except FileNotFoundError: 
-            warnings.warn(f'''No audition output file {path_audition} was founded. 
-                          Please check your Audition file PATH. I will use 
-                          the models defined in the {path_params}
-                          ''')
 
         # Assign dict elements to Parameters object and flatten 
         # thresholds
@@ -70,9 +55,20 @@ class PostmodelParameters(object):
         self.figsize = tuple(self.figsize) 
         self.thresholds_iterator = ThresholdIterator(self.thresholds)
 
-        # Assign Audition models if file was passed
-        try:
-            self.model_group_id = list_models 
-        except NameError:
-            print(f'Models in {path_params} loaded into object')
+        if self.audition_output_path is not None: 
+            try:
+                    with open(self.audition_output_path) as f:
+                        json_models = json.load(f)
 
+                    list_models = [model for model_list in \
+                                   json_models.values() for \
+                                   model in model_list]
+                    self.model_group_id = list_models
+
+            except FileNotFoundError:
+                warnings.warn(
+                    f'''No audition output file: 
+                    {self.audition_output_path} 
+                    was founded. Please check your Audition file PATH. 
+                    I will use the models defined in the {path_params}
+                    configuration file.''') 
