@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.dates as md
 import numpy as np
 from triage.util.conf import convert_str_to_relativedelta
@@ -110,4 +112,5 @@ def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True):
     ax[0].set_title("Timechop: Temporal cross-validation blocks")
     fig.subplots_adjust(hspace=0)
     plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+    plt.savefig('timechop.png')
     plt.show()

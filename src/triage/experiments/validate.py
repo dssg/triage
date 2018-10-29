@@ -328,16 +328,19 @@ class FeatureAggregationsValidator(Validator):
         agg_types = ["aggregates", "categoricals", "array_categoricals"]
 
         for agg_type in agg_types:
+            logging.info('agg_type:{}'.format(agg_type))
             # base_imp are the top-level rules, `such as aggregates_imputation`
             base_imp = aggregation_config.get(agg_type + "_imputation", {})
 
             # loop through the individual aggregates
             for agg in aggregation_config.get(agg_type, []):
+                logging.info('agg:{}'.format(agg))
                 # combine any aggregate-level imputation rules with top-level ones
                 imp_dict = dict(base_imp, **agg.get("imputation", {}))
 
                 # imputation rules are metric-specific, so check each metric's rule
                 for metric in agg["metrics"]:
+                    logging.info('metrics:{}'.format(metric))
                     # metric rules may be defined by the metric name (e.g., 'max')
                     # or with the 'all' catch-all, with named metrics taking
                     # precedence. If we fall back to {}, the rule validator will
