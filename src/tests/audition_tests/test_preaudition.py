@@ -6,8 +6,6 @@ import testing.postgresql
 from sqlalchemy import create_engine
 
 from tests.results_tests.factories import (
-    ExperimentFactory,
-    ExperimentModelFactory,
     EvaluationFactory,
     ModelFactory,
     ModelGroupFactory,
@@ -51,7 +49,6 @@ def test_PreAudition():
             datetime(2016, 1, 1),
         ]
 
-        #experiment = ExperimentFactory()
         models = [
             ModelFactory(model_group_rel=model_group, train_end_time=train_end_time)
             for model_group in model_groups
