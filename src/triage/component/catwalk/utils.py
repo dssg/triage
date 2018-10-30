@@ -2,6 +2,7 @@ import csv
 import datetime
 import hashlib
 import json
+import logging
 import random
 import tempfile
 
@@ -10,7 +11,7 @@ import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Experiment, Model
+from triage.component.results_schema import Experiment, Model, ExperimentMatrix, ExperimentModel
 
 
 def filename_friendly_hash(inputs):
@@ -48,6 +49,26 @@ def save_experiment_and_get_hash(config, db_engine):
     session.commit()
     session.close()
     return experiment_hash
+
+
+@db_retry
+def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
+    session = sessionmaker(bind=db_engine)()
+    for matrix_uuid in matrix_uuids:
+        session.merge(ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid))
+    session.commit()
+    session.close()
+    logging.info("Associated matrices with experiment in database")
+
+
+@db_retry
+def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
+    session = sessionmaker(bind=db_engine)()
+    for model_hash in model_hashes:
+        session.merge(ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash))
+    session.commit()
+    session.close()
+    logging.info("Associated models with experiment in database")
 
 
 class Batch:

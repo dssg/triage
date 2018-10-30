@@ -207,7 +207,7 @@ class ModelTrainer(object):
                 model_type=class_path,
                 hyperparameters=parameters,
                 model_group_id=model_group_id,
-                experiment_hash=self.experiment_hash,
+                built_by_experiment=self.experiment_hash,
                 model_size=model_size,
                 **misc_db_parameters,
             )
@@ -419,5 +419,4 @@ class ModelTrainer(object):
                 }
             )
         logging.info("Found %s unique model training tasks", len(tasks))
-
         return tasks

@@ -151,7 +151,8 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 for row in db_engine.execute(
                     """
                 select * from model_metadata.experiments
-                join model_metadata.models using (experiment_hash)
+                join model_metadata.experiment_models using (experiment_hash)
+                join model_metadata.models using (model_hash)
             """
                 )
             ]
@@ -195,6 +196,14 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         for i in counts:
             assert i > 0
         assert len(matrices) == 4
+
+        # 10. Checking that all matrices are associated with the experiment
+        linked_matrices = list(db_engine.execute(
+            """select * from model_metadata.matrices
+            join model_metadata.experiment_matrices using (matrix_uuid)
+            join model_metadata.experiments using (experiment_hash)"""
+        ))
+        assert len(linked_matrices) == len(matrices)
 
 
 @parametrize_experiment_classes
@@ -442,7 +451,8 @@ def test_baselines_with_missing_features(experiment_class):
                 for row in db_engine.execute(
                     """
                 select * from model_metadata.experiments
-                join model_metadata.models using (experiment_hash)
+                join model_metadata.experiment_models using (experiment_hash)
+                join model_metadata.models using (model_hash)
             """
                 )
             ]

@@ -236,6 +236,8 @@ db_config = {
     "sparse_state_table_name": "staging.sparse_states",
 }
 
+experiment_hash = None
+
 
 @contextmanager
 def get_matrix_storage_engine():
@@ -258,6 +260,7 @@ def test_query_to_df():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -307,6 +310,7 @@ def test_make_entity_date_table():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
             engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
@@ -374,6 +378,7 @@ def test_make_entity_date_table_include_missing_labels():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 include_missing_labels_in_train_as=False,
                 engine=engine,
             )
@@ -440,6 +445,7 @@ def test_load_features_data():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -503,6 +509,7 @@ def test_load_labels_data():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -574,6 +581,7 @@ def test_load_labels_data_include_missing_labels_as_false():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
                 include_missing_labels_in_train_as=False,
             )
@@ -618,6 +626,7 @@ class TestMergeFeatureCSVs(TestCase):
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=None,
             )
             dataframes = [
@@ -688,6 +697,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
                 uuid = metta.generate_uuid(self.good_metadata)
@@ -718,6 +728,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -751,6 +762,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -796,6 +808,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -847,6 +860,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                     replace=False,
                 )
@@ -927,6 +941,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                     replace=True,
                 )

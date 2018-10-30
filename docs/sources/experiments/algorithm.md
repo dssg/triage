@@ -217,7 +217,13 @@ feature groups that are mixed using the 'leave-one-out' and 'all' strategies, an
 matrices to be saved: 9 splits after multiplying the time splits by the feature groups, and each one creating a train
 and test matrix.
 
+### Associating Matrices with Experiment
+
+After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the `model_metadata.experiment_matrices` table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.
+
 #### Retrieving Data and Saving Completed Matrix
+
+Each matrix that has to be built (i.e. has not been built by some prior experiment) is built by retrieving its data out of the database.
 
 How do we get the data for an individual matrix out of the database?
 
@@ -265,6 +271,9 @@ Experiment constructor, in the subdirectory `matrices`.
 
 The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.
 
+### Associating Models with Experiment
+
+Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the `model_metadata.experiment_models` table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.
 
 ### Train
 
