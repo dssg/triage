@@ -284,10 +284,7 @@ class ModelGroupEvaluator(object):
 
             # Filter baseline metrics and create pivot table to join with
             # selected models metrics
-            baseline_metrics_filter =  baseline_metrics[(baseline_metrics['metric'] == metric) &
-                                                        (baseline_metrics['param'] == param) &
-                                                        (baseline_metrics['param_type'] == param_type)].\
-                filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
+            baseline_metrics_filter =  baseline_metrics.filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
 
             baseline_metrics_filter['model_group_id'] = \
                     baseline_metrics_filter.model_group_id.apply(lambda x: \
