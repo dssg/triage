@@ -786,29 +786,35 @@ class ModelGroupEvaluator(object):
         preds_filter = preds[preds['model_id'].isin(self.model_id)]
  
         if temporal_comparison == True:
-            for key, values in \
-            self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
-                preds_filter_group = \
-                preds_filter[preds_filter['model_id'].isin(values[1])] 
-                # Filter predictions dataframe by individual dates 
-                if param_type == 'rank_abs':
-                    df_preds_date = preds_filter_group.copy() 
-                    df_preds_date['above_tresh'] = \
-                            np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
-                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
-                                                     columns='model_id',
-                                                     values='above_tresh')
-                elif param_type == 'rank_pct':
-                    df_preds_date = preds_filter_group.copy() 
-                    df_preds_date['above_tresh'] = \
-                            np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
-                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
-                                                     columns='model_id',
-                                                     values='above_tresh')
-                else:
-                    raise AttributeError('''Error! You have to define a parameter type to
-                                         set up a threshold
-                                         ''')
+            try:
+                for key, values in \
+                self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+                    preds_filter_group = \
+                    preds_filter[preds_filter['model_id'].isin(values[1])] 
+                    # Filter predictions dataframe by individual dates 
+                    if param_type == 'rank_abs':
+                        df_preds_date = preds_filter_group.copy() 
+                        df_preds_date['above_tresh'] = \
+                                np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
+                        df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                         columns='model_id',
+                                                         values='above_tresh')
+                    elif param_type == 'rank_pct':
+                        df_preds_date = preds_filter_group.copy() 
+                        df_preds_date['above_tresh'] = \
+                                np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
+                        df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                                         columns='model_id',
+                                                         values='above_tresh')
+                    else:
+                        raise AttributeError('''Error! You have to define a parameter type to
+                                             set up a threshold
+                                             ''')
+            except ValueError:
+                print(f'''
+                      Temporal comparison can be only made for more than one
+                      model group. 
+                     ''') 
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
