@@ -19,7 +19,7 @@ from itertools import starmap, combinations
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
 
-from utils.aux_funcs import * 
+from utils.aux_funcs import *
 
 # Get indivual model information/metadata from Audition output
 
@@ -34,7 +34,11 @@ class ModelGroupEvaluator(object):
     A model_group_id list is needed to instate the class.
     '''
     def __init__(self, model_group_id):
-        self.model_group_id = model_group_id
+
+        if len(model_group_id) == 1:
+            self.model_group_id = model_group_id + model_group_id
+        else:
+            self.model_group_id = model_group_id
 
         # Retrive model_id metadata from the model_metadata schema
         model_metadata = pd.read_sql(
