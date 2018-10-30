@@ -198,14 +198,11 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         assert len(matrices) == 4
 
         # 10. Checking that all matrices are associated with the experiment
-        linked_matrices = [
-            row
-            for row in db_engine.execute(
-                    """select * from model_metadata.matrices
-                    join model_metadata.experiment_matrices using (matrix_uuid)
-                    join model_metadata.experiments using (experiment_hash)"""
-            )
-        ]
+        linked_matrices = list(db_engine.execute(
+            """select * from model_metadata.matrices
+            join model_metadata.experiment_matrices using (matrix_uuid)
+            join model_metadata.experiments using (experiment_hash)"""
+        ))
         assert len(linked_matrices) == len(matrices)
 
 
