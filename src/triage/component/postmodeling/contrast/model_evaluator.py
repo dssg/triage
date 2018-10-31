@@ -361,6 +361,78 @@ class ModelEvaluator(object):
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
+    def plot_score_distribution_thresh(self,
+                                       param_type=None,
+                                       param=None,
+                                       save_file=False, 
+                                       name_file=None,
+                                       label_names = ('Label = 0', 'Label = 1'),
+                                       figsize=(16, 12),
+                                       fontsize=20):
+        '''
+        Generate a histogram showing the label distribution for predicted
+        entities using a threshold to classify between good prediction or not.
+            - Arguments:
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - label_names(tuple): define custom label names for class.
+                - figsize (tuple): specify size of plot. 
+                - fontsize (int): define custom fontsize. 20 is set by default.
+        '''
+        df_predictions = self.predictions()
+
+        if param_type == 'rank_abs':
+            # Calculate residuals/errors
+            preds_thresh = df_prediction.sort_values(['rank_abs'], ascending=True)
+            preds_thresh['above_thresh'] = \
+                    np.where(preds_thresh['rank_abs'] <= param, 1, 0)
+        elif param_type == 'rank_pct':
+            # Calculate residuals/errors
+            preds_thresh = df_predictions.sort_values(['rank_pct'], ascending=True)
+            preds_thresh['above_thresh'] = \
+                    np.where(preds_thresh['rank_pct'] <= param, 1, 0)
+        else:
+            raise AttributeError('''Error! You have to define a parameter type to
+                                 set up a threshold
+                                 ''')
+
+        # Split dataframe for plotting 
+        preds_above_thresh = preds_thresh[preds_thresh['above_thresh'] == 1]
+        preds_below_thresh = preds_thresh[preds_thresh['above_thresh'] == 0]
+
+        fig, ax = plt.subplots(1, figsize=figsize)
+        plt.hist(preds_below_thresh.score,
+                 bins=20,
+                 normed=True,
+                 alpha=0.5,
+                 color='skyblue',
+                 label=label_names[0])
+        plt.hist(list(preds_above_thresh.score),
+                 bins=20,
+                 normed=True,
+                 alpha=0.5,
+                 color='orange',
+                 label=label_names[1])
+        plt.axvline(preds_above_thresh.score.max(),
+                    color='black',
+                    linestyle='dashed')
+        plt.legend(bbox_to_anchor=(0., 1.005, 1., .102),
+                   loc=8,
+                   ncol=2,
+                   borderaxespad=0.,
+                   fontsize=fontsize-2)
+        ax.set_ylabel('Frequency', fontsize=fontsize)
+        ax.set_xlabel('Score', fontsize=fontsize)
+        plt.title('Score Distribution using prediction threshold', y =1.2, 
+                  fontsize=fontsize)
+        plt.show()
+
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
+
+
+
+    
     def plot_feature_importances(self,
                                  save_file=False,
                                  name_file=None,
@@ -664,7 +736,7 @@ class ModelEvaluator(object):
 
         return (fpr, tpr, thresholds, metrics.auc(fpr, tpr))
 
-    def plot_ROC(self, 
+    def plot_ROC(self,
                  figsize=(16, 12),
                  fontsize=20):
         '''
