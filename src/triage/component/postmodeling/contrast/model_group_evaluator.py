@@ -28,8 +28,8 @@ class ModelGroupEvaluator(object):
     '''
     ModelGroup class calls the model group metadata from the database
     and hold metadata features on each of the class attibutes.
-    This class will contain any information about the model_group, and 
-    will be used to make comparisons and calculations across models. 
+    This class will contain any information about the model_group, and
+    will be used to make comparisons and calculations across models.
 
     A model_group_id list is needed to instate the class.
     '''
@@ -98,7 +98,7 @@ class ModelGroupEvaluator(object):
         f'Model Groups: {self.model_group_id}\n'
         f'Model types: {self.model_type}\n'
         f'Model hyperparameters: {self.hyperparameters}\n'
-        f'''Matrix hashes (train,test): [{self.train_matrix_uuid}, 
+        f'''Matrix hashes (train,test): [{self.train_matrix_uuid},
                                       {self.test_matrix_uuid}]'''
         )
 
@@ -106,7 +106,7 @@ class ModelGroupEvaluator(object):
     def predictions(self):
         preds = pd.read_sql(
             f'''
-            SELECT 
+            SELECT
                    g.model_group_id,
                    m.model_id,
                    m.entity_id,
@@ -143,7 +143,7 @@ class ModelGroupEvaluator(object):
            ''', con=conn)
         return features
 
-    @cachedproperty 
+    @cachedproperty
     def metrics(self):
         model_metrics = pd.read_sql(
             f'''
@@ -167,20 +167,20 @@ class ModelGroupEvaluator(object):
     def feature_groups(self):
         model_feature_groups = pd.read_sql(
             f'''
-            WITH 
-            feature_groups_raw AS( 
-            SELECT 
+            WITH
+            feature_groups_raw AS(
+            SELECT
             model_group_id,
             model_config->>'feature_groups' as features
             FROM model_metadata.model_groups
             WHERE model_group_id IN {self.model_group_id}
-            ), 
+            ),
             feature_groups_unnest AS(
             SELECT model_group_id,
             unnest(regexp_split_to_array(substring(features, '\[(.*?)\]'), ',')) AS group_array
             FROM feature_groups_raw
             ), feature_groups_array AS(
-            SELECT 
+            SELECT
             model_group_id,
             array_agg(split_part(substring(group_array, '\"(.*?)\"'), ':', 2)) AS feature_group_array
             FROM feature_groups_unnest
@@ -191,8 +191,8 @@ class ModelGroupEvaluator(object):
             feature_group_array,
             array_length(feature_group_array, 1) AS number_feature_groups
             FROM feature_groups_array
-            ), feature_groups_class_cases 
-            AS( 
+            ), feature_groups_class_cases
+            AS(
             SELECT
             model_group_id,
             feature_group_array,
@@ -250,15 +250,15 @@ class ModelGroupEvaluator(object):
             definition: rank_pct, or rank_abs. These are usually defined in the
             postmodeling configuration file.
             - param (int): A threshold value compatible with the param_type.
-            This value is also defined in the postmodeling configuration file. 
+            This value is also defined in the postmodeling configuration file.
             - metric (string): A string defnining the type of metric use to
-            evaluate the model, this can be 'precision@', or 'recall@'. 
+            evaluate the model, this can be 'precision@', or 'recall@'.
             - baseline (bool): should we include a baseline for comparison?
             - baseline_query (str): a SQL query that returns the evaluation data from
             the baseline models. This value can also be defined in the
             configuration file.
             - df (bool): If True, no plot is rendered, but a pandas DataFrame
-            is returned with the data. 
+            is returned with the data.
             - figsize (tuple): tuple with figure size parameters
             - fontsize (int): Fontsize for titles
         '''
@@ -272,7 +272,7 @@ class ModelGroupEvaluator(object):
 
         # Filter model_group_id metrics and create pivot table by each
         # model_group_id.
-        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) & 
+        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) &
                                       (model_metrics['param'] == param) &
                                       (model_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year',
@@ -310,8 +310,8 @@ class ModelGroupEvaluator(object):
                 sns.set_style('whitegrid')
                 fig, ax = plt.subplots(figsize=figsize)
                 for model_group, df in model_metrics_filter.groupby(['model_group_id']):
-                    ax = ax = df.plot(ax=ax, kind='line', 
-                                      x='as_of_date_year', 
+                    ax = ax = df.plot(ax=ax, kind='line',
+                                      x='as_of_date_year',
                                       y='value',
                                       label=model_group)
                 plt.title(str(metric).capitalize() +\
@@ -335,14 +335,14 @@ class ModelGroupEvaluator(object):
                           Oops! model_metrics_pivot table is empty. Several problems
                           can be creating this error:
                           1. Check that {param_type}@{param} exists in the evaluations
-                          table 
+                          table
                           2. Check that the metric {metric} is available to the
                           specified {param_type}@{param}.
                           3. You basline model can have different specifications.
-                          Check those! 
+                          Check those!
                           4. Check overlap between baseline dates and model dates.
                           The join is using the dates for doing these, and it's
-                          possible that your timestamps differ. 
+                          possible that your timestamps differ.
                           ''')
 
     def feature_loi_loo(self,
@@ -368,20 +368,20 @@ class ModelGroupEvaluator(object):
 
         Arguments:
             -model_subset (list): A list of model_group_ids, in case you want
-            to override the selected models. 
+            to override the selected models.
             - param_type (string): A parameter string with a threshold
             definition: rank_pct, or rank_abs. These are usually defined in the
             postmodeling configuration file.
             - param (int): A threshold value compatible with the param_type.
-            This value is also defined in the postmodeling configuration file. 
+            This value is also defined in the postmodeling configuration file.
             - metric (string): A string defnining the type of metric use to
-            evaluate the model, this can be 'precision@', or 'recall@'. 
+            evaluate the model, this can be 'precision@', or 'recall@'.
             - baseline (bool): should we include a baseline for comparison?
             - baseline_query (str): a SQL query that returns the evaluation data from
             the baseline models. This value can also be defined in the
             configuration file.
             - df (bool): If True, no plot is rendered, but a pandas DataFrame
-            is returned with the data. 
+            is returned with the data.
             - figsize (tuple): tuple with figure size parameters
             - fontsize (int): Fontsize for titles
 
@@ -395,14 +395,14 @@ class ModelGroupEvaluator(object):
         feature_groups_filter = \
         feature_groups[feature_groups['model_group_id'].isin(model_subset)]
 
-        # Format metrics columns and filter by metric of interest 
+        # Format metrics columns and filter by metric of interest
         model_metrics = self.metrics
         model_metrics[['param', 'param_type']] = \
                 model_metrics['parameter'].str.split('_', 1, expand=True)
         model_metrics['param'] =  model_metrics['param'].astype(str).astype(float)
         model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
 
-        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) & 
+        model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) &
                                       (model_metrics['param'] == param) &
                                       (model_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year',
@@ -424,7 +424,7 @@ class ModelGroupEvaluator(object):
                 metrics_merge_experimental.apply(lambda row: \
                                    list(all_features.difference(row['feature_group_array']))[0] + '_loo' \
                                    if row['experiment_type'] == 'LOO' \
-                                   else row['feature_group_array'] + '_loi', axis=1) 
+                                   else row['feature_group_array'] + '_loi', axis=1)
 
         metrics_merge_experimental = \
         metrics_merge_experimental.filter(['feature_experiment',
@@ -461,13 +461,13 @@ class ModelGroupEvaluator(object):
                 sns.set_style('whitegrid')
                 fig, ax = plt.subplots(figsize=figsize)
                 for feature, df in metrics_merge_experimental.groupby(['feature_experiment']):
-                    ax = df.plot(ax=ax, kind='line', 
-                                      x='as_of_date_year', 
+                    ax = df.plot(ax=ax, kind='line',
+                                      x='as_of_date_year',
                                       y='value',
                                       label=feature)
                 metrics_merge[metrics_merge['experiment_type'] == 'All features']. \
                         groupby(['experiment_type']). \
-                        plot(ax=ax, 
+                        plot(ax=ax,
                              kind='line',
                              x='as_of_date_year',
                              y='value',
@@ -493,14 +493,14 @@ class ModelGroupEvaluator(object):
                           Oops! model_metrics_pivot table is empty. Several problems
                           can be creating this error:
                           1. Check that {param_type}@{param} exists in the evaluations
-                          table 
+                          table
                           2. Check that the metric {metric} is available to the
                           specified {param_type}@{param}.
                           3. You basline model can have different specifications.
-                          Check those! 
+                          Check those!
                           4. Check overlap between baseline dates and model dates.
                           The join is using the dates for doing these, and it's
-                          possible that your timestamps differ. 
+                          possible that your timestamps differ.
                           ''')
 
     def _rank_corr_df(self,
@@ -512,7 +512,7 @@ class ModelGroupEvaluator(object):
         '''
         Calculates ranked correlations for ranked observations and features
         using the stats.spearmanr scipy module.
-        Arguments: 
+        Arguments:
             - model_pair (tuple): tuple with model_ids
               observations or features
             - top_n (int): number of rows to rank (top-k model)
@@ -521,11 +521,11 @@ class ModelGroupEvaluator(object):
         if corr_type not in ['predictions', 'features']:
             raise Exception(
                 f'''Wrong type! Rank correlation is not available\n
-                   for {type}. Try the following options:\n 
+                   for {type}. Try the following options:\n
                    predictions and features''')
 
         if corr_type == 'predictions':
-            # Split df for each model_id 
+            # Split df for each model_id
             model_1 = self.predictions[self.predictions['model_id'] == model_pair[0]]
             model_2 = self.predictions[self.predictions['model_id'] == model_pair[1]]
 
@@ -534,7 +534,7 @@ class ModelGroupEvaluator(object):
             top_model_2 = model_2[model_2[param_type] < param].set_index('entity_id')
 
             # Merge df's by entity_id and calculate corr
-            df_pair_merge = top_model_1.merge(top_model_2, 
+            df_pair_merge = top_model_1.merge(top_model_2,
                                               how='inner',
                                               left_index=True,
                                               right_index=True,
@@ -547,7 +547,7 @@ class ModelGroupEvaluator(object):
             return rank_corr[0]
 
         elif corr_type == 'features':
-            # Split df for each model_id 
+            # Split df for each model_id
             model_1 = \
                     self.feature_importances[self.feature_importances['model_id'] \
                                              == model_pair[0]]
@@ -562,7 +562,7 @@ class ModelGroupEvaluator(object):
                                               axis=0)[:top_n_features].set_index('feature')
 
             # Merge df's by entity_id and calculate corr
-            df_pair_merge = top_model_1.merge(top_model_2, 
+            df_pair_merge = top_model_1.merge(top_model_2,
                                               how='inner',
                                               left_index=True,
                                               right_index=True,
@@ -572,11 +572,11 @@ class ModelGroupEvaluator(object):
             rank_corr = spearmanr(df_pair_filter.iloc[:, 0], df_pair_filter.iloc[:, 1])
 
             # Return corr value (not p-value)
-            return rank_corr[0] 
+            return rank_corr[0]
         else:
-            pass 
+            pass
 
-    def plot_ranked_corrlelation_preds(self, 
+    def plot_ranked_corrlelation_preds(self,
                                        model_subset=None,
                                        temporal_comparison=False,
                                        figsize=(12, 16),
@@ -599,6 +599,14 @@ class ModelGroupEvaluator(object):
         '''
         if model_subset is None:
             model_subset = self.model_id
+        models_to_use = []
+        model_as_of_date = []
+        for key, values in \
+            self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+            if values[1][0] in model_subset:
+                models_to_use.append(values[1][0])
+                model_as_of_date.append(values[0])
+        model_subset = models_to_use
 
         if temporal_comparison == True:
             for key, values in \
@@ -628,7 +636,7 @@ class ModelGroupEvaluator(object):
                 fig, ax = plt.subplots(figsize=figsize)
                 ax.set_xlabel('Model Id', fontsize=fontsize)
                 ax.set_ylabel('Model Id', fontsize=fontsize)
-                plt.title(f'''Predictions Rank Correlation for 
+                plt.title(f'''Predictions Rank Correlation for
                           {kwargs['param_type']}@{kwargs['param']}
                           (date: {model_as_of_date})
                         ''', fontsize=fontsize)
@@ -661,7 +669,7 @@ class ModelGroupEvaluator(object):
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_xlabel('Model Id', fontsize=fontsize)
             ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title(f'''Predictions Rank Correlation for 
+            plt.title(f'''Predictions Rank Correlation for
                       {kwargs['param_type']}@{kwargs['param']}
                      ''', fontsize=fontsize)
             sns.heatmap(corr_matrix_t.fillna(1),
@@ -697,13 +705,16 @@ class ModelGroupEvaluator(object):
 
         if model_subset is None:
             model_subset = self.model_id
+        models_to_use = []
+        model_as_of_date = []
+        for key, values in \
+            self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+            if values[1][0] in model_subset:
+                models_to_use.append(values[1][0])
+                model_as_of_date.append(values[0])
+        model_subset = models_to_use
 
         if  temporal_comparison == True:
-            for key, values in \
-                    self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
-
-                model_subset = values[1]
-                model_as_of_date = values[0]
 
             # Calculate rank correlations for predictions
             corrs = [self._rank_corr_df(pair,
@@ -727,9 +738,9 @@ class ModelGroupEvaluator(object):
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_xlabel('Model Id', fontsize=fontsize)
             ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title(f'''Feature Rank Correlation for 
-                      {kwargs['param_type']}@{kwargs['param']}
-                      (date: {model_as_of_date})
+            plt.title(f'''Feature Rank Correlation for
+                      Top-{kwargs['top_n_features']}
+                     (date: {model_as_of_date})
                     ''', fontsize=fontsize)
             sns.heatmap(corr_matrix_t.fillna(1),
                         mask=mask,
@@ -746,7 +757,6 @@ class ModelGroupEvaluator(object):
                                         param_type=kwargs['param_type'],
                                         top_n_features=10
                                         ) for pair in combinations(model_subset, 2)]
-
             # Store results in dataframe using tuples
             corr_matrix = pd.DataFrame(index=model_subset, columns=model_subset)
             for pair, corr in zip(combinations(model_subset, 2), corrs):
@@ -760,7 +770,7 @@ class ModelGroupEvaluator(object):
             fig, ax = plt.subplots(figsize=figsize)
             ax.set_xlabel('Model Id', fontsize=fontsize)
             ax.set_ylabel('Model Id', fontsize=fontsize)
-            plt.title(f'''Feature Rank Correlation for 
+            plt.title(f'''Feature Rank Correlation for
                       {kwargs['param_type']}@{kwargs['param']}
                      ''', fontsize=fontsize)
             sns.heatmap(corr_matrix_t.fillna(1),
@@ -769,7 +779,7 @@ class ModelGroupEvaluator(object):
                         vmin=0,
                         cmap='YlGnBu',
                         annot=True,
-                        square=True)       
+                        square=True)
 
     def plot_jaccard(self,
                      param_type=None,
@@ -778,32 +788,32 @@ class ModelGroupEvaluator(object):
                      temporal_comparison=False,
                      figsize=(12, 16),
                      fontsize=20):
- 
+
         if model_subset is None:
             model_subset = self.model_id
 
         preds = self.predictions
         preds_filter = preds[preds['model_id'].isin(self.model_id)]
- 
+
         if temporal_comparison == True:
             try:
                 for key, values in \
                 self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
                     preds_filter_group = \
-                    preds_filter[preds_filter['model_id'].isin(values[1])] 
-                    # Filter predictions dataframe by individual dates 
+                    preds_filter[preds_filter['model_id'].isin(values[1])]
+                    # Filter predictions dataframe by individual dates
                     if param_type == 'rank_abs':
-                        df_preds_date = preds_filter_group.copy() 
+                        df_preds_date = preds_filter_group.copy()
                         df_preds_date['above_tresh'] = \
-                                np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
-                        df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                np.where(df_preds_date['rank_abs'] <= param, 1, 0)
+                        df_sim_piv = df_preds_date.pivot(index='entity_id',
                                                          columns='model_id',
                                                          values='above_tresh')
                     elif param_type == 'rank_pct':
-                        df_preds_date = preds_filter_group.copy() 
+                        df_preds_date = preds_filter_group.copy()
                         df_preds_date['above_tresh'] = \
-                                np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
-                        df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                                np.where(df_preds_date['rank_pct'] <= param, 1, 0)
+                        df_sim_piv = df_preds_date.pivot(index='entity_id',
                                                          columns='model_id',
                                                          values='above_tresh')
                     else:
@@ -813,8 +823,8 @@ class ModelGroupEvaluator(object):
             except ValueError:
                 print(f'''
                       Temporal comparison can be only made for more than one
-                      model group. 
-                     ''') 
+                      model group.
+                     ''')
 
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
@@ -834,26 +844,26 @@ class ModelGroupEvaluator(object):
                           ''', fontsize=fontsize)
                 sns.heatmap(df_jac,
                             mask=mask,
-                            cmap='Greens', 
-                            vmin=0, 
-                            vmax=1, 
-                            annot=True, 
+                            cmap='Greens',
+                            vmin=0,
+                            vmax=1,
+                            annot=True,
                             linewidth=0.1)
 
         else:
                 # Call predicitons
                 if param_type == 'rank_abs':
-                    df_preds_date = preds_filter.copy() 
+                    df_preds_date = preds_filter.copy()
                     df_preds_date['above_tresh'] = \
-                            np.where(df_preds_date['rank_abs'] <= param, 1, 0) 
-                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                            np.where(df_preds_date['rank_abs'] <= param, 1, 0)
+                    df_sim_piv = df_preds_date.pivot(index='entity_id',
                                                      columns='model_id',
                                                      values='above_tresh')
                 elif param_type == 'rank_pct':
-                    df_preds_date = preds_filter.copy() 
+                    df_preds_date = preds_filter.copy()
                     df_preds_date['above_tresh'] = \
-                            np.where(df_preds_date['rank_pct'] <= param, 1, 0) 
-                    df_sim_piv = df_preds_date.pivot(index='entity_id', 
+                            np.where(df_preds_date['rank_pct'] <= param, 1, 0)
+                    df_sim_piv = df_preds_date.pivot(index='entity_id',
                                                      columns='model_id',
                                                      values='above_tresh')
                 else:
@@ -875,9 +885,9 @@ class ModelGroupEvaluator(object):
                 ax.set_ylabel('Model Id', fontsize=fontsize)
                 plt.title('Jaccard Similarity Matrix Plot', fontsize=fontsize)
                 sns.heatmap(df_jac,
-                            mask=mask, 
-                            cmap='Greens', 
-                            vmin=0, 
-                            vmax=1, 
-                            annot=True, 
-                            linewidth=0.1) 
+                            mask=mask,
+                            cmap='Greens',
+                            vmin=0,
+                            vmax=1,
+                            annot=True,
+                            linewidth=0.1)

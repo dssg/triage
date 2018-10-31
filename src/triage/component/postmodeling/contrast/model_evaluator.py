@@ -113,8 +113,8 @@ class ModelEvaluator(object):
                    score,
                    label_value,
                    COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   COALESCE(rank_pct, percent_rank() 
-                   OVER(ORDER BY score DESC)) * 100 as rank_pct, 
+                   COALESCE(rank_pct, percent_rank()
+                   OVER(ORDER BY score DESC)) * 100 as rank_pct,
                    test_label_timespan
             FROM test_results.predictions
             WHERE model_id = {self.model_id}
@@ -132,35 +132,35 @@ class ModelEvaluator(object):
                    feature_importance,
                    CASE
                    WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
-			       THEN 'No feature group' 
-		           ELSE split_part(feature, '_', 1) 
+			       THEN 'No feature group'
+		           ELSE split_part(feature, '_', 1)
 			       END AS feature_group,
                    rank_abs
             FROM train_results.feature_importances
             WHERE model_id = {self.model_id}
             ''', con=conn)
         return features
-    
+
     @cachedproperty
     def feature_group_importances(self):
         feature_groups = pd.read_sql(
             f'''
-			WITH 
-			raw_importances AS(    
-			SELECT 
+			WITH
+			raw_importances AS(
+			SELECT
 			model_id,
 			feature,
 			feature_importance,
-			CASE 
+			CASE
 			WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
-			THEN 'No feature group' 
-			ELSE split_part(feature, '_', 1) 
+			THEN 'No feature group'
+			ELSE split_part(feature, '_', 1)
 			END AS feature_group,
 			rank_abs
 			FROM train_results.feature_importances
 			WHERE model_id = {self.model_id}
-			) 
-			SELECT 
+			)
+			SELECT
 			model_id,
 			feature_group,
 			avg(feature_importance) as importance_average,
@@ -202,13 +202,13 @@ class ModelEvaluator(object):
             ''', con=conn)
 
         return model_crosstabs
-    
+
     def preds_matrix(self, path):
         '''
         Load predictions matrices using the catwalk.storage.ProjectStorage.
         This class allow the user to define a project path that can be either a
         system local path or an s3 path and it will handle itself this
-        different infrastructures. 
+        different infrastructures.
 
         Once defined, we can pass this object to the MatrixStorageEngine that
         will read this object and return a MatrixSotre object with a set of
@@ -242,7 +242,7 @@ class ModelEvaluator(object):
         Load predictions matrices using the catwalk.storage.ProjectStorage.
         This class allow the user to define a project path that can be either a
         system local path or an s3 path and it will handle itself this
-        different infrastructures. 
+        different infrastructures.
 
         Once defined, we can pass this object to the MatrixStorageEngine that
         will read this object and return a MatrixSotre object with a set of
@@ -277,17 +277,17 @@ class ModelEvaluator(object):
                                fontsize=20):
         '''
         Generate an histograms with the raw distribution of the predicted
-        scores for all entities. 
+        scores for all entities.
             - Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
                 - name_file (string): specify name file for saved plot.
                 - label_names(tuple): define custom label names for class.
-                - figsize (tuple): specify size of plot. 
+                - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
- 
+
         '''
 
-        df_ = self.predictions.filter(items=['score']) 
+        df_ = self.predictions.filter(items=['score'])
 
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df_.score,
@@ -300,15 +300,15 @@ class ModelEvaluator(object):
                     linestyle='dashed')
         ax.set_ylabel('Frequency', fontsize=fontsize)
         ax.set_xlabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution', y =1.2, 
+        plt.title('Score Distribution', y =1.2,
                   fontsize=fontsize)
         plt.show()
 
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
-    def plot_score_label_distributions(self, 
-                                       save_file=False, 
+    def plot_score_label_distributions(self,
+                                       save_file=False,
                                        name_file=None,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
@@ -320,7 +320,7 @@ class ModelEvaluator(object):
                 - save_file (bool): save file to disk as png. Default is False.
                 - name_file (string): specify name file for saved plot.
                 - label_names(tuple): define custom label names for class.
-                - figsize (tuple): specify size of plot. 
+                - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
         '''
 
@@ -354,7 +354,7 @@ class ModelEvaluator(object):
                    fontsize=fontsize-2)
         ax.set_ylabel('Frequency', fontsize=fontsize)
         ax.set_xlabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution across Labels', y =1.2, 
+        plt.title('Score Distribution across Labels', y =1.2,
                   fontsize=fontsize)
         plt.show()
 
@@ -364,7 +364,7 @@ class ModelEvaluator(object):
     def plot_score_distribution_thresh(self,
                                        param_type=None,
                                        param=None,
-                                       save_file=False, 
+                                       save_file=False,
                                        name_file=None,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
@@ -376,10 +376,10 @@ class ModelEvaluator(object):
                 - save_file (bool): save file to disk as png. Default is False.
                 - name_file (string): specify name file for saved plot.
                 - label_names(tuple): define custom label names for class.
-                - figsize (tuple): specify size of plot. 
+                - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
         '''
-        df_predictions = self.predictions()
+        df_predictions = self.predictions
 
         if param_type == 'rank_abs':
             # Calculate residuals/errors
@@ -395,25 +395,27 @@ class ModelEvaluator(object):
             raise AttributeError('''Error! You have to define a parameter type to
                                  set up a threshold
                                  ''')
+        df__0 = df_predictions[df_predictions.label_value == 0]
+        df__1 = df_predictions[df_predictions.label_value == 1]
 
-        # Split dataframe for plotting 
-        preds_above_thresh = preds_thresh[preds_thresh['above_thresh'] == 1]
-        preds_below_thresh = preds_thresh[preds_thresh['above_thresh'] == 0]
-
+        # Split dataframe for plotting
+        #preds_above_thresh = preds_thresh[preds_thresh['above_thresh'] == 1]
+        #preds_below_thresh = preds_thresh[preds_thresh['above_thresh'] == 0]
+        threshold_value = preds_thresh[preds_thresh['above_thresh'] == 1].score.min()
         fig, ax = plt.subplots(1, figsize=figsize)
-        plt.hist(preds_below_thresh.score,
+        plt.hist(df__0.score,
                  bins=20,
                  normed=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
-        plt.hist(list(preds_above_thresh.score),
+        plt.hist(df__1.score,
                  bins=20,
                  normed=True,
                  alpha=0.5,
                  color='orange',
                  label=label_names[1])
-        plt.axvline(preds_above_thresh.score.max(),
+        plt.axvline(threshold_value,
                     color='black',
                     linestyle='dashed')
         plt.legend(bbox_to_anchor=(0., 1.005, 1., .102),
@@ -421,9 +423,9 @@ class ModelEvaluator(object):
                    ncol=2,
                    borderaxespad=0.,
                    fontsize=fontsize-2)
-        ax.set_ylabel('Frequency', fontsize=fontsize)
+        ax.set_ylabel('Density', fontsize=fontsize)
         ax.set_xlabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution using prediction threshold', y =1.2, 
+        plt.title('Score Distribution using prediction threshold', y =1.2,
                   fontsize=fontsize)
         plt.show()
 
@@ -432,7 +434,7 @@ class ModelEvaluator(object):
 
 
 
-    
+
     def plot_feature_importances(self,
                                  save_file=False,
                                  name_file=None,
@@ -468,7 +470,7 @@ class ModelEvaluator(object):
         ax.set_xlabel('Feature Importance', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
-        plt.title(f'Top {n_features_plots} Feature Importances', 
+        plt.title(f'Top {n_features_plots} Feature Importances',
                   fontsize=fontsize).set_position([.5, 0.99])
         if save_file:
             plt.savefig(str(name_file + '.png'))
@@ -503,7 +505,7 @@ class ModelEvaluator(object):
         std = np.std([tree.feature_importances_ for tree in model_object.estimators_],
                     axis=0)
         # Create dataframe and sort select the most relevant features (defined
-        # by n_features_plot) 
+        # by n_features_plot)
         importances_df = pd.DataFrame({
             'feature_name': matrix_object.columns(),
             'std': std,
@@ -513,7 +515,7 @@ class ModelEvaluator(object):
         importances_sort = \
         importances_df.sort_values(['feature_importance'], ascending=False)
         importances_filter = importances_sort[:n_features_plots]
- 
+
         # Plot features in order
         importances_ordered = \
         importances_filter.sort_values(['feature_importance'], ascending=True)
@@ -538,7 +540,7 @@ class ModelEvaluator(object):
             ax.tick_params(labelsize=16)
             importances_ordered.plot.scatter(x = 'std',
                                              y = 'feature_importance',
-                                             legend=False, 
+                                             legend=False,
                                              ax=ax)
             ax.set_xlabel('Std. Error', fontsize=20)
             ax.set_ylabel('Feature Importance', fontsize=20)
@@ -590,12 +592,12 @@ class ModelEvaluator(object):
         ax.set_xlabel('Feature Importance', fontsize=20)
         ax.set_ylabel('Feature Group', fontsize=20)
         plt.tight_layout()
-        plt.title(f'Feature Group Importances', 
+        plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 0.99])
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
-    def cluster_correlation_features(self, 
+    def cluster_correlation_features(self,
                                      path,
                                      cmap_color_fgroups='Accent',
                                      cmap_heatmap='mako',
@@ -603,12 +605,12 @@ class ModelEvaluator(object):
                                      fontsize=12):
         '''
         Plot correlation in feature space
-        
+
         This function simply renders the correlation between features and uses
         hierarchical clustering to identify cluster of features. The idea bhind
         this plot is not only to explore the correlation in the space, but also
-        to explore is this correlation is comparable with the feature groups. 
-        Arguments: 
+        to explore is this correlation is comparable with the feature groups.
+        Arguments:
             - path (string): Project directory where to find matrices and
             models. Usually is under 'triage/outcomes/'
             - cmap_color_fgroups (string): matplotlib pallete to color the
@@ -634,32 +636,32 @@ class ModelEvaluator(object):
         test_matrix = test_matrix[feature_columns]
         feature_columns = matrix_storage.columns()
         feature_groups = [x.split('_', 1)[0] for x in feature_columns]
-        corr = test_matrix.corr() 
+        corr = test_matrix.corr()
 
-        # Define feature groups and colors 
+        # Define feature groups and colors
         feature_groups = pd.DataFrame(feature_groups,
                               columns = ['feature_group'],
-                              index = corr.index.tolist()) 
+                              index = corr.index.tolist())
 
         cmap = plt.get_cmap(cmap_color_fgroups)
         colors = cmap(np.linspace(0, 1,
-                                  len(feature_groups.feature_group.unique()))) 
+                                  len(feature_groups.feature_group.unique())))
         lut = dict(zip(feature_groups.feature_group.unique(), colors))
-        row_colors = feature_groups.feature_group.map(lut) 
+        row_colors = feature_groups.feature_group.map(lut)
 
         legend_feature_groups = \
                 [mpatches.Patch(color=value, label=key) for key,value in \
                  lut.items()]
 
         # Plot correlation/cluster map
-        ax = sns.clustermap(corr.fillna(0), 
+        ax = sns.clustermap(corr.fillna(0),
                        row_colors=row_colors,
                        cmap=cmap_heatmap)
-        plt.title(f'Clustered Correlation matrix plot for {self.model_id}', 
+        plt.title(f'Clustered Correlation matrix plot for {self.model_id}',
                   fontsize=fontsize)
-        plt.legend(handles=legend_feature_groups, 
+        plt.legend(handles=legend_feature_groups,
                    title= 'Feature Group',
-                   bbox_to_anchor=(0., 1.005, 1., .102), 
+                   bbox_to_anchor=(0., 1.005, 1., .102),
                    loc=7,
                    borderaxespad=0.)
 
@@ -669,12 +671,12 @@ class ModelEvaluator(object):
                                       fontsize=12):
          '''
         Plot sparcity in feature space
- 
+
         This function simply renders the correlation between features and uses
         hierarchical clustering to identify cluster of features. The idea bhind
         this plot is not only to explore the correlation in the space, but also
-        to explore is this correlation is comparable with the feature groups. 
-        Arguments: 
+        to explore is this correlation is comparable with the feature groups.
+        Arguments:
             - path (string): Project directory where to find matrices and
             models. Usually is under 'triage/outcomes/'
             - cmap_heatmap (string):seaborn/matplotlib pallete to color the
@@ -709,23 +711,23 @@ class ModelEvaluator(object):
          num_zeros = sparse_feature_matrix.sum(axis=0)
          sparse_feature_matrix_filter_columns = \
                  sparse_feature_matrix_filter[num_zeros. \
-                                              sort_values(ascending=False).index.values] 
- 
+                                              sort_values(ascending=False).index.values]
+
 		 # Plot matrix
          fig, ax = plt.subplots(figsize=figsize)
-         plt.title(f'Feature space sparse matrix for {self.model_id}', 
+         plt.title(f'Feature space sparse matrix for {self.model_id}',
                    fontsize=fontsize)
          ax.set_xlabel('Features', fontsize=fontsize)
          ax.set_ylabel('Entity ID', fontsize=fontsize)
          cbar_kws = {'ticks': range(2)}
-         sns.heatmap(sparse_feature_matrix_filter_columns, 
+         sns.heatmap(sparse_feature_matrix_filter_columns,
                      cmap=sns.color_palette("hls", 2),
                      cbar_kws=cbar_kws)
- 
+
     def compute_AUC(self):
         '''
         Utility function to generate ROC and AUC data to plot ROC curve
-        Returns (tuple): 
+        Returns (tuple):
             - (false positive rate, true positive rate, thresholds, AUC)
         '''
 
@@ -741,7 +743,7 @@ class ModelEvaluator(object):
                  fontsize=20):
         '''
         Plot an ROC curve for this model and label it with AUC
-        using the sklearn.metrics methods. 
+        using the sklearn.metrics methods.
         Arguments:
             - figsize (tuple): figure size to pass to matplotlib
             - fontsize (int): fontsize for title. Default is 20.
@@ -770,7 +772,7 @@ class ModelEvaluator(object):
         (esentially just a deconstructed ROC curve) along with optimal bounds.
         Arguments:
             - figsize (tuple): define a plot size to pass to matplotlib
-            - fontsize (int): define a custom font size to labels and axes 
+            - fontsize (int): define a custom font size to labels and axes
         '''
 
 
@@ -845,7 +847,7 @@ class ModelEvaluator(object):
         plt.ylim([0.0, 1.05])
         plt.title("Precision-recall at x-proportion", fontsize=fontsize)
         plt.show()
- 
+
     def _error_labeler(self,
                       path,
                       param=None,
@@ -859,12 +861,12 @@ class ModelEvaluator(object):
         This function will label the errors and return two elements relevant to
         model these. First, a feature matrix (X) with all the features used by
         the model. Second, an iterator with different labeled errors: FPR, FRR,
-        and the general error. 
+        and the general error.
 
         Arguments:
             - param_type: (str) type of parameter to define a threshold. Possible
               values come from triage evaluations: rank_abs, or rank_pct
-            - param: (int) value 
+            - param: (int) value
             - path: path for the ProjectStorage class object
         '''
         self.preds_matrix(path)
@@ -890,20 +892,20 @@ class ModelEvaluator(object):
                                  ''')
 
         # Define labels using the errors
-        dict_errors = {'FP': (test_matrix_thresh['label_value'] == 0) & 
+        dict_errors = {'FP': (test_matrix_thresh['label_value'] == 0) &
                               (test_matrix_thresh['above_thresh'] == 1),
-                       'FN': (test_matrix_thresh['label_value'] == 1) & 
+                       'FN': (test_matrix_thresh['label_value'] == 1) &
                               (test_matrix_thresh['above_thresh'] == 0),
-                       'TP':  (test_matrix_thresh['label_value'] == 1) & 
+                       'TP':  (test_matrix_thresh['label_value'] == 1) &
                               (test_matrix_thresh['above_thresh'] == 1),
-                       'TN':  (test_matrix_thresh['label_value'] == 0) & 
+                       'TN':  (test_matrix_thresh['label_value'] == 0) &
                               (test_matrix_thresh['above_thresh'] == 0)
                       }
         test_matrix_thresh['class_error'] = np.select(condlist=dict_errors.values(),
                                                      choicelist=dict_errors.keys(),
                                                      default=None)
-       
-        # Split data frame to explore FPR/FNR against TP and TN 
+
+        # Split data frame to explore FPR/FNR against TP and TN
         test_matrix_thresh_0 = \
         test_matrix_thresh[test_matrix_thresh['label_value'] == 0]
         test_matrix_thresh_1 = \
@@ -912,7 +914,7 @@ class ModelEvaluator(object):
         dict_error_class = {'FPvsAll': (test_matrix_thresh['class_error'] == 'FP'),
                             'FNvsAll': (test_matrix_thresh['class_error'] == 'FN'),
                             'FNvsTP': (test_matrix_thresh_1['class_error'] == 'FN'),
-                            'FPvsTN': (test_matrix_thresh_0['class_error'] == 'FP')}  
+                            'FPvsTN': (test_matrix_thresh_0['class_error'] == 'FP')}
 
         # Create label iterator
         Y = [(np.where(condition, 1, -1), label) for label, condition in \
@@ -924,7 +926,7 @@ class ModelEvaluator(object):
         feature_columns = matrix_storage.columns()
 
         # Build error feature matrix
-        matrices = [test_matrix_thresh, 
+        matrices = [test_matrix_thresh,
                     test_matrix_thresh,
                     test_matrix_thresh_1,
                     test_matrix_thresh_0]
@@ -936,7 +938,7 @@ class ModelEvaluator(object):
                       depth=None,
                       view_plots=False,
                       **kwargs):
-       '''  
+       '''
        Model labeled errors (residuals) by the error_labeler (FPR, FNR, and
        general residual) using a RandomForestClassifier. This function will
        yield a plot tree for each of the label numpy arrays return by the
@@ -949,7 +951,7 @@ class ModelEvaluator(object):
              default OS image renderer
            - **kwargs: more arguments passed to the labeler: param indicating
              the threshold value, param_type indicating the type of threshold,
-             and the path to the ProjectStorage. 
+             and the path to the ProjectStorage.
        '''
 
        # Get matrices from the labeler
@@ -964,7 +966,7 @@ class ModelEvaluator(object):
                       str(error_label[1]) + '_' + \
                       str(self.model_id) + '_' + \
                       str(kwargs['param_type']) + '@'+ \
-                      str(kwargs['param']) +  '.gv' 
+                      str(kwargs['param']) +  '.gv'
 
            clf = tree.DecisionTreeClassifier(max_depth=depth)
            clf_fit = clf.fit(matrix, error_label[0])
@@ -987,13 +989,13 @@ class ModelEvaluator(object):
         have the same functionality as the _error.modeler method, but its
         implemented for iterators, which can be a case use of this analysis.
         If no iterator object is passed, the function will take the needed
-        arguments to run the _error_modeler. 
+        arguments to run the _error_modeler.
         Arguments:
             - threshold_iterator: A ThresholdIterator class (see paramters.py)
             -**kwags: other arguments passed to _error_modeler
         '''
 
-        error_modeler = partial(self._error_modeler, 
+        error_modeler = partial(self._error_modeler,
                                depth = kwargs['depth'],
                                path = kwargs['path'],
                                view_plots = kwargs['view_plots'])
@@ -1008,7 +1010,7 @@ class ModelEvaluator(object):
                          param=kwargs['param'])
 
 
-    def crosstabs_ratio_plot(self, 
+    def crosstabs_ratio_plot(self,
                              n_features=30,
                              save_file=False,
                              name_file=None,
@@ -1017,7 +1019,7 @@ class ModelEvaluator(object):
         '''
         Plot to visualize the top-k features with the highest mean ratio. This
         plot will show the biggest quantitative differences between the labeled/predicted
-        groups 
+        groups
         '''
         crosstabs_ratio = self.crosstabs.loc[self.crosstabs.metric == \
                           'ratio_predicted_positive_over_predicted_negative']
@@ -1035,21 +1037,21 @@ class ModelEvaluator(object):
         ax.set_xlabel('Ratio means (positive/negative)', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
-        plt.title(f'Top {n_features} features with higher mean ratio', 
+        plt.title(f'Top {n_features} features with higher mean ratio',
                   fontsize=fontsize).set_position([.5, 0.99])
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
     def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
-                           score_col='score', 
+                           score_col='score',
                            entity_col='entity_id',
                            cut_n=None, cut_frac=None, cut_score=None,
-                           nbins=None, 
+                           nbins=None,
                            thresh_labels=['Above Threshold', 'Below Threshold'],
-                           figsize=(12, 16), 
-                           figtitle=None, 
+                           figsize=(12, 16),
+                           figtitle=None,
                            xticks_map=None,
-                           figfontsize=14, 
+                           figfontsize=14,
                            figtitlesize=16,
                            *path):
         '''
@@ -1135,4 +1137,3 @@ class ModelEvaluator(object):
             self.continuous_plot_and_stats(df_sorted, name_or_prefix, 'above_thresh', nbins,
                                            y_axis_pct=True, figsize=figsize, figtitle=figtitle,
                                            figfontsize=figfontsize, figtitlesize=figtitlesize)
-
