@@ -1,21 +1,22 @@
 # Postmodeling Configuration File
 #
-# - "metrics" contain all the modeling parameters 
+# - "metrics" contain all the modeling parameters
 #   passed to the postmodeling functions.
-# - "aesthetics" contain all ploting parameters 
+# - "aesthetics" contain all ploting parameters
 #   passed to the ploting methods in postmodeling.
 #
-  project_path: '../../../../../../triage_output/output/'
+  project_path: '/gpfs/data/dsapp-lab/triage-production_runs/'
   audition_output_path: 'results_model_group_ids.json'
-  model_group_id: 
-        - 19 
-        - 43
-        - 55
+  model_group_id:
+        - 599
+        - 598
+        - 596
+        - 602
 
-  thresholds: 
-        rank_abs: [10, 20, 50]
-        rank_pct: [10, 20, 50]
-  
+  thresholds:
+        rank_abs: []
+        rank_pct: [10]
+
   baseline_query: |
       SELECT g.model_group_id,
              m.model_id,
@@ -29,8 +30,10 @@
        FROM test_results.evaluations m
        LEFT JOIN model_metadata.models g
        USING(model_id)
-       WHERE g.model_group_id IN (1, 2, 3)
-  
+       WHERE g.model_group_id IN (599)
+             AND metric = 'precision@'
+             AND parameter = '100.0_pct'
+
   max_depth_error_tree: 5
   n_features_plots: 10
   figsize: [12, 12]
