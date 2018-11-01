@@ -118,14 +118,14 @@ class FeatureTest(Command):
 
     def __init__(self, parser):
         parser.add_argument(
-            "as_of_date",
-            type=valid_date,
-            help="The date as of which to run features. Format YYYY-MM-DD",
-        )
-        parser.add_argument(
             "feature_config_file",
             type=argparse.FileType("r"),
             help="Feature config YAML file, containing a list of feature_aggregation objects",
+        )
+        parser.add_argument(
+            "as_of_date",
+            type=valid_date,
+            help="The date as of which to run features. Format YYYY-MM-DD",
         )
 
     def __call__(self, args):
