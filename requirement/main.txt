@@ -1,4 +1,4 @@
-alembic==1.0.0
+alembic==1.0.2
 SQLAlchemy==1.2.12
 PyYAML==3.13
 psycopg2-binary==2.7.5
