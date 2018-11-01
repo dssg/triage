@@ -324,7 +324,10 @@ matrix that is saved along with the metadata that defines it.</p>
 feature groups that are mixed using the 'leave-one-out' and 'all' strategies, and 1 state definition, we'll expect 18
 matrices to be saved: 9 splits after multiplying the time splits by the feature groups, and each one creating a train
 and test matrix.</p>
+<h3 id="associating-matrices-with-experiment">Associating Matrices with Experiment</h3>
+<p>After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the <code>model_metadata.experiment_matrices</code> table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.</p>
 <h4 id="retrieving-data-and-saving-completed-matrix">Retrieving Data and Saving Completed Matrix</h4>
+<p>Each matrix that has to be built (i.e. has not been built by some prior experiment) is built by retrieving its data out of the database.</p>
 <p>How do we get the data for an individual matrix out of the database?</p>
 <ol>
 <li>
@@ -373,6 +376,8 @@ metadata</a></p>
 Experiment constructor, in the subdirectory <code>matrices</code>.</p>
 <h2 id="4-running-models">4. Running Models</h2>
 <p>The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.</p>
+<h3 id="associating-models-with-experiment">Associating Models with Experiment</h3>
+<p>Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the <code>model_metadata.experiment_models</code> table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.</p>
 <h3 id="train">Train</h3>
 <p>Each matrix marked for training is sent through the configured grid in the experiment's <code>grid_config</code>. This works much
 like the scikit-learn <code>ParameterGrid</code> (and in fact uses it on the backend). It cycles through all of the classifiers
