@@ -19,32 +19,38 @@ from tests.results_tests.factories import (
 
 
 class ModelGroupFilterTest(TestCase):
-    def filter_same_train_end_times(self, engine):
+    def filter_train_end_times(self, engine, train_end_times):
         ensure_db(engine)
         init_engine(engine)
         mg1 = ModelGroupFactory(model_group_id=1, model_type="modelType1")
         mg2 = ModelGroupFactory(model_group_id=2, model_type="modelType2")
         mg3 = ModelGroupFactory(model_group_id=3, model_type="modelType3")
         mg4 = ModelGroupFactory(model_group_id=4, model_type="modelType4")
+        mg5 = ModelGroupFactory(model_group_id=5, model_type="modelType5")
         # model group 1
         ModelFactory(model_group_rel=mg1, train_end_time=datetime(2014, 1, 1))
         ModelFactory(model_group_rel=mg1, train_end_time=datetime(2015, 1, 1))
         ModelFactory(model_group_rel=mg1, train_end_time=datetime(2016, 1, 1))
         ModelFactory(model_group_rel=mg1, train_end_time=datetime(2017, 1, 1))
-        # model group 2 only has three timestamps, should not pass
+        # model group 2 only has one timestamps
         ModelFactory(model_group_rel=mg2, train_end_time=datetime(2014, 1, 1))
         # model group 3
         ModelFactory(model_group_rel=mg3, train_end_time=datetime(2014, 1, 1))
         ModelFactory(model_group_rel=mg3, train_end_time=datetime(2015, 1, 1))
         ModelFactory(model_group_rel=mg3, train_end_time=datetime(2016, 1, 1))
         ModelFactory(model_group_rel=mg3, train_end_time=datetime(2017, 1, 1))
-        # model group 4 only has three timestamps, should not pass
+        # model group 4 only has two timestamps
         ModelFactory(model_group_rel=mg4, train_end_time=datetime(2015, 1, 1))
         ModelFactory(model_group_rel=mg4, train_end_time=datetime(2016, 1, 1))
+        # model group 5 only has three timestamps
+        ModelFactory(model_group_rel=mg5, train_end_time=datetime(2014, 1, 1))
+        ModelFactory(model_group_rel=mg5, train_end_time=datetime(2015, 1, 1))
+        ModelFactory(model_group_rel=mg5, train_end_time=datetime(2016, 1, 1))
+
+
 
         session.commit()
-        train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01", "2017-01-01"]
-        model_groups = [1, 2, 3, 4]
+        model_groups = [1, 2, 3, 4, 5]
         model_group_ids = model_groups_filter(
             train_end_times=train_end_times,
             initial_model_group_ids=model_groups,
@@ -56,10 +62,25 @@ class ModelGroupFilterTest(TestCase):
 
     def test_have_same_train_end_times(self):
         with testing.postgresql.Postgresql() as postgresql:
+            custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01", "2017-01-01"]
             engine = create_engine(postgresql.url())
-            pass_model_groups = self.filter_same_train_end_times(engine)
+            # The filter will only let those models pass only if the model's train end times
+            # contain the custom train end times
+            pass_model_groups = self.filter_train_end_times(engine, custom_train_end_times)
             assert pass_model_groups == {1, 3}
 
+    def test_have_partial_train_end_times(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01"]
+            engine = create_engine(postgresql.url())
+            pass_model_groups = self.filter_train_end_times(engine, custom_train_end_times)
+            assert pass_model_groups == {1, 3, 5}
+
+    def test_have_unmatched_train_end_times(self):
+        with testing.postgresql.Postgresql() as postgresql:
+            custom_train_end_times = ["2014-01-01", "2019-01-01"]
+            engine = create_engine(postgresql.url())
+            self.assertRaises(ValueError, lambda: self.filter_train_end_times(engine, custom_train_end_times))
 
 class ModelGroupThresholderTest(TestCase):
 
