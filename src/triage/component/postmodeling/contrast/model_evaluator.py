@@ -163,7 +163,7 @@ class ModelEvaluator(object):
 			SELECT
 			model_id,
 			feature_group,
-			avg(feature_importance) as importance_average,
+			avg(feature_importance) as importance_average
 			FROM raw_importances
 			GROUP BY feature_group, model_id
 			ORDER BY model_id, feature_group
@@ -383,7 +383,7 @@ class ModelEvaluator(object):
 
         if param_type == 'rank_abs':
             # Calculate residuals/errors
-            preds_thresh = df_prediction.sort_values(['rank_abs'], ascending=True)
+            preds_thresh = df_predictions.sort_values(['rank_abs'], ascending=True)
             preds_thresh['above_thresh'] = \
                     np.where(preds_thresh['rank_abs'] <= param, 1, 0)
         elif param_type == 'rank_pct':
@@ -431,9 +431,6 @@ class ModelEvaluator(object):
 
         if save_file:
             plt.savefig(str(name_file + '.png'))
-
-
-
 
     def plot_feature_importances(self,
                                  save_file=False,
@@ -557,6 +554,46 @@ class ModelEvaluator(object):
         if save_file:
             plt.savefig(str(name_file + '.png'))
 
+    def plot_feature_group_average_importances(self,
+                                               save_file=False,
+                                               name_file=None,
+                                               n_features_plots=30,
+                                               figsize=(16, 12),
+                                               fontsize=20):
+        '''
+        Generate a bar chart of the average feature group importances (by absolute value)
+        Arguments:
+                - save_file (bool): save file to disk as png. Default is False.
+                - name_file (string): specify name file for saved plot.
+                - n_features_plots (int): number of top features to plot
+                - figsize (tuple): figure size to pass to matplotlib
+                - fontsize (int): define custom fontsize for labels and legends.
+        '''
+        fg_importances = self.feature_group_importances
+        fg_importances = fg_importances.filter(items=['feature_group', \
+                                               'importance_average'])
+        fg_importances = fg_importances.set_index('feature_group')
+
+        # Sort by the absolute value of the importance of the feature
+        fg_importances['sort'] = abs(fg_importances['importance_average'])
+        fg_importances = \
+                fg_importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
+
+        # Show the most important positive feature at the top of the graph
+        importances = fg_importances.sort_values(by='importance_average', ascending=True)
+
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.tick_params(labelsize=16)
+        importances.plot(kind="bar", legend=False, ax=ax)
+        plt.setp(ax.get_xticklabels(), rotation=45, fontsize=15)
+        ax.set_ylabel('Feature Importance', fontsize=20)
+        ax.set_xlabel('Feature Group', fontsize=20)
+        plt.tight_layout()
+        plt.title(f'Feature Group Importances',
+                  fontsize=fontsize).set_position([.5, 1.0])
+        if save_file:
+            plt.savefig(str(name_file + '.png'))
+
     def plot_feature_group_importances(self,
                                        save_file=False,
                                        name_file=None,
@@ -573,29 +610,8 @@ class ModelEvaluator(object):
                 - fontsize (int): define custom fontsize for labels and legends.
         '''
 
-        importances = self.feature_group_importances(items=['feature_group', \
-                                                            'importance_average'])
-        importances = importances.set_index('feature_group')
-
-        # Sort by the absolute value of the importance of the feature
-        importances['sort'] = abs(importances['importance_average'])
-        importances = \
-                importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
-
-        # Show the most important positive feature at the top of the graph
-        importances = importances.sort_values(by='importance_average', ascending=True)
-
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.tick_params(labelsize=16)
-        importances.plot(kind="barh", legend=False, ax=ax)
-        ax.set_frame_on(False)
-        ax.set_xlabel('Feature Importance', fontsize=20)
-        ax.set_ylabel('Feature Group', fontsize=20)
-        plt.tight_layout()
-        plt.title(f'Feature Group Importances',
-                  fontsize=fontsize).set_position([.5, 0.99])
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
+        feature_importances = self.feature_importances
+        
 
     def cluster_correlation_features(self,
                                      path,

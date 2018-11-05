@@ -505,10 +505,10 @@ class ModelGroupEvaluator(object):
 
     def _rank_corr_df(self,
                       model_pair,
-                      corr_type: None,
-                      param_type: None,
-                      param: None,
-                      top_n_features: 10):
+                      top_n_features: 10,
+                      corr_type=None,
+                      param_type=None,
+                      param=None):
         '''
         Calculates ranked correlations for ranked observations and features
         using the stats.spearmanr scipy module.
@@ -716,11 +716,9 @@ class ModelGroupEvaluator(object):
 
         if  temporal_comparison == True:
 
-            # Calculate rank correlations for predictions
+            # Calculate rank correlations for features 
             corrs = [self._rank_corr_df(pair,
                                         corr_type='features',
-                                        param=kwargs['param'],
-                                        param_type=kwargs['param_type'],
                                         top_n_features = kwargs \
                                         ['top_n_features']
                                        ) for pair in combinations(model_subset, 2)]
@@ -753,8 +751,6 @@ class ModelGroupEvaluator(object):
         else:
             corrs = [self._rank_corr_df(pair,
                                         corr_type='features',
-                                        param=kwargs['param'],
-                                        param_type=kwargs['param_type'],
                                         top_n_features=10
                                         ) for pair in combinations(model_subset, 2)]
             # Store results in dataframe using tuples
@@ -771,8 +767,8 @@ class ModelGroupEvaluator(object):
             ax.set_xlabel('Model Id', fontsize=fontsize)
             ax.set_ylabel('Model Id', fontsize=fontsize)
             plt.title(f'''Feature Rank Correlation for
-                      {kwargs['param_type']}@{kwargs['param']}
-                     ''', fontsize=fontsize)
+                      Top-{kwargs['top_n_features']}
+                    ''', fontsize=fontsize)
             sns.heatmap(corr_matrix_t.fillna(1),
                         mask=mask,
                         vmax=1,
@@ -813,19 +809,14 @@ class ModelGroupEvaluator(object):
                         df_preds_date = preds_filter_group.copy()
                         df_preds_date['above_tresh'] = \
                                 np.where(df_preds_date['rank_pct'] <= param, 1, 0)
-                        df_sim_piv = df_preds_date.pivot(index='entity_id',
+                        df_sim_piv = df_preds_date.pivot(index=['entity_id',
+                                                                'as_of_date'],
                                                          columns='model_id',
                                                          values='above_tresh')
                     else:
                         raise AttributeError('''Error! You have to define a parameter type to
                                              set up a threshold
                                              ''')
-            except ValueError:
-                print(f'''
-                      Temporal comparison can be only made for more than one
-                      model group.
-                     ''')
-
                 # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
                 df_jac = pd.DataFrame(1-squareform(res),
@@ -849,6 +840,11 @@ class ModelGroupEvaluator(object):
                             vmax=1,
                             annot=True,
                             linewidth=0.1)
+            except ValueError:
+                print(f'''
+                      Temporal comparison can be only made for more than one
+                      model group.
+                     ''')
 
         else:
                 # Call predicitons
