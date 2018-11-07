@@ -15,6 +15,7 @@ from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop import Timechop
 from triage.component.timechop.plotting import visualize_chops
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -23,6 +24,7 @@ from triage.experiments import (
 from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
+
 
 def natural_number(value):
     natural = int(value)
@@ -147,13 +149,18 @@ class FeatureTest(Command):
 class Experiment(Command):
     """Run a full modeling experiment"""
 
+    matrix_storage_map = {
+        "csv": CSVMatrixStore,
+        "hdf": HDFMatrixStore,
+    }
+
     def __init__(self, parser):
         parser.add_argument(
             "config", type=argparse.FileType("r"), help="config file for Experiment"
         )
         parser.add_argument(
             "--project-path",
-            default=os.path.curdir,
+            default=os.getcwd(),
             help="path to store matrices and trained models",
         )
         parser.add_argument(
@@ -167,6 +174,12 @@ class Experiment(Command):
             type=natural_number,
             default=1,
             help="number of cores to use",
+        )
+        parser.add_argument(
+            "--matrix-format",
+            choices=self.matrix_storage_map.keys(),
+            default="csv",
+            help="The matrix storage format to use"
         )
         parser.add_argument("--replace", dest="replace", action="store_true")
         parser.add_argument(
@@ -200,6 +213,7 @@ class Experiment(Command):
             "project_path": self.args.project_path,
             "config": config,
             "replace": self.args.replace,
+            "matrix_storage_class": self.matrix_storage_map[self.args.matrix_storage]
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(
@@ -260,7 +274,7 @@ class Audition(Command):
 
     @cachedproperty
     def runner(self):
-        self.root.setup() # Loading configuration (if exists)
+        self.root.setup()  # Loading configuration (if exists)
         db_url = self.root.db_url
         dir_plot = self.args.directory
         config = yaml.load(self.args.config)
