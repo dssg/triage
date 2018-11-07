@@ -1,5 +1,6 @@
 import logging
 import textwrap
+from triage.database_reflection import table_exists
 
 
 DEFAULT_LABEL_NAME = "outcome"
@@ -21,29 +22,33 @@ class LabelGeneratorNoOp(object):
 
 
 class LabelGenerator(object):
-    def __init__(self, db_engine, query, label_name=None):
+    def __init__(self, db_engine, query, label_name=None, replace=True):
         self.db_engine = db_engine
-
+        self.replace = replace
         # query is expected to select a number of entity ids
         # and an outcome for each given an as-of-date
         self.query = query
         self.label_name = label_name or DEFAULT_LABEL_NAME
 
     def _create_labels_table(self, labels_table_name):
-        self.db_engine.execute("drop table if exists {}".format(labels_table_name))
-        self.db_engine.execute(
-            """
-            create table {} (
-            entity_id int,
-            as_of_date date,
-            label_timespan interval,
-            label_name varchar(30),
-            label_type varchar(30),
-            label int
-        )""".format(
-                labels_table_name
+        if self.replace or not table_exists(labels_table_name, self.db_engine):
+            self.db_engine.execute("drop table if exists {}".format(labels_table_name))
+            self.db_engine.execute(
+                """
+                create table {} (
+                entity_id int,
+                as_of_date date,
+                label_timespan interval,
+                label_name varchar(30),
+                label_type varchar(30),
+                label int
+            )""".format(
+                    labels_table_name
+                )
             )
-        )
+        else:
+            logging.info("Not dropping and recreating table because "
+                         "replace flag was set to False and table was found to exist")
 
     def generate_all_labels(self, labels_table, as_of_dates, label_timespans):
         self._create_labels_table(labels_table)
@@ -54,8 +59,31 @@ class LabelGenerator(object):
         )
         for as_of_date in as_of_dates:
             for label_timespan in label_timespans:
+                if not self.replace:
+                    logging.info(
+                        "Looking for existing labels for as of date %s and label timespan %s",
+                        as_of_date,
+                        label_timespan,
+                    )
+                    any_existing_labels = list(self.db_engine.execute(
+                        """select 1 from {labels_table}
+                        where as_of_date = '{as_of_date}'
+                        and label_timespan = '{label_timespan}'::interval
+                        and label_name = '{label_name}'
+                        limit 1
+                        """.format(
+                            labels_table=labels_table,
+                            as_of_date=as_of_date,
+                            label_timespan=label_timespan,
+                            label_name=self.label_name
+                        )
+                    ))
+                    if len(any_existing_labels) == 1:
+                        logging.info("Since nonzero existing labels found, skipping")
+                        continue
+
                 logging.info(
-                    "Generating labels for as of date %s and " "label timespan %s",
+                    "Generating labels for as of date %s and label timespan %s",
                     as_of_date,
                     label_timespan,
                 )
