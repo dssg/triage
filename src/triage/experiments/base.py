@@ -173,6 +173,7 @@ class ExperimentBase(ABC):
             self.label_generator = LabelGenerator(
                 label_name=self.config["label_config"].get("name", None),
                 query=self.config["label_config"]["query"],
+                replace=self.replace,
                 db_engine=self.db_engine,
             )
         else:

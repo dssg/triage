@@ -151,7 +151,14 @@ We'd like to add more validations for common misconfiguration problems over time
 
 ## Restarting an Experiment
 
-If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set the 'replace' flag. 
+If an experiment fails for any reason, you can restart it.
+
+By default, all work will be recreated. This includes label queries, feature queries, matrix building, model training, etc. However, if you pass the `replace=False` keyword argument, the Experiment will reuse what work it can.
+
+- Labels Table: The Experiment keeps a labels table namespaced by its experiment hash, and within that will check on a per-`as_of_date`/`label timespan` level whether or not there are *any* existing rows, and skip the label query if so. For this reason, it is *not* aware of specific entities or source events so if the label query has changed or the source data has changed, you will not want to set `replace` to False. Don't expect too much reuse from this, however, as the table is experiment-namespaced. Essentially, this will only reuse data if the same experiment was run prior and failed part of the way through label generation. 
+- Features Tables: The Experiment will check on a per-table basis whether or not it exists, and skip the feature generation if so. Each 'table' maps to a feature aggregation in your experiment config, so if you have modified any source data that affects that feature aggregation, added any features to that aggregation, or changed any `temporal_config` so there are more `as_of_dates`, you won't want to set `replace` to False.
+- Matrix Building: Each matrix's metadata is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
+- Model Training: Each model's metadata (which includes its train matrix's hash) is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
 
 
 ### CLI
