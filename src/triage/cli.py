@@ -153,6 +153,7 @@ class Experiment(Command):
         "csv": CSVMatrixStore,
         "hdf": HDFMatrixStore,
     }
+    matrix_storage_default = "csv"
 
     def __init__(self, parser):
         parser.add_argument(
@@ -178,8 +179,8 @@ class Experiment(Command):
         parser.add_argument(
             "--matrix-format",
             choices=self.matrix_storage_map.keys(),
-            default="csv",
-            help="The matrix storage format to use"
+            default=self.matrix_storage_default,
+            help=f"The matrix storage format to use. [default: {self.matrix_storage_default}]"
         )
         parser.add_argument("--replace", dest="replace", action="store_true")
         parser.add_argument(
@@ -213,7 +214,7 @@ class Experiment(Command):
             "project_path": self.args.project_path,
             "config": config,
             "replace": self.args.replace,
-            "matrix_storage_class": self.matrix_storage_map[self.args.matrix_storage]
+            "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(
