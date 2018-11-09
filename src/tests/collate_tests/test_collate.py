@@ -12,6 +12,12 @@ def test_aggregate():
     assert list(map(str, agg.get_columns())) == ["count(*)"]
 
 
+def test_aggregate_cast():
+    agg = Aggregate("*", "count", {}, coltype="REAL")
+    assert list(map(str, agg.get_columns())) == ["count(*)::REAL"]
+
+
+
 def test_aggregate_when():
     agg = Aggregate("1", "count", {})
     assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [

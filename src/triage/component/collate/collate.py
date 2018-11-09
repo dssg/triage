@@ -163,7 +163,7 @@ class Aggregate(AggregateExpression):
     An object representing one or more SQL aggregate columns in a groupby
     """
 
-    def __init__(self, quantity, function, impute_rules, order=None):
+    def __init__(self, quantity, function, impute_rules, order=None, coltype=None):
         """
         Args:
             quantity: SQL for the quantity to aggregate
@@ -194,6 +194,7 @@ class Aggregate(AggregateExpression):
         self.functions = make_list(function)
         self.orders = make_list(order)
         self.impute_rules = impute_rules
+        self.coltype = coltype
 
     def get_columns(self, when=None, prefix=None, format_kwargs=None):
         """
@@ -211,7 +212,8 @@ class Aggregate(AggregateExpression):
             format_kwargs = {}
 
         name_template = "{prefix}{quantity_name}_{function}"
-        column_template = "{function}({distinct}{args}){order_clause}{filter}"
+        coltype_template = ""
+        column_template = "{function}({distinct}{args}){coltype_cast}{order_clause}{filter}"
         arg_template = "{quantity}"
         order_template = ""
         filter_template = ""
@@ -221,6 +223,9 @@ class Aggregate(AggregateExpression):
         if when:
             filter_template = " FILTER (WHERE {when})"
 
+        if self.coltype is not None:
+            coltype_template = "::{coltype}"
+
         for function, (quantity_name, quantity), order in product(
             self.functions, self.quantities.items(), self.orders
         ):
@@ -228,6 +233,7 @@ class Aggregate(AggregateExpression):
             args = str.join(", ", (arg_template.format(quantity=q) for q in quantity))
             order_clause = order_template.format(order=order)
             filter = filter_template.format(when=when)
+            coltype_cast = coltype_template.format(coltype=self.coltype)
 
             if order is not None:
                 if len(quantity_name) > 0:
@@ -242,6 +248,7 @@ class Aggregate(AggregateExpression):
                 order_clause=order_clause,
                 quantity_name=quantity_name,
                 filter=filter,
+                coltype_cast=coltype_cast,
                 **format_kwargs
             )
 
@@ -322,6 +329,7 @@ class Compare(Aggregate):
         function,
         impute_rules,
         order=None,
+        coltype=None,
         include_null=False,
         maxlen=None,
         op_in_name=True,
@@ -392,6 +400,7 @@ class Categorical(Compare):
         impute_rules,
         order=None,
         op_in_name=False,
+        coltype=None,
         **kwargs
     ):
         """
@@ -418,6 +427,7 @@ class Categorical(Compare):
             function,
             impute_rules,
             order,
+            coltype,
             op_in_name=op_in_name,
             **kwargs
         )
