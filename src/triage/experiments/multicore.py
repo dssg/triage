@@ -1,7 +1,7 @@
 import logging
 import traceback
 from functools import partial
-from multiprocessing import Pool
+from pebble import ProcessPool
 
 from triage.component.catwalk.utils import Batch
 
@@ -27,12 +27,19 @@ class MultiCoreExperiment(ExperimentBase):
     def generated_chunked_parallelized_results(
         self, partially_bound_function, tasks, n_processes, chunksize=1
     ):
-        with Pool(n_processes, maxtasksperchild=1) as pool:
-            for result in pool.map(
+        with ProcessPool(n_processes, max_tasks=1) as pool:
+            future = pool.map(
                 partially_bound_function,
                 [list(task_batch) for task_batch in Batch(tasks, chunksize)],
-            ):
-                yield result
+            )
+            iterator = future.result()
+            while True:
+                try:
+                    yield next(iterator)
+                except StopIteration:
+                    break
+                except Exception:
+                    logging.exception('Child failure')
 
     def process_train_tasks(self, train_tasks):
         partial_train_models = partial(
@@ -103,13 +110,21 @@ def parallelize(partially_bound_function, tasks, n_processes):
     num_successes = 0
     num_failures = 0
     results = []
-    with Pool(n_processes, maxtasksperchild=1) as pool:
-        for result in pool.map(partially_bound_function, tasks):
-            if result:
-                num_successes += 1
-            else:
+    with ProcessPool(n_processes, max_tasks=1) as pool:
+        future = pool.map(partially_bound_function, tasks)
+        iterator = future.result()
+        results = []
+        while True:
+            try:
+                result = next(iterator)
+            except StopIteration:
+                break
+            except Exception:
+                logging.exception('Child failure')
                 num_failures += 1
-            results.append(result)
+            else:
+                results.append(result)
+                num_successes += 1
 
         logging.info("Done. successes: %s, failures: %s", num_successes, num_failures)
         return results

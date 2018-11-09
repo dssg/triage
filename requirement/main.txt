@@ -21,3 +21,4 @@ s3fs==0.1.6
 wrapt==1.10.11
 argcmdr==0.6.0
 sqlparse==0.2.4
+pebble==4.3.9

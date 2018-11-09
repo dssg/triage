@@ -33,7 +33,9 @@ from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
-    associate_matrices_with_experiment
+    associate_matrices_with_experiment,
+    missing_matrix_uuids,
+    missing_model_hashes
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -625,6 +627,33 @@ class ExperimentBase(ABC):
                 self.clean_up_tables()
 
         self.train_and_test_models()
+        logging.info("Experiment complete")
+        self._log_end_of_run_report()
+
+    def _log_end_of_run_report(self):
+        missing_models = missing_model_hashes(self.experiment_hash, self.db_engine)
+        if len(missing_models) > 0:
+            logging.info("Found %s missing model hashes."
+                         "This means that they were supposed to either be trained or reused"
+                         "by this experiment but are not present in the models table."
+                         "Inspect the logs for any training errors. Full list: %s",
+                         len(missing_models),
+                         missing_models
+                         )
+        else:
+            logging.info("All models that were supposed to be trained were trained. Awesome!")
+
+        missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
+        if len(missing_matrices) > 0:
+            logging.info("Found %s missing matrix uuids."
+                         "This means that they were supposed to either be build or reused"
+                         "by this experiment but are not present in the matrices table."
+                         "Inspect the logs for any matrix building errors. Full list: %s",
+                         len(missing_matrices),
+                         missing_matrices
+                         )
+        else:
+            logging.info("All matrices that were supposed to be build were built. Awesome!")
 
     def clean_up_tables(self):
         logging.info("Cleaning up state and labels tables")
