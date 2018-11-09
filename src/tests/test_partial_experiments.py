@@ -67,7 +67,7 @@ class Cohort(TestCase):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
             table_should_have_data(
-                experiment.sparse_states_table_name, experiment.db_engine
+                experiment.cohort_table_name, experiment.db_engine
             )
 
     def test_validate_nonstrict(self):

@@ -10,12 +10,6 @@ from triage.component import catwalk
 from triage.component.timechop import Timechop
 
 from triage.util.conf import convert_str_to_relativedelta
-from triage.validation_primitives import (
-    table_should_have_data,
-    column_should_be_intlike,
-    column_should_be_stringlike,
-    column_should_be_timelike,
-)
 
 
 class Validator(object):
@@ -460,95 +454,39 @@ class LabelConfigValidator(Validator):
 
 class CohortConfigValidator(Validator):
     def _run(self, cohort_config):
-        mutex_keys = set(["dense_states", "entities_table", "query"])
-        available_keys = mutex_keys | set(["name"])
-        used_keys = set(cohort_config.keys())
-        bad_keys = used_keys - available_keys
-        if bad_keys:
+        if "query" not in cohort_config:
             raise ValueError(
                 dedent(
                     """
-                Section: cohort_config -
-                The following given keys: '{}'
-                are invalid. Available keys are: '{}'
-                """.format(
-                        bad_keys, available_keys
-                    )
+            Section: cohort_config -
+            key 'query' not found. You must define a cohort query."""
                 )
             )
-        used_mutex_keys = mutex_keys & used_keys
-        if len(used_mutex_keys) > 1:
+        query = cohort_config["query"]
+        if "{as_of_date}" not in query:
             raise ValueError(
                 dedent(
                     """
-                Section: cohort_config -
-                Only one of the following keys can be sent: '{}'
-                Found '{}'
-                """.format(
-                        mutex_keys, used_mutex_keys
-                    )
+            Section: cohort_config -
+            If 'query' is used as cohort_config,
+            {as_of_date} must be present"""
                 )
             )
-
-        if "dense_states" in cohort_config:
-            state_config = cohort_config["dense_states"]
-            if "table_name" not in state_config:
-                raise ValueError(
-                    dedent(
-                        """
+        dated_query = query.replace("{as_of_date}", "2016-01-01")
+        conn = self.db_engine.connect()
+        logging.info("Validating cohort query")
+        try:
+            conn.execute(f"explain {dated_query}")
+        except Exception as e:
+            raise ValueError(
+                dedent(
+                    f"""
                 Section: cohort_config -
-                If 'dense_states' is used as cohort config,
-                a table name must be present"""
-                    )
+                given query can not be run with a sample as_of_date .
+                query: "{query}"
+                Full error: {e}"""
                 )
-            dense_state_table = state_config["table_name"]
-            table_should_have_data(dense_state_table, self.db_engine)
-            column_should_be_intlike(dense_state_table, "entity_id", self.db_engine)
-            column_should_be_stringlike(dense_state_table, "state", self.db_engine)
-            column_should_be_timelike(dense_state_table, "start_time", self.db_engine)
-            column_should_be_timelike(dense_state_table, "end_time", self.db_engine)
-            if (
-                "state_filters" not in state_config
-                or len(state_config["state_filters"]) < 1
-            ):
-                raise ValueError(
-                    dedent(
-                        """
-                Section: cohort_config -
-                If 'dense_states' is used as cohort config,
-                at least one state filter must be present"""
-                    )
-                )
-        elif "entities_table" in cohort_config:
-            entities_table = cohort_config["entities_table"]
-            table_should_have_data(entities_table, self.db_engine)
-            column_should_be_intlike(entities_table, "entity_id", self.db_engine)
-        elif "query" in cohort_config:
-            query = cohort_config["query"]
-            if "{as_of_date}" not in query:
-                raise ValueError(
-                    dedent(
-                        """
-                Section: cohort_config -
-                If 'query' is used as cohort_config,
-                {as_of_date} must be present"""
-                    )
-                )
-            dated_query = query.replace("{as_of_date}", "2016-01-01")
-            conn = self.db_engine.connect()
-            logging.info("Validating cohort query")
-            try:
-                conn.execute(f"explain {dated_query}")
-            except Exception as e:
-                raise ValueError(
-                    dedent(
-                        f"""
-                    Section: cohort_config -
-                    given query can not be run with a sample as_of_date .
-                    query: "{query}"
-                    Full error: {e}"""
-                    )
-                )
+            )
 
 
 class FeatureGroupDefinitionValidator(Validator):

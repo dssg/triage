@@ -4,7 +4,7 @@ import logging
 
 from triage.component import metta
 
-from . import utils, state_table_generators
+from . import utils, cohort_table_generators
 
 
 class Planner(object):
@@ -13,17 +13,15 @@ class Planner(object):
         feature_start_time,
         label_names,
         label_types,
-        states,
+        cohort_names,
         user_metadata,
-        cohort_name="default",
     ):
         self.feature_start_time = (
             feature_start_time
         )  # earliest time included in features
         self.label_names = label_names
         self.label_types = label_types
-        self.cohort_name = cohort_name
-        self.states = states or [state_table_generators.DEFAULT_ACTIVE_STATE]
+        self.cohort_names = cohort_names
         self.user_metadata = user_metadata
 
     def _generate_build_task(
@@ -45,7 +43,7 @@ class Planner(object):
         feature_dictionary,
         label_name,
         label_type,
-        state,
+        cohort_name,
         matrix_type,
     ):
         """ Generate dictionary of matrix metadata.
@@ -54,13 +52,13 @@ class Planner(object):
         :param feature dictionary: feature tables and the columns within them to use as features
         :param label_name: name of label column
         :param label_type: type of label
-        :param state: the entity state to be included in the matrix
+        :param cohort_name: the cohort name to be included in the matrix
         :param matrix_type: type (train/test) of matrix
         :type matrix_definition: dict
         :type feature dictionary: dict
         :type label_name: str
         :type label_type: str
-        :type state: str
+        :type cohort_name: str
         :type matrix_type: str
 
         :return: metadata needed for matrix identification and modeling
@@ -95,8 +93,8 @@ class Planner(object):
                 "test_label_timespan",
                 matrix_definition.get("training_label_timespan", "0 days"),
             ),
-            "cohort_name": self.cohort_name,
-            "state": state,
+            "state": cohort_table_generators.DEFAULT_ACTIVE_STATE,
+            "cohort_name": cohort_name,
             "matrix_id": matrix_id,
             "matrix_type": matrix_type,
         }
@@ -121,21 +119,21 @@ class Planner(object):
         for matrix_set in matrix_set_definitions:
             logging.info("Making plans for matrix set %s", matrix_set)
             logging.info(
-                "Iterating over %s label names, %s label_types, %s states, "
+                "Iterating over %s label names, %s label_types, %s cohort_names, "
                 "%s feature dictionaries",
                 len(self.label_names),
                 len(self.label_types),
-                len(self.states),
+                len(self.cohort_names),
                 len(feature_dictionaries),
             )
             train_matrix = matrix_set["train_matrix"]
             for (
                 label_name,
                 label_type,
-                state,
+                cohort_name,
                 feature_dictionary,
             ) in itertools.product(
-                self.label_names, self.label_types, self.states, feature_dictionaries
+                self.label_names, self.label_types, self.cohort_names, feature_dictionaries
             ):
                 matrix_set_clone = copy.deepcopy(matrix_set)
                 # get a uuid
@@ -144,7 +142,7 @@ class Planner(object):
                     feature_dictionary,
                     label_name,
                     label_type,
-                    state,
+                    cohort_name,
                     "train",
                 )
                 train_uuid = metta.generate_uuid(train_metadata)
@@ -174,7 +172,7 @@ class Planner(object):
                         feature_dictionary,
                         label_name,
                         label_type,
-                        state,
+                        cohort_name,
                         "test",
                     )
                     test_uuid = metta.generate_uuid(test_metadata)
