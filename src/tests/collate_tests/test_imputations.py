@@ -20,7 +20,7 @@ from triage.component.collate.imputations import (
 def test_impute_flag():
     imp = BaseImputation(column="a", coltype="aggregate")
     assert (
-        imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN TRUE ELSE FALSE END AS "a_imp" '
+        imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "a_imp" '
     )
 
 
