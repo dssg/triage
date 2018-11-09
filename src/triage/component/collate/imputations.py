@@ -24,7 +24,7 @@ class BaseImputation(object):
 
     def imputed_flag_sql(self):
         if not self.noflag:
-            return """CASE WHEN "{col}" IS NULL THEN 1 ELSE 0 END AS "{col}_imp" """.format(
+            return """CASE WHEN "{col}" IS NULL THEN TRUE ELSE FALSE END AS "{col}_imp" """.format(
                 col=self.column
             )
         else:
