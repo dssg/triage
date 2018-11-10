@@ -61,7 +61,7 @@ class ImputeMean(BaseImputation):
         if not self.catcol:
             # aggregate columm
             return sql.format(
-                imp="""AVG("%s")::REAL OVER (%s), 0::REAL""" % (self.column, self.partitionby)
+                imp="""AVG("%s") OVER (%s)::REAL, 0::REAL""" % (self.column, self.partitionby)
             )
         elif self.null_cat_pattern in self.column:
             # categorical NULL category
@@ -69,7 +69,7 @@ class ImputeMean(BaseImputation):
         else:
             # categorical
             return sql.format(
-                imp="""AVG("%s")::REAL OVER (%s), 0::REAL""" % (self.column, self.partitionby)
+                imp="""AVG("%s") OVER (%s)::REAL, 0::REAL""" % (self.column, self.partitionby)
             )
 
 
@@ -101,9 +101,9 @@ class ImputeConstant(BaseImputation):
         else:
             # categorical column
             return sql.format(
-                imp=1
+                imp="1::SMALLINT"
                 if self.value in self.column or self.null_cat_pattern in self.column
-                else 0
+                else "0::SMALLINT"
             )
 
 
@@ -151,7 +151,7 @@ class ImputeZeroNoFlag(BaseImputation):
 
     def to_sql(self):
         sql = self._base_sql()
-        return sql.format(imp="0")
+        return sql.format(imp="0::SMALLINT")
 
 
 class ImputeNullCategory(BaseImputation):

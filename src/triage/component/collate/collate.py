@@ -384,7 +384,7 @@ class Compare(Aggregate):
             for i, k in enumerate(list(d.keys())):
                 d["%s_%02d" % (k[: maxlen - 3], i)] = d.pop(k)
 
-        Aggregate.__init__(self, d, function, impute_rules, order)
+        Aggregate.__init__(self, d, function, impute_rules, order, coltype)
 
 
 class Categorical(Compare):

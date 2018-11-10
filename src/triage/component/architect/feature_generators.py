@@ -232,6 +232,7 @@ class FeatureGenerator(object):
                     **categorical.get("imputation", {})
                 ),
                 include_null=True,
+                coltype=aggregate.get('coltype', None),
             )
             for categorical in categorical_config
         ]
@@ -255,6 +256,7 @@ class FeatureGenerator(object):
                 op_in_name=False,
                 quote_choices=False,
                 include_null=True,
+                coltype=aggregate.get('coltype', None)
             )
             for categorical in categorical_config
         ]
@@ -278,6 +280,7 @@ class FeatureGenerator(object):
                 aggregate["quantity"],
                 aggregate["metrics"],
                 dict(agimp, coltype="aggregate", **aggregate.get("imputation", {})),
+                coltype=aggregate.get('coltype', None)
             )
             for aggregate in aggregation_config.get("aggregates", [])
         ]
