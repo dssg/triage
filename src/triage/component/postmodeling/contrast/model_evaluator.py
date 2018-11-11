@@ -1,15 +1,18 @@
 """
 Model Evaluator
 
-This script contain a set of elements to help the postmodeling evaluation
-of audited models by triage.Audition. This will be a continuing list of
-routines that can be scaled up and grow according to the needs of the
-project, or other postmodeling approaches.
+This module will use the model_id as a modeling unit of analysis to answer
+different type of questions related with the quality and behavior of my
+predictions. The ModelEvaluator (and by extension de ModelGroupEvaluator) are
+part of the triage framework, hence they depend on the results schema
+structure, and the rest of the triage elements. 
 
-To run most of this routines you will need:
-    - S3 credentials (if used) or specify the path to both feature and
-    prediction matrices.
-    - Working database conn.
+ModelEvaluator will use a tuple: (model_group_id, model_id) to run diffent
+functions that will help the triage user to explore the final models, ideally
+selected by the Audition module. To initiate this classes, the user need to
+have a tuple and a SQLAlchemy engine object to call the necesary data from the
+SQL database. 
+
 """
 
 import pandas as pd
@@ -30,10 +33,6 @@ from sklearn import metrics
 from sklearn import tree
 from collections import namedtuple
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
-from parameters import ThresholdIterator, PostmodelParameters
-
-from utils.aux_funcs import *
-
 
 class ModelEvaluator(object):
     '''
@@ -45,12 +44,14 @@ class ModelEvaluator(object):
     A pair of (model_group_id, model_id) is needed to instate the class. These
     can be feeded from the get models_ids.
     '''
-    def __init__(self, model_group_id, model_id):
+    def __init__(self, model_group_id, model_id, engine):
+        self.engine = engine
         self.model_id = model_id
         self.model_group_id = model_group_id
 
-        # Retrive model_id metadata from the model_metadata schema
-        model_metadata = pd.read_sql(
+    @cachedproperty
+    def metadata(self):
+        return next(self.engine.execute(
         f'''WITH
         individual_model_ids_metadata AS(
         SELECT m.model_id,
@@ -82,26 +83,44 @@ class ModelEvaluator(object):
         SELECT metadata.*, test.*
         FROM individual_model_ids_metadata AS metadata
         LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);''', con=conn)
+        USING(model_id);''')
+        )
 
-        # Add metadata attributes to model
-        self.model_type = model_metadata.loc[0, 'model_type']
-        self.hyperparameters = model_metadata.loc[0, 'hyperparameters']
-        self.model_hash = model_metadata.loc[0, 'model_hash']
-        self.train_matrix_uuid = model_metadata.loc[0, 'train_matrix_uuid']
-        self.pred_matrix_uuid = model_metadata.loc[0, 'matrix_uuid']
-        self.as_of_date = model_metadata.loc[0, 'train_end_time']
+    @property
+    def model_type(self):
+        return self.metadata['model_id']
+
+    @property
+    def hyperparameters(self):
+        return self.metadata['hyperparameters'] 
+
+    @property
+    def model_hash(self):
+        return self.metadata['model_hash'] 
+
+    @property
+    def train_matrix_uuid(self):
+        return self.metadata['train_matrix_uuid']
+
+    @property
+    def pred_matrix_uuid(self):
+        return self.metadata['matrix_uuid']
+
+    @property
+    def as_of_date(self):
+        return self.metadata['as_of_date']
 
     def __repr__(self):
         return (
-        f'Model object for model_id: {self.model_id}\n'
-        f'Model Group: {self.model_group_id}\n'
-        f'Model type: {self.model_type}\n'
-        f'Train End Time: {self.as_of_date}\n'
-        f'Model hyperparameters: {self.hyperparameters}\n'
-        f'''Matrix hashes (train,test): [{self.train_matrix_uuid},
-                                        {self.pred_matrix_uuid}]'''
-        )
+        f'''
+        Model object for model_id: {self.model_id}\n'
+        Model Group: {self.model_group_id}\n'
+        Model type: {self.model_type}\n'
+        Train End Time: {self.as_of_date}\n'
+        Model hyperparameters: {self.hyperparameters}\n'
+        Matrix hashes (train,test): [{self.train_matrix_uuid},
+                                        {self.pred_matrix_uuid}]
+        ''')
 
     @cachedproperty
     def predictions(self):
@@ -119,7 +138,7 @@ class ModelEvaluator(object):
             FROM test_results.predictions
             WHERE model_id = {self.model_id}
             AND label_value IS NOT NULL
-            ''', con=conn)
+            ''', con=self.engine)
 
         return preds
 
@@ -138,7 +157,7 @@ class ModelEvaluator(object):
                    rank_abs
             FROM train_results.feature_importances
             WHERE model_id = {self.model_id}
-            ''', con=conn)
+            ''', con=self.engine)
         return features
 
     @cachedproperty
@@ -167,7 +186,7 @@ class ModelEvaluator(object):
 			FROM raw_importances
 			GROUP BY feature_group, model_id
 			ORDER BY model_id, feature_group
-            ''', con=conn)
+            ''', con=self.engine)
         return feature_groups
 
     @cachedproperty
@@ -183,7 +202,7 @@ class ModelEvaluator(object):
                    num_positive_labels
             FROM test_results.evaluations
             WHERE model_id = {self.model_id}
-            ''', con=conn)
+            ''', con=self.engine)
         return model_metrics
 
     @cachedproperty
@@ -199,7 +218,7 @@ class ModelEvaluator(object):
                    threshold_value
             FROM test_results.crosstabs_test
             WHERE model_id = {self.model_id}
-            ''', con=conn)
+            ''', con=self.engine)
 
         return model_crosstabs
 
@@ -251,7 +270,7 @@ class ModelEvaluator(object):
         Arguments:
             path: project path to initiate the ProjectStorage object
         '''
-        cache = self.__dict__.setdefault('_preds_matrix_cache', {})
+        cache = self.__dict__.setdefault('_train_matrix_cache', {})
         try:
             return cache[path]
         except KeyError:
@@ -271,8 +290,6 @@ class ModelEvaluator(object):
         return mat
 
     def plot_score_distribution(self,
-                               save_file=False,
-                               name_file=None,
                                figsize=(16,12),
                                fontsize=20):
         '''
@@ -304,12 +321,7 @@ class ModelEvaluator(object):
                   fontsize=fontsize)
         plt.show()
 
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
-
     def plot_score_label_distributions(self,
-                                       save_file=False,
-                                       name_file=None,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
                                        fontsize=20):
@@ -358,14 +370,9 @@ class ModelEvaluator(object):
                   fontsize=fontsize)
         plt.show()
 
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
-
     def plot_score_distribution_thresh(self,
                                        param_type=None,
                                        param=None,
-                                       save_file=False,
-                                       name_file=None,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
                                        fontsize=20):
@@ -392,7 +399,7 @@ class ModelEvaluator(object):
             preds_thresh['above_thresh'] = \
                     np.where(preds_thresh['rank_pct'] <= param, 1, 0)
         else:
-            raise AttributeError('''Error! You have to define a parameter type to
+            raise ValueError('''Error! You have to define a parameter type to
                                  set up a threshold
                                  ''')
         df__0 = df_predictions[df_predictions.label_value == 0]
@@ -429,12 +436,8 @@ class ModelEvaluator(object):
                   fontsize=fontsize)
         plt.show()
 
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
 
     def plot_feature_importances(self,
-                                 save_file=False,
-                                 name_file=None,
                                  n_features_plots=30,
                                  figsize=(16, 12),
                                  fontsize=20):
@@ -469,13 +472,9 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Top {n_features_plots} Feature Importances',
                   fontsize=fontsize).set_position([.5, 0.99])
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
 
     def plot_feature_importances_std_err(self,
                                          path,
-                                         save_file=False,
-                                         name_file=None,
                                          bar=True,
                                          n_features_plots=30,
                                          figsize=(16,21),
@@ -518,7 +517,7 @@ class ModelEvaluator(object):
         importances_filter.sort_values(['feature_importance'], ascending=True)
 
 
-        if bar == True:
+        if bar:
             # Plot features with sd bars
             fig, ax = plt.subplots(figsize=figsize)
             ax.tick_params(labelsize=16)
@@ -551,12 +550,8 @@ class ModelEvaluator(object):
                                         color='r',
                                         lw=1))
 
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
 
     def plot_feature_group_average_importances(self,
-                                               save_file=False,
-                                               name_file=None,
                                                n_features_plots=30,
                                                figsize=(16, 12),
                                                fontsize=20):
@@ -591,12 +586,8 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 1.0])
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
 
     def plot_feature_group_importances(self,
-                                       save_file=False,
-                                       name_file=None,
                                        n_features_plots=30,
                                        figsize=(16, 12),
                                        fontsize=20):
@@ -611,7 +602,7 @@ class ModelEvaluator(object):
         '''
 
         feature_importances = self.feature_importances
-        
+
 
     def cluster_correlation_features(self,
                                      path,
@@ -999,7 +990,7 @@ class ModelEvaluator(object):
 
            print(dot_path)
 
-    def error_analysis(self, threshold_iterator, **kwargs):
+    def error_analysis(self, threshold_iterable, **kwargs):
         '''
         Error analysis function for ThresholdIterator objects. This function
         have the same functionality as the _error.modeler method, but its
@@ -1016,8 +1007,8 @@ class ModelEvaluator(object):
                                path = kwargs['path'],
                                view_plots = kwargs['view_plots'])
 
-        if isinstance(threshold_iterator, collections.Iterable):
-           for threshold_type, threshold in threshold_iterator:
+        if hasattr(threshold_iterable, '__iter__'):
+           for threshold_type, threshold in threshold_iterable:
                print(threshold_type, threshold)
                error_modeler(param_type = threshold_type,
                              param = threshold)

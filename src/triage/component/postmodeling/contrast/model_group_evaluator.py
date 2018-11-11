@@ -19,8 +19,6 @@ from itertools import starmap, combinations
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
 
-from utils.aux_funcs import *
-
 # Get indivual model information/metadata from Audition output
 
 
@@ -33,15 +31,18 @@ class ModelGroupEvaluator(object):
 
     A model_group_id list is needed to instate the class.
     '''
-    def __init__(self, model_group_id):
+    def __init__(self, model_group_id, engine):
+
+        self.engine = engine
 
         if len(model_group_id) == 1:
             self.model_group_id = model_group_id + model_group_id
         else:
             self.model_group_id = model_group_id
 
-        # Retrive model_id metadata from the model_metadata schema
-        model_metadata = pd.read_sql(
+    @cachedproperty
+    def metadata(self):
+        query_execute = list(self.engine.execute(
         f'''WITH
         individual_model_ids_metadata AS(
         SELECT m.model_id,
@@ -81,26 +82,60 @@ class ModelGroupEvaluator(object):
                test.matrix_uuid AS test_matrix_uuid
         FROM individual_model_ids_metadata AS metadata
         LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);''', con=conn).to_dict('list')
+        USING(model_id);''')
+        )
 
-        # Add metadata attributes to model
-        self.model_id = model_metadata['model_id']
-        self.model_type = model_metadata['model_type']
-        self.train_end_time = model_metadata['train_end_time']
-        self.hyperparameters = model_metadata['hyperparameters']
-        self.model_hash = model_metadata['model_hash']
-        self.train_matrix_uuid = model_metadata['train_matrix_uuid']
-        self.test_matrix_uuid = model_metadata['test_matrix_uuid']
+        row_dict, list_dict = {}, []
+        for row in query_execute:
+            for tup in row.items():
+               row_dict = {**row_dict, **{tup[0]: tup[1]}}
+            list_dict.append(row_dict)
+
+        return list_dict
+
+
+    @property
+    def model_id(self):
+        return [dict_row['model_id'] for dict_row in self.metadata]
+
+    @property
+    def model_hash(self):
+        return [dict_row['model_hash'] for dict_row in self.metadata]
+
+    @property
+    def hyperparameters(self):
+        return [dict_row['hyperparameters'] for dict_row in self.metadata]
+
+    @property
+    def train_end_time(self):
+        return [dict_row['train_end_time'] for dict_row in self.metadata]
+
+    @property
+    def train_matrix_uuid(self):
+        return [dict_row['train_matrix_uuid'] for dict_row in self.metadata]
+
+    @property
+    def training_label_timespan(self):
+        return [dict_row['training_label_timespan'] for dict_row in self.metadata]
+
+    @property
+    def model_type(self):
+        return [dict_row['model_type'] for dict_row in self.metadata]
+
+    @property
+    def model_config(self):
+        return [dict_row['model_config'] for dict_row in self.metadata]
 
     def __repr__(self):
         return (
-        f'Model collection object for model_ids:{self.model_id}\n'
-        f'Model Groups: {self.model_group_id}\n'
-        f'Model types: {self.model_type}\n'
-        f'Model hyperparameters: {self.hyperparameters}\n'
-        f'''Matrix hashes (train,test): [{self.train_matrix_uuid},
-                                      {self.test_matrix_uuid}]'''
-        )
+        f'''
+        Model collection object for model_ids:{self.model_id}\n'
+        Model Groups: {self.model_group_id}\n'
+        Model types: {self.model_type}\n'
+        Model hyperparameters: {self.hyperparameters}\n'
+        Matrix hashes (train,test): [{self.train_matrix_uuid},
+                                      {self.test_matrix_uuid}]
+        ''')
 
     @cachedproperty
     def predictions(self):
@@ -124,7 +159,7 @@ class ModelGroupEvaluator(object):
             USING (model_id)
             WHERE model_id IN {tuple(self.model_id)}
             AND label_value IS NOT NULL
-            ''', con=conn)
+            ''', con=self.engine)
         return preds
 
     @cachedproperty
@@ -140,7 +175,7 @@ class ModelGroupEvaluator(object):
            LEFT JOIN model_metadata.models g
            USING (model_id)
            WHERE m.model_id IN {tuple(self.model_id)}
-           ''', con=conn)
+           ''', con=self.engine)
         return features
 
     @cachedproperty
@@ -160,7 +195,7 @@ class ModelGroupEvaluator(object):
             LEFT JOIN model_metadata.models g
             USING (model_id)
             WHERE m.model_id IN {tuple(self.model_id)}
-            ''', con=conn)
+            ''', con=self.engine)
         return model_metrics
 
     @cachedproperty
@@ -209,7 +244,7 @@ class ModelGroupEvaluator(object):
             FROM feature_groups_array_
             WINDOW w AS (ORDER BY number_feature_groups DESC)
             ) SELECT * FROM feature_groups_class_cases
-            ''', con=conn)
+            ''', con=self.engine)
         return model_feature_groups
 
     @cachedproperty
@@ -222,7 +257,7 @@ class ModelGroupEvaluator(object):
                       FROM model_metadata.models
                       WHERE model_group_id IN {self.model_group_id}
                       GROUP BY train_end_time
-                      ''', con = conn)
+                      ''', con = self.engine)
         return time_models
 
     def plot_prec_across_time(self,
@@ -280,7 +315,7 @@ class ModelGroupEvaluator(object):
 
         if baseline == True:
 
-            baseline_metrics = pd.read_sql(baseline_query, con=conn)
+            baseline_metrics = pd.read_sql(baseline_query, con=self.engine)
             baseline_metrics[['param', 'param_type']] = \
                     baseline_metrics['parameter'].str.split('_', 1, expand=True)
             baseline_metrics['param'] = baseline_metrics['param'].astype(str).astype(float)
@@ -432,7 +467,7 @@ class ModelGroupEvaluator(object):
 
         if baseline == True:
 
-            baseline_metrics = pd.read_sql(baseline_query, con=conn)
+            baseline_metrics = pd.read_sql(baseline_query, con=self.engine)
             baseline_metrics[['param', 'param_type']] = \
                     baseline_metrics['parameter'].str.split('_', 1, expand=True)
             baseline_metrics['param'] = baseline_metrics['param'].astype(str).astype(float)
@@ -817,7 +852,7 @@ class ModelGroupEvaluator(object):
                         raise AttributeError('''Error! You have to define a parameter type to
                                              set up a threshold
                                              ''')
-                # Calculate Jaccard Similarity for the selected models
+                            # Calculate Jaccard Similarity for the selected models
                 res = pdist(df_sim_piv.T, 'jaccard')
                 df_jac = pd.DataFrame(1-squareform(res),
                                       index=preds_filter_group.model_id.unique(),
