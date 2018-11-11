@@ -12,29 +12,10 @@ import yaml
 import json
 import warnings
 
-class  ThresholdIterator(dict):
-    '''
-    Take a dictionary of parameters and create an interator class that store
-    the metric, and the parameters, for instance:
-        {'rank_abs': [10, 20, 50], 'rank_pct': [10, 20, 50]}
-        and yield a iterator that contains the key dict as identifier, and the
-        values as iterators. 
-    '''
-    def __init__(self, dict):
-        super().__init__(dict)
-
-        pairs_thresholds = [(iter(v), k) for (k, v) in dict.items()]
-        self.elements = lst = [] 
-        for param, metric in pairs_thresholds:
-            for threshold in param:
-                lst.append((metric, threshold))
-
-    def __iter__(self):
-        return iter(self.elements)
-
-    def __len__(self):
-        return len(self.elements)
-
+def generate_thresholds(threshold_dict):
+    for (metric, param) in threshold_dict.items():
+        for threshold in param:
+            yield (metric, threshold)
 
 class PostmodelParameters(object):
     '''
@@ -53,7 +34,7 @@ class PostmodelParameters(object):
         # thresholds
         self.__dict__.update(params)
         self.figsize = tuple(self.figsize) 
-        self.thresholds_iterator = ThresholdIterator(self.thresholds)
+        self.thresholds_iterator = generate_thresholds(self.thresholds)
 
         try:
             if self.audition_output_path is not None: 
