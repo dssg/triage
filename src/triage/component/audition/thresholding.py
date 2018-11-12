@@ -76,8 +76,10 @@ def model_groups_filter(
         ) as t
         WHERE train_end_time_list @> {end_times_sql}
         """
-    model_groups_df = pd.read_sql(query, con=db_engine)
-    model_group_ids = list(model_groups_df["model_group_id"])
+    model_group_ids = {row['model_group_id'] for row in db_engine.execute(query)}
+
+    if not model_group_ids:
+        raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
 
     dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
     logging.info(
@@ -85,9 +87,8 @@ def model_groups_filter(
     )
     logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
-    if len(set(model_group_ids)) == 0:
-        raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
-    return set(model_group_ids)
+
+    return model_group_ids
 
 
 class ModelGroupThresholder(object):
