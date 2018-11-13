@@ -586,26 +586,10 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 1.0])
-
-    def plot_feature_group_importances(self,
-                                       n_features_plots=30,
-                                       figsize=(16, 12),
-                                       fontsize=20):
-        '''
-        Generate a bar chart of the top n feature importances (by absolute value)
-        Arguments:
-                - save_file (bool): save file to disk as png. Default is False.
-                - name_file (string): specify name file for saved plot.
-                - n_features_plots (int): number of top features to plot
-                - figsize (tuple): figure size to pass to matplotlib
-                - fontsize (int): define custom fontsize for labels and legends.
-        '''
-
-        feature_importances = self.feature_importances
-
-
+   
     def cluster_correlation_features(self,
                                      path,
+                                     feature_group_subset_list=None,
                                      cmap_color_fgroups='Accent',
                                      cmap_heatmap='mako',
                                      figsize=(16,16),
@@ -620,6 +604,8 @@ class ModelEvaluator(object):
         Arguments:
             - path (string): Project directory where to find matrices and
             models. Usually is under 'triage/outcomes/'
+            - feature_group_subset_list (list): list of feature groups to plot.
+            By default, the function uses all the feature groups.
             - cmap_color_fgroups (string): matplotlib pallete to color the
             feature groups.
             - cmap_heatmap (string):seaborn/matplotlib pallete to color the
@@ -628,6 +614,12 @@ class ModelEvaluator(object):
             dimensions)
             - fontsize (string): define size of plot title and axes.
          '''
+        if feature_group_subset_list is None:
+             feature_group_subset = self.feature_importances.feature_group.unique()
+             feature_regex = '|'.join(feature_group_subset)
+        else:
+             feature_group_subset = feature_group_subset_list
+             feature_regex = '|'.join(feature_group_subset_list)
 
         # Load Prediction Matrix
         self.preds_matrix(path)
@@ -641,9 +633,10 @@ class ModelEvaluator(object):
 
         # Prepare and calculate feature correlation
         test_matrix = test_matrix[feature_columns]
-        feature_columns = matrix_storage.columns()
-        feature_groups = [x.split('_', 1)[0] for x in feature_columns]
-        corr = test_matrix.corr()
+        test_matrix_filter = test_matrix.filter(regex=feature_regex)
+        feature_groups = [x.split('_', 1)[0] for x in \
+                          test_matrix_filter.columns.tolist()]
+        corr = test_matrix_filter.corr()
 
         # Define feature groups and colors
         feature_groups = pd.DataFrame(feature_groups,
