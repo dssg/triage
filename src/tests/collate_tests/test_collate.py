@@ -24,6 +24,13 @@ def test_aggregate_when():
         "count(1) FILTER (WHERE date < '2012-01-01')"
     ]
 
+def test_aggregate_when_cast():
+    agg = Aggregate("", "mode", {}, "x", coltype="SMALLINT")
+    assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [
+        "mode() WITHIN GROUP (ORDER BY x) FILTER (WHERE date < '2012-01-01')::SMALLINT"
+    ]
+
+
 def test_ordered_aggregate():
     agg = Aggregate("", "mode", {}, "x")
     (expression,) = agg.get_columns()
@@ -36,6 +43,8 @@ def test_ordered_aggregate_when():
     assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [
         "mode() WITHIN GROUP (ORDER BY x) FILTER (WHERE date < '2012-01-01')"
     ]
+
+
 
 
 def test_aggregate_tuple_quantity():

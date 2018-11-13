@@ -213,7 +213,7 @@ class Aggregate(AggregateExpression):
 
         name_template = "{prefix}{quantity_name}_{function}"
         coltype_template = ""
-        column_template = "{function}({distinct}{args}){coltype_cast}{order_clause}{filter}"
+        column_template = "{function}({distinct}{args}){order_clause}{filter}{coltype_cast}"
         arg_template = "{quantity}"
         order_template = ""
         filter_template = ""
