@@ -1,5 +1,6 @@
 from functools import partial
 import pandas as pd
+import numpy as np
 import logging
 
 
@@ -17,7 +18,7 @@ def downcast_matrix(df):
     """
     logging.debug("Downcasting matrix. Starting memory usage: %s", df.memory_usage())
 
-    new_df = df.apply(lambda x:x.astype(float32))
+    new_df = df.apply(lambda x: x.astype(np.float32))
 
     logging.debug("Downcasted matrix. Final memory usage: %s", new_df.memory_usage())
     return new_df
