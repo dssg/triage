@@ -16,10 +16,8 @@ def downcast_matrix(df):
     and save memory on the index storage.
     """
     logging.debug("Downcasting matrix. Starting memory usage: %s", df.memory_usage())
-    new_df = (
-        df.apply(partial(pd.to_numeric, downcast="float"))
-        .apply(partial(pd.to_numeric, downcast="integer"))
-    )
+
+    new_df = df.apply(lambda x:x.astype(float32))
 
     logging.debug("Downcasted matrix. Final memory usage: %s", new_df.memory_usage())
     return new_df
