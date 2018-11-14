@@ -579,10 +579,10 @@ class ModelEvaluator(object):
 
         fig, ax = plt.subplots(figsize=figsize)
         ax.tick_params(labelsize=16)
-        importances.plot(kind="bar", legend=False, ax=ax)
+        importances.plot(kind="barh", legend=False, ax=ax)
         plt.setp(ax.get_xticklabels(), rotation=45, fontsize=15)
-        ax.set_ylabel('Feature Importance', fontsize=20)
-        ax.set_xlabel('Feature Group', fontsize=20)
+        ax.set_xlabel('Feature Importance', fontsize=20)
+        ax.set_ylabel('Feature Group', fontsize=20)
         plt.tight_layout()
         plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 1.0])
