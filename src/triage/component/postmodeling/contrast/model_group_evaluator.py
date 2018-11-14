@@ -614,8 +614,8 @@ class ModelGroupEvaluator(object):
     def plot_ranked_corrlelation_preds(self,
                                        model_subset=None,
                                        temporal_comparison=False,
-                                       figsize=(12, 16),
-                                       fontsize=20,
+                                       figsize=(24, 10),
+                                       fontsize=12,
                                        **kwargs):
         '''
         Plot ranked correlation between model_id's using the _rank_corr_df
@@ -644,6 +644,7 @@ class ModelGroupEvaluator(object):
         model_subset = models_to_use
 
         if temporal_comparison == True:
+            fig = plt.figure(figsize=figsize)
             for key, values in \
                 self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
 
@@ -668,7 +669,8 @@ class ModelGroupEvaluator(object):
                 mask = np.zeros_like(corr_matrix_t)
                 mask[np.triu_indices_from(mask, k=1)] = True
 
-                fig, ax = plt.subplots(figsize=figsize)
+                #fig, ax = plt.subplots(figsize=figsize)
+                ax = fig.add_subplot(np.ceil(self.same_time_models.shape[0]/4), 4, key+1)
                 ax.set_xlabel('Model Id', fontsize=fontsize)
                 ax.set_ylabel('Model Id', fontsize=fontsize)
                 plt.title(f'''Predictions Rank Correlation for
@@ -751,7 +753,7 @@ class ModelGroupEvaluator(object):
 
         if  temporal_comparison == True:
 
-            # Calculate rank correlations for features 
+            # Calculate rank correlations for features
             corrs = [self._rank_corr_df(pair,
                                         corr_type='features',
                                         top_n_features = kwargs \
@@ -817,8 +819,8 @@ class ModelGroupEvaluator(object):
                      param=None,
                      model_subset=None,
                      temporal_comparison=False,
-                     figsize=(12, 16),
-                     fontsize=20):
+                     figsize=(24, 10),
+                     fontsize=12):
 
         if model_subset is None:
             model_subset = self.model_id
@@ -828,6 +830,7 @@ class ModelGroupEvaluator(object):
 
         if temporal_comparison == True:
             try:
+                fig = plt.figure(figsize=figsize)
                 for key, values in \
                 self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
                     preds_filter_group = \
@@ -844,8 +847,8 @@ class ModelGroupEvaluator(object):
                         df_preds_date = preds_filter_group.copy()
                         df_preds_date['above_tresh'] = \
                                 np.where(df_preds_date['rank_pct'] <= param, 1, 0)
-                        df_sim_piv = df_preds_date.pivot(index=['entity_id',
-                                                                'as_of_date'],
+                        df_preds_date['new_entity_id'] = df_preds_date['entity_id'].astype(str) + ":" + df_preds_date['as_of_date'].astype(str)
+                        df_sim_piv = df_preds_date.pivot(index='new_entity_id',
                                                          columns='model_id',
                                                          values='above_tresh')
                     else:
@@ -853,28 +856,25 @@ class ModelGroupEvaluator(object):
                                              set up a threshold
                                              ''')
                             # Calculate Jaccard Similarity for the selected models
-                res = pdist(df_sim_piv.T, 'jaccard')
-                df_jac = pd.DataFrame(1-squareform(res),
+                    res = pdist(df_sim_piv.T, 'jaccard')
+                    df_jac = pd.DataFrame(1-squareform(res),
                                       index=preds_filter_group.model_id.unique(),
                                       columns=preds_filter_group.model_id.unique())
+                    mask = np.zeros_like(df_jac)
+                    mask[np.triu_indices_from(mask, k=1)] = True
 
-                mask = np.zeros_like(df_jac)
-                mask[np.triu_indices_from(mask, k=1)] = True
-
-                # Plot matrix heatmap
-                fig, ax = plt.subplots(figsize=figsize)
-                ax.set_xlabel('Model Id', fontsize=fontsize)
-                ax.set_ylabel('Model Id', fontsize=fontsize)
-                plt.title(f'''Jaccard Similarity Matrix Plot \n
-                          (as_of_date:{values[0]})
-                          ''', fontsize=fontsize)
-                sns.heatmap(df_jac,
-                            mask=mask,
-                            cmap='Greens',
-                            vmin=0,
-                            vmax=1,
-                            annot=True,
-                            linewidth=0.1)
+                    # Plot matrix heatmap
+                    ax = fig.add_subplot(np.ceil(self.same_time_models.shape[0]/4), 4, key+1)
+                    ax.set_xlabel('Model Id', fontsize=fontsize)
+                    ax.set_ylabel('Model Id', fontsize=fontsize)
+                    plt.title(f'''(as_of_date:{values[0]})''', fontsize=fontsize)
+                    sns.heatmap(df_jac,
+                                mask=mask,
+                                cmap='Greens',
+                                vmin=0,
+                                vmax=1,
+                                annot=True,
+                                linewidth=0.1)
             except ValueError:
                 print(f'''
                       Temporal comparison can be only made for more than one
@@ -894,7 +894,9 @@ class ModelGroupEvaluator(object):
                     df_preds_date = preds_filter.copy()
                     df_preds_date['above_tresh'] = \
                             np.where(df_preds_date['rank_pct'] <= param, 1, 0)
-                    df_sim_piv = df_preds_date.pivot(index='entity_id',
+                    print(df_preds_date.head())
+                    df_preds_date['new_entity_id'] = df_preds_date['entity_id'].astype(str) + ":" + df_preds_date['as_of_date'].astype(str)
+                    df_sim_piv = df_preds_date.pivot(index='new_entity_id',
                                                      columns='model_id',
                                                      values='above_tresh')
                 else:
