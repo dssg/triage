@@ -5,13 +5,13 @@ This module will use the model_id as a modeling unit of analysis to answer
 different type of questions related with the quality and behavior of my
 predictions. The ModelEvaluator (and by extension de ModelGroupEvaluator) are
 part of the triage framework, hence they depend on the results schema
-structure, and the rest of the triage elements. 
+structure, and the rest of the triage elements.
 
 ModelEvaluator will use a tuple: (model_group_id, model_id) to run diffent
 functions that will help the triage user to explore the final models, ideally
 selected by the Audition module. To initiate this classes, the user need to
 have a tuple and a SQLAlchemy engine object to call the necesary data from the
-SQL database. 
+SQL database.
 
 """
 
@@ -92,11 +92,11 @@ class ModelEvaluator(object):
 
     @property
     def hyperparameters(self):
-        return self.metadata['hyperparameters'] 
+        return self.metadata['hyperparameters']
 
     @property
     def model_hash(self):
-        return self.metadata['model_hash'] 
+        return self.metadata['model_hash']
 
     @property
     def train_matrix_uuid(self):
@@ -173,7 +173,7 @@ class ModelEvaluator(object):
 			CASE
 			WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
 			THEN 'No feature group'
-			ELSE split_part(feature, '_', 1)
+			ELSE split_part(feature, '_entity', 1)
 			END AS feature_group,
 			rank_abs
 			FROM train_results.feature_importances
