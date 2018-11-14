@@ -88,7 +88,7 @@ class ModelEvaluator(object):
 
     @property
     def model_type(self):
-        return self.metadata['model_id']
+        return self.metadata['model_type']
 
     @property
     def hyperparameters(self):
@@ -160,9 +160,25 @@ class ModelEvaluator(object):
             ''', con=self.engine)
         return features
 
-    @cachedproperty
-    def feature_group_importances(self):
-        feature_groups = pd.read_sql(
+    #@cachedproperty
+    def feature_group_importances(self, path=None):
+        if "ScaledLogisticRegression" in self.model_type:
+            storage = ProjectStorage(path)
+            model_object = ModelStorageEngine(storage).load(self.model_hash)
+            coefficients = np.abs(1-np.exp(model_object.coef_.squeeze()))
+            self.preds_matrix(path)
+            test_matrix = self.preds_matrix(path)
+            feature_names = [x for x in test_matrix.columns.tolist() if x not in ['entity_id', 'as_of_date', 'label_value', 'outcome', 'model_id', 'score', 'label_value', 'rank_abs', 'rank_pct', 'test_label_timespan']]
+            raw_importances = pd.DataFrame()
+            raw_importances['feature'] = feature_names
+            raw_importances['model_id'] = test_matrix['model_id']
+            raw_importances['feature_importance'] = coefficients
+            raw_importances['feature_group'] = [x.split("_entity")[0] for x in feature_names]
+            raw_importances['rank_abs'] = raw_importances['feature_importance'].rank(method='max')
+            feature_groups = raw_importances.groupby(['feature_group', 'model_id'])['feature_importance'].mean().reset_index()
+            feature_groups = feature_groups.rename(index=str, columns={"feature_importance":"importance_average"})
+        else:
+            feature_groups = pd.read_sql(
             f'''
 			WITH
 			raw_importances AS(
@@ -187,6 +203,7 @@ class ModelEvaluator(object):
 			GROUP BY feature_group, model_id
 			ORDER BY model_id, feature_group
             ''', con=self.engine)
+
         return feature_groups
 
     @cachedproperty
@@ -554,7 +571,8 @@ class ModelEvaluator(object):
     def plot_feature_group_average_importances(self,
                                                n_features_plots=30,
                                                figsize=(16, 12),
-                                               fontsize=20):
+                                               fontsize=20,
+                                               **kwargs):
         '''
         Generate a bar chart of the average feature group importances (by absolute value)
         Arguments:
@@ -564,7 +582,7 @@ class ModelEvaluator(object):
                 - figsize (tuple): figure size to pass to matplotlib
                 - fontsize (int): define custom fontsize for labels and legends.
         '''
-        fg_importances = self.feature_group_importances
+        fg_importances = self.feature_group_importances(path=kwargs['path'])
         fg_importances = fg_importances.filter(items=['feature_group', \
                                                'importance_average'])
         fg_importances = fg_importances.set_index('feature_group')
@@ -586,7 +604,7 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 1.0])
-   
+
     def cluster_correlation_features(self,
                                      path,
                                      feature_group_subset_list=None,
