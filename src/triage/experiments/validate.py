@@ -473,10 +473,9 @@ class CohortConfigValidator(Validator):
                 )
             )
         dated_query = query.replace("{as_of_date}", "2016-01-01")
-        conn = self.db_engine.connect()
         logging.info("Validating cohort query")
         try:
-            conn.execute(f"explain {dated_query}")
+            self.db_engine.execute(f"explain {dated_query}")
         except Exception as e:
             raise ValueError(
                 dedent(

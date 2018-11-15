@@ -29,11 +29,9 @@ def test_empty_output():
             table_generator.generate_cohort_table([datetime(2015, 12, 31)])
 
         (cohort_count,) = engine.execute(
-            """\
-            select count(*) from {generator.cohort_table_name}
-        """.format(
-                generator=table_generator
-            )
+            f"""\
+            select count(*) from {table_generator.cohort_table_name}
+        """
         ).first()
 
         assert cohort_count == 0
@@ -89,17 +87,14 @@ def test_cohort_table_generator():
             (5, datetime(2016, 5, 1), True),
             (5, datetime(2016, 6, 1), True),
         ]
-        results = [
-            row
-            for row in engine.execute(
-                """
-                select entity_id, as_of_date, active from {}
+        results = list(
+            engine.execute(
+                f"""
+                select entity_id, as_of_date, active from {table_generator.cohort_table_name}
                 order by entity_id, as_of_date
-            """.format(
-                    table_generator.cohort_table_name
-                )
+            """
             )
-        ]
+        )
         assert results == expected_output
         utils.assert_index(engine, table_generator.cohort_table_name, "entity_id")
         utils.assert_index(engine, table_generator.cohort_table_name, "as_of_date")

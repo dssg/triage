@@ -74,13 +74,13 @@ class CohortTableGenerator(object):
 
         for as_of_date in as_of_dates:
             formatted_date = f"{as_of_date.isoformat()}"
-            dated_query = self.query.replace("{as_of_date}", formatted_date)
+            dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.cohort_table_name}
                 select q.entity_id, '{formatted_date}'::timestamp, true
                 from ({dated_query}) q
                 group by 1, 2, 3
             """
-            logging.info(f"Running state query for date: {as_of_date}, {full_query}")
+            logging.info("Running state query for date: %s, %s", as_of_date, full_query)
             self.db_engine.execute(full_query)
 
     def _empty_table_message(self, as_of_dates):
