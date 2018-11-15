@@ -7,7 +7,7 @@ routines that can be scaled up and grow according to the needs of the
 project, or other postmodeling approaches.
 
 """
-
+import itertools
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -924,3 +924,108 @@ class ModelGroupEvaluator(object):
                             vmax=1,
                             annot=True,
                             linewidth=0.1)
+
+
+    def plot_preds_compare_score_dist(self,
+                                      m0, m1,
+                                      df_preds_date,
+                                      colors=['blue', 'orange'],
+                                      bins=np.arange(0,1.01,0.01)):
+        df_preds_m0 = df_preds_date[df_preds_date['model_id']==m0]
+        df_preds_m1 = df_preds_date[df_preds_date['model_id']==m1]
+
+        sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==0]['score'],
+                     kde=False, bins=bins, color='grey', label="model "+str(m0)+" predicted label = 0")
+        sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==1]['score'],
+                     kde=False, bins=bins, color=colors[1], label="model "+str(m0)+" predicted label = 1")
+        df_alt_model_scores = pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+        sns.distplot(df_alt_model_scores['score'],
+                     kde=False, bins=bins, color=colors[0], label="model "+str(m1)+" predicted label = 1")
+        plt.xlabel("Scores from model " + str(m0))
+        plt.legend()
+
+    def plot_preds_compare_rank(self,
+                                m0, m1,
+                                df_preds_date,
+                                colors=['black'],
+                                with_tpfp = False,
+                                bins = np.arange(0,110,10)):
+        df_preds_m0 = df_preds_date[df_preds_date['model_id']==m0]
+        df_preds_m1 = df_preds_date[df_preds_date['model_id']==m1]
+        df_alt_model_rank = pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+        if with_tpfp:
+            sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==0]['rank_pct'],
+                 kde=False, bins=bins, hist=True, color=colors[0],
+                 label="false positives")
+            sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==1]['rank_pct'],
+                 kde=False, bins=bins, hist=True, color=colors[1],
+                 label="true positives")
+            plt.legend()
+        else:
+            sns.distplot(df_alt_model_rank['rank_pct'], kde=False, bins=bins, hist=True, color=colors[0])
+        plt.xlabel("Percentile Rank in model " + str(m0))
+        plt.title("model "+str(m1)+" predicted label = 1")
+        plt.xticks(bins)
+
+
+    def plot_preds_comparison(self,
+                     param_type=None,
+                     param=None,
+                     model_subset=None,
+                     figsize=(28, 16),
+                     fontsize=12):
+
+        if model_subset is None:
+            model_subset = self.model_id
+
+        preds = self.predictions
+        preds_filter = preds[preds['model_id'].isin(self.model_id)]
+
+        fig = plt.figure(figsize=figsize)
+        try:
+            for key, values in \
+                self.same_time_models[['train_end_time', 'model_id_array']].iterrows():
+                preds_filter_group = \
+                                     preds_filter[preds_filter['model_id'].isin(values[1])]
+                # Filter predictions dataframe by individual dates
+                df_preds_date = preds_filter_group.copy()
+                if param_type == 'rank_abs':
+                    df_preds_date['above_tresh'] = \
+                        np.where(df_preds_date['rank_abs'] <= param, 1, 0)
+                elif param_type == 'rank_pct':
+                    df_preds_date['above_tresh'] = \
+                        np.where(df_preds_date['rank_pct'] <= param, 1, 0)
+
+                else:
+                    raise AttributeError('''Error! You have to define a parameter type to
+                    set up a threshold
+                    ''')
+
+                sns.set_style('whitegrid')
+                sns.set_context("poster", font_scale=1.25, rc={"lines.linewidth": 2.25,"lines.markersize":12})
+                plt.clf()
+                fig = plt.figure(figsize=figsize)
+                for pair in itertools.combinations(values['model_id_array'], 2):
+                    m0 = pair[0]
+                    m1 = pair[1]
+                    colors = {m0: 'blue', m1: 'orange'}
+                    ax1 = plt.subplot(231)
+                    self.plot_preds_compare_score_dist(pair[0], pair[1], df_preds_date, colors=[colors[m0], colors[m1]])
+                    ax1 = plt.subplot(234)
+                    self.plot_preds_compare_score_dist(pair[1], pair[0], df_preds_date, colors=[colors[m1], colors[m0]])
+                    ax1 = plt.subplot(232)
+                    self.plot_preds_compare_rank(pair[0], pair[1], df_preds_date, colors=[colors[m0]])
+                    ax1 = plt.subplot(235)
+                    self.plot_preds_compare_rank(pair[1], pair[0], df_preds_date, colors=[colors[m1]])
+                    ax1 = plt.subplot(233)
+                    self.plot_preds_compare_rank(pair[0], pair[1], df_preds_date, with_tpfp=True, colors=['lightblue', 'darkblue'])
+                    ax1 = plt.subplot(236)
+                    self.plot_preds_compare_rank(pair[1], pair[0], df_preds_date, with_tpfp=True, colors=['khaki', 'darkorange'])
+                plt.tight_layout()
+                fig.suptitle(values['train_end_time'])
+                plt.show()
+        except ValueError:
+            print(f'''
+            Temporal comparison can be only made for more than one
+            model group.
+            ''')
