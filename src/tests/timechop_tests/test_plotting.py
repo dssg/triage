@@ -16,7 +16,7 @@ class VisualizeChopTest(TestCase):
         # example_experiment_config.yaml file, because that is a
         # diligently updated file. If Timechop config changes, the
         # example config should change too
-        with open("example_experiment_config.yaml") as fd:
+        with open("example/config/experiment.yaml") as fd:
             experiment_config = yaml.load(fd)
         return Timechop(**(experiment_config["temporal_config"]))
 
