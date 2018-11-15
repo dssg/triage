@@ -55,7 +55,7 @@ experiment.run()
 
 ## Multicore example
 
-Triage also offers the ability to parallelize both CPU-heavy and database-heavy tasks. Triage uses the multiprocessing library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.
+Triage also offers the ability to locally parallelize both CPU-heavy and database-heavy tasks. Triage uses the [pebble](https://pythonhosted.org/Pebble) library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.
 
 ### CLI
 
@@ -84,6 +84,8 @@ experiment = MultiCoreExperiment(
 experiment.run()
 
 ```
+
+The [pebble](https://pythonhosted.org/Pebble) library offers an interface around Python3's `concurrent.futures` module that adds in a very helpful tool: watching for killed subprocesses . Model training (and sometimes, matrix building) can be a memory-hungry task, and Triage can not guarantee that the operating system you're running on won't kill the worker processes in a way that prevents them from reporting back to the parent Experiment process. With Pebble, this occurrence is caught like a regular Exception, which allows the Process pool to recover and include the information in the Experiment's log.
 
 ## Using S3 to store matrices and models
 
@@ -291,5 +293,5 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 ## Experiment Classes
 
 - *SingleThreadedExperiment*: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.
-- *MultiCoreExperiment*: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
+- *MultiCoreExperiment*: An experiment that makes use of the pebble library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
 - *RQExperiment*: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( `pip install triage[rq]` )
