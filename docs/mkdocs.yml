@@ -5,6 +5,10 @@ repo_url: http://github.com/dssg/triage
 edit_uri: blob/master/docs/templates
 site_description: 'Documentation for Triage.'
 
+markdown_extensions:
+    - toc:
+        permalink: True
+        baselevel: 2
 pages:
   - Home: index.md
   - Experiment Documentation:
@@ -12,6 +16,7 @@ pages:
     - Testing Feature Configuration: experiments/feature-testing.md
     - Running an Experiment: experiments/running.md
     - Temporal Validation Deep Dive: experiments/temporal-validation.md
+    - Cohort and Label Deep Dive: experiments/cohort-labels.md
     - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
