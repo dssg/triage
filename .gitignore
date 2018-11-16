@@ -7,6 +7,9 @@ dist/
 .coverage*
 .tox/
 
+/.install.*.bash.inc
+/.python-version
+
 .ipynb_checkpoints/
 venv/
 my_db_config.yaml
