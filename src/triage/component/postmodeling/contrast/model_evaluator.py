@@ -58,7 +58,6 @@ class ModelEvaluator(object):
                m.model_group_id,
                m.hyperparameters,
                m.model_hash,
-               m.experiment_hash,
                m.train_end_time,
                m.train_matrix_uuid,
                m.training_label_timespan,

@@ -49,7 +49,6 @@ class ModelGroupEvaluator(object):
                m.model_group_id,
                m.hyperparameters,
                m.model_hash,
-               m.experiment_hash,
                m.train_end_time,
                m.train_matrix_uuid,
                m.training_label_timespan,
@@ -926,54 +925,137 @@ class ModelGroupEvaluator(object):
                             linewidth=0.1)
 
 
-    def plot_preds_compare_score_dist(self,
-                                      m0, m1,
-                                      df_preds_date,
-                                      colors=['blue', 'orange'],
-                                      bins=np.arange(0,1.01,0.01)):
+    def _plot_preds_compare_score_dist(self,
+                                       m0,
+                                       m1,
+                                       df_preds_date,
+                                       colors=['blue', 'orange'],
+                                       bins=np.arange(0,1.01,0.01)):
+
+        '''
+        Plotting function for comparing prediction distributions across models.
+        This function takes two model_ids with predictions in the same
+        prediction window and shows the relative distribution of
+        the first model top-k in the second model score distribution.
+
+        This function is meant to be used as a helper function of
+        plot_preds_comparisons.
+
+        Arguments: 
+            - m0, m1: (int) model_id
+            - df_preds_date: (dataframe) predictions dataframe
+            - colors: (str) color strings. Defaults are blue and orange
+            - bins: (np array) number of bins to pass to the seaborn histogram
+            plotting function 
+
+        Returns: 
+            matplotlib plot object
+        '''
+
         df_preds_m0 = df_preds_date[df_preds_date['model_id']==m0]
         df_preds_m1 = df_preds_date[df_preds_date['model_id']==m1]
 
         sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==0]['score'],
-                     kde=False, bins=bins, color='grey', label="model "+str(m0)+" predicted label = 0")
+                     kde=False, 
+                     bins=bins, 
+                     color='grey', 
+                     label="model " + str(m0) + " predicted label = 0")
         sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==1]['score'],
-                     kde=False, bins=bins, color=colors[1], label="model "+str(m0)+" predicted label = 1")
-        df_alt_model_scores = pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+                     kde=False, 
+                     bins=bins, 
+                     color=colors[1], 
+                     label="model " + str(m0) + " predicted label = 1")
+
+        df_alt_model_scores = \
+                pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+
         sns.distplot(df_alt_model_scores['score'],
-                     kde=False, bins=bins, color=colors[0], label="model "+str(m1)+" predicted label = 1")
+                     kde=False, 
+                     bins=bins, 
+                     color=colors[0], 
+                     label="model " + str(m1) + " predicted label = 1")
+
         plt.xlabel("Scores from model " + str(m0))
         plt.legend()
 
-    def plot_preds_compare_rank(self,
-                                m0, m1,
-                                df_preds_date,
-                                colors=['black'],
-                                with_tpfp = False,
-                                bins = np.arange(0,110,10)):
+    def _plot_preds_compare_rank(self,
+                                 m0, 
+                                 m1,
+                                 df_preds_date,
+                                 colors=['black'],
+                                 show_tp_tn  = False,
+                                 bins = np.arange(0,110,10)):
+        '''
+        Plot predictions rank comparison for two selected models.
+
+        This function will rank the predictions from one model into the decile
+        distribution of the second one. This function is meant to be used as a
+        part of the plot_preds_comparison function. 
+
+        Arguments: 
+            - m0, m1: (int) model_ids to compare, only two.
+            - df_preds_date: (dataframe) predictions dataframe  
+            - colors: (str) color string. Default is black
+            - show_tp_tn: (bool) Plot true positive and true negatives in the
+                           rank distribution plot. Default is False
+            - bins: (np array) Number of bins to pass to the seaborn
+            histogram plot function.
+        '''
+
         df_preds_m0 = df_preds_date[df_preds_date['model_id']==m0]
         df_preds_m1 = df_preds_date[df_preds_date['model_id']==m1]
-        df_alt_model_rank = pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+        df_alt_model_rank = \
+                pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
+
         if with_tpfp:
             sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==0]['rank_pct'],
-                 kde=False, bins=bins, hist=True, color=colors[0],
-                 label="false positives")
+                         kde=False, 
+                         bins=bins, 
+                         hist=True, 
+                         color=colors[0],
+                         label="false positives")
             sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==1]['rank_pct'],
-                 kde=False, bins=bins, hist=True, color=colors[1],
-                 label="true positives")
+                         kde=False, 
+                         bins=bins, 
+                         hist=True, 
+                         color=colors[1],
+                         label="true positives")
             plt.legend()
         else:
-            sns.distplot(df_alt_model_rank['rank_pct'], kde=False, bins=bins, hist=True, color=colors[0])
+            sns.distplot(df_alt_model_rank['rank_pct'], 
+                         kde=False, 
+                         bins=bins, 
+                         hist=True, 
+                         color=colors[0])
         plt.xlabel("Percentile Rank in model " + str(m0))
         plt.title("model "+str(m1)+" predicted label = 1")
         plt.xticks(bins)
 
-
     def plot_preds_comparison(self,
-                     param_type=None,
-                     param=None,
-                     model_subset=None,
-                     figsize=(28, 16),
-                     fontsize=12):
+                              param_type=None,
+                              param=None,
+                              model_subset=None,
+                              figsize=(28, 16),
+                              fontsize=12):
+        '''
+        Plot predictor distribution comparison (distribution and rank)
+
+        This function compares the predictions of all models, or a subset passed to
+        model_subset. To compare predictions, the function will show the
+        relative position of the score distribution of the top-k of one of the
+        models into another model. 
+
+        Also, to compare how "off" can predictions be, the function will plot
+        the rank position of the predictions of one model in to another. The
+        plot will show the decile position of one model into the other.
+
+        Arguments: 
+            - param_type: (str) parameter type (i.e. 'rank_abs', 'rank_pct')
+            - param: (int) parameter threshold
+            - model_subset: (list) list of model_ids to compare. Default is
+            none, and the function will take all the models in self.model_id
+            - figsize, fontsize: aesthetics for plots. 
+        '''
 
         if model_subset is None:
             model_subset = self.model_id
@@ -1010,17 +1092,36 @@ class ModelGroupEvaluator(object):
                     m1 = pair[1]
                     colors = {m0: 'blue', m1: 'orange'}
                     ax1 = plt.subplot(231)
-                    self.plot_preds_compare_score_dist(pair[0], pair[1], df_preds_date, colors=[colors[m0], colors[m1]])
+                    self.plot_preds_compare_score_dist(pair[0], pair[1], 
+                                                       df_preds_date, 
+                                                       colors=[colors[m0], colors[m1]])
                     ax1 = plt.subplot(234)
-                    self.plot_preds_compare_score_dist(pair[1], pair[0], df_preds_date, colors=[colors[m1], colors[m0]])
+                    self.plot_preds_compare_score_dist(pair[1], 
+                                                       pair[0], 
+                                                       df_preds_date, 
+                                                       colors=[colors[m1], colors[m0]])
                     ax1 = plt.subplot(232)
-                    self.plot_preds_compare_rank(pair[0], pair[1], df_preds_date, colors=[colors[m0]])
+                    self.plot_preds_compare_rank(pair[0], 
+                                                 pair[1], 
+                                                 df_preds_date, 
+                                                 colors=[colors[m0]])
                     ax1 = plt.subplot(235)
-                    self.plot_preds_compare_rank(pair[1], pair[0], df_preds_date, colors=[colors[m1]])
+                    self.plot_preds_compare_rank(pair[1], 
+                                                 pair[0], 
+                                                 df_preds_date, 
+                                                 colors=[colors[m1]])
                     ax1 = plt.subplot(233)
-                    self.plot_preds_compare_rank(pair[0], pair[1], df_preds_date, with_tpfp=True, colors=['lightblue', 'darkblue'])
+                    self.plot_preds_compare_rank(pair[0], 
+                                                 pair[1], 
+                                                 df_preds_date, 
+                                                 show_tp_fp=True, 
+                                                 colors=['lightblue', 'darkblue'])
                     ax1 = plt.subplot(236)
-                    self.plot_preds_compare_rank(pair[1], pair[0], df_preds_date, with_tpfp=True, colors=['khaki', 'darkorange'])
+                    self.plot_preds_compare_rank(pair[1], 
+                                                 pair[0], 
+                                                 df_preds_date, 
+                                                 with_tpfp=True, 
+                                                 colors=['khaki', 'darkorange'])
                 plt.tight_layout()
                 fig.suptitle(values['train_end_time'])
                 plt.show()
