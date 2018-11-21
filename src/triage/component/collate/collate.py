@@ -170,6 +170,7 @@ class Aggregate(AggregateExpression):
             function: SQL aggregate function
             impute_rules: dictionary of rules mapping functions to imputation methods
             order: SQL for order by clause in an ordered set aggregate
+            coltype: SQL type for the column in the generated features table
 
         Notes:
             quantity, function, and order can also be lists of the above,

@@ -16,7 +16,11 @@ def test_aggregate_cast():
 
 def test_categorical_cast():
     cat = Categorical("c", ['A','B','C'], "sum", {}, coltype="SMALLINT")
-    assert list(map(str, cat.get_columns())) == ["sum((c = 'A')::INT)::SMALLINT","sum((c = 'B')::INT)::SMALLINT","sum((c = 'C')::INT)::SMALLINT"]
+    assert list(map(str, cat.get_columns())) == [
+        "sum((c = 'A')::INT)::SMALLINT",
+        "sum((c = 'B')::INT)::SMALLINT",
+        "sum((c = 'C')::INT)::SMALLINT"
+    ]
 
 def test_aggregate_when():
     agg = Aggregate("1", "count", {})

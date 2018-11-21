@@ -175,6 +175,7 @@ feature_aggregations:
                 metrics:
                     - 'count'
                     - 'sum'
+                coltype: 'smallint'   # Optional, if you want to control the column type in the generated features tables
             -
                 # since we're specifying `aggregates_imputation` above,
                 # a feature-specific imputation rule can be omitted
