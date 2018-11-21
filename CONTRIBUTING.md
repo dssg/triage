@@ -110,16 +110,49 @@ Triage Development Environment
 This section describes the initial setup of a Triage development environment that you'll need to run before writing any code.
 
 1.  Fork the triage repo on GitHub.
+
 2.  Clone your fork locally:
 
         $ git clone git@github.com:your_name_here/triage.git
 
-3.  Install your local copy. You can control the environment any way you'd like (virtualenv, pyenv, etc), but the directions below are for virtualenvwrapper.
-    Regardless of your Python environment, we do recommend installing `triage` as a module in development mode, via `python setup.py develop` or `pip install -e .`
+3.  Set up your local environment.
+
+    You can control your development environment any way you'd like (virtualenv, pyenv, _etc._).
+
+    To quickly bootstrap an environment, invoke the executable `develop` script &ndash; found in the triage repo root &ndash; from your system shell:
+
+        $ ./develop
+
+    The script will launch a "wizard," which will suggest set-up steps and optionally execute these, for example:
+
+        (install) begin
+
+        (pyenv) installed ✓
+
+        (python-3.6.2) installed ✓
+
+        (virtualenv) installed ✓
+
+        (activation) installed ✓
+
+        (libs) install?
+        1) yes, install {pip install -r requirement/main.txt -r requirement/test.txt -r requirement/dev.txt}
+        2) no, ignore
+        #? 1
+
+    Alternatively, you might manage your environment via `virtualenvwrapper`:
 
         $ mkvirtualenv triage
         $ cd triage/
         $ python setup.py develop
+
+    Or simply via the `venv` module:
+
+        $ cd triage/
+        $ python -m venv --prompt triage venv
+        $ python setup.py develop
+
+    Regardless of your Python environment, we do recommend installing `triage` in development mode, via `python setup.py develop` or `pip install -e .` (The `develop` script handles this for you.)
 
 
 Small Changes
