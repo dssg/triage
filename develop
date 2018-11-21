@@ -66,6 +66,30 @@ require pyenv \
   install_pyenv \
   --fail-prefix="not found"
 
+if exists_pyenv
+then
+  echo
+  icli::set_context pyenv
+
+  if icli::check_command pyenv
+  then
+    icli::message "${T_FGREEN}initialized ✓"
+  else
+    icli::message "${T_FRED}not set up ✗"
+    icli::message
+    icli::message "${T_FYELLOW}hint: add the following lines to your .bashrc, .bash_profile or .zshenv, $(tput sitm)etc."
+    icli::message
+    icli::message '\texport PATH="~/.pyenv/bin:$PATH"'
+    icli::message '\teval "$(pyenv init -)"'
+    icli::message '\teval "$(pyenv virtualenv-init -)"'
+    icli::message
+    icli::message "${T_FMAGENTA}reference: https://github.com/pyenv/pyenv"
+    icli::message "${T_FMAGENTA}reference: https://github.com/pyenv/pyenv-installer/"
+  fi
+
+  icli::unset_context
+fi
+
 # python
 
 version_info=$(<.python-version.current)
@@ -129,10 +153,18 @@ install_virtualenv() {
   pyenv virtualenv $py_version $version_info
 }
 
-require virtualenv \
-  exists_virtualenv \
-  install_virtualenv \
-  --fail-prefix="pyenv project virtual environment \"$version_info\" not found"
+if exists_pyenv
+then
+  require virtualenv \
+    exists_virtualenv \
+    install_virtualenv \
+    "pyenv project virtual environment \"$version_info\" not found"
+else
+  echo
+  icli::set_context virtualenv
+  icli::message "${T_FYELLOW}pyenv required – will not install ✗"
+  icli::unset_context
+fi
 
 # auto-activation
 
@@ -144,7 +176,8 @@ create_symlink() {
   ln -is .python-version.current .python-version
 }
 
-if exists_virtualenv; then
+if exists_virtualenv
+then
   require activation \
     exists_symlink \
     create_symlink \
@@ -152,7 +185,7 @@ if exists_virtualenv; then
 else
   echo
   icli::set_context activation
-  icli::message "${T_FYELLOW}will not install ✗"
+  icli::message "${T_FYELLOW}pyenv-virtualenv required – will not install ✗"
   icli::unset_context
 fi
 
