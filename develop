@@ -153,7 +153,7 @@ install_virtualenv() {
   pyenv virtualenv $py_version $version_info
 }
 
-if exists_pyenv
+if icli::check_command pyenv
 then
   require virtualenv \
     exists_virtualenv \
