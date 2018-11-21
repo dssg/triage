@@ -51,14 +51,17 @@ exists_pyenv() {
   [ -d "$pyenv_bin" ]
 }
 
-install_pyenv() {
-  curl -#L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-
-  # bootstrap for subsequent commands
+boostrap_pyenv() {
   export PATH="$pyenv_bin:$PATH"
 
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
+}
+
+install_pyenv() {
+  curl -#L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+
+  boostrap_pyenv  # bootstrap for subsequent commands
 }
 
 require pyenv \
@@ -85,6 +88,8 @@ then
     icli::message
     icli::message "${T_FMAGENTA}reference: https://github.com/pyenv/pyenv"
     icli::message "${T_FMAGENTA}reference: https://github.com/pyenv/pyenv-installer/"
+
+    boostrap_pyenv  # bootstrap for subsequent commands
   fi
 
   icli::unset_context
