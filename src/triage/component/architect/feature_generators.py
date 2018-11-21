@@ -232,7 +232,7 @@ class FeatureGenerator(object):
                     **categorical.get("imputation", {})
                 ),
                 include_null=True,
-                coltype=aggregate.get('coltype', None),
+                coltype=categorical.get('coltype', None),
             )
             for categorical in categorical_config
         ]
