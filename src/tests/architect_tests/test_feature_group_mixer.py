@@ -59,6 +59,32 @@ def test_feature_group_mixer_leave_one_in(english_numbers, letters, german_numbe
     ]
 
 
+def test_feature_group_mixer_all_combinations(english_numbers, letters,
+                                              german_numbers):
+    feature_groups = [english_numbers, letters, german_numbers]
+
+    result = FeatureGroupMixer(['all_combinations']).generate(feature_groups)
+    expected = [
+        dict(itertools.chain(english_numbers.items())),
+        dict(itertools.chain(letters.items())),
+        dict(itertools.chain(german_numbers.items())),
+        dict(itertools.chain(english_numbers.items(), letters.items())),
+        dict(itertools.chain(english_numbers.items(), german_numbers.items())),
+        dict(itertools.chain(letters.items(), german_numbers.items())),
+        dict(itertools.chain(english_numbers.items(), letters.items(),
+                             german_numbers.items()))
+    ]
+    assert result == expected
+    assert [g.names for g in result] == [
+        ['english_numbers'],
+        ['letters'],
+        ['german_numbers'],
+        ['english_numbers', 'letters'],
+        ['english_numbers', 'german_numbers'],
+        ['letters', 'german_numbers'],
+        ['english_numbers', 'letters', 'german_numbers']
+    ]
+
 def test_feature_group_mixer_all(english_numbers, letters, german_numbers):
     feature_groups = [english_numbers, letters, german_numbers]
 

@@ -31,6 +31,23 @@ def leave_one_out(feature_groups):
         results.append(feature_dict)
     return results
 
+def all_combinations(feature_groups):
+    """Return all combinations of groups, excluding repeated groups
+
+    Args:
+        feature_groups (list) The feature groups to apply the strategy to
+
+    Returns: A list of feature dicts
+    """
+    results = []
+    for number_feature_groups in range(0, len(feature_groups) + 1):
+        for combo in itertools.combinations(feature_groups,\
+                                            number_feature_groups):
+            feature_dict = FeatureGroup()
+            for group_element in combo:
+                feature_dict.update(group)
+            results.append(feature_dict)
+    return list(filter(None, results))
 
 def all_features(feature_groups):
     """Return a combination of all feature groups
@@ -53,6 +70,7 @@ class FeatureGroupMixer(object):
     strategy_lookup = {
         "leave-one-out": leave_one_out,
         "leave-one-in": leave_one_in,
+        "all-combinations":  all_combinations,
         "all": all_features,
     }
 
