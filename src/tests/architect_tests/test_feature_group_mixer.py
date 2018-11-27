@@ -63,7 +63,7 @@ def test_feature_group_mixer_all_combinations(english_numbers, letters,
                                               german_numbers):
     feature_groups = [english_numbers, letters, german_numbers]
 
-    result = FeatureGroupMixer(['all_combinations']).generate(feature_groups)
+    result = FeatureGroupMixer(['all-combinations']).generate(feature_groups)
     expected = [
         dict(itertools.chain(english_numbers.items())),
         dict(itertools.chain(letters.items())),
