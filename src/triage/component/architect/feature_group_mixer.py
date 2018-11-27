@@ -46,7 +46,7 @@ def all_combinations(feature_groups):
                                             number_feature_groups):
             feature_dict = FeatureGroup()
             for group_element in combo:
-                feature_dict.update(group)
+                feature_dict.update(group_element)
             results.append(feature_dict)
     return list(filter(None, results))
 
