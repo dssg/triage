@@ -1,4 +1,5 @@
 import logging
+import itertools
 from triage.component.architect.feature_group_creator import FeatureGroup
 
 
