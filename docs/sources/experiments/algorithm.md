@@ -159,9 +159,7 @@ of iteration we introduce for each split, that may produce many more matrices.
 What do we iterate over?
 * Feature List - All subsets of features that the user wants to cycle through. This is the end result of the feature
 group generation and mixing process, which is described more below.
-* States - All configured `state_filters` in the experiment config. These take the form of boolean SQL clauses that are
-applied to the sparse states table, and the purpose of this is to test different cohorts against each other. Generally
-there is just one here.
+* Cohorts - In theory we can take in different cohorts and iterate in the same experiment.  This is not fully implemented, so in reality we just use the one cohort that is passed in the `cohort_config`
 * Label names - In theory we can take in different labels (e.g. complaints, sustained complaints) in the same
 experiment. Right now there is no support for multiple label names, but the label name used is configurable through the
 optional 'label_config'->'name' config value

@@ -42,20 +42,19 @@ def create_schemas(engine, features_tables, labels, states):
     for row in labels:
         engine.execute("insert into labels.labels values (%s, %s, %s, %s, %s, %s)", row)
 
-    # create sparse state table
+    # create cohort table
     engine.execute("drop schema if exists staging cascade; create schema staging;")
     engine.execute(
         """
-            create table staging.sparse_states (
+            create table cohort (
                 entity_id int,
                 as_of_date date,
-                state_one bool,
-                state_two bool
+                active bool
             )
         """
     )
     for row in states:
-        engine.execute("insert into staging.sparse_states values (%s, %s, %s, %s)", row)
+        engine.execute("insert into cohort values (%s, %s, %s)", row)
 
 
 def create_features_table(table_number, table, engine):
@@ -83,8 +82,6 @@ def create_entity_date_df(
     labels,
     states,
     as_of_dates,
-    state_one,
-    state_two,
     label_name,
     label_type,
     label_timespan,
@@ -105,14 +102,14 @@ def create_entity_date_df(
         ],
     )
     states_table = pd.DataFrame(
-        states, columns=["entity_id", "as_of_date", "state_one", "state_two"]
+        states, columns=["entity_id", "as_of_date", "active"]
     ).set_index(["entity_id", "as_of_date"])
     as_of_dates = [date.date() for date in as_of_dates]
     labels_table = labels_table[labels_table["label_name"] == label_name]
     labels_table = labels_table[labels_table["label_type"] == label_type]
     labels_table = labels_table[labels_table["label_timespan"] == label_timespan]
     labels_table = labels_table.join(other=states_table, on=("entity_id", "as_of_date"))
-    labels_table = labels_table[labels_table["state_one"] & labels_table["state_two"]]
+    labels_table = labels_table[labels_table["active"]]
     ids_dates = labels_table[["entity_id", "as_of_date"]]
     ids_dates = ids_dates.sort_values(["entity_id", "as_of_date"])
     ids_dates["as_of_date"] = [
@@ -196,24 +193,6 @@ def assert_index(engine, table, column):
     )
     num_results = len([row for row in engine.execute(query)])
     assert num_results >= 1
-
-
-def create_dense_state_table(db_engine, table_name, data):
-    db_engine.execute(
-        """create table {} (
-        entity_id int,
-        state text,
-        start_time timestamp,
-        end_time timestamp
-    )""".format(
-            table_name
-        )
-    )
-
-    for row in data:
-        db_engine.execute(
-            "insert into {} values (%s, %s, %s, %s)".format(table_name), row
-        )
 
 
 def create_binary_outcome_events(db_engine, table_name, events_data):
