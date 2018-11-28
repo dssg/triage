@@ -247,7 +247,7 @@ Documentation
 -------------
 
 - All classes/methods should have docstrings describing their purpose
-- If the code adds or changes experiment configuration values, the [example\_experiment\_config.yaml](example/config/experiment.yaml) should be updated with the new or changed experiment configuration, and instructions for using it.
+- If the code adds or changes experiment configuration values, the [example experiment config](example/config/experiment.yaml) should be updated with the new or changed experiment configuration, and instructions for using it.
 - If the code adds to or changes the behavior of the Experiment, update:
     - [Experiment Algorithm Page](docs/sources/experiments/algorithm.md)
     - [DirtyDuck Tutorial](https://www.github.com/dssg/dirtyduck)
