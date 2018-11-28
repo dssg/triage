@@ -50,6 +50,29 @@ Then, to run tests::
 
     pytest
 
+Development
+-----------
+
+To quickly bootstrap a development environment, having cloned the repository, invoke the executable ``develop`` script from your system shell::
+
+    ./develop
+
+A "wizard" will suggest set-up steps and optionally execute these, for example::
+
+    (install) begin
+
+    (pyenv) installed ✓
+
+    (python-3.6.2) installed ✓
+
+    (virtualenv) installed ✓
+
+    (activation) installed ✓
+
+    (libs) install?
+    1) yes, install {pip install -r requirement/main.txt -r requirement/test.txt -r requirement/dev.txt}
+    2) no, ignore
+    #? 1
 
 Experiment
 ==========
