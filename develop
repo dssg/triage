@@ -112,7 +112,8 @@ which_python() {
       break
     else
       # strip a version part from the exe
-      python_exe="$(<<<"$python_exe" sed -e 's/\.\?[0-9]\+$//')"
+      # NOTE: must support POSIX sed (not just GNU)
+      python_exe="$(<<<"$python_exe" sed -Ee 's/\.{0,1}[0-9]{1,}$//')"
     fi
   done
 
