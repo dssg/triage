@@ -4,6 +4,7 @@ from datetime import date
 import pandas
 import pytest
 import sqlalchemy
+from sqlalchemy import text as t
 
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.collate import Aggregate, Categorical, SpacetimeAggregation
@@ -739,10 +740,12 @@ def test_transaction_error(test_engine):
         )
 
     ((query_count,),) = test_engine.execute(
-        """\
-            select count(*) from pg_stat_activity
-            where query not ilike '%%pg_stat_activity%%'
-        """
+        t("""\
+            select count(1) from pg_stat_activity
+            where datname = :datname and
+                  query not ilike '%%pg_stat_activity%%'
+        """),
+        datname=test_engine.url.database,
     )
 
     assert query_count == 0
