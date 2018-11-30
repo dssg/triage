@@ -256,7 +256,7 @@ class FeatureGenerator(object):
                 op_in_name=False,
                 quote_choices=False,
                 include_null=True,
-                coltype=aggregate.get('coltype', None)
+                coltype=categorical.get('coltype', None)
             )
             for categorical in categorical_config
         ]
