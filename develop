@@ -199,7 +199,6 @@ fi
 
 install_lib() {
   pip install \
-    -r requirement/main.txt \
     -r requirement/test.txt \
     -r requirement/dev.txt
 }
@@ -217,7 +216,7 @@ exists_triage() {
 }
 
 install_triage() {
-  pip install --no-deps -e .
+  pip install -e ".[rq]"
 }
 
 require triage \
