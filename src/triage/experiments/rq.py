@@ -161,3 +161,23 @@ class RQExperiment(ExperimentBase):
             for task in train_test_tasks
         ]
         return self.wait_for(jobs)
+
+    def process_subset_tasks(self, subset_tasks):
+        """Run subset tasks using RQ
+
+        Args:
+            subset_tasks (list) of dictionaries, each representing kwargs suitable
+                for self.subsetter.process_task
+        Returns: (list) of job results for each given task
+        """
+        jobs = [
+            self.queue.enqueue(
+                self.subsetter.process_task,
+                timeout=DEFAULT_TIMEOUT,
+                result_ttl=DEFAULT_TIMEOUT,
+                ttl=DEFAULT_TIMEOUT,
+                **task
+            )
+            for task in subset_tasks
+        ]
+        return self.wait_for(jobs)

@@ -89,6 +89,20 @@ class MultiCoreExperiment(ExperimentBase):
             partial_build_matrix, self.matrix_build_tasks.values(), self.n_processes
         )
 
+    def process_subset_tasks(self, subset_tasks):
+        partial_subset = partial(
+            run_task_with_splatted_arguments, self.subsetter.process_task
+        )
+
+        logging.info(
+            "Starting parallel subset creation: %s subsets, %s processes",
+            len(subset_tasks),
+            self.n_db_processes,
+        )
+        parallelize(
+            partial_subset, subset_tasks, self.n_db_processes
+        )
+
 
 def insert_into_table(insert_statements, feature_generator):
     try:

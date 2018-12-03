@@ -4,7 +4,7 @@ import logging
 
 from triage.component import metta
 
-from . import utils, cohort_table_generators
+from . import utils, entity_date_table_generators
 
 
 class Planner(object):
@@ -93,7 +93,7 @@ class Planner(object):
                 "test_label_timespan",
                 matrix_definition.get("training_label_timespan", "0 days"),
             ),
-            "state": cohort_table_generators.DEFAULT_ACTIVE_STATE,
+            "state": entity_date_table_generators.DEFAULT_ACTIVE_STATE,
             "cohort_name": cohort_name,
             "matrix_id": matrix_id,
             "matrix_type": matrix_type,

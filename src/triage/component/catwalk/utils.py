@@ -16,7 +16,8 @@ from triage.component.results_schema import (
     Matrix,
     Model,
     ExperimentMatrix,
-    ExperimentModel
+    ExperimentModel,
+    Subset,
 )
 
 
@@ -29,6 +30,13 @@ def filename_friendly_hash(inputs):
     return hashlib.md5(
         json.dumps(inputs, default=dt_handler, sort_keys=True).encode("utf-8")
     ).hexdigest()
+
+
+def get_subset_table_name(subset_config):
+    return "subset_{}_{}".format(
+        subset_config.get("name", "default"),
+        filename_friendly_hash(subset_config),
+    )
 
 
 def retry_if_db_error(exception):
@@ -141,15 +149,19 @@ class Batch:
 
 
 def sort_predictions_and_labels(predictions_proba, labels, sort_seed):
-    random.seed(sort_seed)
-    predictions_proba_sorted, labels_sorted = zip(
-        *sorted(
-            zip(predictions_proba, labels),
-            key=lambda pair: (pair[0], random.random()),
-            reverse=True,
+    if len(labels) == 0:
+        logging.debug("No labels present, skipping sorting.")
+        return predictions_proba, labels
+    else:
+        random.seed(sort_seed)
+        predictions_proba_sorted, labels_sorted = zip(
+            *sorted(
+                zip(predictions_proba, labels),
+                key=lambda pair: (pair[0], random.random()),
+                reverse=True,
+            )
         )
-    )
-    return predictions_proba_sorted, labels_sorted
+        return predictions_proba_sorted, labels_sorted
 
 
 @db_retry

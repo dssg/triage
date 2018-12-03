@@ -10,3 +10,6 @@ class SingleThreadedExperiment(ExperimentBase):
 
     def process_train_test_tasks(self, tasks):
         self.model_train_tester.process_all_tasks(tasks)
+
+    def process_subset_tasks(self, subset_tasks):
+        self.subsetter.process_all_tasks(subset_tasks)
