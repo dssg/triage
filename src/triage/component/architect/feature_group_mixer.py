@@ -41,14 +41,15 @@ def all_combinations(feature_groups):
     Returns: A list of feature dicts
     """
     results = []
-    for number_feature_groups in range(0, len(feature_groups) + 1):
-        for combo in itertools.combinations(feature_groups,\
+    for number_feature_groups in range(len(feature_groups) + 1):
+        for combo in itertools.combinations(feature_groups,
                                             number_feature_groups):
             feature_dict = FeatureGroup()
             for group_element in combo:
                 feature_dict.update(group_element)
-            results.append(feature_dict)
-    return list(filter(None, results))
+            if feature_dict:
+                results.append(feature_dict)
+    return results
 
 def all_features(feature_groups):
     """Return a combination of all feature groups
