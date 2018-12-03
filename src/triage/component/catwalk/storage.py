@@ -90,12 +90,16 @@ class S3Store(Store):
     """
 
     def __init__(self, *pathparts):
-        self.bucket_ = pathparts[0].replace("s3://", "")
-        self.key_ = pathlib.PurePosixPath(*pathparts[1:])
+
         self.path = str(
-            pathlib.PurePosixPath(self.bucket_, self.key_)
+            pathlib.PurePosixPath(pathparts[0].replace("s3://", ""), *pathparts[1:])
         )
-        self.key_ = str(self.key_)
+
+        if not '/' in self.path:
+            self.bucket_, self.key_ = self.path, ""
+        else:
+            self.bucket_, self.key_ = self.path.split('/', 1)
+
 
     def _get_client(self):
         return boto3.Session().client('s3')
