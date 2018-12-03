@@ -20,7 +20,7 @@ from triage.component.collate.imputations import (
 def test_impute_flag():
     imp = BaseImputation(column="a", coltype="aggregate")
     assert (
-        imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN 1 ELSE 0 END AS "a_imp" '
+        imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "a_imp" '
     )
 
 
@@ -31,16 +31,16 @@ def test_impute_flag_categorical():
 
 def test_mean_imputation():
     imp = ImputeMean(column="a", coltype="aggregate")
-    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (), 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER ()::REAL, 0::REAL) AS "a" '
 
     imp = ImputeMean(column="a", coltype="aggregate", partitionby="date")
-    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (PARTITION BY date), 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (PARTITION BY date)::REAL, 0::REAL) AS "a" '
 
     imp = ImputeMean(column="a", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (), 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER ()::REAL, 0::REAL) AS "a" '
 
     imp = ImputeMean(column="a", coltype="aggregate", partitionby="date")
-    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (PARTITION BY date), 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", AVG("a") OVER (PARTITION BY date)::REAL, 0::REAL) AS "a" '
 
     imp = ImputeMean(column="a__NULL_mean", coltype="categorical")
     assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
@@ -51,54 +51,54 @@ def test_constant_imputation():
     assert imp.to_sql() == 'COALESCE("a", 3.14) AS "a" '
 
     imp = ImputeConstant(column="a_myval_max", coltype="categorical", value="myval")
-    assert imp.to_sql() == 'COALESCE("a_myval_max", 1) AS "a_myval_max" '
+    assert imp.to_sql() == 'COALESCE("a_myval_max", 1::SMALLINT) AS "a_myval_max" '
 
     imp = ImputeConstant(column="a_otherval_max", coltype="categorical", value="myval")
-    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0) AS "a_otherval_max" '
+    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0::SMALLINT) AS "a_otherval_max" '
 
     imp = ImputeConstant(column="a__NULL_mean", coltype="categorical", value="myval")
-    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
+    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1::SMALLINT) AS "a__NULL_mean" '
 
 
 def test_impute_zero():
     imp = ImputeZero(column="a", coltype="aggregate")
-    assert imp.to_sql() == 'COALESCE("a", 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", 0::REAL) AS "a" '
 
     imp = ImputeZero(column="a_myval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_myval_max", 0) AS "a_myval_max" '
+    assert imp.to_sql() == 'COALESCE("a_myval_max", 0::SMALLINT) AS "a_myval_max" '
 
     imp = ImputeZero(column="a_otherval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0) AS "a_otherval_max" '
+    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0::SMALLINT) AS "a_otherval_max" '
 
     imp = ImputeZero(column="a__NULL_mean", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
+    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1::SMALLINT) AS "a__NULL_mean" '
 
 
 def test_impute_zero_noflag():
     imp = ImputeZeroNoFlag(column="a", coltype="aggregate")
-    assert imp.to_sql() == 'COALESCE("a", 0) AS "a" '
+    assert imp.to_sql() == 'COALESCE("a", 0::SMALLINT) AS "a" '
     assert imp.imputed_flag_sql() is None
     assert imp.noflag
 
     imp = ImputeZeroNoFlag(column="a_myval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_myval_max", 0) AS "a_myval_max" '
+    assert imp.to_sql() == 'COALESCE("a_myval_max", 0::SMALLINT) AS "a_myval_max" '
 
     imp = ImputeZeroNoFlag(column="a_otherval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0) AS "a_otherval_max" '
+    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0::SMALLINT) AS "a_otherval_max" '
 
     imp = ImputeZeroNoFlag(column="a__NULL_mean", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 0) AS "a__NULL_mean" '
+    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 0::SMALLINT) AS "a__NULL_mean" '
 
 
 def test_impute_null_cat():
     imp = ImputeNullCategory(column="a_myval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_myval_max", 0) AS "a_myval_max" '
+    assert imp.to_sql() == 'COALESCE("a_myval_max", 0::SMALLINT) AS "a_myval_max" '
 
     imp = ImputeNullCategory(column="a_otherval_max", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0) AS "a_otherval_max" '
+    assert imp.to_sql() == 'COALESCE("a_otherval_max", 0::SMALLINT) AS "a_otherval_max" '
 
     imp = ImputeNullCategory(column="a__NULL_mean", coltype="categorical")
-    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1) AS "a__NULL_mean" '
+    assert imp.to_sql() == 'COALESCE("a__NULL_mean", 1::SMALLINT) AS "a__NULL_mean" '
 
     try:
         imp = ImputeNullCategory(column="a", coltype="aggregate")

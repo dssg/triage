@@ -4,18 +4,34 @@
 Unit tests for `collate` module.
 
 """
-from triage.component.collate import Aggregate, Aggregation
-
+from triage.component.collate import Aggregate, Aggregation, Categorical
 
 def test_aggregate():
     agg = Aggregate("*", "count", {})
     assert list(map(str, agg.get_columns())) == ["count(*)"]
 
+def test_aggregate_cast():
+    agg = Aggregate("*", "count", {}, coltype="REAL")
+    assert list(map(str, agg.get_columns())) == ["count(*)::REAL"]
+
+def test_categorical_cast():
+    cat = Categorical("c", ['A','B','C'], "sum", {}, coltype="SMALLINT")
+    assert list(map(str, cat.get_columns())) == [
+        "sum((c = 'A')::INT)::SMALLINT",
+        "sum((c = 'B')::INT)::SMALLINT",
+        "sum((c = 'C')::INT)::SMALLINT"
+    ]
 
 def test_aggregate_when():
     agg = Aggregate("1", "count", {})
     assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [
         "count(1) FILTER (WHERE date < '2012-01-01')"
+    ]
+
+def test_aggregate_when_cast():
+    agg = Aggregate("", "mode", {}, "x", coltype="SMALLINT")
+    assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [
+        "mode() WITHIN GROUP (ORDER BY x) FILTER (WHERE date < '2012-01-01')::SMALLINT"
     ]
 
 
@@ -31,6 +47,8 @@ def test_ordered_aggregate_when():
     assert list(map(str, agg.get_columns(when="date < '2012-01-01'"))) == [
         "mode() WITHIN GROUP (ORDER BY x) FILTER (WHERE date < '2012-01-01')"
     ]
+
+
 
 
 def test_aggregate_tuple_quantity():
