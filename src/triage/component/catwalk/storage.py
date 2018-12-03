@@ -18,6 +18,12 @@ import pandas as pd
 import s3fs
 import yaml
 
+import boto3
+from boto3.s3.transfer import TransferConfig
+
+import io
+
+from contextlib import contextmanager
 
 class Store(object):
     """Base class for classes which know how to access a file in a preset medium.
@@ -84,22 +90,46 @@ class S3Store(Store):
     """
 
     def __init__(self, *pathparts):
+        self.bucket_ = pathlib.PurePosixPath(pathparts[0].replace("s3://", ""))
+        self.key_ = pathlib.PurePosixPath(*pathparts[1:])
         self.path = str(
-            pathlib.PurePosixPath(pathparts[0].replace("s3://", ""), *pathparts[1:])
+            pathlib.PurePosixPath(self.bucket_, self.key_)
         )
 
+    def _get_client(self):
+        return boto3.Session().client('s3')
+
     def exists(self):
-        s3 = s3fs.S3FileSystem()
-        return s3.exists(self.path)
+        exists = True
+
+        s3 = self._get_client()
+
+        try:
+            s3.head_object(Bucket=self.bucket_, Key=self.key_)
+        except:
+            exists = False
+
+        return exists
 
     def delete(self):
-        s3 = s3fs.S3FileSystem()
-        s3.rm(self.path)
+        s3 = self._get_client()
+        s3.delete_object(Bucket=self.bucket_, Key=self.key_)
 
-    def open(self, *args, **kwargs):
-        s3 = s3fs.S3FileSystem()
-        return s3.open(self.path, *args, **kwargs)
+    @contextmanager
+    def open(self, mode, *args, **kwargs):
+        s3 = self._get_client()
+        s3_buffer = io.BytesIO()
 
+        if mode == "rb":
+            s3.download_fileobj(self.bucket_, self.key_, s3_buffer)
+            s3_buffer.seek(0)
+            yield s3_buffer
+        elif mode == "wb":
+            yield s3_buffer
+            s3_buffer.seek(0)
+            s3.upload_fileobj(s3_buffer, self.bucket_, self.key_)
+        else:
+            raise ValueError("Only 'rb' and 'wb' modes are supported")
 
 class FSStore(Store):
     """Store an object on the local filesystem.
