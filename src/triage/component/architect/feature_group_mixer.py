@@ -32,6 +32,7 @@ def leave_one_out(feature_groups):
         results.append(feature_dict)
     return results
 
+
 def all_combinations(feature_groups):
     """Return all combinations of groups, excluding repeated groups
 
@@ -50,6 +51,7 @@ def all_combinations(feature_groups):
             if feature_dict:
                 results.append(feature_dict)
     return results
+
 
 def all_features(feature_groups):
     """Return a combination of all feature groups
