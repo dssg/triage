@@ -121,14 +121,19 @@ class S3Store(Store):
         s3 = self._get_client()
         s3_buffer = io.BytesIO()
 
+        GB = 1024 ** 3
+        # Ensure that multipart uploads only happen if the size of a transfer
+        # is larger than S3's size limit for nonmultipart uploads, which is 5 GB.
+        config = TransferConfig(multipart_threshold=5 * GB)
+
         if mode == "rb":
-            s3.download_fileobj(self.bucket_, self.key_, s3_buffer)
+            s3.download_fileobj(self.bucket_, self.key_, s3_buffer, Config=config)
             s3_buffer.seek(0)
             yield s3_buffer
         elif mode == "wb":
             yield s3_buffer
             s3_buffer.seek(0)
-            s3.upload_fileobj(s3_buffer, self.bucket_, self.key_)
+            s3.upload_fileobj(s3_buffer, self.bucket_, self.key_, Config=config)
         else:
             raise ValueError("Only 'rb' and 'wb' modes are supported")
 
