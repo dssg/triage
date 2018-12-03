@@ -233,7 +233,7 @@ feature_group_definition:
     tables: ['prefix_aggregation_imputed']
 
 # strategies for generating combinations of groups
-# available: all, leave-one-out, leave-one-in
+# available: all, leave-one-out, leave-one-in, all-combinations
 feature_group_strategies: ['all']
 
 
