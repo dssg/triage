@@ -3,6 +3,27 @@
 import sqlalchemy
 import wrapt
 
+import json
+
+import functools
+
+def fix_data(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    from psycopg2.extras import DateRange, DateTimeRange
+    from datetime import date, datetime
+
+    if isinstance(obj, (datetime, date)):
+        return str(obj.isoformat())
+
+    if isinstance(obj, DateRange) or isinstance(obj, DateTimeRange):
+        return f"[{obj.lower}, {obj.upper}]"
+
+    return obj
+
+
+def json_dumps(d):
+    return json.dumps(d, default=fix_data)
+
 
 class SerializableDbEngine(wrapt.ObjectProxy):
     """A sqlalchemy engine that can be serialized across process boundaries.
@@ -29,4 +50,4 @@ class SerializableDbEngine(wrapt.ObjectProxy):
         return cls(url, creator=creator, **kwargs)
 
 
-create_engine = SerializableDbEngine
+create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps)
