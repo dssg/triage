@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 from descriptors import cachedproperty
 from timeout import timeout
-from sqlalchemy.engine import Engine
 
 from triage.component.architect.label_generators import (
     LabelGenerator,
@@ -47,7 +46,6 @@ from triage.experiments.validate import ExperimentValidator
 
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
-from triage.util.db import create_engine
 
 
 class ExperimentBase(ABC):
@@ -84,15 +82,6 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        if isinstance(db_engine, Engine):
-            logging.warning(
-                "Raw, unserializable SQLAlchemy engine passed. "
-                "URL will be used, other options may be lost in multi-process environments"
-            )
-            self.db_engine = create_engine(db_engine.url)
-        else:
-            self.db_engine = db_engine
-
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
         self.matrix_storage_engine = MatrixStorageEngine(
@@ -100,6 +89,7 @@ class ExperimentBase(ABC):
         )
         self.project_path = project_path
         self.replace = replace
+        self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = "features"

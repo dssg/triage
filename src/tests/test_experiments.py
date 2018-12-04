@@ -9,6 +9,7 @@ import fakeredis
 import pytest
 import testing.postgresql
 from triage import create_engine
+import sqlalchemy
 
 from tests.utils import sample_config, populate_source_data
 from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
@@ -480,3 +481,17 @@ def test_baselines_with_missing_features(experiment_class):
             )
         ]
         assert len(individual_importances) == num_predictions * 2  # only 2 features
+
+
+def test_serializable_engine_check_sqlalchemy_fail():
+    """If we pass a vanilla sqlalchemy engine to the experiment
+    we should convert it to a triage engine"""
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = sqlalchemy.create_engine(postgresql.url())
+        with TemporaryDirectory() as temp_dir:
+            with pytest.raises(ValueError):
+                MultiCoreExperiment(
+                    config=sample_config(),
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                )
