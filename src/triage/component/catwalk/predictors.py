@@ -146,7 +146,6 @@ class Predictor(object):
             session.close()
         db_objects = []
         test_label_timespan = matrix_store.metadata["label_timespan"]
-        logging.warning(test_label_timespan)
 
         if "as_of_date" in matrix_store.matrix.index.names:
             logging.info(

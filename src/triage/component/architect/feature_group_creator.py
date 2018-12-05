@@ -1,4 +1,5 @@
 import logging
+from triage.util.structs import FeatureNameList
 
 
 class FeatureGroup(dict):
@@ -96,31 +97,33 @@ class FeatureGroupCreator(object):
         )
         subsets = []
         for name, config in sorted(self.definition.items()):
+            logging.info("Parsing config grouping method %s, items %s", name, config)
             for config_item in config:
                 subset = FeatureGroup(name="{}: {}".format(name, config_item))
+                logging.info("Finding columns that might belong in %s", subset)
                 for table, features in feature_dictionary.items():
+                    logging.info(
+                        "Searching features in table %s that match group %s",
+                        table,
+                        subset
+                    )
                     matching_features = self.subsetters[name](
                         config_item, table, features
                     )
                     logging.info(
-                        "Matching features for config item %s, table %s: %s",
-                        config_item,
+                        "Found %s matching features in table %s that match group %s",
+                        len(matching_features),
                         table,
-                        matching_features,
+                        subset,
                     )
                     if len(matching_features) > 0:
-                        subset[table] = matching_features
-                    else:
-                        logging.warning(
-                            "No matching features found for config item %s, "
-                            "table %s, master features %s",
-                            config_item,
-                            table,
-                            features,
-                        )
+                        subset[table] = FeatureNameList(matching_features)
 
                 subsets.append(subset)
         if not any(subset for subset in subsets if any(subset)):
-            logging.warning("No matching feature groups available.")
+            raise ValueError(
+                f"Problem! The feature group definition {self.definition} did not find any matches",
+                f"in feature dictionary {feature_dictionary}"
+            )
         logging.info("Found %s total feature subsets", len(subsets))
         return subsets
