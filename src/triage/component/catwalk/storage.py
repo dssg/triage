@@ -17,13 +17,8 @@ from triage.util.pandas import downcast_matrix
 import pandas as pd
 import s3fs
 import yaml
-
-import boto3
 from boto3.s3.transfer import TransferConfig
 
-import io
-
-from contextlib import contextmanager
 
 class Store(object):
     """Base class for classes which know how to access a file in a preset medium.
@@ -75,6 +70,9 @@ class Store(object):
         raise NotImplementedError
 
 
+GB = 1024 ** 3
+
+
 class S3Store(Store):
     """Store an object in S3.
 
@@ -85,61 +83,43 @@ class S3Store(Store):
     ```
 
     Args:
-        *pathparts: A variable length list of components of the path, to be processed in order.
-            All components will be joined using PurePosixPath to create the final path.
+        path_head, *path_parts: one or more path components,
+            (to be joined by PurePosixPath to create the final path).
+
+        **config: arguments to be passed to the S3Fs client constructor.
+
     """
+    transfer_multipart_threshold = 5 * GB
 
-    def __init__(self, *pathparts):
-
+    def __init__(self, path_head, *path_parts, **config):
         self.path = str(
-            pathlib.PurePosixPath(pathparts[0].replace("s3://", ""), *pathparts[1:])
+            pathlib.PurePosixPath(path_head.replace('s3://', ''),
+                                  *path_parts)
         )
 
-        if not '/' in self.path:
-            self.bucket_, self.key_ = self.path, ""
-        else:
-            self.bucket_, self.key_ = self.path.split('/', 1)
+        default_addl_kwargs = {
+            'Config': TransferConfig(
+                multipart_threshold=self.transfer_multipart_threshold,
+            ),
+        }
+        user_addl_kwargs = config.get('s3_additional_kwargs', {})
+        config['s3_additional_kwargs'] = dict(default_addl_kwargs, **user_addl_kwargs)
 
+        self.config = config
 
-    def _get_client(self):
-        return boto3.Session().client('s3')
+    @property
+    def client(self):
+        return s3fs.S3FileSystem(**self.config)
 
     def exists(self):
-        exists = True
-
-        s3 = self._get_client()
-
-        try:
-            s3.head_object(Bucket=self.bucket_, Key=self.key_)
-        except:
-            exists = False
-
-        return exists
+        return self.client.exists(self.path)
 
     def delete(self):
-        s3 = self._get_client()
-        s3.delete_object(Bucket=self.bucket_, Key=self.key_)
+        self.client.rm(self.path)
 
-    @contextmanager
-    def open(self, mode, *args, **kwargs):
-        s3 = self._get_client()
-        s3_buffer = io.BytesIO()
+    def open(self, *args, **kwargs):
+        return self.client.open(self.path, *args, **kwargs)
 
-        GB = 1024 ** 3
-        # Ensure that multipart uploads only happen if the size of a transfer
-        # is larger than S3's size limit for nonmultipart uploads, which is 5 GB.
-        config = TransferConfig(multipart_threshold=5 * GB)
-
-        if mode == "rb":
-            s3.download_fileobj(self.bucket_, self.key_, s3_buffer, Config=config)
-            s3_buffer.seek(0)
-            yield s3_buffer
-        elif mode == "wb":
-            yield s3_buffer
-            s3_buffer.seek(0)
-            s3.upload_fileobj(s3_buffer, self.bucket_, self.key_, Config=config)
-        else:
-            raise ValueError("Only 'rb' and 'wb' modes are supported")
 
 class FSStore(Store):
     """Store an object on the local filesystem.
@@ -223,9 +203,10 @@ class ModelStorageEngine(object):
     Args:
         project_storage (triage.component.catwalk.storage.ProjectStorage)
             A project file storage engine
-        model_directory (string, optional) A directory name for models. Defaults to 'trained_models'
-    """
+        model_directory (string, optional) A directory name for models.
+            Defaults to 'trained_models'
 
+    """
     def __init__(self, project_storage, model_directory=None):
         self.project_storage = project_storage
         self.directories = [model_directory or "trained_models"]
