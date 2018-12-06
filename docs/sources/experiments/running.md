@@ -23,19 +23,19 @@ To run an experiment, you need to tell triage at a minimum where to find the exp
 The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:
 
 ```bash
-triage experiment example_experiment_config.yaml
+triage experiment example/config/experiment.yaml
 ```
 
 If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:
 
 ```bash
-triage -d mydbconfig.yaml experiment example_experiment_config.yaml
+triage -d mydbconfig.yaml experiment example/config/experiment.yaml
 ```
 
 Assuming you want the matrices and models stored somewhere else, pass it as the `--project-path`:
 
 ```bash
-triage -d mydbconfig.yaml experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
+triage -d mydbconfig.yaml experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data'
 ```
 
 ### Python
@@ -62,7 +62,7 @@ Triage also offers the ability to locally parallelize both CPU-heavy and databas
 The Triage CLI allows parallelization to be specified through the `--n-processes` and `--n-db-processes` parameters.
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
 ```
 
 ### Python
@@ -95,7 +95,7 @@ Triage can operate on different storage engines for matrices and models, and bes
 ### CLI
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
+triage experiment example/config/experiment.yaml --project-path 's3://bucket/directory/to/save/data'
 ```
 
 ### Python
@@ -121,7 +121,7 @@ Triage by default uses CSV format to store matrices, but this can take up a lot 
 On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
 
 ```bash
-triage experiment example_experiment_config.yaml --matrix-format hdf
+triage experiment example/config/experiment.yaml --matrix-format hdf
 ```
 
 ### Python
@@ -162,11 +162,11 @@ LINE 1: explain select * from cat_complaints
 The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it *only* validate.
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --no-validate
 ```
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --validate-only
 ```
 
 #### Python
@@ -197,7 +197,7 @@ By default, all work will be recreated. This includes label queries, feature que
 ### CLI
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --replace
 ```
 
 ### Python
@@ -216,7 +216,7 @@ experiment.run()
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
 
 Running parts of an experiment is only supported through the Python interface.
 
@@ -228,7 +228,7 @@ Running parts of an experiment is only supported through the Python interface.
 	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
 	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
 
-2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be passed:
+2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be passed:
 
 	- `experiment.split_definitions` will parse temporal config and create time splits. It only requires `temporal_config`.
 
