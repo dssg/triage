@@ -678,6 +678,13 @@ class GridConfigValidator(Validator):
                 )
             )
         for classpath, parameter_config in grid_config.items():
+            if classpath == "sklearn.linear_model.LogisticRegression":
+                logging.warning(
+                    "sklearn.linear_model.LogisticRegression found in grid. "
+                    "This is unscaled and not well-suited for Triage experiments. "
+                    "Use triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression "
+                    " instead"
+                )
             try:
                 module_name, class_name = classpath.rsplit(".", 1)
                 module = importlib.import_module(module_name)
