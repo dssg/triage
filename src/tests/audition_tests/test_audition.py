@@ -1,6 +1,5 @@
 from datetime import datetime
 import tempfile
-import yaml
 import os
 import mock
 
@@ -276,14 +275,3 @@ def test_Auditioner():
         assert sorted(final_model_group_ids.keys()) == sorted(
             [rule.descriptive_name for rule in auditioner.selection_rules]
         )
-
-        # we expect that the results written to the yaml file are the
-        # chosen model groups and their rules
-        # however because the source data is randomly generated we could have a
-        # different list on consecutive runs
-        # and don't want to introduce non-determinism to the test
-        with tempfile.NamedTemporaryFile() as tf:
-            auditioner.write_tyra_config(tf.name)
-            assert sorted(
-                yaml.load(tf)["selection_rule_model_groups"].keys()
-            ) == sorted(final_model_group_ids.keys())
