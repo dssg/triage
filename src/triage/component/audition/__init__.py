@@ -1,9 +1,7 @@
 import logging
 
-import yaml
 import json
 import os
-from smart_open import smart_open
 
 from .distance_from_best import DistanceFromBestTable, BestDistancePlotter
 from .thresholding import model_groups_filter, ModelGroupThresholder
@@ -354,20 +352,6 @@ class Auditioner(object):
         self.selection_rules = make_selection_rule_grid(rule_grid)
         if plot:
             self.plot_selection_rules()
-
-    def write_tyra_config(self, write_path):
-        """Write the final selection rules and model groups to a YAML file, for later use
-        by the 'Tyra' webapp.
-
-        Args:
-            write_path (string) The smart_open-ready path to a file where
-                the resulting YAML file should go.
-        """
-        logging.info("Writing final model group ids to export to Tyra")
-        with smart_open(write_path, "w") as f:
-            yaml.dump(
-                {"selection_rule_model_groups": self.selection_rule_model_group_ids}, f
-            )
 
 
 class AuditionRunner(object):
