@@ -10,17 +10,17 @@ from triage.experiments import ExperimentBase
 
 
 class MultiCoreExperiment(ExperimentBase):
-    def __init__(self, db_engine, n_processes=1, n_db_processes=1, *args, **kwargs):
+    def __init__(self, config, db_engine, *args, n_processes=1, n_db_processes=1, **kwargs):
         try:
             ForkingPickler.dumps(db_engine)
-        except Exception as e:
-            raise ValueError(
-                "multiprocessing is unable to pickle passed SQLAlchemy engine."
+        except Exception as exc:
+            raise TypeError(
+                "multiprocessing is unable to pickle passed SQLAlchemy engine. "
                 "use triage.create_engine instead when running MultiCoreExperiment: "
                 "(e.g. from triage import create_engine)"
-            ) from e
+            ) from exc
 
-        super(MultiCoreExperiment, self).__init__(db_engine=db_engine, *args, **kwargs)
+        super(MultiCoreExperiment, self).__init__(config, db_engine, *args, **kwargs)
         if n_processes < 1:
             raise ValueError("n_processes must be 1 or greater")
         if n_db_processes < 1:

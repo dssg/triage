@@ -484,12 +484,11 @@ def test_baselines_with_missing_features(experiment_class):
 
 
 def test_serializable_engine_check_sqlalchemy_fail():
-    """If we pass a vanilla sqlalchemy engine to the experiment
-    we should convert it to a triage engine"""
+    """If we pass a vanilla sqlalchemy engine to the experiment we should blow up"""
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = sqlalchemy.create_engine(postgresql.url())
         with TemporaryDirectory() as temp_dir:
-            with pytest.raises(ValueError):
+            with pytest.raises(TypeError):
                 MultiCoreExperiment(
                     config=sample_config(),
                     db_engine=db_engine,
