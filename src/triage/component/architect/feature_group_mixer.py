@@ -88,9 +88,9 @@ class FeatureGroupMixer(object):
         """Apply all strategies to the list of feature groups
 
         Args:
-            feature_groups (list) A list of feature dicts,
+            feature_groups (list) A list of feature dictionarys,
                 each representing a group
-        Returns: (list) of feature dicts
+        Returns: (list) of feature dictionaries
         """
         final_results = []
         for strategy in self.strategies:

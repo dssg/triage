@@ -226,8 +226,9 @@ class ModelEvaluator(object):
                 )
 
                 logging.info(
-                    "Evaluations for %s%s, labeled examples %s "
+                    "%s for %s%s, labeled examples %s "
                     "above threshold %s, positive labels %s, value %s",
+                    evaluation_table_obj,
                     metric,
                     parameter_string,
                     num_labeled_examples,

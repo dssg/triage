@@ -264,9 +264,9 @@ class FeatureGenerator(object):
 
     def _aggregation(self, aggregation_config, feature_dates, state_table):
         logging.info(
-            "Building collate.SpacetimeAggregation for config %s and as_of_dates %s",
+            "Building collate.SpacetimeAggregation for config %s and %s as_of_dates",
             aggregation_config,
-            feature_dates,
+            len(feature_dates),
         )
 
         # read top-level imputation rules from the aggregation config; we'll allow
