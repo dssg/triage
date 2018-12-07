@@ -12,11 +12,6 @@ import yaml
 import json
 import warnings
 
-def generate_thresholds(threshold_dict):
-    for (metric, param) in threshold_dict.items():
-        for threshold in param:
-            yield (metric, threshold)
-
 class PostmodelParameters(object):
     '''
     PostmodelParameters reads all parameters from a 'yaml' file and store them
@@ -34,7 +29,6 @@ class PostmodelParameters(object):
         # thresholds
         self.__dict__.update(params)
         self.figsize = tuple(self.figsize) 
-        self.thresholds_iterator = generate_thresholds(self.thresholds)
 
         try:
             if self.audition_output_path is not None: 

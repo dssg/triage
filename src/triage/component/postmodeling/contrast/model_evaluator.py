@@ -12,27 +12,22 @@ functions that will help the triage user to explore the final models, ideally
 selected by the Audition module. To initiate this classes, the user need to
 have a tuple and a SQLAlchemy engine object to call the necesary data from the
 SQL database.
-
 """
 
 import pandas as pd
 import numpy as np
-import yaml
 import pickle
 import graphviz
-import collections
 import matplotlib.patches as mpatches
 import seaborn as sns
 from adjustText import adjust_text
 from functools import partial
-from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
 from descriptors import cachedproperty
-from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 from sklearn import tree
-from collections import namedtuple
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
+
 
 class ModelEvaluator(object):
     '''
@@ -52,38 +47,39 @@ class ModelEvaluator(object):
     @cachedproperty
     def metadata(self):
         return next(self.engine.execute(
-        f'''WITH
-        individual_model_ids_metadata AS(
-        SELECT m.model_id,
-               m.model_group_id,
-               m.hyperparameters,
-               m.model_hash,
-               m.train_end_time,
-               m.train_matrix_uuid,
-               m.training_label_timespan,
-               mg.model_type,
-               mg.model_config
-            FROM model_metadata.models m
-            JOIN model_metadata.model_groups mg
-            USING (model_group_id)
-            WHERE model_group_id = {self.model_group_id}
-            AND model_id = {self.model_id}
-        ),
-        individual_model_id_matrices AS(
-        SELECT DISTINCT ON (matrix_uuid)
-               model_id,
-               matrix_uuid
-            FROM test_results.predictions
-            WHERE model_id = ANY(
-                SELECT model_id
-                FROM individual_model_ids_metadata
-            )
-        )
-        SELECT metadata.*, test.*
-        FROM individual_model_ids_metadata AS metadata
-        LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);''')
-        )
+                    f'''WITH
+                    individual_model_ids_metadata AS(
+                    SELECT m.model_id,
+                           m.model_group_id,
+                           m.hyperparameters,
+                           m.model_hash,
+                           m.train_end_time,
+                           m.train_matrix_uuid,
+                           m.training_label_timespan,
+                           mg.model_type,
+                           mg.model_config
+                        FROM model_metadata.models m
+                        JOIN model_metadata.model_groups mg
+                        USING (model_group_id)
+                        WHERE model_group_id = {self.model_group_id}
+                        AND model_id = {self.model_id}
+                    ),
+                    individual_model_id_matrices AS(
+                    SELECT DISTINCT ON (matrix_uuid)
+                           model_id,
+                           matrix_uuid,
+                           as_of_date
+                        FROM test_results.predictions
+                        WHERE model_id = ANY(
+                            SELECT model_id
+                            FROM individual_model_ids_metadata
+                        )
+                    )
+                    SELECT metadata.*, test.*
+                    FROM individual_model_ids_metadata AS metadata
+                    LEFT JOIN individual_model_id_matrices AS test
+                    USING(model_id);''')
+        ) 
 
     @property
     def model_type(self):
@@ -111,15 +107,12 @@ class ModelEvaluator(object):
 
     def __repr__(self):
         return (
-        f'''
-        Model object for model_id: {self.model_id}\n'
-        Model Group: {self.model_group_id}\n'
-        Model type: {self.model_type}\n'
-        Train End Time: {self.as_of_date}\n'
-        Model hyperparameters: {self.hyperparameters}\n'
-        Matrix hashes (train,test): [{self.train_matrix_uuid},
-                                        {self.pred_matrix_uuid}]
-        ''')
+        str({'model_id': self.model_id,
+             'model_group': self.model_group_id,
+             'model_type': self.model_type,
+             'as_of_date': self.as_of_date.strftime("%B %d, %Y"),
+             'model_hyperparameters': self.hyperparameters})
+        )
 
     @cachedproperty
     def predictions(self):
@@ -142,38 +135,69 @@ class ModelEvaluator(object):
         return preds
 
     @cachedproperty
-    def feature_importances(self):
-        features = pd.read_sql(
-            f'''
-            SELECT model_id,
-                   feature,
-                   feature_importance,
-                   CASE
-                   WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
-			       THEN 'No feature group'
-		           ELSE split_part(feature, '_', 1)
-			       END AS feature_group,
-                   rank_abs
-            FROM train_results.feature_importances
-            WHERE model_id = {self.model_id}
-            ''', con=self.engine)
+    def feature_importances(self, path):
+        if "ScaledLogisticRegression" in self.model_type:
+            features = _feature_importance_slr(path)
+        else:
+            features = pd.read_sql(
+                f'''
+                SELECT model_id,
+                       feature,
+                       feature_importance,
+                       CASE
+                       WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
+		    	       THEN 'No feature group'
+		               ELSE split_part(feature, '_', 1)
+		    	       END AS feature_group,
+                       rank_abs
+                FROM train_results.feature_importances
+                WHERE model_id = {self.model_id}
+                ''', con=self.engine)
         return features
 
-    #@cachedproperty
+    @cachedproperty
+    def _feature_importance_slr(self, path=None):
+        '''
+        Calculate feature importances for ScaledLogisticRegression
+
+        Since triage do not calculate the feature importances of
+        ScaledLogisticRegression by default, this function will call the model
+        object and calculate a feature importance proxy using the coefficients
+        of the regression. 
+
+        Arguments:
+            - path (str): triage's project path, or a path to find the model
+            objects
+
+        Return:
+            - Dataframe with feature_importances
+        '''
+
+        storage = ProjectStorage(path)
+        model_obj = ModelStorageEngine(storage).load(self.model_hash)
+        coefficients = np.abs(1 - np.exp(model_object.coef_.squeeze()))
+
+        self.preds_matrix(path)
+        test_matrix = self.preds_matrix(path)
+        feature_names = \
+                [x for x in test_matrix.column.tolist() if x not in\
+                 self.predictions.column.tolist()]
+
+        raw_importances = pd.DataFrame(
+            {'feature': feature_names,
+             'model_id':  test_matrix['model_id'],
+             'feature_importance': coefficients,
+             'feature_group': [x.split('_entity_id')[0] for x in feature_names]}
+        )
+        raw_importances['rank_abs'] = \
+        raw_importances['feature_importance'].rank(method='max')
+
+        return raw_importances
+
+    @cachedproperty
     def feature_group_importances(self, path=None):
         if "ScaledLogisticRegression" in self.model_type:
-            storage = ProjectStorage(path)
-            model_object = ModelStorageEngine(storage).load(self.model_hash)
-            coefficients = np.abs(1-np.exp(model_object.coef_.squeeze()))
-            self.preds_matrix(path)
-            test_matrix = self.preds_matrix(path)
-            feature_names = [x for x in test_matrix.columns.tolist() if x not in ['entity_id', 'as_of_date', 'label_value', 'outcome', 'model_id', 'score', 'label_value', 'rank_abs', 'rank_pct', 'test_label_timespan']]
-            raw_importances = pd.DataFrame()
-            raw_importances['feature'] = feature_names
-            raw_importances['model_id'] = test_matrix['model_id']
-            raw_importances['feature_importance'] = coefficients
-            raw_importances['feature_group'] = [x.split("_entity")[0] for x in feature_names]
-            raw_importances['rank_abs'] = raw_importances['feature_importance'].rank(method='max')
+            raw_importances = _feature_importance_slr(path)
             feature_groups = raw_importances.groupby(['feature_group', 'model_id'])['feature_importance'].mean().reset_index()
             feature_groups = feature_groups.rename(index=str, columns={"feature_importance":"importance_average"})
         else:
@@ -206,8 +230,8 @@ class ModelEvaluator(object):
         return feature_groups
 
     @cachedproperty
-    def metrics(self):
-        model_metrics = pd.read_sql(
+    def test_metrics(self):
+        model_test_metrics = pd.read_sql(
             f'''
             SELECT model_id,
                    metric,
@@ -219,7 +243,23 @@ class ModelEvaluator(object):
             FROM test_results.evaluations
             WHERE model_id = {self.model_id}
             ''', con=self.engine)
-        return model_metrics
+        return model_test_metrics
+
+    @cachedproperty
+    def train_metrics(self):
+        model_train_metrics = pd.read_sql(
+            f'''
+            SELECT model_id,
+                   metric,
+                   parameter,
+                   value,
+                   num_labeled_examples,
+                   num_labeled_above_threshold,
+                   num_positive_labels
+            FROM test_results.evaluations
+            WHERE model_id = {self.model_id}
+            ''', con=self.engine)
+        return model_test_metrics
 
     @cachedproperty
     def crosstabs(self):
@@ -1004,7 +1044,7 @@ class ModelEvaluator(object):
 
            print(dot_path)
 
-    def error_analysis(self, threshold_iterable, **kwargs):
+    def error_analysis(self, threshold, **kwargs):
         '''
         Error analysis function for ThresholdIterator objects. This function
         have the same functionality as the _error.modeler method, but its
@@ -1012,7 +1052,9 @@ class ModelEvaluator(object):
         If no iterator object is passed, the function will take the needed
         arguments to run the _error_modeler.
         Arguments:
-            - threshold_iterator: A ThresholdIterator class (see paramters.py)
+            - threshold: a threshold and threshold parameter combination passed
+            to the PostmodelingParamters. If multiple parameters are passed,
+            the function will iterate through them. 
             -**kwags: other arguments passed to _error_modeler
         '''
 
@@ -1021,11 +1063,12 @@ class ModelEvaluator(object):
                                path = kwargs['path'],
                                view_plots = kwargs['view_plots'])
 
-        if hasattr(threshold_iterable, '__iter__'):
-           for threshold_type, threshold in threshold_iterable:
-               print(threshold_type, threshold)
-               error_modeler(param_type = threshold_type,
-                             param = threshold)
+        if isinstance(threshold, 'dict'):
+           for threshold_type, threshold_list in threshold.items():
+               for threshold in threshold_list:
+                   print(threshold_type, threshold)
+                   error_modeler(param_type = threshold_type,
+                                 param = threshold)
         else:
            error_modeler(param_type=kwargs['param_type'],
                          param=kwargs['param'])
@@ -1033,10 +1076,8 @@ class ModelEvaluator(object):
 
     def crosstabs_ratio_plot(self,
                              n_features=30,
-                             save_file=False,
-                             name_file=None,
-                            figsize=(12,16),
-                            fontsize=20):
+                             figsize=(12,16),
+                             fontsize=20):
         '''
         Plot to visualize the top-k features with the highest mean ratio. This
         plot will show the biggest quantitative differences between the labeled/predicted
@@ -1060,10 +1101,14 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Top {n_features} features with higher mean ratio',
                   fontsize=fontsize).set_position([.5, 0.99])
-        if save_file:
-            plt.savefig(str(name_file + '.png'))
 
-    def test_feature_diffs(self, feature_type, name_or_prefix, suffix='',
+    def test_train_metric_delta(self,
+                                param,
+                                param_type,
+                                metric):
+        test_metrics = self.test_metrics()
+        train_metrics = self.train_metrics()
+
                            score_col='score',
                            entity_col='entity_id',
                            cut_n=None, cut_frac=None, cut_score=None,
