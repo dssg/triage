@@ -12,10 +12,8 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from descriptors import cachedproperty
-from sqlalchemy.sql import text
 from matplotlib import pyplot as plt
-from collections import namedtuple
-from itertools import starmap, combinations
+from itertools import combinations
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
 
@@ -43,55 +41,54 @@ class ModelGroupEvaluator(object):
     @cachedproperty
     def metadata(self):
         query_execute = list(self.engine.execute(
-        f'''WITH
-        individual_model_ids_metadata AS(
-        SELECT m.model_id,
-               m.model_group_id,
-               m.hyperparameters,
-               m.model_hash,
-               m.train_end_time,
-               m.train_matrix_uuid,
-               m.training_label_timespan,
-               mg.model_type,
-               mg.model_config
-            FROM model_metadata.models m
-            JOIN model_metadata.model_groups mg
-            USING (model_group_id)
-            WHERE model_group_id IN {self.model_group_id}
-        ),
-        individual_model_id_matrices AS(
-        SELECT DISTINCT ON (matrix_uuid)
-               model_id,
-               matrix_uuid
-            FROM test_results.predictions
-            WHERE model_id = ANY(
-                SELECT model_id
-                FROM individual_model_ids_metadata
+            f'''WITH
+            individual_model_ids_metadata AS(
+            SELECT m.model_id,
+                   m.model_group_id,
+                   m.hyperparameters,
+                   m.model_hash,
+                   m.train_end_time,
+                   m.train_matrix_uuid,
+                   m.training_label_timespan,
+                   mg.model_type,
+                   mg.model_config
+                FROM model_metadata.models m
+                JOIN model_metadata.model_groups mg
+                USING (model_group_id)
+                WHERE model_group_id IN {self.model_group_id}
+            ),
+            individual_model_id_matrices AS(
+            SELECT DISTINCT ON (matrix_uuid)
+                   model_id,
+                   matrix_uuid
+                FROM test_results.predictions
+                WHERE model_id = ANY(
+                    SELECT model_id
+                    FROM individual_model_ids_metadata
+                )
             )
-        )
-        SELECT metadata.model_id,
-               metadata.model_group_id,
-               metadata.model_hash,
-               metadata.hyperparameters,
-               metadata.train_end_time,
-               metadata.train_matrix_uuid,
-               metadata.training_label_timespan,
-               metadata.model_type,
-               metadata.model_config,
-               test.matrix_uuid AS test_matrix_uuid
-        FROM individual_model_ids_metadata AS metadata
-        LEFT JOIN individual_model_id_matrices AS test
-        USING(model_id);''')
+            SELECT metadata.model_id,
+                   metadata.model_group_id,
+                   metadata.model_hash,
+                   metadata.hyperparameters,
+                   metadata.train_end_time,
+                   metadata.train_matrix_uuid,
+                   metadata.training_label_timespan,
+                   metadata.model_type,
+                   metadata.model_config,
+                   test.matrix_uuid AS test_matrix_uuid
+            FROM individual_model_ids_metadata AS metadata
+            LEFT JOIN individual_model_id_matrices AS test
+            USING(model_id);''')
         )
 
         row_dict, list_dict = {}, []
         for row in query_execute:
             for tup in row.items():
-               row_dict = {**row_dict, **{tup[0]: tup[1]}}
+                row_dict = {**row_dict, **{tup[0]: tup[1]}}
             list_dict.append(row_dict)
 
         return list_dict
-
 
     @property
     def model_id(self):
@@ -127,14 +124,13 @@ class ModelGroupEvaluator(object):
 
     def __repr__(self):
         return (
-        f'''
-        Model collection object for model_ids:{self.model_id}\n'
-        Model Groups: {self.model_group_id}\n'
-        Model types: {self.model_type}\n'
-        Model hyperparameters: {self.hyperparameters}\n'
-        Matrix hashes (train,test): [{self.train_matrix_uuid},
-                                      {self.test_matrix_uuid}]
-        ''')
+           str({ 'Model_ids':{self.model_id},
+                  Model Groups: {self.model_group_id}\n'
+            Model types: {self.model_type}\n'
+            Model hyperparameters: {self.hyperparameters}\n'
+            Matrix hashes (train,test): [{self.train_matrix_uuid},
+                                          {self.test_matrix_uuid}]
+            ''')
 
     @cachedproperty
     def predictions(self):
@@ -216,7 +212,8 @@ class ModelGroupEvaluator(object):
             ), feature_groups_array AS(
             SELECT
             model_group_id,
-            array_agg(split_part(substring(group_array, '\"(.*?)\"'), ':', 2)) AS feature_group_array
+            array_agg(split_part(substring(group_array,
+            '\"(.*?)\"'), ':', 2)) AS feature_group_array
             FROM feature_groups_unnest
             GROUP BY model_group_id
             ), feature_groups_array_ AS(
@@ -256,7 +253,7 @@ class ModelGroupEvaluator(object):
                       FROM model_metadata.models
                       WHERE model_group_id IN {self.model_group_id}
                       GROUP BY train_end_time
-                      ''', con = self.engine)
+                      ''', con=self.engine)
         return time_models
 
     def plot_prec_across_time(self,
@@ -266,7 +263,7 @@ class ModelGroupEvaluator(object):
                               baseline=False,
                               baseline_query=None,
                               df=False,
-                              figsize=(12,16),
+                              figsize=(12, 16),
                               fontsize=20):
 
         '''
@@ -318,16 +315,18 @@ class ModelGroupEvaluator(object):
             baseline_metrics[['param', 'param_type']] = \
                     baseline_metrics['parameter'].str.split('_', 1, expand=True)
             baseline_metrics['param'] = baseline_metrics['param'].astype(str).astype(float)
-            baseline_metrics['param_type'] = baseline_metrics['param_type'].apply(lambda x: 'rank_'+x)
+            baseline_metrics['param_type'] = baseline_metrics['param_type'].\
+                    apply(lambda x: 'rank_'+x)
 
             # Filter baseline metrics and create pivot table to join with
             # selected models metrics
-            baseline_metrics_filter =  baseline_metrics.filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
+            baseline_metrics_filter =  baseline_metrics.\
+                    filter(['model_group_id', 'model_id', 'as_of_date_year', 'value'])
 
             baseline_metrics_filter['model_group_id'] = \
-                    baseline_metrics_filter.model_group_id.apply(lambda x: \
-                                                                 'baseline_' + \
-                                                                 str(x))
+                    baseline_metrics_filter.model_group_id.\
+                    apply(lambda x: 'baseline_' + str(x))
+
             # Join tables by index(as_of_date_year)
             model_metrics_filter = \
             model_metrics_filter.append(baseline_metrics_filter, sort=True)
