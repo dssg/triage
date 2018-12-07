@@ -927,11 +927,14 @@ class ModelEvaluator(object):
         test_matrix_thresh[test_matrix_thresh['label_value'] == 0]
         test_matrix_thresh_1 = \
         test_matrix_thresh[test_matrix_thresh['label_value'] == 1]
+        test_matrix_predicted_1 = \
+        test_matrix_thresh[test_matrix_thresh['above_thresh'] == 1]
 
         dict_error_class = {'FPvsAll': (test_matrix_thresh['class_error'] == 'FP'),
                             'FNvsAll': (test_matrix_thresh['class_error'] == 'FN'),
                             'FNvsTP': (test_matrix_thresh_1['class_error'] == 'FN'),
-                            'FPvsTN': (test_matrix_thresh_0['class_error'] == 'FP')}
+                            'FPvsTN': (test_matrix_thresh_0['class_error'] == 'FP'),
+                            'FPvsTP': (test_matrix_predicted_1['class_error'] == 'FP')}
 
         # Create label iterator
         Y = [(np.where(condition, 1, -1), label) for label, condition in \
@@ -946,7 +949,8 @@ class ModelEvaluator(object):
         matrices = [test_matrix_thresh,
                     test_matrix_thresh,
                     test_matrix_thresh_1,
-                    test_matrix_thresh_0]
+                    test_matrix_thresh_0,
+                    test_matrix_predicted_1]
         X = [matrix[feature_columns] for matrix in matrices]
 
         return zip(Y, X)
