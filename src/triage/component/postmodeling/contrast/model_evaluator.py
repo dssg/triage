@@ -1040,7 +1040,7 @@ class ModelEvaluator(object):
 
            print(dot_path)
 
-    def error_analysis(self, threshold_iterable, **kwargs):
+    def error_analysis(self, threshold, **kwargs):
         '''
         Error analysis function for ThresholdIterator objects. This function
         have the same functionality as the _error.modeler method, but its
@@ -1048,7 +1048,9 @@ class ModelEvaluator(object):
         If no iterator object is passed, the function will take the needed
         arguments to run the _error_modeler.
         Arguments:
-            - threshold_iterator: A ThresholdIterator class (see paramters.py)
+            - threshold: a threshold and threshold parameter combination passed
+            to the PostmodelingParamters. If multiple parameters are passed,
+            the function will iterate through them. 
             -**kwags: other arguments passed to _error_modeler
         '''
 
@@ -1057,11 +1059,12 @@ class ModelEvaluator(object):
                                path = kwargs['path'],
                                view_plots = kwargs['view_plots'])
 
-        if hasattr(threshold_iterable, '__iter__'):
-           for threshold_type, threshold in threshold_iterable:
-               print(threshold_type, threshold)
-               error_modeler(param_type = threshold_type,
-                             param = threshold)
+        if isinstance(threshold, 'dict'):
+           for threshold_type, threshold_list in threshold.items():
+               for threshold in threshold_list:
+                   print(threshold_type, threshold)
+                   error_modeler(param_type = threshold_type,
+                                 param = threshold)
         else:
            error_modeler(param_type=kwargs['param_type'],
                          param=kwargs['param'])
