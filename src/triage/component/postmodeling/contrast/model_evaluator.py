@@ -79,7 +79,7 @@ class ModelEvaluator(object):
                     FROM individual_model_ids_metadata AS metadata
                     LEFT JOIN individual_model_id_matrices AS test
                     USING(model_id);''')
-        ) 
+        )
 
     @property
     def model_type(self):
@@ -163,7 +163,7 @@ class ModelEvaluator(object):
         Since triage do not calculate the feature importances of
         ScaledLogisticRegression by default, this function will call the model
         object and calculate a feature importance proxy using the coefficients
-        of the regression. 
+        of the regression.
 
         Arguments:
             - path (str): triage's project path, or a path to find the model
@@ -1054,7 +1054,7 @@ class ModelEvaluator(object):
         Arguments:
             - threshold: a threshold and threshold parameter combination passed
             to the PostmodelingParamters. If multiple parameters are passed,
-            the function will iterate through them. 
+            the function will iterate through them.
             -**kwags: other arguments passed to _error_modeler
         '''
 
@@ -1063,7 +1063,7 @@ class ModelEvaluator(object):
                                path = kwargs['path'],
                                view_plots = kwargs['view_plots'])
 
-        if isinstance(threshold, 'dict'):
+        if isinstance(threshold, dict):
            for threshold_type, threshold_list in threshold.items():
                for threshold in threshold_list:
                    print(threshold_type, threshold)
@@ -1101,105 +1101,3 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Top {n_features} features with higher mean ratio',
                   fontsize=fontsize).set_position([.5, 0.99])
-
-    def test_train_metric_delta(self,
-                                param,
-                                param_type,
-                                metric):
-        test_metrics = self.test_metrics()
-        train_metrics = self.train_metrics()
-
-                           score_col='score',
-                           entity_col='entity_id',
-                           cut_n=None, cut_frac=None, cut_score=None,
-                           nbins=None,
-                           thresh_labels=['Above Threshold', 'Below Threshold'],
-                           figsize=(12, 16),
-                           figtitle=None,
-                           xticks_map=None,
-                           figfontsize=14,
-                           figtitlesize=16,
-                           *path):
-        '''
-        Look at the differences in a feature across a score cut-off. You can specify one of
-        the top n (e.g., cut_n=300), top x% (e.g. cut_frac=0.10 for 10%), or a specific score
-        cut-off to use (e.g., cut_score=0.4815). Since our matrices have integer values for all
-        features, you'll need to specify the type of feature.
-
-        Arguments:
-            feature_type:   one of ['continuous', 'categorical', 'boolean']
-                            note that categorical columns are assumed mutually exclusive
-            name_or_prefix: the feature (column) name for a continuous or boolean feature, or the
-                            prefix for a set of categorical features that span several columns
-            suffix:         suffix for categorical features column names (usually a collate aggregate)
-            score_col:      name of the column with scores in the dataframe df
-            entity_col:     name of the column with the entity identifiers
-            cut_n:          top n by score_col to use for the cut-off
-            cut_frac:       top fraction (between 0 and 1) by score_col to use for the cut-off
-            cut_score:      score cut-off
-            nbins:          optional parameter for number of bins in continuous histogram
-            tresh_lables:   list of labels for entities above and below the threshold, respectively
-            figsize:        figure size tuple to pass through to matplotlib
-            figtitle:       optional title for the plot
-            xticks_map:     optional mapping for a categorical/boolean variable with more readable names for the values
-            figfontsize:    font size to use for the plot
-            figtitlesize:   font size to use for the plot title
-            *path:     arguments to pass through to fetch_features_and_pred_matrix()
-        '''
-
-        if self.pred_matrix is None:
-            self.load_features__matrix(*path)
-
-        # sort and select columns we'll need
-        if feature_type in ['continuous', 'boolean']:
-            df_sorted = self.pred_matrix[[entity_col, score_col, name_or_prefix]].copy()
-            df_sorted['sort_random'] = np.random.random(len(df_sorted))
-            df_sorted.sort_values([score_col, 'sort_random'], ascending=[False, False], inplace=True)
-
-        # for categoricals, combine columns into one categorical column
-        # NOTE: assumes the categoricals are mutually exclusive
-        elif feature_type == 'categorical':
-            df_sorted = self.pred_matrix[[entity_col, score_col]].copy()
-            df_sorted['sort_random'] = np.random.random(len(df_sorted))
-            df_sorted.sort_values([score_col, 'sort_random'], ascending=[False, False], inplace=True)
-            df_sorted, cat_col = recombine_categorical(df_sorted, self.pred_matrix, name_or_prefix, suffix, entity_col)
-
-        else:
-            raise ValueError('feature_type must be one of continuous, boolean, or categorical')
-
-        # calculate the other two cut variables depending on which is specified
-        if cut_n:
-            cut_score = df_sorted[:cut_n][score_col].min()
-            cut_frac = 1.0*cut_n / len(df_sorted)
-
-        elif cut_frac:
-            cut_n = int(np.ceil(len(df_sorted)*cut_frac))
-            cut_score = df_sorted[:cut_n][score_col].min()
-
-        elif cut_score:
-            cut_n = len(df_sorted.loc[df_sorted[score_col] >= cut_score])
-            cut_frac = 1.0*cut_n / len(df_sorted)
-
-        else:
-            raise ValueError('Must specify one of cut_n, cut_frac, or cut_score')
-     # seems like there should be a way to do this without having to touch the index?
-        df_sorted.reset_index(inplace=True)
-        df_sorted['above_thresh'] = df_sorted.index < cut_n
-        df_sorted['above_thresh'] = df_sorted['above_thresh'].map({True: thresh_labels[0], False: thresh_labels[1]})
-
-
-        # for booleans and categoricals, plot the discrete distributions and calculate chi-squared stats
-        if feature_type in ['categorical', 'boolean']:
-            if feature_type == 'boolean':
-                cat_col = name_or_prefix
-
-            self.categorical_plot_and_stats(df_sorted, cat_col, 'above_thresh',
-                                            y_axis_pct=True, figsize=figsize, figtitle=figtitle,
-                                            xticks_map=xticks_map,
-                                            figfontsize=figfontsize, figtitlesize=figtitlesize)
-
-        # for continuous variables, plot histograms and calculate some stats
-        else:
-            self.continuous_plot_and_stats(df_sorted, name_or_prefix, 'above_thresh', nbins,
-                                           y_axis_pct=True, figsize=figsize, figtitle=figtitle,
-                                           figfontsize=figfontsize, figtitlesize=figtitlesize)

@@ -125,12 +125,11 @@ class ModelGroupEvaluator(object):
     def __repr__(self):
         return (
            str({ 'Model_ids':{self.model_id},
-                  Model Groups: {self.model_group_id}\n'
-            Model types: {self.model_type}\n'
-            Model hyperparameters: {self.hyperparameters}\n'
-            Matrix hashes (train,test): [{self.train_matrix_uuid},
-                                          {self.test_matrix_uuid}]
-            ''')
+                 'Model Groups': {self.model_group_id},
+                 'Model types': {self.model_type},
+                 'Model hyperparameters': {self.hyperparameters}
+                 })
+        )
 
     @cachedproperty
     def predictions(self):
@@ -940,14 +939,14 @@ class ModelGroupEvaluator(object):
         This function is meant to be used as a helper function of
         plot_preds_comparisons.
 
-        Arguments: 
+        Arguments:
             - m0, m1: (int) model_id
             - df_preds_date: (dataframe) predictions dataframe
             - colors: (str) color strings. Defaults are blue and orange
             - bins: (np array) number of bins to pass to the seaborn histogram
-            plotting function 
+            plotting function
 
-        Returns: 
+        Returns:
             matplotlib plot object
         '''
 
@@ -955,30 +954,30 @@ class ModelGroupEvaluator(object):
         df_preds_m1 = df_preds_date[df_preds_date['model_id']==m1]
 
         sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==0]['score'],
-                     kde=False, 
-                     bins=bins, 
-                     color='grey', 
+                     kde=False,
+                     bins=bins,
+                     color='grey',
                      label="model " + str(m0) + " predicted label = 0")
         sns.distplot(df_preds_m0[df_preds_m0['above_tresh']==1]['score'],
-                     kde=False, 
-                     bins=bins, 
-                     color=colors[1], 
+                     kde=False,
+                     bins=bins,
+                     color=colors[1],
                      label="model " + str(m0) + " predicted label = 1")
 
         df_alt_model_scores = \
                 pd.merge(df_preds_m0, df_preds_m1[df_preds_m1.above_tresh==1][['entity_id', 'as_of_date']])
 
         sns.distplot(df_alt_model_scores['score'],
-                     kde=False, 
-                     bins=bins, 
-                     color=colors[0], 
+                     kde=False,
+                     bins=bins,
+                     color=colors[0],
                      label="model " + str(m1) + " predicted label = 1")
 
         plt.xlabel("Scores from model " + str(m0))
         plt.legend()
 
     def _plot_preds_compare_rank(self,
-                                 m0, 
+                                 m0,
                                  m1,
                                  df_preds_date,
                                  colors=['black'],
@@ -989,11 +988,11 @@ class ModelGroupEvaluator(object):
 
         This function will rank the predictions from one model into the decile
         distribution of the second one. This function is meant to be used as a
-        part of the plot_preds_comparison function. 
+        part of the plot_preds_comparison function.
 
-        Arguments: 
+        Arguments:
             - m0, m1: (int) model_ids to compare, only two.
-            - df_preds_date: (dataframe) predictions dataframe  
+            - df_preds_date: (dataframe) predictions dataframe
             - colors: (str) color string. Default is black
             - show_tp_tn: (bool) Plot true positive and true negatives in the
                            rank distribution plot. Default is False
@@ -1008,23 +1007,23 @@ class ModelGroupEvaluator(object):
 
         if with_tpfp:
             sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==0]['rank_pct'],
-                         kde=False, 
-                         bins=bins, 
-                         hist=True, 
+                         kde=False,
+                         bins=bins,
+                         hist=True,
                          color=colors[0],
                          label="false positives")
             sns.distplot(df_alt_model_rank[df_alt_model_rank['label_value']==1]['rank_pct'],
-                         kde=False, 
-                         bins=bins, 
-                         hist=True, 
+                         kde=False,
+                         bins=bins,
+                         hist=True,
                          color=colors[1],
                          label="true positives")
             plt.legend()
         else:
-            sns.distplot(df_alt_model_rank['rank_pct'], 
-                         kde=False, 
-                         bins=bins, 
-                         hist=True, 
+            sns.distplot(df_alt_model_rank['rank_pct'],
+                         kde=False,
+                         bins=bins,
+                         hist=True,
                          color=colors[0])
         plt.xlabel("Percentile Rank in model " + str(m0))
         plt.title("model "+str(m1)+" predicted label = 1")
@@ -1042,18 +1041,18 @@ class ModelGroupEvaluator(object):
         This function compares the predictions of all models, or a subset passed to
         model_subset. To compare predictions, the function will show the
         relative position of the score distribution of the top-k of one of the
-        models into another model. 
+        models into another model.
 
         Also, to compare how "off" can predictions be, the function will plot
         the rank position of the predictions of one model in to another. The
         plot will show the decile position of one model into the other.
 
-        Arguments: 
+        Arguments:
             - param_type: (str) parameter type (i.e. 'rank_abs', 'rank_pct')
             - param: (int) parameter threshold
             - model_subset: (list) list of model_ids to compare. Default is
             none, and the function will take all the models in self.model_id
-            - figsize, fontsize: aesthetics for plots. 
+            - figsize, fontsize: aesthetics for plots.
         '''
 
         if model_subset is None:
@@ -1091,35 +1090,35 @@ class ModelGroupEvaluator(object):
                     m1 = pair[1]
                     colors = {m0: 'blue', m1: 'orange'}
                     ax1 = plt.subplot(231)
-                    self.plot_preds_compare_score_dist(pair[0], pair[1], 
-                                                       df_preds_date, 
+                    self.plot_preds_compare_score_dist(pair[0], pair[1],
+                                                       df_preds_date,
                                                        colors=[colors[m0], colors[m1]])
                     ax1 = plt.subplot(234)
-                    self.plot_preds_compare_score_dist(pair[1], 
-                                                       pair[0], 
-                                                       df_preds_date, 
+                    self.plot_preds_compare_score_dist(pair[1],
+                                                       pair[0],
+                                                       df_preds_date,
                                                        colors=[colors[m1], colors[m0]])
                     ax1 = plt.subplot(232)
-                    self.plot_preds_compare_rank(pair[0], 
-                                                 pair[1], 
-                                                 df_preds_date, 
+                    self.plot_preds_compare_rank(pair[0],
+                                                 pair[1],
+                                                 df_preds_date,
                                                  colors=[colors[m0]])
                     ax1 = plt.subplot(235)
-                    self.plot_preds_compare_rank(pair[1], 
-                                                 pair[0], 
-                                                 df_preds_date, 
+                    self.plot_preds_compare_rank(pair[1],
+                                                 pair[0],
+                                                 df_preds_date,
                                                  colors=[colors[m1]])
                     ax1 = plt.subplot(233)
-                    self.plot_preds_compare_rank(pair[0], 
-                                                 pair[1], 
-                                                 df_preds_date, 
-                                                 show_tp_fp=True, 
+                    self.plot_preds_compare_rank(pair[0],
+                                                 pair[1],
+                                                 df_preds_date,
+                                                 show_tp_fp=True,
                                                  colors=['lightblue', 'darkblue'])
                     ax1 = plt.subplot(236)
-                    self.plot_preds_compare_rank(pair[1], 
-                                                 pair[0], 
-                                                 df_preds_date, 
-                                                 with_tpfp=True, 
+                    self.plot_preds_compare_rank(pair[1],
+                                                 pair[0],
+                                                 df_preds_date,
+                                                 with_tpfp=True,
                                                  colors=['khaki', 'darkorange'])
                 plt.tight_layout()
                 fig.suptitle(values['train_end_time'])
