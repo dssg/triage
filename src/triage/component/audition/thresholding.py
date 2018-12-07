@@ -27,10 +27,14 @@ def _of_metric(df, metric_filter):
 def model_groups_filter(
     train_end_times, initial_model_group_ids, models_table, db_engine
 ):
-    """Before creating the distance table, we want to filter the model_group_ids
-    and train_end_times only if they are reasonable -- every model group should
-    have the same train_end_times -- to prevent incomparable model groups from
-    being populated to the distance table.
+    """Filter the models which related train end times don't contain the user-input
+    train_end_times
+
+    Before creating the distance table, we want to make sure the model_group_ids
+    and train_end_times are reasonable:
+        1. the input train_end_times should exisit in the database
+        2. every model group should have the same train_end_times
+    to prevent incomparable model groups from being populated to the distance table.
 
     Args:
         train_end_times (list) The set of train_end_times to consider during
@@ -70,18 +74,21 @@ def model_groups_filter(
             WHERE model_group_id in {tuple(initial_model_group_ids)}
             GROUP BY model_group_id
         ) as t
-        WHERE train_end_time_list = {end_times_sql}
+        WHERE train_end_time_list @> {end_times_sql}
         """
-    model_groups_df = pd.read_sql(query, con=db_engine)
-    model_group_ids = list(model_groups_df["model_group_id"])
+    model_group_ids = {row['model_group_id'] for row in db_engine.execute(query)}
+
+    if not model_group_ids:
+        raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
 
     dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
     logging.info(
-        f"Dropped {dropped_model_groups} model groups which don't have the same train end times"
+        f"Dropped {dropped_model_groups} model groups which don't match the train end times"
     )
     logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
-    return set(model_group_ids)
+
+    return model_group_ids
 
 
 class ModelGroupThresholder(object):

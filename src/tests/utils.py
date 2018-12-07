@@ -270,15 +270,6 @@ def populate_source_data(db_engine):
         (3, 0, "2015-01-01"),
     ]
 
-    states = [
-        (1, "state_one", "2012-01-01", "2016-01-01"),
-        (1, "state_two", "2013-01-01", "2016-01-01"),
-        (2, "state_one", "2012-01-01", "2016-01-01"),
-        (2, "state_two", "2013-01-01", "2016-01-01"),
-        (3, "state_one", "2012-01-01", "2016-01-01"),
-        (3, "state_two", "2013-01-01", "2016-01-01"),
-    ]
-
     db_engine.execute(
         """create table cat_complaints (
         entity_id int,
@@ -324,18 +315,6 @@ def populate_source_data(db_engine):
 
     for event in events:
         db_engine.execute("insert into events values (%s, %s, %s)", event)
-
-    db_engine.execute(
-        """create table states (
-        entity_id int,
-        state text,
-        start_time timestamp,
-        end_time timestamp
-    )"""
-    )
-
-    for state in states:
-        db_engine.execute("insert into states values (%s, %s, %s, %s)", state)
 
 
 def sample_config():
@@ -392,10 +371,8 @@ def sample_config():
     ]
 
     cohort_config = {
-        "dense_states": {
-            "table_name": "states",
-            "state_filters": ["state_one or state_two"],
-        }
+        "query": "select distinct(entity_id) from events where '{as_of_date}'::date < outcome_date",
+        "name": "has_past_events",
     }
 
     label_config = {

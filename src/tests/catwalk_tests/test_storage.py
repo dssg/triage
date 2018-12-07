@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import pandas as pd
 from moto import mock_s3
+
 from numpy.testing import assert_almost_equal
 
 from triage.component.catwalk.storage import (

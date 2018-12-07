@@ -16,9 +16,7 @@ from triage.component.architect.features import (
     FeatureGroupMixer,
 )
 from triage.component.architect.label_generators import LabelGenerator
-from triage.component.architect.state_table_generators import (
-    StateTableGeneratorFromDense,
-)
+from triage.component.architect.cohort_table_generators import CohortTableGenerator
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.storage import ProjectStorage
@@ -101,15 +99,6 @@ def populate_source_data(db_engine):
         (3, 0, "2015-01-01"),
     ]
 
-    states = [
-        (1, "state_one", "2012-01-01", "2016-01-01"),
-        (1, "state_two", "2013-01-01", "2016-01-01"),
-        (2, "state_one", "2012-01-01", "2016-01-01"),
-        (2, "state_two", "2013-01-01", "2016-01-01"),
-        (3, "state_one", "2012-01-01", "2016-01-01"),
-        (3, "state_two", "2013-01-01", "2016-01-01"),
-    ]
-
     db_engine.execute(
         """create table cat_complaints (
         entity_id int,
@@ -143,21 +132,9 @@ def populate_source_data(db_engine):
     for event in events:
         db_engine.execute("insert into events values (%s, %s, %s)", event)
 
-    db_engine.execute(
-        """create table states (
-        entity_id int,
-        state text,
-        start_time timestamp,
-        end_time timestamp
-    )"""
-    )
-
-    for state in states:
-        db_engine.execute("insert into states values (%s, %s, %s, %s)", state)
-
 
 def basic_integration_test(
-    state_filters,
+    cohort_names,
     feature_group_create_rules,
     feature_group_mix_rules,
     expected_matrix_multiplier,
@@ -183,8 +160,10 @@ def basic_integration_test(
                 test_durations=["1months"],
             )
 
-            state_table_generator = StateTableGeneratorFromDense(
-                db_engine=db_engine, experiment_hash="abcd", dense_state_table="states"
+            cohort_table_generator = CohortTableGenerator(
+                db_engine=db_engine,
+                cohort_table_name="cohort_abcd",
+                query="select distinct(entity_id) from events"
             )
 
             label_generator = LabelGenerator(
@@ -207,7 +186,7 @@ def basic_integration_test(
                 feature_start_time=datetime(2010, 1, 1),
                 label_names=["outcome"],
                 label_types=["binary"],
-                states=state_filters,
+                cohort_names=cohort_names,
                 user_metadata={},
             )
 
@@ -217,7 +196,7 @@ def basic_integration_test(
                     "features_schema_name": "features",
                     "labels_schema_name": "public",
                     "labels_table_name": "labels",
-                    "sparse_state_table_name": "tmp_sparse_states_abcd",
+                    "cohort_table_name": "cohort_abcd",
                 },
                 experiment_hash=None,
                 matrix_storage_engine=project_storage.matrix_storage_engine(),
@@ -238,8 +217,8 @@ def basic_integration_test(
                     all_as_of_times.extend(test_matrix["as_of_times"])
             all_as_of_times = list(set(all_as_of_times))
 
-            # generate sparse state table
-            state_table_generator.generate_sparse_table(as_of_dates=all_as_of_times)
+            # generate cohort state table
+            cohort_table_generator.generate_cohort_table(as_of_dates=all_as_of_times)
 
             # create labels table
             label_generator.generate_all_labels(
@@ -284,7 +263,7 @@ def basic_integration_test(
                     },
                 ],
                 feature_dates=all_as_of_times,
-                state_table=state_table_generator.sparse_table_name,
+                state_table=cohort_table_generator.cohort_table_name,
             )
             feature_table_agg_tasks = feature_generator.generate_all_table_tasks(
                 aggregations, task_type="aggregation"
@@ -356,7 +335,7 @@ def basic_integration_test(
 
 def test_integration_simple():
     basic_integration_test(
-        state_filters=["state_one OR state_two"],
+        cohort_names=["mycohort"],
         feature_group_create_rules={"all": [True]},
         feature_group_mix_rules=["all"],
         # only looking at one state, and one feature group.
@@ -366,20 +345,9 @@ def test_integration_simple():
     )
 
 
-def test_integration_more_state_filtering():
-    basic_integration_test(
-        state_filters=["state_one OR state_two", "state_one", "state_two"],
-        feature_group_create_rules={"all": [True]},
-        feature_group_mix_rules=["all"],
-        # 3 state filters, so the # of matrices should be each train/test split *3
-        expected_matrix_multiplier=3,
-        expected_group_lists=[["all: True"]],
-    )
-
-
 def test_integration_feature_grouping():
     basic_integration_test(
-        state_filters=["state_one OR state_two"],
+        cohort_names=["mycohort"],
         feature_group_create_rules={"prefix": ["cat", "dog"]},
         feature_group_mix_rules=["leave-one-out", "all"],
         # 3 feature groups (cat/dog/cat+dog),

@@ -78,8 +78,7 @@ def test_Planner():
         feature_start_time=datetime.datetime(2010, 1, 1, 0, 0),
         label_names=["booking"],
         label_types=["binary"],
-        cohort_name="prior_bookings",
-        states=["state_one AND state_two"],
+        cohort_names=["prior_bookings"],
         user_metadata={},
     )
 

@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 from descriptors import cachedproperty
 from timeout import timeout
-from sqlalchemy.engine import Engine
 
 from triage.component.architect.label_generators import (
     LabelGenerator,
@@ -19,11 +18,9 @@ from triage.component.architect.features import (
 )
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
-from triage.component.architect.state_table_generators import (
-    StateTableGeneratorFromDense,
-    StateTableGeneratorFromEntities,
-    StateTableGeneratorFromQuery,
-    StateTableGeneratorNoOp,
+from triage.component.architect.cohort_table_generators import (
+    CohortTableGenerator,
+    CohortTableGeneratorNoOp,
 )
 from triage.component.timechop import Timechop
 from triage.component.results_schema import upgrade_db
@@ -33,7 +30,9 @@ from triage.component.catwalk.model_testers import ModelTester
 from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
-    associate_matrices_with_experiment
+    associate_matrices_with_experiment,
+    missing_matrix_uuids,
+    missing_model_hashes
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -47,7 +46,6 @@ from triage.experiments.validate import ExperimentValidator
 
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
-from triage.util.db import create_engine
 
 
 class ExperimentBase(ABC):
@@ -84,15 +82,6 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        if isinstance(db_engine, Engine):
-            logging.warning(
-                "Raw, unserializable SQLAlchemy engine passed. "
-                "URL will be used, other options may be lost in multi-process environments"
-            )
-            self.db_engine = create_engine(db_engine.url)
-        else:
-            self.db_engine = db_engine
-
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
         self.matrix_storage_engine = MatrixStorageEngine(
@@ -100,11 +89,13 @@ class ExperimentBase(ABC):
         )
         self.project_path = project_path
         self.replace = replace
+        self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = "features"
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.labels_table_name = "labels_{}".format(self.experiment_hash)
+        self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
         self.initialize_components()
 
         self.cleanup = cleanup
@@ -145,29 +136,17 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get("cohort_config", {})
         if "query" in cohort_config:
-            self.state_table_generator = StateTableGeneratorFromQuery(
-                experiment_hash=self.experiment_hash,
+            self.cohort_table_generator = CohortTableGenerator(
+                cohort_table_name=self.cohort_table_name,
                 db_engine=self.db_engine,
                 query=cohort_config["query"],
-            )
-        elif "entities_table" in cohort_config:
-            self.state_table_generator = StateTableGeneratorFromEntities(
-                experiment_hash=self.experiment_hash,
-                db_engine=self.db_engine,
-                entities_table=cohort_config["entities_table"],
-            )
-        elif "dense_states" in cohort_config:
-            self.state_table_generator = StateTableGeneratorFromDense(
-                experiment_hash=self.experiment_hash,
-                db_engine=self.db_engine,
-                dense_state_table=cohort_config["dense_states"]["table_name"],
             )
         else:
             logging.warning(
                 "cohort_config missing or unrecognized. Without a cohort, "
                 "you will not be able to make matrices or perform feature imputation."
             )
-            self.state_table_generator = StateTableGeneratorNoOp()
+            self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         if "label_config" in self.config:
             self.label_generator = LabelGenerator(
@@ -208,10 +187,7 @@ class ExperimentBase(ABC):
                 self.config.get("label_config", {}).get("name", DEFAULT_LABEL_NAME)
             ],
             label_types=["binary"],
-            cohort_name=self.config.get("cohort_config", {}).get("name", None),
-            states=self.config.get("cohort_config", {})
-            .get("dense_states", {})
-            .get("state_filters", []),
+            cohort_names=[self.config.get("cohort_config", {}).get("name", None)],
             user_metadata=self.config.get("user_metadata", {}),
         )
 
@@ -220,10 +196,7 @@ class ExperimentBase(ABC):
                 "features_schema_name": self.features_schema_name,
                 "labels_schema_name": "public",
                 "labels_table_name": self.labels_table_name,
-                # TODO: have planner/builder take state table later on, so we
-                # can grab it from the StateTableGenerator instead of
-                # duplicating it here
-                "sparse_state_table_name": self.sparse_states_table_name,
+                "cohort_table_name": self.cohort_table_name,
             },
             matrix_storage_engine=self.matrix_storage_engine,
             experiment_hash=self.experiment_hash,
@@ -250,10 +223,6 @@ class ExperimentBase(ABC):
             individual_importance_config=self.config.get("individual_importance", {}),
             evaluator_config=self.config.get("scoring", {}),
         )
-
-    @property
-    def sparse_states_table_name(self):
-        return "tmp_sparse_states_{}".format(self.experiment_hash)
 
     @cachedproperty
     def split_definitions(self):
@@ -357,14 +326,13 @@ class ExperimentBase(ABC):
 
         """
         logging.info("Creating collate aggregations")
-        cohort_table = self.state_table_generator.sparse_table_name
         if "feature_aggregations" not in self.config:
             logging.warning("No feature_aggregation config is available")
             return []
         return self.feature_generator.aggregations(
             feature_aggregation_config=self.config["feature_aggregations"],
             feature_dates=self.all_as_of_times,
-            state_table=cohort_table,
+            state_table=self.cohort_table_name,
         )
 
     @cachedproperty
@@ -446,7 +414,7 @@ class ExperimentBase(ABC):
         Returns: (list) of dicts
 
         """
-        if not table_has_data(self.sparse_states_table_name, self.db_engine):
+        if not table_has_data(self.cohort_table_name, self.db_engine):
             logging.warning("cohort table is not populated, cannot build any matrices")
             return {}
         if not table_has_data(self.labels_table_name, self.db_engine):
@@ -495,7 +463,7 @@ class ExperimentBase(ABC):
         )
 
     def generate_cohort(self):
-        self.state_table_generator.generate_sparse_table(
+        self.cohort_table_generator.generate_cohort_table(
             as_of_dates=self.all_as_of_times
         )
 
@@ -625,11 +593,38 @@ class ExperimentBase(ABC):
                 self.clean_up_tables()
 
         self.train_and_test_models()
+        logging.info("Experiment complete")
+        self._log_end_of_run_report()
+
+    def _log_end_of_run_report(self):
+        missing_models = missing_model_hashes(self.experiment_hash, self.db_engine)
+        if len(missing_models) > 0:
+            logging.info("Found %s missing model hashes."
+                         "This means that they were supposed to either be trained or reused"
+                         "by this experiment but are not present in the models table."
+                         "Inspect the logs for any training errors. Full list: %s",
+                         len(missing_models),
+                         missing_models
+                         )
+        else:
+            logging.info("All models that were supposed to be trained were trained. Awesome!")
+
+        missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
+        if len(missing_matrices) > 0:
+            logging.info("Found %s missing matrix uuids."
+                         "This means that they were supposed to either be build or reused"
+                         "by this experiment but are not present in the matrices table."
+                         "Inspect the logs for any matrix building errors. Full list: %s",
+                         len(missing_matrices),
+                         missing_matrices
+                         )
+        else:
+            logging.info("All matrices that were supposed to be build were built. Awesome!")
 
     def clean_up_tables(self):
         logging.info("Cleaning up state and labels tables")
         with timeout(self.cleanup_timeout):
-            self.state_table_generator.clean_up()
+            self.cohort_table_generator.clean_up()
             self.label_generator.clean_up(self.labels_table_name)
 
     def run(self):

@@ -5,6 +5,7 @@ import sqlalchemy
 import sqlparse
 
 from triage.util.conf import convert_str_to_relativedelta
+from triage.database_reflection import table_exists
 
 from triage.component.collate import (
     Aggregate,
@@ -232,6 +233,7 @@ class FeatureGenerator(object):
                     **categorical.get("imputation", {})
                 ),
                 include_null=True,
+                coltype=categorical.get('coltype', None),
             )
             for categorical in categorical_config
         ]
@@ -255,6 +257,7 @@ class FeatureGenerator(object):
                 op_in_name=False,
                 quote_choices=False,
                 include_null=True,
+                coltype=categorical.get('coltype', None)
             )
             for categorical in categorical_config
         ]
@@ -278,6 +281,7 @@ class FeatureGenerator(object):
                 aggregate["quantity"],
                 aggregate["metrics"],
                 dict(agimp, coltype="aggregate", **aggregate.get("imputation", {})),
+                coltype=aggregate.get('coltype', None)
             )
             for aggregate in aggregation_config.get("aggregates", [])
         ]
@@ -619,7 +623,16 @@ class FeatureGenerator(object):
 
         if not aggregation.state_table:
             logging.warning(
-                "No state table available to aggregation, cannot create imputation table for %s",
+                "No state table defined in aggregation, cannot create imputation table for %s",
+                imp_tbl_name,
+            )
+            table_tasks[imp_tbl_name] = {}
+            return table_tasks
+
+        if not table_exists(aggregation.state_table, self.db_engine):
+            logging.warning(
+                "State table %s does not exist, cannot create imputation table for %s",
+                aggregation.state_table,
                 imp_tbl_name,
             )
             table_tasks[imp_tbl_name] = {}

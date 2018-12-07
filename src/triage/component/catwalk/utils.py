@@ -11,7 +11,13 @@ import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.results_schema import Experiment, Model, ExperimentMatrix, ExperimentModel
+from triage.component.results_schema import (
+    Experiment,
+    Matrix,
+    Model,
+    ExperimentMatrix,
+    ExperimentModel
+)
 
 
 def filename_friendly_hash(inputs):
@@ -69,6 +75,40 @@ def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
     session.commit()
     session.close()
     logging.info("Associated models with experiment in database")
+
+
+@db_retry
+def missing_matrix_uuids(experiment_hash, db_engine):
+    """Compare the contents of the experiment_matrices table with that of the
+    matrices table to produce a list of matrix_uuids that the experiment wants
+    but are not available.
+    """
+    query = f"""
+        select experiment_matrices.matrix_uuid
+        from {ExperimentMatrix.__table__.fullname} experiment_matrices
+        left join {Matrix.__table__.fullname} matrices
+        on (experiment_matrices.matrix_uuid = matrices.matrix_uuid)
+        where experiment_hash = %s
+        and matrices.matrix_uuid is null
+    """
+    return [row[0] for row in db_engine.execute(query, experiment_hash)]
+
+
+@db_retry
+def missing_model_hashes(experiment_hash, db_engine):
+    """Compare the contents of the experiment_models table with that of the
+    models table to produce a list of model hashes the experiment wants
+    but are not available.
+    """
+    query = f"""
+        select experiment_models.model_hash
+        from {ExperimentModel.__table__.fullname} experiment_models
+        left join {Model.__table__.fullname} models
+        on (experiment_models.model_hash = models.model_hash)
+        where experiment_hash = %s
+        and models.model_hash is null
+    """
+    return [row[0] for row in db_engine.execute(query, experiment_hash)]
 
 
 class Batch:
