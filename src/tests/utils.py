@@ -14,6 +14,7 @@ from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from tests.results_tests.factories import init_engine, session, MatrixFactory
+from triage.util.structs import FeatureNameList
 
 
 @contextmanager
@@ -139,7 +140,7 @@ def matrix_metadata_creator(**override_kwargs):
         "label_timespan": "1y",
         "metta-uuid": "1234",
         "matrix_type": "test",
-        "feature_names": ["ft1", "ft2"],
+        "feature_names": FeatureNameList(["ft1", "ft2"]),
         "feature_groups": ["all: True"],
         "indices": ["entity_id", "as_of_date"],
     }
