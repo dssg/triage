@@ -133,7 +133,7 @@ class ModelGrouper(object):
                 "            '{model_config}'::JSONB )".format(
                     class_path=model_group_args["class_path"],
                     parameters=json.dumps(model_group_args["parameters"]),
-                    feature_names=model_group_args["feature_names"],
+                    feature_names=list(model_group_args["feature_names"]),
                     model_config=json.dumps(
                         model_group_args["model_config"], sort_keys=True
                     ),
