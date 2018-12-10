@@ -140,6 +140,7 @@ class ExperimentBase(ABC):
                 cohort_table_name=self.cohort_table_name,
                 db_engine=self.db_engine,
                 query=cohort_config["query"],
+                replace=self.replace
             )
         else:
             logging.warning(
