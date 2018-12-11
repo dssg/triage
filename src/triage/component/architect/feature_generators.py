@@ -5,13 +5,14 @@ import sqlalchemy
 import sqlparse
 
 from triage.util.conf import convert_str_to_relativedelta
-from triage.database_reflection import table_exists
+from triage.database_reflection import table_exists, column_is_indexed
 
 from triage.component.collate import (
     Aggregate,
     Categorical,
     Compare,
     SpacetimeAggregation,
+    MaterializedFromObj
 )
 
 
@@ -36,6 +37,7 @@ class FeatureGenerator(object):
         self.replace = replace
         self.feature_start_time = feature_start_time
         self.entity_id_column = "entity_id"
+        self.from_objs = {}
 
     def _validate_keys(self, aggregation_config):
         for key in [
@@ -532,6 +534,13 @@ class FeatureGenerator(object):
             for aggregation in aggregations
         )
 
+    def _materialized_from_obj(self, aggregation):
+        return MaterializedFromObj(
+            from_obj=aggregation.from_obj,
+            name=f"{aggregation.schema}.{aggregation.prefix}",
+            knowledge_date_column=aggregation.date_column
+        )
+
     def _generate_agg_table_tasks_for(self, aggregation):
         """Generates SQL commands for preparing, populating, and finalizing
         each feature group table in the given aggregation
@@ -546,15 +555,31 @@ class FeatureGenerator(object):
         }
         """
         create_schema = aggregation.get_create_schema()
-        creates = aggregation.get_creates()
-        drops = aggregation.get_drops()
-        indexes = aggregation.get_indexes()
-        inserts = aggregation.get_inserts()
 
         if create_schema is not None:
             with self.db_engine.begin() as conn:
                 conn.execute(create_schema)
 
+        # materialize from obj
+        from_obj = self._materialized_from_obj(aggregation)
+        exists = False
+        try:
+            exists = table_exists(from_obj.from_obj, self.db_engine)
+        except AttributeError:
+            exists = False
+        if exists:
+            logging.info("From obj %s looks to be a real table, will not attempt to materialize", from_obj.from_obj)
+        else:
+            self.db_engine.execute(from_obj.drop)
+            self.db_engine.execute(from_obj.create)
+            from_obj.validate(self.db_engine)
+            self.db_engine.execute(from_obj.index)
+            aggregation.from_obj = from_obj.table
+
+        creates = aggregation.get_creates()
+        drops = aggregation.get_drops()
+        indexes = aggregation.get_indexes()
+        inserts = aggregation.get_inserts()
         table_tasks = OrderedDict()
         for group in aggregation.groups:
             group_table = self._clean_table_name(

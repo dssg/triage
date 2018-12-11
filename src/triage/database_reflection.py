@@ -135,3 +135,32 @@ def schema_tables(schema_name, db_engine):
     meta = MetaData(schema=schema_name, bind=db_engine)
     meta.reflect()
     return meta.tables
+
+
+def column_is_indexed(engine, table, column):
+    """Assert that a table has an index on a given column
+
+    Does not care which position the column is in the index
+    Modified from https://www.gab.lc/articles/index_on_id_with_postgresql
+
+    Args:
+        engine (sqlalchemy.engine) a database engine
+        table (string) the name of a table
+        column (string) the name of a column
+    """
+    query = """
+        SELECT 1
+        FROM pg_class t
+             JOIN pg_index ix ON t.oid = ix.indrelid
+             JOIN pg_class i ON i.oid = ix.indexrelid
+             JOIN pg_attribute a ON a.attrelid = t.oid
+        WHERE
+             a.attnum = ANY(ix.indkey) AND
+             t.relkind = 'r' AND
+             t.relname = '{table_name}' AND
+             a.attname = '{column_name}'
+    """.format(
+        table_name=table, column_name=column
+    )
+    num_results = len([row for row in engine.execute(query)])
+    return num_results >= 1

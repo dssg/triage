@@ -6,6 +6,7 @@ Unit tests for `collate` module.
 """
 from triage.component.collate import Aggregate, Aggregation, Categorical
 
+
 def test_aggregate():
     agg = Aggregate("*", "count", {})
     assert list(map(str, agg.get_columns())) == ["count(*)"]
