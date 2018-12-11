@@ -18,7 +18,7 @@
 
 # Update INSTALL_VERSION to require the version of install-cli this
 # script expects
-INSTALL_VERSION=0.0.5
+INSTALL_VERSION=0.0.6
 
 #
 # start bootstrap installation lib
