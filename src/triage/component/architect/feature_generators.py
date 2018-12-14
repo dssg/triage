@@ -5,7 +5,7 @@ import sqlalchemy
 import sqlparse
 
 from triage.util.conf import convert_str_to_relativedelta
-from triage.database_reflection import table_exists, column_is_indexed
+from triage.database_reflection import table_exists
 
 from triage.component.collate import (
     Aggregate,

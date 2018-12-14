@@ -33,7 +33,7 @@ class FromObj(object):
         return f"create index on {self.materialized_table} ({self.knowledge_date_column})"
 
     @property
-    def drop(self):
+    def drop_materialized_table_sql(self):
         return f"drop table if exists {self.materialized_table}"
 
     def should_materialize(self):
