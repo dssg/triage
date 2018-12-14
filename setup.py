@@ -44,7 +44,7 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='3.0.2',
+    version='3.2.1',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     author="Center for Data Science and Public Policy",

@@ -27,37 +27,37 @@ from tests.utils import matrix_metadata_creator
 # make some fake features data
 
 states = [
-    [0, "2016-01-01", False, True],
-    [0, "2016-02-01", False, True],
-    [0, "2016-03-01", False, True],
-    [0, "2016-04-01", False, True],
-    [0, "2016-05-01", False, True],
-    [0, "2016-06-01", True, True],
-    [1, "2016-01-01", True, False],
-    [1, "2016-02-01", True, False],
-    [1, "2016-03-01", True, False],
-    [1, "2016-04-01", True, False],
-    [1, "2016-05-01", True, False],
-    [2, "2016-01-01", True, False],
-    [2, "2016-02-01", True, True],
-    [2, "2016-03-01", True, False],
-    [2, "2016-04-01", True, True],
-    [2, "2016-05-01", True, False],
-    [3, "2016-01-01", False, True],
-    [3, "2016-02-01", True, True],
-    [3, "2016-03-01", False, True],
-    [3, "2016-04-01", True, True],
-    [3, "2016-05-01", False, True],
-    [4, "2016-01-01", True, True],
-    [4, "2016-02-01", True, True],
-    [4, "2016-03-01", True, True],
-    [4, "2016-04-01", True, True],
-    [4, "2016-05-01", True, True],
-    [5, "2016-01-01", False, False],
-    [5, "2016-02-01", False, False],
-    [5, "2016-03-01", False, False],
-    [5, "2016-04-01", False, False],
-    [5, "2016-05-01", False, False],
+    [0, "2016-01-01", False],
+    [0, "2016-02-01", False],
+    [0, "2016-03-01", False],
+    [0, "2016-04-01", False],
+    [0, "2016-05-01", False],
+    [0, "2016-06-01", True],
+    [1, "2016-01-01", False],
+    [1, "2016-02-01", False],
+    [1, "2016-03-01", False],
+    [1, "2016-04-01", False],
+    [1, "2016-05-01", False],
+    [2, "2016-01-01", False],
+    [2, "2016-02-01", True],
+    [2, "2016-03-01", False],
+    [2, "2016-04-01", True],
+    [2, "2016-05-01", False],
+    [3, "2016-01-01", False],
+    [3, "2016-02-01", True],
+    [3, "2016-03-01", False],
+    [3, "2016-04-01", True],
+    [3, "2016-05-01", False],
+    [4, "2016-01-01", True],
+    [4, "2016-02-01", True],
+    [4, "2016-03-01", True],
+    [4, "2016-04-01", True],
+    [4, "2016-05-01", True],
+    [5, "2016-01-01", False],
+    [5, "2016-02-01", False],
+    [5, "2016-03-01", False],
+    [5, "2016-04-01", False],
+    [5, "2016-05-01", False],
 ]
 
 features0_pre = [
@@ -233,8 +233,10 @@ db_config = {
     "features_schema_name": "features",
     "labels_schema_name": "labels",
     "labels_table_name": "labels",
-    "sparse_state_table_name": "staging.sparse_states",
+    "cohort_table_name": "cohort",
 }
+
+experiment_hash = None
 
 
 @contextmanager
@@ -258,6 +260,7 @@ def test_query_to_df():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -289,8 +292,6 @@ def test_make_entity_date_table():
         labels=labels,
         states=states,
         as_of_dates=dates,
-        state_one=True,
-        state_two=True,
         label_name="booking",
         label_type="binary",
         label_timespan="1 month",
@@ -307,6 +308,7 @@ def test_make_entity_date_table():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
             engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
@@ -315,7 +317,7 @@ def test_make_entity_date_table():
                 as_of_times=dates,
                 label_type="binary",
                 label_name="booking",
-                state="state_one AND state_two",
+                state="active",
                 matrix_uuid="my_uuid",
                 matrix_type="train",
                 label_timespan="1 month",
@@ -352,8 +354,6 @@ def test_make_entity_date_table_include_missing_labels():
         labels=labels,
         states=states,
         as_of_dates=dates,
-        state_one=True,
-        state_two=True,
         label_name="booking",
         label_type="binary",
         label_timespan="1 month",
@@ -374,6 +374,7 @@ def test_make_entity_date_table_include_missing_labels():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 include_missing_labels_in_train_as=False,
                 engine=engine,
             )
@@ -383,7 +384,7 @@ def test_make_entity_date_table_include_missing_labels():
                 as_of_times=dates,
                 label_type="binary",
                 label_name="booking",
-                state="state_one AND state_two",
+                state="active",
                 matrix_uuid="my_uuid",
                 matrix_type="train",
                 label_timespan="1 month",
@@ -409,8 +410,6 @@ def test_load_features_data():
         labels=labels,
         states=states,
         as_of_dates=dates,
-        state_one=True,
-        state_two=True,
         label_name="booking",
         label_type="binary",
         label_timespan="1 month",
@@ -440,6 +439,7 @@ def test_load_features_data():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -448,7 +448,7 @@ def test_load_features_data():
                 as_of_times=dates,
                 label_type="binary",
                 label_name="booking",
-                state="state_one AND state_two",
+                state="active",
                 matrix_type="train",
                 matrix_uuid="my_uuid",
                 label_timespan="1 month",
@@ -503,6 +503,7 @@ def test_load_labels_data():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
             )
 
@@ -511,7 +512,7 @@ def test_load_labels_data():
                 as_of_times=dates,
                 label_type="binary",
                 label_name="booking",
-                state="state_one AND state_two",
+                state="active",
                 matrix_type="train",
                 matrix_uuid="my_uuid",
                 label_timespan="1 month",
@@ -574,6 +575,7 @@ def test_load_labels_data_include_missing_labels_as_false():
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=engine,
                 include_missing_labels_in_train_as=False,
             )
@@ -583,7 +585,7 @@ def test_load_labels_data_include_missing_labels_as_false():
                 as_of_times=dates,
                 label_type="binary",
                 label_name="booking",
-                state="state_one AND state_two",
+                state="active",
                 matrix_type="train",
                 matrix_uuid="my_uuid",
                 label_timespan="1 month",
@@ -618,6 +620,7 @@ class TestMergeFeatureCSVs(TestCase):
             builder = MatrixBuilder(
                 db_config=db_config,
                 matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
                 engine=None,
             )
             dataframes = [
@@ -647,7 +650,7 @@ class TestBuildMatrix(TestCase):
     def good_metadata(self):
         return {
             "matrix_id": "hi",
-            "state": "state_one AND state_two",
+            "state": "active",
             "label_name": "booking",
             "end_time": datetime.datetime(2016, 3, 1, 0, 0),
             "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
@@ -688,6 +691,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
                 uuid = metta.generate_uuid(self.good_metadata)
@@ -718,6 +722,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -751,6 +756,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -796,6 +802,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                 )
 
@@ -805,7 +812,7 @@ class TestBuildMatrix(TestCase):
                 }
                 matrix_metadata = {
                     "matrix_id": "hi",
-                    "state": "state_one AND state_two",
+                    "state": "active",
                     "label_name": "booking",
                     "end_time": datetime.datetime(2016, 3, 1, 0, 0),
                     "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
@@ -847,6 +854,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                     replace=False,
                 )
@@ -857,7 +865,7 @@ class TestBuildMatrix(TestCase):
                 }
                 matrix_metadata = {
                     "matrix_id": "hi",
-                    "state": "state_one AND state_two",
+                    "state": "active",
                     "label_name": "booking",
                     "end_time": datetime.datetime(2016, 3, 1, 0, 0),
                     "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
@@ -902,7 +910,7 @@ class TestBuildMatrix(TestCase):
                 states=states,
             )
             matrix_metadata = matrix_metadata_creator(
-                state="state_one and state_two", test_duration="1month"
+                state="active", test_duration="1month"
             )
 
             dates = [
@@ -927,6 +935,7 @@ class TestBuildMatrix(TestCase):
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,
+                    experiment_hash=experiment_hash,
                     engine=engine,
                     replace=True,
                 )

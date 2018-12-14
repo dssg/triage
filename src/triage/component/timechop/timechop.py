@@ -2,6 +2,7 @@ import itertools
 import logging
 
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
+from triage.util.structs import AsOfTimeList
 
 from . import utils
 
@@ -367,9 +368,9 @@ class Timechop(object):
             "test_matrices": test_matrix_definitions,
         }
         logging.info(
-            "Matrix definitions for train/test split {}: {}".format(
-                train_test_split_time, matrix_set_definition
-            )
+            "Matrix definitions for train/test split %s: %s",
+            train_test_split_time,
+            matrix_set_definition
         )
 
         return matrix_set_definition
@@ -413,7 +414,6 @@ class Timechop(object):
             training_label_timespan
         )
         last_train_as_of_time = train_test_split_time - training_prediction_delta
-        logging.info("last train as of time: {}".format(last_train_as_of_time))
 
         # earliest time in matrix can't be farther back than the latest of the beginning
         # of label time or the beginning of feature time -- whichever is latest is the
@@ -430,9 +430,8 @@ class Timechop(object):
         if earliest_possible_train_as_of_time < experiment_as_of_time_limit:
             earliest_possible_train_as_of_time = experiment_as_of_time_limit
         logging.info(
-            "earliest possible train as of time: {}".format(
-                earliest_possible_train_as_of_time
-            )
+            "earliest possible train as of time: %s",
+            earliest_possible_train_as_of_time
         )
 
         # with the last as of time and the earliest possible time known,
@@ -448,14 +447,14 @@ class Timechop(object):
             as_of_end_limit=last_train_as_of_time,
             data_frequency=convert_str_to_relativedelta(training_as_of_date_frequency),
         )
-        logging.info("train as of times: {}".format(train_as_of_times))
+        logging.info("train as of times: %s", train_as_of_times)
 
         # create a dict of the matrix metadata
         matrix_definition = {
             "first_as_of_time": min(train_as_of_times),
             "last_as_of_time": max(train_as_of_times),
             "matrix_info_end_time": train_test_split_time,
-            "as_of_times": train_as_of_times,
+            "as_of_times": AsOfTimeList(train_as_of_times),
             "training_label_timespan": training_label_timespan,
             "training_as_of_date_frequency": training_as_of_date_frequency,
             "max_training_history": max_training_history,
@@ -493,22 +492,20 @@ class Timechop(object):
         # for the example, as_of_time_limit = 2016-10-01 + 3month = 2017-01-01
         # (note as well that this will be treated as an _exclusive_ limit)
         logging.info(
-            "Generating test matrix definitions for train/test split {}".format(
-                train_test_split_time
-            )
+            "Generating test matrix definitions for train/test split %s",
+            train_test_split_time
         )
         test_definitions = []
         test_delta = convert_str_to_relativedelta(test_duration)
         as_of_time_limit = train_test_split_time + test_delta
-        logging.info("All test as of times before {}".format(as_of_time_limit))
+        logging.info("All test as of times before %s", as_of_time_limit)
 
         # calculate the as_of_times associated with each test data frequency
         # for our example, we just have one, 1month
         for test_as_of_date_frequency in self.test_as_of_date_frequencies:
             logging.info(
-                "Generating test matrix definitions for test data frequency {}".format(
-                    test_as_of_date_frequency
-                )
+                "Generating test matrix definitions for test data frequency %s",
+                test_as_of_date_frequency
             )
 
             # for test as_of_times we step _forwards_ from the train_test_split_time
@@ -528,13 +525,13 @@ class Timechop(object):
                 data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
                 forward=True,
             )
-            logging.info("Test as of times: {}".format(test_as_of_times))
+            logging.info("test as of times: %s", test_as_of_times)
             test_definition = {
                 "first_as_of_time": train_test_split_time,
                 "last_as_of_time": max(test_as_of_times),
                 "matrix_info_end_time": max(test_as_of_times)
                 + convert_str_to_relativedelta(test_label_timespan),
-                "as_of_times": test_as_of_times,
+                "as_of_times": AsOfTimeList(test_as_of_times),
                 "test_label_timespan": test_label_timespan,
                 "test_as_of_date_frequency": test_as_of_date_frequency,
                 "test_duration": test_duration,

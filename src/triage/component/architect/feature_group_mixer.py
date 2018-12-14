@@ -1,4 +1,5 @@
 import logging
+import itertools
 from triage.component.architect.feature_group_creator import FeatureGroup
 
 
@@ -32,6 +33,26 @@ def leave_one_out(feature_groups):
     return results
 
 
+def all_combinations(feature_groups):
+    """Return all combinations of groups, excluding repeated groups
+
+    Args:
+        feature_groups (list) The feature groups to apply the strategy to
+
+    Returns: A list of feature dicts
+    """
+    results = []
+    for number_feature_groups in range(len(feature_groups) + 1):
+        for combo in itertools.combinations(feature_groups,
+                                            number_feature_groups):
+            feature_dict = FeatureGroup()
+            for group_element in combo:
+                feature_dict.update(group_element)
+            if feature_dict:
+                results.append(feature_dict)
+    return results
+
+
 def all_features(feature_groups):
     """Return a combination of all feature groups
 
@@ -53,6 +74,7 @@ class FeatureGroupMixer(object):
     strategy_lookup = {
         "leave-one-out": leave_one_out,
         "leave-one-in": leave_one_in,
+        "all-combinations":  all_combinations,
         "all": all_features,
     }
 
@@ -66,9 +88,9 @@ class FeatureGroupMixer(object):
         """Apply all strategies to the list of feature groups
 
         Args:
-            feature_groups (list) A list of feature dicts,
+            feature_groups (list) A list of feature dictionarys,
                 each representing a group
-        Returns: (list) of feature dicts
+        Returns: (list) of feature dictionaries
         """
         final_results = []
         for strategy in self.strategies:

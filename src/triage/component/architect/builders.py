@@ -16,12 +16,14 @@ class BuilderBase(object):
         db_config,
         matrix_storage_engine,
         engine,
+        experiment_hash,
         replace=True,
         include_missing_labels_in_train_as=None,
     ):
         self.db_config = db_config
         self.matrix_storage_engine = matrix_storage_engine
         self.db_engine = engine
+        self.experiment_hash = experiment_hash
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
 
@@ -32,7 +34,7 @@ class BuilderBase(object):
     def validate(self):
         for expected_db_config_val in [
             "features_schema_name",
-            "sparse_state_table_name",
+            "cohort_table_name",
             "labels_schema_name",
             "labels_table_name",
         ]:
@@ -154,7 +156,7 @@ class BuilderBase(object):
             table_name=table_name,
             index_query=indices_query,
         )
-        logging.info(
+        logging.debug(
             "Creating matrix-specific entity-date table for matrix " "%s with query %s",
             matrix_uuid,
             query,
@@ -178,7 +180,7 @@ class BuilderBase(object):
             AND label is not null
             ORDER BY entity_id, as_of_date
         """.format(
-            states_table=self.db_config["sparse_state_table_name"],
+            states_table=self.db_config["cohort_table_name"],
             state_string=state,
             labels_schema_name=self.db_config["labels_schema_name"],
             labels_table_name=self.db_config["labels_table_name"],
@@ -197,14 +199,14 @@ class BuilderBase(object):
             AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
             ORDER BY entity_id, as_of_date
         """.format(
-            states_table=self.db_config["sparse_state_table_name"],
+            states_table=self.db_config["cohort_table_name"],
             state_string=state,
             times=as_of_time_strings,
         )
         if not table_has_data(
-            self.db_config["sparse_state_table_name"], self.db_engine
+            self.db_config["cohort_table_name"], self.db_engine
         ):
-            raise ValueError("Required sparse state table does not exist")
+            raise ValueError("Required cohort table does not exist")
         return query
 
 
@@ -242,7 +244,7 @@ class MatrixBuilder(BuilderBase):
         """
         logging.info("popped matrix %s build off the queue", matrix_uuid)
         if not table_has_data(
-            self.db_config["sparse_state_table_name"], self.db_engine
+            self.db_config["cohort_table_name"], self.db_engine
         ):
             logging.warning("cohort table is not populated, cannot build matrix")
             return
@@ -332,6 +334,7 @@ class MatrixBuilder(BuilderBase):
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
+            built_by_experiment=self.experiment_hash
         )
         session = self.sessionmaker()
         session.merge(matrix)

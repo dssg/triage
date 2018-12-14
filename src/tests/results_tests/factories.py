@@ -56,7 +56,7 @@ class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
     matrix_uuid = factory.fuzzy.FuzzyText()
 
 
-class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
+class BaseModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Model
         sqlalchemy_session = session
@@ -71,11 +71,23 @@ class ModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     batch_comment = ""
     config = {}
     matrix_rel = factory.SubFactory(MatrixFactory)
-    experiment_rel = factory.SubFactory(ExperimentFactory)
     train_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     test = False
     train_matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
     training_label_timespan = "1y"
+
+
+class ExperimentModelFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.ExperimentModel
+        sqlalchemy_session = session
+
+    model_rel = factory.SubFactory(BaseModelFactory)
+    experiment_rel = factory.SubFactory(ExperimentFactory)
+
+
+class ModelFactory(BaseModelFactory):
+    experiment_association = factory.RelatedFactory(ExperimentModelFactory, 'model_rel')
 
 
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):

@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.dates as md
 import numpy as np
 from triage.util.conf import convert_str_to_relativedelta
@@ -7,7 +9,7 @@ import matplotlib.pyplot as plt
 FIG_SIZE = (32, 16)
 
 
-def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True):
+def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True, save_target=None):
     """Visualize time chops of a given Timechop object using matplotlib
 
     Args:
@@ -16,6 +18,8 @@ def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True):
             for as-of-times
         show_boundaries (bool, default True) Whether or not to show a rectangle around matrices
             and dashed lines around feature/label boundaries
+        save_target (path or filehandle, default None) A save target for matplotlib to save
+            the figure to. Defaults to None, which won't save anything
     """
     chops = chopper.chop_time()
 
@@ -110,4 +114,6 @@ def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True):
     ax[0].set_title("Timechop: Temporal cross-validation blocks")
     fig.subplots_adjust(hspace=0)
     plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+    if save_target:
+        plt.savefig(save_target)
     plt.show()

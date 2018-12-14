@@ -11,6 +11,7 @@ import yaml
 from triage.component.catwalk.storage import (
     ProjectStorage,
 )
+from triage.util.structs import FeatureNameList
 
 
 @contextmanager
@@ -53,7 +54,7 @@ def sample_metadata():
         "cohort_name": "default",
         "label_timespan": "1y",
         "metta-uuid": "1234",
-        "feature_names": ["ft1", "ft2"],
+        "feature_names": FeatureNameList(["ft1", "ft2"]),
         "feature_groups": ["all: True"],
         "indices": ["entity_id"],
     }

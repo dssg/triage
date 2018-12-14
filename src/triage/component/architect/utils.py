@@ -15,6 +15,7 @@ import numpy
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
+from triage.util.structs import FeatureNameList
 
 
 def str_in_sql(values):
@@ -29,61 +30,17 @@ def feature_list(feature_dictionary):
     Returns: sorted list of feature names
     """
     if not feature_dictionary:
-        return []
-    return sorted(
+        return FeatureNameList()
+    return FeatureNameList(sorted(
         functools.reduce(
             operator.concat,
             (feature_dictionary[key] for key in feature_dictionary.keys()),
         )
-    )
+    ))
 
 
 def convert_string_column_to_date(column):
     return [datetime.datetime.strptime(date, "%Y-%m-%d").date() for date in column]
-
-
-def create_schemas(engine, features_tables, labels, states):
-    """ This function makes a features schema and populates it with the fake
-    data from above.
-
-    :param engine: a postgresql engine
-    :type engine: sqlalchemy.engine
-    """
-    # create features schema and associated tables
-    engine.execute("drop schema if exists features cascade; create schema features;")
-    for table_number, table in enumerate(features_tables):
-        create_features_table(table_number, table, engine)
-    # create labels schema and table
-    engine.execute("drop schema if exists labels cascade; create schema labels;")
-    engine.execute(
-        """
-            create table labels.labels (
-                entity_id int,
-                as_of_date date,
-                label_timespan interval,
-                label_name char(30),
-                label_type char(30),
-                label int
-            )
-        """
-    )
-    for row in labels:
-        engine.execute("insert into labels.labels values (%s, %s, %s, %s, %s, %s)", row)
-
-    # create sparse state table
-    engine.execute("drop schema if exists staging cascade; create schema staging;")
-    engine.execute(
-        """
-            create table staging.sparse_states (
-                entity_id int,
-                as_of_date date,
-                state_one bool,
-                state_two bool
-            )
-        """
-    )
-    for row in states:
-        engine.execute("insert into staging.sparse_states values (%s, %s, %s, %s)", row)
 
 
 def create_features_table(table_number, table, engine):

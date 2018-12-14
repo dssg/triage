@@ -25,17 +25,20 @@ AS_OF_DATE = datetime.date(2016, 12, 21)
 def prepare():
     with rig_engines() as (db_engine, project_storage):
         train_matrix_uuid = "1234"
-        session = sessionmaker(db_engine)()
-        session.add(Matrix(matrix_uuid=train_matrix_uuid))
+        try:
+            session = sessionmaker(db_engine)()
+            session.add(Matrix(matrix_uuid=train_matrix_uuid))
 
-        # Create the fake trained model and store in db
-        trained_model = MockTrainedModel()
-        model_hash = "abcd"
-        project_storage.model_storage_engine().write(trained_model, model_hash)
-        db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
-        session.add(db_model)
-        session.commit()
-        yield project_storage, db_engine, db_model.model_id
+            # Create the fake trained model and store in db
+            trained_model = MockTrainedModel()
+            model_hash = "abcd"
+            project_storage.model_storage_engine().write(trained_model, model_hash)
+            db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
+            session.add(db_model)
+            session.commit()
+            yield project_storage, db_engine, db_model.model_id
+        finally:
+            session.close()
 
 
 def test_predictor_entity_index():
@@ -264,15 +267,21 @@ def test_predictor_retrieve():
         # Remove the first row and put it at the end.
         # If the Predictor doesn't explicitly reorder the results, this will fail
         # Only running on TestPrediction because TrainPrediction behaves the exact same way
-        reorder_session = sessionmaker(bind=db_engine)()
-        obj = reorder_session.query(TestPrediction).first()
-        reorder_session.delete(obj)
-        reorder_session.commit()
+        try:
+            reorder_session = sessionmaker(bind=db_engine)()
+            obj = reorder_session.query(TestPrediction).first()
+            reorder_session.delete(obj)
+            reorder_session.commit()
+        finally:
+            reorder_session.close()
 
         make_transient(obj)
-        reorder_session = sessionmaker(bind=db_engine)()
-        reorder_session.add(obj)
-        reorder_session.commit()
+        try:
+            reorder_session = sessionmaker(bind=db_engine)()
+            reorder_session.add(obj)
+            reorder_session.commit()
+        finally:
+            reorder_session.close()
 
         predictor.load_model = Mock()
         new_predict_proba = predictor.predict(

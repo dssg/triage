@@ -9,6 +9,7 @@ import fakeredis
 import pytest
 import testing.postgresql
 from triage import create_engine
+import sqlalchemy
 
 from tests.utils import sample_config, populate_source_data
 from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
@@ -151,7 +152,8 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 for row in db_engine.execute(
                     """
                 select * from model_metadata.experiments
-                join model_metadata.models using (experiment_hash)
+                join model_metadata.experiment_models using (experiment_hash)
+                join model_metadata.models using (model_hash)
             """
                 )
             ]
@@ -195,6 +197,14 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         for i in counts:
             assert i > 0
         assert len(matrices) == 4
+
+        # 10. Checking that all matrices are associated with the experiment
+        linked_matrices = list(db_engine.execute(
+            """select * from model_metadata.matrices
+            join model_metadata.experiment_matrices using (matrix_uuid)
+            join model_metadata.experiments using (experiment_hash)"""
+        ))
+        assert len(linked_matrices) == len(matrices)
 
 
 @parametrize_experiment_classes
@@ -255,8 +265,8 @@ class TestConfigVersion(TestCase):
 
 @parametrize_experiment_classes
 @mock.patch(
-    "triage.component.architect.state_table_generators."
-    "StateTableGeneratorBase.clean_up",
+    "triage.component.architect.cohort_table_generators."
+    "CohortTableGenerator.clean_up",
     side_effect=lambda: time.sleep(1),
 )
 def test_cleanup_timeout(_clean_up_mock, experiment_class):
@@ -297,8 +307,8 @@ def test_build_error(experiment_class):
 
 @parametrize_experiment_classes
 @mock.patch(
-    "triage.component.architect.state_table_generators."
-    "StateTableGeneratorBase.clean_up",
+    "triage.component.architect.cohort_table_generators."
+    "CohortTableGenerator.clean_up",
     side_effect=lambda: time.sleep(1),
 )
 def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
@@ -442,7 +452,8 @@ def test_baselines_with_missing_features(experiment_class):
                 for row in db_engine.execute(
                     """
                 select * from model_metadata.experiments
-                join model_metadata.models using (experiment_hash)
+                join model_metadata.experiment_models using (experiment_hash)
+                join model_metadata.models using (model_hash)
             """
                 )
             ]
@@ -470,3 +481,16 @@ def test_baselines_with_missing_features(experiment_class):
             )
         ]
         assert len(individual_importances) == num_predictions * 2  # only 2 features
+
+
+def test_serializable_engine_check_sqlalchemy_fail():
+    """If we pass a vanilla sqlalchemy engine to the experiment we should blow up"""
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = sqlalchemy.create_engine(postgresql.url())
+        with TemporaryDirectory() as temp_dir:
+            with pytest.raises(TypeError):
+                MultiCoreExperiment(
+                    config=sample_config(),
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                )

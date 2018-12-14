@@ -42,6 +42,7 @@ class PreAudition(object):
         query = """
             SELECT DISTINCT(model_group_id)
             FROM model_metadata.models
+            JOIN model_metadata.experiment_models using (model_hash)
             WHERE experiment_hash = %(experiment_hash)s
             """
 

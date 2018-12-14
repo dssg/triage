@@ -29,7 +29,7 @@ To make modifications to the schema, you should be working in a cloned version o
 
 1. Create a candidate database for comparison if you don't have one already. You can use a toy database for this, or use your project database if the results schema has not been manually modified. Populate `database.yaml` in the repo root with the credentials, and upgrade it to the current HEAD: `manage alembic upgrade head`
 
-2. Make the desired modifications to [results_schema.schema](src/triage/component/results_schema/schema.py).
+2. Make the desired modifications to [results_schema.schema](schema.py).
 
 3. From within the results schema directory, autogenerate a migration: `manage alembic revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
 
@@ -37,7 +37,7 @@ To make modifications to the schema, you should be working in a cloned version o
 
 5. Upgrade the database: `manage alembic upgrade head`
 
-6. Update the [factories file](src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
+6. Update the [factories file](../../../../src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 
 7. If everything looks good, create a pull request!
 

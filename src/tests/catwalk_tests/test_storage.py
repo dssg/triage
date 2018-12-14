@@ -1,10 +1,10 @@
 import os
 import tempfile
 import unittest
-import yaml
 from collections import OrderedDict
 
 import pandas as pd
+import yaml
 from moto import mock_s3
 from numpy.testing import assert_almost_equal
 

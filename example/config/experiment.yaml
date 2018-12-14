@@ -30,36 +30,15 @@ temporal_config:
 
 
 # COHORT CONFIG
-# To define what entities make it into different matrices, there are three options (only choose one).
+# Cohorts are configured by passing a query with placeholders for the 'as_of_date'.
 #
-# 1. Pass an entities table. All distinct entities present in this table (the 'entity_id' column) will be included in all matrices. Other columns will be ignored
+# The 'query' key should have a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs. The returned 'entity_id' must be an integer.
 #
-# 2. Pass a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs.
-#
-# 3. Pass a dense states table, and information about which state filters to use in this experiment
-#
-#   a. a dense state table that defines when entities were in specific states
-#       should have columns entity_id/state/start time/end time
-#       Note that the time columns are timestamps, not dates. So if you would like
-#       to signify that an entity is in a state for an entire day, make the start
-#       the beginning of the day and the end a day later.
-#   b. a list of state filtering SQL clauses to iterate through. Assuming the
-#       states are boolean columns (the experiment will convert the one you pass in
-#       to this format), write a SQL expression for each state
-#       configuration you want, ie '(permitted OR suspended) AND licensed'
-#
-#
-# Regardless of which method you choose, you may enter a 'name' for your configuration.
+# You may enter a 'name' for your configuration.
 # This will be included in the metadata for each matrix and used to group models
 # If you don't pass one, the string 'default' will be used.
 #
 cohort_config:
-#   entities_table: 'events'
-#   dense_states:
-#        table_name: 'states'
-#        state_filters:
-#        - 'state_one AND state_two'
-#        - '(state_one OR state_two) AND state_three'
     query: "select entity_id from events where outcome_date < '{as_of_date}'"
     name: 'past_events'
 
@@ -175,6 +154,7 @@ feature_aggregations:
                 metrics:
                     - 'count'
                     - 'sum'
+                coltype: 'smallint'   # Optional, if you want to control the column type in the generated features tables
             -
                 # since we're specifying `aggregates_imputation` above,
                 # a feature-specific imputation rule can be omitted
@@ -233,7 +213,7 @@ feature_group_definition:
     tables: ['prefix_aggregation_imputed']
 
 # strategies for generating combinations of groups
-# available: all, leave-one-out, leave-one-in
+# available: all, leave-one-out, leave-one-in, all-combinations
 feature_group_strategies: ['all']
 
 

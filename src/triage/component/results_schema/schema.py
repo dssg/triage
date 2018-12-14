@@ -82,6 +82,19 @@ class ListPrediction(Base):
     model_rel = relationship("Model")
 
 
+class ExperimentMatrix(Base):
+    __tablename__ = "experiment_matrices"
+    __table_args__ = {"schema": "model_metadata"}
+
+    experiment_hash = Column(
+        String,
+        ForeignKey("model_metadata.experiments.experiment_hash"),
+        primary_key=True
+    )
+
+    matrix_uuid = Column(String, primary_key=True)
+
+
 class Matrix(Base):
 
     __tablename__ = "matrices"
@@ -96,6 +109,9 @@ class Matrix(Base):
     lookback_duration = Column(Interval)
     feature_start_time = Column(DateTime)
     matrix_metadata = Column(JSONB)
+    built_by_experiment = Column(
+        String, ForeignKey("model_metadata.experiments.experiment_hash")
+    )
 
 
 class Model(Base):
@@ -115,7 +131,7 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    experiment_hash = Column(
+    built_by_experiment = Column(
         String, ForeignKey("model_metadata.experiments.experiment_hash")
     )
     train_end_time = Column(DateTime)
@@ -125,7 +141,6 @@ class Model(Base):
     model_size = Column(Float)
 
     model_group_rel = relationship("ModelGroup")
-    experiment_rel = relationship("Experiment")
     matrix_rel = relationship("Matrix")
 
     def delete(self, session):
@@ -134,6 +149,21 @@ class Model(Base):
         (session.query(TestEvaluation).filter_by(model_id=self.model_id).delete())
         (session.query(TestPrediction).filter_by(model_id=self.model_id).delete())
         session.delete(self)
+
+
+class ExperimentModel(Base):
+    __tablename__ = "experiment_models"
+    __table_args__ = {"schema": "model_metadata"}
+
+    experiment_hash = Column(
+        String,
+        ForeignKey("model_metadata.experiments.experiment_hash"),
+        primary_key=True
+    )
+    model_hash = Column(String, primary_key=True)
+
+    model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
+    experiment_rel = relationship("Experiment")
 
 
 class FeatureImportance(Base):

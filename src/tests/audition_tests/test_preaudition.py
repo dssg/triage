@@ -85,7 +85,10 @@ def test_PreAudition():
         # Expect the number of model groups with certain experiment_hash
         experiment_hash = list(
             pd.read_sql(
-                "SELECT experiment_hash FROM model_metadata.models limit 1",
+                """SELECT experiment_hash
+                FROM model_metadata.models
+                JOIN model_metadata.experiment_models using (model_hash)
+                limit 1""",
                 con=db_engine,
             )["experiment_hash"]
         )[0]
@@ -95,13 +98,13 @@ def test_PreAudition():
         query = """
             SELECT DISTINCT(model_group_id)
             FROM model_metadata.models
+            JOIN model_metadata.experiment_models using (model_hash)
             WHERE train_end_time >= '2013-01-01'
             AND experiment_hash = '{}'
         """.format(
             experiment_hash
         )
         assert len(pre_aud.get_model_groups(query)) == 1
-
         # Expect the number of train_end_times after 2014-01-01
         assert len(pre_aud.get_train_end_times(after="2014-01-01")) == 6
 
