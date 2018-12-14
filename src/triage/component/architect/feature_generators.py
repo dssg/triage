@@ -12,7 +12,7 @@ from triage.component.collate import (
     Categorical,
     Compare,
     SpacetimeAggregation,
-    MaterializedFromObj
+    FromObj
 )
 
 
@@ -534,13 +534,6 @@ class FeatureGenerator(object):
             for aggregation in aggregations
         )
 
-    def _materialized_from_obj(self, aggregation):
-        return MaterializedFromObj(
-            from_obj=aggregation.from_obj,
-            name=f"{aggregation.schema}.{aggregation.prefix}",
-            knowledge_date_column=aggregation.date_column
-        )
-
     def _generate_agg_table_tasks_for(self, aggregation):
         """Generates SQL commands for preparing, populating, and finalizing
         each feature group table in the given aggregation
@@ -561,20 +554,13 @@ class FeatureGenerator(object):
                 conn.execute(create_schema)
 
         # materialize from obj
-        from_obj = self._materialized_from_obj(aggregation)
-        exists = False
-        try:
-            exists = table_exists(from_obj.from_obj, self.db_engine)
-        except AttributeError:
-            exists = False
-        if exists:
-            logging.info("From obj %s looks to be a real table, will not attempt to materialize", from_obj.from_obj)
-        else:
-            self.db_engine.execute(from_obj.drop)
-            self.db_engine.execute(from_obj.create)
-            from_obj.validate(self.db_engine)
-            self.db_engine.execute(from_obj.index)
-            aggregation.from_obj = from_obj.table
+        from_obj = FromObj(
+            from_obj=aggregation.from_obj,
+            name=f"{aggregation.schema}.{aggregation.prefix}",
+            knowledge_date_column=aggregation.date_column
+        )
+        from_obj.maybe_materialize(self.db_engine)
+        aggregation.from_obj = from_obj.table
 
         creates = aggregation.get_creates()
         drops = aggregation.get_drops()
