@@ -4,6 +4,8 @@ from triage.validation_primitives import (
     table_should_have_column,
     column_should_be_timelike
 )
+import sqlalchemy.sql.expression as ex
+import sqlparse
 
 
 class MaterializedFromObj(object):
@@ -27,6 +29,10 @@ class MaterializedFromObj(object):
     @property
     def drop(self):
         return f"drop table if exists {self.table}"
+
+    def should_materialize(self):
+        parsed = sqlparse.parse(self.from_obj)[0].token_first(skip_ws=True, skip_cm=True)
+        return parsed.has_alias() and parsed.get_alias() == parsed.get_real_name() 
 
     def validate(self, db_engine):
         logging.info('Validating materialized from_obj %s', self.table)
