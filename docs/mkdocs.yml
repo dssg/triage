@@ -25,5 +25,6 @@ pages:
     - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
+    - Extending Experiment Features: experiments/extending-features.md
   - Audition: https://github.com/dssg/triage/tree/master/src/triage/component/audition
   - Postmodeling: https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling

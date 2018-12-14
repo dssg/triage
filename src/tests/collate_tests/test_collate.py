@@ -4,7 +4,9 @@
 Unit tests for `collate` module.
 
 """
-from triage.component.collate import Aggregate, Aggregation, Categorical
+import testing.postgresql
+import sqlalchemy
+from triage.component.collate import Aggregate, Categorical
 
 def test_aggregate():
     agg = Aggregate("*", "count", {})
@@ -114,50 +116,6 @@ def test_aggregate_format_kwargs():
     assert list(
         map(str, agg.get_columns(format_kwargs={"collate_date": "2012-01-01"}))
     ) == ["min('2012-01-01' - date)"]
-
-
-def test_aggregation_table_name_no_schema():
-    # no schema
-    assert (
-        Aggregation(
-            [], from_obj="source", groups=[], state_table="tbl"
-        ).get_table_name()
-        == '"source_aggregation"'
-    )
-    assert (
-        Aggregation([], from_obj="source", groups=[], state_table="tbl").get_table_name(
-            imputed=True
-        )
-        == '"source_aggregation_imputed"'
-    )
-
-    # prefix
-    assert (
-        Aggregation(
-            [], from_obj="source", prefix="mysource", groups=[], state_table="tbl"
-        ).get_table_name()
-        == '"mysource_aggregation"'
-    )
-    assert (
-        Aggregation(
-            [], from_obj="source", prefix="mysource", groups=[], state_table="tbl"
-        ).get_table_name(imputed=True)
-        == '"mysource_aggregation_imputed"'
-    )
-
-    # schema
-    assert (
-        Aggregation(
-            [], from_obj="source", schema="schema", groups=[], state_table="tbl"
-        ).get_table_name()
-        == '"schema"."source_aggregation"'
-    )
-    assert (
-        Aggregation(
-            [], from_obj="source", schema="schema", groups=[], state_table="tbl"
-        ).get_table_name(imputed=True)
-        == '"schema"."source_aggregation_imputed"'
-    )
 
 
 def test_distinct():

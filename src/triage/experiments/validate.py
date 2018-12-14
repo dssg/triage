@@ -126,7 +126,7 @@ class TemporalValidator(Validator):
                     )
 
 
-class FeatureAggregationsValidator(Validator):
+class SpacetimeAggregationValidator(Validator):
     def _validate_keys(self, aggregation_config):
         for key in [
             "from_obj",
@@ -139,7 +139,7 @@ class FeatureAggregationsValidator(Validator):
                 raise ValueError(
                     dedent(
                         """
-                Section: feature_aggregations -
+                Section: features->spacetime_aggregations -
                 '{} required as key: aggregation config: {}""".format(
                             key, aggregation_config
                         )
@@ -155,7 +155,7 @@ class FeatureAggregationsValidator(Validator):
             raise ValueError(
                 dedent(
                     """
-            Section: feature_aggregations -
+            Section: features->spacetime_aggregations -
             Need either aggregates, categoricals, or array_categoricals
             in {}""".format(
                         aggregation_config
@@ -499,7 +499,7 @@ class CohortConfigValidator(Validator):
 
 
 class FeatureGroupDefinitionValidator(Validator):
-    def _run(self, feature_group_definition, feature_aggregation_config):
+    def _run(self, feature_group_definition):
         if not isinstance(feature_group_definition, dict):
             raise ValueError(
                 dedent(
@@ -532,45 +532,6 @@ class FeatureGroupDefinitionValidator(Validator):
                 feature_group_definition value for {}, {}
                 should be a list""".format(
                             subsetter_name, value
-                        )
-                    )
-                )
-
-        if "prefix" in feature_group_definition:
-            available_prefixes = {
-                aggregation["prefix"] for aggregation in feature_aggregation_config
-            }
-            bad_prefixes = set(feature_group_definition["prefix"]) - available_prefixes
-            if bad_prefixes:
-                raise ValueError(
-                    dedent(
-                        """
-                Section: feature_group_definition -
-                The following given feature group prefixes: '{}'
-                are invalid. Available prefixes from this experiment's feature
-                aggregations are: '{}'
-                """.format(
-                            bad_prefixes, available_prefixes
-                        )
-                    )
-                )
-
-        if "tables" in feature_group_definition:
-            available_tables = {
-                aggregation["prefix"] + "_aggregation_imputed"
-                for aggregation in feature_aggregation_config
-            }
-            bad_tables = set(feature_group_definition["tables"]) - available_tables
-            if bad_tables:
-                raise ValueError(
-                    dedent(
-                        """
-                Section: feature_group_definition -
-                The following given feature group tables: '{}'
-                are invalid. Available tables from this experiment's feature
-                aggregations are: '{}'
-                """.format(
-                            bad_tables, available_tables
                         )
                     )
                 )
@@ -769,13 +730,37 @@ class ScoringConfigValidator(Validator):
                         )
 
 
+class FeatureValidator(Validator):
+    def _run(self, feature_config):
+        feature_lookup = architect.feature_block_generators.FEATURE_BLOCK_GENERATOR_LOOKUP
+        available_keys = set(feature_lookup.keys())
+        given_keys = set(feature_config.keys())
+        bad_keys = given_keys - available_keys
+        if bad_keys:
+            raise ValueError(
+                dedent(
+                    """Section: features -
+                The following given feature types '{}' are unavailable.
+                Available metrics are: '{}'
+                """.format(
+                        bad_keys, available_keys
+                    )
+                )
+            )
+        if 'spacetime_aggregations' in feature_config:
+            SpacetimeAggregationValidator(
+                self.db_engine,
+                strict=self.strict
+            ).run(feature_config['spacetime_aggregations'])
+
+
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
         TemporalValidator(strict=self.strict).run(
             experiment_config.get("temporal_config", {})
         )
-        FeatureAggregationsValidator(self.db_engine, strict=self.strict).run(
-            experiment_config.get("feature_aggregations", {})
+        FeatureValidator(self.db_engine, strict=self.strict).run(
+            experiment_config.get("features", {})
         )
         LabelConfigValidator(self.db_engine, strict=self.strict).run(
             experiment_config.get("label_config", None)
@@ -785,7 +770,6 @@ class ExperimentValidator(Validator):
         )
         FeatureGroupDefinitionValidator(strict=self.strict).run(
             experiment_config.get("feature_group_definition", {}),
-            experiment_config.get("feature_aggregations", {}),
         )
         FeatureGroupStrategyValidator(strict=self.strict).run(
             experiment_config.get("feature_group_strategies", [])

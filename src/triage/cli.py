@@ -10,7 +10,7 @@ from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
-from triage.component.architect.feature_generators import FeatureGenerator
+from triage.component.architect.feature_block_generators import feature_blocks_from_config
 from triage.component.architect.cohort_table_generators import CohortTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
@@ -112,7 +112,7 @@ class FeatureTest(Command):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
         full_config = yaml.load(args.feature_config_file)
-        feature_config = full_config['feature_aggregations']
+        feature_config = full_config['features']
         cohort_config = full_config.get('cohort_config', None)
         if cohort_config:
             CohortTableGenerator(
@@ -122,11 +122,18 @@ class FeatureTest(Command):
                 replace=True
             ).generate_cohort_table(as_of_dates=[args.as_of_date])
 
-        FeatureGenerator(db_engine, "features_test").create_features_before_imputation(
-            feature_aggregation_config=feature_config,
-            feature_dates=[args.as_of_date],
-            state_table="features_test.test_cohort"
+        feature_blocks = feature_blocks_from_config(
+            feature_config,
+            as_of_dates=[args.as_of_date],
+            cohort_table="features_test.test_cohort" if cohort_config else None,
+            db_engine=db_engine,
+            features_schema_name="features_test",
+            materialize_subquery_fromobjs=False,
+            features_ignore_cohort=bool(cohort_config),
         )
+        for feature_block in feature_blocks:
+            feature_block.run_preimputation(verbose=True)
+
         logging.info(
             "Features created for feature_config %s and date %s",
             feature_config,

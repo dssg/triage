@@ -131,6 +131,20 @@ def column_type(table_name, column, db_engine):
     return type(reflected_table(table_name, db_engine).columns[column].type)
 
 
+def table_columns(table_name, db_engine):
+    """Retrieve a list of columns.
+
+    The table is expected to exist.
+
+    Args:
+        table_name (string) A table name (with schema)
+        db_engine (sqlalchemy.engine)
+
+    Returns: (list) Every column currently in the table
+    """
+    return reflected_table(table_name, db_engine).columns
+
+
 def schema_tables(schema_name, db_engine):
     meta = MetaData(schema=schema_name, bind=db_engine)
     meta.reflect()

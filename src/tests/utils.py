@@ -355,7 +355,7 @@ def sample_config():
         }
     }
 
-    feature_config = [
+    spacetime_agg_config = [
         {
             "prefix": "entity_features",
             "from_obj": "cat_complaints",
@@ -401,7 +401,7 @@ def sample_config():
         "entity_column_name": "entity_id",
         "model_comment": "test2-final-final",
         "model_group_keys": ["label_name", "label_type", "custom_key"],
-        "feature_aggregations": feature_config,
+        "features": {"spacetime_aggregations": spacetime_agg_config},
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,

@@ -14,11 +14,12 @@ from triage.component.architect.label_generators import (
 )
 
 from triage.component.architect.features import (
-    FeatureGenerator,
-    FeatureDictionaryCreator,
     FeatureGroupCreator,
     FeatureGroupMixer,
+    FeatureDictionary,
 )
+
+from triage.component.architect.feature_block_generators import feature_blocks_from_config
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.architect.cohort_table_generators import (
@@ -55,6 +56,7 @@ from triage.experiments.validate import ExperimentValidator
 
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
+from triage.util.db import run_statements
 
 
 class ExperimentBase(ABC):
@@ -195,19 +197,6 @@ class ExperimentBase(ABC):
                 "label_config missing or unrecognized. Without labels, "
                 "you will not be able to make matrices."
             )
-
-        self.feature_dictionary_creator = FeatureDictionaryCreator(
-            features_schema_name=self.features_schema_name, db_engine=self.db_engine
-        )
-
-        self.feature_generator = FeatureGenerator(
-            features_schema_name=self.features_schema_name,
-            replace=self.replace,
-            db_engine=self.db_engine,
-            feature_start_time=split_config["feature_start_time"],
-            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
-            features_ignore_cohort=self.features_ignore_cohort
-        )
 
         self.feature_group_creator = FeatureGroupCreator(
             self.config.get("feature_group_definition", {"all": [True]})
@@ -375,56 +364,25 @@ class ExperimentBase(ABC):
         return distinct_as_of_times
 
     @cachedproperty
-    def collate_aggregations(self):
+    def feature_blocks(self):
         """Collation of ``Aggregation`` objects used by this experiment.
 
         Returns: (list) of ``collate.Aggregation`` objects
 
         """
-        logging.info("Creating collate aggregations")
-        if "feature_aggregations" not in self.config:
-            logging.warning("No feature_aggregation config is available")
+        if "features" not in self.config:
+            logging.warning("No feature config is available")
             return []
-        return self.feature_generator.aggregations(
-            feature_aggregation_config=self.config["feature_aggregations"],
-            feature_dates=self.all_as_of_times,
-            state_table=self.cohort_table_name,
-        )
-
-    @cachedproperty
-    def feature_aggregation_table_tasks(self):
-        """All feature table query tasks specified by this
-        ``Experiment``.
-
-        Returns: (dict) keys are group table names, values are
-            themselves dicts, each with keys for different stages of
-            table creation (prepare, inserts, finalize) and with values
-            being lists of SQL commands
-
-        """
-        logging.info(
-            "Calculating feature tasks for %s as_of_times", len(self.all_as_of_times)
-        )
-        return self.feature_generator.generate_all_table_tasks(
-            self.collate_aggregations, task_type="aggregation"
-        )
-
-    @cachedproperty
-    def feature_imputation_table_tasks(self):
-        """All feature imputation query tasks specified by this
-        ``Experiment``.
-
-        Returns: (dict) keys are group table names, values are
-            themselves dicts, each with keys for different stages of
-            table creation (prepare, inserts, finalize) and with values
-            being lists of SQL commands
-
-        """
-        logging.info(
-            "Calculating feature tasks for %s as_of_times", len(self.all_as_of_times)
-        )
-        return self.feature_generator.generate_all_table_tasks(
-            self.collate_aggregations, task_type="imputation"
+        logging.info("Creating feature blocks from config")
+        return feature_blocks_from_config(
+            config=self.config["features"],
+            as_of_dates=self.all_as_of_times,
+            cohort_table=self.cohort_table_name,
+            features_schema_name=self.features_schema_name,
+            db_engine=self.db_engine,
+            feature_start_time=self.config["temporal_config"]["feature_start_time"],
+            features_ignore_cohort=self.features_ignore_cohort,
+            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
         )
 
     @cachedproperty
@@ -436,12 +394,7 @@ class ExperimentBase(ABC):
         values being lists of feature names
 
         """
-        result = self.feature_dictionary_creator.feature_dictionary(
-            feature_table_names=self.feature_imputation_table_tasks.keys(),
-            index_column_lookup=self.feature_generator.index_column_lookup(
-                self.collate_aggregations
-            ),
-        )
+        result = FeatureDictionary(feature_blocks=self.feature_blocks)
         logging.info("Computed master feature dictionary: %s", result)
         return result
 
@@ -537,7 +490,7 @@ class ExperimentBase(ABC):
         pass
 
     @abstractmethod
-    def process_query_tasks(self, query_tasks):
+    def process_inserts(self, inserts):
         pass
 
     @abstractmethod
@@ -545,18 +498,24 @@ class ExperimentBase(ABC):
         pass
 
     def generate_preimputation_features(self):
-        self.process_query_tasks(self.feature_aggregation_table_tasks)
-        logging.info(
-            "Finished running preimputation feature queries. The final results are in tables: %s",
-            ",".join(agg.get_table_name() for agg in self.collate_aggregations),
-        )
+        for feature_block in self.feature_blocks:
+            tasks = feature_block.generate_preimpute_tasks(self.replace)
+            run_statements(tasks.get("prepare", []), self.db_engine)
+            self.process_inserts(tasks.get("inserts", []))
+            run_statements(tasks.get("finalize", []), self.db_engine)
+        logging.info("Finished running preimputation feature queries.")
 
     def impute_missing_features(self):
-        self.process_query_tasks(self.feature_imputation_table_tasks)
+        for feature_block in self.feature_blocks:
+            tasks = feature_block.generate_impute_tasks(self.replace)
+            run_statements(tasks.get("prepare", []), self.db_engine)
+            self.process_inserts(tasks.get("inserts", []))
+            run_statements(tasks.get("finalize", []), self.db_engine)
+
         logging.info(
             "Finished running postimputation feature queries. The final results are in tables: %s",
             ",".join(
-                agg.get_table_name(imputed=True) for agg in self.collate_aggregations
+                block.final_feature_table_name for block in self.feature_blocks
             ),
         )
 

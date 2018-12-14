@@ -69,17 +69,19 @@ def test_basic_spacetime():
             from_obj="events",
             groups=["entity_id"],
             intervals=["1y", "2y", "all"],
-            dates=["2016-01-01", "2015-01-01"],
-            state_table="states",
-            state_group="entity_id",
+            as_of_dates=["2016-01-01", "2015-01-01"],
+            features_schema_name="schema",
+            cohort_table="states",
+            entity_column="entity_id",
             date_column="event_date",
             output_date_column="as_of_date",
+            db_engine=engine,
+            drop_interim_tables=False,
         )
-
-        st.execute(engine.connect())
-
+        engine.execute(st.get_create_schema())
+        st.run_preimputation()
         r = engine.execute(
-            "select * from events_entity_id order by entity_id, as_of_date"
+            "select * from schema.events_entity_id order by entity_id, as_of_date"
         )
         rows = [x for x in r]
         assert rows[0]["entity_id"] == 1
@@ -144,9 +146,10 @@ def test_basic_spacetime():
         assert rows[6]["events_entity_id_all_outcome::int_avg"] == 0
         assert len(rows) == 7
 
+        st.run_imputation()
         # check some imputation results
         r = engine.execute(
-            "select * from events_aggregation_imputed order by entity_id, as_of_date"
+            "select * from schema.events_aggregation_imputed order by entity_id, as_of_date"
         )
         rows = [x for x in r]
         assert rows[6]["entity_id"] == 4
@@ -185,8 +188,23 @@ def test_basic_spacetime():
         assert rows[7]["events_entity_id_all_outcome::int_avg_imp"] == 0
         assert len(rows) == 8
 
+        assert st.feature_columns == {
+            "events_entity_id_1y_outcome::int_sum",
+            "events_entity_id_1y_outcome::int_sum_imp",
+            "events_entity_id_1y_outcome::int_avg",
+            "events_entity_id_1y_outcome::int_avg_imp",
+            "events_entity_id_2y_outcome::int_sum",
+            "events_entity_id_2y_outcome::int_sum_imp",
+            "events_entity_id_2y_outcome::int_avg",
+            "events_entity_id_2y_outcome::int_avg_imp",
+            "events_entity_id_all_outcome::int_sum",
+            "events_entity_id_all_outcome::int_sum_imp",
+            "events_entity_id_all_outcome::int_avg",
+            "events_entity_id_all_outcome::int_avg_imp"
+        }
 
-def test_input_min_date():
+
+def test_feature_start_time():
     with testing.postgresql.Postgresql() as psql:
         engine = sqlalchemy.create_engine(psql.url())
         engine.execute("create table events (entity_id int, date date, outcome bool)")
@@ -212,14 +230,16 @@ def test_input_min_date():
             from_obj="events",
             groups=["entity_id"],
             intervals=["all"],
-            dates=["2016-01-01"],
-            state_table="states",
-            state_group="entity_id",
+            as_of_dates=["2016-01-01"],
+            cohort_table="states",
+            entity_column="entity_id",
             date_column='"date"',
-            input_min_date="2015-11-10",
+            feature_start_time="2015-11-10",
+            db_engine=engine,
+            drop_interim_tables=False,
         )
 
-        st.execute(engine.connect())
+        st.run_preimputation()
 
         r = engine.execute("select * from events_entity_id order by entity_id")
         rows = [x for x in r]
@@ -240,19 +260,18 @@ def test_input_min_date():
             from_obj="events",
             groups=["entity_id"],
             intervals=["1y", "all"],
-            dates=["2016-01-01", "2015-01-01"],
-            state_table="states",
-            state_group="entity_id",
+            as_of_dates=["2016-01-01", "2015-01-01"],
+            cohort_table="states",
+            entity_column="entity_id",
             date_column='"date"',
-            input_min_date="2014-11-10",
+            feature_start_time="2014-11-10",
+            db_engine=engine
         )
         with pytest.raises(ValueError):
             st.validate(engine.connect())
-        with pytest.raises(ValueError):
-            st.execute(engine.connect())
 
 
-def test_join_with_cohort_table(db_engine):
+def test_features_ignore_cohort(db_engine):
     # if we specify joining with the cohort table
     # only entity_id/date pairs in the cohort table should show up
     db_engine.execute("create table events (entity_id int, date date, outcome bool)")
@@ -271,7 +290,7 @@ def test_join_with_cohort_table(db_engine):
     for state in smaller_cohort:
         db_engine.execute("insert into cohort values (%s, %s)", state)
 
-    # create our test aggregation with the important 'join_with_cohort_table' flag
+    # create our test aggregation with the important 'features_ignore_cohort' flag
     agg = Aggregate(
         "outcome::int",
         ["sum", "avg"],
@@ -287,14 +306,16 @@ def test_join_with_cohort_table(db_engine):
         from_obj="events",
         groups=["entity_id"],
         intervals=["all"],
-        dates=["2016-01-01", "2015-01-01"],
-        state_table="cohort",
-        state_group="entity_id",
+        as_of_dates=["2016-01-01", "2015-01-01"],
+        cohort_table="cohort",
+        entity_column="entity_id",
         date_column='"date"',
-        join_with_cohort_table=True,
+        features_ignore_cohort=False,
+        db_engine=db_engine,
+        drop_interim_tables=False,
     )
 
-    st.execute(db_engine.connect())
+    st.run_preimputation()
 
     r = db_engine.execute("select * from events_entity_id order by entity_id, date")
     rows = [x for x in r]
@@ -320,3 +341,70 @@ def test_join_with_cohort_table(db_engine):
     assert rows[3]["date"] == date(2016, 1, 1)
     assert rows[3]["events_entity_id_all_outcome::int_sum"] == 1
     assert rows[3]["events_entity_id_all_outcome::int_avg"] == 0.5
+
+
+def test_aggregation_table_name_no_schema():
+    # no schema
+    assert (
+        SpacetimeAggregation(
+            [], from_obj="source", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+        ).get_table_name()
+        == '"source_aggregation"'
+    )
+    assert (
+        SpacetimeAggregation([], from_obj="source", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[]).get_table_name(
+            imputed=True
+        )
+        == '"source_aggregation_imputed"'
+    )
+
+    # prefix
+    assert (
+        SpacetimeAggregation(
+            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+        ).get_table_name()
+        == '"mysource_aggregation"'
+    )
+    assert (
+        SpacetimeAggregation(
+            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+        ).get_table_name(imputed=True)
+        == '"mysource_aggregation_imputed"'
+    )
+
+    # schema
+    assert (
+        SpacetimeAggregation(
+            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+        ).get_table_name()
+        == '"schema"."source_aggregation"'
+    )
+    assert (
+        SpacetimeAggregation(
+            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+        ).get_table_name(imputed=True)
+        == '"schema"."source_aggregation_imputed"'
+    )
+
+
+def test_get_feature_columns():
+    with testing.postgresql.Postgresql() as psql:
+        db_engine = sqlalchemy.create_engine(psql.url())
+        n = Aggregate("x", "sum", {})
+        d = Aggregate("1", "count", {})
+        m = Aggregate("y", "avg", {})
+        assert SpacetimeAggregation(
+            aggregates=[n, d, m],
+            from_obj="source",
+            features_schema_name="schema",
+            prefix="prefix",
+            groups=["entity_id"],
+            cohort_table="tbl",
+            db_engine=db_engine,
+            as_of_dates=[],
+        ).feature_columns == set([
+            "prefix_entity_id_all_x_sum",
+            "prefix_entity_id_all_1_count",
+            "prefix_entity_id_all_y_avg"
+        ])
+

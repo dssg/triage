@@ -1,6 +1,7 @@
 import logging
 import time
 from triage.component.catwalk.utils import Batch
+from triage.util.db import run_statements
 from triage.experiments import ExperimentBase
 
 try:
@@ -74,51 +75,22 @@ class RQExperiment(ExperimentBase):
                 logging.info("Sleeping for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
 
-    def process_query_tasks(self, query_tasks):
-        """Run queries by table
-
-        Will run preparation (e.g. create table) and finalize (e.g. create index) tasks
-        in the main process,
-        but delegate inserts to rq Jobs in batches of 25
-
-        Args: query_tasks (dict) - keys should be table names and values should be dicts.
-            Each inner dict should have up to three keys, each with a list of queries:
-            'prepare' (setting up the table),
-            'inserts' (insert commands to populate the table),
-            'finalize' (finishing table setup after all inserts have run)
-
-            Example: {
-                'table_one': {
-                    'prepare': ['create table table_one (col1 varchar)'],
-                    'inserts': [
-                        'insert into table_one values (\'a\')',
-                        'insert into table_one values (\'b'\')'
-                    ]
-                    'finalize': ['create index on table_one (col1)']
-                }
-            }
-        """
-        for table_name, tasks in query_tasks.items():
-            logging.info("Processing features for %s", table_name)
-            self.feature_generator.run_commands(tasks.get("prepare", []))
-
-            insert_batches = [
-                list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
-            ]
-            jobs = [
-                self.queue.enqueue(
-                    self.feature_generator.run_commands,
-                    insert_batch,
-                    timeout=DEFAULT_TIMEOUT,
-                    result_ttl=DEFAULT_TIMEOUT,
-                    ttl=DEFAULT_TIMEOUT,
-                )
-                for insert_batch in insert_batches
-            ]
-            self.wait_for(jobs)
-
-            self.feature_generator.run_commands(tasks.get("finalize", []))
-            logging.info("%s completed", table_name)
+    def process_inserts(self, inserts):
+        insert_batches = [
+            list(task_batch) for task_batch in Batch(inserts, 25)
+        ]
+        jobs = [
+            self.queue.enqueue(
+                run_statements,
+                insert_batch,
+                self.db_engine,
+                timeout=DEFAULT_TIMEOUT,
+                result_ttl=DEFAULT_TIMEOUT,
+                ttl=DEFAULT_TIMEOUT,
+            )
+            for insert_batch in insert_batches
+        ]
+        self.wait_for(jobs)
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ

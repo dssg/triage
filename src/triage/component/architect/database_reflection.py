@@ -98,6 +98,20 @@ def table_has_column(table_name, column, db_engine):
     return column in reflected_table(table_name, db_engine).columns
 
 
+def table_columns(table_name, db_engine):
+    """Retrieve a list of columns.
+
+    The table is expected to exist.
+
+    Args:
+        table_name (string) A table name (with schema)
+        db_engine (sqlalchemy.engine)
+
+    Returns: (list) Every column currently in the table
+    """
+    return reflected_table(table_name, db_engine).columns
+
+
 def column_type(table_name, column, db_engine):
     """Find the database type of the given column in the given table
 

@@ -1,3 +1,6 @@
+IMPUTATION_COLNAME_SUFFIX = "_imp"
+
+
 class BaseImputation(object):
     """Base class for various imputation methods
     """
@@ -24,8 +27,9 @@ class BaseImputation(object):
 
     def imputed_flag_sql(self):
         if not self.noflag:
-            return """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "{col}_imp" """.format(
-                col=self.column
+            return """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "{col}{suffix}" """.format(
+                col=self.column,
+                suffix=IMPUTATION_COLNAME_SUFFIX
             )
         else:
             # don't need to create a flag for categoricals (since this is handled with the

@@ -105,7 +105,7 @@ class Labels(TestCase):
 class PreimputationFeatures(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
+        "features": sample_config()["features"],
         "config_version": sample_config()["config_version"],
     }
 
@@ -120,7 +120,7 @@ class PreimputationFeatures(TestCase):
                 if "_aggregation" in table
             ]
 
-            assert len(generated_tables) == len(sample_config()["feature_aggregations"])
+            assert len(generated_tables) == len(sample_config()["features"]["spacetime_aggregations"])
             for table in generated_tables:
                 table_should_have_data(table, experiment.db_engine)
 
@@ -137,7 +137,7 @@ class PreimputationFeatures(TestCase):
 class PostimputationFeatures(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
+        "features": sample_config()["features"],
         "cohort_config": sample_config()["cohort_config"],
         "config_version": sample_config()["config_version"],
     }
@@ -153,7 +153,7 @@ class PostimputationFeatures(TestCase):
                 if "_aggregation_imputed" in table
             ]
 
-            assert len(generated_tables) == len(sample_config()["feature_aggregations"])
+            assert len(generated_tables) == len(sample_config()["features"]["spacetime_aggregations"])
             for table in generated_tables:
                 table_should_have_data(table, experiment.db_engine)
 
@@ -170,7 +170,7 @@ class PostimputationFeatures(TestCase):
 class Matrices(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
+        "features": sample_config()["features"],
         "cohort_config": sample_config()["cohort_config"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],

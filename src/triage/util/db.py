@@ -34,3 +34,9 @@ class SerializableDbEngine(wrapt.ObjectProxy):
 
 
 create_engine = SerializableDbEngine
+
+
+def run_statements(statement_list, db_engine):
+    with db_engine.begin() as conn:
+        for statement in statement_list:
+            conn.execute(statement)
