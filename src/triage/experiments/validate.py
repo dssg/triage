@@ -683,7 +683,7 @@ class GridConfigValidator(Validator):
                     "sklearn.linear_model.LogisticRegression found in grid. "
                     "This is unscaled and not well-suited for Triage experiments. "
                     "Use triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression "
-                    " instead"
+                    "instead"
                 )
             try:
                 module_name, class_name = classpath.rsplit(".", 1)
