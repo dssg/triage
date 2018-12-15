@@ -147,3 +147,8 @@ def test_materialized_from_obj_should_handle_leading_whitespace():
     from_obj = FromObj(from_obj=q, name="events", knowledge_date_column="date")
     assert from_obj.should_materialize()
     assert from_obj.table == "events_from_obj"
+
+def test_materialized_from_obj_should_handle_keywords():
+    from_obj = FromObj(from_obj="events", name="events", knowledge_date_column="date")
+    assert not from_obj.should_materialize()
+    assert from_obj.table == "events"

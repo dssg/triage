@@ -54,6 +54,14 @@ class FromObj(object):
         # for easy reference elsewhere.
         # The second check covers this. The 'real name' in these cases is the name
         # of the original table, whereas for a subquery there is no 'real name' besides the alias
+        if not isinstance(from_obj, sqlparse.sql.Identifier):
+            logging.warning(
+                "Expected %s to parse as an Identifier. It did not. "
+                "As a result, falling back to *not* materializing raw from object %s",
+                from_obj,
+                self.from_obj
+            )
+            return False
         return from_obj.has_alias() and from_obj.get_alias() == from_obj.get_real_name()
 
     def maybe_materialize(self, db_engine):

@@ -530,6 +530,7 @@ def test_array_categoricals(db_engine):
 
 
 def test_generate_table_tasks(test_engine):
+    test_engine.execute('create schema features')
     aggregations = [
         SpacetimeAggregation(
             prefix="prefix1",

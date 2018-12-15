@@ -323,9 +323,28 @@ class FeatureGenerator(object):
         Returns: (list) collate.SpacetimeAggregations
         """
         return [
-            self._aggregation(aggregation_config, feature_dates, state_table)
+            self.preprocess_aggregation(
+                self._aggregation(aggregation_config, feature_dates, state_table)
+            )
             for aggregation_config in feature_aggregation_config
         ]
+
+    def preprocess_aggregation(self, aggregation):
+        create_schema = aggregation.get_create_schema()
+
+        if create_schema is not None:
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
+
+        # materialize from obj
+        from_obj = FromObj(
+            from_obj=aggregation.from_obj.text,
+            name=f"{aggregation.schema}.{aggregation.prefix}",
+            knowledge_date_column=aggregation.date_column
+        )
+        from_obj.maybe_materialize(self.db_engine)
+        aggregation.from_obj = from_obj.table
+        return aggregation
 
     def generate_all_table_tasks(self, aggregations, task_type):
         """Generates SQL commands for creating, populating, and indexing
@@ -547,21 +566,6 @@ class FeatureGenerator(object):
             'finalize': list of commands to finalize table after population
         }
         """
-        create_schema = aggregation.get_create_schema()
-
-        if create_schema is not None:
-            with self.db_engine.begin() as conn:
-                conn.execute(create_schema)
-
-        # materialize from obj
-        from_obj = FromObj(
-            from_obj=aggregation.from_obj,
-            name=f"{aggregation.schema}.{aggregation.prefix}",
-            knowledge_date_column=aggregation.date_column
-        )
-        from_obj.maybe_materialize(self.db_engine)
-        aggregation.from_obj = from_obj.table
-
         creates = aggregation.get_creates()
         drops = aggregation.get_drops()
         indexes = aggregation.get_indexes()
