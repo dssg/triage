@@ -65,6 +65,9 @@ class ExperimentBase(ABC):
         project_path (string)
         replace (bool)
         cleanup_timeout (int)
+        materialize_subquery_fromobjs (bool, default True) Whether or not to create and index
+            tables for feature "from objects" that are subqueries. Can speed up performance
+            when building features for many as-of-dates.
     """
 
     cleanup_timeout = 60  # seconds
@@ -78,6 +81,7 @@ class ExperimentBase(ABC):
         replace=True,
         cleanup=False,
         cleanup_timeout=None,
+        materialize_subquery_fromobjs=True
     ):
         self._check_config_version(config)
         self.config = config
@@ -93,6 +97,7 @@ class ExperimentBase(ABC):
         upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = "features"
+        self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.labels_table_name = "labels_{}".format(self.experiment_hash)
         self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
@@ -172,6 +177,7 @@ class ExperimentBase(ABC):
             replace=self.replace,
             db_engine=self.db_engine,
             feature_start_time=split_config["feature_start_time"],
+            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs
         )
 
         self.feature_group_creator = FeatureGroupCreator(
