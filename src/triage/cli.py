@@ -201,6 +201,13 @@ class Experiment(Command):
             help="only validate the config file not running Experiment",
         )
 
+        parser.add_argument(
+            "--no-materialize-fromobjs",
+            action="store_false",
+            dest="materialize_fromobjs",
+            help="do not attempt to create tables out of any feature 'from obj' subqueries."
+        )
+
         parser.set_defaults(validate=True, validate_only=False)
 
     @cachedproperty
@@ -214,6 +221,7 @@ class Experiment(Command):
             "project_path": self.args.project_path,
             "config": config,
             "replace": self.args.replace,
+            "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
