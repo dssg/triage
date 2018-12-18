@@ -135,27 +135,6 @@ class ModelEvaluator(object):
         return preds
 
     @cachedproperty
-    def feature_importances(self, path):
-        if "ScaledLogisticRegression" in self.model_type:
-            features = _feature_importance_slr(path)
-        else:
-            features = pd.read_sql(
-                f'''
-                SELECT model_id,
-                       feature,
-                       feature_importance,
-                       CASE
-                       WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
-		    	       THEN 'No feature group'
-		               ELSE split_part(feature, '_', 1)
-		    	       END AS feature_group,
-                       rank_abs
-                FROM train_results.feature_importances
-                WHERE model_id = {self.model_id}
-                ''', con=self.engine)
-        return features
-
-    @cachedproperty
     def _feature_importance_slr(self, path=None):
         '''
         Calculate feature importances for ScaledLogisticRegression
@@ -194,11 +173,37 @@ class ModelEvaluator(object):
 
         return raw_importances
 
+
+    @cachedproperty
+    def feature_importances(self, path=None):
+        if "ScaledLogisticRegression" in self.model_type:
+            features = self._feature_importance_slr(path)
+        else:
+            features = pd.read_sql(
+                f'''
+                SELECT model_id,
+                       feature,
+                       feature_importance,
+                       CASE
+                       WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
+		    	       THEN 'No feature group'
+		               ELSE split_part(feature, '_', 1)
+		    	       END AS feature_group,
+                       rank_abs
+                FROM train_results.feature_importances
+                WHERE model_id = {self.model_id}
+                ''', con=self.engine)
+        return features
+
+
     @cachedproperty
     def feature_group_importances(self, path=None):
         if "ScaledLogisticRegression" in self.model_type:
-            raw_importances = _feature_importance_slr(path)
-            feature_groups = raw_importances.groupby(['feature_group', 'model_id'])['feature_importance'].mean().reset_index()
+            raw_importances = self._feature_importance_slr(path)
+            feature_groups = raw_importances.\
+            groupby(['feature_group', 'model_id'])['feature_importance']\
+                    .mean()\
+                    .reset_index()
             feature_groups = feature_groups.rename(index=str, columns={"feature_importance":"importance_average"})
         else:
             feature_groups = pd.read_sql(
@@ -212,7 +217,7 @@ class ModelEvaluator(object):
 			CASE
 			WHEN feature like 'Algorithm does not support a standard way to calculate feature importance.'
 			THEN 'No feature group'
-			ELSE split_part(feature, '_entity', 1)
+			ELSE split_part(feature, '_', 1)
 			END AS feature_group,
 			rank_abs
 			FROM train_results.feature_importances
@@ -611,7 +616,7 @@ class ModelEvaluator(object):
                                                n_features_plots=30,
                                                figsize=(16, 12),
                                                fontsize=20,
-                                               **kwargs):
+                                               path=None):
         '''
         Generate a bar chart of the average feature group importances (by absolute value)
         Arguments:
@@ -621,7 +626,7 @@ class ModelEvaluator(object):
                 - figsize (tuple): figure size to pass to matplotlib
                 - fontsize (int): define custom fontsize for labels and legends.
         '''
-        fg_importances = self.feature_group_importances(path=kwargs['path'])
+        fg_importances = self.feature_group_importances
         fg_importances = fg_importances.filter(items=['feature_group', \
                                                'importance_average'])
         fg_importances = fg_importances.set_index('feature_group')
