@@ -154,7 +154,7 @@ class ModelEvaluator(object):
 
         storage = ProjectStorage(path)
         model_obj = ModelStorageEngine(storage).load(self.model_hash)
-        coefficients = np.abs(1 - np.exp(model_object.coef_.squeeze()))
+        coefficients = np.abs(1 - np.exp(model_obj.coef_.squeeze()))
 
         self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
@@ -1106,3 +1106,77 @@ class ModelEvaluator(object):
         plt.tight_layout()
         plt.title(f'Top {n_features} features with higher mean ratio',
                   fontsize=fontsize).set_position([.5, 0.99])
+
+    def plot_feature_distribution(self,
+                                  path,
+                                  feature_list=None):
+        '''
+        Plot feature distributions (and compare feature distributions across
+        labels)
+        '''
+
+        if feature_list is None:
+            f_importances = self.feature_importances
+            top_f = f_importances[f_importances['rank_abs'] <=
+                                  10]['feature'].tolist()
+            feature_list = top_f
+
+        n = len(feature_list)
+
+        fig, axs = plt.subplots(n, 3, figsize=(20,7*n))
+        axs = axs.ravel()
+
+        matrix = self.preds_matrix(path=path)
+ 
+        for idx,feature in enumerate(feature_list):
+            i1 = 3*idx 
+            i2 = 3*idx + 1
+            i3 = 3*idx + 2
+            f_0 = matrix[matrix.label_value==0][feature]
+            f_1 = matrix[matrix.label_value==1][feature]
+
+            if len(matrix[feature].unique()) == 2:
+                axs[i1].hist(f_0,bins=20,normed=True,alpha=0.5, 
+                             label=str(yr), color=colors[yr], histtype='step')
+                axs[i2].hist(f_1,bins=20,normed=True,alpha=0.5, 
+                             label=str(yr), color=colors[yr], linestyle="--",histtype='step')
+                axs[i3].hist(f_0,bins=20,normed=True,alpha=0.8,histtype='step',
+                             label=str(yr), color=colors[yr])
+                axs[i3].hist(f_1,bins=20,normed=True,alpha=1, linestyle="--",histtype='step',
+                             label=str(yr), color=colors[yr])
+            else:
+                sns.distplot(matrix[matrix.label_value == 0][feature], 
+                             hist=False, 
+                             kde=True, 
+                             kde_kws={'linewidth': 2}, 
+                             ax=axs[i1]
+                        )
+                sns.distplot(matrix[matrix.label_value == 1][feature], 
+                             hist=False, 
+                             kde=True, 
+                             kde_kws={'linewidth': 2, 'linestyle':'--'}, 
+                             ax=axs[i2]
+                        )
+                sns.distplot(f_0, 
+                             hist=False, 
+                             kde=True, 
+                             kde_kws={'linewidth': 2} , 
+                             ax=axs[i3])
+                sns.distplot(f_1, 
+                             hist=False, 
+                              kde=True, 
+                             kde_kws={'linewidth': 2, 'linestyle':'--'}, 
+                             ax=axs[i3])
+
+            axs[i1].legend()
+            axs[i1].set_title("0 class")
+            axs[i1].set_xlabel(feature)
+            axs[i2].legend()
+            axs[i2].set_title("1 class")
+            axs[i2].set_xlabel(feature)
+            axs[i3].legend()
+            axs[i3].set_title("All classes")
+            axs[i3].set_xlabel(feature)
+    plt.tight_layout()
+    plt.show()
+
