@@ -1,6 +1,5 @@
 import logging
 
-
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.individual_importance import (
     IndividualImportanceCalculator,
@@ -73,6 +72,7 @@ class ModelTester(object):
             max(as_of_times),
             len(as_of_times),
         )
+
         for model_id in model_ids:
             logging.info("Testing model id %s", model_id)
 
@@ -82,15 +82,31 @@ class ModelTester(object):
 
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                predictions_proba = self.predictor.predict(
-                    model_id,
-                    store,
-                    misc_db_parameters=dict(),
-                    train_matrix_columns=train_store.columns(),
-                )
+                if self.evaluator.needs_evaluations(store, model_id):
+                    logging.info(
+                        "The evaluations needed for matrix %s-%s and model %s"
+                        "are not all present in db, so predicting and evaluating",
+                        store.uuid,
+                        store.matrix_type,
+                        model_id
+                    )
+                    predictions_proba = self.predictor.predict(
+                        model_id,
+                        store,
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=train_store.columns(),
+                    )
 
-                self.evaluator.evaluate(
-                    predictions_proba=predictions_proba,
-                    matrix_store=store,
-                    model_id=model_id,
-                )
+                    self.evaluator.evaluate(
+                        predictions_proba=predictions_proba,
+                        matrix_store=store,
+                        model_id=model_id,
+                    )
+                else:
+                    logging.info(
+                        "The evaluations needed for matrix %s-%s and model %s are all present"
+                        "in db from a previous run (or none needed at all), so skipping!",
+                        store.uuid,
+                        store.matrix_type,
+                        model_id
+                    )
