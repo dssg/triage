@@ -7,6 +7,7 @@ from numpy.testing import assert_array_equal
 import pandas
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
+from triage.database_reflection import table_has_data
 
 from triage.component.catwalk.predictors import Predictor
 from tests.utils import (
@@ -179,6 +180,65 @@ def test_predictor_composite_index():
                 )
             ]
             assert len(records) == 4
+
+
+def test_predictor_save_predictions():
+    # if save_predictions is sent as False, don't save
+    with prepare() as (project_storage, db_engine, model_id):
+        predictor = Predictor(project_storage.model_storage_engine(), db_engine, save_predictions=False)
+
+        # Runs the same test for training and testing predictions
+        for mat_type in ("train", "test"):
+            matrix = matrix_creator(index="entity_id")
+            metadata = matrix_metadata_creator(
+                end_time=AS_OF_DATE, matrix_type=mat_type, indices=["entity_id"]
+            )
+
+            matrix_store = get_matrix_store(project_storage, matrix, metadata)
+            train_matrix_columns = matrix.columns[0:-1].tolist()
+
+            predict_proba = predictor.predict(
+                model_id,
+                matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns,
+            )
+
+            # assert
+            # 1. that the returned predictions are of the desired length
+            assert len(predict_proba) == 2
+
+            # 2. that the predictions table entries are present and
+            # can be linked to the original models
+            assert not table_has_data(f"{mat_type}_predictions", db_engine)
+
+
+def test_predictor_needs_predictions():
+    # if not all of the predictions for the given model id and matrix are present in the db,
+    # needs_predictions should return true. else, false
+    with prepare() as (project_storage, db_engine, model_id):
+        predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+
+        # Runs the same test for training and testing predictions
+        for mat_type in ("train", "test"):
+            matrix = matrix_creator(index="entity_id")
+            metadata = matrix_metadata_creator(
+                end_time=AS_OF_DATE, matrix_type=mat_type, indices=["entity_id"]
+            )
+
+            matrix_store = get_matrix_store(project_storage, matrix, metadata)
+            train_matrix_columns = matrix.columns[0:-1].tolist()
+
+            # we haven't done anything yet, this should definitely need predictions
+            assert predictor.needs_predictions(matrix_store, model_id)
+            predictor.predict(
+                model_id,
+                matrix_store,
+                misc_db_parameters=dict(),
+                train_matrix_columns=train_matrix_columns,
+            )
+            # now that predictions have been made, this should no longer need predictions
+            assert not predictor.needs_predictions(matrix_store, model_id)
 
 
 def test_predictor_get_train_columns():

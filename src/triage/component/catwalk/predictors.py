@@ -20,7 +20,7 @@ class ModelNotFoundError(ValueError):
 class Predictor(object):
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
 
-    def __init__(self, model_storage_engine, db_engine, replace=True):
+    def __init__(self, model_storage_engine, db_engine, replace=True, save_predictions=True):
         """Encapsulates the task of generating predictions on an arbitrary
         dataset and storing the results
 
@@ -32,6 +32,7 @@ class Predictor(object):
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
         self.replace = replace
+        self.save_predictions = save_predictions
 
     @property
     def sessionmaker(self):
@@ -86,6 +87,34 @@ class Predictor(object):
             .filter_by(model_id=model_id)
             .filter(Prediction_obj.as_of_date.in_(self._as_of_dates(matrix_store)))
         )
+
+    @db_retry
+    def needs_predictions(self, matrix_store, model_id):
+        """Returns whether or not the given matrix and model are lacking any predictions
+
+        Args:
+            matrix_store (triage.component.catwalk.storage.MatrixStore) A matrix with metadata
+            model_id (int) A database ID of a model
+
+        The way we check is by grabbing all the distinct as-of-dates in the predictions table
+        for this model and matrix. If there are more as-of-dates defined in the matrix's metadata
+        than are in the table, we need predictions
+        """
+        if not self.save_predictions:
+            return False
+        session = self.sessionmaker()
+        prediction_obj = matrix_store.matrix_type.prediction_obj
+        as_of_dates_in_db = set(
+            obj.as_of_date.date()
+            for obj in session.query(prediction_obj).filter_by(
+                model_id=model_id,
+                matrix_uuid=matrix_store.uuid
+            ).distinct(prediction_obj.as_of_date).all()
+        )
+        as_of_dates_needed = set(self._as_of_dates(matrix_store))
+        needed = bool(as_of_dates_needed - as_of_dates_in_db)
+        session.close()
+        return needed
 
     def _as_of_dates(self, matrix_store):
         matrix = matrix_store.matrix
@@ -276,18 +305,30 @@ class Predictor(object):
         logging.info(
             "Generated predictions for model %s, matrix %s", model_id, matrix_store.uuid
         )
-
-        self._write_to_db(
-            model_id,
-            matrix_store,
-            predictions_proba[:, 1],
-            labels,
-            misc_db_parameters,
-            prediction_obj,
-        )
-        logging.info(
-            "Wrote predictions for model %s, matrix %s to database",
-            model_id,
-            matrix_store.uuid,
-        )
+        if self.save_predictions:
+            logging.info(
+                "Writing predictions for model %s, matrix %s to database",
+                model_id,
+                matrix_store.uuid,
+            )
+            self._write_to_db(
+                model_id,
+                matrix_store,
+                predictions_proba[:, 1],
+                labels,
+                misc_db_parameters,
+                prediction_obj,
+            )
+            logging.info(
+                "Wrote predictions for model %s, matrix %s to database",
+                model_id,
+                matrix_store.uuid,
+            )
+        else:
+            logging.info(
+                "Skipping prediction database sync for model %s, matrix %s because "
+                "save_predictions was marked False",
+                model_id,
+                matrix_store.uuid,
+            )
         return predictions_proba[:, 1]

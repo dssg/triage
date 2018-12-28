@@ -214,6 +214,22 @@ class Experiment(Command):
             help="do not attempt to create tables out of any feature 'from obj' subqueries."
         )
 
+        parser.add_argument(
+            "--save-predictions",
+            action="store_true",
+            dest="save_predictions",
+            default=True,
+            help="Save predictions in the database to enable more analyses after modeling [default: True]",
+        )
+
+        parser.add_argument(
+            "--no-save-predictions",
+            action="store_false",
+            default=True,
+            dest="save_predictions",
+            help="Skip saving predictions to the database to save time",
+        )
+
         parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
@@ -230,6 +246,7 @@ class Experiment(Command):
             "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
+            "save_predictions": self.args.save_predictions
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(

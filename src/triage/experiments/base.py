@@ -87,6 +87,7 @@ class ExperimentBase(ABC):
         cleanup_timeout=None,
         materialize_subquery_fromobjs=True,
         profile=False,
+        save_predictions=True,
     ):
         self._check_config_version(config)
         self.config = config
@@ -98,6 +99,7 @@ class ExperimentBase(ABC):
         )
         self.project_path = project_path
         self.replace = replace
+        self.save_predictions = save_predictions
         self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
 
@@ -236,6 +238,7 @@ class ExperimentBase(ABC):
             db_engine=self.db_engine,
             individual_importance_config=self.config.get("individual_importance", {}),
             evaluator_config=self.config.get("scoring", {}),
+            save_predictions=self.save_predictions,
         )
 
     @cachedproperty
