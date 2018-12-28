@@ -24,11 +24,9 @@ events_data = [
 
 # distinct entity_id, event_date pairs
 state_data = sorted(
-    list(
-        product(
-            set([l[0] for l in events_data]),
-            set([l[1] for l in events_data] + [date(2016, 1, 1)]),
-        )
+    product(
+        set([l[0] for l in events_data]),
+        set([l[1] for l in events_data] + [date(2016, 1, 1)]),
     )
 )
 
@@ -59,63 +57,46 @@ def test_materialized_from_obj_drop():
     assert materialized_query.drop_materialized_table_sql == 'drop table if exists myquery_from_obj'
 
 
-def test_materialized_from_obj_validate_needs_entity_id():
-    with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
-        engine.execute(
-            "create table events (entity_id int, event_date date, outcome bool)"
-        )
-        for event in events_data:
-            engine.execute("insert into events values (%s, %s, %s::bool)", event)
-
-         
-        from_obj = FromObj(
-            from_obj="(select event_date from events where event_date < '2016-01-01') from_obj",
-            name="myquery",
-            knowledge_date_column='event_date'
-        )
-        engine.execute(from_obj.create_materialized_table_sql)
-        with pytest.raises(ValueError):
-            from_obj.validate(engine)
+@pytest.fixture(name="db_engine_with_events_table", scope='function')
+def db_engine_with_events_table(db_engine):
+    db_engine.execute(
+        "create table events (entity_id int, event_date date, outcome bool)"
+    )
+    for event in events_data:
+        db_engine.execute("insert into events values (%s, %s, %s::bool)", event)
+    return db_engine
 
 
-def test_materialized_from_obj_validate_needs_knowledge_date():
-    with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
-        engine.execute(
-            "create table events (entity_id int, event_date date, outcome bool)"
-        )
-        for event in events_data:
-            engine.execute("insert into events values (%s, %s, %s::bool)", event)
-
-         
-        from_obj = FromObj(
-            from_obj="(select entity_id from events where event_date < '2016-01-01') from_obj",
-            name="myquery",
-            knowledge_date_column='event_date'
-        )
-        engine.execute(from_obj.create_materialized_table_sql)
-        with pytest.raises(ValueError):
-            from_obj.validate(engine)
+def test_materialized_from_obj_validate_needs_entity_id(db_engine_with_events_table):
+    from_obj = FromObj(
+        from_obj="(select event_date from events where event_date < '2016-01-01') from_obj",
+        name="myquery",
+        knowledge_date_column='event_date'
+    )
+    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    with pytest.raises(ValueError):
+        from_obj.validate(db_engine_with_events_table)
 
 
-def test_materialized_from_obj_validate_success():
-    with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
-        engine.execute(
-            "create table events (entity_id int, event_date date, outcome bool)"
-        )
-        for event in events_data:
-            engine.execute("insert into events values (%s, %s, %s::bool)", event)
+def test_materialized_from_obj_validate_needs_knowledge_date(db_engine_with_events_table):
+    from_obj = FromObj(
+        from_obj="(select entity_id from events where event_date < '2016-01-01') from_obj",
+        name="myquery",
+        knowledge_date_column='event_date'
+    )
+    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    with pytest.raises(ValueError):
+        from_obj.validate(db_engine_with_events_table)
 
-         
-        from_obj = FromObj(
-            from_obj="events where event_date < '2016-01-01'",
-            name="myquery",
-            knowledge_date_column='event_date'
-        )
-        engine.execute(from_obj.create_materialized_table_sql)
-        from_obj.validate(engine)
+
+def test_materialized_from_obj_validate_success(db_engine_with_events_table):
+    from_obj = FromObj(
+        from_obj="events where event_date < '2016-01-01'",
+        name="myquery",
+        knowledge_date_column='event_date'
+    )
+    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    from_obj.validate(db_engine_with_events_table)
 
 
 def test_materialized_from_obj_should_not_materialize_tbl():

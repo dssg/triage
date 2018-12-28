@@ -37,11 +37,11 @@ class FromObj(object):
         return f"drop table if exists {self.materialized_table}"
 
     def should_materialize(self):
-        statements = sqlparse.parse(self.from_obj)
-        # sqlparse.parse returns a tuple of Statement objects. a from_obj should have just one
-        if len(statements) > 1:
-            raise ValueError(f"Expecting only one statement in from_obj {self.from_obj}")
-        statement = statements[0]
+        try:
+            (statement,) = sqlparse.parse(self.from_obj)
+        except ValueError as exc:
+            raise ValueError("Expected exactly one statment to be parsed by sqlparse "
+                             f"from from_obj {self.from_obj}.") from exc
         from_obj = statement.token_first(skip_ws=True, skip_cm=True)
         # token_first returns the first 'token' at the top level. This includes any aliases
         # In other words, it's something that you can "select *" from

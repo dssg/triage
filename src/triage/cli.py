@@ -208,7 +208,7 @@ class Experiment(Command):
             help="do not attempt to create tables out of any feature 'from obj' subqueries."
         )
 
-        parser.set_defaults(validate=True, validate_only=False)
+        parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
     def experiment(self):
