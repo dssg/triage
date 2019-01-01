@@ -3,7 +3,7 @@ SQLAlchemy==1.2.15
 PyYAML==3.13
 psycopg2-binary==2.7.6.1
 python-dateutil==2.7.5
-scipy==1.1.0
+scipy==1.2.0
 scikit-learn==0.20.1
 tables==3.3.0 # pyup: ignore
 matplotlib<2.2 # pyup: ignore
