@@ -1,5 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
+import cProfile
+import marshal
+import time
 
 from descriptors import cachedproperty
 from timeout import timeout
@@ -68,6 +71,7 @@ class ExperimentBase(ABC):
         materialize_subquery_fromobjs (bool, default True) Whether or not to create and index
             tables for feature "from objects" that are subqueries. Can speed up performance
             when building features for many as-of-dates.
+        profile (bool)
     """
 
     cleanup_timeout = 60  # seconds
@@ -81,7 +85,8 @@ class ExperimentBase(ABC):
         replace=True,
         cleanup=False,
         cleanup_timeout=None,
-        materialize_subquery_fromobjs=True
+        materialize_subquery_fromobjs=True,
+        profile=False,
     ):
         self._check_config_version(config)
         self.config = config
@@ -117,6 +122,8 @@ class ExperimentBase(ABC):
         self.cleanup_timeout = (
             self.cleanup_timeout if cleanup_timeout is None else cleanup_timeout
         )
+        self.profile = profile
+        logging.info("Generate profiling stats? (profile option): %s", self.profile)
 
     def _check_config_version(self, config):
         if "config_version" in config:
@@ -634,9 +641,26 @@ class ExperimentBase(ABC):
             self.cohort_table_generator.clean_up()
             self.label_generator.clean_up(self.labels_table_name)
 
+    def _run_profile(self):
+        cp = cProfile.Profile()
+        cp.runcall(self._run)
+        store = self.project_storage.get_store(
+            ["profiling_stats"],
+            f"{int(time.time())}.profile"
+        )
+        with store.open('wb') as fd:
+            cp.create_stats()
+            marshal.dump(cp.stats, fd)
+            logging.info("Profiling stats of this Triage run calculated and written to %s"
+                         "in cProfile format.",
+                         store)
+
     def run(self):
         try:
-            self._run()
+            if self.profile:
+                self._run_profile()
+            else:
+                self._run()
         except Exception:
             logging.exception("Run interrupted by uncaught exception")
             raise
