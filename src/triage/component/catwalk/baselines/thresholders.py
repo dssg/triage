@@ -97,7 +97,7 @@ class SimpleThresholder(object):
         """ Convert the user-passed operator into the the name of the apprpriate
         pandas method.
         """
-        operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "equals"}
+        operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "eq"}
         try:
             operator = operator_lookup[operator_string]
         except KeyError:
