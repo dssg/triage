@@ -9,6 +9,8 @@ from sqlalchemy import text as t
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.collate import Aggregate, Categorical, SpacetimeAggregation
 
+from unittest.mock import patch
+
 
 INPUT_DATA = [
     # entity_id, knowledge_date, zip_code, cat_one, quantity_one
@@ -530,6 +532,7 @@ def test_array_categoricals(db_engine):
 
 
 def test_generate_table_tasks(test_engine):
+    test_engine.execute('create schema features')
     aggregations = [
         SpacetimeAggregation(
             prefix="prefix1",
@@ -700,6 +703,65 @@ def test_replace(test_engine):
     )
 
     assert len(imp_tasks["aprefix_aggregation_imputed"]) == 0
+
+
+def test_aggregations_materialize_off(test_engine):
+    aggregate_config = {
+        "prefix": "aprefix",
+        "categoricals": [
+            {
+                "column": "cat_one",
+                "choices": ["good", "bad"],
+                "metrics": ["sum"],
+                "imputation": {"all": {"type": "null_category"}},
+            }
+        ],
+        "groups": ["entity_id", "zip_code"],
+        "intervals": ["all"],
+        "knowledge_date_column": "knowledge_date",
+        "from_obj": "data",
+    }
+
+    feature_generator = FeatureGenerator(
+        db_engine=test_engine,
+        features_schema_name="features",
+        materialize_subquery_fromobjs=False
+    )
+
+    with patch("triage.component.architect.feature_generators.FromObj") as fromobj_mock:
+        feature_generator.aggregations([aggregate_config], "2016-01-01", "states")
+        assert not fromobj_mock.called
+
+
+def test_aggregations_materialize_on(test_engine):
+    aggregate_config = {
+        "prefix": "aprefix",
+        "categoricals": [
+            {
+                "column": "cat_one",
+                "choices": ["good", "bad"],
+                "metrics": ["sum"],
+                "imputation": {"all": {"type": "null_category"}},
+            }
+        ],
+        "groups": ["entity_id", "zip_code"],
+        "intervals": ["all"],
+        "knowledge_date_column": "knowledge_date",
+        "from_obj": "data",
+    }
+
+    feature_generator = FeatureGenerator(
+        db_engine=test_engine,
+        features_schema_name="features",
+    )
+
+    with patch("triage.component.architect.feature_generators.FromObj") as fromobj_mock:
+        feature_generator.aggregations([aggregate_config], "2016-01-01", "states")
+        fromobj_mock.assert_called_once_with(
+            from_obj="data",
+            knowledge_date_column="knowledge_date",
+            name="features.aprefix"
+        )
 
 
 def test_transaction_error(test_engine):

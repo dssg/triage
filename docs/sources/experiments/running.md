@@ -291,6 +291,13 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 - `experiment.feature_dicts` will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment
 - `experiment.matrix_build_tasks` will output a list representing each matrix that will be built.
 
+## Optimizing Experiment Performance
+
+### materialize_subquery_fromobjs
+By default, experiments will inspect the `from_obj` of every feature aggregation to see if it looks like a subquery, create a table out of it if so, index it on the `knowledge_date_column` and `entity_id`, and use that for running feature queries. This can make feature generation go a lot faster if the `from_obj` takes a decent amount of time to run and/or there are a lot of as-of-dates in the experiment. It won't do this for `from_objs` that are just tables, or simple joins (e.g. `entities join events using (entity_id)`) as the existing indexes you have on those tables should work just fine.
+
+You can turn this off if you'd like, which you may want to do if the `from_obj` subqueries return a lot of data and you want to save as much disk space as possible. The option is turned off by passing `materialize_subquery_fromobjs=False` to the Experiment.
+
 ## Experiment Classes
 
 - *SingleThreadedExperiment*: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.

@@ -12,12 +12,18 @@ from triage.component.collate import (
     Categorical,
     Compare,
     SpacetimeAggregation,
+    FromObj
 )
 
 
 class FeatureGenerator(object):
     def __init__(
-        self, db_engine, features_schema_name, replace=True, feature_start_time=None
+        self,
+        db_engine,
+        features_schema_name,
+        replace=True,
+        feature_start_time=None,
+        materialize_subquery_fromobjs=True
     ):
         """Generates aggregate features using collate
 
@@ -35,7 +41,9 @@ class FeatureGenerator(object):
         self.categorical_cache = {}
         self.replace = replace
         self.feature_start_time = feature_start_time
+        self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.entity_id_column = "entity_id"
+        self.from_objs = {}
 
     def _validate_keys(self, aggregation_config):
         for key in [
@@ -321,9 +329,29 @@ class FeatureGenerator(object):
         Returns: (list) collate.SpacetimeAggregations
         """
         return [
-            self._aggregation(aggregation_config, feature_dates, state_table)
+            self.preprocess_aggregation(
+                self._aggregation(aggregation_config, feature_dates, state_table)
+            )
             for aggregation_config in feature_aggregation_config
         ]
+
+    def preprocess_aggregation(self, aggregation):
+        create_schema = aggregation.get_create_schema()
+
+        if create_schema is not None:
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
+
+        if self.materialize_subquery_fromobjs:
+            # materialize from obj
+            from_obj = FromObj(
+                from_obj=aggregation.from_obj.text,
+                name=f"{aggregation.schema}.{aggregation.prefix}",
+                knowledge_date_column=aggregation.date_column
+            )
+            from_obj.maybe_materialize(self.db_engine)
+            aggregation.from_obj = from_obj.table
+        return aggregation
 
     def generate_all_table_tasks(self, aggregations, task_type):
         """Generates SQL commands for creating, populating, and indexing
@@ -545,16 +573,10 @@ class FeatureGenerator(object):
             'finalize': list of commands to finalize table after population
         }
         """
-        create_schema = aggregation.get_create_schema()
         creates = aggregation.get_creates()
         drops = aggregation.get_drops()
         indexes = aggregation.get_indexes()
         inserts = aggregation.get_inserts()
-
-        if create_schema is not None:
-            with self.db_engine.begin() as conn:
-                conn.execute(create_schema)
-
         table_tasks = OrderedDict()
         for group in aggregation.groups:
             group_table = self._clean_table_name(
