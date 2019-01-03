@@ -283,6 +283,9 @@ Here's an example query, which returns the top 10 model groups by precision at t
     limit 10
 ```
 
+
+
+
 ## Inspecting an Experiment before running
 
 Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:
@@ -292,6 +295,17 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 - `experiment.matrix_build_tasks` will output a list representing each matrix that will be built.
 
 ## Optimizing Experiment Performance
+
+### Profiling an Experiment
+
+Experiment running slowly? Try the `profile` keyword argument, or `--profile` in the command line. This will output a cProfile file to the project path's `profiling_stats` directory.  This is a binary format but can be read with a variety of visualization programs.
+
+[snakeviz](https://jiffyclub.github.io/snakeviz/) - A browser based graphical viewer.
+[tuna](https://github.com/nschloe/tuna) - Another browser based graphical viewer
+[gprof2dot](https://github.com/jrfonseca/gprof2dot) - A command-line tool to convert files to graphviz format
+[pyprof2calltree](https://pypi.org/project/pyprof2calltree/) - A command-line tool to convert files to Valgrind log format, for viewing in established viewers like KCacheGrind
+
+Looking at the profile through a visualization program, you can see which portions of the experiment are taking up the most time. Based on this, you may be able to prioritize changes. For instance, if cohort/label/feature table generation are taking up the bulk of the time, you may add indexes to source tables, or increase the number of database processes. On the other hand, if model training is the culprit, you may temporarily try a smaller grid to get results more quickly.
 
 ### materialize_subquery_fromobjs
 By default, experiments will inspect the `from_obj` of every feature aggregation to see if it looks like a subquery, create a table out of it if so, index it on the `knowledge_date_column` and `entity_id`, and use that for running feature queries. This can make feature generation go a lot faster if the `from_obj` takes a decent amount of time to run and/or there are a lot of as-of-dates in the experiment. It won't do this for `from_objs` that are just tables, or simple joins (e.g. `entities join events using (entity_id)`) as the existing indexes you have on those tables should work just fine.

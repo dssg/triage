@@ -6,6 +6,7 @@ from collections import OrderedDict
 import pandas as pd
 import yaml
 from moto import mock_s3
+import boto3
 from numpy.testing import assert_almost_equal
 
 from triage.component.catwalk.storage import (
@@ -24,8 +25,6 @@ class SomeClass(object):
 
 def test_S3Store():
     with mock_s3():
-        import boto3
-
         client = boto3.client("s3")
         client.create_bucket(Bucket="test_bucket", ACL="public-read-write")
         store = S3Store(f"s3://test_bucket/a_path")
@@ -176,7 +175,6 @@ class MatrixStoreTest(unittest.TestCase):
 
     def test_s3_save(self):
         with mock_s3():
-            import boto3
 
             client = boto3.client("s3")
             client.create_bucket(Bucket="fake-matrix-bucket", ACL="public-read-write")

@@ -200,6 +200,12 @@ class Experiment(Command):
             action="store_true",
             help="only validate the config file not running Experiment",
         )
+        parser.add_argument(
+            "--profile",
+            action="store_true",
+            dest="profile",
+            help="Record the time spent in various functions using cProfile"
+        )
 
         parser.add_argument(
             "--no-materialize-fromobjs",
@@ -223,6 +229,7 @@ class Experiment(Command):
             "replace": self.args.replace,
             "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
+            "profile": self.args.profile,
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(

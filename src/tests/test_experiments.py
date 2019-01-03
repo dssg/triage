@@ -351,6 +351,19 @@ def test_custom_label_name(experiment_class):
             assert experiment.planner.label_names == ["custom_label_name"]
 
 
+def test_profiling(db_engine):
+    populate_source_data(db_engine)
+    with TemporaryDirectory() as temp_dir:
+        project_path = os.path.join(temp_dir, "inspections")
+        experiment = SingleThreadedExperiment(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=project_path,
+            profile=True
+        ).run()
+        assert len(os.listdir(os.path.join(project_path, "profiling_stats"))) == 1
+
+
 @parametrize_experiment_classes
 def test_baselines_with_missing_features(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
