@@ -205,11 +205,15 @@ class ModelStorageEngine(object):
             A project file storage engine
         model_directory (string, optional) A directory name for models.
             Defaults to 'trained_models'
+        should_cache (bool, optional) Whether or not the engine should cache written models
+            in memory in addition to persisting. Defaults to True
 
     """
-    def __init__(self, project_storage, model_directory=None):
+    def __init__(self, project_storage, model_directory=None, should_cache=True):
         self.project_storage = project_storage
         self.directories = [model_directory or "trained_models"]
+        self.should_cache = should_cache
+        self.cache = {}
 
     def write(self, obj, model_hash):
         """Persist a model object using joblib. Also performs compression
@@ -218,6 +222,9 @@ class ModelStorageEngine(object):
             obj (object) A picklable model object
             model_hash (string) An identifier, unique within this project, for the model
         """
+        if self.should_cache:
+            logging.info("Caching model %s", model_hash)
+            self.cache[model_hash] = obj
         with self._get_store(model_hash).open("wb") as fd:
             joblib.dump(obj, fd, compress=True)
 
@@ -229,6 +236,9 @@ class ModelStorageEngine(object):
 
         Returns: (object) A model object
         """
+        if self.should_cache and model_hash in self.cache:
+            logging.info("Returning model %s from cache", model_hash)
+            return self.cache[model_hash]
         with self._get_store(model_hash).open("rb") as fd:
             return joblib.load(fd)
 
@@ -249,6 +259,20 @@ class ModelStorageEngine(object):
             model_hash (string) An identifier, unique within this project, for the model
         """
         return self._get_store(model_hash).delete()
+
+    def uncache(self, model_hash):
+        """Remove the model identified by this hash from memory
+
+        Args:
+            model_hash (string) An identifier, unique within this project, for the model
+        """
+        if model_hash in self.cache:
+            logging.info("Removing model %s from cache", model_hash)
+            del self.cache[model_hash]
+        else:
+            logging.info("Model %s not in cache (likely was trained in another run),"
+                         "so no need to remove",
+                         model_hash)
 
     def _get_store(self, model_hash):
         return self.project_storage.get_store(self.directories, model_hash)

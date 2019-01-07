@@ -151,4 +151,5 @@ class IndividualImportanceCalculator(object):
                 importance_score=float(importance_record["score"]),
             )
             db_objects.append(db_object)
+        print(len(db_objects))
         save_db_objects(self.db_engine, db_objects)

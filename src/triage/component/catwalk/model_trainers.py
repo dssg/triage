@@ -17,6 +17,7 @@ from .feature_importances import get_feature_importances
 from .utils import (
     filename_friendly_hash,
     retrieve_model_id_from_hash,
+    retrieve_model_hash_from_id,
     db_retry,
     save_db_objects,
 )
@@ -420,3 +421,6 @@ class ModelTrainer(object):
             )
         logging.info("Found %s unique model training tasks", len(tasks))
         return tasks
+
+    def uncache_model(self, model_id):
+        self.model_storage_engine.uncache(retrieve_model_hash_from_id(self.db_engine, model_id))
