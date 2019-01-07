@@ -353,5 +353,6 @@ scoring:
 # This entire section can be left blank,
 # in which case the defaults will be used.
 individual_importance:
-    methods: ['uniform']
+    methods: [] # empty list means don't calculate individual importances
+    # methods: ['uniform']
     n_ranks: 5
