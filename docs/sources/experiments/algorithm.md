@@ -110,11 +110,16 @@ a column or SQL expression representing a numeric quantity present in the `from_
 of aggregate functions we want to use. The aggregate function is applied to the quantity.
 * Each `group` is a column applied to the GROUP BY clause. Generally this is 'entity_id', but higher-level groupings
 (for instance, 'zip_code') can be used as long as they can be rolled up to 'entity_id'.
+* By default the query is joined with the cohort table (see 'state table' above) to remove unnecessary rows. If `save_all_features` is passed to the Experiment this is not done.
 
 So a simplified version of a typical query would look like:
 ```
 SELECT {group}, {metric}({quantity})
 FROM {from_obj}
+JOIN {cohort_table} ON (
+    {cohort_table.entity_id} = {from_obj.entity_id}
+    AND {cohort_table.date} = {as_of_time}
+)
 WHERE {knowledge_date_column} >= {as_of_time} - interval {interval}
 GROUP BY {group}
 ```

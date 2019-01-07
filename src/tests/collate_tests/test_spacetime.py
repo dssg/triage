@@ -250,3 +250,75 @@ def test_input_min_date():
             st.validate(engine.connect())
         with pytest.raises(ValueError):
             st.execute(engine.connect())
+
+
+def test_join_with_cohort_table(db_engine):
+    # if we specify joining with the cohort table
+    # only entity_id/date pairs in the cohort table should show up
+    db_engine.execute("create table events (entity_id int, date date, outcome bool)")
+    for event in events_data:
+        db_engine.execute("insert into events values (%s, %s, %s::bool)", event)
+
+    db_engine.execute("create table cohort (entity_id int, date date)")
+
+    # use the states list from above except only include entities 1 and 2 in the cohort
+    smaller_cohort = sorted(
+        list(
+            product(
+                set([l[0] for l in events_data if l[0] == 1 or l[0] == 2]),
+                set([l[1] for l in events_data] + [date(2016, 1, 1)]),
+            )
+        )
+    )
+    for state in smaller_cohort:
+        db_engine.execute("insert into cohort values (%s, %s)", state)
+
+    # create our test aggregation with the important 'join_with_cohort_table' flag
+    agg = Aggregate(
+        "outcome::int",
+        ["sum", "avg"],
+        {
+            "coltype": "aggregate",
+            "avg": {"type": "mean"},
+            "sum": {"type": "constant", "value": 3},
+            "max": {"type": "zero"},
+        },
+    )
+    st = SpacetimeAggregation(
+        aggregates=[agg],
+        from_obj="events",
+        groups=["entity_id"],
+        intervals=["all"],
+        dates=["2016-01-01", "2015-01-01"],
+        state_table="cohort",
+        state_group="entity_id",
+        date_column='"date"',
+        join_with_cohort_table=True,
+    )
+
+    st.execute(db_engine.connect())
+
+    r = db_engine.execute("select * from events_entity_id order by entity_id, date")
+    rows = [x for x in r]
+
+    # these rows should be similar to the rows in the basic spacetime test,
+    # except only the rows for entities 1 and 2 are present
+    assert len(rows) == 4
+
+    assert rows[0]["entity_id"] == 1
+    assert rows[0]["date"] == date(2015, 1, 1)
+    assert rows[0]["events_entity_id_all_outcome::int_sum"] == 1
+    assert rows[0]["events_entity_id_all_outcome::int_avg"] == 0.5
+    assert rows[1]["entity_id"] == 1
+    assert rows[1]["date"] == date(2016, 1, 1)
+    assert rows[1]["events_entity_id_all_outcome::int_sum"] == 2
+    assert rows[1]["events_entity_id_all_outcome::int_avg"] == 0.5
+
+    assert rows[2]["entity_id"] == 2
+    assert rows[2]["date"] == date(2015, 1, 1)
+    assert rows[2]["events_entity_id_all_outcome::int_sum"] == 1
+    assert rows[2]["events_entity_id_all_outcome::int_avg"] == 0.5
+    assert rows[3]["entity_id"] == 2
+    assert rows[3]["date"] == date(2016, 1, 1)
+    assert rows[3]["events_entity_id_all_outcome::int_sum"] == 1
+    assert rows[3]["events_entity_id_all_outcome::int_avg"] == 0.5
