@@ -67,11 +67,11 @@ class FromObj(object):
     def maybe_materialize(self, db_engine):
         if self.should_materialize():
             logging.info("from_obj %s looks like a subquery, so creating table", self.name)
-            db_engine.execute(self.drop)
-            db_engine.execute(self.create)
+            db_engine.execute(self.drop_materialized_table_sql)
+            db_engine.execute(self.create_materialized_table_sql)
             logging.info("Created table to hold from_obj. New table: %s", self.materialized_table)
             self.validate(db_engine)
-            db_engine.execute(self.index)
+            db_engine.execute(self.index_materialized_table_sql)
             logging.info("Indexed from_obj table: %s", self.materialized_table)
         else:
             logging.info("from_obj did not look like a subquery, so did not materialize")
