@@ -7,6 +7,28 @@ from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 REQUIRED_KEYS = frozenset(["feature_name", "operator", "threshold"])
 
 
+def get_operator_method(operator_string, rule):
+    """ Convert the user-passed operator into the the name of the apprpriate
+    pandas method.
+    """
+    operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "eq"}
+    try:
+        operator_method = operator_lookup[operator_string]
+    except KeyError:
+        raise ValueError(
+            (
+                'Operator "{operator}" extracted from rule "{rule}" is not a '
+                "supported operator ({supported_operators}).".format(
+                    operator=operator_string,
+                    rule=rule,
+                    supported_operators=operator_lookup.keys(),
+                )
+            )
+        )
+
+    return operator_method
+
+
 class SimpleThresholder(object):
     """ The simple thresholder applies a set of predetermined logical rules to a
     test matrix to classify entities. By default, it will classify entities as 1
@@ -77,7 +99,7 @@ class SimpleThresholder(object):
                             )
                         )
                     )
-                rule["operator"] = self._validate_operator(rule["operator"], rule)
+                rule["operator"] = get_operator_method(rule["operator"], rule)
                 converted_rules.append(rule)
 
         vars(self)["rules"] = converted_rules
@@ -92,27 +114,6 @@ class SimpleThresholder(object):
         """
         rule_combination_method_lookup = {"or": "any", "and": "all"}
         return rule_combination_method_lookup[logical_operator]
-
-    def _validate_operator(self, operator_string, rule):
-        """ Convert the user-passed operator into the the name of the apprpriate
-        pandas method.
-        """
-        operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "eq"}
-        try:
-            operator = operator_lookup[operator_string]
-        except KeyError:
-            raise ValueError(
-                (
-                    'Operator "{operator}" extracted from rule "{rule}" is not a '
-                    "supported operator ({supported_operators}).".format(
-                        operator=operator_string,
-                        rule=rule,
-                        supported_operators=operator_lookup.keys(),
-                    )
-                )
-            )
-
-        return operator
 
     def _convert_string_rule_to_dict(self, rule):
         """ Converts a string rule into a dict, raising helpful exceptions if it
@@ -140,7 +141,7 @@ class SimpleThresholder(object):
                 )
             )
 
-        operator = self._validate_operator(components[1], rule)
+        operator = get_operator_method(components[1], rule)
 
         return {
             "feature_name": components[0],

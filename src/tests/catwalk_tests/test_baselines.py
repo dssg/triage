@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+import pandas.api.types as ptypes
 
 import pytest
 from unittest import TestCase
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
 from triage.component.catwalk.baselines.thresholders import SimpleThresholder
+from triage.component.catwalk.baselines.thresholders import get_operator_method
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
@@ -78,6 +80,14 @@ class TestRankOneFeature(TestCase):
                     ]
                 ).transpose()
             np.testing.assert_array_equal(results, expected_results)
+
+
+@pytest.mark.parametrize('operator', [">", ">=", "<", "<=", "=="])
+def test_get_operator_method(operator):
+    series = pd.Series([1, 2, 3, 4, 5])
+    pd_operator = get_operator_method(operator, "This is a  dummy rule.")
+    result = getattr(series, pd_operator)(series)
+    assert ptypes.is_bool_dtype(result)
 
 
 @pytest.mark.usefixtures("data", "rules")
