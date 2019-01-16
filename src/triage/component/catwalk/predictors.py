@@ -105,11 +105,11 @@ class Predictor(object):
         session = self.sessionmaker()
         prediction_obj = matrix_store.matrix_type.prediction_obj
         as_of_dates_in_db = set(
-            obj.as_of_date.date()
-            for obj in session.query(prediction_obj).filter_by(
+            as_of_date.date()
+            for (as_of_date,) in session.query(prediction_obj).filter_by(
                 model_id=model_id,
                 matrix_uuid=matrix_store.uuid
-            ).distinct(prediction_obj.as_of_date).all()
+            ).distinct(prediction_obj.as_of_date).values("as_of_date")
         )
         as_of_dates_needed = set(self._as_of_dates(matrix_store))
         needed = bool(as_of_dates_needed - as_of_dates_in_db)
