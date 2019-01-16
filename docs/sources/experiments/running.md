@@ -215,6 +215,15 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
+## Optimizing an Experiment
+
+### Skipping Prediction Syncing
+By default, the Experiment will save predictions to the database. This can take a long time if your test matrices have a lot of rows, and isn't quite necessary if you just want to see the high-level performance of your grid. By switching `save_predictions` to `False`, you can skip the prediction saving. You'll still get your evaluation metrics, so you can look at performance. Don't worry, you can still get your predictions back later by rerunning the Experiment later at default settings, which will find your already-trained models, generate predictions, and save them.
+
+CLI: `triage experiment myexperiment.yaml --no-save-predictions`
+
+Python: `SingleThreadedExperiment(..., save_predictions=False)`
+
 ## Running parts of an Experiment
 
 If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
