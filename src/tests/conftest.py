@@ -1,6 +1,10 @@
 import pytest
 import testing.postgresql
+import tempfile
 from sqlalchemy import create_engine
+from triage.component.catwalk.storage import ProjectStorage
+from triage.component.catwalk.db import ensure_db
+from tests.results_tests.factories import init_engine
 
 
 @pytest.fixture(name='db_engine', scope='function')
@@ -12,5 +16,18 @@ def fixture_db_engine():
     """
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
+        ensure_db(engine)
+        init_engine(engine)
         yield engine
         engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def project_storage():
+    """Set up a temporary project storage engine
+
+    Yields (catwalk.storage.ProjectStorage)
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_storage = ProjectStorage(temp_dir)
+        yield project_storage

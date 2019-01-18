@@ -78,58 +78,60 @@ class ModelTrainTester(object):
 
     def process_task(self, test_store, train_store, train_kwargs):
         logging.info("Beginning train task %s", train_kwargs)
-        model_id = self.model_trainer.process_train_task(**train_kwargs)
-        if not model_id:
-            logging.warning("No model id returned from ModelTrainer.process_train_task, "
-                            "training unsuccessful. Not attempting to test")
-            return
-        logging.info("Trained task %s and got model id %s", train_kwargs, model_id)
-        as_of_times = test_store.metadata["as_of_times"]
-        logging.info(
-            "Testing and scoring model id %s with test matrix %s. "
-            "as_of_times min: %s max: %s num: %s",
-            model_id,
-            test_store.uuid,
-            min(as_of_times),
-            max(as_of_times),
-            len(as_of_times),
-        )
+        with self.model_trainer.cache_models():
+            # will cache any trained models until it goes out of scope (at the end of the task)
+            # this way we avoid loading the model pickle again for predictions
+            model_id = self.model_trainer.process_train_task(**train_kwargs)
+            if not model_id:
+                logging.warning("No model id returned from ModelTrainer.process_train_task, "
+                                "training unsuccessful. Not attempting to test")
+                return
+            logging.info("Trained task %s and got model id %s", train_kwargs, model_id)
+            as_of_times = test_store.metadata["as_of_times"]
+            logging.info(
+                "Testing and scoring model id %s with test matrix %s. "
+                "as_of_times min: %s max: %s num: %s",
+                model_id,
+                test_store.uuid,
+                min(as_of_times),
+                max(as_of_times),
+                len(as_of_times),
+            )
 
-        self.individual_importance_calculator.calculate_and_save_all_methods_and_dates(
-            model_id, test_store
-        )
+            self.individual_importance_calculator.calculate_and_save_all_methods_and_dates(
+                model_id, test_store
+            )
 
-        # Generate predictions for the testing data then training data
-        for store in (test_store, train_store):
-            if self.predictor.replace or self.model_evaluator.needs_evaluations(store, model_id):
-                logging.info(
-                    "The evaluations needed for matrix %s-%s and model %s"
-                    "are not all present in db, so predicting and evaluating",
-                    store.uuid,
-                    store.matrix_type,
-                    model_id
-                )
-                predictions_proba = self.predictor.predict(
-                    model_id,
-                    store,
-                    misc_db_parameters=dict(),
-                    train_matrix_columns=train_store.columns(),
-                )
+            # Generate predictions for the testing data then training data
+            for store in (test_store, train_store):
+                if self.predictor.replace or self.model_evaluator.needs_evaluations(store, model_id):
+                    logging.info(
+                        "The evaluations needed for matrix %s-%s and model %s"
+                        "are not all present in db, so predicting and evaluating",
+                        store.uuid,
+                        store.matrix_type,
+                        model_id
+                    )
+                    predictions_proba = self.predictor.predict(
+                        model_id,
+                        store,
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=train_store.columns(),
+                    )
 
-                self.model_evaluator.evaluate(
-                    predictions_proba=predictions_proba,
-                    matrix_store=store,
-                    model_id=model_id,
-                )
-            else:
-                logging.info(
-                    "The evaluations needed for matrix %s-%s and model %s are all present"
-                    "in db from a previous run (or none needed at all), so skipping!",
-                    store.uuid,
-                    store.matrix_type,
-                    model_id
-                )
-        self.model_trainer.uncache_model(model_id)
+                    self.model_evaluator.evaluate(
+                        predictions_proba=predictions_proba,
+                        matrix_store=store,
+                        model_id=model_id,
+                    )
+                else:
+                    logging.info(
+                        "The evaluations needed for matrix %s-%s and model %s are all present"
+                        "in db from a previous run (or none needed at all), so skipping!",
+                        store.uuid,
+                        store.matrix_type,
+                        model_id
+                    )
 
 
 __all__ = (

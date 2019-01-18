@@ -4,6 +4,7 @@ import os
 from os.path import dirname
 import pathlib
 import logging
+from contextlib import contextmanager
 from sklearn.externals import joblib
 from urllib.parse import urlparse
 from triage.component.results_schema import (
@@ -205,15 +206,24 @@ class ModelStorageEngine(object):
             A project file storage engine
         model_directory (string, optional) A directory name for models.
             Defaults to 'trained_models'
-        should_cache (bool, optional) Whether or not the engine should cache written models
-            in memory in addition to persisting. Defaults to True
-
     """
-    def __init__(self, project_storage, model_directory=None, should_cache=True):
+    def __init__(self, project_storage, model_directory=None):
         self.project_storage = project_storage
         self.directories = [model_directory or "trained_models"]
-        self.should_cache = should_cache
+        self.should_cache = False
+        self.reset_cache()
+
+    def reset_cache(self):
         self.cache = {}
+
+    @contextmanager
+    def cache_models(self):
+        self.should_cache = True
+        try:
+            yield
+        finally:
+            self.reset_cache()
+            self.should_cache = False
 
     def write(self, obj, model_hash):
         """Persist a model object using joblib. Also performs compression
@@ -259,20 +269,6 @@ class ModelStorageEngine(object):
             model_hash (string) An identifier, unique within this project, for the model
         """
         return self._get_store(model_hash).delete()
-
-    def uncache(self, model_hash):
-        """Remove the model identified by this hash from memory
-
-        Args:
-            model_hash (string) An identifier, unique within this project, for the model
-        """
-        if model_hash in self.cache:
-            logging.info("Removing model %s from cache", model_hash)
-            del self.cache[model_hash]
-        else:
-            logging.info("Model %s not in cache (likely was trained in another run),"
-                         "so no need to remove",
-                         model_hash)
 
     def _get_store(self, model_hash):
         return self.project_storage.get_store(self.directories, model_hash)

@@ -3,6 +3,7 @@ import datetime
 import importlib
 import logging
 import sys
+from contextlib import contextmanager
 
 import numpy as np
 import pandas
@@ -17,7 +18,6 @@ from .feature_importances import get_feature_importances
 from .utils import (
     filename_friendly_hash,
     retrieve_model_id_from_hash,
-    retrieve_model_hash_from_id,
     db_retry,
     save_db_objects,
 )
@@ -278,6 +278,11 @@ class ModelTrainer(object):
         logging.info("Wrote model to db: hash %s, got id %s", model_hash, model_id)
         return model_id
 
+    @contextmanager
+    def cache_models(self):
+        with self.model_storage_engine.cache_models():
+            yield
+
     def generate_trained_models(self, grid_config, misc_db_parameters, matrix_store):
         """Train and store configured models, yielding the ids one by one
 
@@ -421,6 +426,3 @@ class ModelTrainer(object):
             )
         logging.info("Found %s unique model training tasks", len(tasks))
         return tasks
-
-    def uncache_model(self, model_id):
-        self.model_storage_engine.uncache(retrieve_model_hash_from_id(self.db_engine, model_id))

@@ -8,6 +8,7 @@ import yaml
 from moto import mock_s3
 import boto3
 from numpy.testing import assert_almost_equal
+from unittest import mock
 
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -15,6 +16,7 @@ from triage.component.catwalk.storage import (
     HDFMatrixStore,
     S3Store,
     ProjectStorage,
+    ModelStorageEngine,
 )
 
 
@@ -48,6 +50,26 @@ def test_FSStore():
         assert newVal.decode("utf-8") == "val"
         store.delete()
         assert not store.exists()
+
+
+def test_ModelStorageEngine_nocaching(project_storage):
+    mse = ModelStorageEngine(project_storage)
+    mse.write('testobject', 'myhash')
+    assert mse.exists('myhash')
+    assert mse.load('myhash') == 'testobject'
+    assert 'myhash' not in mse.cache
+
+
+def test_ModelStorageEngine_caching(project_storage):
+    mse = ModelStorageEngine(project_storage)
+    with mse.cache_models():
+        mse.write('testobject', 'myhash')
+        with mock.patch.object(mse, "_get_store") as get_store_mock:
+            assert mse.load('myhash') == 'testobject'
+            assert not get_store_mock.called
+        assert 'myhash' in mse.cache
+    # when cache_models goes out of scope the cache should be empty
+    assert 'myhash' not in mse.cache
 
 
 class MatrixStoreTest(unittest.TestCase):
@@ -142,34 +164,30 @@ class MatrixStoreTest(unittest.TestCase):
             matrix_store.matrix = None
             assert matrix_store.matrix.to_dict() == original_dict
 
-    def test_as_of_dates_entity_index(self):
+    def test_as_of_dates_entity_index(self, project_storage):
         data = {
             "entity_id": [1, 2],
             "feature_one": [0.5, 0.6],
             "feature_two": [0.5, 0.6],
         }
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_storage = ProjectStorage(tmpdir)
-            matrix_store = CSVMatrixStore(project_storage, [], "test")
-            matrix_store.matrix = pd.DataFrame.from_dict(data)
-            matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"]}
+        matrix_store = CSVMatrixStore(project_storage, [], "test")
+        matrix_store.matrix = pd.DataFrame.from_dict(data)
+        matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"]}
 
-            self.assertEqual(matrix_store.as_of_dates, ["2016-01-01"])
+        self.assertEqual(matrix_store.as_of_dates, ["2016-01-01"])
 
-    def test_as_of_dates_entity_date_index(self):
+    def test_as_of_dates_entity_date_index(self, project_storage):
         data = {
             "entity_id": [1, 2, 1, 2],
             "feature_one": [0.5, 0.6, 0.5, 0.6],
             "feature_two": [0.5, 0.6, 0.5, 0.6],
             "as_of_date": ["2016-01-01", "2016-01-01", "2017-01-01", "2017-01-01"],
         }
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_storage = ProjectStorage(tmpdir)
-            matrix_store = CSVMatrixStore(project_storage, [], "test")
-            matrix_store.matrix = pd.DataFrame.from_dict(data).set_index(
-                ["entity_id", "as_of_date"]
-            )
-            matrix_store.metadata = {"indices": ["entity_id", "as_of_date"]}
+        matrix_store = CSVMatrixStore(project_storage, [], "test")
+        matrix_store.matrix = pd.DataFrame.from_dict(data).set_index(
+            ["entity_id", "as_of_date"]
+        )
+        matrix_store.metadata = {"indices": ["entity_id", "as_of_date"]}
 
         self.assertEqual(matrix_store.as_of_dates, ["2016-01-01", "2017-01-01"])
 
