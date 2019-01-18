@@ -280,6 +280,11 @@ class ModelTrainer(object):
 
     @contextmanager
     def cache_models(self):
+        """Caches each trained model in memory as it is written to storage.
+
+        Must be used as a context manager.
+        The cache is cleared when the context manager goes out of scope
+        """
         with self.model_storage_engine.cache_models():
             yield
 

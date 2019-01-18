@@ -24,7 +24,7 @@ def fixture_db_engine():
 
 @pytest.fixture(scope="function")
 def project_storage():
-    """Set up a temporary project storage engine
+    """Set up a temporary project storage engine on the filesystem
 
     Yields (catwalk.storage.ProjectStorage)
     """

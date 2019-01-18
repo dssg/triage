@@ -218,6 +218,11 @@ class ModelStorageEngine(object):
 
     @contextmanager
     def cache_models(self):
+        """Caches each model in memory as it is written.
+
+        Must be used as a context manager.
+        The cache is cleared when the context manager goes out of scope
+        """
         self.should_cache = True
         try:
             yield
