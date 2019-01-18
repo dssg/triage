@@ -601,8 +601,6 @@ class ExperimentBase(ABC):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
-        cp = cProfile.Profile()
-        cp.enable()
         try:
             logging.info("Generating matrices")
             self.generate_matrices()
@@ -612,12 +610,6 @@ class ExperimentBase(ABC):
 
         self.train_and_test_models()
         logging.info("Experiment complete")
-        cp.disable()
-        store = self.project_storage.get_store(
-            ["profiling_stats"],
-            f"{int(time.time())}.profile"
-        )
-        cp.dump_stats(store.path)
         self._log_end_of_run_report()
 
     def _log_end_of_run_report(self):
