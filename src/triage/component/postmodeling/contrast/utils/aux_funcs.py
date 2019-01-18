@@ -1,5 +1,5 @@
 '''
-Auxiliary functions and helpers:
+A4uxiliary functions and helpers:
 
 This set of functions are helper functions to format data 
 (i.e., prediction matrices, etc.) for plotting. This functions
@@ -24,7 +24,7 @@ def create_pgconn(credentials_yaml):
     with open(credentials_yaml) as f:
         configs = yaml.load(f)
     try:
-        conn = create_engine("postgresql://{user}:{password}@{host}/{dbname}".format(**configs))
+        conn = create_engine("postgresql://{user}:{password}@{host}:{port}/{dbname}".format(**configs))
     except:
         print("Error connecting to db.")
 

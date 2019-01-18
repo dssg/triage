@@ -6,10 +6,10 @@
 
 This questions, and other ones, are the kind of inquiries that the `triage`user
 may have in mind when scrolling trough the models selected by the `Audition`
-component. Choosing the right model for deployment and exploring its quirks and
-behavior is a pivotal task. `postemodeling` will help to answer some of this
-questions by exploring the outcomes of the model, and exploring "deeply" into
-the model behavior across time and features. 
+component. Choosing the right model for deployment and exploring its predictions
+and behavior in time is a pivotal task. `postemodeling` will help to answer some
+of this questions by exploring the outcomes of the model, and exploring "deeply"
+into the model behavior across time and features. 
 
 This library lays at the end of the `triage` pipeline and will use the output of
 `Audition` and some of its selection rules as a main input. The
@@ -17,10 +17,67 @@ This library lays at the end of the `triage` pipeline and will use the output of
 that the component is able to answer about the models, but the methods are
 expandable and allow the user to develop new insights.  
 
-Here is a list of preliminary functions included in the Component and their
-status:
+Here is a list of general functions that helps the `triage` user to understand
+and analyze selected models:
 
-## Components
+## Two classes, two units of analysis: `model_id` and `model_group_id`
+
+We can inspect models in two levels. The first, the individual model level
+(identified by the `model_id`) with the `ModelEvaluator` class. The methods in
+this class  will help us to answer questions about different relevant features
+of each model: 
+
+ - **Model Predictions**: 
+     - `plot_score_label_distribution` shows a hued distribution plot of the predicted
+       score colored by the label. A raw version of the plot without label can
+       be plotted using the `plot_score_distribution` instead.
+
+     - `plot_score_distribution_thresh` plots a score distribution plot with
+       a dotted vertical line showing the "location" of a threshold defined by
+       a model metric (i.e. precision@pct10).
+       
+ - **Feature relevance**:
+     - `plot_feature_importances` shows an horizontal bar-plot with the top-n most
+       relevant features defined by the model feature importance (when available). 
+
+     - `plot_feature_importances_std_err` plots the feature importance of the
+       top-n features with their standard deviation. This is highly informative
+       in RandomForest models where each three can have different relevant
+       features. 
+
+     - `plot_feature_group_average_importance` makes the same excersice, but it
+       aggreagates (averages) feature importance metrics to the feature group
+       level and plots the relevance of each feature grup. 
+
+ - **Model Matrix characteristics**:
+    - `cluster_correlation_features` shows a correlation matrix ordered by the
+      correlation between features. This plot can be subsetted by a feature
+      group and explore the correlation in that set of the feature space. 
+
+    - `cluster_correlation_sparsity` renders an image with the prediction matrix
+      colored by their data availabilty. This plot can shows different
+      consequences of data imputation and help the user to visualize the
+      zero-only features (it happens with individual constant features). 
+
+    - `plot_feature_distribution` plots the distribution of the top_n features
+      comparing the positive and negative labeled entities. A three-column plot
+      is rendered, the first two corresponding to the individual label plots,
+      and the third one corresponding to both. 
+
+ - **Error Analysis**: Error analysis is a powerful tool to identify where the
+   model is making classification mistakes. Error analysis involves several
+   other hidden functions, but it can be completely run using the
+   `error_analysis` function. This function will label the errors and use
+   a `DecisionTreeClassifier` to classify the errors and print the modeled tree.
+
+ - **Model Metrics**:
+   - 
+
+about model predictions, feature relevance, prediction matrix characteristics,
+prediction error analysis, and `sklearn` classifier object metrics. The
+`ModelEvaluator` class contains different methods with the aforementioned
+questions. 
+
 
 We can analyze models by getting its individual metrics or comparing between
 them. The first step would include a set of basic metric for each model, such
