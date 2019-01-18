@@ -263,11 +263,9 @@ def test_join_with_cohort_table(db_engine):
 
     # use the states list from above except only include entities 1 and 2 in the cohort
     smaller_cohort = sorted(
-        list(
-            product(
-                set([l[0] for l in events_data if l[0] == 1 or l[0] == 2]),
-                set([l[1] for l in events_data] + [date(2016, 1, 1)]),
-            )
+        product(
+            set([l[0] for l in events_data if l[0] == 1 or l[0] == 2]),
+            set([l[1] for l in events_data] + [date(2016, 1, 1)]),
         )
     )
     for state in smaller_cohort:

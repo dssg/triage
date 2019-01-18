@@ -569,18 +569,23 @@ class FeatureGenerator(object):
         )
 
         if self._table_exists(imputed_table):
-            check_query = f"select 1 from {aggregation.state_table} " +\
-                f"left join {self.features_schema_name}.{imputed_table} using (entity_id, as_of_date) " +\
+            check_query = (
+                f"select 1 from {aggregation.state_table} "
+                f"left join {self.features_schema_name}.{imputed_table} "
+                "using (entity_id, as_of_date) "
                 f"where {self.features_schema_name}.{imputed_table}.entity_id is null limit 1"
-            if list(self.db_engine.execute(check_query)):
+            )
+            if self.db_engine.execute(check_query).scalar():
                 logging.warning(
                     "Imputed feature table %s did not contain rows from the "
                     "entire cohort, need to rebuild features", imputed_table)
                 return True
         else:
-            logging.warning("Imputed feature table %s did not exist, need to build features", imputed_table)
+            logging.warning("Imputed feature table %s did not exist, "
+                            "need to build features", imputed_table)
             return True
-        logging.warning("Imputed feature table %s looks good, skipping feature building!", imputed_table)
+        logging.warning("Imputed feature table %s looks good, "
+                        "skipping feature building!", imputed_table)
         return False
 
     def _generate_agg_table_tasks_for(self, aggregation):
@@ -604,9 +609,6 @@ class FeatureGenerator(object):
         for group in aggregation.groups:
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
-            )
-            imputed_table = self._clean_table_name(
-                aggregation.get_table_name(imputed=True)
             )
             if self.replace or self._needs_features(aggregation):
                 table_tasks[group_table] = {
