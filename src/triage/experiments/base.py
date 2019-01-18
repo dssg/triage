@@ -161,8 +161,10 @@ class ExperimentBase(ABC):
         else:
             logging.warning(
                 "cohort_config missing or unrecognized. Without a cohort, "
-                "you will not be able to make matrices or perform feature imputation."
+                "you will not be able to make matrices, perform feature imputation, "
+                "or save time by only computing features for that cohort."
             )
+            self.save_all_features = True
             self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         if "label_config" in self.config:
