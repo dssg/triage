@@ -16,10 +16,15 @@ def fixture_db_engine():
     """
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        ensure_db(engine)
-        init_engine(engine)
         yield engine
         engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def db_engine_with_results_schema(db_engine):
+    ensure_db(db_engine)
+    init_engine(db_engine)
+    yield db_engine
 
 
 @pytest.fixture(scope="function")

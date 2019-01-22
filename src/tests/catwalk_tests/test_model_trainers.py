@@ -26,12 +26,12 @@ def grid_config():
 
 
 @pytest.fixture(scope="function")
-def default_model_trainer(db_engine, project_storage):
+def default_model_trainer(db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
     trainer = ModelTrainer(
         experiment_hash=None,
         model_storage_engine=model_storage_engine,
-        db_engine=db_engine,
+        db_engine=db_engine_with_results_schema,
         model_grouper=ModelGrouper(),
     )
     yield trainer
@@ -200,13 +200,13 @@ def test_baseline_exception_handling(default_model_trainer):
     assert model_ids == [1, None]
 
 
-def test_custom_groups(grid_config, db_engine, project_storage):
+def test_custom_groups(grid_config, db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
     trainer = ModelTrainer(
         experiment_hash=None,
         model_storage_engine=model_storage_engine,
         model_grouper=ModelGrouper(["class_path"]),
-        db_engine=db_engine,
+        db_engine=db_engine_with_results_schema,
     )
     # create training set
     model_ids = trainer.train_models(
@@ -217,7 +217,7 @@ def test_custom_groups(grid_config, db_engine, project_storage):
     # expect only one model group now
     records = [
         row[0]
-        for row in db_engine.execute(
+        for row in db_engine_with_results_schema.execute(
             "select distinct model_group_id from model_metadata.models"
         )
     ]
