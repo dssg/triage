@@ -70,8 +70,9 @@ of each model:
 
  - **Model Matrix characteristics**:
  
- <p align="center;"> These function need the user to pass Triage's project to
- the `path` argument. More details in the [Configuration File](#configuration-file) section.
+ <p align="center;"> 
+ These function need the user to pass Triage's project to the `path` argument.
+ More details in the [Configuration File](#configuration-file) section. 
  </p>
  
     - `cluster_correlation_features` shows a correlation matrix ordered by the
