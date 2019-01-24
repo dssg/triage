@@ -4,10 +4,10 @@
 > model x compared to model y? ¿What is the single most important feature in my
 > models?
 
-This questions, and other ones, are the kind of inquiries that the `triage`user
+This questions, and other ones, are the kind of inquiries that the `triage` user
 may have in mind when scrolling trough the models selected by the `Audition`
 component. Choosing the right model for deployment and exploring its predictions
-and behavior in time is a pivotal task. `postemodeling` will help to answer some
+and behavior in time is a pivotal task. `postmodeling` will help to answer some
 of this questions by exploring the outcomes of the model, and exploring "deeply"
 into the model behavior across time and features. 
 
@@ -16,6 +16,23 @@ This library lays at the end of the `triage` pipeline and will use the output of
 `postmodeling_tutorial.ipynb` notebook contains a user guide with some questions
 that the component is able to answer about the models, but the methods are
 expandable and allow the user to develop new insights.  
+
+## Configuration File
+
+Before running the postmodeling notebook, the user must first define a series
+of parameters relevant for the library: 
+
+  - `project_path`: Triage's project path (same as your `config_file.yml`)
+  - `audition_output_path`: path to Audition's output. If not passed, the class
+    will use the listed `model_group_id`.
+  - `thresholds`: list of thresholds. 
+  - `baseline_query`: SQL query with baseline models metrics.
+  - `max_depth_error_tree`: deep for error DTs.
+  - other aesthetic arguments. 
+
+This file is passed to the `PostmodelParameters` class to facilitate the use of
+this parameters thorough the notebook. [Here](postmodeling_config_example.yaml)
+is an example of a valid configuration file. 
 
 Here is a list of general functions that helps the `triage` user to understand
 and analyze selected models:
@@ -34,7 +51,8 @@ of each model:
 
      - `plot_score_distribution_thresh` plots a score distribution plot with
        a dotted vertical line showing the "location" of a threshold defined by
-       a model metric (i.e. precision@pct10).
+       a model metric. For this the function need a pair of `param_type` and `param`
+       (i.e. param_type='rank_abs', param=10).
        
  - **Feature relevance**:
      - `plot_feature_importances` shows an horizontal bar-plot with the top-n most
@@ -43,13 +61,19 @@ of each model:
      - `plot_feature_importances_std_err` plots the feature importance of the
        top-n features with their standard deviation. This is highly informative
        in RandomForest models where each three can have different relevant
-       features. 
+       features. The function needs the user to pass the project path to the `path`
+       argument. More details in the [Configuration File](#configuration-file) section.
 
      - `plot_feature_group_average_importance` makes the same excersice, but it
        aggreagates (averages) feature importance metrics to the feature group
        level and plots the relevance of each feature grup. 
 
  - **Model Matrix characteristics**:
+ 
+ <p align="center;"> These function need the user to pass Triage's project to
+ the `path` argument. More details in the [Configuration File](#configuration-file) section.
+ </p>
+ 
     - `cluster_correlation_features` shows a correlation matrix ordered by the
       correlation between features. This plot can be subsetted by a feature
       group and explore the correlation in that set of the feature space. 
@@ -80,12 +104,16 @@ of each model:
    other hidden functions, but it can be completely run using the
    `error_analysis` function. This function will label the errors and use
    a `DecisionTreeClassifier` to classify the errors and print the modeled
-   tree.
+   tree. This function needs a parameters object defined in the configuration
+   file. More details in the [Configuration File](#configuration-file)
+   section.
 
  - **Crosstabs Analysis**: `crosstabs_ratio_plot` will plots the mean ratio for
    all relevant features in the model. This allows a good comparison of
-   true/false predicted groups and get the key differences between groups in the
-   feature space.
+   true/false predicted groups and get the key differences between groups in
+   the feature space. The function expects that the user run
+   [crosstabs](https://github.com/dssg/postmodel-analysis/tree/sqlqueries/postmodel/crosstabs)
+   first. 
 
 The `ModelEvaluator` also contain a set of miscellaneous methods to retrieve
 different model results: 

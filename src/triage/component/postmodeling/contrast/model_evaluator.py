@@ -432,8 +432,8 @@ class ModelEvaluator(object):
         plt.show()
 
     def plot_score_distribution_thresh(self,
-                                       param_type=None,
-                                       param=None,
+                                       param_type,
+                                       param,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
                                        fontsize=20):
@@ -649,6 +649,7 @@ class ModelEvaluator(object):
         plt.title(f'Feature Group Importances',
                   fontsize=fontsize).set_position([.5, 1.0])
 
+
     def cluster_correlation_features(self,
                                      path,
                                      feature_group_subset_list=None,
@@ -726,11 +727,14 @@ class ModelEvaluator(object):
                    bbox_to_anchor=(0., 1.005, 1., .102),
                    loc=7,
                    borderaxespad=0.)
+        ax.ax_row_dendogram.set_visible(False)
+        ax.ax_row_dendogram.set_xlim([0, 0])
+
 
     def cluster_correlation_sparsity(self,
-                                      path,
-                                      figsize=(20,20),
-                                      fontsize=12):
+                                     path,
+                                     figsize=(20,20),
+                                     fontsize=12):
          '''
         Plot sparcity in feature space
 
@@ -786,6 +790,7 @@ class ModelEvaluator(object):
                      cmap=sns.color_palette("hls", 2),
                      cbar_kws=cbar_kws)
 
+
     def compute_AUC(self):
         '''
         Utility function to generate ROC and AUC data to plot ROC curve
@@ -799,6 +804,7 @@ class ModelEvaluator(object):
             label_, score_, pos_label=1)
 
         return (fpr, tpr, thresholds, metrics.auc(fpr, tpr))
+
 
     def plot_ROC(self,
                  figsize=(16, 12),
@@ -864,6 +870,7 @@ class ModelEvaluator(object):
         ax1.set_xlabel('Proportion of Population', fontsize=fontsize)
         ax1.set_ylabel('False Positive Rate', color="#000099", fontsize=fontsize)
         plt.ylim([0.0, 1.05])
+
 
     def plot_precision_recall_n(self,
                                 figsize=(16, 12),
