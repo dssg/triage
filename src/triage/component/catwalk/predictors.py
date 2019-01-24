@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
 
-from .utils import db_retry
+from .utils import db_retry, retrieve_model_hash_from_id
 
 
 class ModelNotFoundError(ValueError):
@@ -39,22 +39,6 @@ class Predictor(object):
         return sessionmaker(bind=self.db_engine)
 
     @db_retry
-    def _retrieve_model_hash(self, model_id):
-        """Retrieves the model hash associated with a given model id
-
-        Args:
-            model_id (int) The id of a given model in the database
-
-        Returns: (str) the stored hash of the model
-        """
-        try:
-            session = self.sessionmaker()
-            model_hash = session.query(Model).get(model_id).model_hash
-        finally:
-            session.close()
-        return model_hash
-
-    @db_retry
     def load_model(self, model_id):
         """Downloads the cached model associated with a given model id
 
@@ -65,7 +49,7 @@ class Predictor(object):
             A python object which implements .predict()
         """
 
-        model_hash = self._retrieve_model_hash(model_id)
+        model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
         logging.info("Checking for model_hash %s in store", model_hash)
         if self.model_storage_engine.exists(model_hash):
             return self.model_storage_engine.load(model_hash)
@@ -77,7 +61,7 @@ class Predictor(object):
         Args:
             model_id (int) The id of a given model in the database
         """
-        model_hash = self._retrieve_model_hash(model_id)
+        model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
         self.model_storage_engine.delete(model_hash)
 
     @db_retry

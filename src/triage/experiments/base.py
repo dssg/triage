@@ -27,9 +27,14 @@ from triage.component.architect.cohort_table_generators import (
 )
 from triage.component.timechop import Timechop
 from triage.component.results_schema import upgrade_db
-from triage.component.catwalk.model_grouping import ModelGrouper
-from triage.component.catwalk.model_trainers import ModelTrainer
-from triage.component.catwalk.model_testers import ModelTester
+from triage.component.catwalk import (
+    ModelTrainer,
+    ModelEvaluator,
+    Predictor,
+    IndividualImportanceCalculator,
+    ModelGrouper,
+    ModelTrainTester
+)
 from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
@@ -236,14 +241,33 @@ class ExperimentBase(ABC):
             replace=self.replace,
         )
 
-        self.tester = ModelTester(
-            model_storage_engine=self.model_storage_engine,
-            matrix_storage_engine=self.matrix_storage_engine,
-            replace=self.replace,
+        self.predictor = Predictor(
             db_engine=self.db_engine,
-            individual_importance_config=self.config.get("individual_importance", {}),
-            evaluator_config=self.config.get("scoring", {}),
+            model_storage_engine=self.model_storage_engine,
             save_predictions=self.save_predictions,
+            replace=self.replace,
+        )
+
+        self.individual_importance_calculator = IndividualImportanceCalculator(
+            db_engine=self.db_engine,
+            n_ranks=self.config.get("individual_importance", {}).get("n_ranks", 5),
+            methods=self.config.get("individual_importance", {}).get("methods", ["uniform"]),
+            replace=self.replace,
+        )
+
+        self.evaluator = ModelEvaluator(
+            db_engine=self.db_engine,
+            sort_seed=self.config.get("scoring", {}).get("sort_seed", None),
+            testing_metric_groups=self.config.get("scoring", {}).get("testing_metric_groups", []),
+            training_metric_groups=self.config.get("scoring", {}).get("training_metric_groups", []),
+        )
+
+        self.model_train_tester = ModelTrainTester(
+            matrix_storage_engine=self.matrix_storage_engine,
+            model_evaluator=self.evaluator,
+            model_trainer=self.trainer,
+            individual_importance_calculator=self.individual_importance_calculator,
+            predictor=self.predictor
         )
 
     @cachedproperty
@@ -499,7 +523,7 @@ class ExperimentBase(ABC):
         )
 
     @abstractmethod
-    def process_train_tasks(self, train_tasks):
+    def process_train_test_tasks(self, train_tasks):
         pass
 
     @abstractmethod
@@ -546,62 +570,37 @@ class ExperimentBase(ABC):
         logging.info("Building all matrices")
         self.build_matrices()
 
-    def train_and_test_models(self):
+    def _all_train_test_tasks(self):
         if "grid_config" not in self.config:
             logging.warning(
                 "No grid_config was passed in the experiment config. No models will be trained"
             )
             return
 
+        train_test_tasks = []
         for split_num, split in enumerate(self.full_matrix_definitions):
             self.log_split(split_num, split)
-            train_store = self.matrix_storage_engine.get_store(split["train_uuid"])
-            if train_store.empty:
-                logging.warning(
-                    """Train matrix for split %s was empty,
-                no point in training this model. Skipping
-                """,
-                    split["train_uuid"],
-                )
-                continue
-            if len(train_store.labels().unique()) == 1:
-                logging.warning(
-                    """Train Matrix for split %s had only one
-                unique value, no point in training this model. Skipping
-                """,
-                    split["train_uuid"],
-                )
-                continue
+            for task in self.model_train_tester.generate_tasks(
+                split=split,
+                grid_config=self.config.get('grid_config'),
+                model_comment=self.config.get('model_comment', None)
+            ):
+                train_test_tasks.append(task)
+        return train_test_tasks
 
-            logging.info("Training models")
+    def train_and_test_models(self):
+        tasks = self._all_train_test_tasks()
+        if not tasks:
+            logging.warning("No train/test tasks found, so no training to do")
+            return
 
-            train_tasks = self.trainer.generate_train_tasks(
-                grid_config=self.config["grid_config"],
-                misc_db_parameters=dict(
-                    test=False, model_comment=self.config.get("model_comment", None)
-                ),
-                matrix_store=train_store,
-            )
-
-            associate_models_with_experiment(
-                self.experiment_hash,
-                [train_task['model_hash'] for train_task in train_tasks],
-                self.db_engine
-            )
-            model_ids = self.process_train_tasks(train_tasks)
-
-            logging.info("Done training models for split %s", split_num)
-
-            test_tasks = self.tester.generate_model_test_tasks(
-                split=split, train_store=train_store, model_ids=model_ids
-            )
-            logging.info(
-                "Found %s non-empty test matrices for split %s",
-                len(test_tasks),
-                split_num,
-            )
-
-            self.process_model_test_tasks(test_tasks)
+        logging.info("%s train/test tasks found. Beginning training.", len(tasks))
+        associate_models_with_experiment(
+            self.experiment_hash,
+            set(task['train_kwargs']['model_hash'] for task in tasks),
+            self.db_engine
+        )
+        self.process_train_test_tasks(tasks)
 
     def validate(self, strict=True):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)
