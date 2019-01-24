@@ -646,6 +646,8 @@ def test_aggregations(test_engine):
 
 
 def test_replace(test_engine):
+    # test the replace=False functionality, wherein we see if the cohort is fully represented
+    # in the imputed table and reuse the features if so
     aggregate_config = [
         {
             "prefix": "aprefix",
@@ -672,7 +674,7 @@ def test_replace(test_engine):
         features_schema_name=features_schema_name,
         replace=False,
     ).create_all_tables(
-        feature_dates=["2013-09-30", "2014-09-30"],
+        feature_dates=["2013-09-30", "2014-09-30", "2015-01-01"],
         feature_aggregation_config=aggregate_config,
         state_table="states",
     )
@@ -680,13 +682,15 @@ def test_replace(test_engine):
     assert len(feature_tables) == 1
     assert list(feature_tables)[0] == "aprefix_aggregation_imputed"
 
+    # now try and run feature generation with replace=False. We should
+    # be able to see that the entire cohort is there and reuse the features
     feature_generator = FeatureGenerator(
         db_engine=test_engine,
         features_schema_name=features_schema_name,
         replace=False,
     )
     aggregations = feature_generator.aggregations(
-        feature_dates=["2013-09-30", "2014-09-30"],
+        feature_dates=["2013-09-30", "2014-09-30", "2015-01-01"],
         feature_aggregation_config=aggregate_config,
         state_table="states",
     )
@@ -696,6 +700,7 @@ def test_replace(test_engine):
     )
 
     assert len(table_tasks["aprefix_entity_id"]) == 0
+    assert len(table_tasks["aprefix_aggregation"]) == 0
 
     imp_tasks = feature_generator.generate_all_table_tasks(
         aggregations,
@@ -704,6 +709,21 @@ def test_replace(test_engine):
 
     assert len(imp_tasks["aprefix_aggregation_imputed"]) == 0
 
+    # add a new member of the cohort. now we should need to rebuild everything
+    test_engine.execute("insert into states values (%s, %s)", 999, "2015-01-01")
+    table_tasks = feature_generator.generate_all_table_tasks(
+        aggregations,
+        task_type="aggregation",
+    )
+    assert len(table_tasks["aprefix_entity_id"]) == 3
+    assert len(table_tasks["aprefix_aggregation"]) == 3
+    feature_generator.process_table_tasks(table_tasks)
+    imp_tasks = feature_generator.generate_all_table_tasks(
+        aggregations,
+        task_type="imputation",
+    )
+
+    assert len(imp_tasks["aprefix_aggregation_imputed"]) == 3
 
 def test_aggregations_materialize_off(test_engine):
     aggregate_config = {

@@ -86,6 +86,7 @@ class ExperimentBase(ABC):
         cleanup=False,
         cleanup_timeout=None,
         materialize_subquery_fromobjs=True,
+        features_ignore_cohort=False,
         profile=False,
         save_predictions=True,
     ):
@@ -105,6 +106,7 @@ class ExperimentBase(ABC):
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
+        self.features_ignore_cohort = features_ignore_cohort
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.labels_table_name = "labels_{}".format(self.experiment_hash)
         self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
@@ -159,8 +161,10 @@ class ExperimentBase(ABC):
         else:
             logging.warning(
                 "cohort_config missing or unrecognized. Without a cohort, "
-                "you will not be able to make matrices or perform feature imputation."
+                "you will not be able to make matrices, perform feature imputation, "
+                "or save time by only computing features for that cohort."
             )
+            self.features_ignore_cohort = True
             self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         if "label_config" in self.config:
@@ -186,7 +190,8 @@ class ExperimentBase(ABC):
             replace=self.replace,
             db_engine=self.db_engine,
             feature_start_time=split_config["feature_start_time"],
-            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs
+            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
+            features_ignore_cohort=self.features_ignore_cohort
         )
 
         self.feature_group_creator = FeatureGroupCreator(

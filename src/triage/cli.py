@@ -11,6 +11,7 @@ from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
 from triage.component.architect.feature_generators import FeatureGenerator
+from triage.component.architect.cohort_table_generators import CohortTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop import Timechop
@@ -133,10 +134,21 @@ class FeatureTest(Command):
     def __call__(self, args):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
-        feature_config = yaml.load(args.feature_config_file)
+        full_config = yaml.load(args.feature_config_file)
+        feature_config = full_config['feature_aggregations']
+        cohort_config = full_config.get('cohort_config', None)
+        if cohort_config:
+            CohortTableGenerator(
+                cohort_table_name="features_test.test_cohort",
+                db_engine=db_engine,
+                query=cohort_config["query"],
+                replace=True
+            ).generate_cohort_table(as_of_dates=[args.as_of_date])
 
         FeatureGenerator(db_engine, "features_test").create_features_before_imputation(
-            feature_aggregation_config=feature_config, feature_dates=[args.as_of_date]
+            feature_aggregation_config=feature_config,
+            feature_dates=[args.as_of_date],
+            state_table="features_test.test_cohort"
         )
         logging.info(
             "Features created for feature_config %s and date %s",
@@ -230,6 +242,16 @@ class Experiment(Command):
             help="Skip saving predictions to the database to save time",
         )
 
+        parser.add_argument(
+            "--features-ignore-cohort",
+            action="store_true",
+            default=False,
+            dest="features_ignore_cohort",
+            help="Will save all features independently of cohort. " +
+            "This can require more disk space but allow you to reuse " +
+            "features across different cohorts"
+        )
+
         parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
@@ -244,6 +266,7 @@ class Experiment(Command):
             "config": config,
             "replace": self.args.replace,
             "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
+            "features_ignore_cohort": self.args.features_ignore_cohort,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions
