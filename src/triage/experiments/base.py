@@ -40,7 +40,8 @@ from triage.component.catwalk.utils import (
     associate_models_with_experiment,
     associate_matrices_with_experiment,
     missing_matrix_uuids,
-    missing_model_hashes
+    missing_model_hashes,
+    filename_friendly_hash
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -113,8 +114,6 @@ class ExperimentBase(ABC):
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.features_ignore_cohort = features_ignore_cohort
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
-        self.labels_table_name = "labels_{}".format(self.experiment_hash)
-        self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
         self.initialize_components()
 
         self.cleanup = cleanup
@@ -157,6 +156,10 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get("cohort_config", {})
         if "query" in cohort_config:
+            self.cohort_table_name = "cohort_{}_{}".format(
+                cohort_config.get('name', 'default'),
+                filename_friendly_hash(cohort_config['query'])
+            )
             self.cohort_table_generator = CohortTableGenerator(
                 cohort_table_name=self.cohort_table_name,
                 db_engine=self.db_engine,
@@ -170,16 +173,23 @@ class ExperimentBase(ABC):
                 "or save time by only computing features for that cohort."
             )
             self.features_ignore_cohort = True
+            self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
             self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         if "label_config" in self.config:
+            label_config = self.config["label_config"]
+            self.labels_table_name = "labels_{}_{}".format(
+                label_config.get('name', 'default'),
+                filename_friendly_hash(label_config['query'])
+            )
             self.label_generator = LabelGenerator(
-                label_name=self.config["label_config"].get("name", None),
-                query=self.config["label_config"]["query"],
+                label_name=label_config.get("name", None),
+                query=label_config["query"],
                 replace=self.replace,
                 db_engine=self.db_engine,
             )
         else:
+            self.labels_table_name = "labels_{}".format(self.experiment_hash)
             self.label_generator = LabelGeneratorNoOp()
             logging.warning(
                 "label_config missing or unrecognized. Without labels, "

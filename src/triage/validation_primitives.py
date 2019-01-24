@@ -149,3 +149,9 @@ def column_should_be_stringlike(table_name, column, db_engine):
     """
     table_should_have_column(table_name, column, db_engine)
     column_should_be_in_types(table_name, column, [VARCHAR, TEXT], db_engine)
+
+
+def string_is_tablesafe(string):
+    if not string:
+        return False
+    return all(c.isalpha() or c.isdigit() or c == '_' for c in string)
