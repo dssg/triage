@@ -70,24 +70,22 @@ of each model:
 
  - **Model Matrix characteristics**:
  
- <p align="center"> 
- These function need the user to pass Triage's project to the `path` argument.
- More details in the [Configuration File](#configuration-file) section. 
- </p>
+ _These function need the user to pass Triage's project to the `path` argument.
+ More details in the [Configuration File](#configuration-file) section._ 
  
-    - `cluster_correlation_features` shows a correlation matrix ordered by the
-      correlation between features. This plot can be subsetted by a feature
-      group and explore the correlation in that set of the feature space. 
-
-    - `cluster_correlation_sparsity` renders an image with the prediction matrix
-      colored by their data availabilty. This plot can shows different
-      consequences of data imputation and help the user to visualize the
-      zero-only features (it happens with individual constant features). 
-
-    - `plot_feature_distribution` plots the distribution of the top_n features
-      comparing the positive and negative labeled entities. A three-column plot
-      is rendered, the first two corresponding to the individual label plots,
-      and the third one corresponding to both. 
+     - `cluster_correlation_features` shows a correlation matrix ordered by the
+         correlation between features. This plot can be subsetted by a feature
+         group and explore the correlation in that set of the feature space. 
+  
+     - `cluster_correlation_sparsity` renders an image with the prediction matrix
+       colored by their data availabilty. This plot can shows different
+       consequences of data imputation and help the user to visualize the
+       zero-only features (it happens with individual constant features). 
+  
+     - `plot_feature_distribution` plots the distribution of the top_n features
+       comparing the positive and negative labeled entities. A three-column plot
+       is rendered, the first two corresponding to the individual label plots,
+       and the third one corresponding to both. 
 
  - **Model Metrics**:
    - `plot_ROC` plots the AUC-ROC curve plot for the selected model. This is
