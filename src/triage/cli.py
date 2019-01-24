@@ -243,10 +243,10 @@ class Experiment(Command):
         )
 
         parser.add_argument(
-            "--save-all-features",
+            "--features-ignore-cohort",
             action="store_true",
             default=False,
-            dest="save_all_features",
+            dest="features_ignore_cohort",
             help="Will save all features independently of cohort. " +
             "This can require more disk space but allow you to reuse " +
             "features across different cohorts"
@@ -266,7 +266,7 @@ class Experiment(Command):
             "config": config,
             "replace": self.args.replace,
             "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
-            "save_all_features": self.args.save_all_features,
+            "features_ignore_cohort": self.args.features_ignore_cohort,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions

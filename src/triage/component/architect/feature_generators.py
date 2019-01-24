@@ -24,7 +24,7 @@ class FeatureGenerator(object):
         replace=True,
         feature_start_time=None,
         materialize_subquery_fromobjs=True,
-        save_all_features=False,
+        features_ignore_cohort=False,
     ):
         """Generates aggregate features using collate
 
@@ -36,6 +36,9 @@ class FeatureGenerator(object):
                 should be replaced
             feature_start_time (string/datetime, optional) point in time before which
                 should not be included in features
+            features_ignore_cohort (boolean, optional) Whether or not features should be built
+                independently of the cohort. Takes longer but means that features can be reused
+                for different cohorts.
         """
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
@@ -43,7 +46,7 @@ class FeatureGenerator(object):
         self.replace = replace
         self.feature_start_time = feature_start_time
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
-        self.save_all_features = save_all_features
+        self.features_ignore_cohort = features_ignore_cohort
         self.entity_id_column = "entity_id"
         self.from_objs = {}
 
@@ -317,7 +320,7 @@ class FeatureGenerator(object):
             input_min_date=self.feature_start_time,
             schema=self.features_schema_name,
             prefix=aggregation_config["prefix"],
-            join_with_cohort_table=not self.save_all_features
+            join_with_cohort_table=not self.features_ignore_cohort
         )
 
     def aggregations(self, feature_aggregation_config, feature_dates, state_table):

@@ -86,7 +86,7 @@ class ExperimentBase(ABC):
         cleanup=False,
         cleanup_timeout=None,
         materialize_subquery_fromobjs=True,
-        save_all_features=False,
+        features_ignore_cohort=False,
         profile=False,
         save_predictions=True,
     ):
@@ -106,7 +106,7 @@ class ExperimentBase(ABC):
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
-        self.save_all_features = save_all_features
+        self.features_ignore_cohort = features_ignore_cohort
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.labels_table_name = "labels_{}".format(self.experiment_hash)
         self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
@@ -164,7 +164,7 @@ class ExperimentBase(ABC):
                 "you will not be able to make matrices, perform feature imputation, "
                 "or save time by only computing features for that cohort."
             )
-            self.save_all_features = True
+            self.features_ignore_cohort = True
             self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         if "label_config" in self.config:
@@ -191,7 +191,7 @@ class ExperimentBase(ABC):
             db_engine=self.db_engine,
             feature_start_time=split_config["feature_start_time"],
             materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
-            save_all_features=self.save_all_features
+            features_ignore_cohort=self.features_ignore_cohort
         )
 
         self.feature_group_creator = FeatureGroupCreator(
