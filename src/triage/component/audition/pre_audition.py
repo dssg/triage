@@ -27,10 +27,9 @@ class PreAudition(object):
             """
 
         model_groups = pd.read_sql(
-            query,
-            con=self.db_engine,
-            params={"label_definition": label_def})
-        self.model_groups = list(model_groups['model_group_id'])
+            query, con=self.db_engine, params={"label_definition": label_def}
+        )
+        self.model_groups = list(model_groups["model_group_id"])
         return self.model_groups
 
     def get_model_groups_from_experiment(self, experiment_hash):
@@ -43,14 +42,14 @@ class PreAudition(object):
         query = """
             SELECT DISTINCT(model_group_id)
             FROM model_metadata.models
+            JOIN model_metadata.experiment_models using (model_hash)
             WHERE experiment_hash = %(experiment_hash)s
             """
 
         model_groups = pd.read_sql(
-            query,
-            con=self.db_engine,
-            params={"experiment_hash": experiment_hash})
-        self.model_groups = list(model_groups['model_group_id'])
+            query, con=self.db_engine, params={"experiment_hash": experiment_hash}
+        )
+        self.model_groups = list(model_groups["model_group_id"])
         return self.model_groups
 
     def get_model_groups(self, query):
@@ -61,7 +60,7 @@ class PreAudition(object):
             query: (string) SQL query for model groups
         """
         model_groups = pd.read_sql(query, con=self.db_engine)
-        self.model_group = list(model_groups['model_group_id'])
+        self.model_group = list(model_groups["model_group_id"])
         return self.model_group
 
     def get_train_end_times(self, after=None, query=None):
@@ -79,10 +78,15 @@ class PreAudition(object):
                 AND train_end_time >= %(after)s
             ORDER BY train_end_time
             ;
-            """.format(', '.join(map(str, self.model_groups)))
+            """.format(
+                ", ".join(map(str, self.model_groups))
+            )
 
-        end_times = sorted(list(pd.read_sql(
-            query,
-            con=self.db_engine,
-            params={"after": after})['train_end_time']))
+        end_times = sorted(
+            list(
+                pd.read_sql(query, con=self.db_engine, params={"after": after})[
+                    "train_end_time"
+                ]
+            )
+        )
         return end_times

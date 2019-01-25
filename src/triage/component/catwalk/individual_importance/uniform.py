@@ -12,16 +12,16 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
 
     Returns: (list) of (entity_id, feature_value) tuples
     """
-    if matrix.index.names == ['entity_id']:
+    if matrix.index.names == ["entity_id"]:
         if feature_name == NO_FEATURE_IMPORTANCE:
             # if model does not support feature importance, write 0 as individual importance.
             return list(zip(matrix.index.values, [None] * len(matrix.index.values)))
         else:
             return list(zip(matrix.index.values, matrix[feature_name].tolist()))
-    elif 'entity_id' in matrix.index.names:
+    elif "entity_id" in matrix.index.names:
         results = []
-        index_of_entity = matrix.index.names.index('entity_id')
-        index_of_date = matrix.index.names.index('as_of_date')
+        index_of_entity = matrix.index.names.index("entity_id")
+        index_of_date = matrix.index.names.index("as_of_date")
 
         if feature_name == NO_FEATURE_IMPORTANCE:
             zipped_iter = zip(matrix.index.values, [None] * len(matrix.index.values))
@@ -50,23 +50,28 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
 
     Returns: (list) dicts with entity_id, feature_value, feature_name, score
     """
-    global_feature_importances = [row for row in db_engine.execute(
-        '''select feature, feature_importance
+    global_feature_importances = [
+        row
+        for row in db_engine.execute(
+            """select feature, feature_importance
         from train_results.feature_importances where model_id = %s
-        order by feature_importance desc limit %s''',
-        model_id,
-        n_ranks
-    )]
+        order by feature_importance desc limit %s""",
+            model_id,
+            n_ranks,
+        )
+    ]
 
     results = []
 
     for feature_name, feature_importance in global_feature_importances:
         efv = _entity_feature_values(test_matrix_store.matrix, feature_name, as_of_date)
         for entity_id, feature_value in efv:
-            results.append({
-                'entity_id': entity_id,
-                'feature_value': feature_value,
-                'feature_name': feature_name,
-                'score': feature_importance,
-            })
+            results.append(
+                {
+                    "entity_id": entity_id,
+                    "feature_value": feature_value,
+                    "feature_name": feature_name,
+                    "score": feature_importance,
+                }
+            )
     return results

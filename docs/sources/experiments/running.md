@@ -55,7 +55,7 @@ experiment.run()
 
 ## Multicore example
 
-Triage also offers the ability to parallelize both CPU-heavy and database-heavy tasks. Triage uses the multiprocessing library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.
+Triage also offers the ability to locally parallelize both CPU-heavy and database-heavy tasks. Triage uses the [pebble](https://pythonhosted.org/Pebble) library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.
 
 ### CLI
 
@@ -85,6 +85,8 @@ experiment.run()
 
 ```
 
+The [pebble](https://pythonhosted.org/Pebble) library offers an interface around Python3's `concurrent.futures` module that adds in a very helpful tool: watching for killed subprocesses . Model training (and sometimes, matrix building) can be a memory-hungry task, and Triage can not guarantee that the operating system you're running on won't kill the worker processes in a way that prevents them from reporting back to the parent Experiment process. With Pebble, this occurrence is caught like a regular Exception, which allows the Process pool to recover and include the information in the Experiment's log.
+
 ## Using S3 to store matrices and models
 
 Triage can operate on different storage engines for matrices and models, and besides the standard filesystem engine comes with S3 support out of the box. To use this, just use the `s3://` scheme for your `project_path` (this is similar for both Python and the CLI).
@@ -109,6 +111,37 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 
 ```
+
+## Using HDF5 as a matrix storage format
+
+Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.
+
+### CLI
+
+On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
+
+```bash
+triage experiment example_experiment_config.yaml --matrix-format hdf
+```
+
+### Python
+
+In Python, this is configurable using the `matrix_storage_class` keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in `triage.component.catwalk.storage`. If you'd like to write your own storage module, you can use the [existing modules](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py) as a guide.
+
+```python
+from triage.experiments import SingleThreadedExperiment
+from triage.component.catwalk.storage import HDFMatrixStore
+
+experiment = SingleThreadedExperiment(
+    config=experiment_config
+    db_engine=create_engine(...),
+    matrix_storage_class=HDFMatrixStore,
+    project_path='/path/to/directory/to/save/data',
+)
+experiment.run()
+```
+
+Note: The HDF storage option is *not* compatible with S3.
 
 ## Validating an Experiment
 
@@ -151,7 +184,14 @@ We'd like to add more validations for common misconfiguration problems over time
 
 ## Restarting an Experiment
 
-If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set the 'replace' flag. 
+If an experiment fails for any reason, you can restart it.
+
+By default, all work will be recreated. This includes label queries, feature queries, matrix building, model training, etc. However, if you pass the `replace=False` keyword argument, the Experiment will reuse what work it can.
+
+- Labels Table: The Experiment keeps a labels table namespaced by its experiment hash, and within that will check on a per-`as_of_date`/`label timespan` level whether or not there are *any* existing rows, and skip the label query if so. For this reason, it is *not* aware of specific entities or source events so if the label query has changed or the source data has changed, you will not want to set `replace` to False. Don't expect too much reuse from this, however, as the table is experiment-namespaced. Essentially, this will only reuse data if the same experiment was run prior and failed part of the way through label generation. 
+- Features Tables: The Experiment will check on a per-table basis whether or not it exists, and skip the feature generation if so. Each 'table' maps to a feature aggregation in your experiment config, so if you have modified any source data that affects that feature aggregation, added any features to that aggregation, or changed any `temporal_config` so there are more `as_of_dates`, you won't want to set `replace` to False.
+- Matrix Building: Each matrix's metadata is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
+- Model Training: Each model's metadata (which includes its train matrix's hash) is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
 
 
 ### CLI
@@ -210,7 +250,10 @@ Running parts of an experiment is only supported through the Python interface.
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
 * model_metadata.experiments - The experiment configuration and a hash
+* model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
+* model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
 * model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
+* model_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
 * model_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
 * model_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
 * train_results.feature_importances - The sklearn feature importances results for each trained model
@@ -250,5 +293,5 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 ## Experiment Classes
 
 - *SingleThreadedExperiment*: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.
-- *MultiCoreExperiment*: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
+- *MultiCoreExperiment*: An experiment that makes use of the pebble library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
 - *RQExperiment*: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( `pip install triage[rq]` )

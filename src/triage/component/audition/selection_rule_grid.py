@@ -30,12 +30,14 @@ def _bound_rules_from(shared_param_set, selection_rule):
     rule_instances, values = zip(*rule_instances_and_values)
 
     for expanded_param_set in _expand_param_sets(rule_instances, values):
-        function_name = expanded_param_set['name']
-        del expanded_param_set['name']
-        rules.append(BoundSelectionRule(
-            function_name=function_name,
-            args=_build_rule_arguments(expanded_param_set, shared_param_set)
-        ))
+        function_name = expanded_param_set["name"]
+        del expanded_param_set["name"]
+        rules.append(
+            BoundSelectionRule(
+                function_name=function_name,
+                args=_build_rule_arguments(expanded_param_set, shared_param_set),
+            )
+        )
     return rules
 
 
@@ -70,24 +72,23 @@ def make_selection_rule_grid(rule_groups):
     Returns: (list of audition.selection_rules.BoundSelectionRule)
     """
     rules = []
-    logging.info('Expanding selection rule groups into full grid')
+    logging.info("Expanding selection rule groups into full grid")
     for rule_group in rule_groups:
-        logging.info('Expanding rule group %s', rule_group)
+        logging.info("Expanding rule group %s", rule_group)
         for shared_param_set, selection_rule in product(
-            rule_group['shared_parameters'],
-            rule_group['selection_rules']
+            rule_group["shared_parameters"], rule_group["selection_rules"]
         ):
             logging.info(
-                'Expanding shared param set %s and selection rules %s',
+                "Expanding shared param set %s and selection rules %s",
                 shared_param_set,
-                selection_rule
+                selection_rule,
             )
             new_rules = _bound_rules_from(shared_param_set, selection_rule)
-            logging.info('Found %s new rules', len(new_rules))
+            logging.info("Found %s new rules", len(new_rules))
             rules += new_rules
     logging.info(
-        'Found %s total selection rules. Full list: %s',
+        "Found %s total selection rules. Full list: %s",
         len(rules),
-        [rule.descriptive_name for rule in rules]
+        [rule.descriptive_name for rule in rules],
     )
     return rules

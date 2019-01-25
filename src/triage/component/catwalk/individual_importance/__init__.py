@@ -6,9 +6,7 @@ from triage.component.results_schema import IndividualImportance
 from .uniform import uniform_distribution
 
 
-CALCULATE_STRATEGIES = {
-    'uniform': uniform_distribution
-}
+CALCULATE_STRATEGIES = {"uniform": uniform_distribution}
 
 
 class IndividualImportanceCalculator(object):
@@ -22,25 +20,26 @@ class IndividualImportanceCalculator(object):
             Defaults to ['uniform']
         replace (bool) Whether to replace old records or reuse them.
     """
-    def __init__(
-        self,
-        db_engine,
-        n_ranks=5,
-        methods=['uniform'],
-        replace=True
-    ):
+
+    def __init__(self, db_engine, n_ranks=5, methods=["uniform"], replace=True):
         self.db_engine = db_engine
         self.n_ranks = n_ranks
         self.methods = methods
         self.replace = replace
 
     def _num_existing_importances(self, model_id, as_of_date, method):
-        return [row[0] for row in self.db_engine.execute(
-            '''select count(*) from test_results.individual_importances
+        return [
+            row[0]
+            for row in self.db_engine.execute(
+                """select count(*) from test_results.individual_importances
             where model_id = %s
             and as_of_date = %s
-            and method = %s''',
-            model_id, as_of_date, method)][0]
+            and method = %s""",
+                model_id,
+                as_of_date,
+                method,
+            )
+        ][0]
 
     def _needs_new_importances(self, model_id, as_of_date, method, matrix_store):
         """Determines whether or not importances matching the arguments are present in the database
@@ -57,18 +56,21 @@ class IndividualImportanceCalculator(object):
         Returns: (bool) whether or not there are fewer importances in the db than the matrix
         """
         existing_importances = self._num_existing_importances(
-            model_id,
-            as_of_date,
-            method
+            model_id, as_of_date, method
         )
         expected_importances = matrix_store.num_entities * self.n_ranks
         logging.debug(
-            'model_id=%s/as_of_date=%s/method=%s: found %s importances',
-            model_id, as_of_date, method, existing_importances
+            "model_id=%s/as_of_date=%s/method=%s: found %s importances",
+            model_id,
+            as_of_date,
+            method,
+            existing_importances,
         )
         logging.debug(
-            'matrix_uuid=%s/n_ranks=%s: expect %s importances',
-            matrix_store.uuid, self.n_ranks, expected_importances
+            "matrix_uuid=%s/n_ranks=%s: expect %s importances",
+            matrix_store.uuid,
+            self.n_ranks,
+            expected_importances,
         )
         return existing_importances < expected_importances
 
@@ -83,13 +85,7 @@ class IndividualImportanceCalculator(object):
             for as_of_date in test_matrix_store.as_of_dates:
                 self.calculate_and_save(model_id, test_matrix_store, method, as_of_date)
 
-    def calculate_and_save(
-        self,
-        model_id,
-        test_matrix_store,
-        method,
-        as_of_date
-    ):
+    def calculate_and_save(self, model_id, test_matrix_store, method, as_of_date):
         """Calculate and save importances for a given model, test matrix, method, and date
 
         Args:
@@ -100,27 +96,24 @@ class IndividualImportanceCalculator(object):
             as_of_date (datetime or string) The date to produce individual importances as of
         """
         if not self.replace and not self._needs_new_importances(
-            model_id,
-            as_of_date,
-            method,
-            test_matrix_store
+            model_id, as_of_date, method, test_matrix_store
         ):
-                logging.info('Found as many or more individual importances ' +
-                             'for model_id=%s/as_of_date=%s/method=%s, skipping',
-                             model_id, as_of_date, method)
-        else:
-            importance_records = CALCULATE_STRATEGIES[method](
-                self.db_engine,
+            logging.info(
+                "Found as many or more individual importances "
+                + "for model_id=%s/as_of_date=%s/method=%s, skipping",
                 model_id,
                 as_of_date,
-                test_matrix_store,
-                self.n_ranks
+                method,
+            )
+        else:
+            importance_records = CALCULATE_STRATEGIES[method](
+                self.db_engine, model_id, as_of_date, test_matrix_store, self.n_ranks
             )
             self.save(
                 importance_records=importance_records,
                 model_id=model_id,
                 as_of_date=as_of_date,
-                method_name=method
+                method_name=method,
             )
 
     def save(self, importance_records, model_id, as_of_date, method_name):
@@ -139,21 +132,23 @@ class IndividualImportanceCalculator(object):
         """
         db_objects = []
         self.db_engine.execute(
-            '''delete from test_results.individual_importances
+            """delete from test_results.individual_importances
             where model_id = %s
             and as_of_date = %s
-            and method = %s''',
-            model_id, as_of_date, method_name
+            and method = %s""",
+            model_id,
+            as_of_date,
+            method_name,
         )
         for importance_record in importance_records:
             db_object = IndividualImportance(
                 model_id=int(model_id),
-                entity_id=int(importance_record['entity_id']),
+                entity_id=int(importance_record["entity_id"]),
                 as_of_date=as_of_date,
-                feature=importance_record['feature_name'],
-                feature_value=importance_record['feature_value'],
+                feature=importance_record["feature_name"],
+                feature_value=importance_record["feature_value"],
                 method=method_name,
-                importance_score=float(importance_record['score']),
+                importance_score=float(importance_record["score"]),
             )
             db_objects.append(db_object)
         save_db_objects(self.db_engine, db_objects)

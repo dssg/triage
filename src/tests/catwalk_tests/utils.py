@@ -1,19 +1,16 @@
 import datetime
-import os
 import random
 import tempfile
-from collections import OrderedDict
 from contextlib import contextmanager
 import pytest
 
 import numpy
 import pandas
 import yaml
-from sqlalchemy.orm import sessionmaker
 
-from triage.component import metta
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, MatrixStore, ProjectStorage
-from triage.component.results_schema import Model
+from triage.component.catwalk.storage import (
+    ProjectStorage,
+)
 
 
 @contextmanager
@@ -28,11 +25,11 @@ def fake_metta(matrix_dict, metadata):
     Yields:
         tuple of filenames for matrix and metadata
     """
-    matrix = pandas.DataFrame.from_dict(matrix_dict).set_index('entity_id')
+    matrix = pandas.DataFrame.from_dict(matrix_dict).set_index("entity_id")
     with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile('w') as metadata_file:
+        with tempfile.NamedTemporaryFile("w") as metadata_file:
             hdf = pandas.HDFStore(matrix_file.name)
-            hdf.put('title', matrix, data_columns=True)
+            hdf.put("title", matrix, data_columns=True)
             matrix_file.seek(0)
 
             yaml.dump(metadata, metadata_file)
@@ -47,34 +44,38 @@ def fake_labels(length):
 @pytest.fixture
 def sample_metadata():
     return {
-        'feature_start_time': datetime.date(2012, 12, 20),
-        'end_time': datetime.date(2016, 12, 20),
-        'label_name': 'label',
-        'as_of_date_frequency': '1w',
-        'max_training_history': '5y',
-        'state': 'default',
-        'cohort_name': 'default',
-        'label_timespan': '1y',
-        'metta-uuid': '1234',
-        'feature_names': ['ft1', 'ft2'],
-        'feature_groups': ['all: True'],
-        'indices': ['entity_id'],
+        "feature_start_time": datetime.date(2012, 12, 20),
+        "end_time": datetime.date(2016, 12, 20),
+        "label_name": "label",
+        "as_of_date_frequency": "1w",
+        "max_training_history": "5y",
+        "state": "default",
+        "cohort_name": "default",
+        "label_timespan": "1y",
+        "metta-uuid": "1234",
+        "feature_names": ["ft1", "ft2"],
+        "feature_groups": ["all: True"],
+        "indices": ["entity_id"],
     }
+
 
 @pytest.fixture
 def sample_df():
-    return pandas.DataFrame.from_dict({
-        'entity_id': [1, 2],
-        'feature_one': [3, 4],
-        'feature_two': [5, 6],
-        'label': ['good', 'bad']
-    }).set_index('entity_id')
+    return pandas.DataFrame.from_dict(
+        {
+            "entity_id": [1, 2],
+            "feature_one": [3, 4],
+            "feature_two": [5, 6],
+            "label": ["good", "bad"],
+        }
+    ).set_index("entity_id")
+
 
 @pytest.fixture
 def sample_matrix_store():
     with tempfile.TemporaryDirectory() as tempdir:
         project_storage = ProjectStorage(tempdir)
-        store = project_storage.matrix_storage_engine().get_store('1234')
+        store = project_storage.matrix_storage_engine().get_store("1234")
         store.matrix = sample_df()
         store.metadata = sample_metadata()
         return store

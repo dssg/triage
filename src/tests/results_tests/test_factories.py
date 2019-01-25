@@ -11,7 +11,6 @@ from .factories import (
     IndividualImportanceFactory,
     init_engine,
     session,
-    MatrixFactory
 )
 
 
@@ -23,18 +22,13 @@ def test_evaluation_factories():
 
         model_group = ModelGroupFactory()
         model = ModelFactory(model_group_rel=model_group)
-        for metric, value in [
-            ('precision@', 0.4),
-            ('recall@', 0.3),
-        ]:
+        for metric, value in [("precision@", 0.4), ("recall@", 0.3)]:
             EvaluationFactory(
-                model_rel=model,
-                metric=metric,
-                parameter='100_abs',
-                value=value
+                model_rel=model, metric=metric, parameter="100_abs", value=value
             )
         session.commit()
-        results = engine.execute('''
+        results = engine.execute(
+            """
             select
                 model_group_id,
                 m.model_id,
@@ -43,7 +37,8 @@ def test_evaluation_factories():
             from
                 test_results.evaluations e
                 join model_metadata.models m using (model_id)
-        ''')
+        """
+        )
         for model_group_id, model_id, metric, value in results:
             # if the evaluations are created with the model group and model,
             # as opposed to an autoprovisioned one,
@@ -63,31 +58,29 @@ def test_prediction_factories():
         model_group = ModelGroupFactory()
         model = ModelFactory(model_group_rel=model_group)
         for entity_id, as_of_date in [
-            (1, '2016-01-01'),
-            (1, '2016-04-01'),
-            (2, '2016-01-01'),
-            (2, '2016-04-01'),
-            (3, '2016-01-01'),
-            (3, '2016-04-01'),
+            (1, "2016-01-01"),
+            (1, "2016-04-01"),
+            (2, "2016-01-01"),
+            (2, "2016-04-01"),
+            (3, "2016-01-01"),
+            (3, "2016-04-01"),
         ]:
             PredictionFactory(
-                model_rel=model,
-                entity_id=entity_id,
-                as_of_date=as_of_date,
+                model_rel=model, entity_id=entity_id, as_of_date=as_of_date
             )
             IndividualImportanceFactory(
-                model_rel=model,
-                entity_id=entity_id,
-                as_of_date=as_of_date,
+                model_rel=model, entity_id=entity_id, as_of_date=as_of_date
             )
         session.commit()
-        results = engine.execute('''
+        results = engine.execute(
+            """
             select m.*, p.*
             from
                 test_results.predictions p
                 join model_metadata.models m using (model_id)
                 join test_results.individual_importances i using (model_id, entity_id, as_of_date)
-        ''')
+        """
+        )
         assert len([row for row in results]) == 6
         # if the predictions are created with the model,
         # the join should work and we should have the original six results

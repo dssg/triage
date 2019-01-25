@@ -9,7 +9,13 @@ import pandas
 from triage.component.results_schema import TestPrediction, Matrix, Model
 
 from triage.component.catwalk.predictors import Predictor
-from tests.utils import MockTrainedModel, matrix_creator, matrix_metadata_creator, get_matrix_store, rig_engines
+from tests.utils import (
+    MockTrainedModel,
+    matrix_creator,
+    matrix_metadata_creator,
+    get_matrix_store,
+    rig_engines,
+)
 
 
 AS_OF_DATE = datetime.date(2016, 12, 21)
@@ -18,18 +24,21 @@ AS_OF_DATE = datetime.date(2016, 12, 21)
 @contextmanager
 def prepare():
     with rig_engines() as (db_engine, project_storage):
-        train_matrix_uuid = '1234'
-        session = sessionmaker(db_engine)()
-        session.add(Matrix(matrix_uuid=train_matrix_uuid))
+        train_matrix_uuid = "1234"
+        try:
+            session = sessionmaker(db_engine)()
+            session.add(Matrix(matrix_uuid=train_matrix_uuid))
 
-        # Create the fake trained model and store in db
-        trained_model = MockTrainedModel()
-        model_hash = 'abcd'
-        project_storage.model_storage_engine().write(trained_model, model_hash)
-        db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
-        session.add(db_model)
-        session.commit()
-        yield project_storage, db_engine, db_model.model_id
+            # Create the fake trained model and store in db
+            trained_model = MockTrainedModel()
+            model_hash = "abcd"
+            project_storage.model_storage_engine().write(trained_model, model_hash)
+            db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
+            session.add(db_model)
+            session.commit()
+            yield project_storage, db_engine, db_model.model_id
+        finally:
+            session.close()
 
 
 def test_predictor_entity_index():
@@ -38,8 +47,10 @@ def test_predictor_entity_index():
 
         # Runs the same test for training and testing predictions
         for mat_type in ("train", "test"):
-            matrix = matrix_creator(index='entity_id')
-            metadata = matrix_metadata_creator(end_time=AS_OF_DATE, matrix_type=mat_type, indices=['entity_id'])
+            matrix = matrix_creator(index="entity_id")
+            metadata = matrix_metadata_creator(
+                end_time=AS_OF_DATE, matrix_type=mat_type, indices=["entity_id"]
+            )
 
             matrix_store = get_matrix_store(project_storage, matrix, metadata)
             train_matrix_columns = matrix.columns[0:-1].tolist()
@@ -48,7 +59,7 @@ def test_predictor_entity_index():
                 model_id,
                 matrix_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
+                train_matrix_columns=train_matrix_columns,
             )
 
             # assert
@@ -58,10 +69,14 @@ def test_predictor_entity_index():
             # 2. that the predictions table entries are present and
             # can be linked to the original models
             records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
+                row
+                for row in db_engine.execute(
+                    """select entity_id, as_of_date
                 from {}_results.predictions
-                join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                join model_metadata.models using (model_id)""".format(
+                        mat_type, mat_type
+                    )
+                )
             ]
             assert len(records) == 2
 
@@ -78,27 +93,37 @@ def test_predictor_entity_index():
 
         # Runs the same test for training and testing predictions
         for mat_type in ("train", "test"):
-            new_matrix = matrix_creator(index='entity_id')
-            new_metadata = matrix_metadata_creator(end_time=AS_OF_DATE + datetime.timedelta(days=1), matrix_type=mat_type, indices=['entity_id'])
-            new_matrix_store = get_matrix_store(project_storage, new_matrix, new_metadata)
+            new_matrix = matrix_creator(index="entity_id")
+            new_metadata = matrix_metadata_creator(
+                end_time=AS_OF_DATE + datetime.timedelta(days=1),
+                matrix_type=mat_type,
+                indices=["entity_id"],
+            )
+            new_matrix_store = get_matrix_store(
+                project_storage, new_matrix, new_metadata
+            )
 
             predictor.predict(
                 model_id,
                 new_matrix_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
+                train_matrix_columns=train_matrix_columns,
             )
             predictor.predict(
                 model_id,
                 matrix_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_matrix_columns
+                train_matrix_columns=train_matrix_columns,
             )
             records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
+                row
+                for row in db_engine.execute(
+                    """select entity_id, as_of_date
                 from {}_results.predictions
-                join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                join model_metadata.models using (model_id)""".format(
+                        mat_type, mat_type
+                    )
+                )
             ]
             assert len(records) == 4
 
@@ -114,17 +139,19 @@ def test_predictor_composite_index():
         dayone = datetime.datetime(2011, 1, 1)
         daytwo = datetime.datetime(2011, 1, 2)
         source_dict = {
-            'entity_id': [1, 2, 1, 2],
-            'as_of_date': [dayone, dayone, daytwo, daytwo],
-            'feature_one': [3, 4, 5, 6],
-            'feature_two': [5, 6, 7, 8],
-            'label': [7, 8, 8, 7]
+            "entity_id": [1, 2, 1, 2],
+            "as_of_date": [dayone, dayone, daytwo, daytwo],
+            "feature_one": [3, 4, 5, 6],
+            "feature_two": [5, 6, 7, 8],
+            "label": [7, 8, 8, 7],
         }
 
         # Runs the same test for training and testing predictions
         for mat_type in ("train", "test"):
 
-            matrix = pandas.DataFrame.from_dict(source_dict).set_index(['entity_id', 'as_of_date'])
+            matrix = pandas.DataFrame.from_dict(source_dict).set_index(
+                ["entity_id", "as_of_date"]
+            )
             metadata = matrix_metadata_creator(matrix_type=mat_type)
             matrix_store = get_matrix_store(project_storage, matrix, metadata)
 
@@ -132,7 +159,7 @@ def test_predictor_composite_index():
                 model_id,
                 matrix_store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=['feature_one', 'feature_two']
+                train_matrix_columns=["feature_one", "feature_two"],
             )
 
             # assert
@@ -142,10 +169,14 @@ def test_predictor_composite_index():
             # 2. that the predictions table entries are present and
             # can be linked to the original models
             records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
+                row
+                for row in db_engine.execute(
+                    """select entity_id, as_of_date
                 from {}_results.predictions
-                join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                join model_metadata.models using (model_id)""".format(
+                        mat_type, mat_type
+                    )
+                )
             ]
             assert len(records) == 4
 
@@ -156,7 +187,7 @@ def test_predictor_get_train_columns():
         train_store = get_matrix_store(
             project_storage=project_storage,
             matrix=matrix_creator(),
-            metadata=matrix_metadata_creator(matrix_type='train'),
+            metadata=matrix_metadata_creator(matrix_type="train"),
         )
 
         # flip the order of some feature columns in the test matrix
@@ -167,7 +198,7 @@ def test_predictor_get_train_columns():
         test_store = get_matrix_store(
             project_storage=project_storage,
             matrix=other_order_matrix,
-            metadata=matrix_metadata_creator(matrix_type='test'),
+            metadata=matrix_metadata_creator(matrix_type="test"),
         )
 
         # Runs the same test for training and testing predictions
@@ -176,7 +207,7 @@ def test_predictor_get_train_columns():
                 model_id,
                 store,
                 misc_db_parameters=dict(),
-                train_matrix_columns=train_store.columns()
+                train_matrix_columns=train_store.columns(),
             )
             # assert
             # 1. that we calculated predictions
@@ -185,17 +216,23 @@ def test_predictor_get_train_columns():
             # 2. that the predictions table entries are present and
             # can be linked to the original models
             records = [
-                row for row in
-                db_engine.execute('''select entity_id, as_of_date
+                row
+                for row in db_engine.execute(
+                    """select entity_id, as_of_date
                 from {}_results.predictions
-                join model_metadata.models using (model_id)'''.format(mat_type, mat_type))
+                join model_metadata.models using (model_id)""".format(
+                        mat_type, mat_type
+                    )
+                )
             ]
             assert len(records) > 0
 
 
 def test_predictor_retrieve():
     with prepare() as (project_storage, db_engine, model_id):
-        predictor = Predictor(project_storage.model_storage_engine(), db_engine, replace=False)
+        predictor = Predictor(
+            project_storage.model_storage_engine(), db_engine, replace=False
+        )
 
         # create prediction set
         matrix = matrix_creator()
@@ -206,7 +243,7 @@ def test_predictor_retrieve():
             model_id,
             matrix_store,
             misc_db_parameters=dict(),
-            train_matrix_columns=matrix.columns[0:-1].tolist()
+            train_matrix_columns=matrix.columns[0:-1].tolist(),
         )
 
         # When run again, the predictions retrieved from the database
@@ -230,22 +267,28 @@ def test_predictor_retrieve():
         # Remove the first row and put it at the end.
         # If the Predictor doesn't explicitly reorder the results, this will fail
         # Only running on TestPrediction because TrainPrediction behaves the exact same way
-        reorder_session = sessionmaker(bind=db_engine)()
-        obj = reorder_session.query(TestPrediction).first()
-        reorder_session.delete(obj)
-        reorder_session.commit()
+        try:
+            reorder_session = sessionmaker(bind=db_engine)()
+            obj = reorder_session.query(TestPrediction).first()
+            reorder_session.delete(obj)
+            reorder_session.commit()
+        finally:
+            reorder_session.close()
 
         make_transient(obj)
-        reorder_session = sessionmaker(bind=db_engine)()
-        reorder_session.add(obj)
-        reorder_session.commit()
+        try:
+            reorder_session = sessionmaker(bind=db_engine)()
+            reorder_session.add(obj)
+            reorder_session.commit()
+        finally:
+            reorder_session.close()
 
         predictor.load_model = Mock()
         new_predict_proba = predictor.predict(
             model_id,
             matrix_store,
             misc_db_parameters=dict(),
-            train_matrix_columns=matrix.columns[0:-1].tolist()
+            train_matrix_columns=matrix.columns[0:-1].tolist(),
         )
         assert_array_equal(new_predict_proba, predict_proba)
         assert not predictor.load_model.called

@@ -4,34 +4,37 @@ from .metric_directionality import is_better_operator
 import pandas as pd
 from datetime import datetime
 
+
 def _past_threshold(df, metric_filter):
-    return df[is_better_operator(metric_filter['metric'])(
-        df['raw_value'],
-        metric_filter['threshold_value']
-    )]
+    return df[
+        is_better_operator(metric_filter["metric"])(
+            df["raw_value"], metric_filter["threshold_value"]
+        )
+    ]
 
 
 def _close_to_best_case(df, metric_filter):
-    return df[df['dist_from_best_case'] < metric_filter['max_from_best']]
+    return df[df["dist_from_best_case"] < metric_filter["max_from_best"]]
 
 
 def _of_metric(df, metric_filter):
     return df[
-        (df['metric'] == metric_filter['metric']) &
-        (df['parameter'] == metric_filter['parameter'])
+        (df["metric"] == metric_filter["metric"])
+        & (df["parameter"] == metric_filter["parameter"])
     ]
 
 
 def model_groups_filter(
-    train_end_times,
-    initial_model_group_ids,
-    models_table,
-    db_engine
+    train_end_times, initial_model_group_ids, models_table, db_engine
 ):
-    """Before creating the distance table, we want to filter the model_group_ids
-    and train_end_times only if they are reasonable -- every model group should
-    have the same train_end_times -- to prevent incomparable model groups from
-    being populated to the distance table.
+    """Filter the models which related train end times don't contain the user-input
+    train_end_times
+
+    Before creating the distance table, we want to make sure the model_group_ids
+    and train_end_times are reasonable:
+        1. the input train_end_times should exisit in the database
+        2. every model group should have the same train_end_times
+    to prevent incomparable model groups from being populated to the distance table.
 
     Args:
         train_end_times (list) The set of train_end_times to consider during
@@ -43,17 +46,20 @@ def model_groups_filter(
                                       schema of a completed modeling run
     """
 
-    if isinstance(train_end_times, str) or not hasattr(train_end_times, '__iter__'):
+    if isinstance(train_end_times, str) or not hasattr(train_end_times, "__iter__"):
         raise TypeError("train_end_times should be a list of str or timestamp")
 
     if not bool(train_end_times):
         raise ValueError("train_end_times shouldn't be an empty list")
 
     end_times_sql = "ARRAY[{}]".format(
-        ', '.join(
+        ", ".join(
             "'{}'".format(
-                end_time.strftime('%Y-%m-%d') if isinstance(end_time, datetime) else end_time
-            ) for end_time in train_end_times
+                end_time.strftime("%Y-%m-%d")
+                if isinstance(end_time, datetime)
+                else end_time
+            )
+            for end_time in train_end_times
         )
     )
     logging.info("Checking if all model groups have the same train end times")
@@ -68,25 +74,30 @@ def model_groups_filter(
             WHERE model_group_id in {tuple(initial_model_group_ids)}
             GROUP BY model_group_id
         ) as t
-        WHERE train_end_time_list = {end_times_sql}
+        WHERE train_end_time_list @> {end_times_sql}
         """
-    model_groups_df = pd.read_sql(query, con=db_engine)
-    model_group_ids = list(model_groups_df['model_group_id'])
+    model_group_ids = {row['model_group_id'] for row in db_engine.execute(query)}
+
+    if not model_group_ids:
+        raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
 
     dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
-    logging.info(f"Dropped {dropped_model_groups} model groups which don't have the same train end times")
+    logging.info(
+        f"Dropped {dropped_model_groups} model groups which don't match the train end times"
+    )
     logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
 
-    return set(model_group_ids)
+
+    return model_group_ids
+
 
 class ModelGroupThresholder(object):
-
     def __init__(
         self,
         distance_from_best_table,
         train_end_times,
         initial_model_group_ids,
-        initial_metric_filters
+        initial_metric_filters,
     ):
         """Iteratively narrow down a list of model groups by changing thresholds
         for max below best model and minimum absolute value with respect to
@@ -105,7 +116,6 @@ class ModelGroupThresholder(object):
         self._initial_model_group_ids = initial_model_group_ids
         self._metric_filters = initial_metric_filters
 
-
     def _filter_model_groups(self, df, filter_func):
         """Filter model groups by ensuring each of their metrics meets the given
             filtering function.
@@ -120,10 +130,11 @@ class ModelGroupThresholder(object):
         """
         passing = set(self._initial_model_group_ids)
         for metric_filter in self._metric_filters:
-            passing &= set(filter_func(
-                _of_metric(df, metric_filter),
-                metric_filter
-            )['model_group_id'])
+            passing &= set(
+                filter_func(_of_metric(df, metric_filter), metric_filter)[
+                    "model_group_id"
+                ]
+            )
         return passing
 
     def model_groups_past_threshold(self, df):
@@ -168,27 +179,25 @@ class ModelGroupThresholder(object):
             )
             close_to_best = self.model_groups_close_to_best_case(df_as_of)
             logging.info(
-                'Found %s model groups close to best for %s',
+                "Found %s model groups close to best for %s",
                 len(close_to_best),
-                train_end_time
+                train_end_time,
             )
             close_to_best_model_groups |= close_to_best
 
             past_threshold = self.model_groups_past_threshold(df_as_of)
             logging.info(
-                'Found %s model groups above min for %s',
+                "Found %s model groups above min for %s",
                 len(past_threshold),
-                train_end_time
+                train_end_time,
             )
             past_threshold_model_groups &= past_threshold
 
         total_model_groups = close_to_best_model_groups & past_threshold_model_groups
         logging.info(
-            'Found %s total model groups past threshold',
-            len(total_model_groups)
+            "Found %s total model groups past threshold", len(total_model_groups)
         )
         return total_model_groups
-
 
     def update_filters(self, new_metric_filters):
         """Update the saved metric filters.

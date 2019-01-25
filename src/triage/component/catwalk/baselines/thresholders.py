@@ -4,7 +4,7 @@ from six import string_types
 
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
-REQUIRED_KEYS = frozenset(['feature_name', 'operator', 'threshold'])
+REQUIRED_KEYS = frozenset(["feature_name", "operator", "threshold"])
 
 
 class SimpleThresholder(object):
@@ -29,15 +29,18 @@ class SimpleThresholder(object):
         }
     where rules and operators that combine them can be nested).
     """
-    def __init__(self, rules, logical_operator='or'):
+
+    def __init__(self, rules, logical_operator="or"):
         self.rules = rules
         self.logical_operator = logical_operator
         self.feature_importances_ = None
-        self.rule_combination_method = self.lookup_rule_combination_method(logical_operator)
+        self.rule_combination_method = self.lookup_rule_combination_method(
+            logical_operator
+        )
 
     @property
     def rules(self):
-        return vars(self)['rules']
+        return vars(self)["rules"]
 
     @rules.setter
     def rules(self, rules):
@@ -59,59 +62,55 @@ class SimpleThresholder(object):
                 converted_rules.append(self._convert_string_rule_to_dict(rule))
             else:
                 if not isinstance(rule, dict):
-                    raise ValueError((
-                        'Rule "{rule}" is not of a supported type (string or '
-                        'dict).'.format(rule=rule)
-                    ))
-                if not rule.keys() >= REQUIRED_KEYS:
-                    raise ValueError((
-                        'Rule "{rule}" missing one or more required keys '
-                        '({required_keys}).'.format(
-                            rule=rule,
-                            required_keys=REQUIRED_KEYS
+                    raise ValueError(
+                        (
+                            'Rule "{rule}" is not of a supported type (string or '
+                            "dict).".format(rule=rule)
                         )
-                    ))
-                rule['operator'] = self._validate_operator(rule['operator'], rule)
+                    )
+                if not rule.keys() >= REQUIRED_KEYS:
+                    raise ValueError(
+                        (
+                            'Rule "{rule}" missing one or more required keys '
+                            "({required_keys}).".format(
+                                rule=rule, required_keys=REQUIRED_KEYS
+                            )
+                        )
+                    )
+                rule["operator"] = self._validate_operator(rule["operator"], rule)
                 converted_rules.append(rule)
 
-        vars(self)['rules'] = converted_rules
+        vars(self)["rules"] = converted_rules
 
     @property
     def all_feature_names(self):
-        return [rule['feature_name'] for rule in self.rules]
+        return [rule["feature_name"] for rule in self.rules]
 
     def lookup_rule_combination_method(self, logical_operator):
         """ Convert 'and' to 'all' and 'or' to 'any' for interacting with
         pandas DataFrames.
         """
-        rule_combination_method_lookup = {
-            'or': 'any',
-            'and': 'all'
-        }
+        rule_combination_method_lookup = {"or": "any", "and": "all"}
         return rule_combination_method_lookup[logical_operator]
 
     def _validate_operator(self, operator_string, rule):
         """ Convert the user-passed operator into the the name of the apprpriate
         pandas method.
         """
-        operator_lookup = {
-            '>': 'gt',
-            '>=': 'ge',
-            '<': 'lt',
-            '<=': 'le',
-            '==': 'equals'
-        }
+        operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "equals"}
         try:
             operator = operator_lookup[operator_string]
         except KeyError:
-            raise ValueError((
-                'Operator "{operator}" extracted from rule "{rule}" is not a '
-                'supported operator ({supported_operators}).'.format(
-                    operator=operator_string,
-                    rule=rule,
-                    supported_operators=operator_lookup.keys()
+            raise ValueError(
+                (
+                    'Operator "{operator}" extracted from rule "{rule}" is not a '
+                    "supported operator ({supported_operators}).".format(
+                        operator=operator_string,
+                        rule=rule,
+                        supported_operators=operator_lookup.keys(),
+                    )
                 )
-            ))
+            )
 
         return operator
 
@@ -119,31 +118,34 @@ class SimpleThresholder(object):
         """ Converts a string rule into a dict, raising helpful exceptions if it
         cannot be parsed.
         """
-        components = rule.rsplit(' ', 2)
+        components = rule.rsplit(" ", 2)
 
         if len(components) < 3:
-            raise ValueError((
-                '{required_keys} could not be parsed from rule "{rule}". Are '
-                'they all present and separated by spaces?'.format(
-                    required_keys=REQUIRED_KEYS,
-                    rule=rule
+            raise ValueError(
+                (
+                    '{required_keys} could not be parsed from rule "{rule}". Are '
+                    "they all present and separated by spaces?".format(
+                        required_keys=REQUIRED_KEYS, rule=rule
+                    )
                 )
-            ))
+            )
 
         try:
             threshold = int(components[2])
         except ValueError:
-            raise ValueError((
-                'Threshold "{threshold}" parsed from rule "{rule}" is not an '
-                'int.'.format(threshold=components[2], rule=rule)
-            ))
+            raise ValueError(
+                (
+                    'Threshold "{threshold}" parsed from rule "{rule}" is not an '
+                    "int.".format(threshold=components[2], rule=rule)
+                )
+            )
 
         operator = self._validate_operator(components[1], rule)
 
         return {
-            'feature_name': components[0],
-            'operator': operator,
-            'threshold': threshold
+            "feature_name": components[0],
+            "operator": operator,
+            "threshold": threshold,
         }
 
     def _set_feature_importances_(self, x):
@@ -155,10 +157,12 @@ class SimpleThresholder(object):
             try:
                 position = x.columns.get_loc(feature_name)
             except KeyError:
-                raise BaselineFeatureNotInMatrix((
-                    'Rules refer to a feature ({feature_name}) not included in '
-                    'the training matrix!'.format(feature_name=feature_name)
-                ))
+                raise BaselineFeatureNotInMatrix(
+                    (
+                        "Rules refer to a feature ({feature_name}) not included in "
+                        "the training matrix!".format(feature_name=feature_name)
+                    )
+                )
             feature_importances[position] = 1
         self.feature_importances_ = np.array(feature_importances)
 
@@ -174,10 +178,12 @@ class SimpleThresholder(object):
         rule_evaluations_list = []
         for rule in self.rules:
             rule_evaluations_list.append(
-                getattr(x[rule['feature_name']], rule['operator'])(rule['threshold'])
+                getattr(x[rule["feature_name"]], rule["operator"])(rule["threshold"])
             )
         rule_evaluations_dataframe = pd.concat(rule_evaluations_list, axis=1)
-        scores = getattr(rule_evaluations_dataframe, self.rule_combination_method)(axis=1)
+        scores = getattr(rule_evaluations_dataframe, self.rule_combination_method)(
+            axis=1
+        )
         scores = list(scores.astype(int))
 
         # format it like sklearn output and return

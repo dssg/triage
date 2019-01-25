@@ -18,7 +18,7 @@ from triage.component.results_schema import Model
 
 
 def str_in_sql(values):
-    return ','.join(map(lambda x: "'{}'".format(x), values))
+    return ",".join(map(lambda x: "'{}'".format(x), values))
 
 
 def feature_list(feature_dictionary):
@@ -33,65 +33,13 @@ def feature_list(feature_dictionary):
     return sorted(
         functools.reduce(
             operator.concat,
-            (feature_dictionary[key] for key in feature_dictionary.keys())
+            (feature_dictionary[key] for key in feature_dictionary.keys()),
         )
     )
 
 
 def convert_string_column_to_date(column):
-    return(
-        [datetime.datetime.strptime(date, '%Y-%m-%d').date() for date in column]
-    )
-
-
-def create_schemas(engine, features_tables, labels, states):
-    """ This function makes a features schema and populates it with the fake
-    data from above.
-
-    :param engine: a postgresql engine
-    :type engine: sqlalchemy.engine
-    """
-    # create features schema and associated tables
-    engine.execute('drop schema if exists features cascade; create schema features;')
-    for table_number, table in enumerate(features_tables):
-        create_features_table(table_number, table, engine)
-    # create labels schema and table
-    engine.execute('drop schema if exists labels cascade; create schema labels;')
-    engine.execute(
-        """
-            create table labels.labels (
-                entity_id int,
-                as_of_date date,
-                label_timespan interval,
-                label_name char(30),
-                label_type char(30),
-                label int
-            )
-        """
-    )
-    for row in labels:
-        engine.execute(
-            'insert into labels.labels values (%s, %s, %s, %s, %s, %s)',
-            row
-        )
-
-    # create sparse state table
-    engine.execute('drop schema if exists staging cascade; create schema staging;')
-    engine.execute(
-        """
-            create table staging.sparse_states (
-                entity_id int,
-                as_of_date date,
-                state_one bool,
-                state_two bool
-            )
-        """
-    )
-    for row in states:
-        engine.execute(
-            'insert into staging.sparse_states values (%s, %s, %s, %s)',
-            row
-        )
+    return [datetime.datetime.strptime(date, "%Y-%m-%d").date() for date in column]
 
 
 def create_features_table(table_number, table, engine):
@@ -100,14 +48,18 @@ def create_features_table(table_number, table, engine):
             create table features.features{} (
                 entity_id int, as_of_date date, f{} int, f{} int
             )
-        """.format(table_number, (table_number*2)+1, (table_number*2)+2)
+        """.format(
+            table_number, (table_number * 2) + 1, (table_number * 2) + 2
+        )
     )
     for row in table:
         engine.execute(
             """
                 insert into features.features{} values (%s, %s, %s, %s)
-            """.format(table_number),
-            row
+            """.format(
+                table_number
+            ),
+            row,
         )
 
 
@@ -119,50 +71,47 @@ def create_entity_date_df(
     state_two,
     label_name,
     label_type,
-    label_timespan
+    label_timespan,
 ):
     """ This function makes a pandas DataFrame that mimics the entity-date table
     for testing against.
     """
-    0, '2016-02-01', '1 month', 'booking', 'binary', 0
-    labels_table = pd.DataFrame(labels, columns=[
-        'entity_id',
-        'as_of_date',
-        'label_timespan',
-        'label_name',
-        'label_type',
-        'label'
-    ])
-    states_table = pd.DataFrame(states, columns=[
-        'entity_id',
-        'as_of_date',
-        'state_one',
-        'state_two'
-    ]).set_index(['entity_id', 'as_of_date'])
-    as_of_dates = [date.date() for date in as_of_dates]
-    labels_table = labels_table[labels_table['label_name'] == label_name]
-    labels_table = labels_table[labels_table['label_type'] == label_type]
-    labels_table = labels_table[labels_table['label_timespan'] == label_timespan]
-    labels_table = labels_table.join(
-        other=states_table,
-        on=('entity_id', 'as_of_date'),
+    0, "2016-02-01", "1 month", "booking", "binary", 0
+    labels_table = pd.DataFrame(
+        labels,
+        columns=[
+            "entity_id",
+            "as_of_date",
+            "label_timespan",
+            "label_name",
+            "label_type",
+            "label",
+        ],
     )
-    labels_table = labels_table[labels_table['state_one'] & labels_table['state_two']]
-    ids_dates = labels_table[['entity_id', 'as_of_date']]
-    ids_dates = ids_dates.sort_values(['entity_id', 'as_of_date'])
-    ids_dates['as_of_date'] = [datetime.datetime.strptime(
-        date,
-        '%Y-%m-%d'
-    ).date() for date in ids_dates['as_of_date']]
-    ids_dates = ids_dates[ids_dates['as_of_date'].isin(as_of_dates)]
+    states_table = pd.DataFrame(
+        states, columns=["entity_id", "as_of_date", "state_one", "state_two"]
+    ).set_index(["entity_id", "as_of_date"])
+    as_of_dates = [date.date() for date in as_of_dates]
+    labels_table = labels_table[labels_table["label_name"] == label_name]
+    labels_table = labels_table[labels_table["label_type"] == label_type]
+    labels_table = labels_table[labels_table["label_timespan"] == label_timespan]
+    labels_table = labels_table.join(other=states_table, on=("entity_id", "as_of_date"))
+    labels_table = labels_table[labels_table["state_one"] & labels_table["state_two"]]
+    ids_dates = labels_table[["entity_id", "as_of_date"]]
+    ids_dates = ids_dates.sort_values(["entity_id", "as_of_date"])
+    ids_dates["as_of_date"] = [
+        datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        for date in ids_dates["as_of_date"]
+    ]
+    ids_dates = ids_dates[ids_dates["as_of_date"].isin(as_of_dates)]
     print(ids_dates)
 
-    return(ids_dates.reset_index(drop=True))
+    return ids_dates.reset_index(drop=True)
 
 
 def NamedTempFile():
     if sys.version_info >= (3, 0, 0):
-        return tempfile.NamedTemporaryFile(mode='w+', newline='')
+        return tempfile.NamedTemporaryFile(mode="w+", newline="")
     else:
         return tempfile.NamedTemporaryFile()
 
@@ -188,11 +137,11 @@ def fake_metta(matrix_dict, metadata):
     Yields:
         tuple of filenames for matrix and metadata
     """
-    matrix = pd.DataFrame.from_dict(matrix_dict).set_index('entity_id')
+    matrix = pd.DataFrame.from_dict(matrix_dict).set_index("entity_id")
     with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile('w') as metadata_file:
+        with tempfile.NamedTemporaryFile("w") as metadata_file:
             hdf = pd.HDFStore(matrix_file.name)
-            hdf.put('title', matrix, data_columns=True)
+            hdf.put("title", matrix, data_columns=True)
             matrix_file.seek(0)
 
             yaml.dump(metadata, metadata_file)
@@ -221,9 +170,9 @@ def fake_trained_model(project_path, model_storage_engine, db_engine):
         (int) model id for database retrieval
     """
     trained_model = MockTrainedModel()
-    model_storage_engine.write(trained_model, 'abcd')
+    model_storage_engine.write(trained_model, "abcd")
     session = sessionmaker(db_engine)()
-    db_model = Model(model_hash='abcd')
+    db_model = Model(model_hash="abcd")
     session.add(db_model)
     session.commit()
     return trained_model, db_model.model_id
@@ -252,36 +201,37 @@ def assert_index(engine, table, column):
              t.relname = '{table_name}' AND
              a.attname = '{column_name}'
     """.format(
-        table_name=table,
-        column_name=column
+        table_name=table, column_name=column
     )
     num_results = len([row for row in engine.execute(query)])
     assert num_results >= 1
 
 
 def create_dense_state_table(db_engine, table_name, data):
-    db_engine.execute('''create table {} (
+    db_engine.execute(
+        """create table {} (
         entity_id int,
         state text,
         start_time timestamp,
         end_time timestamp
-    )'''.format(table_name))
+    )""".format(
+            table_name
+        )
+    )
 
     for row in data:
         db_engine.execute(
-            'insert into {} values (%s, %s, %s, %s)'.format(table_name),
-            row
+            "insert into {} values (%s, %s, %s, %s)".format(table_name), row
         )
 
 
 def create_binary_outcome_events(db_engine, table_name, events_data):
     db_engine.execute(
-        'create table events (entity_id int, outcome_date date, outcome bool)'
+        "create table events (entity_id int, outcome_date date, outcome bool)"
     )
     for event in events_data:
         db_engine.execute(
-            'insert into {} values (%s, %s, %s::bool)'.format(table_name),
-            event
+            "insert into {} values (%s, %s, %s::bool)".format(table_name), event
         )
 
 
