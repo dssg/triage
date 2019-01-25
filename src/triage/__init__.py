@@ -2,7 +2,7 @@
 
 __author__ = """Center for Data Science and Public Policy"""
 __email__ = "datascifellows@gmail.com"
-__version__ = "__version__ = '3.1.1'"
+__version__ = "__version__ = '3.2.1'"
 
 
 from .util.db import create_engine

@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
 
-from .utils import db_retry
+from .utils import db_retry, retrieve_model_hash_from_id
 
 
 class ModelNotFoundError(ValueError):
@@ -20,7 +20,7 @@ class ModelNotFoundError(ValueError):
 class Predictor(object):
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
 
-    def __init__(self, model_storage_engine, db_engine, replace=True):
+    def __init__(self, model_storage_engine, db_engine, replace=True, save_predictions=True):
         """Encapsulates the task of generating predictions on an arbitrary
         dataset and storing the results
 
@@ -32,26 +32,11 @@ class Predictor(object):
         self.model_storage_engine = model_storage_engine
         self.db_engine = db_engine
         self.replace = replace
+        self.save_predictions = save_predictions
 
     @property
     def sessionmaker(self):
         return sessionmaker(bind=self.db_engine)
-
-    @db_retry
-    def _retrieve_model_hash(self, model_id):
-        """Retrieves the model hash associated with a given model id
-
-        Args:
-            model_id (int) The id of a given model in the database
-
-        Returns: (str) the stored hash of the model
-        """
-        try:
-            session = self.sessionmaker()
-            model_hash = session.query(Model).get(model_id).model_hash
-        finally:
-            session.close()
-        return model_hash
 
     @db_retry
     def load_model(self, model_id):
@@ -64,7 +49,7 @@ class Predictor(object):
             A python object which implements .predict()
         """
 
-        model_hash = self._retrieve_model_hash(model_id)
+        model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
         logging.info("Checking for model_hash %s in store", model_hash)
         if self.model_storage_engine.exists(model_hash):
             return self.model_storage_engine.load(model_hash)
@@ -76,7 +61,7 @@ class Predictor(object):
         Args:
             model_id (int) The id of a given model in the database
         """
-        model_hash = self._retrieve_model_hash(model_id)
+        model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
         self.model_storage_engine.delete(model_hash)
 
     @db_retry
@@ -86,6 +71,34 @@ class Predictor(object):
             .filter_by(model_id=model_id)
             .filter(Prediction_obj.as_of_date.in_(self._as_of_dates(matrix_store)))
         )
+
+    @db_retry
+    def needs_predictions(self, matrix_store, model_id):
+        """Returns whether or not the given matrix and model are lacking any predictions
+
+        Args:
+            matrix_store (triage.component.catwalk.storage.MatrixStore) A matrix with metadata
+            model_id (int) A database ID of a model
+
+        The way we check is by grabbing all the distinct as-of-dates in the predictions table
+        for this model and matrix. If there are more as-of-dates defined in the matrix's metadata
+        than are in the table, we need predictions
+        """
+        if not self.save_predictions:
+            return False
+        session = self.sessionmaker()
+        prediction_obj = matrix_store.matrix_type.prediction_obj
+        as_of_dates_in_db = set(
+            as_of_date.date()
+            for (as_of_date,) in session.query(prediction_obj).filter_by(
+                model_id=model_id,
+                matrix_uuid=matrix_store.uuid
+            ).distinct(prediction_obj.as_of_date).values("as_of_date")
+        )
+        as_of_dates_needed = set(self._as_of_dates(matrix_store))
+        needed = bool(as_of_dates_needed - as_of_dates_in_db)
+        session.close()
+        return needed
 
     def _as_of_dates(self, matrix_store):
         matrix = matrix_store.matrix
@@ -146,7 +159,6 @@ class Predictor(object):
             session.close()
         db_objects = []
         test_label_timespan = matrix_store.metadata["label_timespan"]
-        logging.warning(test_label_timespan)
 
         if "as_of_date" in matrix_store.matrix.index.names:
             logging.info(
@@ -277,18 +289,30 @@ class Predictor(object):
         logging.info(
             "Generated predictions for model %s, matrix %s", model_id, matrix_store.uuid
         )
-
-        self._write_to_db(
-            model_id,
-            matrix_store,
-            predictions_proba[:, 1],
-            labels,
-            misc_db_parameters,
-            prediction_obj,
-        )
-        logging.info(
-            "Wrote predictions for model %s, matrix %s to database",
-            model_id,
-            matrix_store.uuid,
-        )
+        if self.save_predictions:
+            logging.info(
+                "Writing predictions for model %s, matrix %s to database",
+                model_id,
+                matrix_store.uuid,
+            )
+            self._write_to_db(
+                model_id,
+                matrix_store,
+                predictions_proba[:, 1],
+                labels,
+                misc_db_parameters,
+                prediction_obj,
+            )
+            logging.info(
+                "Wrote predictions for model %s, matrix %s to database",
+                model_id,
+                matrix_store.uuid,
+            )
+        else:
+            logging.info(
+                "Skipping prediction database sync for model %s, matrix %s because "
+                "save_predictions was marked False",
+                model_id,
+                matrix_store.uuid,
+            )
         return predictions_proba[:, 1]

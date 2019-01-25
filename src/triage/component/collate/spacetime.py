@@ -22,6 +22,7 @@ class SpacetimeAggregation(Aggregation):
         date_column=None,
         output_date_column=None,
         input_min_date=None,
+        join_with_cohort_table=False,
     ):
         """
         Args:
@@ -61,6 +62,7 @@ class SpacetimeAggregation(Aggregation):
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
         self.input_min_date = input_min_date
+        self.join_with_cohort_table = join_with_cohort_table
 
     def _state_table_sub(self):
         """Helper function to ensure we only include state table records
@@ -141,7 +143,16 @@ class SpacetimeAggregation(Aggregation):
                 )
 
                 gb_clause = make_sql_clause(groupby, ex.literal_column)
-                query = ex.select(columns=columns, from_obj=self.from_obj).group_by(
+                if self.join_with_cohort_table:
+                    from_obj = ex.text(
+                        f"(select from_obj.* from ("
+                        f"(select * from {self.from_obj}) from_obj join {self.state_table} cohort on ( "
+                        "cohort.entity_id = from_obj.entity_id and "
+                        f"cohort.{self.output_date_column} = '{date}'::date)"
+                        ")) cohorted_from_obj")
+                else:
+                    from_obj = self.from_obj
+                query = ex.select(columns=columns, from_obj=from_obj).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))

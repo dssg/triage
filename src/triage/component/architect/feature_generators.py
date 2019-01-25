@@ -12,12 +12,19 @@ from triage.component.collate import (
     Categorical,
     Compare,
     SpacetimeAggregation,
+    FromObj
 )
 
 
 class FeatureGenerator(object):
     def __init__(
-        self, db_engine, features_schema_name, replace=True, feature_start_time=None
+        self,
+        db_engine,
+        features_schema_name,
+        replace=True,
+        feature_start_time=None,
+        materialize_subquery_fromobjs=True,
+        features_ignore_cohort=False,
     ):
         """Generates aggregate features using collate
 
@@ -29,13 +36,19 @@ class FeatureGenerator(object):
                 should be replaced
             feature_start_time (string/datetime, optional) point in time before which
                 should not be included in features
+            features_ignore_cohort (boolean, optional) Whether or not features should be built
+                independently of the cohort. Takes longer but means that features can be reused
+                for different cohorts.
         """
         self.db_engine = db_engine
         self.features_schema_name = features_schema_name
         self.categorical_cache = {}
         self.replace = replace
         self.feature_start_time = feature_start_time
+        self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
+        self.features_ignore_cohort = features_ignore_cohort
         self.entity_id_column = "entity_id"
+        self.from_objs = {}
 
     def _validate_keys(self, aggregation_config):
         for key in [
@@ -233,6 +246,7 @@ class FeatureGenerator(object):
                     **categorical.get("imputation", {})
                 ),
                 include_null=True,
+                coltype=categorical.get('coltype', None),
             )
             for categorical in categorical_config
         ]
@@ -256,15 +270,16 @@ class FeatureGenerator(object):
                 op_in_name=False,
                 quote_choices=False,
                 include_null=True,
+                coltype=categorical.get('coltype', None)
             )
             for categorical in categorical_config
         ]
 
     def _aggregation(self, aggregation_config, feature_dates, state_table):
         logging.info(
-            "Building collate.SpacetimeAggregation for config %s and as_of_dates %s",
+            "Building collate.SpacetimeAggregation for config %s and %s as_of_dates",
             aggregation_config,
-            feature_dates,
+            len(feature_dates),
         )
 
         # read top-level imputation rules from the aggregation config; we'll allow
@@ -279,6 +294,7 @@ class FeatureGenerator(object):
                 aggregate["quantity"],
                 aggregate["metrics"],
                 dict(agimp, coltype="aggregate", **aggregate.get("imputation", {})),
+                coltype=aggregate.get('coltype', None)
             )
             for aggregate in aggregation_config.get("aggregates", [])
         ]
@@ -304,6 +320,7 @@ class FeatureGenerator(object):
             input_min_date=self.feature_start_time,
             schema=self.features_schema_name,
             prefix=aggregation_config["prefix"],
+            join_with_cohort_table=not self.features_ignore_cohort
         )
 
     def aggregations(self, feature_aggregation_config, feature_dates, state_table):
@@ -318,9 +335,29 @@ class FeatureGenerator(object):
         Returns: (list) collate.SpacetimeAggregations
         """
         return [
-            self._aggregation(aggregation_config, feature_dates, state_table)
+            self.preprocess_aggregation(
+                self._aggregation(aggregation_config, feature_dates, state_table)
+            )
             for aggregation_config in feature_aggregation_config
         ]
+
+    def preprocess_aggregation(self, aggregation):
+        create_schema = aggregation.get_create_schema()
+
+        if create_schema is not None:
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
+
+        if self.materialize_subquery_fromobjs:
+            # materialize from obj
+            from_obj = FromObj(
+                from_obj=aggregation.from_obj.text,
+                name=f"{aggregation.schema}.{aggregation.prefix}",
+                knowledge_date_column=aggregation.date_column
+            )
+            from_obj.maybe_materialize(self.db_engine)
+            aggregation.from_obj = from_obj.table
+        return aggregation
 
     def generate_all_table_tasks(self, aggregations, task_type):
         """Generates SQL commands for creating, populating, and indexing
@@ -357,12 +394,12 @@ class FeatureGenerator(object):
         return table_tasks
 
     def create_features_before_imputation(
-        self, feature_aggregation_config, feature_dates
+        self, feature_aggregation_config, feature_dates, state_table=None
     ):
         """Create features before imputation for a set of dates"""
         all_tasks = self.generate_all_table_tasks(
             self.aggregations(
-                feature_aggregation_config, feature_dates, state_table=None
+                feature_aggregation_config, feature_dates, state_table=state_table
             ),
             task_type="aggregation",
         )
@@ -529,6 +566,31 @@ class FeatureGenerator(object):
             for aggregation in aggregations
         )
 
+    def _needs_features(self, aggregation):
+        imputed_table = self._clean_table_name(
+            aggregation.get_table_name(imputed=True)
+        )
+
+        if self._table_exists(imputed_table):
+            check_query = (
+                f"select 1 from {aggregation.state_table} "
+                f"left join {self.features_schema_name}.{imputed_table} "
+                "using (entity_id, as_of_date) "
+                f"where {self.features_schema_name}.{imputed_table}.entity_id is null limit 1"
+            )
+            if self.db_engine.execute(check_query).scalar():
+                logging.warning(
+                    "Imputed feature table %s did not contain rows from the "
+                    "entire cohort, need to rebuild features", imputed_table)
+                return True
+        else:
+            logging.warning("Imputed feature table %s did not exist, "
+                            "need to build features", imputed_table)
+            return True
+        logging.warning("Imputed feature table %s looks good, "
+                        "skipping feature building!", imputed_table)
+        return False
+
     def _generate_agg_table_tasks_for(self, aggregation):
         """Generates SQL commands for preparing, populating, and finalizing
         each feature group table in the given aggregation
@@ -542,28 +604,16 @@ class FeatureGenerator(object):
             'finalize': list of commands to finalize table after population
         }
         """
-        create_schema = aggregation.get_create_schema()
         creates = aggregation.get_creates()
         drops = aggregation.get_drops()
         indexes = aggregation.get_indexes()
         inserts = aggregation.get_inserts()
-
-        if create_schema is not None:
-            with self.db_engine.begin() as conn:
-                conn.execute(create_schema)
-
         table_tasks = OrderedDict()
         for group in aggregation.groups:
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
             )
-            imputed_table = self._clean_table_name(
-                aggregation.get_table_name(imputed=True)
-            )
-            if self.replace or (
-                not self._table_exists(group_table)
-                and not self._table_exists(imputed_table)
-            ):
+            if self.replace or self._needs_features(aggregation):
                 table_tasks[group_table] = {
                     "prepare": [drops[group], creates[group]],
                     "inserts": inserts[group],
@@ -574,12 +624,7 @@ class FeatureGenerator(object):
                 logging.info("Skipping feature table creation for %s", group_table)
                 table_tasks[group_table] = {}
         logging.info("Created table tasks for aggregation")
-        if self.replace or (
-            not self._table_exists(self._clean_table_name(aggregation.get_table_name()))
-            and not self._table_exists(
-                self._clean_table_name(aggregation.get_table_name(imputed=True))
-            )
-        ):
+        if self.replace or self._needs_features(aggregation):
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {
                 "prepare": [aggregation.get_drop(), aggregation.get_create()],
                 "inserts": [],
@@ -613,8 +658,8 @@ class FeatureGenerator(object):
         table_tasks = OrderedDict()
         imp_tbl_name = self._clean_table_name(aggregation.get_table_name(imputed=True))
 
-        if not self.replace and self._table_exists(imp_tbl_name):
-            logging.info("Skipping imputation table creation for %s", imp_tbl_name)
+        if not self.replace and not self._needs_features(aggregation):
+            logging.warning("Skipping imputation table creation for %s", imp_tbl_name)
             table_tasks[imp_tbl_name] = {}
             return table_tasks
 

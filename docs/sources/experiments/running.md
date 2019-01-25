@@ -23,19 +23,19 @@ To run an experiment, you need to tell triage at a minimum where to find the exp
 The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:
 
 ```bash
-triage experiment example_experiment_config.yaml
+triage experiment example/config/experiment.yaml
 ```
 
 If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:
 
 ```bash
-triage -d mydbconfig.yaml experiment example_experiment_config.yaml
+triage -d mydbconfig.yaml experiment example/config/experiment.yaml
 ```
 
 Assuming you want the matrices and models stored somewhere else, pass it as the `--project-path`:
 
 ```bash
-triage -d mydbconfig.yaml experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
+triage -d mydbconfig.yaml experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data'
 ```
 
 ### Python
@@ -62,7 +62,7 @@ Triage also offers the ability to locally parallelize both CPU-heavy and databas
 The Triage CLI allows parallelization to be specified through the `--n-processes` and `--n-db-processes` parameters.
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
 ```
 
 ### Python
@@ -95,7 +95,7 @@ Triage can operate on different storage engines for matrices and models, and bes
 ### CLI
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
+triage experiment example/config/experiment.yaml --project-path 's3://bucket/directory/to/save/data'
 ```
 
 ### Python
@@ -121,7 +121,7 @@ Triage by default uses CSV format to store matrices, but this can take up a lot 
 On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
 
 ```bash
-triage experiment example_experiment_config.yaml --matrix-format hdf
+triage experiment example/config/experiment.yaml --matrix-format hdf
 ```
 
 ### Python
@@ -162,11 +162,11 @@ LINE 1: explain select * from cat_complaints
 The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it *only* validate.
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --no-validate
 ```
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --validate-only
 ```
 
 #### Python
@@ -188,8 +188,9 @@ If an experiment fails for any reason, you can restart it.
 
 By default, all work will be recreated. This includes label queries, feature queries, matrix building, model training, etc. However, if you pass the `replace=False` keyword argument, the Experiment will reuse what work it can.
 
+- Cohort Table: The Experiment keeps a cohort table namespaced by its experiment hash, and within that will check on a per-as-of-date level whether or not there are any existing rows, and skip the cohort query for that date if so. For this reason, it is *not* aware of specific entities or source events so if the source data has changed, you will not want to set `replace` to False. Don't expect too much reuse from this, however, as the table is experiment-namespaced. Essentially, this will only reuse data if the same experiment was run prior and failed part of the way through.
 - Labels Table: The Experiment keeps a labels table namespaced by its experiment hash, and within that will check on a per-`as_of_date`/`label timespan` level whether or not there are *any* existing rows, and skip the label query if so. For this reason, it is *not* aware of specific entities or source events so if the label query has changed or the source data has changed, you will not want to set `replace` to False. Don't expect too much reuse from this, however, as the table is experiment-namespaced. Essentially, this will only reuse data if the same experiment was run prior and failed part of the way through label generation. 
-- Features Tables: The Experiment will check on a per-table basis whether or not it exists, and skip the feature generation if so. Each 'table' maps to a feature aggregation in your experiment config, so if you have modified any source data that affects that feature aggregation, added any features to that aggregation, or changed any `temporal_config` so there are more `as_of_dates`, you won't want to set `replace` to False.
+- Features Tables: The Experiment will check on a per-table basis whether or not it exists and contains rows for the entire cohort, and skip the feature generation if so. It does not look at the column list for the feature table or inspect the feature data itself. So, if you have modified any source data that affects a feature aggregation, or added any columns to that aggregation, you won't want to set `replace` to False. However, it is cohort-and-date aware so you can change around your cohort and temporal configuration safely.
 - Matrix Building: Each matrix's metadata is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
 - Model Training: Each model's metadata (which includes its train matrix's hash) is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.
 
@@ -197,7 +198,7 @@ By default, all work will be recreated. This includes label queries, feature que
 ### CLI
 
 ```bash
-triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
+triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --replace
 ```
 
 ### Python
@@ -214,9 +215,18 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
+## Optimizing an Experiment
+
+### Skipping Prediction Syncing
+By default, the Experiment will save predictions to the database. This can take a long time if your test matrices have a lot of rows, and isn't quite necessary if you just want to see the high-level performance of your grid. By switching `save_predictions` to `False`, you can skip the prediction saving. You'll still get your evaluation metrics, so you can look at performance. Don't worry, you can still get your predictions back later by rerunning the Experiment later at default settings, which will find your already-trained models, generate predictions, and save them.
+
+CLI: `triage experiment myexperiment.yaml --no-save-predictions`
+
+Python: `SingleThreadedExperiment(..., save_predictions=False)`
+
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
 
 Running parts of an experiment is only supported through the Python interface.
 
@@ -228,7 +238,7 @@ Running parts of an experiment is only supported through the Python interface.
 	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
 	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
 
-2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](https://github.com/dssg/triage/blob/master/example_experiment_config.yaml) to be passed:
+2. To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be passed:
 
 	- `experiment.split_definitions` will parse temporal config and create time splits. It only requires `temporal_config`.
 
@@ -282,6 +292,9 @@ Here's an example query, which returns the top 10 model groups by precision at t
     limit 10
 ```
 
+
+
+
 ## Inspecting an Experiment before running
 
 Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:
@@ -289,6 +302,29 @@ Before you run an experiment, you can inspect properties of the Experiment objec
 - `experiment.all_as_of_times` for debugging temporal config. This will show all dates that features and labels will be calculated at.
 - `experiment.feature_dicts` will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment
 - `experiment.matrix_build_tasks` will output a list representing each matrix that will be built.
+
+## Optimizing Experiment Performance
+
+### Profiling an Experiment
+
+Experiment running slowly? Try the `profile` keyword argument, or `--profile` in the command line. This will output a cProfile file to the project path's `profiling_stats` directory.  This is a binary format but can be read with a variety of visualization programs.
+
+[snakeviz](https://jiffyclub.github.io/snakeviz/) - A browser based graphical viewer.
+[tuna](https://github.com/nschloe/tuna) - Another browser based graphical viewer
+[gprof2dot](https://github.com/jrfonseca/gprof2dot) - A command-line tool to convert files to graphviz format
+[pyprof2calltree](https://pypi.org/project/pyprof2calltree/) - A command-line tool to convert files to Valgrind log format, for viewing in established viewers like KCacheGrind
+
+Looking at the profile through a visualization program, you can see which portions of the experiment are taking up the most time. Based on this, you may be able to prioritize changes. For instance, if cohort/label/feature table generation are taking up the bulk of the time, you may add indexes to source tables, or increase the number of database processes. On the other hand, if model training is the culprit, you may temporarily try a smaller grid to get results more quickly.
+
+### materialize_subquery_fromobjs
+By default, experiments will inspect the `from_obj` of every feature aggregation to see if it looks like a subquery, create a table out of it if so, index it on the `knowledge_date_column` and `entity_id`, and use that for running feature queries. This can make feature generation go a lot faster if the `from_obj` takes a decent amount of time to run and/or there are a lot of as-of-dates in the experiment. It won't do this for `from_objs` that are just tables, or simple joins (e.g. `entities join events using (entity_id)`) as the existing indexes you have on those tables should work just fine.
+
+You can turn this off if you'd like, which you may want to do if the `from_obj` subqueries return a lot of data and you want to save as much disk space as possible. The option is turned off by passing `materialize_subquery_fromobjs=False` to the Experiment.
+
+### Build Features Independently of Cohort
+
+By default the feature queries generated by your feature configuration on any given date are joined with the cohort table on that date, which means that no features for entities not in the cohort are saved. This is to save time and database disk space when your cohort on any given date is not very large and allow you to iterate on feature building quickly by default. However, this means that anytime you change your cohort, you have to rebuild all of your features. Depending on your experiment setup (for instance, multiple large cohorts that you experiment with), this may be time-consuming. Change this by passing `features_ignore_cohort=True` to the Experiment constructor, or `--save-all-features` to the command-line.
+
 
 ## Experiment Classes
 

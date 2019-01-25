@@ -241,13 +241,13 @@ The larger Triage entrypoints (e.g. Experiment, Audition) are largely driven by 
 
 Experiment Versioning
 ---------------------
-If the change breaks old experiment definitions, the experiment config version should be updated in both the [example experiment config](example_experiment_config.yaml) and [experiment module base](src/triage/experiments/__init__.py)
+If the change breaks old experiment definitions, the experiment config version should be updated in both the [example experiment config](example/config/experiment.yaml) and [experiment module base](src/triage/experiments/__init__.py)
 
 Documentation
 -------------
 
 - All classes/methods should have docstrings describing their purpose
-- If the code adds or changes experiment configuration values, the [example\_experiment\_config.yaml](example_experiment_config.yaml) should be updated with the new or changed experiment configuration, and instructions for using it.
+- If the code adds or changes experiment configuration values, the [example experiment config](example/config/experiment.yaml) should be updated with the new or changed experiment configuration, and instructions for using it.
 - If the code adds to or changes the behavior of the Experiment, update:
     - [Experiment Algorithm Page](docs/sources/experiments/algorithm.md)
     - [DirtyDuck Tutorial](https://www.github.com/dssg/dirtyduck)

@@ -4,6 +4,7 @@ import os
 from os.path import dirname
 import pathlib
 import logging
+from contextlib import contextmanager
 from sklearn.externals import joblib
 from urllib.parse import urlparse
 from triage.component.results_schema import (
@@ -17,6 +18,7 @@ from triage.util.pandas import downcast_matrix
 import pandas as pd
 import s3fs
 import yaml
+from boto3.s3.transfer import TransferConfig
 
 
 class Store(object):
@@ -69,6 +71,9 @@ class Store(object):
         raise NotImplementedError
 
 
+GB = 1024 ** 3
+
+
 class S3Store(Store):
     """Store an object in S3.
 
@@ -79,26 +84,42 @@ class S3Store(Store):
     ```
 
     Args:
-        *pathparts: A variable length list of components of the path, to be processed in order.
-            All components will be joined using PurePosixPath to create the final path.
-    """
+        path_head, *path_parts: one or more path components,
+            (to be joined by PurePosixPath to create the final path).
 
-    def __init__(self, *pathparts):
+        **config: arguments to be passed to the S3Fs client constructor.
+
+    """
+    transfer_multipart_threshold = 5 * GB
+
+    def __init__(self, path_head, *path_parts, **config):
         self.path = str(
-            pathlib.PurePosixPath(pathparts[0].replace("s3://", ""), *pathparts[1:])
+            pathlib.PurePosixPath(path_head.replace('s3://', ''),
+                                  *path_parts)
         )
 
+        default_addl_kwargs = {
+            'Config': TransferConfig(
+                multipart_threshold=self.transfer_multipart_threshold,
+            ),
+        }
+        user_addl_kwargs = config.get('s3_additional_kwargs', {})
+        config['s3_additional_kwargs'] = dict(default_addl_kwargs, **user_addl_kwargs)
+
+        self.config = config
+
+    @property
+    def client(self):
+        return s3fs.S3FileSystem(**self.config)
+
     def exists(self):
-        s3 = s3fs.S3FileSystem()
-        return s3.exists(self.path)
+        return self.client.exists(self.path)
 
     def delete(self):
-        s3 = s3fs.S3FileSystem()
-        s3.rm(self.path)
+        self.client.rm(self.path)
 
     def open(self, *args, **kwargs):
-        s3 = s3fs.S3FileSystem()
-        return s3.open(self.path, *args, **kwargs)
+        return self.client.open(self.path, *args, **kwargs)
 
 
 class FSStore(Store):
@@ -183,12 +204,31 @@ class ModelStorageEngine(object):
     Args:
         project_storage (triage.component.catwalk.storage.ProjectStorage)
             A project file storage engine
-        model_directory (string, optional) A directory name for models. Defaults to 'trained_models'
+        model_directory (string, optional) A directory name for models.
+            Defaults to 'trained_models'
     """
-
     def __init__(self, project_storage, model_directory=None):
         self.project_storage = project_storage
         self.directories = [model_directory or "trained_models"]
+        self.should_cache = False
+        self.reset_cache()
+
+    def reset_cache(self):
+        self.cache = {}
+
+    @contextmanager
+    def cache_models(self):
+        """Caches each model in memory as it is written.
+
+        Must be used as a context manager.
+        The cache is cleared when the context manager goes out of scope
+        """
+        self.should_cache = True
+        try:
+            yield
+        finally:
+            self.reset_cache()
+            self.should_cache = False
 
     def write(self, obj, model_hash):
         """Persist a model object using joblib. Also performs compression
@@ -197,6 +237,9 @@ class ModelStorageEngine(object):
             obj (object) A picklable model object
             model_hash (string) An identifier, unique within this project, for the model
         """
+        if self.should_cache:
+            logging.info("Caching model %s", model_hash)
+            self.cache[model_hash] = obj
         with self._get_store(model_hash).open("wb") as fd:
             joblib.dump(obj, fd, compress=True)
 
@@ -208,6 +251,9 @@ class ModelStorageEngine(object):
 
         Returns: (object) A model object
         """
+        if self.should_cache and model_hash in self.cache:
+            logging.info("Returning model %s from cache", model_hash)
+            return self.cache[model_hash]
         with self._get_store(model_hash).open("rb") as fd:
             return joblib.load(fd)
 

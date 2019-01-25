@@ -3,6 +3,7 @@ import datetime
 import importlib
 import logging
 import sys
+from contextlib import contextmanager
 
 import numpy as np
 import pandas
@@ -276,6 +277,16 @@ class ModelTrainer(object):
         )
         logging.info("Wrote model to db: hash %s, got id %s", model_hash, model_id)
         return model_id
+
+    @contextmanager
+    def cache_models(self):
+        """Caches each trained model in memory as it is written to storage.
+
+        Must be used as a context manager.
+        The cache is cleared when the context manager goes out of scope
+        """
+        with self.model_storage_engine.cache_models():
+            yield
 
     def generate_trained_models(self, grid_config, misc_db_parameters, matrix_store):
         """Train and store configured models, yielding the ids one by one

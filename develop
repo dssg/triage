@@ -18,7 +18,7 @@
 
 # Update INSTALL_VERSION to require the version of install-cli this
 # script expects
-INSTALL_VERSION=0.0.4
+INSTALL_VERSION=0.0.6
 
 #
 # start bootstrap installation lib
@@ -46,13 +46,28 @@ INSTALL_URL=https://raw.githubusercontent.com/dssg/install-cli/$INSTALL_VERSION/
 # pyenv
 
 pyenv_bin="${PYENV_ROOT:-$HOME/.pyenv}/bin"
+pyenv_homebrew_bin=/usr/local/bin
 
-exists_pyenv() {
+exists_pyenv_installer() {
   [ -d "$pyenv_bin" ]
 }
 
+exists_pyenv_homebrew() {
+  [ -x "${pyenv_homebrew_bin}/pyenv" ]
+}
+
+exists_pyenv() {
+  exists_pyenv_installer || exists_pyenv_homebrew
+}
+
 boostrap_pyenv() {
-  export PATH="$pyenv_bin:$PATH"
+  if exists_pyenv_installer
+  then
+    export PATH="$pyenv_bin:$PATH"
+  elif exists_pyenv_homebrew
+  then
+    export PATH="$pyenv_homebrew_bin:$PATH"
+  fi
 
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
@@ -199,7 +214,6 @@ fi
 
 install_lib() {
   pip install \
-    -r requirement/main.txt \
     -r requirement/test.txt \
     -r requirement/dev.txt
 }
@@ -217,7 +231,7 @@ exists_triage() {
 }
 
 install_triage() {
-  pip install --no-deps -e .
+  pip install -e ".[rq]"
 }
 
 require triage \

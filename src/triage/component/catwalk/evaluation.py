@@ -226,8 +226,9 @@ class ModelEvaluator(object):
                 )
 
                 logging.info(
-                    "Evaluations for %s%s, labeled examples %s "
+                    "%s for %s%s, labeled examples %s "
                     "above threshold %s, positive labels %s, value %s",
+                    evaluation_table_obj,
                     metric,
                     parameter_string,
                     num_labeled_examples,
@@ -294,6 +295,51 @@ class ModelEvaluator(object):
                 threshold_unit="top_n", threshold_value=abs_thresh
             )
         return evaluations
+
+    def needs_evaluations(self, matrix_store, model_id):
+        """Returns whether or not all the configured metrics are present in the
+        database for the given matrix and model.
+
+        Args:
+            matrix_store (triage.component.catwalk.storage.MatrixStore)
+            model_id (int) A model id
+
+        Returns:
+            (bool) whether or not this matrix and model are missing any evaluations in the db
+        """
+
+        # assemble a list of evaluation objects from the config
+        # by running the evaluation code with an empty list of predictions and labels
+        eval_obj = matrix_store.matrix_type.evaluation_obj
+        matrix_type = matrix_store.matrix_type
+        if matrix_type.is_test:
+            metric_groups_to_compute = self.testing_metric_groups
+        else:
+            metric_groups_to_compute = self.training_metric_groups
+        evaluation_objects_from_config = [
+            item
+            for group in metric_groups_to_compute
+            for item in self._evaluations_for_group(group, [], [], eval_obj)
+        ]
+
+        # assemble a list of evaluation objects from the database
+        # by querying the unique metrics and parameters relevant to the passed-in matrix
+        session = self.sessionmaker()
+        evaluation_objects_in_db = session.query(eval_obj).filter_by(
+            model_id=model_id,
+            evaluation_start_time=matrix_store.as_of_dates[0],
+            evaluation_end_time=matrix_store.as_of_dates[-1],
+            as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
+        ).distinct(eval_obj.metric, eval_obj.parameter).all()
+
+        # The list of needed metrics and parameters are all the unique metric/params from the config
+        # not present in the unique metric/params from the db
+        needed = bool(
+            {(obj.metric, obj.parameter) for obj in evaluation_objects_from_config} -
+            {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
+        )
+        session.close()
+        return needed
 
     def evaluate(self, predictions_proba, matrix_store, model_id):
         """Evaluate a model based on predictions, and save the results

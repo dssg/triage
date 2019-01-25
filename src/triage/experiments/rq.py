@@ -142,7 +142,7 @@ class RQExperiment(ExperimentBase):
         ]
         return self.wait_for(jobs)
 
-    def process_train_tasks(self, train_tasks):
+    def process_train_test_tasks(self, train_test_tasks):
         """Run train tasks using RQ
 
         Args:
@@ -152,32 +152,12 @@ class RQExperiment(ExperimentBase):
         """
         jobs = [
             self.queue.enqueue(
-                self.trainer.process_train_task,
+                self.model_train_tester.process_task,
                 timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
-                **train_task
+                **task
             )
-            for train_task in train_tasks
-        ]
-        return self.wait_for(jobs)
-
-    def process_model_test_tasks(self, test_tasks):
-        """Run test tasks using RQ
-
-        Args:
-            test_tasks (list) of dictionaries, each representing kwargs suitable
-                for self.tester.process_model_test_task
-        Returns: (list) of job results for each given task
-        """
-        jobs = [
-            self.queue.enqueue(
-                self.tester.process_model_test_task,
-                timeout=DEFAULT_TIMEOUT,
-                result_ttl=DEFAULT_TIMEOUT,
-                ttl=DEFAULT_TIMEOUT,
-                **test_task
-            )
-            for test_task in test_tasks
+            for task in train_test_tasks
         ]
         return self.wait_for(jobs)

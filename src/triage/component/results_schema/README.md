@@ -10,12 +10,13 @@ Store results of modeling runs in a relational database
 2. You can do the initial schema and table creation a couple of different ways, with a couple of different options for passing database credentials.
 
 	- *Triage cli script*. Assuming you have triage installed from pip: `triage -d dbcredentials.yaml db upgrade`, or just `triage db upgrade` if you have a database credentials file at `database.yaml` (the default)
-	- *From Python code*. If you are in a Python console or notebook, you can call `upgrade_db` with either sqlalchemy engine pointing to your database, or a filename similar to what's used to launch the cli script.
+	- *From Python code*. If you are in a Python console or notebook, you can call `upgrade_db` with either sqlalchemy engine pointing to your database, or a filehandle to a credentials file.
 
 	```
 	>>> from triage.component.results_schema import upgrade_db
-	>>> upgrade_db(engine)
-	>>> upgrade_db('database.yaml')
+	>>> upgrade_db(db_engine=engine)
+	>>> with open ('database.yaml') as fh:
+            upgrade_db(db_config_filehandle=fh)
 	```
 
 This command will create a 'results' schema and the necessary tables.
@@ -29,7 +30,7 @@ To make modifications to the schema, you should be working in a cloned version o
 
 1. Create a candidate database for comparison if you don't have one already. You can use a toy database for this, or use your project database if the results schema has not been manually modified. Populate `database.yaml` in the repo root with the credentials, and upgrade it to the current HEAD: `manage alembic upgrade head`
 
-2. Make the desired modifications to [results_schema.schema](src/triage/component/results_schema/schema.py).
+2. Make the desired modifications to [results_schema.schema](schema.py).
 
 3. From within the results schema directory, autogenerate a migration: `manage alembic revision --autogenerate` - This will look at the difference between your schema definition and the database, and generate a new file in results_schema/alembic/versions/.
 
@@ -37,7 +38,7 @@ To make modifications to the schema, you should be working in a cloned version o
 
 5. Upgrade the database: `manage alembic upgrade head`
 
-6. Update the [factories file](src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
+6. Update the [factories file](../../../../src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 
 7. If everything looks good, create a pull request!
 

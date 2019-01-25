@@ -1,11 +1,13 @@
 from triage.component.catwalk.evaluation import ModelEvaluator, generate_binary_at_x
 from triage.component.catwalk.metrics import Metric
 import testing.postgresql
+import datetime
 
 import numpy
 from sqlalchemy import create_engine
 from triage.component.catwalk.db import ensure_db
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
+from tests.results_tests.factories import ModelFactory, EvaluationFactory, init_engine, session
 
 
 @Metric(greater_is_better=True)
@@ -198,6 +200,102 @@ def test_model_scoring_inspections():
             assert record["num_labeled_examples"] == 8
             assert record["num_positive_labels"] == 5
             assert record["value"] == 0.625
+
+
+def test_ModelEvaluator_needs_evaluation(db_engine):
+    ensure_db(db_engine)
+    init_engine(db_engine)
+    # TEST SETUP:
+
+    # create two models: one that has zero evaluations,
+    # one that has an evaluation for precision@100_abs
+    model_with_evaluations = ModelFactory()
+    model_without_evaluations = ModelFactory()
+
+    eval_time = datetime.datetime(2016, 1, 1)
+    as_of_date_frequency = "3d"
+    EvaluationFactory(
+        model_rel=model_with_evaluations,
+        evaluation_start_time=eval_time,
+        evaluation_end_time=eval_time,
+        as_of_date_frequency=as_of_date_frequency,
+        metric="precision@",
+        parameter="100_abs"
+    )
+    session.commit()
+
+    # make a test matrix to pass in
+    metadata_overrides = {
+        'as_of_date_frequency': as_of_date_frequency,
+        'end_time': eval_time,
+    }
+    test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine, metadata_overrides=metadata_overrides
+    )
+    train_matrix_store = MockMatrixStore(
+        "train", "2345", 5, db_engine, metadata_overrides=metadata_overrides
+    )
+
+    # the evaluated model has test evaluations for precision, but not recall,
+    # so this needs evaluations
+    assert ModelEvaluator(
+        testing_metric_groups=[{
+            "metrics": ["precision@", "recall@"],
+            "thresholds": {"top_n": [100]},
+        }],
+        training_metric_groups=[],
+        db_engine=db_engine
+    ).needs_evaluations(
+        matrix_store=test_matrix_store,
+        model_id=model_with_evaluations.model_id,
+    )
+
+    # the evaluated model has test evaluations for precision,
+    # so this should not need evaluations
+    assert not ModelEvaluator(
+        testing_metric_groups=[{
+            "metrics": ["precision@"],
+            "thresholds": {"top_n": [100]},
+        }],
+        training_metric_groups=[],
+        db_engine=db_engine
+    ).needs_evaluations(
+        matrix_store=test_matrix_store,
+        model_id=model_with_evaluations.model_id,
+    )
+
+    # the non-evaluated model has no evaluations,
+    # so this should need evaluations
+    assert ModelEvaluator(
+        testing_metric_groups=[{
+            "metrics": ["precision@"],
+            "thresholds": {"top_n": [100]},
+        }],
+        training_metric_groups=[],
+        db_engine=db_engine
+    ).needs_evaluations(
+        matrix_store=test_matrix_store,
+        model_id=model_without_evaluations.model_id,
+    )
+
+    # the evaluated model has no *train* evaluations,
+    # so the train matrix should need evaluations
+    assert ModelEvaluator(
+        testing_metric_groups=[{
+            "metrics": ["precision@"],
+            "thresholds": {"top_n": [100]},
+        }],
+        training_metric_groups=[{
+            "metrics": ["precision@"],
+            "thresholds": {"top_n": [100]},
+        }],
+        db_engine=db_engine
+    ).needs_evaluations(
+        matrix_store=train_matrix_store,
+        model_id=model_with_evaluations.model_id,
+    )
+    session.close()
+    session.remove()
 
 
 def test_generate_binary_at_x():

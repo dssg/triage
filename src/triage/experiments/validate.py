@@ -322,16 +322,19 @@ class FeatureAggregationsValidator(Validator):
         agg_types = ["aggregates", "categoricals", "array_categoricals"]
 
         for agg_type in agg_types:
+            logging.info('Checking imputation rules for aggregation type %s', agg_type)
             # base_imp are the top-level rules, `such as aggregates_imputation`
             base_imp = aggregation_config.get(agg_type + "_imputation", {})
 
             # loop through the individual aggregates
             for agg in aggregation_config.get(agg_type, []):
+                logging.info('Checking imputation rules for aggregation %s', agg)
                 # combine any aggregate-level imputation rules with top-level ones
                 imp_dict = dict(base_imp, **agg.get("imputation", {}))
 
                 # imputation rules are metric-specific, so check each metric's rule
                 for metric in agg["metrics"]:
+                    logging.info('Checking imputation rules for metric: %s', metric)
                     # metric rules may be defined by the metric name (e.g., 'max')
                     # or with the 'all' catch-all, with named metrics taking
                     # precedence. If we fall back to {}, the rule validator will
@@ -675,6 +678,13 @@ class GridConfigValidator(Validator):
                 )
             )
         for classpath, parameter_config in grid_config.items():
+            if classpath == "sklearn.linear_model.LogisticRegression":
+                logging.warning(
+                    "sklearn.linear_model.LogisticRegression found in grid. "
+                    "This is unscaled and not well-suited for Triage experiments. "
+                    "Use triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression "
+                    "instead"
+                )
             try:
                 module_name, class_name = classpath.rsplit(".", 1)
                 module = importlib.import_module(module_name)

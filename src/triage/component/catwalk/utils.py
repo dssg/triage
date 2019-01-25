@@ -171,6 +171,22 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
 
 
 @db_retry
+def retrieve_model_hash_from_id(db_engine, model_id):
+    """Retrieves the model hash associated with a given model id
+
+    Args:
+        model_id (int) The id of a given model in the database
+
+    Returns: (str) the stored hash of the model
+    """
+    session = sessionmaker(bind=db_engine)()
+    try:
+        return session.query(Model).get(model_id).model_hash
+    finally:
+        session.close()
+
+
+@db_retry
 def save_db_objects(db_engine, db_objects):
     """Saves a collection of SQLAlchemy model objects to the database using a COPY command
 

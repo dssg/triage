@@ -156,7 +156,7 @@ class BuilderBase(object):
             table_name=table_name,
             index_query=indices_query,
         )
-        logging.info(
+        logging.debug(
             "Creating matrix-specific entity-date table for matrix " "%s with query %s",
             matrix_uuid,
             query,

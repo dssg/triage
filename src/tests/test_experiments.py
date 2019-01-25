@@ -9,6 +9,7 @@ import fakeredis
 import pytest
 import testing.postgresql
 from triage import create_engine
+import sqlalchemy
 
 from tests.utils import sample_config, populate_source_data
 from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
@@ -350,6 +351,19 @@ def test_custom_label_name(experiment_class):
             assert experiment.planner.label_names == ["custom_label_name"]
 
 
+def test_profiling(db_engine):
+    populate_source_data(db_engine)
+    with TemporaryDirectory() as temp_dir:
+        project_path = os.path.join(temp_dir, "inspections")
+        experiment = SingleThreadedExperiment(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=project_path,
+            profile=True
+        ).run()
+        assert len(os.listdir(os.path.join(project_path, "profiling_stats"))) == 1
+
+
 @parametrize_experiment_classes
 def test_baselines_with_missing_features(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
@@ -480,3 +494,16 @@ def test_baselines_with_missing_features(experiment_class):
             )
         ]
         assert len(individual_importances) == num_predictions * 2  # only 2 features
+
+
+def test_serializable_engine_check_sqlalchemy_fail():
+    """If we pass a vanilla sqlalchemy engine to the experiment we should blow up"""
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = sqlalchemy.create_engine(postgresql.url())
+        with TemporaryDirectory() as temp_dir:
+            with pytest.raises(TypeError):
+                MultiCoreExperiment(
+                    config=sample_config(),
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                )
