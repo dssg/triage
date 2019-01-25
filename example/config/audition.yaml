@@ -7,7 +7,7 @@ model_groups:
         FROM results.model_groups
 
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
-# The timestamps to be auditioned for each model group.
+# The timestamps when audition happens for each model group.
 # There's a hard rule in Audition that all of the chosen model groups for audition should
 # have the same train end times as the timestamps or the subset of the timestamps from this
 # query, otherwise those model groups with unmatched train end times will be pruned in the

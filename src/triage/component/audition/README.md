@@ -15,8 +15,8 @@ We’ve just built hundreds of models over time - each model group trains on a g
 ### What does it do?
 **Input**:
 
-* List of model groups built over different train periods and tested on different test periods
-	* The test time periods for each model group should be the same, otherwise most models would be pruned out in the first round.
+* List of model groups built over different train periods and tested on different test periods (train end times)
+	* The train end times for each model group should be the same as the list or subset of the list, otherwise those models with unmatched train end times would be pruned out in the first round.
 * Model selection rules
 * Metric(s) of interest
 
