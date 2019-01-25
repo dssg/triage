@@ -9,6 +9,9 @@ markdown_extensions:
     - toc:
         permalink: True
         baselevel: 2
+extra_javascript:
+    - "js/mermaid.min.js"
+
 pages:
   - Home: index.md
   - Experiment Documentation:
