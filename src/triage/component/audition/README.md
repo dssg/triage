@@ -84,7 +84,7 @@ The Auditioner requires a few inputs to get started:
 	* metric (string) -- model evaluation metric, such as 'precision@'
 	* parameter (string) -- model evaluation metric parameter,
 		such as '300_abs'
-	* max_from_best (float) The maximum value that the given metric can be worst the best for a given train end time. To start out without filtering, this could be the theoretical maximum range of the metric, often '1.0'.
+	* max_from_best (float) The maximum value that the given metric can be worse than the best model for a given train end time. To start out without filtering, this could be the theoretical maximum range of the metric, often '1.0'.
 	* threshold_value (float) The worst absolute value that the given metric should be. Depending on the metric, this could be a minimum (precision) or a maximum (false positives)
 
 Gets rid of really bad model groups wrt the metric of interest. A model group is discarded if:
@@ -139,7 +139,7 @@ The goal of audition is to narrow a very large number of model groups to a small
 
 Audition formalizes this idea through "selection rules" that take in the data up to a given point in time, apply some rule to choose a model group, and evaluate the performance of that chosen model in the subsequent time window, the regret. You can register, evaluate, and update selection rules associated with the Auditioner object as shown below.
 
-Audition will run similations of different model group selection rules to show users and let users asses which rule(s) is the best for their needs. Next, Audition will output numbers of best model in current time period for each rule.
+Audition will run simulations of different model group selection rules to show users and let users assess which rule(s) is the best for their needs. Next, Audition will output numbers of best model in current time period for each rule.
 
 First, we need to create a selection rule grid which will be passed to aud.register_selection_rule_grid() to run the simulations. The selection rule grid is only recognized as a list of dictionaries of all the parameters. One can create this giant grid by hands, but Audition also provides some helper functions to create the grid easily.
 

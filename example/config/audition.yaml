@@ -1,0 +1,72 @@
+# CHOOSE MODEL GROUPS
+# Audition needs a bunch of model_group_ids to help you select the models.
+# The query is to choose what the model groups you want to include in the first round.
+model_groups:
+    query: |
+        SELECT DISTINCT(model_group_id)
+        FROM results.model_groups
+
+# CHOOSE TIMESTAMPS/TRAIN END TIMES
+# The timestamps to be auditioned for each model group.
+# There's a hard rule in Audition that all of the chosen model groups for audition should
+# have the same train end times as the timestamps or the subset of the timestamps from this
+# query, otherwise those model groups with unmatched train end times will be pruned in the
+# first round.
+time_stamps:
+    query: |
+        SELECT DISTINCT train_end_time
+        FROM results.models
+        WHERE model_group_id IN ({})
+        AND EXTRACT(DAY FROM train_end_time) IN (1)
+        AND train_end_time >= '2012-01-01'
+
+# FILTER
+# Configuration for the Auditioner
+filter:
+    metric: 'precision@' # metric of interest
+    parameter: '50_abs' # parameter of interest
+    max_from_best: 1.0 # The maximum value that the given metric can be worse than the best model for a given train end time. 
+    threshold_value: 0.0 # The worst absolute value that the given metric should be. 
+    distance_table: 'distance_table' # name of the distance table
+    models_table: 'models' # name of the models table
+
+# RULES
+# The selection rules for Audition to simulate the model selection process for each timestamps. 
+# More rules can be found in the README.
+rules:
+    -
+        shared_parameters:
+            -
+                metric: 'precision@'
+                parameter: '50_abs'
+            -
+                metric: 'recall@'
+                parameter: '50_abs'
+        selection_rules:
+            -
+                name: 'best_current_value' # Pick the model group with the best current metric value
+                num: 3
+            -
+                name: 'best_average_value' # Pick the model with the highest average metric value
+                num: 3
+            -
+                name: 'lowest_metric_variance' # Pick the model with the lowest metric variance
+                num: 3
+            -
+                name: 'most_frequent_best_dist' # Pick the model that is most frequently within `dist_from_best_case`
+                dist_from_best_case: [0.05]
+                num: 3
+
+    -
+        shared_parameters:
+            -
+                metric1: 'precision@'
+                parameter1: '50_abs'
+        selection_rules:
+            -
+                name: 'best_average_two_metrics' #  Pick the model with the highest average combined value to date of two metrics weighted together using metric1_weight
+                metric2: 'recall@'
+                parameter2: '50_abs'
+                metric1_weight: 0.5
+                num: 3
+
