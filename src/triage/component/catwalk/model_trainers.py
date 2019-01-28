@@ -27,6 +27,17 @@ NO_FEATURE_IMPORTANCE = (
 )
 
 
+def flatten_grid_config(grid_config):
+    """Flattens a model/parameter grid configuration into individually
+    trainable model/parameter pairs
+
+    Yields: (tuple) classpath and parameters
+    """
+    for class_path, parameter_config in grid_config.items():
+        for parameters in ParameterGrid(parameter_config):
+            yield class_path, parameters
+
+
 class ModelTrainer(object):
     """Trains a series of classifiers using the same training set
     Args:
@@ -80,16 +91,6 @@ class ModelTrainer(object):
         }
         logging.info("Creating model hash from unique data %s", unique)
         return filename_friendly_hash(unique)
-
-    def _generate_model_configs(self, grid_config):
-        """Flattens a model/parameter grid configuration into individually
-        trainable model/parameter pairs
-
-        Yields: (tuple) classpath and parameters
-        """
-        for class_path, parameter_config in grid_config.items():
-            for parameters in ParameterGrid(parameter_config):
-                yield class_path, parameters
 
     def _train(self, matrix_store, class_path, parameters):
         """Fit a model to a training set. Works on any modeling class that
@@ -402,7 +403,7 @@ class ModelTrainer(object):
 
         tasks = []
 
-        for class_path, parameters in self._generate_model_configs(grid_config):
+        for class_path, parameters in flatten_grid_config(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
             logging.info(
                 f"Computed model hash for {class_path} "
