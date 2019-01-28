@@ -4,7 +4,7 @@ This document is intended at providing a deep dive into the concepts of cohorts 
 
 ## Temporal Validation Refresher
 
-Triage uses temporal validation to select models because the real-world problems that Triage is built for tend to have a strong temporal correlation.  Picking a date range to train on and a date range afterwards to test on ensures that we don't leak data from the future into our models that wouldn't be available in a real-world deployment scenario. Because of this, we often talk in Triage about the *as-of-date*: all models trained by Triage are associated with an *as-of-date*, which means that all the data that goes into the model **is only included if it was known about before that date**. For more on temporal validation, see the [relevant section in Dirty Duck](https://dssg.github.io/dirtyduck/#sec-4-2-2-1).
+Triage uses temporal validation to select models because the real-world problems that Triage is built for tend to evolve or change over time.  Picking a date range to train on and a date range afterwards to test on ensures that we don't leak data from the future into our models that wouldn't be available in a real-world deployment scenario. Because of this, we often talk in Triage about the *as-of-date*: all models trained by Triage are associated with an *as-of-date*, which means that all the data that goes into the model **is only included if it was known about before that date**. For more on temporal validation, see the [relevant section in Dirty Duck](https://dssg.github.io/dirtyduck/#sec-4-2-2-1).
 
 ## What are Cohorts and Labels in Triage?
 
@@ -352,7 +352,7 @@ entity_id | as_of_date | label
 44 | 2016-03-01 | True
 60 | 2016-03-01 | True
 
-Above we define three total cohorts, on `2016-01-01`, `2016-02-01`, and `2016-03-01`. The first two cohorts have two entities each and the last one has a new third entity. For the first cohort, only one of the entities has an explicitly defined label (meaning the label query didn't return anything for them on that date).
+Above we observe three total cohorts, on `2016-01-01`, `2016-02-01`, and `2016-03-01`. The first two cohorts have two entities each and the last one has a new third entity. For the first cohort, only one of the entities has an explicitly defined label (meaning the label query didn't return anything for them on that date).
 
 For simplicity's sake, we are going to assume only one matrix is created that includes all of these cohorts. Depending on the experiment's temporal configuration, there may be one, many, or all dates in a matrix, but the details here are outside of the scope of this document.
 
@@ -360,7 +360,7 @@ In general, the index of the matrix is created using a left join in SQL: The coh
 
 The final contents of the matrix, however, depend on the `include_missing_labels_in_train_as` setting.
 
-### Inspections-Style (don't include missing labels)
+### Inspections-Style (preserve missing labels as null)
 
 If `include_missing_labels_in_train_as` is not set, Triage treats it as a truly missing label. The final matrix will look like:
 
