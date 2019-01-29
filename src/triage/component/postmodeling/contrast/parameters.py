@@ -35,9 +35,8 @@ class PostmodelParameters(object):
                 with open(self.audition_output_path) as f:
                     json_models = json.load(f)
 
-                list_models = [model for model_list in \
-                               json_models.values() for \
-                               model in model_list]
+                list_models = [model for model_list in json_models.values() 
+                               for model in model_list]
                 self.model_group_id = list_models
 
         except AttributeError:

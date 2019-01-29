@@ -134,7 +134,6 @@ class ModelEvaluator(object):
 
         return preds
 
-    @cachedproperty
     def _feature_importance_slr(self, path=None):
         '''
         Calculate feature importances for ScaledLogisticRegression
@@ -158,23 +157,22 @@ class ModelEvaluator(object):
 
         self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
-        feature_names = \
-                [x for x in test_matrix.column.tolist() if x not in\
-                 self.predictions.column.tolist()]
+        feature_names = [x for x in test_matrix.column.tolist() 
+                         if x not in self.predictions.column.tolist()]
 
         raw_importances = pd.DataFrame(
             {'feature': feature_names,
              'model_id':  test_matrix['model_id'],
              'feature_importance': coefficients,
-             'feature_group': [x.split('_entity_id')[0] for x in feature_names]}
+             'feature_group': [x.split('_entity_id')[0] for x in feature_names]
+            }
         )
-        raw_importances['rank_abs'] = \
-        raw_importances['feature_importance'].rank(method='max')
+        raw_importances['rank_abs'] = raw_importances['feature_importance'].\
+                                      rank(method='max')
 
         return raw_importances
 
 
-    @cachedproperty
     def feature_importances(self, path=None):
         if "ScaledLogisticRegression" in self.model_type:
             features = self._feature_importance_slr(path)
@@ -196,15 +194,15 @@ class ModelEvaluator(object):
         return features
 
 
-    @cachedproperty
     def feature_group_importances(self, path=None):
         if "ScaledLogisticRegression" in self.model_type:
             raw_importances = self._feature_importance_slr(path)
-            feature_groups = raw_importances.\
-            groupby(['feature_group', 'model_id'])['feature_importance']\
-                    .mean()\
-                    .reset_index()
-            feature_groups = feature_groups.rename(index=str, columns={"feature_importance":"importance_average"})
+                              feature_groups = raw_importances.\
+                              groupby(['feature_group', 'model_id'])['feature_importance']\
+                                      .mean()\
+                                      .reset_index()
+            feature_groups = feature_groups.rename(index=str, 
+                                                   columns={"feature_importance":"importance_average"})
         else:
             feature_groups = pd.read_sql(
             f'''
@@ -264,7 +262,7 @@ class ModelEvaluator(object):
             FROM test_results.evaluations
             WHERE model_id = {self.model_id}
             ''', con=self.engine)
-        return model_test_metrics
+        return model_train_metrics
 
     @cachedproperty
     def crosstabs(self):
