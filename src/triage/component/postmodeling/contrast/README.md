@@ -66,11 +66,10 @@ of each model:
        aggreagates (averages) feature importance metrics to the feature group
        level and plots the relevance of each feature group. 
 
- - **Model Matrix characteristics**:
- 
- _These function need the user to pass Triage's project to the `path` argument.
- More details in the [Configuration File](#configuration-file) section._ 
- 
+ - **Model Matrix characteristics**: _These function need the user to pass
+   Triage's project to the `path` argument. More details in the [Configuration
+   File](#configuration-file) section._
+   
      - `cluster_correlation_features` shows a correlation matrix ordered by the
          correlation between features. This plot can be subsetted by a feature
          group and explore the correlation in that set of the feature space. 
@@ -145,17 +144,15 @@ contains modules helpful for:
        (leave-one-in) experiment and label the models and they LOI or LOO
        feature accordingly.
 
- - *Model group predictions and feature comparisons*:
-
- These functions listed below allow the user to compare model predictions and
- feature importances using different methods. Although, be aware that some
- comparisons between individual models inside the model groups can be invalid
- (i.e. comparing the `model_id = 1` of the `model_group_id = 1` with an
- `as_of_date = 2012-01-01` with  the `model_id = 5` of the `model_group_id = 2`
- with an `as_of_date = 2013-01-01`). For this reason all the functions listed
- include a `temporal_comparison=False` argument. This option will group the
- models by `as_of_date` and make comparisons only between same-prediction-time
- models. 
+ - *Model group predictions and feature comparisons*: These functions listed
+   below allow the user to compare model predictions and feature importances
+   using different methods. Although, be aware that some comparisons between
+   individual models inside the model groups can be invalid (i.e. comparing the
+   `model_id = 1` of the `model_group_id = 1` with an `as_of_date = 2012-01-01`
+   with  the `model_id = 5` of the `model_group_id = 2` with an `as_of_date
+   = 2013-01-01`). For this reason all the functions listed include
+   a `temporal_comparison=False` argument. This option will group the models by
+   `as_of_date` and make comparisons only between same-prediction-time models. 
  
      - `plot_ranked_correlation_preds`: this function will plot a heatmap with
         the predictions ranked correlation for each of the individual `model_group_id`
