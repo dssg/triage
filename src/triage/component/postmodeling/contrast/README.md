@@ -31,11 +31,9 @@ of parameters relevant for the library:
   - other aesthetic arguments. 
 
 This file is passed to the `PostmodelParameters` class to facilitate the use of
-this parameters thorough the notebook. [Here](postmodeling_config_example.yaml)
-is an example of a valid configuration file. 
-
-Here is a list of general functions that helps the `triage` user to understand
-and analyze selected models:
+this parameters thorough the notebook.
+[Here](triage/blob/master/examples/postmodeling_config_example.yaml) is an
+example of a valid configuration file.  
 
 ## Two classes, two units of analysis: `model_id` and `model_group_id`
 
@@ -64,9 +62,9 @@ of each model:
        features. The function needs the user to pass the project path to the `path`
        argument. More details in the [Configuration File](#configuration-file) section.
 
-     - `plot_feature_group_average_importance` makes the same excersice, but it
+     - `plot_feature_group_average_importance` makes the same excercise, but it
        aggreagates (averages) feature importance metrics to the feature group
-       level and plots the relevance of each feature grup. 
+       level and plots the relevance of each feature group. 
 
  - **Model Matrix characteristics**:
  
@@ -131,7 +129,7 @@ different model results:
 
 The second method will help us to answer questions related with models across
 time. The `model_group_id` contains all equal specified models with different
-`as_of_dates` (test/validation dates) per entity. The `ModelGroupEvaluator`
+`as_of_dates` (test/validation dates). The `ModelGroupEvaluator`
 contains modules helpful for:
 
  - **Models behavior across time**:
@@ -147,5 +145,55 @@ contains modules helpful for:
        (leave-one-in) experiment and label the models and they LOI or LOO
        feature accordingly.
 
- - *Model group comparisons*
+ - *Model group predictions and feature comparisons*:
 
+ These functions listed below allow the user to compare model predictions and
+ feature importances using different methods. Although, be aware that some
+ comparisons between individual models inside the model groups can be invalid
+ (i.e. comparing the `model_id = 1` of the `model_group_id = 1` with an
+ `as_of_date = 2012-01-01` with  the `model_id = 5` of the `model_group_id = 2`
+ with an `as_of_date = 2013-01-01`). For this reason all the functions listed
+ include a `temporal_comparison=False` argument. This option will group the
+ models by `as_of_date` and make comparisons only between same-prediction-time
+ models. 
+ 
+     - `plot_ranked_correlation_preds`: this function will plot a heatmap with
+        the predictions ranked correlation for each of the individual `model_group_id`
+        and its `model_id` (which are equal but with different test_date). This
+        function uses the hidden function `_rank_corr_df` which calculates the
+        correlation in a pairwise manner. For succesfuly compare predictions,
+        the user must especify a threshold metric (`param_type` and `param`) to
+        select the true positive predictions. 
+
+     - `plot_ranked_correlation_features`: just as the `_preds` function above,
+       this function will plot a heatmap with the rank correlation matrix for
+       each of the model groups (you can pass a `top_n_features` argument to
+       select the top-n features to compare). 
+
+      - `plot_jaccard_preds`: as the rank correlation functions, this function
+        compare the prediction set overlap between different model groups. This
+        function needs the user to pass a `param_type` and a `param` value to
+        select the true positive entities to compare.
+
+      - `plot_jaccard_features`: Jaccard overlap for feature importances. Just
+        as the above function, the function will plot the feature importance set
+        overlap for each model inside the model group. 
+
+      - `plot_preds_comparison`: plots the comparison of score distributions
+        across models in the model groups. This plot needs a `param_type` and
+        a `param` to define a threshold to define the false positives. 
+
+The `ModelGroupEvaluator` class also has different objects that can be useful
+for further analysis:
+
+|       method       | Description                                                                                                     |
+|:------------------:|-----------------------------------------------------------------------------------------------------------------|
+|     `metadata`     | Table with model group elements. You can explore the class `.__dict__`  as well                                 |
+|     `model_id`     | List of `model_id` inside each model group.                                                                     |
+|    `model_hash`    | List of `model_hash` inside each model group.                                                                   |
+|  `hyperparameters` | List of model group hyperparameters.                                                                            |
+|  `train_end_time`  | List of model group train end times.                                                                            |
+|    `model_type`    | List of model types for each model group.                                                                       |
+|    `predictions`   | Returns a `pd.DataFrame` with model predictions.                                                                |
+|  `feature_groups`  | Returns a `pd.DataFrame` with model feature groups  used by each model-group (also experiment type: LOI or LOO) |
+| `same_time_models` | Returns a `pd.DataFrame` with `as_of_dates` and  a list of models estimated in that date.                       | 
