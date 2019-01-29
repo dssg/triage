@@ -435,8 +435,8 @@ class ModelGroupEvaluator(object):
         model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
 
         model_metrics_filter = model_metrics[(model_metrics['metric'] == metric) &
-                                      (model_metrics['param'] == param) &
-                                      (model_metrics['param_type'] == param_type)].\
+                                             (model_metrics['param'] == param) &
+                                             (model_metrics['param_type'] == param_type)].\
                 filter(['model_group_id', 'model_id', 'as_of_date_year',
                         'value'])
 
@@ -608,7 +608,7 @@ class ModelGroupEvaluator(object):
         else:
             pass
 
-    def plot_ranked_corrlelation_preds(self,
+    def plot_ranked_correlation_preds(self,
                                        model_subset=None,
                                        temporal_comparison=False,
                                        figsize=(24, 10),
@@ -810,6 +810,7 @@ class ModelGroupEvaluator(object):
                         cmap='YlGnBu',
                         annot=True,
                         square=True)
+
 
     def plot_jaccard(self,
                      param_type=None,
