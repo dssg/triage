@@ -555,7 +555,7 @@ class ModelEvaluator(object):
                 - fontsize (int): define a custom fontsize for labels and legends.
                 - *path: path to retrieve model pickle
         '''
-        if 'sklearn.ensemble' not in self.model_type: 
+        if 'sklearn.ensemble' in self.model_type: 
 
             storage = ProjectStorage(path)
             model_object = ModelStorageEngine(storage).load(self.model_hash)
@@ -617,10 +617,10 @@ class ModelEvaluator(object):
                                             color='r',
                                             lw=1))
         else:
-            f'''
+            raise ValueError(f'''
             This plot is only available for Ensemble models, not
             {self.model_type}
-            ''' 
+            ''')
 
     def plot_feature_group_average_importances(self,
                                                n_features_plots=30,
