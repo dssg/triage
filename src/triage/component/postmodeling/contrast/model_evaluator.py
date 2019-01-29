@@ -197,7 +197,7 @@ class ModelEvaluator(object):
     def feature_group_importances(self, path=None):
         if "ScaledLogisticRegression" in self.model_type:
             raw_importances = self._feature_importance_slr(path)
-                              feature_groups = raw_importances.\
+            feature_groups = raw_importances.\
                               groupby(['feature_group', 'model_id'])['feature_importance']\
                                       .mean()\
                                       .reset_index()
@@ -540,7 +540,11 @@ class ModelEvaluator(object):
                                          fontsize=20):
         '''
         Generate a bar chart of the top n features importances showing the
-        error bars.
+        error bars. This plot is valid for ensemble classifiers (i.e. Random
+        Forests or ExtraTrees), where many classifiers are bootstraped in
+        estimation. This plot will allow the user to explore the feature
+        importance variation inside the ensemble classifier.
+
         Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
                 - name_file (string): specify name file for saved plot.
@@ -551,64 +555,72 @@ class ModelEvaluator(object):
                 - fontsize (int): define a custom fontsize for labels and legends.
                 - *path: path to retrieve model pickle
         '''
-        storage = ProjectStorage(path)
-        model_object = ModelStorageEngine(storage).load(self.model_hash)
-        matrix_object = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
+        if 'sklearn.ensemble' not in self.model_type: 
 
-        # Calculate errors from model
-        importances = model_object.feature_importances_
-        std = np.std([tree.feature_importances_ for tree in model_object.estimators_],
-                    axis=0)
-        # Create dataframe and sort select the most relevant features (defined
-        # by n_features_plot)
-        importances_df = pd.DataFrame({
-            'feature_name': matrix_object.columns(),
-            'std': std,
-            'feature_importance': importances
-        }).set_index('feature_name')
+            storage = ProjectStorage(path)
+            model_object = ModelStorageEngine(storage).load(self.model_hash)
+            matrix_object = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
 
-        importances_sort = \
-        importances_df.sort_values(['feature_importance'], ascending=False)
-        importances_filter = importances_sort[:n_features_plots]
+            # Calculate errors from model
+            importances = model_object.feature_importances_
+            std = np.std([tree.feature_importances_ for tree in model_object.estimators_],
+                        axis=0)
+            # Create dataframe and sort select the most relevant features (defined
+            # by n_features_plot)
+            importances_df = pd.DataFrame({
+                'feature_name': matrix_object.columns(),
+                'std': std,
+                'feature_importance': importances
+            }).set_index('feature_name')
 
-        # Plot features in order
-        importances_ordered = \
-        importances_filter.sort_values(['feature_importance'], ascending=True)
+            importances_sort = \
+            importances_df.sort_values(['feature_importance'], ascending=False)
+            importances_filter = importances_sort[:n_features_plots]
+
+            # Plot features in order
+            importances_ordered = \
+            importances_filter.sort_values(['feature_importance'], ascending=True)
 
 
-        if bar:
-            # Plot features with sd bars
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.tick_params(labelsize=16)
-            importances_ordered['feature_importance'].plot.barh(legend=False, ax=ax,
-                                                                xerr=importances_ordered['std'],
-                                                                color='b')
-            ax.set_frame_on(False)
-            ax.set_xlabel('Feature Importance', fontsize=20)
-            ax.set_ylabel('Feature', fontsize=20)
-            plt.tight_layout()
-            plt.title(f'Top {n_features_plots} Feature Importances with SD',
-                      fontsize=fontsize).set_position([.5, 0.99])
+            if bar:
+                # Plot features with sd bars
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.tick_params(labelsize=16)
+                importances_ordered['feature_importance'].\
+                                   plot.barh(legend=False, 
+                                             ax=ax,
+                                             xerr=importances_ordered['std'],
+                                             color='b')
+                ax.set_frame_on(False)
+                ax.set_xlabel('Feature Importance', fontsize=20)
+                ax.set_ylabel('Feature', fontsize=20)
+                plt.tight_layout()
+                plt.title(f'Top {n_features_plots} Feature Importances with SD',
+                          fontsize=fontsize).set_position([.5, 0.99])
 
+            else:
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.tick_params(labelsize=16)
+                importances_ordered.plot.scatter(x = 'std',
+                                                 y = 'feature_importance',
+                                                 legend=False,
+                                                 ax=ax)
+                ax.set_xlabel('Std. Error', fontsize=20)
+                ax.set_ylabel('Feature Importance', fontsize=20)
+                plt.title(f'Top {n_features_plots} Feature Importances against SD',
+                          fontsize=fontsize).set_position([.5, 0.99])
+                feature_labels = []
+                for k, v in importances_ordered.iterrows():
+                    feature_labels.append(plt.text(v[0], v[1], k))
+                adjust_text(feature_labels,
+                            arrow_props=dict(arrowstype='->',
+                                            color='r',
+                                            lw=1))
         else:
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.tick_params(labelsize=16)
-            importances_ordered.plot.scatter(x = 'std',
-                                             y = 'feature_importance',
-                                             legend=False,
-                                             ax=ax)
-            ax.set_xlabel('Std. Error', fontsize=20)
-            ax.set_ylabel('Feature Importance', fontsize=20)
-            plt.title(f'Top {n_features_plots} Feature Importances against SD',
-                      fontsize=fontsize).set_position([.5, 0.99])
-            feature_labels = []
-            for k, v in importances_ordered.iterrows():
-                feature_labels.append(plt.text(v[0], v[1], k))
-            adjust_text(feature_labels,
-                        arrow_props=dict(arrowstype='->',
-                                        color='r',
-                                        lw=1))
-
+            f'''
+            This plot is only available for Ensemble models, not
+            {self.model_type}
+            ''' 
 
     def plot_feature_group_average_importances(self,
                                                n_features_plots=30,
