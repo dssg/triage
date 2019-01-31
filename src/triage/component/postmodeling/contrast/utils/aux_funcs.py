@@ -10,8 +10,8 @@ evaluation.py.
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 from collections import namedtuple
-import pandas as pd
 import yaml
+
 
 def create_pgconn(credentials_yaml):
     '''
@@ -30,6 +30,7 @@ def create_pgconn(credentials_yaml):
 
     return conn 
 
+
 def get_models_ids(audited_model_group_ids, conn):
     '''
     This helper functions will retrieve the model_id's from a set
@@ -44,6 +45,9 @@ def get_models_ids(audited_model_group_ids, conn):
     This function will return a list of ModelEvaluator objects
     '''
 
+    ModelEvaluator = namedtuple('ModelEvaluator', 
+                                ('model_group_id', 'model_id'))
+
     query = conn.execute(text("""
     SELECT model_group_id,
            model_id
@@ -51,8 +55,4 @@ def get_models_ids(audited_model_group_ids, conn):
     WHERE model_group_id = ANY(:ids);
     """), ids=audited_model_group_ids)
 
-    ModelTuple = namedtuple('ModelEvaluator', ['model_group_id', 'model_id'])
-    l = [ModelTuple(*i) for i in query]
-
-    return(l)
-
+    return [ModelEvaluator._make(row) for row in query]
