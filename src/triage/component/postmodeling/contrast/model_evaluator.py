@@ -162,7 +162,7 @@ class ModelEvaluator(object):
         raw_importances = pd.DataFrame(
             {'feature': feature_names,
              'model_id':  test_matrix['model_id'],
-             'feature_importance':  np.abs(1 - np.exp(model_obj.coef_.squeeze()))
+             'feature_importance':  np.abs(1 - np.exp(model_obj.coef_.squeeze())),
              'feature_group': [x.split('_entity_id')[0] for x in
                                feature_names]
             }
