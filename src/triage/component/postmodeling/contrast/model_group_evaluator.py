@@ -812,13 +812,13 @@ class ModelGroupEvaluator(object):
                         square=True)
 
 
-    def plot_jaccard(self,
-                     param_type=None,
-                     param=None,
-                     model_subset=None,
-                     temporal_comparison=False,
-                     figsize=(24, 10),
-                     fontsize=12):
+    def plot_jaccard_preds(self,
+                           param_type=None,
+                           param=None,
+                           model_subset=None,
+                           temporal_comparison=False,
+                           figsize=(24, 10),
+                           fontsize=12):
 
         if model_subset is None:
             model_subset = self.model_id
@@ -843,8 +843,7 @@ class ModelGroupEvaluator(object):
                                                          values='above_tresh')
                     elif param_type == 'rank_pct':
                         df_preds_date = preds_filter_group.copy()
-                        df_preds_date['above_tresh'] = \
-                                np.where(df_preds_date['rank_pct'] <= param, 1, 0)
+                        df_preds_date['above_tresh'] = np.where(df_preds_date['rank_pct'] <= param, 1, 0)
                         df_preds_date['new_entity_id'] = df_preds_date['entity_id'].astype(str) + ":" + df_preds_date['as_of_date'].astype(str)
                         df_sim_piv = df_preds_date.pivot(index='new_entity_id',
                                                          columns='model_id',

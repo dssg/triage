@@ -134,7 +134,7 @@ class ModelEvaluator(object):
 
         return preds
 
-    def _feature_importance_slr(self, path=None):
+    def _feature_importance_slr(self, path):
         '''
         Calculate feature importances for ScaledLogisticRegression
 
@@ -153,7 +153,6 @@ class ModelEvaluator(object):
 
         storage = ProjectStorage(path)
         model_obj = ModelStorageEngine(storage).load(self.model_hash)
-        coefficients = np.abs(1 - np.exp(model_obj.coef_.squeeze()))
 
         self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
@@ -163,8 +162,9 @@ class ModelEvaluator(object):
         raw_importances = pd.DataFrame(
             {'feature': feature_names,
              'model_id':  test_matrix['model_id'],
-             'feature_importance': coefficients,
-             'feature_group': [x.split('_entity_id')[0] for x in feature_names]
+             'feature_importance':  np.abs(1 - np.exp(model_obj.coef_.squeeze()))
+             'feature_group': [x.split('_entity_id')[0] for x in
+                               feature_names]
             }
         )
         raw_importances['rank_abs'] = raw_importances['feature_importance'].\
@@ -493,10 +493,10 @@ class ModelEvaluator(object):
         ax.set_xlabel('Score', fontsize=fontsize)
         plt.title('Score Distribution using prediction threshold', y =1.2,
                   fontsize=fontsize)
-        plt.show()
 
 
     def plot_feature_importances(self,
+                                 path,
                                  n_features_plots=30,
                                  figsize=(16, 12),
                                  fontsize=20):
@@ -504,13 +504,15 @@ class ModelEvaluator(object):
         Generate a bar chart of the top n feature importances (by absolute value)
         Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
+                - path (str): path to triage project_dir 
                 - name_file (string): specify name file for saved plot.
                 - n_features_plots (int): number of top features to plot
                 - figsize (tuple): figure size to pass to matplotlib
                 - fontsize (int): define custom fontsize for labels and legends.
         '''
 
-        importances = self.feature_importances.filter(items=['feature', 'feature_importance'])
+        importances = self.feature_importances(path=path)
+        importances = importances.filter(items=['feature', 'feature_importance'])
         importances = importances.set_index('feature')
 
         # Sort by the absolute value of the importance of the feature
@@ -631,12 +633,14 @@ class ModelEvaluator(object):
         Generate a bar chart of the average feature group importances (by absolute value)
         Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
+                - path (str): path to the triage's project_path
                 - name_file (string): specify name file for saved plot.
                 - n_features_plots (int): number of top features to plot
                 - figsize (tuple): figure size to pass to matplotlib
                 - fontsize (int): define custom fontsize for labels and legends.
         '''
-        fg_importances = self.feature_group_importances
+
+        fg_importances = self.feature_group_importances(path=path)
         fg_importances = fg_importances.filter(items=['feature_group', \
                                                'importance_average'])
         fg_importances = fg_importances.set_index('feature_group')
@@ -1133,9 +1137,8 @@ class ModelEvaluator(object):
         '''
 
         if feature_list is None:
-            f_importances = self.feature_importances
-            top_f = f_importances[f_importances['rank_abs'] <=
-                                  10]['feature'].tolist()
+            f_importances = self.feature_importances(path)
+            top_f = f_importances[f_importances['rank_abs'] <= 10]['feature'].tolist()
             feature_list = top_f
 
         n = len(feature_list)

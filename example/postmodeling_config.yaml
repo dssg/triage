@@ -1,6 +1,6 @@
 # Postmodeling Configuration File
   
-  project_path: '../../../../../../triage_output/output/' # Project path defined in triage with matrices and models
+  project_path: 'triage_output/output/' # Project path defined in triage with matrices and models
   audition_output_path: 'results_model_group_ids.json' # Audition output path 
   model_group_id: # List of model_id's [optional if a audition_output_path is given]
         - 19
