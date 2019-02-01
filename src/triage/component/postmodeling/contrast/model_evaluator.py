@@ -348,6 +348,7 @@ class ModelEvaluator(object):
         return mat
 
     def plot_score_distribution(self,
+                                nbins=10,
                                figsize=(16,12),
                                fontsize=20):
         '''
@@ -379,6 +380,7 @@ class ModelEvaluator(object):
         plt.show()
 
     def plot_score_label_distributions(self,
+                                       nbins=10,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
                                        fontsize=20):
