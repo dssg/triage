@@ -345,6 +345,7 @@ class ModelGroupEvaluator(object):
                     ax = ax = df.plot(ax=ax, kind='line',
                                       x='as_of_date_year',
                                       y='value',
+                                      marker='d',
                                       label=model_group)
                 plt.title(str(metric).capitalize() +\
                           ' for selected model_groups in time.',
