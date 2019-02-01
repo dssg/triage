@@ -154,7 +154,6 @@ class ModelEvaluator(object):
         storage = ProjectStorage(path)
         model_obj = ModelStorageEngine(storage).load(self.model_hash)
 
-        self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
         feature_names = [x for x in test_matrix.column.tolist() 
                          if x not in self.predictions.column.tolist()]
@@ -699,7 +698,6 @@ class ModelEvaluator(object):
              feature_regex = '|'.join(feature_group_subset_list)
 
         # Load Prediction Matrix
-        self.preds_matrix(path)
         test_matrix = self.preds_matrix(path)
 
         # Define feature space (remove predictions)
@@ -741,8 +739,6 @@ class ModelEvaluator(object):
                    bbox_to_anchor=(0., 1.005, 1., .102),
                    loc=7,
                    borderaxespad=0.)
-        ax.ax_row_dendogram.set_visible(False)
-        ax.ax_row_dendogram.set_xlim([0, 0])
 
 
     def cluster_correlation_sparsity(self,
@@ -767,7 +763,6 @@ class ModelEvaluator(object):
          '''
 
          # Load Prediction Matrix
-         self.preds_matrix(path)
          test_matrix = self.preds_matrix(path)
 
          # Define feature space (remove predictions)
@@ -952,7 +947,7 @@ class ModelEvaluator(object):
             - param: (int) value
             - path: path for the ProjectStorage class object
         '''
-        self.preds_matrix(path)
+
         test_matrix = self.preds_matrix(path)
 
         if param_type == 'rank_abs':
