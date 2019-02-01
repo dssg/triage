@@ -13,6 +13,10 @@ from collections import namedtuple
 import yaml
 
 
+ModelEvaluator = namedtuple('ModelEvaluator', 
+                           ('model_group_id', 'model_id'))
+
+
 def create_pgconn(credentials_yaml):
     '''
     Create SQL connection object using a psycopg2 cursor and abiding to new
@@ -44,9 +48,6 @@ def get_models_ids(audited_model_group_ids, conn):
 
     This function will return a list of ModelEvaluator objects
     '''
-
-    ModelEvaluator = namedtuple('ModelEvaluator', 
-                                ('model_group_id', 'model_id'))
 
     query = conn.execute(text("""
     SELECT model_group_id,
