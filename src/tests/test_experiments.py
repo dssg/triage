@@ -355,7 +355,7 @@ def test_profiling(db_engine):
     populate_source_data(db_engine)
     with TemporaryDirectory() as temp_dir:
         project_path = os.path.join(temp_dir, "inspections")
-        experiment = SingleThreadedExperiment(
+        SingleThreadedExperiment(
             config=sample_config(),
             db_engine=db_engine,
             project_path=project_path,
