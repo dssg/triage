@@ -354,8 +354,7 @@ class ModelEvaluator(object):
         Generate an histograms with the raw distribution of the predicted
         scores for all entities.
             - Arguments:
-                - save_file (bool): save file to disk as png. Default is False.
-                - name_file (string): specify name file for saved plot.
+                - nbins: bins to plot in histogram (default is 10).
                 - label_names(tuple): define custom label names for class.
                 - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
@@ -366,7 +365,7 @@ class ModelEvaluator(object):
 
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df_.score,
-                 bins=20,
+                 bins=nbins,
                  normed=True,
                  alpha=0.5,
                  color='blue')
@@ -387,9 +386,8 @@ class ModelEvaluator(object):
         Generate a histogram showing the label distribution for predicted
         entities:
             - Arguments:
-                - save_file (bool): save file to disk as png. Default is False.
-                - name_file (string): specify name file for saved plot.
                 - label_names(tuple): define custom label names for class.
+                - nbins: bins to plot in histogram (default is 10).
                 - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
         '''
@@ -400,13 +398,13 @@ class ModelEvaluator(object):
 
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df__0.score,
-                 bins=20,
+                 bins=nbins,
                  normed=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
         plt.hist(list(df__1.score),
-                 bins=20,
+                 bins=nbins,
                  normed=True,
                  alpha=0.5,
                  color='orange',
@@ -431,6 +429,7 @@ class ModelEvaluator(object):
     def plot_score_distribution_thresh(self,
                                        param_type,
                                        param,
+                                       nbins = 10,
                                        label_names = ('Label = 0', 'Label = 1'),
                                        figsize=(16, 12),
                                        fontsize=20):
@@ -438,8 +437,9 @@ class ModelEvaluator(object):
         Generate a histogram showing the label distribution for predicted
         entities using a threshold to classify between good prediction or not.
             - Arguments:
-                - save_file (bool): save file to disk as png. Default is False.
-                - name_file (string): specify name file for saved plot.
+                - param_type (str): parameter to use,
+                - param (int/float): threshold value to use
+                - nbins: bins to plot in histogram (default is 10).
                 - label_names(tuple): define custom label names for class.
                 - figsize (tuple): specify size of plot.
                 - fontsize (int): define custom fontsize. 20 is set by default.
@@ -450,12 +450,12 @@ class ModelEvaluator(object):
             # Calculate residuals/errors
             preds_thresh = df_predictions.sort_values(['rank_abs'], ascending=True)
             preds_thresh['above_thresh'] = \
-                    np.where(preds_thresh['rank_abs'] <= param, 1, 0)
+                    np.where(preds_thresh['rank_abs'] <= param/100, 1, 0)
         elif param_type == 'rank_pct':
             # Calculate residuals/errors
             preds_thresh = df_predictions.sort_values(['rank_pct'], ascending=True)
             preds_thresh['above_thresh'] = \
-                    np.where(preds_thresh['rank_pct'] <= param, 1, 0)
+                    np.where(preds_thresh['rank_pct'] <= param/100, 1, 0)
         else:
             raise ValueError('''Error! You have to define a parameter type to
                                  set up a threshold
@@ -469,13 +469,13 @@ class ModelEvaluator(object):
         threshold_value = preds_thresh[preds_thresh['above_thresh'] == 1].score.min()
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df__0.score,
-                 bins=20,
+                 bins=nbins,
                  normed=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
         plt.hist(df__1.score,
-                 bins=20,
+                 bins=nbins,
                  normed=True,
                  alpha=0.5,
                  color='orange',
@@ -490,7 +490,7 @@ class ModelEvaluator(object):
                    fontsize=fontsize-2)
         ax.set_ylabel('Density', fontsize=fontsize)
         ax.set_xlabel('Score', fontsize=fontsize)
-        plt.title('Score Distribution using prediction threshold', y =1.2,
+        plt.title('Score Distribution using prediction threshold', y=1.2,
                   fontsize=fontsize)
 
 
