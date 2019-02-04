@@ -102,6 +102,12 @@ class ShowTimeChops(Command):
             type=argparse.FileType("r"),
             help="YAML file containing temporal_config (for instance, an Experiment config)",
         )
+        parser.add_argument(
+            "--project-path",
+            default=os.getcwd(),
+            help="path to store the Timechop blocks image",
+        )
+
 
     def __call__(self, args):
         experiment_config = yaml.load(args.config)
@@ -112,7 +118,13 @@ class ShowTimeChops(Command):
             )
         chopper = Timechop(**(experiment_config["temporal_config"]))
         logging.info("Visualizing time chops")
-        visualize_chops(chopper)
+        visualize_chops(chopper,
+                        save_target=os.path.join(
+                            self.args.project_path,
+                            'images',
+                            self.args.config
+                        )
+        )
 
 
 @Triage.register
