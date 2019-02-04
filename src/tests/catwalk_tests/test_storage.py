@@ -112,15 +112,6 @@ def test_MatrixStore_metadata():
         assert matrix_store.metadata == METADATA
 
 
-def test_MatrixStore_head_of_matrix():
-    for matrix_store in matrix_stores():
-        assert matrix_store.head_of_matrix.to_dict() == {
-            "k_feature": {1: 0.5},
-            "m_feature": {1: 0.4},
-            "label": {1: 0},
-        }
-
-
 def test_MatrixStore_columns():
     for matrix_store in matrix_stores():
         assert matrix_store.columns() == ["k_feature", "m_feature"]
