@@ -24,6 +24,10 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     def __reduce__(self):
         return (self.__reconstruct__, (self.url, self.creator, self.kwargs))
 
+    def __reduce_ex__(self, protocol):
+        # wrapt requires reduce_ex to be implemented
+        return self.__reduce__()
+
     @classmethod
     def __reconstruct__(cls, url, creator, kwargs):
         return cls(url, creator=creator, **kwargs)
