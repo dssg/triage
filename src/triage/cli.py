@@ -107,6 +107,11 @@ class ShowTimeChops(Command):
             default=os.getcwd(),
             help="path to store the Timechop blocks image",
         )
+        parser.add_argument(
+            "--format",
+            default='png'
+            help="Format to use when storing the image"
+        )
 
 
     def __call__(self, args):
@@ -124,7 +129,7 @@ class ShowTimeChops(Command):
                         save_target=os.path.join(
                             self.args.project_path,
                             'images',
-                            experiment_name + '.svg'
+                            experiment_name + str(self.args.format)
                         )
         )
 
