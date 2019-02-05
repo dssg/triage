@@ -538,7 +538,6 @@ class HDFMatrixStore(MatrixStore):
             mode="w",
             complevel=4,
             complib="zlib",
-            format="table",
         )
         hdf.put(self.matrix_uuid, self.matrix.apply(pd.to_numeric), data_columns=True)
         hdf.close()
