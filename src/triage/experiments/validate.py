@@ -10,6 +10,7 @@ from triage.component import catwalk
 from triage.component.timechop import Timechop
 
 from triage.util.conf import convert_str_to_relativedelta
+from triage.validation_primitives import string_is_tablesafe
 
 
 class Validator(object):
@@ -449,6 +450,9 @@ class LabelConfigValidator(Validator):
             key 'query' not found. You must define a label query."""
                 )
             )
+        if 'name' in label_config and not string_is_tablesafe(label_config['name']):
+            raise ValueError("Section: label_config - "
+                             "name should only contain letters, numbers, and underscores")
         self._validate_query(label_config["query"])
         self._validate_include_missing_labels_in_train_as(
             label_config.get("include_missing_labels_in_train_as", None)
@@ -475,6 +479,9 @@ class CohortConfigValidator(Validator):
             {as_of_date} must be present"""
                 )
             )
+        if 'name' in cohort_config and not string_is_tablesafe(cohort_config['name']):
+            raise ValueError("Section: cohort_config - "
+                             "name should only contain letters, numbers, and underscores")
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logging.info("Validating cohort query")
         try:

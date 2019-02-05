@@ -56,39 +56,25 @@ This binary labels table is scoped to the entire Experiment, so all `as_of_time`
 `label_timespan` (taken straight from `temporal_config`) combinations are present. Additionally, the 'label_name' and
 'label_type' are also recorded with each row in the table.
 
+The name of the labels table is based on both the name of the label and a hash of the label query (e.g `labels_failedviolation_a0b1c2d3`), so any prior experiments that shared both the name and query will be able to reuse the labels table.  If the 'replace' flag was sent, for each `as_of_time` and `label_timespan`, the labels table is queried to check if any rows exist that match. If any such rows exist, the labels query for that date and timespan is not run.
+
 At this point, the 'labels' table may not have entries for all entities and dates that need to be in a given matrix.
 How these rows have their labels represented is up to the configured `include_missing_labels_in_train_as` value in the
 experiment. This value is not processed when we generate the labels table, but later on when the matrix is built (see
 'Retrieving Data and Saving Completed Matrix')
 
 
-### State Table
+### Cohort Table
 
-The Experiment keeps track of the state of the entities. Based on the configuration, certain entities can be included
-or excluded for different time periods in feature imputation, creating matrices, or both.
+The Experiment keeps track of the which entities are in the cohort on any given date. Similarly to the labels table, the experiment populates a cohort table using the following input:
 
-In code, it does this by computing what it calls the 'sparse' state table for an experiment. This is a table with a
-boolean flag entry for every entity, as_of_time, and state. The structure of this table allows for state filtering
-based on SQL conditions given by the user.
+1. A query, provided by the user in the configuration file, that generates entity_ids for a given as_of_date.
 
-Based on configuration, it can be created through one of three code paths:
+2. Each as_of_date as defined in temporal config
 
-1. If the user passes what we call a 'dense states' table, with the following structure: entity id/state/start/end, and
-a list of state filters, this 'dense states' table holds time ranges that entities were in for specific states.
-When converting this to a sparse table, we take each as_of_time present in the Experiment, and for each known state
-(that is, the distinct values found in the 'dense states' table), see if there is any entry in the dense states table
-with this state whose range overlaps with the as_of_time. If so, the entity is considered to be in that state as of that
-date.
+This cohort table is scoped to the entire Experiment, so all `as_of_times` (computed in step 1) are present. 
 
-2. If the user passes what we call an 'entities' table, containing an entity_id, it will simply use all distinct
-entities present in said table, and mark them as 'active' for every as_of_time in the experiment. Any other columns are
-ignored.
-
-3. If the user passes a query, parameterized with an as of date, we will populate the table by running it for each
-as_of_date.
-
-This table is created and exists until matrices are built, at which point it is considered unnecessary and then dropped.
-
+The name of the cohort table is based on both the name of the cohort and a hash of the cohort query (e.g `cohort_permitted_a0b1c2d3`), so any prior experiments that shared both the name and query will be able to reuse the cohort table.  If the 'replace' flag was sent, for each `as_of_time`, the cohort table is queried to check if any rows exist that match. If any such rows exist, the cohort query for that date is not run.
 
 ### Features
 
@@ -110,7 +96,7 @@ a column or SQL expression representing a numeric quantity present in the `from_
 of aggregate functions we want to use. The aggregate function is applied to the quantity.
 * Each `group` is a column applied to the GROUP BY clause. Generally this is 'entity_id', but higher-level groupings
 (for instance, 'zip_code') can be used as long as they can be rolled up to 'entity_id'.
-* By default the query is joined with the cohort table (see 'state table' above) to remove unnecessary rows. If `features_ignore_cohort` is passed to the Experiment this is not done.
+* By default the query is joined with the cohort table to remove unnecessary rows. If `features_ignore_cohort` is passed to the Experiment this is not done.
 
 So a simplified version of a typical query would look like:
 ```
@@ -137,7 +123,7 @@ entity-level and zipcode-level aggregates from both tables. This aggregation-lev
 in the aggregation, pre-imputation. Its output location is generally `{prefix}_aggregation`
 
 #### Imputing Values
-A table that looks similar, but with imputed values is created. The state table from above is passed into collate as
+A table that looks similar, but with imputed values is created. The cohort table from above is passed into collate as
 the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the
 `from_obj`. Each feature column has an imputation rule, inherited from some level of the feature definition. The
 imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value.
@@ -147,8 +133,8 @@ Its output location is generally `{prefix}_aggregation_imputed`
 
 At this point, we have at least three tables that are used to populate matrices:
 
-- `labels` with computed labels
-- `tmp_states_{experiment hash}` that tracks what `as_of_times` each entity was in each state.
+- `labels_{labelname}_{labelqueryhash}` with computed labels for each date
+- `cohort_{cohortname}_{cohortqueryhash}` with the cohort for each date
 - A `features.{prefix}_aggregation_imputed` table for each feature aggregation present in the experiment config.
 
 
