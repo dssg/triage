@@ -252,6 +252,7 @@ class TestEvaluation(Base):
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     value = Column(Numeric)
@@ -260,6 +261,7 @@ class TestEvaluation(Base):
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
 
+    matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
 
 
@@ -274,6 +276,7 @@ class TrainEvaluation(Base):
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     value = Column(Numeric)
@@ -282,4 +285,5 @@ class TrainEvaluation(Base):
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
 
+    matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")

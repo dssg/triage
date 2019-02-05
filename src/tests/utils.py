@@ -92,6 +92,7 @@ class MockMatrixStore(MatrixStore):
 
         session = sessionmaker(db_engine)()
         session.add(Matrix(matrix_uuid=matrix_uuid))
+        session.commit()
 
     def labels(self):
         if self.init_labels == []:

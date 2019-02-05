@@ -109,6 +109,13 @@ def test_evaluating_early_warning():
             "true positives@5_abs",
         ]
 
+        # ensure that the matrix uuid is present
+        matrix_uuids = [
+            row[0]
+            for row in db_engine.execute("select matrix_uuid from test_results.evaluations")
+        ]
+        assert all(matrix_uuid == "1234" for matrix_uuid in matrix_uuids)
+
         # Evaluate the training metrics and test
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1], fake_train_matrix_store, model_id
@@ -125,6 +132,13 @@ def test_evaluating_early_warning():
             )
         ]
         assert records == ["accuracy", "roc_auc"]
+
+        # ensure that the matrix uuid is present
+        matrix_uuids = [
+            row[0]
+            for row in db_engine.execute("select matrix_uuid from train_results.evaluations")
+        ]
+        assert all(matrix_uuid == "efgh" for matrix_uuid in matrix_uuids)
 
 
 def test_model_scoring_inspections():
