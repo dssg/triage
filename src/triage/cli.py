@@ -109,7 +109,7 @@ class ShowTimeChops(Command):
         )
         parser.add_argument(
             "--format",
-            default='png'
+            default='png',
             help="Format to use when storing the image"
         )
 
