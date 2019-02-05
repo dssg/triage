@@ -113,7 +113,6 @@ class ShowTimeChops(Command):
             help="Format to use when storing the image"
         )
 
-
     def __call__(self, args):
         experiment_config = yaml.load(args.config)
         if "temporal_config" not in experiment_config:
@@ -122,8 +121,9 @@ class ShowTimeChops(Command):
                 "in order to visualize time chops"
             )
         chopper = Timechop(**(experiment_config["temporal_config"]))
-        experiment_name =  os.path.splitext(os.path.basename(self.args.config.name))[0]
-        os.makedirs(os.path.join(self.args.project_path, 'images'), exist_ok=True)
+        experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
+        os.makedirs(os.path.join(self.args.project_path, 'images'),
+                    exist_ok=True)
         logging.info("Visualizing time chops")
         visualize_chops(chopper,
                         save_target=os.path.join(
