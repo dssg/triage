@@ -508,7 +508,13 @@ class MatrixStore(object):
 
 
 class HDFMatrixStore(MatrixStore):
-    """Store and access matrices using HDF"""
+    """Store and access matrices using HDF
+
+    Instead of overriding head_of_matrix, which cannot be easily and reliably done
+    using HDFStore without loading the whole matrix into memory,
+    we individually override 'empty' and 'columns'
+    to obviate the need for a performant 'head_of_matrix' operation.
+    """
 
     suffix = "h5"
 
@@ -517,17 +523,29 @@ class HDFMatrixStore(MatrixStore):
         if isinstance(self.matrix_base_store, S3Store):
             raise ValueError("HDFMatrixStore cannot be used with S3")
 
-    @property
-    def head_of_matrix(self):
-        try:
-            head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=1)
-            # Is the index already in place?
-            if head_of_matrix.index.names != self.metadata["indices"]:
-                head_of_matrix.set_index(self.metadata["indices"], inplace=True)
-        except pd.errors.EmptyDataError:
-            head_of_matrix = None
+    def columns(self, include_label=False):
+        """The matrix's column list"""
+        head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=0)
+        columns = head_of_matrix.columns.tolist()
+        if include_label:
+            return columns
+        else:
+            return [col for col in columns if col != self.metadata["label_name"]]
 
-        return head_of_matrix
+    @property
+    def empty(self):
+        """Whether or not the matrix has at least one row"""
+        if not self.matrix_base_store.exists():
+            return True
+        else:
+            try:
+                head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=1)
+                return head_of_matrix.empty
+            except ValueError:
+                # There is no known way to make the start/stop operations work all the time
+                # , there is often a ValueError when trying to load just the first row
+                # However, if we do get a ValueError that means there is data so it can't be empty
+                return False
 
     def _load(self):
         return pd.read_hdf(self.matrix_base_store.path)
