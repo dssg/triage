@@ -129,7 +129,7 @@ class ShowTimeChops(Command):
                         save_target=os.path.join(
                             self.args.project_path,
                             'images',
-                            experiment_name + str(self.args.format)
+                            experiment_name + '.' + str(self.args.format)
                         )
         )
 
