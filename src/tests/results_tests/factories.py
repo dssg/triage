@@ -163,6 +163,8 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     num_labeled_above_threshold = 8
     num_positive_labels = 5
     sort_seed = 8
+    matrix_rel = factory.SubFactory(MatrixFactory)
+    matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
 
 
 def init_engine(new_engine):

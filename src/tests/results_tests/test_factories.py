@@ -37,6 +37,7 @@ def test_evaluation_factories():
             from
                 test_results.evaluations e
                 join model_metadata.models m using (model_id)
+                join model_metadata.matrices test_matrix on (e.matrix_uuid = test_matrix.matrix_uuid)
         """
         )
         for model_group_id, model_id, metric, value in results:

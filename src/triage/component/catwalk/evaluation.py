@@ -391,6 +391,7 @@ class ModelEvaluator(object):
             evaluation_start_time,
             evaluation_end_time,
             as_of_date_frequency,
+            matrix_store.uuid,
             evaluations,
             evaluation_table_obj,
         )
@@ -403,6 +404,7 @@ class ModelEvaluator(object):
         evaluation_start_time,
         evaluation_end_time,
         as_of_date_frequency,
+        matrix_uuid,
         evaluations,
         evaluation_table_obj,
     ):
@@ -432,6 +434,7 @@ class ModelEvaluator(object):
             evaluation.evaluation_start_time = evaluation_start_time
             evaluation.evaluation_end_time = evaluation_end_time
             evaluation.as_of_date_frequency = as_of_date_frequency
+            evaluation.matrix_uuid = matrix_uuid
             session.add(evaluation)
         session.commit()
         session.close()
