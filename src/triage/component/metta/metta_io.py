@@ -227,7 +227,7 @@ def _store_matrix(metadata, df_data, title, directory, format="hd5"):
                     df_data[col] = df_data[col].astype(float)
 
             hdf = pd.HDFStore(
-                matrix_fname, mode="w", complevel=5, complib="zlib", format="table"
+                matrix_fname, mode="w", complevel=5, complib="zlib",
             )
             hdf.put(title, df_data, data_columns=True)
             hdf.close()
