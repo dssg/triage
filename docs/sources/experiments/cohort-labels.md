@@ -12,7 +12,7 @@ This document assumes that the reader is familiar with the concept of a machine 
 
 **A cohort is the population used used for modeling on a given as-of-date**. This is expressed as a list of *entities*. An entity is simply the object of prediction, such as a facility to inspect or a patient coming in for a visit. Early warning systems tend to include their entire population (or at least a large subset of it) in the cohort at any given date, while appointment-based problems may only include in a date's cohort the people who are scheduled for an appointment on that date.
 
-**A label is the binary target variable for a member of the cohort at a given as-of-date and a given label timespan.** For instance, in an inspection prioritization problem the question being asked may be 'what facilities are at high risk of having a failed inspection in the next 6 months?' For this problem, the `label_timespan` is 6 months. There may be multiple label timespans tested in the same experiment, in which case there could be multiple labels for an entity and date.
+**A label is the binary target variable for a member of the cohort at a given as-of-date and a given label timespan.** For instance, in an inspection prioritization problem the question being asked may be 'what facilities are at high risk of having a failed inspection in the next 6 months?' For this problem, the `label_timespan` is 6 months. There may be multiple label timespans tested in the same experiment, in which case there could be multiple labels for an entity and date. In addition, multiple label definitions are often tested against each other, such as "any inspection failures" vs "inspection failures with serious issues".
 
 Both labels and cohorts are defined in Triage's experiment configuration using SQL queries, with the variables (`as_of_date`, `label_timespan`) given as placeholders. This allows the definitions to be given in a concise manner while allowing the temporal configuration defined elsewhere in the experiment to produce the actual list of dates and timespans that are calculated during the experiment.
 
@@ -23,7 +23,8 @@ The cohort is configured with a query that returns a unique list of `entity_id`s
 
 ### Note 1
 
-The as_of_date is parsed as a timestamp in the database. This timestamp defaults to **the beginning of the date in question**. It's important to consider how this is used for feature generation. Features are only included if they are known about **before this timestamp**. So features will be only included for an as_of_date if they are known about **before that as_of_date**. If you want to work around this (e.g for visit-level problems in which you want to intake data **on the day of the visit and make predictions using that data the same day**), you can move your cohort up a day.
+The as_of_date is parsed as a timestamp in the database, which Postgres defaults to **midnight at the beginning of the date in question**. It's important to consider how this is used for feature generation. Features are only included if they are known about **before this timestamp**. So features will be only included for an as_of_date if they are known about **before that as_of_date**. If you want to work around this (e.g for visit-level problems in which you want to intake data **on the day of the visit and make predictions using that data the same day**), you can move your cohort up a day. The time splitting in Triage is designed for day granularity so approaches to train up to a specific hour and test at another hour of the same day are not supported.
+
 
 ### Note 2
 
@@ -34,7 +35,7 @@ Triage expects all entity ids to be integers.
 Triage expects the cohort to be a unique list of entity ids. Throughout the cohort example queries you will see `distinct(entity_id)` used to ensure this.
 
 ### Example: Inspections
-Let's say I am prioritizing the inspection of restaurants. One simple definition of a cohort for restaurant inspection would be to include *any restaurants that have active permits in the last year* in the cohort. Assume that these permits are contained in a table, named `permits`, with the facility's id, a start date, and an end date of the permit.
+Let's say I am prioritizing the inspection of restaurants. One simple definition of a cohort for restaurant inspection would be to include *any restaurants that have active permits in the last year* in the cohort. Assume that these permits are contained in a table, named `permits`, with the restaurant's id, a start date, and an end date of the permit.
 
 #### Inspections Cohort Source Table
 
