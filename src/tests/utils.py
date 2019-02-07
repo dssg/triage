@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import testing.postgresql
 from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
@@ -84,7 +85,7 @@ class MockMatrixStore(MatrixStore):
             ).set_index("entity_id")
         if init_labels is None:
             init_labels = []
-        self.matrix = matrix
+        self.matrix_with_labels = matrix
         self.metadata = base_metadata
         self.label_count = label_count
         self.init_labels = init_labels
@@ -94,6 +95,7 @@ class MockMatrixStore(MatrixStore):
         session.add(Matrix(matrix_uuid=matrix_uuid))
         session.commit()
 
+    @property
     def labels(self):
         if self.init_labels == []:
             return fake_labels(self.label_count)
@@ -187,12 +189,11 @@ def get_matrix_store(project_storage, matrix=None, metadata=None):
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
-    matrix_store = project_storage.matrix_storage_engine().get_store(
-        metadata["metta-uuid"]
-    )
-    matrix_store.matrix = matrix
+    matrix_store = project_storage.matrix_storage_engine().get_store(filename_friendly_hash(metadata))
+    matrix_store.matrix_with_labels = matrix
     matrix_store.metadata = metadata
     matrix_store.save()
+    matrix_store.clear_cache()
     if (
         session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
         == 0

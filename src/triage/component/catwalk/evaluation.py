@@ -350,7 +350,7 @@ class ModelEvaluator(object):
                 prediction matrix and metadata
             model_id (int) The database identifier of the model
         """
-        labels = matrix_store.labels()
+        labels = matrix_store.labels
         matrix_type = matrix_store.matrix_type.string_name
         evaluation_start_time = matrix_store.as_of_dates[0]
         evaluation_end_time = matrix_store.as_of_dates[-1]

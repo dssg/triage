@@ -34,7 +34,7 @@ class ModelTrainTester(object):
                 split["train_uuid"],
             )
             return []
-        if len(train_store.labels().unique()) == 1:
+        if len(train_store.labels.unique()) == 1:
             logging.warning(
                 """Train Matrix for split %s had only one
             unique value, no point in training this model. Skipping
@@ -78,7 +78,7 @@ class ModelTrainTester(object):
 
     def process_task(self, test_store, train_store, train_kwargs):
         logging.info("Beginning train task %s", train_kwargs)
-        with self.model_trainer.cache_models():
+        with self.model_trainer.cache_models(), test_store.cache(), train_store.cache():
             # will cache any trained models until it goes out of scope (at the end of the task)
             # this way we avoid loading the model pickle again for predictions
             model_id = self.model_trainer.process_train_task(**train_kwargs)

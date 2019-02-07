@@ -69,7 +69,7 @@ class Predictor(object):
         return (
             session.query(Prediction_obj)
             .filter_by(model_id=model_id)
-            .filter(Prediction_obj.as_of_date.in_(self._as_of_dates(matrix_store)))
+            .filter(Prediction_obj.as_of_date.in_(matrix_store.as_of_dates))
         )
 
     @db_retry
@@ -95,21 +95,14 @@ class Predictor(object):
                 matrix_uuid=matrix_store.uuid
             ).distinct(prediction_obj.as_of_date).values("as_of_date")
         )
-        as_of_dates_needed = set(self._as_of_dates(matrix_store))
+        as_of_dates_needed = set(matrix_store.as_of_dates)
         needed = bool(as_of_dates_needed - as_of_dates_in_db)
         session.close()
         return needed
 
-    def _as_of_dates(self, matrix_store):
-        matrix = matrix_store.matrix
-        if "as_of_date" in matrix.index.names:
-            return matrix.index.levels[matrix.index.names.index("as_of_date")].tolist()
-        else:
-            return [matrix_store.metadata["end_time"]]
-
     @db_retry
     def _load_saved_predictions(self, existing_predictions, matrix_store):
-        index = matrix_store.matrix.index
+        index = matrix_store.index
         score_lookup = {}
         for prediction in existing_predictions:
             score_lookup[
@@ -160,7 +153,7 @@ class Predictor(object):
         db_objects = []
         test_label_timespan = matrix_store.metadata["label_timespan"]
 
-        if "as_of_date" in matrix_store.matrix.index.names:
+        if "as_of_date" in matrix_store.index.names:
             logging.info(
                 "as_of_date found as part of matrix index, using "
                 "index for table as_of_dates"
@@ -168,7 +161,7 @@ class Predictor(object):
             with tempfile.TemporaryFile(mode="w+") as f:
                 writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
                 for index, score, label in zip(
-                    matrix_store.matrix.index, predictions, labels
+                    matrix_store.index, predictions, labels
                 ):
                     entity_id, as_of_date = index
                     prediction = Prediction_obj(
@@ -195,6 +188,7 @@ class Predictor(object):
                         ]
                     )
                 f.seek(0)
+                f.seek(0)
                 postgres_copy.copy_from(f, Prediction_obj, self.db_engine, format="csv")
         else:
             logging.info(
@@ -207,7 +201,7 @@ class Predictor(object):
                 method="dense", ascending=False, pct=True
             )
             for entity_id, score, label, rank_abs, rank_pct in zip(
-                matrix_store.matrix.index,
+                matrix_store.index,
                 predictions,
                 labels,
                 rankings_abs,
@@ -264,8 +258,7 @@ class Predictor(object):
                 existing_predictions = self._existing_predictions(
                     prediction_obj, session, model_id, matrix_store
                 )
-                index = matrix_store.matrix.index
-                if existing_predictions.count() == len(index):
+                if existing_predictions.count() == len(matrix_store.index):
                     logging.info(
                         "Found predictions for model id %s, matrix %s, returning saved versions",
                         model_id,
@@ -281,7 +274,7 @@ class Predictor(object):
             raise ModelNotFoundError("Model id {} not found".format(model_id))
 
         # Labels are popped from matrix (IE, they are removed and returned)
-        labels = matrix_store.labels()
+        labels = matrix_store.labels
 
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)

@@ -325,8 +325,9 @@ class MatrixStore(object):
         metadata (dict, optional). The matrix' metadata.
             Defaults to None, which means it will be loaded from storage on demand.
     """
-
-    _labels = None
+    __labels = None
+    __design_matrix = None
+    should_cache = False
 
     def __init__(
         self, project_storage, directories, matrix_uuid, matrix=None, metadata=None
@@ -339,30 +340,101 @@ class MatrixStore(object):
             directories, f"{matrix_uuid}.yaml"
         )
 
-        self.matrix = matrix
+        self.matrix_with_labels = matrix
         self.metadata = metadata
+        self.clear_cache()
+
+    @contextmanager
+    def cache(self):
+        """Enable caching
+
+        Must be used as a context manager.
+        The cache is cleared when the context manager goes out of scope
+        """
+        self.should_cache = True
+        try:
+            yield
+        finally:
+            self.clear_cache()
+            self.should_cache = False
+
+    def _preprocess_matrix_with_labels(self, matrix_with_labels):
+        """Perform desired preprocessing that we generally want to do after loading a matrix
+
+        This includes setting the index (depending on the storage, may not be serializable)
+        and downcasting.
+        """
+        indices = self.metadata['indices']
+        if matrix_with_labels.index.names != indices:
+            matrix_with_labels.set_index(indices, inplace=True)
+        matrix_with_labels = downcast_matrix(matrix_with_labels)
+        return matrix_with_labels
+
+    def _split_matrix(self, matrix_with_labels):
+        """Split a matrix with labels into a design matrix and label vector
+
+        Returns both as a tuple
+        """
+        labels = matrix_with_labels.pop(self.label_column_name)
+        # After we pop the labels from the matrix with labels it is now a design matrix
+        design_matrix = matrix_with_labels
+        if self.should_cache:
+            # we neither want to store multiple copies of the matrix
+            # nor misrepresent the label-less version of the matrix as the one with labels
+            # so we explicitly set the matrix_with_labels to None in the cache
+            self.matrix_with_labels = None
+            self.design_matrix = design_matrix
+            self.labels = labels
+        return design_matrix, labels
 
     @property
-    def matrix(self):
-        """The raw matrix. Will load from storage into memory if not already loaded"""
-        if self.__matrix is None:
-            self.__matrix = self._load()
-            # Is the index already in place?
-            if self.__matrix.index.names != self.metadata['indices']:
-                self.__matrix.set_index(self.metadata['indices'], inplace=True)
+    def design_matrix(self):
+        """The matrix without the label vector, only the index and features"""
+        if self.__design_matrix is not None:
+            return self.__design_matrix
+        else:
+            return self._split_matrix(self.matrix_with_labels)[0]
 
-            self.__matrix = downcast_matrix(self.__matrix)
-        return self.__matrix
+    @design_matrix.setter
+    def design_matrix(self, design_matrix):
+        self.__design_matrix = design_matrix
 
-    @matrix.setter
-    def matrix(self, matrix):
-        self.__matrix = matrix
+    @property
+    def labels(self):
+        """The label vector of the matrix"""
+        if self.__labels is not None:
+            return self.__labels
+        return self._split_matrix(self.matrix_with_labels)[1]
+
+    @labels.setter
+    def labels(self, labels):
+        self.__labels = labels
+
+    @property
+    def matrix_with_labels(self):
+        """The matrix complete with label vector."""
+        if self.__matrix_with_labels is not None:
+            return self._preprocess_matrix_with_labels(self.__matrix_with_labels)
+        elif self.__design_matrix is not None and self.__labels is not None:
+            return self.design_matrix.assign(**{self.label_column_name: self.labels})
+        else:
+            return self._preprocess_matrix_with_labels(self._load())
+
+    @matrix_with_labels.setter
+    def matrix_with_labels(self, matrix_with_labels):
+        self.__matrix_with_labels = matrix_with_labels
 
     @property
     def metadata(self):
         """The raw metadata. Will load from storage into memory if not already loaded"""
-        if self.__metadata is None:
-            self.__metadata = self.load_metadata()
+        if self.__metadata is not None:
+            return self.__metadata
+        if not self.should_cache or self.__metadata is None:
+            metadata = self.load_metadata()
+            if self.should_cache:
+                self.__metadata = metadata
+            else:
+                return metadata
         return self.__metadata
 
     @metadata.setter
@@ -397,15 +469,13 @@ class MatrixStore(object):
         else:
             return [col for col in columns if col != self.metadata["label_name"]]
 
-    def labels(self):
-        """The matrix's label column."""
-        if self._labels is not None:
-            logging.debug("using stored labels")
-            return self._labels
-        else:
-            logging.debug("popping labels from matrix")
-            self._labels = self.matrix.pop(self.metadata["label_name"])
-            return self._labels
+    @property
+    def label_column_name(self):
+        return self.metadata["label_name"]
+
+    @property
+    def index(self):
+        return self.design_matrix.index
 
     @property
     def uuid(self):
@@ -415,9 +485,9 @@ class MatrixStore(object):
     @property
     def as_of_dates(self):
         """The list of as-of-dates in the matrix"""
-        if "as_of_date" in self.matrix.index.names:
+        if "as_of_date" in self.design_matrix.index.names:
             return sorted(
-                list(set([as_of_date for entity_id, as_of_date in self.matrix.index]))
+                list(set([as_of_date for entity_id, as_of_date in self.design_matrix.index]))
             )
         else:
             return [self.metadata["end_time"]]
@@ -425,11 +495,11 @@ class MatrixStore(object):
     @property
     def num_entities(self):
         """The number of entities in the matrix"""
-        if self.matrix.index.names == ["entity_id"]:
-            return len(self.matrix.index.values)
-        elif "entity_id" in self.matrix.index.names:
+        if self.design_matrix.index.names == ["entity_id"]:
+            return len(self.design_matrix.index.values)
+        elif "entity_id" in self.design_matrix.index.names:
             return len(
-                self.matrix.index.levels[self.matrix.index.names.index("entity_id")]
+                self.design_matrix.index.levels[self.design_matrix.index.names.index("entity_id")]
             )
 
     @property
@@ -464,7 +534,7 @@ class MatrixStore(object):
         if columnset == desired_columnset:
             if self.columns() != columns:
                 logging.warning("Column orders not the same, re-ordering")
-            return self.matrix[columns]
+            return self.design_matrix[columns]
         else:
             if columnset.issuperset(desired_columnset):
                 raise ValueError(
@@ -496,14 +566,17 @@ class MatrixStore(object):
     def save(self):
         raise NotImplementedError
 
+    def clear_cache(self):
+        self.design_matrix = None
+        self.labels = None
+        self.metadata = None
+
     def __getstate__(self):
         """Remove object of a large size upon serialization.
 
         This helps in a multiprocessing context.
         """
-        self.matrix = None
-        self._labels = None
-        self.metadata = None
+        self.clear_cache()
         return self.__dict__.copy()
 
 
@@ -557,9 +630,8 @@ class HDFMatrixStore(MatrixStore):
             complevel=4,
             complib="zlib",
         )
-        hdf.put(self.matrix_uuid, self.matrix.apply(pd.to_numeric), data_columns=True)
+        hdf.put(self.matrix_uuid, self.matrix_with_labels.apply(pd.to_numeric), data_columns=True)
         hdf.close()
-
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
@@ -590,7 +662,7 @@ class CSVMatrixStore(MatrixStore):
             return pd.read_csv(fd, parse_dates=parse_dates_argument)
 
     def save(self):
-        self.matrix_base_store.write(self.matrix.to_csv(None).encode("utf-8"))
+        self.matrix_base_store.write(self.matrix_with_labels.to_csv(None).encode("utf-8"))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

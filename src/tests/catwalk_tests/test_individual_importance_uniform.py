@@ -16,13 +16,16 @@ def test_uniform_distribution_entity_id_index():
             FeatureImportanceFactory(model_rel=model, feature="feature_{}".format(i))
             for i in range(0, 10)
         ]
-        data_dict = {"entity_id": [1, 2]}
+        data_dict = {
+            "entity_id": [1, 2],
+            "label": [1, 0]
+        }
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
-        metadata = matrix_metadata_creator(indices="entity_id")
+        metadata = matrix_metadata_creator(indices=["entity_id"])
         test_store = get_matrix_store(
             project_storage,
-            pandas.DataFrame.from_dict(data_dict).set_index(metadata["indices"]),
+            pandas.DataFrame.from_dict(data_dict),
             metadata,
         )
         results = uniform_distribution(
@@ -53,13 +56,13 @@ def test_uniform_distribution_entity_date_index():
             FeatureImportanceFactory(model_rel=model, feature="feature_{}".format(i))
             for i in range(0, 10)
         ]
-        data_dict = {"entity_id": [1, 1], "as_of_date": ["2016-01-01", "2017-01-01"]}
+        data_dict = {"entity_id": [1, 1], "as_of_date": ["2016-01-01", "2017-01-01"], "label": [0, 1]}
         for imp in feature_importances:
             data_dict[imp.feature] = [0.5, 0.5]
         metadata = matrix_metadata_creator()
         test_store = get_matrix_store(
             project_storage,
-            pandas.DataFrame.from_dict(data_dict).set_index(metadata["indices"]),
+            pandas.DataFrame.from_dict(data_dict),
             metadata,
         )
         results = uniform_distribution(

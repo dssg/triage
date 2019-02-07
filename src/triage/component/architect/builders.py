@@ -314,7 +314,7 @@ class MatrixBuilder(BuilderBase):
         logging.info(f"Features data merged for matrix {matrix_uuid}")
 
         # store the matrix
-        matrix_store.matrix = output
+        matrix_store.matrix_with_labels = output
         matrix_store.metadata = matrix_metadata
         matrix_store.save()
         logging.info("Matrix {matrix_uuid} saved")

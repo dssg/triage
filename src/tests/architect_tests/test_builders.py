@@ -704,7 +704,7 @@ class TestBuildMatrix(TestCase):
                     matrix_uuid=uuid,
                     matrix_type="train",
                 )
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
@@ -737,7 +737,7 @@ class TestBuildMatrix(TestCase):
                     matrix_type="test",
                 )
 
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
     def test_hdf_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
@@ -771,7 +771,7 @@ class TestBuildMatrix(TestCase):
                     matrix_type="test",
                 )
 
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
     def test_nullcheck(self):
         f0_dict = {(r[0], r[1]): r for r in features0_pre}
@@ -884,7 +884,7 @@ class TestBuildMatrix(TestCase):
                     matrix_type="test",
                 )
 
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
                 # rerun
                 builder.make_entity_date_table = Mock()
                 builder.build_matrix(
@@ -910,7 +910,7 @@ class TestBuildMatrix(TestCase):
                 states=states,
             )
             matrix_metadata = matrix_metadata_creator(
-                state="active", test_duration="1month"
+                state="active", test_duration="1month", label_name="booking"
             )
 
             dates = [
@@ -942,9 +942,9 @@ class TestBuildMatrix(TestCase):
 
                 builder.build_matrix(**build_args)
 
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
                 assert builder.sessionmaker().query(Matrix).get(uuid)
                 # rerun
                 builder.build_matrix(**build_args)
-                assert len(matrix_storage_engine.get_store(uuid).matrix) == 5
+                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
                 assert builder.sessionmaker().query(Matrix).get(uuid)
