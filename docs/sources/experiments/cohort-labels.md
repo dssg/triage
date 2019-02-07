@@ -280,6 +280,10 @@ label_config:
   name: 'diabetes'
 ```
 
+### Alternate Label Definitions
+
+Many problems can be framed in different ways
+
 ### Testing Label Configuration
 
 If you want to test out a label query without running a whole experiment, you can test it out similarly to the cohort section above.
