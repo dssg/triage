@@ -35,7 +35,7 @@ Triage expects all entity ids to be integers.
 Triage expects the cohort to be a unique list of entity ids. Throughout the cohort example queries you will see `distinct(entity_id)` used to ensure this.
 
 ### Example: Inspections
-Let's say I am prioritizing the inspection of restaurants. One simple definition of a cohort for restaurant inspection would be to include *any restaurants that have active permits in the last year* in the cohort. Assume that these permits are contained in a table, named `permits`, with the restaurant's id, a start date, and an end date of the permit.
+Let's say I am prioritizing the inspection of food service facilities such as restaurants, caterers or grocery stores. One simple definition of a cohort for facility inspection would be to include *any facilities that have active permits in the last year* in the cohort. Assume that these permits are contained in a table, named `permits`, with the facility's id, a start date, and an end date of the permit.
 
 #### Inspections Cohort Source Table
 
