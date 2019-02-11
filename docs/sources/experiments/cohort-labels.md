@@ -280,9 +280,7 @@ label_config:
   name: 'diabetes'
 ```
 
-### Alternate Label Definitions
-
-Many problems can be framed in different ways
+Note: If you broadened the scope of this diabetes problem to concern not just diabetes diagnoses but having diabetes in general, and you had access to both positive and negative diabetes tests, you might avoid setting `include_missing_labels_in_train_as`, similar to the inspections problem, to more completely take into account the possibility that a person may or may not have diabetes.
 
 ### Testing Label Configuration
 
