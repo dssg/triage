@@ -271,6 +271,13 @@ class Experiment(Command):
             "features across different cohorts"
         )
 
+        parser.add_argument(
+            "--show-timechop",
+            action="store_true",
+            default=False,
+            help="Visualize time chops (temporal cross-validation blocks')"
+        )
+
         parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
@@ -306,6 +313,17 @@ class Experiment(Command):
         elif args.validate:
             self.experiment.validate()
             self.experiment.run()
+        elif args.show_timechop:
+            experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
+            os.makedirs(os.path.join(self.args.project_path, 'images'),
+                        exist_ok=True)
+            visualize_chops(self.experiment.chopper,
+                            save_target=os.path.join(
+                                self.args.project_path,
+                                'images',
+                                experiment_name + '.' + str(self.args.format)
+                            )
+            )
         else:
             self.experiment.run()
 
