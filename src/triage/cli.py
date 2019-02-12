@@ -91,49 +91,6 @@ class Triage(RootCommand):
         """Check the experiment config version compatible with this installation of Triage"""
         print(CONFIG_VERSION)
 
-
-@Triage.register
-class ShowTimeChops(Command):
-    """Visualize time chops (temporal cross-validation blocks')"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            type=argparse.FileType("r"),
-            help="YAML file containing temporal_config (for instance, an Experiment config)",
-        )
-        parser.add_argument(
-            "--project-path",
-            default=os.getcwd(),
-            help="path to store the Timechop blocks image",
-        )
-        parser.add_argument(
-            "--format",
-            default='png',
-            help="Format to use when storing the image"
-        )
-
-    def __call__(self, args):
-        experiment_config = yaml.load(args.config)
-        if "temporal_config" not in experiment_config:
-            raise ValueError(
-                "Passed configuration must have `temporal_config` key "
-                "in order to visualize time chops"
-            )
-        chopper = Timechop(**(experiment_config["temporal_config"]))
-        experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
-        os.makedirs(os.path.join(self.args.project_path, 'images'),
-                    exist_ok=True)
-        logging.info("Visualizing time chops")
-        visualize_chops(chopper,
-                        save_target=os.path.join(
-                            self.args.project_path,
-                            'images',
-                            experiment_name + '.' + str(self.args.format)
-                        )
-        )
-
-
 @Triage.register
 class FeatureTest(Command):
     """Test a feature aggregation by running it for one date"""
@@ -278,7 +235,7 @@ class Experiment(Command):
             help="Visualize time chops (temporal cross-validation blocks')"
         )
 
-        parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
+        parser.set_defaults(validate=False, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
     def experiment(self):
@@ -321,7 +278,7 @@ class Experiment(Command):
                             save_target=os.path.join(
                                 self.args.project_path,
                                 'images',
-                                experiment_name + '.' + str(self.args.format)
+                                experiment_name + '.png'
                             )
             )
         else:
