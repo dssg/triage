@@ -85,7 +85,8 @@ class MockMatrixStore(MatrixStore):
             ).set_index("entity_id")
         if init_labels is None:
             init_labels = []
-        self.matrix_with_labels = matrix
+        labels = matrix.pop("label")
+        self.matrix_label_tuple = matrix, labels
         self.metadata = base_metadata
         self.label_count = label_count
         self.init_labels = init_labels
@@ -190,8 +191,10 @@ def get_matrix_store(project_storage, matrix=None, metadata=None):
     if not metadata:
         metadata = matrix_metadata_creator()
     matrix_store = project_storage.matrix_storage_engine().get_store(filename_friendly_hash(metadata))
-    matrix_store.matrix_with_labels = matrix
     matrix_store.metadata = metadata
+    new_matrix = matrix.copy()
+    labels = new_matrix.pop(matrix_store.label_column_name)
+    matrix_store.matrix_label_tuple = new_matrix, labels
     matrix_store.save()
     matrix_store.clear_cache()
     if (

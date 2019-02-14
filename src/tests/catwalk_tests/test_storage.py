@@ -99,7 +99,7 @@ def matrix_stores():
         df.to_hdf(tmphdf, "matrix")
         csv = CSVMatrixStore(project_storage, [], "df")
         hdf = HDFMatrixStore(project_storage, [], "df")
-        assert csv.matrix_with_labels.equals(hdf.matrix_with_labels)
+        assert csv.design_matrix.equals(hdf.design_matrix)
         # first test with caching
         with csv.cache(), hdf.cache():
             yield csv
@@ -179,14 +179,16 @@ def test_MatrixStore_save():
         "label": [1, 0]
     }
     df = pd.DataFrame.from_dict(data)
+    labels = df.pop("label")
 
     for matrix_store in matrix_stores():
         matrix_store.metadata = METADATA
-        matrix_store.matrix_with_labels = df.copy(deep=True)
+
+        matrix_store.matrix_label_tuple = df, labels
         matrix_store.save()
         assert_frame_equal(
-            matrix_store.matrix_with_labels,
-            matrix_store._preprocess_matrix_with_labels(df)
+            matrix_store.design_matrix,
+            df
         )
 
 
@@ -206,8 +208,10 @@ def test_as_of_dates_entity_index(project_storage):
         "feature_two": [0.5, 0.6],
         "label": [0, 1],
     }
+    df = pd.DataFrame.from_dict(data)
+    labels = df.pop("label")
     matrix_store = CSVMatrixStore(project_storage, [], "test")
-    matrix_store.matrix_with_labels = pd.DataFrame.from_dict(data)
+    matrix_store.matrix_label_tuple = df, labels
     matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"], "label_name": "label"}
 
     assert matrix_store.as_of_dates == ["2016-01-01"]
@@ -221,12 +225,14 @@ def test_as_of_dates_entity_date_index(project_storage):
         "as_of_date": ["2016-01-01", "2016-01-01", "2017-01-01", "2017-01-01"],
         "label": [1, 0, 1, 0]
     }
-    matrix_store = CSVMatrixStore(project_storage, [], "test")
-    matrix_store.matrix_with_labels = pd.DataFrame.from_dict(data).set_index(
-        ["entity_id", "as_of_date"]
+    df = pd.DataFrame.from_dict(data)
+    matrix_store = CSVMatrixStore(
+        project_storage,
+        [],
+        "test",
+        matrix=df,
+        metadata={"indices": ["entity_id", "as_of_date"], "label_name": "label"}
     )
-    matrix_store.metadata = {"indices": ["entity_id", "as_of_date"], "label_name": "label"}
-
     assert matrix_store.as_of_dates == ["2016-01-01", "2017-01-01"]
 
 
@@ -239,7 +245,7 @@ def test_s3_save():
 
             tosave = CSVMatrixStore(project_storage, [], "test")
             tosave.metadata = example.metadata
-            tosave.matrix_with_labels = example.matrix_with_labels
+            tosave.matrix_label_tuple = example.matrix_label_tuple
             tosave.save()
 
             tocheck = CSVMatrixStore(project_storage, [], "test")

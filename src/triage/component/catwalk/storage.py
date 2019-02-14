@@ -325,8 +325,7 @@ class MatrixStore(object):
         metadata (dict, optional). The matrix' metadata.
             Defaults to None, which means it will be loaded from storage on demand.
     """
-    __labels = None
-    __design_matrix = None
+    _matrix_label_tuple = None
     should_cache = False
 
     def __init__(
@@ -340,9 +339,9 @@ class MatrixStore(object):
             directories, f"{matrix_uuid}.yaml"
         )
 
-        self.matrix_with_labels = matrix
         self.metadata = metadata
-        self.clear_cache()
+        if matrix is not None:
+            self._matrix_label_tuple = self._preprocess_and_split_matrix(matrix)
 
     @contextmanager
     def cache(self):
@@ -358,7 +357,7 @@ class MatrixStore(object):
             self.clear_cache()
             self.should_cache = False
 
-    def _preprocess_matrix_with_labels(self, matrix_with_labels):
+    def _preprocess_and_split_matrix(self, matrix_with_labels):
         """Perform desired preprocessing that we generally want to do after loading a matrix
 
         This includes setting the index (depending on the storage, may not be serializable)
@@ -368,61 +367,31 @@ class MatrixStore(object):
         if matrix_with_labels.index.names != indices:
             matrix_with_labels.set_index(indices, inplace=True)
         matrix_with_labels = downcast_matrix(matrix_with_labels)
-        return matrix_with_labels
-
-    def _split_matrix(self, matrix_with_labels):
-        """Split a matrix with labels into a design matrix and label vector
-
-        Returns both as a tuple
-        """
         labels = matrix_with_labels.pop(self.label_column_name)
-        # After we pop the labels from the matrix with labels it is now a design matrix
         design_matrix = matrix_with_labels
-        if self.should_cache:
-            # we neither want to store multiple copies of the matrix
-            # nor misrepresent the label-less version of the matrix as the one with labels
-            # so we explicitly set the matrix_with_labels to None in the cache
-            self.matrix_with_labels = None
-            self.design_matrix = design_matrix
-            self.labels = labels
         return design_matrix, labels
+
+    @property
+    def matrix_label_tuple(self):
+        if self._matrix_label_tuple:
+            return self._matrix_label_tuple
+        design_matrix, labels = self._preprocess_and_split_matrix(self._load())
+        if self.should_cache:
+            self._matrix_label_tuple = design_matrix, labels
+        return design_matrix, labels
+
+    @matrix_label_tuple.setter
+    def matrix_label_tuple(self, matrix_label_tuple):
+        self._matrix_label_tuple = matrix_label_tuple
 
     @property
     def design_matrix(self):
         """The matrix without the label vector, only the index and features"""
-        if self.__design_matrix is not None:
-            return self.__design_matrix
-        else:
-            return self._split_matrix(self.matrix_with_labels)[0]
-
-    @design_matrix.setter
-    def design_matrix(self, design_matrix):
-        self.__design_matrix = design_matrix
+        return self.matrix_label_tuple[0]
 
     @property
     def labels(self):
-        """The label vector of the matrix"""
-        if self.__labels is not None:
-            return self.__labels
-        return self._split_matrix(self.matrix_with_labels)[1]
-
-    @labels.setter
-    def labels(self, labels):
-        self.__labels = labels
-
-    @property
-    def matrix_with_labels(self):
-        """The matrix complete with label vector."""
-        if self.__matrix_with_labels is not None:
-            return self._preprocess_matrix_with_labels(self.__matrix_with_labels)
-        elif self.__design_matrix is not None and self.__labels is not None:
-            return self.design_matrix.assign(**{self.label_column_name: self.labels})
-        else:
-            return self._preprocess_matrix_with_labels(self._load())
-
-    @matrix_with_labels.setter
-    def matrix_with_labels(self, matrix_with_labels):
-        self.__matrix_with_labels = matrix_with_labels
+        return self.matrix_label_tuple[1]
 
     @property
     def metadata(self):
@@ -558,6 +527,10 @@ class MatrixStore(object):
                     columnset ^ desired_columnset,
                 )
 
+    @property
+    def full_matrix_for_saving(self):
+        return self.design_matrix.assign(**{self.label_column_name: self.labels})
+
     def load_metadata(self):
         """Load metadata from storage"""
         with self.metadata_base_store.open("rb") as fd:
@@ -567,8 +540,7 @@ class MatrixStore(object):
         raise NotImplementedError
 
     def clear_cache(self):
-        self.design_matrix = None
-        self.labels = None
+        self._matrix_label_tuple = None
         self.metadata = None
 
     def __getstate__(self):
@@ -630,7 +602,7 @@ class HDFMatrixStore(MatrixStore):
             complevel=4,
             complib="zlib",
         )
-        hdf.put(self.matrix_uuid, self.matrix_with_labels.apply(pd.to_numeric), data_columns=True)
+        hdf.put(self.matrix_uuid, self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
         hdf.close()
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
@@ -662,7 +634,7 @@ class CSVMatrixStore(MatrixStore):
             return pd.read_csv(fd, parse_dates=parse_dates_argument)
 
     def save(self):
-        self.matrix_base_store.write(self.matrix_with_labels.to_csv(None).encode("utf-8"))
+        self.matrix_base_store.write(self.full_matrix_for_saving.to_csv(None).encode("utf-8"))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

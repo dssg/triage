@@ -27,7 +27,6 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
             zipped_iter = zip(matrix.index.values, [None] * len(matrix.index.values))
         else:
             zipped_iter = zip(matrix.index.values, matrix[feature_name].tolist())
-
         for row in zipped_iter:
             index_values, feature_value = row
             entity_id = index_values[index_of_entity]

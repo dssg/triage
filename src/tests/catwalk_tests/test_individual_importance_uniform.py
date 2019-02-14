@@ -2,6 +2,7 @@ import pandas
 
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
 from tests.utils import rig_engines, get_matrix_store, matrix_metadata_creator
+import datetime
 
 from tests.results_tests.factories import (
     ModelFactory,
@@ -68,7 +69,7 @@ def test_uniform_distribution_entity_date_index():
         results = uniform_distribution(
             db_engine,
             model_id=model.model_id,
-            as_of_date="2016-01-01",
+            as_of_date=datetime.datetime(2016, 1, 1),
             test_matrix_store=test_store,
             n_ranks=5,
         )
