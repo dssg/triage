@@ -272,15 +272,15 @@ class Experiment(Command):
             self.experiment.run()
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
-            os.makedirs(os.path.join(self.args.project_path, 'images'),
-                        exist_ok=True)
-            visualize_chops(self.experiment.chopper,
-                            save_target=os.path.join(
-                                self.args.project_path,
-                                'images',
-                                experiment_name + '.png'
-                            )
-            )
+            project_storage = self.experiment.project_storage
+            timechop_store = project_storage.get_store(
+                ["images"],
+                f"{experiment_name}.png"
+                )
+
+            with timechop_store.open('wb') as fd:
+                visualize_chops(self.experiment.chopper, save_target=fd)
+
         else:
             self.experiment.run()
 
