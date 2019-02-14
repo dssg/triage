@@ -91,30 +91,6 @@ class Triage(RootCommand):
         """Check the experiment config version compatible with this installation of Triage"""
         print(CONFIG_VERSION)
 
-
-@Triage.register
-class ShowTimeChops(Command):
-    """Visualize time chops (temporal cross-validation blocks')"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            type=argparse.FileType("r"),
-            help="YAML file containing temporal_config (for instance, an Experiment config)",
-        )
-
-    def __call__(self, args):
-        experiment_config = yaml.load(args.config)
-        if "temporal_config" not in experiment_config:
-            raise ValueError(
-                "Passed configuration must have `temporal_config` key "
-                "in order to visualize time chops"
-            )
-        chopper = Timechop(**(experiment_config["temporal_config"]))
-        logging.info("Visualizing time chops")
-        visualize_chops(chopper)
-
-
 @Triage.register
 class FeatureTest(Command):
     """Test a feature aggregation by running it for one date"""
@@ -252,7 +228,14 @@ class Experiment(Command):
             "features across different cohorts"
         )
 
-        parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
+        parser.add_argument(
+            "--show-timechop",
+            action="store_true",
+            default=False,
+            help="Visualize time chops (temporal cross-validation blocks')"
+        )
+
+        parser.set_defaults(validate=False, validate_only=False, materialize_fromobjs=True)
 
     @cachedproperty
     def experiment(self):
@@ -287,6 +270,17 @@ class Experiment(Command):
         elif args.validate:
             self.experiment.validate()
             self.experiment.run()
+        elif args.show_timechop:
+            experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
+            project_storage = self.experiment.project_storage
+            timechop_store = project_storage.get_store(
+                ["images"],
+                f"{experiment_name}.png"
+                )
+
+            with timechop_store.open('wb') as fd:
+                visualize_chops(self.experiment.chopper, save_target=fd)
+
         else:
             self.experiment.run()
 
