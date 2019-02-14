@@ -75,14 +75,13 @@ class ModelGroup(luigi.Task):
         self.output().done()
 
     def output(self):
-        # return PostgresRowTarget(table="model_metadata_groups")
         return RunAnywayTarget(self)
 
     def requires(self):
-        for as_of_time in self.time_config["train_matrix"]["as_of_times"]:
+        for train_as_of_time in self.time_config["train_matrix"]["as_of_times"]:
             yield Evaluation(
                     mg_config=self.mg_config,
-                    as_of_time=datetime.strptime(as_of_time, "%Y-%m-%d %H:%M:%S"),
+                    train_as_of_time=datetime.strptime(train_as_of_time, "%Y-%m-%d %H:%M:%S"),
                     train_info=self.time_config["train_matrix"]["train_info"],
                     test_matrices=self.time_config["test_matrices"]
                 )
@@ -90,7 +89,7 @@ class ModelGroup(luigi.Task):
 
 class Evaluation(luigi.Task):
     mg_config = luigi.DictParameter()
-    as_of_time = luigi.DateParameter()
+    train_as_of_time = luigi.DateParameter()
     train_info = luigi.DictParameter(significant=False)
     test_matrices = luigi.DictParameter(significant=False)
 
@@ -103,21 +102,44 @@ class Evaluation(luigi.Task):
 
     def requires(self):
         return [
-                Model(
-                    mg_config=self.mg_config,
-                    as_of_time=self.as_of_time,
-                    train_info=self.train_info,
-                ),
                 Testing(
                     test_matrices=self.test_matrices,
-                    mg_config=self.mg_config
+                    train_as_of_time=self.train_as_of_time,
+                    mg_config=self.mg_config,
+                    train_info=self.train_info
                     )
                 ]
 
 
+class Testing(luigi.Task):
+    test_matrices = luigi.DictParameter()
+    mg_config = luigi.DictParameter()
+    train_as_of_time = luigi.DateParameter()
+    train_info = luigi.DictParameter()
+
+    def run(self):
+        self.output().done()
+
+    def output(self):
+        return RunAnywayTarget(self)
+
+    def requires(self):
+        for test_matrix in self.test_matrices:
+            for test_as_of_time in test_matrix["as_of_times"]:
+                yield TestingMatrix(
+                        test_as_of_time=datetime.strptime(test_as_of_time, "%Y-%m-%d %H:%M:%S"),
+                        feature_groups=self.mg_config["feature_groups"]
+                        )
+                yield Model(
+                        mg_config=self.mg_config,
+                        train_as_of_time=self.train_as_of_time,
+                        train_info=self.train_info,
+                        )
+
+
 class Model(luigi.Task):
     mg_config = luigi.DictParameter()
-    as_of_time = luigi.DateParameter()
+    train_as_of_time = luigi.DateParameter()
     train_info = luigi.DictParameter(significant=False)
 
     def run(self):
@@ -133,17 +155,17 @@ class Model(luigi.Task):
 
     def requires(self):
         return TrainingMatrix(
-                as_of_time=self.as_of_time,
+                train_as_of_time=self.train_as_of_time,
                 feature_groups=self.mg_config["feature_groups"]
                 )
 
 
 class TrainingMatrix(luigi.Task):
-    as_of_time = luigi.DateParameter()
+    train_as_of_time = luigi.DateParameter()
     feature_groups = luigi.ListParameter()
 
     def run(self):
-        print(f"Create training matrix for {self.as_of_time}")
+        print(f"Create training matrix for {self.train_as_of_time}")
         time.sleep(3)
         self.output().done()
 
@@ -155,11 +177,11 @@ class TrainingMatrix(luigi.Task):
 
 
 class TestingMatrix(luigi.Task):
-    as_of_time = luigi.DateParameter()
+    test_as_of_time = luigi.DateParameter()
     feature_groups = luigi.ListParameter()
 
     def run(self):
-        print(f"Creating testing matrix for {self.as_of_time}")
+        print(f"Creating testing matrix for {self.test_as_of_time}")
         time.sleep(2)
         self.output().done()
 
@@ -168,25 +190,6 @@ class TestingMatrix(luigi.Task):
 
     def requires(self):
         return FeatureCreator(feature_groups=self.feature_groups)
-
-
-class Testing(luigi.Task):
-    test_matrices = luigi.DictParameter()
-    mg_config = luigi.DictParameter()
-
-    def run(self):
-        self.output().done()
-
-    def output(self):
-        return RunAnywayTarget(self)
-
-    def requires(self):
-        for test_matrix in self.test_matrices:
-            for as_of_time in test_matrix["as_of_times"]:
-                yield TestingMatrix(
-                        as_of_time=as_of_time,
-                        feature_groups=self.mg_config["feature_groups"]
-                        )
 
 
 class FeatureCreator(luigi.Task):
