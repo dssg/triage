@@ -9,18 +9,18 @@ class ModelGroupsCreator(luigi.WrapperTask):
         {
             "model_type": "sklearn.tree.DecisionTreeClassifier",
             "hyperparams": {"maxdepth": 2},
-            "feature_groups": ["inspection", "inspections", "results", "risks"]
+            "feature_groups": ["inspections", "results", "risks"]
         },
         {
             "model_type": "sklearn.ensemble.RandomForestClassifier",
             "hyperparams": {"n_estimator": 100},
-            "feature_groups": ["inspection", "inspections", "results"]
+            "feature_groups": ["inspections", "results"]
 
         },
         {
             "model_type": "tf.estimator.DNNClassifier",
             "hyperparams": {"hidden_units": [256, 32], "n_classes": 2, "dropout": 0.1},
-            "feature_groups": ["inspection", "inspections", "results", "risks"]
+            "feature_groups": ["inspections", "results", "risks"]
         }
     ]
 
@@ -147,7 +147,7 @@ class Model(luigi.Task):
         Instantiate the model and start training
         """
         print(f"Training {self.mg_config['model_type']}")
-        time.sleep(3)
+        time.sleep(1)
         self.output().done()
 
     def output(self):
@@ -166,7 +166,7 @@ class TrainingMatrix(luigi.Task):
 
     def run(self):
         print(f"Create training matrix for {self.train_as_of_time}")
-        time.sleep(3)
+        time.sleep(1)
         self.output().done()
 
     def output(self):
@@ -182,7 +182,7 @@ class TestingMatrix(luigi.Task):
 
     def run(self):
         print(f"Creating testing matrix for {self.test_as_of_time}")
-        time.sleep(2)
+        time.sleep(1)
         self.output().done()
 
     def output(self):
@@ -196,7 +196,29 @@ class FeatureCreator(luigi.Task):
     feature_groups = luigi.ListParameter()
 
     def run(self):
-        time.sleep(3)
+        time.sleep(1)
+        for feature_group in self.feature_groups:
+            yield FeatureGroupFactory.factory(feature_group)
+        self.output().done()
+
+    def output(self):
+        return RunAnywayTarget(self)
+
+
+class FeatureGroupFactory(object):
+    @staticmethod
+    def factory(feature_group):
+        for feature_object in FeatureGroupFactory.__subclasses__():
+            print(feature_object.name)
+            if feature_object.name == feature_group:
+                return feature_object()
+
+
+class FeatureGroupInspectionsCreator(FeatureGroupFactory, luigi.Task):
+    name = "inspections"
+
+    def run(self):
+        time.sleep(1)
         self.output().done()
 
     def output(self):
@@ -204,3 +226,32 @@ class FeatureCreator(luigi.Task):
 
     def requires(self):
         pass
+
+
+class FeatureGroupResultsCreator(FeatureGroupFactory, luigi.Task):
+    name = "results"
+
+    def run(self):
+        time.sleep(1)
+        self.output().done()
+
+    def output(self):
+        return RunAnywayTarget(self)
+
+    def requires(self):
+        pass
+
+
+class FeatureGroupRisksCreator(FeatureGroupFactory, luigi.Task):
+    name = "risks"
+
+    def run(self):
+        time.sleep(1)
+        self.output().done()
+
+    def output(self):
+        return RunAnywayTarget(self)
+
+    def requires(self):
+        pass
+
