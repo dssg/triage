@@ -1,5 +1,6 @@
 import luigi
 from luigi.contrib.simulate import RunAnywayTarget
+from luigi.parameter import ParameterVisibility
 import time
 from datetime import datetime
 
@@ -68,7 +69,7 @@ class ModelGroupsCreator(luigi.WrapperTask):
 
 class ModelGroup(luigi.Task):
     mg_config = luigi.DictParameter()
-    time_config = luigi.DictParameter(significant=False)
+    time_config = luigi.DictParameter(significant=False, visibility=ParameterVisibility.HIDDEN)
 
     def run(self):
         print("Write model group information into db")
@@ -90,8 +91,8 @@ class ModelGroup(luigi.Task):
 class Evaluation(luigi.Task):
     mg_config = luigi.DictParameter()
     train_as_of_time = luigi.DateParameter()
-    train_info = luigi.DictParameter(significant=False)
-    test_matrices = luigi.DictParameter(significant=False)
+    train_info = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
+    test_matrices = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
 
     def run(self):
         time.sleep(1)
@@ -115,7 +116,7 @@ class Testing(luigi.Task):
     test_matrices = luigi.DictParameter()
     mg_config = luigi.DictParameter()
     train_as_of_time = luigi.DateParameter()
-    train_info = luigi.DictParameter()
+    train_info = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
 
     def run(self):
         self.output().done()
@@ -140,7 +141,7 @@ class Testing(luigi.Task):
 class Model(luigi.Task):
     mg_config = luigi.DictParameter()
     train_as_of_time = luigi.DateParameter()
-    train_info = luigi.DictParameter(significant=False)
+    train_info = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
 
     def run(self):
         """
