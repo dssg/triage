@@ -247,6 +247,7 @@ Documentation
 -------------
 
 - All classes/methods should have docstrings describing their purpose
+- If the code adds components to the Experiment or makes major changes to the internal architecture of the experiment, update [Experiment Architecture](docs/sources/experiments/architecture.md)
 - If the code adds or changes experiment configuration values, the [example experiment config](example/config/experiment.yaml) should be updated with the new or changed experiment configuration, and instructions for using it.
 - If the code adds to or changes the behavior of the Experiment, update:
     - [Experiment Algorithm Page](docs/sources/experiments/algorithm.md)
