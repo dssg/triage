@@ -241,6 +241,8 @@ def test_s3_save():
         client = boto3.client("s3")
         client.create_bucket(Bucket="fake-matrix-bucket", ACL="public-read-write")
         for example in matrix_stores():
+            if not isinstance(example, CSVMatrixStore):
+                continue
             project_storage = ProjectStorage("s3://fake-matrix-bucket")
 
             tosave = CSVMatrixStore(project_storage, [], "test")
@@ -251,4 +253,3 @@ def test_s3_save():
             tocheck = CSVMatrixStore(project_storage, [], "test")
             assert tocheck.metadata == example.metadata
             assert tocheck.design_matrix.to_dict() == example.design_matrix.to_dict()
-            break
