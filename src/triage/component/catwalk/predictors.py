@@ -188,7 +188,6 @@ class Predictor(object):
                         ]
                     )
                 f.seek(0)
-                f.seek(0)
                 postgres_copy.copy_from(f, Prediction_obj, self.db_engine, format="csv")
         else:
             logging.info(

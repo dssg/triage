@@ -326,11 +326,11 @@ class MatrixStore(object):
             Defaults to None, which means it will be loaded from storage on demand.
     """
     _matrix_label_tuple = None
-    should_cache = False
 
     def __init__(
         self, project_storage, directories, matrix_uuid, matrix=None, metadata=None
     ):
+        self.should_cache = False
         self.matrix_uuid = matrix_uuid
         self.matrix_base_store = project_storage.get_store(
             directories, f"{matrix_uuid}.{self.suffix}"
@@ -398,12 +398,11 @@ class MatrixStore(object):
         """The raw metadata. Will load from storage into memory if not already loaded"""
         if self.__metadata is not None:
             return self.__metadata
-        if not self.should_cache or self.__metadata is None:
-            metadata = self.load_metadata()
-            if self.should_cache:
-                self.__metadata = metadata
-            else:
-                return metadata
+        metadata = self.load_metadata()
+        if self.should_cache:
+            self.__metadata = metadata
+        else:
+            return metadata
         return self.__metadata
 
     @metadata.setter
