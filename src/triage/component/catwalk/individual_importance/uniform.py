@@ -27,7 +27,6 @@ def _entity_feature_values(matrix, feature_name, as_of_date=None):
             zipped_iter = zip(matrix.index.values, [None] * len(matrix.index.values))
         else:
             zipped_iter = zip(matrix.index.values, matrix[feature_name].tolist())
-
         for row in zipped_iter:
             index_values, feature_value = row
             entity_id = index_values[index_of_entity]
@@ -64,7 +63,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
     results = []
 
     for feature_name, feature_importance in global_feature_importances:
-        efv = _entity_feature_values(test_matrix_store.matrix, feature_name, as_of_date)
+        efv = _entity_feature_values(test_matrix_store.design_matrix, feature_name, as_of_date)
         for entity_id, feature_value in efv:
             results.append(
                 {

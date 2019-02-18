@@ -106,9 +106,8 @@ class ModelTrainer(object):
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls(**parameters)
-        y = matrix_store.labels()
 
-        return instance.fit(matrix_store.matrix, y), matrix_store.matrix.columns
+        return instance.fit(matrix_store.design_matrix, matrix_store.labels)
 
     @db_retry
     def _save_feature_importances(self, model_id, feature_importances, feature_names):
@@ -250,7 +249,7 @@ class ModelTrainer(object):
         """
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logging.info("Training and storing model for matrix uuid %s", matrix_store.uuid)
-        trained_model, feature_names = self._train(matrix_store, class_path, parameters)
+        trained_model = self._train(matrix_store, class_path, parameters)
 
         unique_parameters = self.unique_parameters(parameters)
 
@@ -268,7 +267,7 @@ class ModelTrainer(object):
         model_id = self._write_model_to_db(
             class_path,
             unique_parameters,
-            feature_names,
+            matrix_store.columns(include_label=False),
             model_hash,
             trained_model,
             model_group_id,

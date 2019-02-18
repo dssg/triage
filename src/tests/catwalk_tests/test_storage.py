@@ -7,6 +7,7 @@ import yaml
 from moto import mock_s3
 import boto3
 from numpy.testing import assert_almost_equal
+from pandas.testing import assert_frame_equal
 from unittest import mock
 import pytest
 
@@ -94,12 +95,19 @@ def matrix_stores():
         tmphdf = os.path.join(tmpdir, "df.h5")
         with open(tmpyaml, "w") as outfile:
             yaml.dump(METADATA, outfile, default_flow_style=False)
-            df.to_csv(tmpcsv)
-            df.to_hdf(tmphdf, "matrix")
-            csv = CSVMatrixStore(project_storage, [], "df")
-            hdf = HDFMatrixStore(project_storage, [], "df")
-            assert csv.matrix.equals(hdf.matrix)
-            yield from [csv, hdf]
+        df.to_csv(tmpcsv)
+        df.to_hdf(tmphdf, "matrix")
+        csv = CSVMatrixStore(project_storage, [], "df")
+        hdf = HDFMatrixStore(project_storage, [], "df")
+        assert csv.design_matrix.equals(hdf.design_matrix)
+        # first test with caching
+        with csv.cache(), hdf.cache():
+            yield csv
+            yield hdf
+        # with the caching out of scope they will be nuked
+        # and these last two versions will not have any cache
+        yield csv
+        yield hdf
 
 
 def test_MatrixStore_empty():
@@ -157,13 +165,40 @@ def test_MatrixStore_sorted_columns_mismatch():
             ).values.tolist()
 
 
-def test_MatrixStore_save():
+def test_MatrixStore_labels_idempotency():
     for matrix_store in matrix_stores():
-        original_dict = matrix_store.matrix.to_dict()
+        assert matrix_store.labels.tolist() == [0, 1]
+        assert matrix_store.labels.tolist() == [0, 1]
+
+
+def test_MatrixStore_save():
+    data = {
+        "entity_id": [1, 2],
+        "feature_one": [0.5, 0.6],
+        "feature_two": [0.5, 0.6],
+        "label": [1, 0]
+    }
+    df = pd.DataFrame.from_dict(data)
+    labels = df.pop("label")
+
+    for matrix_store in matrix_stores():
+        matrix_store.metadata = METADATA
+
+        matrix_store.matrix_label_tuple = df, labels
         matrix_store.save()
-        # nuke the cache to force reload
-        matrix_store.matrix = None
-        assert matrix_store.matrix.to_dict() == original_dict
+        assert_frame_equal(
+            matrix_store.design_matrix,
+            df
+        )
+
+
+def test_MatrixStore_caching():
+    for matrix_store in matrix_stores():
+        with matrix_store.cache():
+            matrix = matrix_store.design_matrix
+            with mock.patch.object(matrix_store, "_load") as load_mock:
+                assert_frame_equal(matrix_store.design_matrix, matrix)
+                assert not load_mock.called
 
 
 def test_as_of_dates_entity_index(project_storage):
@@ -171,10 +206,13 @@ def test_as_of_dates_entity_index(project_storage):
         "entity_id": [1, 2],
         "feature_one": [0.5, 0.6],
         "feature_two": [0.5, 0.6],
+        "label": [0, 1],
     }
+    df = pd.DataFrame.from_dict(data)
+    labels = df.pop("label")
     matrix_store = CSVMatrixStore(project_storage, [], "test")
-    matrix_store.matrix = pd.DataFrame.from_dict(data)
-    matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"]}
+    matrix_store.matrix_label_tuple = df, labels
+    matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"], "label_name": "label"}
 
     assert matrix_store.as_of_dates == ["2016-01-01"]
 
@@ -185,29 +223,33 @@ def test_as_of_dates_entity_date_index(project_storage):
         "feature_one": [0.5, 0.6, 0.5, 0.6],
         "feature_two": [0.5, 0.6, 0.5, 0.6],
         "as_of_date": ["2016-01-01", "2016-01-01", "2017-01-01", "2017-01-01"],
+        "label": [1, 0, 1, 0]
     }
-    matrix_store = CSVMatrixStore(project_storage, [], "test")
-    matrix_store.matrix = pd.DataFrame.from_dict(data).set_index(
-        ["entity_id", "as_of_date"]
+    df = pd.DataFrame.from_dict(data)
+    matrix_store = CSVMatrixStore(
+        project_storage,
+        [],
+        "test",
+        matrix=df,
+        metadata={"indices": ["entity_id", "as_of_date"], "label_name": "label"}
     )
-    matrix_store.metadata = {"indices": ["entity_id", "as_of_date"]}
-
     assert matrix_store.as_of_dates == ["2016-01-01", "2017-01-01"]
 
 
 def test_s3_save():
     with mock_s3():
-
         client = boto3.client("s3")
         client.create_bucket(Bucket="fake-matrix-bucket", ACL="public-read-write")
-        example = next(matrix_stores())
-        project_storage = ProjectStorage("s3://fake-matrix-bucket")
+        for example in matrix_stores():
+            if not isinstance(example, CSVMatrixStore):
+                continue
+            project_storage = ProjectStorage("s3://fake-matrix-bucket")
 
-        tosave = CSVMatrixStore(project_storage, [], "test")
-        tosave.matrix = example.matrix
-        tosave.metadata = example.metadata
-        tosave.save()
+            tosave = CSVMatrixStore(project_storage, [], "test")
+            tosave.metadata = example.metadata
+            tosave.matrix_label_tuple = example.matrix_label_tuple
+            tosave.save()
 
-        tocheck = CSVMatrixStore(project_storage, [], "test")
-        assert tocheck.metadata == example.metadata
-        assert tocheck.matrix.to_dict() == example.matrix.to_dict()
+            tocheck = CSVMatrixStore(project_storage, [], "test")
+            assert tocheck.metadata == example.metadata
+            assert tocheck.design_matrix.to_dict() == example.design_matrix.to_dict()

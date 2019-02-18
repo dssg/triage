@@ -313,9 +313,10 @@ class MatrixBuilder(BuilderBase):
         output = self.merge_feature_csvs(dataframes, matrix_uuid)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
 
-        # store the matrix
-        matrix_store.matrix = output
         matrix_store.metadata = matrix_metadata
+        # store the matrix
+        labels = output.pop(matrix_store.label_column_name)
+        matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
         logging.info("Matrix {matrix_uuid} saved")
         # If completely archived, save its information to matrices table
