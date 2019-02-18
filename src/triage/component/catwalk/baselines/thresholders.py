@@ -4,24 +4,23 @@ from six import string_types
 
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
+OPERATOR_METHODS = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "eq"}
 REQUIRED_KEYS = frozenset(["feature_name", "operator", "threshold"])
 
 
-def get_operator_method(operator_string, rule):
+def get_operator_method(operator_string):
     """ Convert the user-passed operator into the the name of the apprpriate
     pandas method.
     """
-    operator_lookup = {">": "gt", ">=": "ge", "<": "lt", "<=": "le", "==": "eq"}
     try:
-        operator_method = operator_lookup[operator_string]
+        operator_method = OPERATOR_METHODS[operator_string]
     except KeyError:
         raise ValueError(
             (
-                'Operator "{operator}" extracted from rule "{rule}" is not a '
+                "Operator '{operator}' extracted from rule is not a "
                 "supported operator ({supported_operators}).".format(
                     operator=operator_string,
-                    rule=rule,
-                    supported_operators=operator_lookup.keys(),
+                    supported_operators=OPERATOR_METHODS.keys(),
                 )
             )
         )
@@ -99,7 +98,7 @@ class SimpleThresholder(object):
                             )
                         )
                     )
-                rule["operator"] = get_operator_method(rule["operator"], rule)
+                rule["operator"] = get_operator_method(rule["operator"])
                 converted_rules.append(rule)
 
         vars(self)["rules"] = converted_rules
@@ -141,7 +140,7 @@ class SimpleThresholder(object):
                 )
             )
 
-        operator = get_operator_method(components[1], rule)
+        operator = get_operator_method(components[1])
 
         return {
             "feature_name": components[0],
