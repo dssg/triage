@@ -547,8 +547,10 @@ class MatrixStore(object):
 
         This helps in a multiprocessing context.
         """
-        self.clear_cache()
-        return self.__dict__.copy()
+        state = self.__dict__.copy()
+        state['_matrix_label_tuple'] = None
+        state['__metadata'] = None
+        return state
 
 
 class HDFMatrixStore(MatrixStore):
