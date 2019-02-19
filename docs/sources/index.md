@@ -11,47 +11,48 @@ Predictive analytics projects require the coordination of many different tasks, 
 
 Triage aims to provide interfaces to these different phases of a project, such as an `Experiment`. Each phase is defined by configuration specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.
 
-The first phase implemented in triage is the `Experiment`. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
+<script>mermaid.initialize({startOnLoad:true});</script>
+
+The phases currently implemented in Triage are:
+
+<div class="mermaid">
+graph LR
+    Experiment["Experiment (create features and models)"]
+    Audition["Audition (pick the best models)"]
+    Postmodeling["Postmodeling (dive into best models)"]
+
+    Experiment --> Audition
+    Audition --> Postmodeling
+</div>
+
+### Experiment
+
+>> I have a bunch of data. How do I create some models?
+
+An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.
 
 
-## Running an Experiment
+If you're new to Triage Experiments, check out the [Dirty Duck tutorial](https://dssg.github.io/dirtyduck). It's a guided tour through Triage functionality using a real-world problem.
 
-See the [Running an Experiment](experiments/running.md) documentation.
+If you're familiar with creating an Experiment but want to see more reference documentation and some deep dives, check out the links on the side.
 
-## Upgrading an Experiment config
+## Audition
 
-* [v5 &rarr; v6](experiments/upgrade-to-v6.md)
-* [v3/v4 &rarr; v5](experiments/upgrade-to-v5.md)
+>> I just trained a bunch of models. How do I pick the best ones?
+
+Audition is a tool for picking the best trained classifiers from a predictive analytics experiment. Often, production-scale experiments will come up with thousands of trained models, and sifting through all of those results can be time-consuming even after calculating the usual basic metrics like precision and recall. Which metrics matter most? Should you prioritize the best metric value over time or treat recent data as most important? Is low metric variance important? The answers to questions like these may not be obvious up front. Audition introduces a structured, semi-automated way of filtering models based on what you consider important, with an interface that is easy to interact with from a Jupyter notebook (with plots), but is driven by configuration that can easily be scripted.
+
+To get started with Audition, check out its [README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
+
+## Postmodeling
+
+>> What is the distribution of my scores? What is generating a higher FPR in model x compared to model y? What is the single most important feature in my models?`
+
+This questions, and other ones, are the kind of inquiries that the triage user may have in mind when scrolling trough the models selected by the Audition component. Choosing the right model for deployment and exploring its predictions and behavior in time is a pivotal task. postmodeling will help to answer some of this questions by exploring the outcomes of the model, and exploring "deeply" into the model behavior across time and features.
+
+To get started with Postmodeling, check out its [README](https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling/contrast)
 
 
 ## Background
 
 Triage is developed at the University of Chicago's [Center For Data Science and Public Policy](http://dsapp.uchicago.edu). We created it in response to commonly occuring challenges we've encountered and patterns we've developed while working on projects for our partners.
-
-## Major Components Used by Triage
-
-Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if 
-
-* [Architect](https://github.com/dssg/architect): Plan, design and build train and test matrices. Includes feature and label generation.
-* [Collate](https://github.com/dssg/collate): Aggregation SQL Query Builder. This is used by the Architect to build features.
-* [Timechop](https://github.com/dssg/timechop): Generate temporal cross-validation time windows for matrix creation
-* [Metta-Data](https://github.com/dssg/metta-data): Train and test matrix storage
-* [Catwalk](https://github.com/dssg/catwalk): Training, testing, and evaluating machine learning classifier models
-* [Results Schema](https://github.com/dssg/results-schema): Generate a database schema suitable for storing the results of modeling runs
-
-
-## Design Goals
-
-There are two overarching design goals for Triage:
-
-- All configuration necessary to run the full experiment from the external interface (ie, Experiment subclasses) from beginning to end must be easily serializable and machine-constructable, to allow the eventual development of tools for users to design experiments. 
-
-- All core functionality must be usable outside of a specific pipeline context or workflow manager. There are many good workflow managers; everybody has their favorite, and core functionality should not be designed to work with specific execution expectations.
-
-
-## Future Plans
-
-- Generation and Management of lists (ie for inspections) by various criteria
-- Integration of components with various workflow managers, like [Drain](https://github.com/dssg/drain) and [Luigi](https://github.com/spotify/luigi).
-- Comprehensive leakage testing of an experiment's modeling run
-- Feature Generation Wizard
