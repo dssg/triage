@@ -14,12 +14,16 @@ extra_javascript:
 
 pages:
   - Home: index.md
-  - Experiment Documentation:
+  - Dirty Duck Tutorial: https://dssg.github.io/dirtyduck
+  - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
     - Running an Experiment: experiments/running.md
+    - Upgrading an Experiment: experiments/upgrading.md
     - Temporal Validation Deep Dive: experiments/temporal-validation.md
     - Cohort and Label Deep Dive: experiments/cohort-labels.md
     - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
+  - Audition: https://github.com/dssg/triage/tree/master/src/triage/component/audition
+  - Postmodeling: https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling
