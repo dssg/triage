@@ -170,7 +170,8 @@ class Experiment(Command):
 
     def __init__(self, parser):
         parser.add_argument(
-            "config", type=argparse.FileType("r"), help="config file for Experiment"
+            "config",
+            help="config file for Experiment"
         )
         parser.add_argument(
             "--project-path",
