@@ -4,7 +4,7 @@
 model_groups:
     query: |
         SELECT DISTINCT(model_group_id)
-        FROM results.model_groups
+        FROM model_metadata.model_groups
 
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 # The timestamps when audition happens for each model group.
@@ -15,7 +15,7 @@ model_groups:
 time_stamps:
     query: |
         SELECT DISTINCT train_end_time
-        FROM results.models
+        FROM model_metadata.models
         WHERE model_group_id IN ({})
         AND EXTRACT(DAY FROM train_end_time) IN (1)
         AND train_end_time >= '2012-01-01'
@@ -33,40 +33,25 @@ filter:
 # RULES
 # The selection rules for Audition to simulate the model selection process for each timestamps. 
 # More rules can be found in the README.
+# The metric and parameter in shared_parameters should be the same in the filter section as well. 
 rules:
     -
         shared_parameters:
             -
                 metric: 'precision@'
                 parameter: '50_abs'
-            -
-                metric: 'recall@'
-                parameter: '50_abs'
         selection_rules:
             -
                 name: 'best_current_value' # Pick the model group with the best current metric value
-                num: 3
+                n: 3
             -
                 name: 'best_average_value' # Pick the model with the highest average metric value
-                num: 3
+                n: 3
             -
                 name: 'lowest_metric_variance' # Pick the model with the lowest metric variance
-                num: 3
+                n: 3
             -
                 name: 'most_frequent_best_dist' # Pick the model that is most frequently within `dist_from_best_case`
                 dist_from_best_case: [0.05]
-                num: 3
-
-    -
-        shared_parameters:
-            -
-                metric1: 'precision@'
-                parameter1: '50_abs'
-        selection_rules:
-            -
-                name: 'best_average_two_metrics' #  Pick the model with the highest average combined value to date of two metrics weighted together using metric1_weight
-                metric2: 'recall@'
-                parameter2: '50_abs'
-                metric1_weight: 0.5
-                num: 3
+                n: 3
 
