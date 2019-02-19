@@ -55,16 +55,3 @@ rules:
                 dist_from_best_case: [0.05]
                 n: 3
 
-    -
-        shared_parameters:
-            -
-                metric1: 'precision@'
-                parameter1: '50_abs'
-        selection_rules:
-            -
-                name: 'best_average_two_metrics' #  Pick the model with the highest average combined value to date of two metrics weighted together using metric1_weight
-                metric2: 'recall@'
-                parameter2: '50_abs'
-                metric1_weight: 0.5
-                n: 3
-
