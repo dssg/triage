@@ -16,6 +16,7 @@ from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop import Timechop
 from triage.component.timechop.plotting import visualize_chops
+from triage.component.catwalk.storage import Store
 from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
 from triage.experiments import (
     CONFIG_VERSION,
@@ -145,7 +146,8 @@ class Experiment(Command):
 
     def __init__(self, parser):
         parser.add_argument(
-            "config", type=argparse.FileType("r"), help="config file for Experiment"
+            "config",
+            help="config file for Experiment"
         )
         parser.add_argument(
             "--project-path",
@@ -237,11 +239,15 @@ class Experiment(Command):
 
         parser.set_defaults(validate=False, validate_only=False, materialize_fromobjs=True)
 
+    def _load_config(self):
+        config_file = Store.factory(self.args.config)
+        return yaml.load(config_file.load())
+
     @cachedproperty
     def experiment(self):
         self.root.setup()  # Loading configuration (if exists)
         db_url = self.root.db_url
-        config = yaml.load(self.args.config)
+        config = self._load_config()
         db_engine = create_engine(db_url)
         common_kwargs = {
             "db_engine": db_engine,
