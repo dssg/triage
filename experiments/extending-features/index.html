@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Extending Feature Generation - Triage Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Extending Feature Generation";
+    var mkdocs_page_input_path = "experiments/extending-features.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Triage Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../defining/">Defining an Experiment</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../feature-testing/">Testing Feature Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../running/">Running an Experiment</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../upgrading/">Upgrading an Experiment</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../cohort-labels/">Cohort and Label Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../features/">Feature Generation Recipe Book</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../algorithm/">Experiment Algorithm</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../architecture/">Experiment Architecture</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Triage Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Extending Feature Generation</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="http://github.com/dssg/triage/blob/master/docs/templates/experiments/extending-features.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h2 id="extending-feature-generation">Extending Feature Generation<a class="headerlink" href="#extending-feature-generation" title="Permanent link">&para;</a></h2>
+<p>This document describes how to extend Triage's feature generation capabilities by writing new FeatureBlock classes and incorporating them into Experiments.</p>
+<h3 id="what-is-a-featureblock">What is a FeatureBlock?<a class="headerlink" href="#what-is-a-featureblock" title="Permanent link">&para;</a></h3>
+<p>A FeatureBlock represents a single feature table in the database and how to generate it. If you're familiar with <code>collate</code> parlance, a <code>SpacetimeAggregation</code> is similar in scope to a FeatureBlock. A <code>FeatureBlock</code> class can be instantiated with whatever arguments it needs,and from there can provide queries to produce its output feature table. Full-size Triage experiments tend to contain multiple feature blocks. These all live in a collection as the <code>experiment.feature_blocks</code> property in the Experiment.</p>
+<h3 id="what-existing-featureblock-classes-can-i-use">What existing FeatureBlock classes can I use?<a class="headerlink" href="#what-existing-featureblock-classes-can-i-use" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Class name</th>
+<th>Experiment config key</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>triage.component.collate.SpacetimeAggregation</td>
+<td>spacetime_aggregations</td>
+<td>Temporal aggregations of event-based data</td>
+</tr>
+</tbody>
+</table>
+<h3 id="writing-a-new-featureblock-class">Writing a new FeatureBlock class<a class="headerlink" href="#writing-a-new-featureblock-class" title="Permanent link">&para;</a></h3>
+<p>The <code>FeatureBlock</code> base class defines a set of abstract methods that any child class must implement, as well as a number of initialization arguments that it must take and implement in order to fulfill expectations Triage users have on feature generators. Triage expects these classes to define the queries they need to run, as opposed to generating the tables themselves, so that Triage can implement scaling by parallelization.</p>
+<h4 id="abstract-methods">Abstract methods<a class="headerlink" href="#abstract-methods" title="Permanent link">&para;</a></h4>
+<p>Any method here without parentheses afterwards is expected to be a property.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Task</th>
+<th>Return Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>final_feature_table_name</td>
+<td>The name of the final table with all features filled in (no missing values)</td>
+<td>string</td>
+</tr>
+<tr>
+<td>feature_columns</td>
+<td>The list of feature columns in the final, postimputation table. Should exclude any index columns (e.g. entity id, date)</td>
+<td>list</td>
+</tr>
+<tr>
+<td>preinsert_queries</td>
+<td>Return all queries that should be run before inserting any data. The creation of your feature table should happen here, and is expected to have <code>entity_id(integer)</code> and <code>as_of_date(timestamp)</code> columns.</td>
+<td>list</td>
+</tr>
+<tr>
+<td>insert_queries</td>
+<td>Return all inserts to populate this data. Each query in this list should be parallelizable, and should be valid after all <code>preinsert_queries</code> are run.</td>
+<td>list</td>
+</tr>
+<tr>
+<td>postinsert_queries</td>
+<td>Return all queries that should be run after inserting all data</td>
+<td>list</td>
+</tr>
+<tr>
+<td>imputation_queries</td>
+<td>Return all queries that should be run to fill in missing data with imputed values.</td>
+<td>list</td>
+</tr>
+<tr>
+<td>verify_no_nulls()</td>
+<td>Verify that there are no nulls remaining in the imputed table. Should raise an error if there are any.</td>
+<td>void</td>
+</tr>
+</tbody>
+</table>
+<p>Any of the query list properties can be empty: for instance, if your implementation doesn't have inserts separate from table creation and is just one big query (e.g. a <code>CREATE TABLE AS</code>), you could just define <code>preinsert_queries</code> so be that one mega-query and leave the other properties as empty lists.</p>
+<h4 id="properties-provided-by-base-class">Properties Provided by Base Class<a class="headerlink" href="#properties-provided-by-base-class" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>as_of_dates</td>
+<td>list</td>
+<td>Features are created "as of" specific dates, and expects that each of these dates will be populated with a row for each member of the cohort on that date.</td>
+</tr>
+<tr>
+<td>cohort_table</td>
+<td>string</td>
+<td>The final shape of the feature table should at least include every entity id/date pair in this cohort table.</td>
+</tr>
+<tr>
+<td>db_engine</td>
+<td>sqlalchemy.engine</td>
+<td>The engine to use to access the database. Although these instances are mostly returning queries, the engine may be useful for implementing imputation.</td>
+</tr>
+<tr>
+<td>features_schema_name</td>
+<td>string</td>
+<td>The database schema where all feature tables should reside.</td>
+</tr>
+<tr>
+<td>feature_start_time</td>
+<td>string/datetime</td>
+<td>A time before which no data should be considered for features</td>
+</tr>
+<tr>
+<td>features_ignore_cohort</td>
+<td>bool</td>
+<td>If True (the default), features are only computed for members of the cohort. If False, the shape of the final feature table could include more.</td>
+</tr>
+</tbody>
+</table>
+<p><code>FeatureBlock</code> child classes can, and in almost all cases will, include more configuration at initialization time that are specific to them. They probably also define many more methods to use internally. But as long as they adhere to this interface, they'll work with Triage.</p>
+<h4 id="making-the-new-featureblock-available-to-experiments">Making the new FeatureBlock available to experiments<a class="headerlink" href="#making-the-new-featureblock-available-to-experiments" title="Permanent link">&para;</a></h4>
+<p>Triage Experiments run on serializable configuration, and although it's possible to take fully generated <code>FeatureBlock</code> instances and bypass this (e.g. <code>experiment.feature_blocks = &lt;my_collection_of_feature_blocks&gt;</code>), it's not recommended. The last step is to pick a config key for use within the <code>features</code> key of experiment configs, within <code>triage.component.architect.feature_block_generators.FEATURE_BLOCK_GENERATOR_LOOKUP</code> and point it to a function that instantiates a bunch of your objects based on config. </p>
+              
+            </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="http://github.com/dssg/triage/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mermaid.min.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>

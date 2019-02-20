@@ -55,7 +55,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Experiment Documentation</span>
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
     <ul class="subnav">
                 <li class="">
                     
@@ -71,7 +76,15 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../upgrading/">Upgrading an Experiment</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../cohort-labels/">Cohort and Label Deep Dive</a>
                 </li>
                 <li class=" current">
                     
@@ -100,6 +113,16 @@
     </ul>
 	    </li>
           
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
+	    </li>
+          
         </ul>
       </div>
       &nbsp;
@@ -122,7 +145,7 @@
     
       
         
-          <li>Experiment Documentation &raquo;</li>
+          <li>Experiment &raquo;</li>
         
       
     
@@ -139,10 +162,10 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="feature-generation-recipe-book">Feature Generation Recipe Book</h1>
+                <h2 id="feature-generation-recipe-book">Feature Generation Recipe Book<a class="headerlink" href="#feature-generation-recipe-book" title="Permanent link">&para;</a></h2>
 <p>This document is a collection of 'collate' aggregate features that we have found useful to create in Triage that may not be apparent at first.</p>
 <p>For an introduction to feature generation in Triage, refer to <a href="https://dssg.github.io/dirtyduck/#orgaae2e66">Dirty Duck Feature Generation</a></p>
-<h2 id="age">Age</h2>
+<h3 id="age">Age<a class="headerlink" href="#age" title="Permanent link">&para;</a></h3>
 <p>You can calculate age from a date of birth column using the <code>collate_date</code> special variable. This variable is marked as a placeholder in the feature quantity input, but is replaced with each as-of-date when features are being calculated. Combined with the Postgres <code>age</code> function, this calculates a person's age at each as-of-date as a feature.</p>
 <p>For this example, let's assume you have a column called 'dob' that is a timestamp (or anything that can be cast to a date) in your source table. The <code>feature_aggregation</code>'s quantity would be: </p>
 <p><code>EXTRACT(YEAR FROM AGE('{collate_date}'::DATE, dob::DATE))</code></p>
@@ -167,7 +190,7 @@
         <a href="../algorithm/" class="btn btn-neutral float-right" title="Experiment Algorithm">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../temporal-validation/" class="btn btn-neutral" title="Temporal Validation Deep Dive"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../cohort-labels/" class="btn btn-neutral" title="Cohort and Label Deep Dive"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -195,7 +218,7 @@
           <a href="http://github.com/dssg/triage/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../temporal-validation/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../cohort-labels/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
         <span style="margin-left: 15px"><a href="../algorithm/" style="color: #fcfcfc">Next &raquo;</a></span>
@@ -204,6 +227,7 @@
 </div>
     <script>var base_url = '../..';</script>
     <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mermaid.min.js" defer></script>
       <script src="../../search/main.js" defer></script>
 
 </body>

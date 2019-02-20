@@ -55,7 +55,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Experiment Documentation</span>
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
     <ul class="subnav">
                 <li class="">
                     
@@ -71,7 +76,15 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../upgrading/">Upgrading an Experiment</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../cohort-labels/">Cohort and Label Deep Dive</a>
                 </li>
                 <li class="">
                     
@@ -86,6 +99,16 @@
     <a class="" href="../architecture/">Experiment Architecture</a>
                 </li>
     </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
 	    </li>
           
         </ul>
@@ -123,7 +146,7 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="upgrading-your-experiment-configuration-to-v5">Upgrading your experiment configuration to v5</h1>
+                <h2 id="upgrading-your-experiment-configuration-to-v5">Upgrading your experiment configuration to v5<a class="headerlink" href="#upgrading-your-experiment-configuration-to-v5" title="Permanent link">&para;</a></h2>
 <p>This document details the steps needed to update a triage v3 or v4 configuration to v5, mimicing the old behavior (as opposed to taking advantage of new options) as much as possible.</p>
 <p>In the experiment configuration v5, several things were changed:</p>
 <ul>
@@ -131,7 +154,7 @@
 <li><code>label_config</code> is changed to take a parameterized query</li>
 <li><code>model_group_keys</code> is changed to have more robust defaults, and values specified in the config file act as overrides for the defaults instead of additions to them.</li>
 </ul>
-<h2 id="state_config-cohort_config">state_config -&gt; cohort_config</h2>
+<h3 id="state_config-cohort_config">state_config -&gt; cohort_config<a class="headerlink" href="#state_config-cohort_config" title="Permanent link">&para;</a></h3>
 <p>Upgrading the state config is fairly straightforward, as no functionality was removed. The key at which the state table-based configuration can be passed has changed. Before it resided at the top-level <code>state_config</code> key, whereas now it is in the optional <code>dense_states</code> key within the top-level <code>cohort_config</code> key.</p>
 <p>Old:</p>
 <pre><code>state_config:
@@ -150,7 +173,7 @@
         - '(state_one OR state_two) AND state_three'
 </code></pre>
 
-<h2 id="label_config">label_config</h2>
+<h3 id="label_config">label_config<a class="headerlink" href="#label_config" title="Permanent link">&para;</a></h3>
 <p>The label config has had functionality changed, so there is more conversion that needs to happen. Instead of taking in an 'events' table and making assumptions suitable for inspections tasks based on that table, for transparency and flexibility this now takes a parameterized query, as well as an optional <code>include_missing_labels_in_train_as</code> boolean. Leaving out this boolean value reproduces the inspections behavior (missing labels are treated as null), so to upgrade old configurations it is not needed.</p>
 <p>Old:</p>
 <pre><code>events_table: 'events'
@@ -168,7 +191,7 @@
             group by entity_id
 </code></pre>
 
-<h2 id="model_group_keys">model_group_keys</h2>
+<h3 id="model_group_keys">model_group_keys<a class="headerlink" href="#model_group_keys" title="Permanent link">&para;</a></h3>
 <p>The model group configuration was changed quite a bit. Before, the Experiment defined a few default grouping keys and would treat anything included in the config as additional. In practice, there were many keys that were almost always included as additional model group keys, and these are now default. There are also other keys that generally make sense if certain things are iterated on (e.g. feature groups). The goal is for most projects to simply leave out this configuration value entirely. If possible, this is the recommended route to go. But for the purposes of this guide, this change should duplicate the old behavior exactly.</p>
 <p>Old (empty, using defaults):</p>
 <pre><code></code></pre>
@@ -185,7 +208,7 @@
 <pre><code>model_group_keys: ['class_path', 'parameters', 'feature_names', 'label_timespan', 'as_of_date_frequency', 'max_training_history']
 </code></pre>
 
-<h2 id="upgrading-the-experiment-config-version">Upgrading the experiment config version</h2>
+<h3 id="upgrading-the-experiment-config-version">Upgrading the experiment config version<a class="headerlink" href="#upgrading-the-experiment-config-version" title="Permanent link">&para;</a></h3>
 <p>At this point, you should be able to bump the top-level experiment config version to v5:</p>
 <p>Old:</p>
 <pre><code>config_version: 'v4'
@@ -228,6 +251,7 @@
 </div>
     <script>var base_url = '../..';</script>
     <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mermaid.min.js" defer></script>
       <script src="../../search/main.js" defer></script>
 
 </body>

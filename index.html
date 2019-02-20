@@ -57,17 +57,13 @@
     
         <ul>
         
-            <li><a class="toctree-l3" href="#running-an-experiment">Running an Experiment</a></li>
+            <li><a class="toctree-l3" href="#experiment">Experiment</a></li>
         
-            <li><a class="toctree-l3" href="#upgrading-an-experiment-config">Upgrading an Experiment config</a></li>
+            <li><a class="toctree-l3" href="#audition">Audition</a></li>
+        
+            <li><a class="toctree-l3" href="#postmodeling">Postmodeling</a></li>
         
             <li><a class="toctree-l3" href="#background">Background</a></li>
-        
-            <li><a class="toctree-l3" href="#major-components-used-by-triage">Major Components Used by Triage</a></li>
-        
-            <li><a class="toctree-l3" href="#design-goals">Design Goals</a></li>
-        
-            <li><a class="toctree-l3" href="#future-plans">Future Plans</a></li>
         
         </ul>
     
@@ -77,7 +73,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Experiment Documentation</span>
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
     <ul class="subnav">
                 <li class="">
                     
@@ -93,7 +94,15 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="experiments/upgrading/">Upgrading an Experiment</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="experiments/temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="experiments/cohort-labels/">Cohort and Label Deep Dive</a>
                 </li>
                 <li class="">
                     
@@ -108,6 +117,16 @@
     <a class="" href="experiments/architecture/">Experiment Architecture</a>
                 </li>
     </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
 	    </li>
           
         </ul>
@@ -145,48 +164,53 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="triage">Triage</h1>
+                <h2 id="triage">Triage<a class="headerlink" href="#triage" title="Permanent link">&para;</a></h2>
 <p>Risk modeling and prediction</p>
 <p><a href="https://travis-ci.org/dssg/triage"><img alt="Build Status" src="https://travis-ci.org/dssg/triage.svg?branch=master" /></a>
 <a href="https://codecov.io/gh/dssg/triage"><img alt="codecov" src="https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg" /></a>
 <a href="https://codeclimate.com/github/dssg/triage"><img alt="codeclimate" src="https://codeclimate.com/github/dssg/triage.png" /></a></p>
 <p>Predictive analytics projects require the coordination of many different tasks, such as feature generation, classifier training, evaluation, and list generation. These tasks are complicated in their own right, but in addition have to be combined in different ways throughout the course of the project. </p>
 <p>Triage aims to provide interfaces to these different phases of a project, such as an <code>Experiment</code>. Each phase is defined by configuration specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.</p>
-<p>The first phase implemented in triage is the <code>Experiment</code>. An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.</p>
-<h2 id="running-an-experiment">Running an Experiment</h2>
-<p>See the <a href="experiments/running/">Running an Experiment</a> documentation.</p>
-<h2 id="upgrading-an-experiment-config">Upgrading an Experiment config</h2>
-<p><a href="experiments/upgrade-to-v6/">v5 -&gt; v6</a>
-<a href="experiments/upgrade-to-v5/">v3/v4 -&gt; v5</a></p>
-<h2 id="background">Background</h2>
+<script>mermaid.initialize({startOnLoad:true});</script>
+
+<p>The phases currently implemented in Triage are:</p>
+<div class="mermaid">
+graph LR
+    Experiment["Experiment (create features and models)"]
+    Audition["Audition (pick the best models)"]
+    Postmodeling["Postmodeling (dive into best models)"]
+
+    Experiment --> Audition
+    Audition --> Postmodeling
+</div>
+
+<h4 id="experiment">Experiment<a class="headerlink" href="#experiment" title="Permanent link">&para;</a></h4>
+<blockquote>
+<blockquote>
+<p>I have a bunch of data. How do I create some models?</p>
+</blockquote>
+</blockquote>
+<p>An experiment represents the initial research work of creating design matrices from source data, and training/testing/evaluating a model grid on those matrices. At the end of the experiment, a relational database with results metadata is populated, allowing for evaluation by the researcher.</p>
+<p>If you're new to Triage Experiments, check out the <a href="https://dssg.github.io/dirtyduck">Dirty Duck tutorial</a>. It's a guided tour through Triage functionality using a real-world problem.</p>
+<p>If you're familiar with creating an Experiment but want to see more reference documentation and some deep dives, check out the links on the side.</p>
+<h3 id="audition">Audition<a class="headerlink" href="#audition" title="Permanent link">&para;</a></h3>
+<blockquote>
+<blockquote>
+<p>I just trained a bunch of models. How do I pick the best ones?</p>
+</blockquote>
+</blockquote>
+<p>Audition is a tool for picking the best trained classifiers from a predictive analytics experiment. Often, production-scale experiments will come up with thousands of trained models, and sifting through all of those results can be time-consuming even after calculating the usual basic metrics like precision and recall. Which metrics matter most? Should you prioritize the best metric value over time or treat recent data as most important? Is low metric variance important? The answers to questions like these may not be obvious up front. Audition introduces a structured, semi-automated way of filtering models based on what you consider important, with an interface that is easy to interact with from a Jupyter notebook (with plots), but is driven by configuration that can easily be scripted.</p>
+<p>To get started with Audition, check out its <a href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">README</a></p>
+<h3 id="postmodeling">Postmodeling<a class="headerlink" href="#postmodeling" title="Permanent link">&para;</a></h3>
+<blockquote>
+<blockquote>
+<p>What is the distribution of my scores? What is generating a higher FPR in model x compared to model y? What is the single most important feature in my models?`</p>
+</blockquote>
+</blockquote>
+<p>This questions, and other ones, are the kind of inquiries that the triage user may have in mind when scrolling trough the models selected by the Audition component. Choosing the right model for deployment and exploring its predictions and behavior in time is a pivotal task. postmodeling will help to answer some of this questions by exploring the outcomes of the model, and exploring "deeply" into the model behavior across time and features.</p>
+<p>To get started with Postmodeling, check out its <a href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling/contrast">README</a></p>
+<h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>Triage is developed at the University of Chicago's <a href="http://dsapp.uchicago.edu">Center For Data Science and Public Policy</a>. We created it in response to commonly occuring challenges we've encountered and patterns we've developed while working on projects for our partners.</p>
-<h2 id="major-components-used-by-triage">Major Components Used by Triage</h2>
-<p>Triage makes use of many core data science components developed at DSaPP. These components can be useful in their own right, and are worth checking out if </p>
-<ul>
-<li><a href="https://github.com/dssg/architect">Architect</a>: Plan, design and build train and test matrices. Includes feature and label generation.</li>
-<li><a href="https://github.com/dssg/collate">Collate</a>: Aggregation SQL Query Builder. This is used by the Architect to build features.</li>
-<li><a href="https://github.com/dssg/timechop">Timechop</a>: Generate temporal cross-validation time windows for matrix creation</li>
-<li><a href="https://github.com/dssg/metta-data">Metta-Data</a>: Train and test matrix storage</li>
-<li><a href="https://github.com/dssg/catwalk">Catwalk</a>: Training, testing, and evaluating machine learning classifier models</li>
-<li><a href="https://github.com/dssg/results-schema">Results Schema</a>: Generate a database schema suitable for storing the results of modeling runs</li>
-</ul>
-<h2 id="design-goals">Design Goals</h2>
-<p>There are two overarching design goals for Triage:</p>
-<ul>
-<li>
-<p>All configuration necessary to run the full experiment from the external interface (ie, Experiment subclasses) from beginning to end must be easily serializable and machine-constructable, to allow the eventual development of tools for users to design experiments. </p>
-</li>
-<li>
-<p>All core functionality must be usable outside of a specific pipeline context or workflow manager. There are many good workflow managers; everybody has their favorite, and core functionality should not be designed to work with specific execution expectations.</p>
-</li>
-</ul>
-<h2 id="future-plans">Future Plans</h2>
-<ul>
-<li>Generation and Management of lists (ie for inspections) by various criteria</li>
-<li>Integration of components with various workflow managers, like <a href="https://github.com/dssg/drain">Drain</a> and <a href="https://github.com/spotify/luigi">Luigi</a>.</li>
-<li>Comprehensive leakage testing of an experiment's modeling run</li>
-<li>Feature Generation Wizard</li>
-</ul>
               
             </div>
           </div>
@@ -230,6 +254,7 @@
 </div>
     <script>var base_url = '.';</script>
     <script src="js/theme.js" defer></script>
+      <script src="js/mermaid.min.js" defer></script>
       <script src="search/main.js" defer></script>
 
 </body>
@@ -237,5 +262,5 @@
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2018-11-01 20:59:57
+Build Date UTC : 2019-02-20 21:37:16
 -->

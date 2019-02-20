@@ -55,7 +55,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Experiment Documentation</span>
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
     <ul class="subnav">
                 <li class="">
                     
@@ -82,15 +87,21 @@
         
             <li><a class="toctree-l4" href="#using-s3-to-store-matrices-and-models">Using S3 to store matrices and models</a></li>
         
+            <li><a class="toctree-l4" href="#using-hdf5-as-a-matrix-storage-format">Using HDF5 as a matrix storage format</a></li>
+        
             <li><a class="toctree-l4" href="#validating-an-experiment">Validating an Experiment</a></li>
         
             <li><a class="toctree-l4" href="#restarting-an-experiment">Restarting an Experiment</a></li>
+        
+            <li><a class="toctree-l4" href="#optimizing-an-experiment">Optimizing an Experiment</a></li>
         
             <li><a class="toctree-l4" href="#running-parts-of-an-experiment">Running parts of an Experiment</a></li>
         
             <li><a class="toctree-l4" href="#evaluating-results-of-an-experiment">Evaluating results of an Experiment</a></li>
         
             <li><a class="toctree-l4" href="#inspecting-an-experiment-before-running">Inspecting an Experiment before running</a></li>
+        
+            <li><a class="toctree-l4" href="#optimizing-experiment-performance">Optimizing Experiment Performance</a></li>
         
             <li><a class="toctree-l4" href="#experiment-classes">Experiment Classes</a></li>
         
@@ -101,7 +112,15 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../upgrading/">Upgrading an Experiment</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../temporal-validation/">Temporal Validation Deep Dive</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../cohort-labels/">Cohort and Label Deep Dive</a>
                 </li>
                 <li class="">
                     
@@ -116,6 +135,16 @@
     <a class="" href="../architecture/">Experiment Architecture</a>
                 </li>
     </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
 	    </li>
           
         </ul>
@@ -140,7 +169,7 @@
     
       
         
-          <li>Experiment Documentation &raquo;</li>
+          <li>Experiment &raquo;</li>
         
       
     
@@ -157,8 +186,8 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="running-an-experiment">Running an Experiment</h1>
-<h2 id="prerequisites">Prerequisites</h2>
+                <h2 id="running-an-experiment">Running an Experiment<a class="headerlink" href="#running-an-experiment" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
 <p>To use a Triage experiment, you first need:</p>
 <ul>
 <li>Python 3.5</li>
@@ -167,22 +196,22 @@
 <li>An experiment definition (see <a href="../defining/">Defining an Experiment</a>)</li>
 </ul>
 <p>You may run a Triage experiment two ways: through the Triage command line tool, or through instantiating an Experiment object in your own Python code and running it. The rest of this document will introduce experiment runs of increasing complexity, through both the CLI and Python interfaces.</p>
-<h2 id="simple-example">Simple Example</h2>
+<h3 id="simple-example">Simple Example<a class="headerlink" href="#simple-example" title="Permanent link">&para;</a></h3>
 <p>To run an experiment, you need to tell triage at a minimum where to find the experiment file (in YAML format), and how to connect to the database, In this simple example, we're assuming that the experiment will be run with only one process, and that the matrices and models should be stored on the local filesystem.</p>
-<h3 id="cli">CLI</h3>
+<h4 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h4>
 <p>The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:</p>
-<pre><code class="bash">triage experiment example_experiment_config.yaml
+<pre><code class="bash">triage experiment example/config/experiment.yaml
 </code></pre>
 
 <p>If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:</p>
-<pre><code class="bash">triage -d mydbconfig.yaml experiment example_experiment_config.yaml
+<pre><code class="bash">triage -d mydbconfig.yaml experiment example/config/experiment.yaml
 </code></pre>
 
 <p>Assuming you want the matrices and models stored somewhere else, pass it as the <code>--project-path</code>:</p>
-<pre><code class="bash">triage -d mydbconfig.yaml experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data'
+<pre><code class="bash">triage -d mydbconfig.yaml experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data'
 </code></pre>
 
-<h3 id="python">Python</h3>
+<h4 id="python">Python<a class="headerlink" href="#python" title="Permanent link">&para;</a></h4>
 <p>When running an experiment in Python, the database information is passed in the form of a SQLAlchemy database engine, and the experiment information is passed as a dictionary rather as YAML specifically.</p>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
@@ -194,14 +223,14 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 </code></pre>
 
-<h2 id="multicore-example">Multicore example</h2>
-<p>Triage also offers the ability to parallelize both CPU-heavy and database-heavy tasks. Triage uses the multiprocessing library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.</p>
-<h3 id="cli_1">CLI</h3>
+<h3 id="multicore-example">Multicore example<a class="headerlink" href="#multicore-example" title="Permanent link">&para;</a></h3>
+<p>Triage also offers the ability to locally parallelize both CPU-heavy and database-heavy tasks. Triage uses the <a href="https://pythonhosted.org/Pebble">pebble</a> library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.</p>
+<h4 id="cli_1">CLI<a class="headerlink" href="#cli_1" title="Permanent link">&para;</a></h4>
 <p>The Triage CLI allows parallelization to be specified through the <code>--n-processes</code> and <code>--n-db-processes</code> parameters.</p>
-<pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
+<pre><code class="bash">triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --n-db-processes 4 --n-processes 8
 </code></pre>
 
-<h3 id="python_1">Python</h3>
+<h4 id="python_1">Python<a class="headerlink" href="#python_1" title="Permanent link">&para;</a></h4>
 <p>In Python, you can use the <code>MultiCoreExperiment</code> instead of the <code>SingleThreadedExperiment</code>, and similarly pass the <code>n_processes</code> and <code>n_db_processes</code> parameters. We also recommend using <code>triage.create_engine</code>. It will create a serializable version of the engine that will be fully reconstructed in multiprocess contexts. If you pass a regular SQLAlchemy engine, in these contexts the engine will be reconstructed with the <a href="http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls">database URL only</a>, which may cancel other settings you have used to configure your engine.</p>
 <pre><code class="python">
 from triage.experiments import MultiCoreExperiment
@@ -218,13 +247,14 @@ experiment.run()
 
 </code></pre>
 
-<h2 id="using-s3-to-store-matrices-and-models">Using S3 to store matrices and models</h2>
+<p>The <a href="https://pythonhosted.org/Pebble">pebble</a> library offers an interface around Python3's <code>concurrent.futures</code> module that adds in a very helpful tool: watching for killed subprocesses . Model training (and sometimes, matrix building) can be a memory-hungry task, and Triage can not guarantee that the operating system you're running on won't kill the worker processes in a way that prevents them from reporting back to the parent Experiment process. With Pebble, this occurrence is caught like a regular Exception, which allows the Process pool to recover and include the information in the Experiment's log.</p>
+<h3 id="using-s3-to-store-matrices-and-models">Using S3 to store matrices and models<a class="headerlink" href="#using-s3-to-store-matrices-and-models" title="Permanent link">&para;</a></h3>
 <p>Triage can operate on different storage engines for matrices and models, and besides the standard filesystem engine comes with S3 support out of the box. To use this, just use the <code>s3://</code> scheme for your <code>project_path</code> (this is similar for both Python and the CLI).</p>
-<h3 id="cli_2">CLI</h3>
-<pre><code class="bash">triage experiment example_experiment_config.yaml --project-path 's3://bucket/directory/to/save/data'
+<h4 id="cli_2">CLI<a class="headerlink" href="#cli_2" title="Permanent link">&para;</a></h4>
+<pre><code class="bash">triage experiment example/config/experiment.yaml --project-path 's3://bucket/directory/to/save/data'
 </code></pre>
 
-<h3 id="python_2">Python</h3>
+<h4 id="python_2">Python<a class="headerlink" href="#python_2" title="Permanent link">&para;</a></h4>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
 experiment = SingleThreadedExperiment(
@@ -236,7 +266,29 @@ experiment.run()
 
 </code></pre>
 
-<h2 id="validating-an-experiment">Validating an Experiment</h2>
+<h3 id="using-hdf5-as-a-matrix-storage-format">Using HDF5 as a matrix storage format<a class="headerlink" href="#using-hdf5-as-a-matrix-storage-format" title="Permanent link">&para;</a></h3>
+<p>Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.</p>
+<h4 id="cli_3">CLI<a class="headerlink" href="#cli_3" title="Permanent link">&para;</a></h4>
+<p>On the command-line, this is configurable using the <code>--matrix-format</code> option, and supports <code>csv</code> and <code>hdf</code>.</p>
+<pre><code class="bash">triage experiment example/config/experiment.yaml --matrix-format hdf
+</code></pre>
+
+<h4 id="python_3">Python<a class="headerlink" href="#python_3" title="Permanent link">&para;</a></h4>
+<p>In Python, this is configurable using the <code>matrix_storage_class</code> keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in <code>triage.component.catwalk.storage</code>. If you'd like to write your own storage module, you can use the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py">existing modules</a> as a guide.</p>
+<pre><code class="python">from triage.experiments import SingleThreadedExperiment
+from triage.component.catwalk.storage import HDFMatrixStore
+
+experiment = SingleThreadedExperiment(
+    config=experiment_config
+    db_engine=create_engine(...),
+    matrix_storage_class=HDFMatrixStore,
+    project_path='/path/to/directory/to/save/data',
+)
+experiment.run()
+</code></pre>
+
+<p>Note: The HDF storage option is <em>not</em> compatible with S3.</p>
+<h3 id="validating-an-experiment">Validating an Experiment<a class="headerlink" href="#validating-an-experiment" title="Permanent link">&para;</a></h3>
 <p>Configuring an experiment is complex, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the <code>cat_complaints</code> table in a feature aggregation but it doesn't exist, I'll see something like this:</p>
 <pre><code>*** ValueError: from_obj query does not run.
 from_obj: &quot;cat_complaints&quot;
@@ -246,28 +298,36 @@ LINE 1: explain select * from cat_complaints
  [SQL: 'explain select * from cat_complaints']
 </code></pre>
 
-<h3 id="cli_3">CLI</h3>
+<h4 id="cli_4">CLI<a class="headerlink" href="#cli_4" title="Permanent link">&para;</a></h4>
 <p>The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it <em>only</em> validate.</p>
-<pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --no-validate
+<pre><code class="bash">triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --no-validate
 </code></pre>
 
-<pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --validate-only
+<pre><code class="bash">triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --validate-only
 </code></pre>
 
-<h4 id="python_3">Python</h4>
+<h5 id="python_4">Python<a class="headerlink" href="#python_4" title="Permanent link">&para;</a></h5>
 <p>Experiments expose a <code>validate</code> method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.</p>
 <pre><code class="python">experiment.validate()
 </code></pre>
 
 <p>By default, the <code>validate</code> method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call <code>validate(strict=False)</code> and all of the errors will be changed to warnings.</p>
 <p>We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the <a href="https://github.com/dssg/triage/blob/master/src/triage/experiments/validate.py">validation module</a> and submitting a pull request!</p>
-<h2 id="restarting-an-experiment">Restarting an Experiment</h2>
-<p>If an experiment fails for any reason, you can restart it. Each matrix and each model file is saved with a filename matching a hash of its unique attributes, so when the experiment is rerun, it will by default reuse the matrix or model instead of rebuilding it. If you would like to change this behavior and replace existing versions of matrices and models, set the 'replace' flag. </p>
-<h3 id="cli_4">CLI</h3>
-<pre><code class="bash">triage experiment example_experiment_config.yaml --project-path '/path/to/directory/to/save/data' --replace
+<h3 id="restarting-an-experiment">Restarting an Experiment<a class="headerlink" href="#restarting-an-experiment" title="Permanent link">&para;</a></h3>
+<p>If an experiment fails for any reason, you can restart it.</p>
+<p>By default, all work will be recreated. This includes label queries, feature queries, matrix building, model training, etc. However, if you pass the <code>replace=False</code> keyword argument, the Experiment will reuse what work it can.</p>
+<ul>
+<li>Cohort Table: The Experiment refers to a cohort table namespaced by the cohort name and a hash of the cohort query, and in that way allows you to reuse cohorts between different experiments if their label names and queries are identical. When referring to this table, it will check on an as-of-date level whether or not there are any existing rows for that date, and skip the cohort query for that date if so. For this reason, it is <em>not</em> aware of specific entities or source events so if the source data has changed, ensure that <code>replace</code> is set to True. </li>
+<li>Labels Table: The Experiment refers to a labels table namespaced by the label name and a hash of the label query, and in that way allows you to reuse labels between different experiments if their label names and queries are identical. When referring to this table, it will check on a per-<code>as_of_date</code>/<code>label timespan</code> level whether or not there are <em>any</em> existing rows, and skip the label query if so. For this reason, it is <em>not</em> aware of specific entities or source events so if the label query has changed or the source data has changed, ensure that <code>replace</code> is set to True.</li>
+<li>Features Tables: The Experiment will check on a per-table basis whether or not it exists and contains rows for the entire cohort, and skip the feature generation if so. It does not look at the column list for the feature table or inspect the feature data itself. So, if you have modified any source data that affects a feature aggregation, or added any columns to that aggregation, you won't want to set <code>replace</code> to False. However, it is cohort-and-date aware so you can change around your cohort and temporal configuration safely.</li>
+<li>Matrix Building: Each matrix's metadata is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.</li>
+<li>Model Training: Each model's metadata (which includes its train matrix's hash) is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.</li>
+</ul>
+<h4 id="cli_5">CLI<a class="headerlink" href="#cli_5" title="Permanent link">&para;</a></h4>
+<pre><code class="bash">triage experiment example/config/experiment.yaml --project-path '/path/to/directory/to/save/data' --replace
 </code></pre>
 
-<h3 id="python_4">Python</h3>
+<h4 id="python_5">Python<a class="headerlink" href="#python_5" title="Permanent link">&para;</a></h4>
 <pre><code class="python">from triage.experiments import SingleThreadedExperiment
 
 experiment = SingleThreadedExperiment(
@@ -279,10 +339,15 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 </code></pre>
 
-<h2 id="running-parts-of-an-experiment">Running parts of an Experiment</h2>
-<p>If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the <a href="https://github.com/dssg/triage/blob/master/example_experiment_config.yaml">experiment config</a> to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.</p>
+<h3 id="optimizing-an-experiment">Optimizing an Experiment<a class="headerlink" href="#optimizing-an-experiment" title="Permanent link">&para;</a></h3>
+<h4 id="skipping-prediction-syncing">Skipping Prediction Syncing<a class="headerlink" href="#skipping-prediction-syncing" title="Permanent link">&para;</a></h4>
+<p>By default, the Experiment will save predictions to the database. This can take a long time if your test matrices have a lot of rows, and isn't quite necessary if you just want to see the high-level performance of your grid. By switching <code>save_predictions</code> to <code>False</code>, you can skip the prediction saving. You'll still get your evaluation metrics, so you can look at performance. Don't worry, you can still get your predictions back later by rerunning the Experiment later at default settings, which will find your already-trained models, generate predictions, and save them.</p>
+<p>CLI: <code>triage experiment myexperiment.yaml --no-save-predictions</code></p>
+<p>Python: <code>SingleThreadedExperiment(..., save_predictions=False)</code></p>
+<h3 id="running-parts-of-an-experiment">Running parts of an Experiment<a class="headerlink" href="#running-parts-of-an-experiment" title="Permanent link">&para;</a></h3>
+<p>If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">experiment config</a> to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.</p>
 <p>Running parts of an experiment is only supported through the Python interface.</p>
-<h3 id="python_5">Python</h3>
+<h4 id="python_6">Python<a class="headerlink" href="#python_6" title="Permanent link">&para;</a></h4>
 <ol>
 <li>
 <p><code>experiment.run()</code> will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with <code>cleanup=False</code>, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.</p>
@@ -292,7 +357,7 @@ experiment.run()
 </ul>
 </li>
 <li>
-<p>To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of <a href="https://github.com/dssg/triage/blob/master/example_experiment_config.yaml">experiment config</a> to be passed:</p>
+<p>To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">experiment config</a> to be passed:</p>
 <ul>
 <li>
 <p><code>experiment.split_definitions</code> will parse temporal config and create time splits. It only requires <code>temporal_config</code>.</p>
@@ -318,7 +383,7 @@ experiment.run()
 </ul>
 </li>
 </ol>
-<h2 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment</h2>
+<h3 id="evaluating-results-of-an-experiment">Evaluating results of an Experiment<a class="headerlink" href="#evaluating-results-of-an-experiment" title="Permanent link">&para;</a></h3>
 <p>After the experiment run, a variety of schemas and tables will be created and populated in the configured database:</p>
 <ul>
 <li>model_metadata.experiments - The experiment configuration and a hash</li>
@@ -352,17 +417,30 @@ experiment.run()
     limit 10
 </code></pre>
 
-<h2 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running</h2>
+<h3 id="inspecting-an-experiment-before-running">Inspecting an Experiment before running<a class="headerlink" href="#inspecting-an-experiment-before-running" title="Permanent link">&para;</a></h3>
 <p>Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:</p>
 <ul>
 <li><code>experiment.all_as_of_times</code> for debugging temporal config. This will show all dates that features and labels will be calculated at.</li>
 <li><code>experiment.feature_dicts</code> will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment</li>
 <li><code>experiment.matrix_build_tasks</code> will output a list representing each matrix that will be built.</li>
 </ul>
-<h2 id="experiment-classes">Experiment Classes</h2>
+<h3 id="optimizing-experiment-performance">Optimizing Experiment Performance<a class="headerlink" href="#optimizing-experiment-performance" title="Permanent link">&para;</a></h3>
+<h4 id="profiling-an-experiment">Profiling an Experiment<a class="headerlink" href="#profiling-an-experiment" title="Permanent link">&para;</a></h4>
+<p>Experiment running slowly? Try the <code>profile</code> keyword argument, or <code>--profile</code> in the command line. This will output a cProfile file to the project path's <code>profiling_stats</code> directory.  This is a binary format but can be read with a variety of visualization programs.</p>
+<p><a href="https://jiffyclub.github.io/snakeviz/">snakeviz</a> - A browser based graphical viewer.
+<a href="https://github.com/nschloe/tuna">tuna</a> - Another browser based graphical viewer
+<a href="https://github.com/jrfonseca/gprof2dot">gprof2dot</a> - A command-line tool to convert files to graphviz format
+<a href="https://pypi.org/project/pyprof2calltree/">pyprof2calltree</a> - A command-line tool to convert files to Valgrind log format, for viewing in established viewers like KCacheGrind</p>
+<p>Looking at the profile through a visualization program, you can see which portions of the experiment are taking up the most time. Based on this, you may be able to prioritize changes. For instance, if cohort/label/feature table generation are taking up the bulk of the time, you may add indexes to source tables, or increase the number of database processes. On the other hand, if model training is the culprit, you may temporarily try a smaller grid to get results more quickly.</p>
+<h4 id="materialize_subquery_fromobjs">materialize_subquery_fromobjs<a class="headerlink" href="#materialize_subquery_fromobjs" title="Permanent link">&para;</a></h4>
+<p>By default, experiments will inspect the <code>from_obj</code> of every feature aggregation to see if it looks like a subquery, create a table out of it if so, index it on the <code>knowledge_date_column</code> and <code>entity_id</code>, and use that for running feature queries. This can make feature generation go a lot faster if the <code>from_obj</code> takes a decent amount of time to run and/or there are a lot of as-of-dates in the experiment. It won't do this for <code>from_objs</code> that are just tables, or simple joins (e.g. <code>entities join events using (entity_id)</code>) as the existing indexes you have on those tables should work just fine.</p>
+<p>You can turn this off if you'd like, which you may want to do if the <code>from_obj</code> subqueries return a lot of data and you want to save as much disk space as possible. The option is turned off by passing <code>materialize_subquery_fromobjs=False</code> to the Experiment.</p>
+<h4 id="build-features-independently-of-cohort">Build Features Independently of Cohort<a class="headerlink" href="#build-features-independently-of-cohort" title="Permanent link">&para;</a></h4>
+<p>By default the feature queries generated by your feature configuration on any given date are joined with the cohort table on that date, which means that no features for entities not in the cohort are saved. This is to save time and database disk space when your cohort on any given date is not very large and allow you to iterate on feature building quickly by default. However, this means that anytime you change your cohort, you have to rebuild all of your features. Depending on your experiment setup (for instance, multiple large cohorts that you experiment with), this may be time-consuming. Change this by passing <code>features_ignore_cohort=True</code> to the Experiment constructor, or <code>--save-all-features</code> to the command-line.</p>
+<h3 id="experiment-classes">Experiment Classes<a class="headerlink" href="#experiment-classes" title="Permanent link">&para;</a></h3>
 <ul>
 <li><em>SingleThreadedExperiment</em>: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.</li>
-<li><em>MultiCoreExperiment</em>: An experiment that makes use of the multiprocessing library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
+<li><em>MultiCoreExperiment</em>: An experiment that makes use of the pebble library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
 <li><em>RQExperiment</em>: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( <code>pip install triage[rq]</code> )</li>
 </ul>
               
@@ -372,7 +450,7 @@ experiment.run()
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../temporal-validation/" class="btn btn-neutral float-right" title="Temporal Validation Deep Dive">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../upgrading/" class="btn btn-neutral float-right" title="Upgrading an Experiment">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
         <a href="../feature-testing/" class="btn btn-neutral" title="Testing Feature Configuration"><span class="icon icon-circle-arrow-left"></span> Previous</a>
@@ -406,12 +484,13 @@ experiment.run()
         <span><a href="../feature-testing/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../temporal-validation/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../upgrading/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
     <script>var base_url = '../..';</script>
     <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mermaid.min.js" defer></script>
       <script src="../../search/main.js" defer></script>
 
 </body>

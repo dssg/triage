@@ -55,7 +55,12 @@
           
             <li class="toctree-l1">
 		
-    <span class="caption-text">Experiment Documentation</span>
+    <a class="" href="https://dssg.github.io/dirtyduck">Dirty Duck Tutorial</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Experiment</span>
     <ul class="subnav">
                 <li class="">
                     
@@ -68,6 +73,10 @@
                 <li class="">
                     
     <a class="" href="../running/">Running an Experiment</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../upgrading/">Upgrading an Experiment</a>
                 </li>
                 <li class=" current">
                     
@@ -91,6 +100,10 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../cohort-labels/">Cohort and Label Deep Dive</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../features/">Feature Generation Recipe Book</a>
                 </li>
                 <li class="">
@@ -102,6 +115,16 @@
     <a class="" href="../architecture/">Experiment Architecture</a>
                 </li>
     </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/audition">Audition</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling">Postmodeling</a>
 	    </li>
           
         </ul>
@@ -126,7 +149,7 @@
     
       
         
-          <li>Experiment Documentation &raquo;</li>
+          <li>Experiment &raquo;</li>
         
       
     
@@ -143,10 +166,10 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="temporal-validation-deep-dive">Temporal Validation Deep Dive</h1>
+                <h2 id="temporal-validation-deep-dive">Temporal Validation Deep Dive<a class="headerlink" href="#temporal-validation-deep-dive" title="Permanent link">&para;</a></h2>
 <p>A temporal validation deep dive is currently available in the Dirty Duck tutorial. <a href="https://dssg.github.io/dirtyduck/#sec-4-2-2-1">Dirty Duck - Temporal Cross-validation</a></p>
 <p>You can produce the time graphs detailed in the Dirty Duck deep dive using the Triage CLI or through calling Python code directly. The graphs use matplotlib, so you'll need a matplotlib backend to use. Refer to the <a href="https://matplotlib.org/faq/usage_faq.html">matplotlib docs</a> for more details.</p>
-<h2 id="python-code">Python Code</h2>
+<h3 id="python-code">Python Code<a class="headerlink" href="#python-code" title="Permanent link">&para;</a></h3>
 <p>Plotting is supported through the <code>visualize_chops</code> function, which takes a fully configured Timechop object. You may store the configuration for this object in a YAML file if you wish and load from a file, but in this example we directly set the parameters as arguments to the Timechop object. This would enable faster iteration of time config in a notebook setting.</p>
 <pre><code>from triage.component.timechop.plotting import visualize_chops
 from triage.component.timechop import Timechop
@@ -168,10 +191,10 @@ chopper = Timechop(
 visualize_chops(chopper)
 </code></pre>
 
-<h2 id="triage-cli">Triage CLI</h2>
-<p>The Triage CLI exposes the <code>showtimechops</code> command which just takes a YAML file as input. This YAML file is expected to have a <code>temporal_config</code> section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the <a href="https://github.com/dssg/triage/blob/master/example_experiment_config.yaml">example_experiment_config.yaml</a> from the Triage repository root as an example.</p>
+<h3 id="triage-cli">Triage CLI<a class="headerlink" href="#triage-cli" title="Permanent link">&para;</a></h3>
+<p>The Triage CLI exposes the <code>showtimechops</code> command which just takes a YAML file as input. This YAML file is expected to have a <code>temporal_config</code> section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example_experiment_config.yaml</a> from the Triage repository root as an example.</p>
 <p><code>triage showtimechops example_experiment_config.yaml</code></p>
-<h2 id="result">Result</h2>
+<h3 id="result">Result<a class="headerlink" href="#result" title="Permanent link">&para;</a></h3>
 <p>Using either method, you should see output similar to this:</p>
 <p><img alt="time chop visualization" src="../timechops.png" /></p>
               
@@ -181,10 +204,10 @@ visualize_chops(chopper)
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../features/" class="btn btn-neutral float-right" title="Feature Generation Recipe Book">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../cohort-labels/" class="btn btn-neutral float-right" title="Cohort and Label Deep Dive">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../running/" class="btn btn-neutral" title="Running an Experiment"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../upgrading/" class="btn btn-neutral" title="Upgrading an Experiment"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -212,15 +235,16 @@ visualize_chops(chopper)
           <a href="http://github.com/dssg/triage/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../running/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../upgrading/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../features/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../cohort-labels/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
     <script>var base_url = '../..';</script>
     <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mermaid.min.js" defer></script>
       <script src="../../search/main.js" defer></script>
 
 </body>
