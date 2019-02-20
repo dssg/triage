@@ -302,7 +302,7 @@ class ModelEvaluator(object):
 
         storage = ProjectStorage(path)
         matrix_storage = MatrixStorageEngine(storage).get_store(self.pred_matrix_uuid)
-        mat = matrix_storage.matrix
+        mat = matrix_storage.design_matrix
 
         # Merge with predictions table and return complete matrix
         merged_df = pd.merge(mat,
@@ -336,7 +336,7 @@ class ModelEvaluator(object):
 
         storage = ProjectStorage(path)
         matrix_storage = MatrixStorageEngine(storage).get_store(self.train_matrix_uuid)
-        mat = matrix_storage.matrix
+        mat = matrix_storage.design_matrix
 
         # Merge with predictions table and return complete matrix
         merged_df = mat.merge(self.predictions,
