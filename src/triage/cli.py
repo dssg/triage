@@ -2,7 +2,7 @@
 import argparse
 import importlib.util
 import logging
-import os.path
+import os
 import yaml
 from datetime import datetime
 
@@ -14,7 +14,6 @@ from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.cohort_table_generators import CohortTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
-from triage.component.timechop import Timechop
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import Store
 from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
@@ -47,13 +46,13 @@ def valid_date(value):
 class Triage(RootCommand):
     """manage Triage database and experiments"""
 
+    DATABASE_FILE_DEFAULT = os.path.abspath('database.yaml')
     SETUP_FILE_DEFAULT = os.path.abspath('experiment.py')
 
     def __init__(self, parser):
         parser.add_argument(
             "-d",
             "--dbfile",
-            default="database.yaml",
             type=argparse.FileType("r"),
             help="database connection file",
         )
@@ -76,21 +75,39 @@ class Triage(RootCommand):
 
     @cachedproperty
     def db_url(self):
-        dbconfig = yaml.load(self.args.dbfile)
-        db_url = URL(
-            "postgres",
-            host=dbconfig["host"],
-            username=dbconfig["user"],
-            database=dbconfig["db"],
-            password=dbconfig["pass"],
-            port=dbconfig["port"],
+        if self.args.dbfile:
+            dbfile = self.args.dbfile
+        else:
+            environ_url = os.getenv('DATABASE_URL')
+            if environ_url:
+                return environ_url
+
+            if os.path.isfile(self.DATABASE_FILE_DEFAULT):
+                dbfile = open(self.DATABASE_FILE_DEFAULT)
+            else:
+                raise EnvironmentError(
+                    f"could not determine database connection information from "
+                    f"either process environment (DATABASE_URL) or filesystem "
+                    f"default ({self.DATABASE_FILE_DEFAULT}) -- see option: -d/--dbfile"
+                )
+
+        with dbfile:
+            dbconfig = yaml.load(dbfile)
+
+        return URL(
+            'postgres',
+            host=dbconfig['host'],
+            username=dbconfig['user'],
+            database=dbconfig['db'],
+            password=dbconfig['pass'],
+            port=dbconfig['port'],
         )
-        return db_url
 
     @cmdmethod
     def configversion(self, args):
         """Check the experiment config version compatible with this installation of Triage"""
         print(CONFIG_VERSION)
+
 
 @Triage.register
 class FeatureTest(Command):
