@@ -294,7 +294,7 @@ class Experiment(Command):
             self.experiment.validate()
             self.experiment.run()
         elif args.show_timechop:
-            experiment_name = os.path.splitext(os.path.basename(self.args.config.name))[0]
+            experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = self.experiment.project_storage
             timechop_store = project_storage.get_store(
                 ["images"],
