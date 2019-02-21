@@ -12,6 +12,7 @@ from triage.component.results_schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    ListPrediction
 )
 from triage.util.pandas import downcast_matrix
 
@@ -371,7 +372,10 @@ class MatrixStore(object):
         if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
             raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
         matrix_with_labels = downcast_matrix(matrix_with_labels)
-        labels = matrix_with_labels.pop(self.label_column_name)
+        if self.metadata['matrix_type'] != 'production':
+            labels = matrix_with_labels.pop(self.label_column_name)
+        else:
+            labels = None
         design_matrix = matrix_with_labels
         return design_matrix, labels
 
@@ -435,7 +439,7 @@ class MatrixStore(object):
         if include_label:
             return columns
         else:
-            return [col for col in columns if col != self.metadata["label_name"]]
+            return [col for col in columns if col != self.metadata.get("label_name", None)]
 
     @property
     def label_column_name(self):
@@ -479,6 +483,8 @@ class MatrixStore(object):
             return TrainMatrixType
         elif self.metadata["matrix_type"] == "test":
             return TestMatrixType
+        elif self.metadata["matrix_type"] == "production":
+            return ProductionMatrixType
         else:
             raise Exception(
                 """matrix metadata for matrix {} must contain 'matrix_type'
@@ -525,7 +531,10 @@ class MatrixStore(object):
 
     @property
     def full_matrix_for_saving(self):
-        return self.design_matrix.assign(**{self.label_column_name: self.labels})
+        if self.labels is not None:
+            return self.design_matrix.assign(**{self.label_column_name: self.labels})
+        else:
+            return self.design_matrix
 
     def load_metadata(self):
         """Load metadata from storage"""
@@ -644,3 +653,9 @@ class TrainMatrixType(object):
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction
     is_test = False
+
+
+class ProductionMatrixType(object):
+    string_name = "production"
+    prediction_obj = ListPrediction
+

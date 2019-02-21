@@ -18,7 +18,12 @@ def test_risklist(db_engine, project_storage):
 
     model_id = 1
     as_of_date = '2013-01-01'
-    generate_risk_list(db_engine, model_id, as_of_date)
+    generate_risk_list(
+            db_engine=db_engine,
+            matrix_storage_engine=project_storage.matrix_storage_engine(),
+            model_storage_engine=project_storage.model_storage_engine(),
+            model_id=model_id,
+            as_of_date=as_of_date)
     table_should_have_data(
         db_engine=db_engine,
         table_name="production.list_predictions",
