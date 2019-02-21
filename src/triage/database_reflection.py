@@ -10,7 +10,7 @@ def split_table(table_name):
 
     Returns: (tuple) of schema and table name
     """
-    table_parts = table_name.split(".")
+    table_parts = table_name.replace('"', '').split(".")
     if len(table_parts) == 2:
         return tuple(table_parts)
     elif len(table_parts) == 1:
