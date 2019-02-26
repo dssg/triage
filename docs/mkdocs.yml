@@ -26,4 +26,4 @@ pages:
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
   - Audition: https://github.com/dssg/triage/tree/master/src/triage/component/audition
-  - Postmodeling: https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling
+  - Postmodeling: postmodeling/index.md

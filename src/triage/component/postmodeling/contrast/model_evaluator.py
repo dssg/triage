@@ -56,7 +56,7 @@ class ModelEvaluator(object):
                            m.train_end_time,
                            m.train_matrix_uuid,
                            m.training_label_timespan,
-                           mg.model_type,
+                           m.model_type,
                            mg.model_config
                         FROM model_metadata.models m
                         JOIN model_metadata.model_groups mg
@@ -274,7 +274,7 @@ class ModelEvaluator(object):
                    value,
                    threshold_unit,
                    threshold_value
-            FROM test_results.crosstabs_test
+            FROM test_results.crosstabs
             WHERE model_id = {self.model_id}
             ''', con=self.engine)
 
@@ -693,7 +693,7 @@ class ModelEvaluator(object):
             - fontsize (string): define size of plot title and axes.
          '''
         if feature_group_subset_list is None:
-             feature_group_subset = self.feature_importances.feature_group.unique()
+             feature_group_subset = self.feature_importances(path).feature_group.unique()
              feature_regex = '|'.join(feature_group_subset)
         else:
              feature_group_subset = feature_group_subset_list
