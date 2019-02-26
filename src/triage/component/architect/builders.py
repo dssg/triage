@@ -309,6 +309,8 @@ class MatrixBuilder(BuilderBase):
         )
         logging.info(f"Feature data extracted for matrix {matrix_uuid}")
 
+        # dataframes add label_name
+
         if self.includes_labels:
             logging.info(
                 "Extracting label data from database into file for " "matrix %s",
@@ -323,17 +325,17 @@ class MatrixBuilder(BuilderBase):
             )
             dataframes.insert(0, labels_df)
             logging.info(f"Label data extracted for matrix {matrix_uuid}")
+        else:
+            labels_df = pandas.DataFrame(index=dataframes[0].index, columns=[label_name])
+            dataframes.insert(0, labels_df)
+
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
         output = self.merge_feature_csvs(dataframes, matrix_uuid)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
-
         matrix_store.metadata = matrix_metadata
         # store the matrix
-        if self.includes_labels:
-            labels = output.pop(matrix_store.label_column_name)
-        else:
-            labels = None
+        labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
         logging.info("Matrix %s saved", matrix_uuid)

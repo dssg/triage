@@ -95,6 +95,7 @@ class ListPrediction(Base):
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
+    label_value = Column(Integer)
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
     matrix_uuid = Column(Text)

@@ -635,7 +635,7 @@ class FeatureGenerator(object):
 
         return table_tasks
 
-    def _generate_imp_table_tasks_for(self, aggregation, drop_preagg=True):
+    def _generate_imp_table_tasks_for(self, aggregation, impute_cols=None, nonimpute_cols=None, drop_preagg=True):
         """Generate SQL statements for preparing, populating, and
         finalizing imputations, for each feature group table in the
         given aggregation.
@@ -685,8 +685,10 @@ class FeatureGenerator(object):
         with self.db_engine.begin() as conn:
             results = conn.execute(aggregation.find_nulls())
             null_counts = results.first().items()
-        impute_cols = [col for (col, val) in null_counts if val > 0]
-        nonimpute_cols = [col for (col, val) in null_counts if val == 0]
+        if impute_cols is None:
+            impute_cols = [col for (col, val) in null_counts if val > 0]
+        if nonimpute_cols is None:
+            nonimpute_cols = [col for (col, val) in null_counts if val == 0]
 
         # table tasks for imputed aggregation table, most of the work is done here
         # by collate's get_impute_create()

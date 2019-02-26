@@ -372,10 +372,7 @@ class MatrixStore(object):
         if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
             raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
         matrix_with_labels = downcast_matrix(matrix_with_labels)
-        if self.metadata['matrix_type'] != 'production':
-            labels = matrix_with_labels.pop(self.label_column_name)
-        else:
-            labels = None
+        labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels
         return design_matrix, labels
 
