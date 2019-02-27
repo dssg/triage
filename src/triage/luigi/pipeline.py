@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 
-class ModelGroupsCreator(luigi.WrapperTask):
+class TriageExperimentRunner(luigi.WrapperTask):
     modeltype_hyperparams_featuregroups = [
         {
             "model_type": "sklearn.tree.DecisionTreeClassifier",
@@ -93,6 +93,13 @@ class Evaluation(luigi.Task):
     train_as_of_time = luigi.DateParameter()
     train_info = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
     test_matrices = luigi.DictParameter(visibility=ParameterVisibility.HIDDEN)
+
+    @property
+    def priority(self):
+        if self.mg_config['model_type'] == 'sklearn.ensemble.RandomForestClassifier':
+            return 80
+        else:
+            return 40
 
     def run(self):
         time.sleep(1)
