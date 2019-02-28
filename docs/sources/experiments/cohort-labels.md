@@ -146,18 +146,18 @@ cohort_config:
 
 If you want to test out a cohort query without running an entire experiment, there are a few ways, and the easiest way depends on how much of the rest of the experiment you have configured.
 
-Option 1: **You have not started writing an experiment config file yet**. If you just want to test your query with a hardcoded list of dates as Triage does it (including as-of-date interpolation), you can instantiate the `CohortTableGenerator` with the query and run it for those dates. This skips any temporal config, so you don't have to worry about temporal config:
+Option 1: **You have not started writing an experiment config file yet**. If you just want to test your query with a hardcoded list of dates as Triage does it (including as-of-date interpolation), you can instantiate the `EntityDateTableGenerator` with the query and run it for those dates. This skips any temporal config, so you don't have to worry about temporal config:
 
 ```python
-from triage.component.architect.cohort_table_generators import CohortTableGenerator
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage import create_engine
 from datetime import datetime
 
-CohortTableGenerator(
+EntityDateTableGenerator(
     query="select entity_id from permits where tsrange(start_time, end_time, '[]') @> {as_of_date}",
     db_engine=create_engine(...),
-    cohort_table_name="my_test_cohort_table"
-).generate_cohort_table([datetime(2016, 1, 1), datetime(2016, 2, 1), datetime(2016, 3, 1)])
+    entity_date_table_name="my_test_cohort_table"
+).generate_entity_date_table([datetime(2016, 1, 1), datetime(2016, 2, 1), datetime(2016, 3, 1)])
 ```
 
 Running this will generate a table with the name you gave it (`my_test_cohort_table`), populated with the cohort for that list of dates. You can inspect this table in your SQL browser of choice.

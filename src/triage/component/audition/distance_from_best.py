@@ -70,7 +70,7 @@ class DistanceFromBestTable(object):
                         ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
                         ) AS eval_rn
                     FROM test_results.evaluations
-                    WHERE metric='{metric}' AND parameter='{parameter}'
+                    WHERE metric='{metric}' AND parameter='{parameter}' AND subset_hash=''
                 ),
                 model_ranks AS (
                     SELECT

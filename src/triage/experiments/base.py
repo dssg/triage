@@ -21,9 +21,9 @@ from triage.component.architect.features import (
 )
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
-from triage.component.architect.cohort_table_generators import (
-    CohortTableGenerator,
-    CohortTableGeneratorNoOp,
+from triage.component.architect.entity_date_table_generators import (
+    EntityDateTableGenerator,
+    EntityDateTableGeneratorNoOp,
 )
 from triage.component.timechop import Timechop
 from triage.component.results_schema import upgrade_db
@@ -33,7 +33,8 @@ from triage.component.catwalk import (
     Predictor,
     IndividualImportanceCalculator,
     ModelGrouper,
-    ModelTrainTester
+    ModelTrainTester,
+    Subsetter
 )
 from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
@@ -41,7 +42,7 @@ from triage.component.catwalk.utils import (
     associate_matrices_with_experiment,
     missing_matrix_uuids,
     missing_model_hashes,
-    filename_friendly_hash
+    filename_friendly_hash,
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -63,8 +64,8 @@ class ExperimentBase(ABC):
     Subclasses must implement the following four methods:
     process_query_tasks
     process_matrix_build_tasks
-    process_train_tasks
-    process_model_test_tasks
+    process_subset_tasks
+    process_train_test_tasks
 
     Look at singlethreaded.py for reference implementation of each.
 
@@ -119,13 +120,14 @@ class ExperimentBase(ABC):
         self.cleanup = cleanup
         if self.cleanup:
             logging.info(
-                "cleanup is set to True, so intermediate tables (labels and states) "
-                "will be removed after matrix creation"
+                "cleanup is set to True, so intermediate tables (labels and cohort) "
+                "will be removed after matrix creation and subset tables will be "
+                "removed after model training and testing"
             )
         else:
             logging.info(
-                "cleanup is set to False, so intermediate tables (labels and states) "
-                "will not be removed after matrix creation"
+                "cleanup is set to False, so intermediate tables (labels, cohort, and subsets) "
+                "will not be removed"
             )
         self.cleanup_timeout = (
             self.cleanup_timeout if cleanup_timeout is None else cleanup_timeout
@@ -160,8 +162,8 @@ class ExperimentBase(ABC):
                 cohort_config.get('name', 'default'),
                 filename_friendly_hash(cohort_config['query'])
             )
-            self.cohort_table_generator = CohortTableGenerator(
-                cohort_table_name=self.cohort_table_name,
+            self.cohort_table_generator = EntityDateTableGenerator(
+                entity_date_table_name=self.cohort_table_name,
                 db_engine=self.db_engine,
                 query=cohort_config["query"],
                 replace=self.replace
@@ -174,7 +176,9 @@ class ExperimentBase(ABC):
             )
             self.features_ignore_cohort = True
             self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
-            self.cohort_table_generator = CohortTableGeneratorNoOp()
+            self.cohort_table_generator = EntityDateTableGeneratorNoOp()
+
+        self.subsets = [None] + self.config.get("scoring", {}).get("subsets", [])
 
         if "label_config" in self.config:
             label_config = self.config["label_config"]
@@ -243,6 +247,12 @@ class ExperimentBase(ABC):
             replace=self.replace,
         )
 
+        self.subsetter = Subsetter(
+            db_engine=self.db_engine,
+            replace=self.replace,
+            as_of_times=self.all_as_of_times
+        )
+        
         self.trainer = ModelTrainer(
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
@@ -277,7 +287,8 @@ class ExperimentBase(ABC):
             model_evaluator=self.evaluator,
             model_trainer=self.trainer,
             individual_importance_calculator=self.individual_importance_calculator,
-            predictor=self.predictor
+            predictor=self.predictor,
+            subsets=self.subsets,
         )
 
     @cachedproperty
@@ -509,6 +520,10 @@ class ExperimentBase(ABC):
             )
         )
 
+    @cachedproperty
+    def subset_tasks(self):
+        return self.subsetter.generate_tasks(self.subsets)
+
     def generate_labels(self):
         """Generate labels based on experiment configuration
 
@@ -519,7 +534,12 @@ class ExperimentBase(ABC):
         )
 
     def generate_cohort(self):
-        self.cohort_table_generator.generate_cohort_table(
+        self.cohort_table_generator.generate_entity_date_table(
+            as_of_dates=self.all_as_of_times
+        )
+
+    def generate_subset(self, subset_hash):
+        self.subsets["subset_hash"].subset_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
 
@@ -531,6 +551,10 @@ class ExperimentBase(ABC):
             split["train_matrix"]["first_as_of_time"],
             split["train_matrix"]["matrix_info_end_time"],
         )
+
+    @abstractmethod
+    def process_subset_tasks(self, subset_tasks):
+        pass
 
     @abstractmethod
     def process_train_test_tasks(self, train_tasks):
@@ -580,6 +604,13 @@ class ExperimentBase(ABC):
         logging.info("Building all matrices")
         self.build_matrices()
 
+    def generate_subsets(self):
+        if self.subsets:
+            logging.info("Beginning subset generation")
+            self.process_subset_tasks(self.subset_tasks)
+        else:
+            logging.info("No subsets found. Proceeding to training and testing models")
+
     def _all_train_test_tasks(self):
         if "grid_config" not in self.config:
             logging.warning(
@@ -599,6 +630,7 @@ class ExperimentBase(ABC):
         return train_test_tasks
 
     def train_and_test_models(self):
+        self.generate_subsets()
         tasks = self._all_train_test_tasks()
         if not tasks:
             logging.warning("No train/test tasks found, so no training to do")
@@ -621,11 +653,15 @@ class ExperimentBase(ABC):
             self.generate_matrices()
         finally:
             if self.cleanup:
-                self.clean_up_tables()
+                self.clean_up_matrix_building_tables()
 
-        self.train_and_test_models()
-        logging.info("Experiment complete")
-        self._log_end_of_run_report()
+        try:
+            self.train_and_test_models()
+        finally:
+            if self.cleanup:
+                self.clean_up_subset_tables()
+            logging.info("Experiment complete")
+            self._log_end_of_run_report()
 
     def _log_end_of_run_report(self):
         missing_models = missing_model_hashes(self.experiment_hash, self.db_engine)
@@ -652,11 +688,17 @@ class ExperimentBase(ABC):
         else:
             logging.info("All matrices that were supposed to be build were built. Awesome!")
 
-    def clean_up_tables(self):
-        logging.info("Cleaning up state and labels tables")
+    def clean_up_matrix_building_tables(self):
+        logging.info("Cleaning up cohort and labels tables")
         with timeout(self.cleanup_timeout):
             self.cohort_table_generator.clean_up()
             self.label_generator.clean_up(self.labels_table_name)
+
+    def clean_up_subset_tables(self):
+        logging.info("Cleaning up cohort and labels tables")
+        with timeout(self.cleanup_timeout):
+            for subset_task in self.subset_tasks:
+                subset_task["subset_table_generator"].clean_up()
 
     def _run_profile(self):
         cp = cProfile.Profile()

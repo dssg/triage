@@ -4,7 +4,7 @@ import pytest
 import testing.postgresql
 from sqlalchemy.engine import create_engine
 
-from triage.component.architect.cohort_table_generators import CohortTableGenerator
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 
 from . import utils
 
@@ -18,19 +18,19 @@ def test_empty_output():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         utils.create_binary_outcome_events(engine, "events", [])
-        table_generator = CohortTableGenerator(
+        table_generator = EntityDateTableGenerator(
             query="select entity_id from events where outcome_date < '{as_of_date}'::date",
             db_engine=engine,
-            cohort_table_name="exp_hash_cohort",
+            entity_date_table_name="exp_hash_cohort",
         )
 
         with pytest.raises(ValueError):
             # Request time outside of available intervals
-            table_generator.generate_cohort_table([datetime(2015, 12, 31)])
+            table_generator.generate_entity_date_table([datetime(2015, 12, 31)])
 
         (cohort_count,) = engine.execute(
             f"""\
-            select count(*) from {table_generator.cohort_table_name}
+            select count(*) from {table_generator.entity_date_table_name}
         """
         ).first()
 
@@ -39,7 +39,7 @@ def test_empty_output():
         engine.dispose()
 
 
-def test_cohort_table_generator_replace():
+def test_entity_date_table_generator_replace():
     input_data = [
         (1, datetime(2016, 1, 1), True),
         (1, datetime(2016, 4, 1), False),
@@ -53,10 +53,10 @@ def test_cohort_table_generator_replace():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         utils.create_binary_outcome_events(engine, "events", input_data)
-        table_generator = CohortTableGenerator(
+        table_generator = EntityDateTableGenerator(
             query="select entity_id from events where outcome_date < '{as_of_date}'::date",
             db_engine=engine,
-            cohort_table_name="exp_hash_cohort",
+            entity_date_table_name="exp_hash_entity_date",
             replace=True
         )
         as_of_dates = [
@@ -67,7 +67,7 @@ def test_cohort_table_generator_replace():
             datetime(2016, 5, 1),
             datetime(2016, 6, 1),
         ]
-        table_generator.generate_cohort_table(as_of_dates)
+        table_generator.generate_entity_date_table(as_of_dates)
         expected_output = [
             (1, datetime(2016, 2, 1), True),
             (1, datetime(2016, 3, 1), True),
@@ -91,20 +91,20 @@ def test_cohort_table_generator_replace():
         results = list(
             engine.execute(
                 f"""
-                select entity_id, as_of_date, active from {table_generator.cohort_table_name}
+                select entity_id, as_of_date, active from {table_generator.entity_date_table_name}
                 order by entity_id, as_of_date
             """
             )
         )
         assert results == expected_output
-        utils.assert_index(engine, table_generator.cohort_table_name, "entity_id")
-        utils.assert_index(engine, table_generator.cohort_table_name, "as_of_date")
+        utils.assert_index(engine, table_generator.entity_date_table_name, "entity_id")
+        utils.assert_index(engine, table_generator.entity_date_table_name, "as_of_date")
 
-        table_generator.generate_cohort_table(as_of_dates)
+        table_generator.generate_entity_date_table(as_of_dates)
         assert results == expected_output
 
 
-def test_cohort_table_generator_noreplace():
+def test_entity_date_table_generator_noreplace():
     input_data = [
         (1, datetime(2016, 1, 1), True),
         (1, datetime(2016, 4, 1), False),
@@ -118,10 +118,10 @@ def test_cohort_table_generator_noreplace():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         utils.create_binary_outcome_events(engine, "events", input_data)
-        table_generator = CohortTableGenerator(
+        table_generator = EntityDateTableGenerator(
             query="select entity_id from events where outcome_date < '{as_of_date}'::date",
             db_engine=engine,
-            cohort_table_name="exp_hash_cohort",
+            entity_date_table_name="exp_hash_entity_date",
             replace=False
         )
 
@@ -131,7 +131,7 @@ def test_cohort_table_generator_noreplace():
             datetime(2016, 2, 1),
             datetime(2016, 3, 1),
         ]
-        table_generator.generate_cohort_table(as_of_dates)
+        table_generator.generate_entity_date_table(as_of_dates)
         expected_output = [
             (1, datetime(2016, 2, 1), True),
             (1, datetime(2016, 3, 1), True),
@@ -143,16 +143,16 @@ def test_cohort_table_generator_noreplace():
         results = list(
             engine.execute(
                 f"""
-                select entity_id, as_of_date, active from {table_generator.cohort_table_name}
+                select entity_id, as_of_date, active from {table_generator.entity_date_table_name}
                 order by entity_id, as_of_date
             """
             )
         )
         assert results == expected_output
-        utils.assert_index(engine, table_generator.cohort_table_name, "entity_id")
-        utils.assert_index(engine, table_generator.cohort_table_name, "as_of_date")
+        utils.assert_index(engine, table_generator.entity_date_table_name, "entity_id")
+        utils.assert_index(engine, table_generator.entity_date_table_name, "as_of_date")
 
-        table_generator.generate_cohort_table(as_of_dates)
+        table_generator.generate_entity_date_table(as_of_dates)
         assert results == expected_output
 
         # 2. generate a cohort for a different subset of as-of-dates,
@@ -163,7 +163,7 @@ def test_cohort_table_generator_noreplace():
             datetime(2016, 5, 1),
             datetime(2016, 6, 1),
         ]
-        table_generator.generate_cohort_table(as_of_dates)
+        table_generator.generate_entity_date_table(as_of_dates)
         expected_output = [
             (1, datetime(2016, 2, 1), True),
             (1, datetime(2016, 3, 1), True),
@@ -187,7 +187,7 @@ def test_cohort_table_generator_noreplace():
         results = list(
             engine.execute(
                 f"""
-                select entity_id, as_of_date, active from {table_generator.cohort_table_name}
+                select entity_id, as_of_date, active from {table_generator.entity_date_table_name}
                 order by entity_id, as_of_date
             """
             )

@@ -11,7 +11,7 @@ from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
 
 from triage.component.architect.feature_generators import FeatureGenerator
-from triage.component.architect.cohort_table_generators import CohortTableGenerator
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop.plotting import visualize_chops
@@ -132,12 +132,12 @@ class FeatureTest(Command):
         feature_config = full_config['feature_aggregations']
         cohort_config = full_config.get('cohort_config', None)
         if cohort_config:
-            CohortTableGenerator(
-                cohort_table_name="features_test.test_cohort",
+            EntityDateTableGenerator(
+                entity_date_table_name="features_test.test_cohort",
                 db_engine=db_engine,
                 query=cohort_config["query"],
                 replace=True
-            ).generate_cohort_table(as_of_dates=[args.as_of_date])
+            ).generate_entity_date_table(as_of_dates=[args.as_of_date])
 
         FeatureGenerator(db_engine, "features_test").create_features_before_imputation(
             feature_aggregation_config=feature_config,

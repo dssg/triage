@@ -51,6 +51,16 @@ class Experiment(Base):
     config = Column(JSONB)
 
 
+class Subset(Base):
+
+    __tablename__ = "subsets"
+    __table_args__ = {"schema": "model_metadata"}
+
+    subset_hash = Column(String, primary_key=True)
+    config = Column(JSONB)
+    created_timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelGroup(Base):
 
     __tablename__ = "model_groups"
@@ -249,6 +259,7 @@ class TestEvaluation(Base):
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
     )
+    subset_hash = Column(String, primary_key=True, default='')
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
@@ -273,6 +284,7 @@ class TrainEvaluation(Base):
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
     )
+    subset_hash = Column(String, primary_key=True, default='')
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
