@@ -16,6 +16,8 @@ from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from tests.results_tests.factories import init_engine, session, MatrixFactory
 from triage.util.structs import FeatureNameList
+import matplotlib
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
 
