@@ -64,7 +64,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         active in the subset
     """
     as_of_dates_sql = "[{}]".format(
-        ", ".join("'" + date.strftime("%Y-%m-%d %H:%M:%S.%f") + "'" for date in as_of_dates)
+        ", ".join("'{}'".format(date.strftime("%Y-%m-%d %H:%M:%S.%f")) for date in as_of_dates)
     )
     query_string = f"""
         with dates as (
