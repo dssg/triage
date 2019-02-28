@@ -1,7 +1,7 @@
 from triage.component.postmodeling.contrast.model_group_evaluator import ModelGroupEvaluator
 import pandas as pd
 import pytest
-from matplotlib import pyplot as plt
+from tests.utils import assert_plot_figures_added
 
 
 @pytest.fixture(scope="module")
@@ -41,9 +41,8 @@ def test_ModelGroupEvaluator_same_time_models(model_group_evaluator):
 
 
 def test_ModelGroupEvaluator_plot_prec_across_time(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_prec_across_time()
-    assert plt.gcf().number == 1
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_prec_across_time()
 
 
 def test_ModelGroupEvaluator_feature_loi_loo(model_group_evaluator):
@@ -52,29 +51,24 @@ def test_ModelGroupEvaluator_feature_loi_loo(model_group_evaluator):
 
 
 def test_ModelGroupEvaluator_plot_ranked_correlation_preds(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_ranked_correlation_preds(param_type='rank_abs', param=10, top_n_features=10)
-    assert plt.gcf().number == 1
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_ranked_correlation_preds(param_type='rank_abs', param=10, top_n_features=10)
 
 
 def test_ModelGroupEvaluator_plot_ranked_correlation_features(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_ranked_correlation_features(param_type='rank_abs', param=10, top_n_features=10)
-    assert plt.gcf().number == 1
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_ranked_correlation_features(param_type='rank_abs', param=10, top_n_features=10)
 
 def test_ModelGroupEvaluator_plot_jaccard_preds(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_jaccard_preds(param_type='rank_abs', param=10)
-    assert plt.gcf().number == 1
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_jaccard_preds(param_type='rank_abs', param=10)
 
 
 def test_ModelGroupEvaluator_plot_jaccard_features(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_jaccard_features()
-    assert plt.gcf().number == 1
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_jaccard_features()
 
 
 def test_ModelGroupEvaluator_plot_preds_comparison(model_group_evaluator):
-    plt.close()
-    model_group_evaluator.plot_preds_comparison(param_type='rank_abs', param=10)
-    assert plt.gcf().number == 1 + len(model_group_evaluator.same_time_models)
+    with assert_plot_figures_added():
+        model_group_evaluator.plot_preds_comparison(param_type='rank_abs', param=10)

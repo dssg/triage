@@ -1,10 +1,9 @@
 from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
 from triage.component.postmodeling.crosstabs import run_crosstabs
-from tests.utils import sample_config, populate_source_data
+from tests.utils import sample_config, populate_source_data, assert_plot_figures_added
 from triage.experiments import SingleThreadedExperiment
 import pandas as pd
 import pytest
-from matplotlib import pyplot as plt
 
 
 @pytest.fixture(scope="module")
@@ -65,51 +64,43 @@ def test_ModelEvaluator_preds_matrix(model_evaluator, shared_project_storage):
 
 
 def test_ModelEvaluator_plot_score_distribution(model_evaluator):
-    plt.close()
-    model_evaluator.plot_score_distribution()
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_score_distribution()
 
 
 def test_ModelEvaluator_plot_score_label_distributions(model_evaluator):
-    plt.close()
-    model_evaluator.plot_score_label_distributions()
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_score_label_distributions()
 
 
 def test_ModelEvaluator_plot_score_distribution_thresh(model_evaluator):
-    plt.close()
-    model_evaluator.plot_score_distribution_thresh(param_type='rank_abs', param=10)
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_score_distribution_thresh(param_type='rank_abs', param=10)
 
 
 def test_ModelEvaluator_plot_feature_importances(model_evaluator, shared_project_storage):
-    plt.close()
-    model_evaluator.plot_feature_importances(shared_project_storage.project_path)
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_feature_importances(shared_project_storage.project_path)
 
 
 def test_ModelEvaluator_plot_feature_importances_std_err(model_evaluator, shared_project_storage):
-    plt.close()
-    model_evaluator.plot_feature_importances_std_err(shared_project_storage.project_path)
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_feature_importances_std_err(shared_project_storage.project_path)
 
 
 def test_ModelEvaluator_plot_precision_recall_n(model_evaluator):
-    plt.close()
-    model_evaluator.plot_precision_recall_n()
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_precision_recall_n()
 
 
 def test_ModelEvaluator_plot_recall_fpr_n(model_evaluator):
-    plt.close()
-    model_evaluator.plot_recall_fpr_n()
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_recall_fpr_n()
 
 
 def test_ModelEvaluator_plot_ROC(model_evaluator):
-    plt.close()
-    model_evaluator.plot_ROC()
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.plot_ROC()
 
 
 def test_ModelEvaluator_compute_AUC(model_evaluator):
@@ -117,19 +108,15 @@ def test_ModelEvaluator_compute_AUC(model_evaluator):
 
 
 def test_ModelEvaluator_cluster_correlation_sparsity(model_evaluator, shared_project_storage):
-    plt.close()
-    model_evaluator.cluster_correlation_sparsity(shared_project_storage.project_path)
-    assert plt.gcf().number > 0
+    with assert_plot_figures_added():
+        model_evaluator.cluster_correlation_sparsity(shared_project_storage.project_path)
 
 
 def test_ModelEvaluator_cluster_correlation_features(model_evaluator, shared_project_storage):
-    plt.close()
-    model_evaluator.cluster_correlation_features(shared_project_storage.project_path)
-
-    assert plt.gcf().number == 2 # one figure per feature group
+    with assert_plot_figures_added():
+        model_evaluator.cluster_correlation_features(shared_project_storage.project_path)
 
 
 def test_ModelEvaluator_plot_feature_group_average_importances(model_evaluator, shared_project_storage):
-    plt.close()
-    model_evaluator.plot_feature_group_average_importances(path=shared_project_storage.project_path)
-    assert plt.gcf().number == 2 # one figure per feature group
+    with assert_plot_figures_added():
+        model_evaluator.plot_feature_group_average_importances(path=shared_project_storage.project_path)

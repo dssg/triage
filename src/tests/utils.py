@@ -16,6 +16,7 @@ from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from tests.results_tests.factories import init_engine, session, MatrixFactory
 from triage.util.structs import FeatureNameList
+from matplotlib import pyplot as plt
 
 
 @contextmanager
@@ -409,3 +410,11 @@ def sample_config():
         "user_metadata": {"custom_key": "custom_value"},
         "individual_importance": {"n_ranks": 2},
     }
+
+
+@contextmanager
+def assert_plot_figures_added():
+    num_figures_before = plt.gcf().number
+    yield
+    num_figures_after = plt.gcf().number
+    assert num_figures_before < num_figures_after
