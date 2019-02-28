@@ -5,11 +5,11 @@ Developing features for Triage experiments can be a daunting task. There are a l
 To speed up the process of iterating on features, you can run a list of feature aggregations, without imputation, on just one as-of-date. This functionality can be accessed through the `triage` command line tool or called directly from code (say, in a Jupyter notebook) using the `feature_blocks_from_config` utility.
 
 ## Using Triage CLI
-![triage featuretest cli help screen](featuretest-cli.png)
 
 The command-line interface for testing features takes in two arguments:
-	- An experiment config file, with a feature section and optionally a cohort section. 
-	- An as-of-date. This should be in the format `2016-01-01`.
+
+- An experiment config file. It should have at least a `features` section, and if a `cohort_config` section is present, it will use that to limit the number of feature rows it creates to the cohort at the given date. Other keys can be in there but are ignored. In other lwords, you can use your experiment config file either before or after its fully completed.
+- An as-of-date. This should be in the format `2016-01-01`.
 
 Example: `triage experiment featuretest example/config/experiment.yaml 2016-01-01`
 
@@ -39,6 +39,7 @@ feature_config = {'spacetime_aggregations': [{
 		{
 		'quantity': 'quantity_one',
 		'metrics': ['sum', 'count'],
+        }
 	],
 	'categoricals': [
 		{

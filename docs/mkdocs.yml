@@ -19,7 +19,10 @@ pages:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
     - Running an Experiment: experiments/running.md
-    - Upgrading an Experiment: experiments/upgrading.md
+    - Upgrading an Experiment:
+        to v5: experiments/upgrade-to-v5.md
+        to v6: experiments/upgrade-to-v6.md
+        to v7: experiments/upgrade-to-v7.md
     - Temporal Validation Deep Dive: experiments/temporal-validation.md
     - Cohort and Label Deep Dive: experiments/cohort-labels.md
     - Feature Generation Recipe Book: experiments/features.md
