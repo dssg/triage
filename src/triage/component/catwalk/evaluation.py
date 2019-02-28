@@ -2,7 +2,6 @@ import functools
 import io
 import logging
 import time
-import warnings
 
 import numpy
 import pandas
