@@ -13,7 +13,7 @@ graph TD
     TC[Timechop]
     subgraph Architect
     LG[Label Generator]
-    CG[Cohort Generator]
+    EDG[Entity-Date Generator]
     FG["Feature Generator (+ feature groups)"]
     MB[Matrix Builder]
     end
@@ -23,10 +23,10 @@ graph TD
     EV[Model Evaluator]
     end
     TC --> LG
-    TC --> CG
+    TC --> EDG
     TC --> FG
     LG --> MB
-    CG --> MB
+    EDG --> MB
     FG --> MB
     MB --> MT
     MB --> PR
@@ -62,7 +62,7 @@ These are where the interesting data science work is done.
 
 - [Timechop](#timechop) (temporal cross-validation)
 - Architect (design matrix creation)
-    - [Cohort Table Generator](#cohort-table-generator)
+    - [Entity-Date_ Table Generator](#entity-date-table-generator)
     - [Label Generator](#label-generator)
     - [Feature Generator](#feature-generator)
     - [Feature Dictionary Creator](#feature-dictionary-creator)
@@ -91,19 +91,19 @@ Timechop does the necessary temporal math to set up temporal cross-validation. I
 - Time splits containing temporal cross-validation definition, including each `as_of_date` to be included in the matrices in each time split
 
 
-### Cohort Table Generator
+### Entity-Date Table Generator
 
-The `CohortTableGenerator` manages a cohort table by running the configured cohort query for a number of different `as_of_dates`.
+The `EntityDateTableGenerator` manages entity-date tables (including cohort and subset tables) by running the configured query for a number of different `as_of_dates`.
 
 **Input**
 
 - All unique `as_of_dates` needed by matrices in the experiment, as provided by [Timechop](#timechop)
-- query and name from `cohort_config` in experiment config
-- cohort table name that the caller wants to use
+- query and name from `cohort_config` or `subsets` in the `scoring` section in an experiment config
+- entity-date table name that the caller wants to use
 
 **Output**
 
-- A cohort table in the database, consisting of entity ids and dates
+- An entity-date table in the database, consisting of entity ids and dates
 
 
 ### Label Generator
@@ -132,7 +132,7 @@ The `FeatureGenerator` manages a number of features tables by converting the con
 **Input**
 
 - All unique `as_of_dates` needed by matrices in the experiment, and the start time for features, as provided by [Timechop](#timechop)
-- The populated cohort table, as provided by [Cohort Table Generator](#cohort-table-generator)
+- The populated cohort table, as provided by [Entity-Date Table Generator](#entity-date-table-generator)
 - `feature_aggregations` in experiment config
 
 **Output**
@@ -279,17 +279,18 @@ Generates predictions for a given model and matrix, both returning them for imme
 
 ### ModelEvaluator
 
-Generates evaluation metrics for a given model and matrix.
+Generates evaluation metrics for a given model and matrix over the entire matrix and for any subsets.
 
 **Input**
 
 - `scoring` in experiment config
 - array of predictions
 - the [MatrixStore](#matrix-store) and model_id that the predictions were generated from
+- the subset to be evaluated (or `None` for the whole matrix)
 
 **Output**
 
-- A row in the database for each evaluation metric. The table they are stored in depends on which type of matrix it is (e.g. `test_results.evaluations` or `train_results.evaluations`).
+- A row in the database for each evaluation metric for each subset. The table they are stored in depends on which type of matrix it is (e.g. `test_results.evaluations` or `train_results.evaluations`).
 
 ### Individual Importance Calculator
 

@@ -310,8 +310,8 @@ grid_config:
 # which are simply wrappers of sklearn functions, these
 # are passed directly to sklearn.
 #
-# Thresholds are more specific: The list is subset and only the
-# top percentile or top n entities are scored
+# Thresholds are more specific: The list is dichotomized and only the
+# top percentile or top n entities are scored as positive labels
 #
 # sort_seed, if passed, will seed the random number generator for each model's
 # metric creation phase. This affects how entities with the same probabilities
