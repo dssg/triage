@@ -83,21 +83,17 @@ class FeatureBlock(ABC):
         """Helper function to ensure we only include state table records
         in our set of input dates and after the feature_start_time.
         """
-        datestr = ", ".join(["'%s'::date" % dt for dt in self.as_of_dates])
+        datestr = ", ".join(f"'{dt}'::date" for dt in self.as_of_dates)
         mindtstr = (
-            " AND as_of_date >= '%s'::date" % (self.feature_start_time,)
+            f" AND as_of_date >= '{self.feature_start_time}'::date"
             if self.feature_start_time is not None
             else ""
         )
-        return """(
+        return f"""(
         SELECT *
-        FROM {st}
+        FROM {self.cohort_table_name}
         WHERE as_of_date IN ({datestr})
-        {mindtstr})""".format(
-            st=self.cohort_table_name,
-            datestr=datestr,
-            mindtstr=mindtstr,
-        )
+        {mindtstr})"""
 
     def verify_no_nulls(self):
         """
@@ -112,12 +108,8 @@ class FeatureBlock(ABC):
             LEFT JOIN {aggs_tbl} t2 USING(entity_id, as_of_date)
             """
         cols_sql = ",\n".join(
-            [
-                """SUM(CASE WHEN "{col}" IS NULL THEN 1 ELSE 0 END) AS "{col}" """.format(
-                    col=column.name
-                )
-                for column in table_columns(self.final_feature_table_name, self.db_engine)
-            ]
+            f"""SUM(CASE WHEN "{column.name}" IS NULL THEN 1 ELSE 0 END) AS "{column.name}" """
+            for column in table_columns(self.final_feature_table_name, self.db_engine)
         )
 
         results = self.db_engine.execute(query_template.format(

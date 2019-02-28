@@ -1,25 +1,20 @@
 from triage.component.architect.utils import remove_schema_from_table_name
 from triage.util.structs import FeatureNameList
 from collections.abc import Iterable
-from collections import MutableMapping
 
 
-class FeatureDictionary(MutableMapping):
+class FeatureDictionary(dict):
     """A feature dictionary, consisting of table names as keys and column names as values
 
     If a list of feature_blocks is passed, will initialize the feature dictionary with their data.
     """
     def __init__(self, feature_blocks=None, *args, **kwargs):
-        self.tables = dict()
-        self.update(dict(*args, **kwargs))  # use the free update to set keys
+        super().__init__(*args, **kwargs)
         for feature_block in feature_blocks:
             cleaned_table = remove_schema_from_table_name(
                 feature_block.final_feature_table_name
             )
             self[cleaned_table] = feature_block.feature_columns
-
-    def __getitem__(self, key):
-        return FeatureNameList(self.tables[key])
 
     def __setitem__(self, table, feature_names):
         if not isinstance(table, str):
@@ -34,31 +29,7 @@ class FeatureDictionary(MutableMapping):
                                  f"invalid type: {type(feature_name)} "
                                  "The value of FeatureDictionary objects represents a list of "
                                  "feature names, and therefore each item must be a string")
-        self.tables[table] = feature_names
-
-    def __delitem__(self, key):
-        del self.tables[key]
-
-    def __iter__(self):
-        return iter(self.tables)
-
-    def __len__(self):
-        return len(self.tables)
-
-    def __sub__(self, other):
-        not_in_other = FeatureDictionary()
-        for table_name, feature_list in self.items():
-            if table_name not in other:
-                not_in_other[table_name] = feature_list
-                continue
-            missing_feature_names = [
-                feature_name
-                for feature_name in feature_list
-                if feature_name not in other[table_name]
-            ]
-            if missing_feature_names:
-                not_in_other[table_name] = missing_feature_names
-        return not_in_other
-
-    def __repr__(self):
-        return str(self.tables)
+        if isinstance(feature_names, FeatureNameList):
+            super().__setitem__(table, feature_names)
+        else:
+            super().__setitem__(table, FeatureNameList(feature_names))
