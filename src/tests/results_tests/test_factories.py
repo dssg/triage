@@ -51,8 +51,8 @@ def test_evaluation_factories_no_subset():
 
 
 def test_evaluation_factories_with_subset(db_engine):
-    Base.metadata.create_all(engine)
-    init_engine(engine)
+    Base.metadata.create_all(db_engine)
+    init_engine(db_engine)
 
     model_group = ModelGroupFactory()
     model = ModelFactory(model_group_rel=model_group)
@@ -62,7 +62,7 @@ def test_evaluation_factories_with_subset(db_engine):
             model_rel=model, metric=metric, parameter="100_abs", value=value
         )
     session.commit()
-    results = engine.execute(
+    results = db_engine.execute(
         """\
         select
             model_group_id,

@@ -159,7 +159,8 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                     )
                 ]
             )
-            assert num_evaluations > 0
+            # 4 model groups trained/tested on 2 splits, with 1 metric + parameter
+            assert num_evaluations == 8
 
         # 6. experiment
         num_experiments = len(
