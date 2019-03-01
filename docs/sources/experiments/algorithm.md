@@ -309,7 +309,7 @@ The trained model's prediction probabilities (`predict_proba()`) are computed bo
 ### Individual Feature Importance
 Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `test_results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
-#### Metrics
+### Metrics
 Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.evaluations` table or the `test_results.evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
 
 Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
@@ -318,6 +318,15 @@ Sometimes test matrices may not have labels for every row, so it's worth mention
 * `num_labeled_above_threshold` - The number of rows above the configured threshold for this metric score that have
 labels
 * `num_positive_labels` - The number of positive labels in the test matrix
+
+Triage also supports evaluating a model on a subset of the predictions made.
+This is done by passing a subset query in the prediction config. The model
+evaluator will then subset the predictions on valid entity-date pairs for the
+given model and will calculate metrics for the subset, re-applying thresholds
+as necessary to the predictions in the subset. Subset definitions are stored in
+the `model_metadata.subsets` table, and the evaluations are stored in the
+`evaluations` tables. A hash of the subset configuration identifies subset
+evaluations and links the `subsets` table.
 
 ### Recap
 At this point, the 'model_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.

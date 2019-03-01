@@ -90,6 +90,16 @@ class ModelFactory(BaseModelFactory):
     experiment_association = factory.RelatedFactory(ExperimentModelFactory, 'model_rel')
 
 
+class SubsetFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.Subset
+        sqlalchemy_session = session
+
+    subset_hash = factory.fuzzy.FuzzyText()
+    config = {}
+    created_timestamp = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+
+
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.FeatureImportance
@@ -116,6 +126,7 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     rank_pct = 1.0
     matrix_uuid = factory.SelfAttribute("model_rel.train_matrix_uuid")
     test_label_timespan = "3m"
+
 
 
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -153,6 +164,7 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = session
 
     model_rel = factory.SubFactory(ModelFactory)
+    subset_hash = ''
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     evaluation_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     as_of_date_frequency = "3d"

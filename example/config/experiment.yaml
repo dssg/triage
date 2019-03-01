@@ -311,12 +311,32 @@ grid_config:
 # which are simply wrappers of sklearn functions, these
 # are passed directly to sklearn.
 #
-# Thresholds are more specific: The list is subset and only the
-# top percentile or top n entities are scored
+# Thresholds are more specific: The list is dichotomized and only the
+# top percentile or top n entities are scored as positive labels
 #
 # sort_seed, if passed, will seed the random number generator for each model's
 # metric creation phase. This affects how entities with the same probabilities
 # are sorted
+#
+# subsets, if passed, will add evaluations for subset(s) of the predictions to
+# the subset_evaluations tables, using the same testing and training metric
+# groups as used for overall evaluations but with any thresholds reapplied only
+# to entities in the subset on the relevant as_of_dates. For example, when
+# calculating precision@5_pct for the subset of women, the ModelEvaluator will
+# count as positively labeled the top 5% of women, rather than any women in the
+# top 5% overall. This is useful if, for example, different interventions will
+# be applied to different subsets of entities (e.g., one program will provide
+# subsidies to the top 500 women with children and another program will provide
+# shelter to the top 150 women without children) and you would like to see
+# whether a single model can be used for both applications. Subsets can also be
+# used to see how a model's performance would be affected if the requirements
+# for intervention eligibility became more restricted.
+#
+# Subsets should be a list of dictionaries with the following keys:
+#     - "name": a shorthand name for the subset 
+#     - "query": a query that returns distinct entity_ids belonging to the
+#                subset on a given as_of_date with a placeholder for the
+#                as_of_date being queried
 scoring:
     sort_seed: 5
     testing_metric_groups:
@@ -337,6 +357,14 @@ scoring:
     training_metric_groups:
         -
             metrics: [accuracy]
+    subsets:
+        -
+            name: women
+            query: |
+                select distinct entity_id
+                from demographics
+                where d.gender = 'woman'
+                and demographic_date < '{as_of_date}'::date
 
 
 # INDIVIDUAL IMPORTANCES

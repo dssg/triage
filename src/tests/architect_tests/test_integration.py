@@ -16,7 +16,7 @@ from triage.component.architect.features import (
 )
 from triage.component.architect.feature_block_generators import feature_blocks_from_config
 from triage.component.architect.label_generators import LabelGenerator
-from triage.component.architect.cohort_table_generators import CohortTableGenerator
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.storage import ProjectStorage
@@ -160,9 +160,9 @@ def basic_integration_test(
                 test_durations=["1months"],
             )
 
-            cohort_table_generator = CohortTableGenerator(
+            entity_date_table_generator = EntityDateTableGenerator(
                 db_engine=db_engine,
-                cohort_table_name="cohort_abcd",
+                entity_date_table_name="cohort_abcd",
                 query="select distinct(entity_id) from events"
             )
 
@@ -209,8 +209,8 @@ def basic_integration_test(
                     all_as_of_times.extend(test_matrix["as_of_times"])
             all_as_of_times = list(set(all_as_of_times))
 
-            # generate cohort state table
-            cohort_table_generator.generate_cohort_table(as_of_dates=all_as_of_times)
+            # generate entity_date state table
+            entity_date_table_generator.generate_entity_date_table(as_of_dates=all_as_of_times)
 
             # create labels table
             label_generator.generate_all_labels(
@@ -255,7 +255,7 @@ def basic_integration_test(
                     ]
                 },
                 as_of_dates=all_as_of_times,
-                cohort_table=cohort_table_generator.cohort_table_name,
+                cohort_table=entity_date_table_generator.entity_date_table_name,
                 db_engine=db_engine,
                 features_schema_name='features',
             )

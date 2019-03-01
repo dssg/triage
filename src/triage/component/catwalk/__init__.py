@@ -4,9 +4,12 @@ from .predictors import Predictor
 from .evaluation import ModelEvaluator
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
+from .subsetters import Subsetter
+from .utils import filename_friendly_hash
 
 import logging
 
+import numpy
 
 class ModelTrainTester(object):
     def __init__(
@@ -15,13 +18,15 @@ class ModelTrainTester(object):
         model_trainer,
         model_evaluator,
         individual_importance_calculator,
-        predictor
+        predictor,
+        subsets,
     ):
         self.matrix_storage_engine = matrix_storage_engine
         self.model_trainer = model_trainer
         self.model_evaluator = model_evaluator
         self.individual_importance_calculator = individual_importance_calculator
         self.predictor = predictor
+        self.subsets = subsets
 
     def generate_tasks(self, split, grid_config, model_comment=None):
         logging.info("Generating train/test tasks for split %s", split["train_uuid"])
@@ -104,14 +109,16 @@ class ModelTrainTester(object):
 
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                if self.predictor.replace or self.model_evaluator.needs_evaluations(store, model_id):
+                predictions_proba = numpy.array(None)
+                if self.predictor.replace:
                     logging.info(
-                        "The evaluations needed for matrix %s-%s and model %s"
-                        "are not all present in db, so predicting and evaluating",
+                        "Replace flag set; generating new predictions and evaluations for"
+                        "matrix %s-%s, and model %s",
                         store.uuid,
                         store.matrix_type,
                         model_id
                     )
+
                     predictions_proba = self.predictor.predict(
                         model_id,
                         store,
@@ -119,19 +126,51 @@ class ModelTrainTester(object):
                         train_matrix_columns=train_store.columns(),
                     )
 
-                    self.model_evaluator.evaluate(
-                        predictions_proba=predictions_proba,
-                        matrix_store=store,
-                        model_id=model_id,
-                    )
-                else:
-                    logging.info(
-                        "The evaluations needed for matrix %s-%s and model %s are all present"
-                        "in db from a previous run (or none needed at all), so skipping!",
-                        store.uuid,
-                        store.matrix_type,
-                        model_id
-                    )
+                for subset in self.subsets:
+                    if self.predictor.replace or self.model_evaluator.needs_evaluations(
+                        store, model_id, filename_friendly_hash(subset)
+                    ):
+                        logging.info(
+                            "Evaluating matrix %s-%s, subset %s, and model %s",
+                            store.uuid,
+                            store.matrix_type,
+                            filename_friendly_hash(subset),
+                            model_id,
+                        )
+
+                        if not predictions_proba.any():
+                            logging.info(
+                                "Generating new predictions for"
+                                "matrix %s-%s, and model %s to make evaluation",
+                                store.uuid,
+                                store.matrix_type,
+                                model_id
+                            )
+
+                            predictions_proba = self.predictor.predict(
+                                model_id,
+                                store,
+                                misc_db_parameters=dict(),
+                                train_matrix_columns=train_store.columns(),
+                            )
+
+                        self.model_evaluator.evaluate(
+                            predictions_proba=predictions_proba,
+                            matrix_store=store,
+                            model_id=model_id,
+                            subset=subset,
+                        )
+                    
+                    else:
+                        logging.info(
+                            "The evaluations needed for matrix %s-%s, subset %s, and "
+                            "model %s are all present"
+                            "in db from a previous run (or none needed at all), so skipping!",
+                            store.uuid,
+                            store.matrix_type,
+                            filename_friendly_hash(subset),
+                            model_id
+                        )
 
 
 __all__ = (
@@ -140,5 +179,6 @@ __all__ = (
     "ModelGrouper"
     "ModelTrainer",
     "Predictor",
-    "ModelTrainTester"
+    "ModelTrainTester",
+    "Subsetter",
 )

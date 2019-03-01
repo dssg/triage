@@ -61,6 +61,7 @@ class MockMatrixStore(MatrixStore):
         init_labels=None,
         metadata_overrides=None,
         matrix=None,
+        init_as_of_dates=None,
     ):
         base_metadata = {
             "feature_start_time": datetime.date(2014, 1, 1),
@@ -71,6 +72,7 @@ class MockMatrixStore(MatrixStore):
             "label_timespan": "3month",
             "indices": ["entity_id"],
             "matrix_type": matrix_type,
+            "as_of_times": [datetime.date(2014, 10, 1), datetime.date(2014, 7, 1)],
         }
         metadata_overrides = metadata_overrides or {}
         base_metadata.update(metadata_overrides)
@@ -91,20 +93,30 @@ class MockMatrixStore(MatrixStore):
         self.label_count = label_count
         self.init_labels = init_labels
         self.matrix_uuid = matrix_uuid
+        self.init_as_of_dates = init_as_of_dates or []
 
         session = sessionmaker(db_engine)()
         session.add(Matrix(matrix_uuid=matrix_uuid))
         session.commit()
+    
+    @property
+    def as_of_dates(self):
+        """The list of as-of-dates in the matrix"""
+        return self.init_as_of_dates or self.metadata["as_of_times"] 
 
     @property
     def labels(self):
-        if self.init_labels == []:
-            return fake_labels(self.label_count)
-        else:
+        if len(self.init_labels) > 0:
             return self.init_labels
+        else:
+            return fake_labels(self.label_count)
 
 
-def fake_trained_model(db_engine, train_matrix_uuid="efgh"):
+def fake_trained_model(
+    db_engine,
+    train_matrix_uuid="efgh",
+    train_end_time=datetime.datetime(2016, 1, 1)
+):
     """Creates and stores a trivial trained model and training matrix
 
     Args:
@@ -118,7 +130,11 @@ def fake_trained_model(db_engine, train_matrix_uuid="efgh"):
 
     # Create the fake trained model and store in db
     trained_model = MockTrainedModel()
-    db_model = Model(model_hash="abcd", train_matrix_uuid=train_matrix_uuid)
+    db_model = Model(
+        model_hash="abcd",
+        train_matrix_uuid=train_matrix_uuid,
+        train_end_time=train_end_time,
+    )
     session.add(db_model)
     session.commit()
     return trained_model, db_model.model_id
@@ -345,6 +361,17 @@ def sample_config():
         "training_metric_groups": [
             {"metrics": ["precision@"], "thresholds": {"top_n": [3]}}
         ],
+        "subsets": [
+            {
+                "name": "evens",
+                "query": """\
+                    select distinct entity_id
+                    from events
+                    where entity_id %% 2 = 0
+                    and outcome_date < '{as_of_date}'::date
+                """,
+            },
+        ]
     }
 
     grid_config = {

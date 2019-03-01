@@ -729,6 +729,52 @@ class ScoringConfigValidator(Validator):
                             )
                         )
 
+            if "subsets" in scoring_config:
+                for subset in scoring_config["subsets"]:
+                    # 1. Validate that all required keys are present
+                    if "query" not in subset:
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset {subset} does not have a query key.
+                                To run evaluations on a subset, you must
+                                include a query that returns a list of distinct 
+                                entity_ids and has a placeholder for an
+                                as_of_date
+                                """
+                            )
+                        )
+                    if "name" not in subset:
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset {subset} does not have a name key.
+                                Please give a name to your subset. This is used
+                                in the namespacing of subset tables created by
+                                triage.
+                                """
+                            )
+                        )
+
+                    # 2. Validate that query conforms to the expectations
+                    if "{as_of_date}" not in subset["query"]:
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset query {subset["query"]} must
+                                include a placeholder for the as_of_date
+                                """
+                            )
+                        )
+                    if "entity_id" not in subset["query"]:
+                        raise ValueError(
+                            dedent(
+                                f"""The subset qeury {subset["query"]} must
+                                return a list of distinct entity_ids
+                                """
+                            )
+                        )
+
 
 class FeatureValidator(Validator):
     def _run(self, feature_config):
