@@ -15,11 +15,6 @@ from unittest import TestCase
 from contextlib import contextmanager
 
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
-
 @contextmanager
 def prepare_experiment(config):
     with testing.postgresql.Postgresql() as postgresql:
