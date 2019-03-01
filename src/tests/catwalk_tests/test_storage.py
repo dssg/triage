@@ -3,6 +3,7 @@ import tempfile
 from collections import OrderedDict
 
 import pandas as pd
+import datetime
 import yaml
 from moto import mock_s3
 import boto3
@@ -12,6 +13,7 @@ from unittest import mock
 import pytest
 
 from triage.component.catwalk.storage import (
+    MatrixStore,
     CSVMatrixStore,
     FSStore,
     HDFMatrixStore,
@@ -76,17 +78,18 @@ def test_ModelStorageEngine_caching(project_storage):
 DATA_DICT = OrderedDict(
     [
         ("entity_id", [1, 2]),
+        ("as_of_date", [datetime.date(2017, 1, 1), datetime.date(2017, 1, 1)]),
         ("k_feature", [0.5, 0.4]),
         ("m_feature", [0.4, 0.5]),
         ("label", [0, 1]),
     ]
 )
 
-METADATA = {"label_name": "label", "indices": ["entity_id"]}
+METADATA = {"label_name": "label"}
 
 
 def matrix_stores():
-    df = pd.DataFrame.from_dict(DATA_DICT).set_index(["entity_id"])
+    df = pd.DataFrame.from_dict(DATA_DICT).set_index(MatrixStore.indices)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         project_storage = ProjectStorage(tmpdir)
@@ -174,6 +177,7 @@ def test_MatrixStore_labels_idempotency():
 def test_MatrixStore_save():
     data = {
         "entity_id": [1, 2],
+        "as_of_date": [pd.Timestamp(2017, 1, 1), pd.Timestamp(2017, 1, 1)],
         "feature_one": [0.5, 0.6],
         "feature_two": [0.5, 0.6],
         "label": [1, 0]
@@ -201,28 +205,12 @@ def test_MatrixStore_caching():
                 assert not load_mock.called
 
 
-def test_as_of_dates_entity_index(project_storage):
-    data = {
-        "entity_id": [1, 2],
-        "feature_one": [0.5, 0.6],
-        "feature_two": [0.5, 0.6],
-        "label": [0, 1],
-    }
-    df = pd.DataFrame.from_dict(data)
-    labels = df.pop("label")
-    matrix_store = CSVMatrixStore(project_storage, [], "test")
-    matrix_store.matrix_label_tuple = df, labels
-    matrix_store.metadata = {"end_time": "2016-01-01", "indices": ["entity_id"], "label_name": "label"}
-
-    assert matrix_store.as_of_dates == ["2016-01-01"]
-
-
-def test_as_of_dates_entity_date_index(project_storage):
+def test_as_of_dates(project_storage):
     data = {
         "entity_id": [1, 2, 1, 2],
         "feature_one": [0.5, 0.6, 0.5, 0.6],
         "feature_two": [0.5, 0.6, 0.5, 0.6],
-        "as_of_date": ["2016-01-01", "2016-01-01", "2017-01-01", "2017-01-01"],
+        "as_of_date": [pd.Timestamp(2016, 1, 1), pd.Timestamp(2016, 1, 1), pd.Timestamp(2017, 1, 1), pd.Timestamp(2017, 1, 1)],
         "label": [1, 0, 1, 0]
     }
     df = pd.DataFrame.from_dict(data)
@@ -233,7 +221,7 @@ def test_as_of_dates_entity_date_index(project_storage):
         matrix=df,
         metadata={"indices": ["entity_id", "as_of_date"], "label_name": "label"}
     )
-    assert matrix_store.as_of_dates == ["2016-01-01", "2017-01-01"]
+    assert matrix_store.as_of_dates == [datetime.date(2016, 1, 1), datetime.date(2017, 1, 1)]
 
 
 def test_s3_save():

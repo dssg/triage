@@ -4,6 +4,7 @@ from triage.component.catwalk.evaluation import ModelEvaluator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
 from triage.component.catwalk.storage import (
     ModelStorageEngine,
+    MatrixStore,
 )
 from tests.utils import (
     rig_engines,
@@ -32,12 +33,13 @@ def test_integration():
                 pandas.DataFrame.from_dict(
                     {
                         "entity_id": [3],
+                        "as_of_date": [as_of_date],
                         "feature_one": [8],
                         "feature_two": [5],
                         "label": [0],
                     }
-                ).set_index("entity_id"),
-                matrix_metadata_creator(end_time=as_of_date, indices=["entity_id"]),
+                ),
+                matrix_metadata_creator(as_of_times=[as_of_date]),
             )
             test_stores.append(matrix_store)
 
