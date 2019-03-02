@@ -2,8 +2,7 @@ import copy
 import itertools
 import logging
 
-from triage.component import metta
-
+from triage.component.catwalk.utils import filename_friendly_hash
 from . import utils, entity_date_table_generators
 
 
@@ -145,7 +144,7 @@ class Planner(object):
                     cohort_name,
                     "train",
                 )
-                train_uuid = metta.generate_uuid(train_metadata)
+                train_uuid = filename_friendly_hash(train_metadata)
                 logging.info(
                     "Matrix UUID %s found for train metadata %s",
                     train_uuid,
@@ -175,7 +174,7 @@ class Planner(object):
                         cohort_name,
                         "test",
                     )
-                    test_uuid = metta.generate_uuid(test_metadata)
+                    test_uuid = filename_friendly_hash(test_metadata)
                     logging.info(
                         "Matrix UUID %s found for test metadata %s",
                         test_uuid,

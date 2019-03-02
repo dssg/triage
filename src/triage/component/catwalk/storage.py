@@ -603,7 +603,7 @@ class HDFMatrixStore(MatrixStore):
             complevel=4,
             complib="zlib",
         )
-        hdf.put(self.matrix_uuid, self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
+        hdf.put(f"matrix_{self.matrix_uuid}", self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
         hdf.close()
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
