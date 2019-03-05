@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 import numpy
 import pandas
+import numpy as np
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import testing.postgresql
@@ -152,7 +153,7 @@ def matrix_creator():
 
     source_dict = {
         "entity_id": [1, 2],
-        "as_of_date": [datetime.date(2016, 1, 1), datetime.date(2016, 1, 1)],
+        "as_of_date": [pandas.Timestamp(2016, 1, 1), pandas.Timestamp(2016, 1, 1)],
         "feature_one": [3, 4],
         "feature_two": [5, 6],
         "label": [0, 1],

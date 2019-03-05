@@ -29,7 +29,7 @@ def test_uniform_distribution():
         results = uniform_distribution(
             db_engine,
             model_id=model.model_id,
-            as_of_date=datetime.datetime(2016, 1, 1),
+            as_of_date=datetime.date(2016, 1, 1),
             test_matrix_store=test_store,
             n_ranks=5,
         )
