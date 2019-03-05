@@ -18,14 +18,14 @@ class FeatureDictionary(dict):
 
     def __setitem__(self, table, feature_names):
         if not isinstance(table, str):
-            raise ValueError("key of FeatureDictionary objects represents a table "
+            raise TypeError("key of FeatureDictionary objects represents a table "
                              "name and must be a string")
         if not isinstance(feature_names, Iterable):
-            raise ValueError("value of FeatureDictionary objects represents a list of "
+            raise TypeError("value of FeatureDictionary objects represents a list of "
                              "feature names, and therefore must be iterable")
         for feature_name in feature_names:
             if not isinstance(feature_name, str):
-                raise ValueError(f"invalid value: {feature_name}. "
+                raise TypeError(f"invalid value: {feature_name}. "
                                  f"invalid type: {type(feature_name)} "
                                  "The value of FeatureDictionary objects represents a list of "
                                  "feature names, and therefore each item must be a string")
