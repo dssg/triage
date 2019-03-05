@@ -5,11 +5,13 @@ import json
 import logging
 import random
 import tempfile
+from itertools import chain
 
 import postgres_copy
 import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
+from ohio import PipeTextIO
 
 from triage.component.results_schema import (
     Experiment,
@@ -204,13 +206,20 @@ def save_db_objects(db_engine, db_objects):
 
     Args:
         db_engine (sqlalchemy.engine)
-        db_objects (list) SQLAlchemy model objects, corresponding to a valid table
+        db_objects (iterator) SQLAlchemy model objects, corresponding to a valid table
     """
-    with tempfile.TemporaryFile(mode="w+") as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-        for db_object in db_objects:
+
+    first_object = next(db_objects)
+    type_of_object = type(first_object)
+    def write_output(file_like):
+        writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL)
+        for db_object in chain((first_object,), db_objects):
+            if type(db_object) != type_of_object:
+                raise TypeError("Cannot copy collection of objects to db as they are not all "
+                                f"of the same type. First object was {type_of_object} "
+                                f"and later encountered a {type(db_object)}")
             writer.writerow(
                 [getattr(db_object, col.name) for col in db_object.__table__.columns]
             )
-        f.seek(0)
-        postgres_copy.copy_from(f, type(db_objects[0]), db_engine, format="csv")
+    pipe = PipeTextIO(write_output)
+    postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")

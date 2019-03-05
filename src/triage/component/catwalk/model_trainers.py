@@ -159,7 +159,7 @@ class ModelTrainer(object):
                     rank_pct=0,
                 )
             )
-        save_db_objects(self.db_engine, db_objects)
+        save_db_objects(self.db_engine, iter(db_objects))
 
     @db_retry
     def _write_model_to_db(

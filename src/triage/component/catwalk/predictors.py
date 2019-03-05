@@ -1,13 +1,10 @@
-import csv
 import logging
 import math
-import tempfile
 
 import numpy
-import postgres_copy
 from sqlalchemy.orm import sessionmaker
 
-from .utils import db_retry, retrieve_model_hash_from_id
+from .utils import db_retry, retrieve_model_hash_from_id, save_db_objects
 
 
 class ModelNotFoundError(ValueError):
@@ -143,16 +140,14 @@ class Predictor(object):
             session.commit()
         finally:
             session.close()
-        db_objects = []
         test_label_timespan = matrix_store.metadata["label_timespan"]
 
-        with tempfile.TemporaryFile(mode="w+") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+        def generate_prediction_objects():
             for index, score, label in zip(
                 matrix_store.index, predictions, labels
             ):
                 entity_id, as_of_date = index
-                prediction = Prediction_obj(
+                yield Prediction_obj(
                     model_id=int(model_id),
                     entity_id=int(entity_id),
                     as_of_date=as_of_date,
@@ -162,27 +157,7 @@ class Predictor(object):
                     test_label_timespan=test_label_timespan,
                     **misc_db_parameters
                 )
-                writer.writerow(
-                    [
-                        prediction.model_id,
-                        prediction.entity_id,
-                        prediction.as_of_date,
-                        prediction.score,
-                        prediction.label_value,
-                        prediction.rank_abs,
-                        prediction.rank_pct,
-                        prediction.matrix_uuid,
-                        prediction.test_label_timespan,
-                    ]
-                )
-            f.seek(0)
-            postgres_copy.copy_from(f, Prediction_obj, self.db_engine, format="csv")
-        try:
-            session = self.sessionmaker()
-            session.bulk_save_objects(db_objects)
-            session.commit()
-        finally:
-            session.close()
+        save_db_objects(self.db_engine, generate_prediction_objects())
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
