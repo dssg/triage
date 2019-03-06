@@ -14,10 +14,12 @@ from triage.component.results_schema import (
     TrainPrediction,
 )
 from triage.util.pandas import downcast_matrix
+from ohio import PipeTextIO
 
 import pandas as pd
 import s3fs
 import yaml
+import csv
 from boto3.s3.transfer import TransferConfig
 import gzip
 
@@ -633,10 +635,26 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
+            zipped = gzip.GzipFile(fileobj=fd, mode='r')
+            print(zipped.read())
+            zipped.seek(0)
+            df = pd.read_csv(zipped, parse_dates=parse_dates_argument)
+            import ipdb
+            #ipdb.set_trace()
+            return df
 
     def save(self):
-        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        with self.matrix_base_store.open('wb') as fd:
+            full = self.full_matrix_for_saving
+            with gzip.open(fd, 'wt') as g:
+                writer = csv.writer(g)
+                writer.writerow(full.columns)
+                    #PipeTextIO(self.full_matrix_for_saving.to_csv) as pipe:
+                #zipped = gzip.GzipFile(fileobj=fd, mode='wb')
+                for k, row in full.iterrows():
+                    newrow = [row[col] for col in full.columns]
+                    writer.writerow(newrow)
+                    #zipped.write(line.encode('utf-8'))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

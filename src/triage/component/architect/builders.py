@@ -4,7 +4,11 @@ import logging
 import pandas
 
 from sqlalchemy.orm import sessionmaker
+from functools import partial
+from ohio import PipeTextIO
+from csv import DictReader
 
+from triage.component.catwalk.storage import MatrixStore
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
 from triage.util.pandas import downcast_matrix
@@ -290,33 +294,34 @@ class MatrixBuilder(BuilderBase):
             "Extracting feature group data from database into file " "for matrix %s",
             matrix_uuid,
         )
-        dataframes = self.load_features_data(
-            as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
-        )
-        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
-        logging.info(
-            "Extracting label data from database into file for " "matrix %s",
-            matrix_uuid,
-        )
-        labels_df = self.load_labels_data(
+        feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
+        #logging.info(f"Feature data extracted for matrix {matrix_uuid}")
+        #logging.info(
+            #"Extracting label data from database into file for " "matrix %s",
+            #matrix_uuid,
+        #)
+        label_query = self.label_load_query(
             label_name,
             label_type,
             entity_date_table_name,
-            matrix_uuid,
             matrix_metadata["label_timespan"],
         )
-        dataframes.insert(0, labels_df)
 
         logging.info(f"Label data extracted for matrix {matrix_uuid}")
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
-        output = self.merge_feature_csvs(dataframes, matrix_uuid)
+
+        design_matrix = self.feature_queries_to_df(feature_queries)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
 
         matrix_store.metadata = matrix_metadata
         # store the matrix
-        labels = output.pop(matrix_store.label_column_name)
-        matrix_store.matrix_label_tuple = output, labels
+        labels = self.query_to_df(label_query)
+        
+        import ipdb
+        #ipdb.set_trace()
+        design_matrix.set_index(['entity_id', 'as_of_date'], inplace=True)
+        matrix_store.matrix_label_tuple = design_matrix, labels
         matrix_store.save()
         logging.info("Matrix %s saved", matrix_uuid)
         # If completely archived, save its information to matrices table
@@ -331,7 +336,7 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=len(output),
+            num_observations=len(design_matrix),
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
@@ -342,12 +347,11 @@ class MatrixBuilder(BuilderBase):
         session.commit()
         session.close()
 
-    def load_labels_data(
+    def label_load_query(
         self,
         label_name,
         label_type,
         entity_date_table_name,
-        matrix_uuid,
         label_timespan,
     ):
         """ Query the labels table and write the data to disk in csv format.
@@ -356,12 +360,10 @@ class MatrixBuilder(BuilderBase):
         :param label_name: name of the label to be used
         :param label_type: the type of label to be used
         :param entity_date_table_name: the name of the entity date table
-        :param matrix_uuid: a unique id for the matrix
         :param label_timespan: the time timespan that labels in matrix will include
         :type label_name: str
         :type label_type: str
         :type entity_date_table_name: str
-        :type matrix_uuid: str
         :type label_timespan: str
 
         :return: name of csv containing labels
@@ -399,33 +401,27 @@ class MatrixBuilder(BuilderBase):
             ),
         )
 
-        return self.query_to_df(labels_query)
+        return labels_query
 
-    def load_features_data(
-        self, as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
-    ):
+    def feature_load_queries(self, feature_dictionary, entity_date_table_name):
         """ Loop over tables in features schema, writing the data from each to a
         csv. Return the full list of feature csv names and the list of all
         features.
 
-        :param as_of_times: the times to be included in the matrix
         :param feature_dictionary: a dictionary of feature tables and features
             to be included in the matrix
         :param entity_date_table_name: the name of the entity date table
             for the matrix
-        :param matrix_uuid: a human-readable id for the matrix
-        :type as_of_times: list
         :type feature_dictionary: dict
         :type entity_date_table_name: str
-        :type matrix_uuid: str
 
         :return: list of csvs containing feature data
         :rtype: tuple
         """
         # iterate! for each table, make query, write csv, save feature & file names
-        feature_dfs = []
+        feature_queries = []
         for feature_table_name, feature_names in feature_dictionary.items():
-            logging.info("Retrieving feature data from %s", feature_table_name)
+            logging.info("Generating feature query for %s", feature_table_name)
             features_query = self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
                     schema=self.db_config["features_schema_name"],
@@ -441,9 +437,9 @@ class MatrixBuilder(BuilderBase):
                 # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
             )
-            feature_dfs.append(self.query_to_df(features_query))
+            feature_queries.append(features_query)
 
-        return feature_dfs
+        return feature_queries
 
     def query_to_df(self, query_string, header="HEADER"):
         """ Given a query, write the requested data to csv.
@@ -471,6 +467,27 @@ class MatrixBuilder(BuilderBase):
         df = pandas.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         return downcast_matrix(df)
+
+    def _write_copy(self, file_like, query_string):
+        copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
+            query=query_string, head="HEADER"
+        )
+        conn = self.db_engine.raw_connection()
+        cur = conn.cursor()
+        cur.copy_expert(copy_sql, file_like)
+
+
+    def feature_queries_to_df(self, feature_queries):
+        readers = [DictReader(PipeTextIO(partial(self._write_copy, query_string=query))) for query in feature_queries]
+        def record_generator():
+            for record_chunks in zip(*readers):
+                new_dict = record_chunks[0]
+                for chunk in record_chunks[1:]:
+                    new_dict.update(chunk)
+                yield new_dict
+        big_df = pandas.DataFrame.from_records(record_generator())
+        return big_df
+                  
 
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs

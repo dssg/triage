@@ -704,6 +704,7 @@ class TestBuildMatrix(TestCase):
                     matrix_uuid=uuid,
                     matrix_type="train",
                 )
+                print(matrix_storage_engine.get_store(uuid).design_matrix)
                 assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
     def test_test_matrix(self):
