@@ -90,12 +90,12 @@ def matrix_stores():
 
     with tempfile.TemporaryDirectory() as tmpdir:
         project_storage = ProjectStorage(tmpdir)
-        tmpcsv = os.path.join(tmpdir, "df.csv")
+        tmpcsv = os.path.join(tmpdir, "df.csv.gz")
         tmpyaml = os.path.join(tmpdir, "df.yaml")
         tmphdf = os.path.join(tmpdir, "df.h5")
         with open(tmpyaml, "w") as outfile:
             yaml.dump(METADATA, outfile, default_flow_style=False)
-        df.to_csv(tmpcsv)
+        df.to_csv(tmpcsv, compression="gzip")
         df.to_hdf(tmphdf, "matrix")
         csv = CSVMatrixStore(project_storage, [], "df")
         hdf = HDFMatrixStore(project_storage, [], "df")
