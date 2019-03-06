@@ -139,16 +139,16 @@ class IndividualImportanceCalculator(object):
             as_of_date,
             method_name,
         )
-        def generate_records():
-            for importance_record in importance_records:
-                db_object = IndividualImportance(
-                    model_id=int(model_id),
-                    entity_id=int(importance_record["entity_id"]),
-                    as_of_date=as_of_date,
-                    feature=importance_record["feature_name"],
-                    feature_value=importance_record["feature_value"],
-                    method=method_name,
-                    importance_score=float(importance_record["score"]),
-                )
-                yield db_object
-        save_db_objects(self.db_engine, generate_records())
+        record_stream = (
+            IndividualImportance(
+                model_id=int(model_id),
+                entity_id=int(importance_record["entity_id"]),
+                as_of_date=as_of_date,
+                feature=importance_record["feature_name"],
+                feature_value=importance_record["feature_value"],
+                method=method_name,
+                importance_score=float(importance_record["score"]),
+            )
+            for importance_record in importance_records
+        )
+        save_db_objects(self.db_engine, record_stream)

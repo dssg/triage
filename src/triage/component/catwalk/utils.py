@@ -4,8 +4,8 @@ import hashlib
 import json
 import logging
 import random
-import tempfile
 from itertools import chain
+from functools import partial
 
 import postgres_copy
 import sqlalchemy
@@ -200,26 +200,33 @@ def retrieve_model_hash_from_id(db_engine, model_id):
         session.close()
 
 
+def _write_csv(file_like, db_objects, type_of_object):
+    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL)
+    for db_object in db_objects:
+        if type(db_object) != type_of_object:
+            raise TypeError("Cannot copy collection of objects to db as they are not all "
+                            f"of the same type. First object was {type_of_object} "
+                            f"and later encountered a {type(db_object)}")
+        writer.writerow(
+            [getattr(db_object, col.name) for col in db_object.__table__.columns]
+        )
+
+
 @db_retry
 def save_db_objects(db_engine, db_objects):
     """Saves a collection of SQLAlchemy model objects to the database using a COPY command
 
     Args:
         db_engine (sqlalchemy.engine)
-        db_objects (iterator) SQLAlchemy model objects, corresponding to a valid table
+        db_objects (iterable) SQLAlchemy model objects, corresponding to a valid table
     """
-
+    db_objects = iter(db_objects)
     first_object = next(db_objects)
     type_of_object = type(first_object)
-    def write_output(file_like):
-        writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL)
-        for db_object in chain((first_object,), db_objects):
-            if type(db_object) != type_of_object:
-                raise TypeError("Cannot copy collection of objects to db as they are not all "
-                                f"of the same type. First object was {type_of_object} "
-                                f"and later encountered a {type(db_object)}")
-            writer.writerow(
-                [getattr(db_object, col.name) for col in db_object.__table__.columns]
-            )
-    pipe = PipeTextIO(write_output)
-    postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")
+
+    with PipeTextIO(partial(
+            _write_csv,
+            db_objects=chain((first_object,), db_objects),
+            type_of_object=type_of_object
+    )) as pipe:
+        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")

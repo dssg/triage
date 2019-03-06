@@ -142,22 +142,22 @@ class Predictor(object):
             session.close()
         test_label_timespan = matrix_store.metadata["label_timespan"]
 
-        def generate_prediction_objects():
-            for index, score, label in zip(
+        record_stream = (
+            Prediction_obj(
+                model_id=int(model_id),
+                entity_id=int(entity_id),
+                as_of_date=as_of_date,
+                score=float(score),
+                label_value=int(label) if not math.isnan(label) else None,
+                matrix_uuid=matrix_store.uuid,
+                test_label_timespan=test_label_timespan,
+                **misc_db_parameters
+            )
+            for ((entity_id, as_of_date), score, label) in zip(
                 matrix_store.index, predictions, labels
-            ):
-                entity_id, as_of_date = index
-                yield Prediction_obj(
-                    model_id=int(model_id),
-                    entity_id=int(entity_id),
-                    as_of_date=as_of_date,
-                    score=float(score),
-                    label_value=int(label) if not math.isnan(label) else None,
-                    matrix_uuid=matrix_store.uuid,
-                    test_label_timespan=test_label_timespan,
-                    **misc_db_parameters
-                )
-        save_db_objects(self.db_engine, generate_prediction_objects())
+            )
+        )
+        save_db_objects(self.db_engine, record_stream)
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
