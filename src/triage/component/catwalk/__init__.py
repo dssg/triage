@@ -31,22 +31,6 @@ class ModelTrainTester(object):
     def generate_tasks(self, split, grid_config, model_comment=None):
         logging.info("Generating train/test tasks for split %s", split["train_uuid"])
         train_store = self.matrix_storage_engine.get_store(split["train_uuid"])
-        if train_store.empty:
-            logging.warning(
-                """Train matrix for split %s was empty,
-            no point in training this model. Skipping
-            """,
-                split["train_uuid"],
-            )
-            return []
-        if len(train_store.labels.unique()) == 1:
-            logging.warning(
-                """Train Matrix for split %s had only one
-            unique value, no point in training this model. Skipping
-            """,
-                split["train_uuid"],
-            )
-            return []
         train_tasks = self.model_trainer.generate_train_tasks(
             grid_config=grid_config,
             misc_db_parameters=dict(test=False, model_comment=model_comment),
@@ -59,14 +43,6 @@ class ModelTrainTester(object):
         ):
             test_store = self.matrix_storage_engine.get_store(test_uuid)
 
-            if test_store.empty:
-                logging.warning(
-                    """Test matrix for uuid %s
-                was empty, no point in generating predictions. Not creating train/test task.
-                """,
-                    test_uuid,
-                )
-                continue
             for train_task in train_tasks:
                 train_test_tasks.append(
                     {
@@ -83,6 +59,35 @@ class ModelTrainTester(object):
 
     def process_task(self, test_store, train_store, train_kwargs):
         logging.info("Beginning train task %s", train_kwargs)
+
+        # If the train or test design matrix empty, or if the train store only
+        # has one label value, skip training the model.
+        if train_store.empty:
+            logging.warning(
+                """Train matrix for split %s was empty,
+            no point in training this model. Skipping
+            """,
+                split["train_uuid"],
+            )
+            return
+        if len(train_store.labels.unique()) == 1:
+            logging.warning(
+                """Train Matrix for split %s had only one
+            unique value, no point in training this model. Skipping
+            """,
+                split["train_uuid"],
+            )
+            return
+        if test_store.empty:
+            logging.warning(
+                """Test matrix for uuid %s
+            was empty, no point in generating predictions. Not processing train/test task.
+            """,
+                test_uuid,
+            )
+            return
+
+        # If the matrices and train labels are OK, train and test the model!
         with self.model_trainer.cache_models(), test_store.cache(), train_store.cache():
             # will cache any trained models until it goes out of scope (at the end of the task)
             # this way we avoid loading the model pickle again for predictions
