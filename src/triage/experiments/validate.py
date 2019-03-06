@@ -779,18 +779,15 @@ class ScoringConfigValidator(Validator):
 class FeatureValidator(Validator):
     def _run(self, feature_config):
         feature_lookup = architect.feature_block_generators.FEATURE_BLOCK_GENERATOR_LOOKUP
-        available_keys = set(feature_lookup.keys())
-        given_keys = set(feature_config.keys())
-        bad_keys = given_keys - available_keys
+        bad_keys = feature_config.keys() - feature_lookup.keys()
         if bad_keys:
             raise ValueError(
                 dedent(
-                    """Section: features -
-                The following given feature types '{}' are unavailable.
-                Available metrics are: '{}'
-                """.format(
-                        bad_keys, available_keys
-                    )
+                    f"""\
+                    Section: features -
+                    The following given feature types '{bad_keys}' are unavailable.
+                    Available metrics are: '{feature_lookup.keys()}'
+                    """
                 )
             )
         if 'spacetime_aggregations' in feature_config:

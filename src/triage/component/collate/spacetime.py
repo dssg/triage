@@ -588,12 +588,11 @@ class SpacetimeAggregation(FeatureBlock):
 
     @property
     def feature_columns_sans_impflags(self):
-        columns = []
-        for group, groupby in self.groups.items():
-            intervals = self.intervals[group]
-            columns += list(
-                chain(
-                    *[self._get_aggregates_sql(i, "2016-01-01", group) for i in intervals]
-                )
+        columns = chain.from_iterable(
+            chain.from_iterable(
+                self._get_aggregates_sql(interval, "2016-01-01", group)
+                for interval in self.intervals[group]
             )
-        return set(label_obj.name for label_obj in columns)
+            for (group, groupby) in self.groups.items()
+        )
+        return {label.name for label in columns}
