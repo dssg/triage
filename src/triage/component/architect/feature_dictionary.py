@@ -23,6 +23,11 @@ class FeatureDictionary(dict):
         if not isinstance(feature_names, Iterable):
             raise TypeError("value of FeatureDictionary objects represents a list of "
                             "feature names, and therefore must be iterable")
+
+        for feature_name in feature_names:
+            if not isinstance(feature_name, str):
+                raise TypeError("A FeatureNameList represents a list of feature names, and therefore"
+                                f"each item must be a string, not: {feature_name!r}")
         if isinstance(feature_names, FeatureNameList):
             super().__setitem__(table, feature_names)
         else:
