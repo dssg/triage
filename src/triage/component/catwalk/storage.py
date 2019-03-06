@@ -458,12 +458,10 @@ class MatrixStore(object):
     @property
     def as_of_dates(self):
         """All as-of-dates in the matrix. Will be converted to datetime.date"""
-        return sorted(
-            list(set([
-                as_of_date.date() if hasattr(as_of_date, 'date') else as_of_date
-                for entity_id, as_of_date in self.design_matrix.index
-            ]))
-        )
+        return sorted(set(
+            as_of_date.date() if hasattr(as_of_date, 'date') else as_of_date
+            for entity_id, as_of_date in self.design_matrix.index
+        ))
 
     @property
     def num_entities(self):
