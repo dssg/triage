@@ -1,14 +1,17 @@
-import io
 import json
 import logging
-import pandas
 
+import contextlib
 from sqlalchemy.orm import sessionmaker
+from functools import partial
+from ohio import PipeTextIO
+from triage.util.io import IteratorBytesIO
 
 from triage.component.results_schema import Matrix
-from triage.database_reflection import table_has_data
+from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
+from triage.validation_primitives import table_should_have_entity_date_columns, table_should_have_data
 
 
 class BuilderBase(object):
@@ -62,6 +65,8 @@ class BuilderBase(object):
         right_column_selections,
         entity_date_table_name,
         additional_conditions="",
+        include_index=False,
+        column_override=None,
     ):
         """ Given a (features or labels) table, a list of times, columns to
         select, and (optionally) a set of join conditions, perform an outer
@@ -82,23 +87,46 @@ class BuilderBase(object):
         """
 
         # put everything into the query
-        query = """
-            SELECT ed.entity_id,
-                   ed.as_of_date{columns}
-            FROM {entity_date_table_name} ed
-            LEFT OUTER JOIN {right_table} r
-            ON ed.entity_id = r.entity_id AND
-               ed.as_of_date = r.as_of_date
-               {more}
-            ORDER BY ed.entity_id,
-                     ed.as_of_date
-        """.format(
-            columns="".join(right_column_selections),
-            feature_schema=self.db_config["features_schema_name"],
-            entity_date_table_name=entity_date_table_name,
-            right_table=right_table_name,
-            more=additional_conditions,
-        )
+        
+        if include_index:
+            query = """
+                SELECT ed.entity_id,
+                       ed.as_of_date{columns}
+                FROM {entity_date_table_name} ed
+                LEFT OUTER JOIN {right_table} r
+                ON ed.entity_id = r.entity_id AND
+                   ed.as_of_date = r.as_of_date
+                   {more}
+                ORDER BY ed.entity_id,
+                         ed.as_of_date
+            """.format(
+                columns="".join(right_column_selections),
+                feature_schema=self.db_config["features_schema_name"],
+                entity_date_table_name=entity_date_table_name,
+                right_table=right_table_name,
+                more=additional_conditions,
+            )
+        else:
+            query = """
+                with r as (
+                    SELECT ed.entity_id,
+                           ed.as_of_date, {columns}
+                    FROM {entity_date_table_name} ed
+                    LEFT OUTER JOIN {right_table} r
+                    ON ed.entity_id = r.entity_id AND
+                       ed.as_of_date = r.as_of_date
+                       {more}
+                    ORDER BY ed.entity_id,
+                             ed.as_of_date
+                ) select {columns_maybe_override} from r
+            """.format(
+                columns="".join(right_column_selections)[2:],
+                columns_maybe_override="".join(right_column_selections)[2:] if not column_override else column_override,
+                feature_schema=self.db_config["features_schema_name"],
+                entity_date_table_name=entity_date_table_name,
+                right_table=right_table_name,
+                more=additional_conditions,
+            )
         return query
 
     def make_entity_date_table(
@@ -214,6 +242,7 @@ class BuilderBase(object):
 
 
 class MatrixBuilder(BuilderBase):
+
     def build_matrix(
         self,
         as_of_times,
@@ -253,17 +282,34 @@ class MatrixBuilder(BuilderBase):
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
+
+        # what should the labels table look like?
+        # 1. have data
+        # 2. entity date/column
+        labels_table_name = f"{self.db_config['labels_schema_name']}.{self.db_config['labels_table_name']}"
         if not table_has_data(
-            "{}.{}".format(
-                self.db_config["labels_schema_name"],
-                self.db_config["labels_table_name"],
-            ),
+            labels_table_name,
             self.db_engine,
         ):
             logging.warning("labels table is not populated, cannot build matrix")
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
+
+        table_should_have_entity_date_columns(
+            labels_table_name,
+            self.db_engine
+        )
+
+        # what should the feature tables look like?
+        # 1. have data
+        # 2. entity/date column
+        for feature_table in feature_dictionary.keys():
+            full_feature_table = \
+                f"{self.db_config['features_schema_name']}.{feature_table}"
+            table_should_have_data(full_feature_table, self.db_engine)
+            table_should_have_entity_date_columns(full_feature_table,  self.db_engine)
+
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
@@ -289,7 +335,7 @@ class MatrixBuilder(BuilderBase):
                 matrix_uuid,
                 matrix_metadata["label_timespan"],
             )
-        except ValueError as e:
+        except ValueError:
             logging.warning(
                 "Not able to build entity-date table due to: %s - will not build matrix",
                 exc_info=True,
@@ -297,39 +343,22 @@ class MatrixBuilder(BuilderBase):
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
-        logging.info(
-            "Extracting feature group data from database into file " "for matrix %s",
-            matrix_uuid,
-        )
-        dataframes = self.load_features_data(
-            as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
-        )
-        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
-        logging.info(
-            "Extracting label data from database into file for " "matrix %s",
-            matrix_uuid,
-        )
-        labels_df = self.load_labels_data(
+        feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
+        label_query = self.label_load_query(
             label_name,
             label_type,
             entity_date_table_name,
-            matrix_uuid,
             matrix_metadata["label_timespan"],
         )
-        dataframes.insert(0, labels_df)
 
-        logging.info(f"Label data extracted for matrix {matrix_uuid}")
         # stitch together the csvs
-        logging.info("Merging feature files for matrix %s", matrix_uuid)
-        output = self.merge_feature_csvs(dataframes, matrix_uuid)
-        logging.info(f"Features data merged for matrix {matrix_uuid}")
+        logging.info("Building and saving matrix %s by querying and joining tables", matrix_uuid)
+        self._save_matrix(
+            queries=feature_queries + [label_query],
+            matrix_store=matrix_store,
+            matrix_metadata=matrix_metadata
+        )
 
-        matrix_store.metadata = matrix_metadata
-        # store the matrix
-        labels = output.pop(matrix_store.label_column_name)
-        matrix_store.matrix_label_tuple = output, labels
-        matrix_store.save()
-        logging.info("Matrix %s saved", matrix_uuid)
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
         if matrix_type == "train":
@@ -337,12 +366,20 @@ class MatrixBuilder(BuilderBase):
         else:
             lookback = matrix_metadata["test_duration"]
 
+        row_count = table_row_count(
+            '{schema}."{table}"'.format(
+                schema=self.db_config["features_schema_name"],
+                table=entity_date_table_name,
+            ),
+            self.db_engine
+        )
+
         matrix = Matrix(
             matrix_id=matrix_metadata["matrix_id"],
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=len(output),
+            num_observations=row_count,
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             feature_dictionary=feature_dictionary,
@@ -357,12 +394,11 @@ class MatrixBuilder(BuilderBase):
             built_matrix(self.run_id, self.db_engine)
 
 
-    def load_labels_data(
+    def label_load_query(
         self,
         label_name,
         label_type,
         entity_date_table_name,
-        matrix_uuid,
         label_timespan,
     ):
         """ Query the labels table and write the data to disk in csv format.
@@ -371,12 +407,10 @@ class MatrixBuilder(BuilderBase):
         :param label_name: name of the label to be used
         :param label_type: the type of label to be used
         :param entity_date_table_name: the name of the entity date table
-        :param matrix_uuid: a unique id for the matrix
         :param label_timespan: the time timespan that labels in matrix will include
         :type label_name: str
         :type label_type: str
         :type entity_date_table_name: str
-        :type matrix_uuid: str
         :type label_timespan: str
 
         :return: name of csv containing labels
@@ -412,36 +446,32 @@ class MatrixBuilder(BuilderBase):
             """.format(
                 name=label_name, type=label_type, timespan=label_timespan
             ),
+            include_index=False,
+            column_override=label_name
         )
 
-        return self.query_to_df(labels_query)
+        return labels_query
 
-    def load_features_data(
-        self, as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
-    ):
+    def feature_load_queries(self, feature_dictionary, entity_date_table_name):
         """ Loop over tables in features schema, writing the data from each to a
         csv. Return the full list of feature csv names and the list of all
         features.
 
-        :param as_of_times: the times to be included in the matrix
         :param feature_dictionary: a dictionary of feature tables and features
             to be included in the matrix
         :param entity_date_table_name: the name of the entity date table
             for the matrix
-        :param matrix_uuid: a human-readable id for the matrix
-        :type as_of_times: list
         :type feature_dictionary: dict
         :type entity_date_table_name: str
-        :type matrix_uuid: str
 
         :return: list of csvs containing feature data
         :rtype: tuple
         """
         # iterate! for each table, make query, write csv, save feature & file names
-        feature_dfs = []
-        for feature_table_name, feature_names in feature_dictionary.items():
-            logging.info("Retrieving feature data from %s", feature_table_name)
-            features_query = self._outer_join_query(
+        queries = []
+        for num, (feature_table_name, feature_names) in enumerate(feature_dictionary.items()):
+            logging.info("Generating feature query for %s", feature_table_name)
+            queries.append(self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
                     schema=self.db_config["features_schema_name"],
                     table=feature_table_name,
@@ -450,84 +480,43 @@ class MatrixBuilder(BuilderBase):
                     schema=self.db_config["features_schema_name"],
                     table=entity_date_table_name,
                 ),
-                # collate imputation shouldn't leave any nulls and we double-check
-                # the imputed table in FeatureGenerator.create_all_tables() but as
-                # a final check, raise a divide by zero error on export if the
-                # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
+                include_index=True if num==0 else False,
+            ))
+        return queries
+
+    @property
+    def _raw_connections(self):
+        while True:
+            yield self.db_engine.raw_connection()
+
+    def _save_matrix(self, queries, matrix_store, matrix_metadata):
+        """Construct and save a matrix CSV from a list of queries
+
+        The results of each query are expected to return the same number of rows in the same order.
+        The columns will be placed alongside each other in the CSV much as a SQL join would.
+        However, this code does not deduplicate the columns, so the actual row identifiers
+        (e.g. entity id, as of date) should only be present in one of the queries
+        unless you want duplicate columns.
+
+        The result, and the given metadata, will be given to the supplied MatrixStore for saving.
+
+        Args:
+            queries (iterable) SQL queries
+            matrix_store (triage.component.catwalk.storage.CSVMatrixStore)
+            matrix_metadata (dict) matrix metadata to save alongside the data
+        """
+        copy_sqls = (f"COPY ({query}) TO STDOUT WITH CSV HEADER" for query in queries)
+        with contextlib.ExitStack() as stack:
+            connections = (stack.enter_context(contextlib.closing(conn))
+                           for conn in self._raw_connections)
+            cursors = (conn.cursor() for conn in connections)
+
+            writers = (partial(cursor.copy_expert, copy_sql)
+                       for (cursor, copy_sql) in zip(cursors, copy_sqls))
+            pipes = (stack.enter_context(PipeTextIO(writer)) for writer in writers)
+            iterable = (
+                b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n'
+                for join in zip(*pipes)
             )
-            feature_dfs.append(self.query_to_df(features_query))
-
-        return feature_dfs
-
-    def query_to_df(self, query_string, header="HEADER"):
-        """ Given a query, write the requested data to csv.
-
-        :param query_string: query to send
-        :param file_name: name to save the file as
-        :header: text to include in query indicating if a header should be saved
-                 in output
-        :type query_string: str
-        :type file_name: str
-        :type header: str
-
-        :return: none
-        :rtype: none
-        """
-        logging.debug("Copying to CSV query %s", query_string)
-        copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
-            query=query_string, head=header
-        )
-        conn = self.db_engine.raw_connection()
-        cur = conn.cursor()
-        out = io.StringIO()
-        cur.copy_expert(copy_sql, out)
-        out.seek(0)
-        df = pandas.read_csv(out, parse_dates=["as_of_date"])
-        df.set_index(["entity_id", "as_of_date"], inplace=True)
-        return downcast_matrix(df)
-
-    def merge_feature_csvs(self, dataframes, matrix_uuid):
-        """Horizontally merge a list of feature CSVs
-        Assumptions:
-        - The first and second columns of each CSV are
-          the entity_id and date
-        - That the CSVs have the same list of entity_id/date combinations
-          in the same order.
-        - The first CSV is expected to be labels, and only have
-          entity_id, date, and label.
-        - All other CSVs do not have any labels (all non entity_id/date columns
-          will be treated as features)
-        - The label will be in the *last* column of the merged CSV
-
-        :param source_filenames: the filenames of each feature csv
-        :param out_filename: the desired filename of the merged csv
-        :type source_filenames: list
-        :type out_filename: str
-
-        :return: none
-        :rtype: none
-
-        :raises: ValueError if the first two columns in every CSV don't match
-        """
-
-        for i, df in enumerate(dataframes):
-            if df.index.names != ["entity_id", "as_of_date"]:
-                raise ValueError(
-                    f"index must be entity_id and as_of_date, value was {df.index}"
-                )
-            # check for any nulls. the labels, understood to be the first file,
-            # can have nulls but no features should. therefore, skip the first dataframe
-            if i > 0:
-                columns_with_nulls = [
-                    column for column in df.columns if df[column].isnull().values.any()
-                ]
-                if len(columns_with_nulls) > 0:
-                    raise ValueError(
-                        "Imputation failed for the following features: %s"
-                        % columns_with_nulls
-                    )
-            i += 1
-
-        big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
-        return big_df
+            matrix_store.save(from_fileobj=IteratorBytesIO(iterable), metadata=matrix_metadata)

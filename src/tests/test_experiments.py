@@ -13,8 +13,8 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
 from tests.utils import sample_config, populate_source_data
-from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
+from triage.component.catwalk.storage import CSVMatrixStore
 
 from triage.experiments import (
     MultiCoreExperiment,
@@ -55,7 +55,7 @@ parametrize_experiment_classes = pytest.mark.parametrize(
 )
 
 parametrize_matrix_storage_classes = pytest.mark.parametrize(
-    ("matrix_storage_class",), [(HDFMatrixStore,), (CSVMatrixStore,)]
+    ("matrix_storage_class",), [(CSVMatrixStore,)]
 )
 
 

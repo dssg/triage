@@ -334,7 +334,7 @@ On the other hand, new options that affect only runtime concerns (e.g. performan
 
 ## Storage Abstractions
 
-Another important part of enabling different execution contexts is being able to pass large, persisted objects (e.g. matrices or models) by reference to another process or cluster. To achieve this, as well as provide the ability to configure different storage mediums (e.g. S3) and formats (e,g, HDF) without changes to the Experiment class, all references to these large objects within any components are handled through an abstraction layer.
+Another important part of enabling different execution contexts is being able to pass large, persisted objects (e.g. matrices or models) by reference to another process or cluster. To achieve this, as well as provide the ability to configure different storage mediums (e.g. S3) without changes to the Experiment class, all references to these large objects within any components are handled through an abstraction layer.
 
 ### Matrix Storage
 

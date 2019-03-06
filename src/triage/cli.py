@@ -2,6 +2,7 @@
 import argparse
 import importlib.util
 import logging
+import time
 import os
 import yaml
 from datetime import datetime
@@ -15,7 +16,7 @@ from triage.component.architect.entity_date_table_generators import EntityDateTa
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -23,8 +24,6 @@ from triage.experiments import (
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
-
-logging.basicConfig(level=logging.INFO)
 
 
 def natural_number(value):
@@ -157,7 +156,6 @@ class Experiment(Command):
 
     matrix_storage_map = {
         "csv": CSVMatrixStore,
-        "hdf": HDFMatrixStore,
     }
     matrix_storage_default = "csv"
 

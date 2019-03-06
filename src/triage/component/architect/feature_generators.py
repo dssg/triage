@@ -635,7 +635,7 @@ class FeatureGenerator(object):
 
         return table_tasks
 
-    def _generate_imp_table_tasks_for(self, aggregation, drop_preagg=True):
+    def _generate_imp_table_tasks_for(self, aggregation, drop_preagg=False):
         """Generate SQL statements for preparing, populating, and
         finalizing imputations, for each feature group table in the
         given aggregation.

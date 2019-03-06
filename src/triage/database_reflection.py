@@ -95,7 +95,7 @@ def table_row_count(table_name, db_engine):
     Returns: (int) The number of rows in the table
     """
     return next(
-        row for row in db_engine.execute("select count(*) from {}".format(table_name))
+        row[0] for row in db_engine.execute(f"select count(*) from {table_name}")
     )
 
 
