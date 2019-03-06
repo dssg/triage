@@ -105,7 +105,6 @@ Components Within Triage
 * `Catwalk <src/triage/component/catwalk>`_: Training, testing, and evaluating machine learning classifier models
 * `Collate <src/triage/component/collate>`_: Aggregation SQL Query Builder. This is used by the Architect to build features.
 * `Timechop <src/triage/component/timechop>`_: Generate temporal cross-validation time windows for matrix creation
-* `Metta-Data <src/triage/component/metta>`_: Train and test matrix storage
 * `Results Schema <src/triage/component/results_schema>`_: Generate a database schema suitable for storing the results of modeling runs
 
 Design Goals

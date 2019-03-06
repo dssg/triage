@@ -46,7 +46,7 @@ parametrize_experiment_classes = pytest.mark.parametrize(
             partial(
                 RQExperiment,
                 redis_connection=fakeredis.FakeStrictRedis(),
-                queue_kwargs={"async": False},
+                queue_kwargs={"is_async": False},
             ),
         ),
     ],

@@ -7,7 +7,7 @@ from mock import Mock
 from sqlalchemy import create_engine
 from contextlib import contextmanager
 
-from triage.component import metta
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db
@@ -694,7 +694,7 @@ class TestBuildMatrix(TestCase):
                     experiment_hash=experiment_hash,
                     engine=engine,
                 )
-                uuid = metta.generate_uuid(self.good_metadata)
+                uuid = filename_friendly_hash(self.good_metadata)
                 builder.build_matrix(
                     as_of_times=self.good_dates,
                     label_name="booking",
@@ -726,7 +726,7 @@ class TestBuildMatrix(TestCase):
                     engine=engine,
                 )
 
-                uuid = metta.generate_uuid(self.good_metadata)
+                uuid = filename_friendly_hash(self.good_metadata)
                 builder.build_matrix(
                     as_of_times=self.good_dates,
                     label_name="booking",
@@ -760,7 +760,7 @@ class TestBuildMatrix(TestCase):
                     engine=engine,
                 )
 
-                uuid = metta.generate_uuid(self.good_metadata)
+                uuid = filename_friendly_hash(self.good_metadata)
                 builder.build_matrix(
                     as_of_times=self.good_dates,
                     label_name="booking",
@@ -820,7 +820,7 @@ class TestBuildMatrix(TestCase):
                     "test_duration": "1 month",
                     "indices": ["entity_id", "as_of_date"],
                 }
-                uuid = metta.generate_uuid(matrix_metadata)
+                uuid = filename_friendly_hash(matrix_metadata)
                 with self.assertRaises(ValueError):
                     builder.build_matrix(
                         as_of_times=dates,
@@ -873,7 +873,7 @@ class TestBuildMatrix(TestCase):
                     "test_duration": "1 month",
                     "indices": ["entity_id", "as_of_date"],
                 }
-                uuid = metta.generate_uuid(matrix_metadata)
+                uuid = filename_friendly_hash(matrix_metadata)
                 builder.build_matrix(
                     as_of_times=dates,
                     label_name="booking",
@@ -920,7 +920,7 @@ class TestBuildMatrix(TestCase):
             ]
 
             feature_dictionary = {"features0": ["f1", "f2"], "features1": ["f3", "f4"]}
-            uuid = metta.generate_uuid(matrix_metadata)
+            uuid = filename_friendly_hash(matrix_metadata)
             build_args = dict(
                 as_of_times=dates,
                 label_name="booking",

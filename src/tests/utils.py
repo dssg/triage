@@ -375,7 +375,7 @@ def sample_config():
     ]
 
     cohort_config = {
-        "query": "select distinct(entity_id) from events where '{as_of_date}'::date < outcome_date",
+        "query": "select distinct(entity_id) from events where '{as_of_date}'::date >= outcome_date",
         "name": "has_past_events",
     }
 

@@ -15,11 +15,6 @@ from unittest import TestCase
 from contextlib import contextmanager
 
 
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
-
 @contextmanager
 def prepare_experiment(config):
     with testing.postgresql.Postgresql() as postgresql:
@@ -186,7 +181,7 @@ class Matrices(TestCase):
             matrices = experiment.matrix_build_tasks
             assert len(matrices) > 0
             for matrix in matrices:
-                assert "{}.csv".format(matrix) in matrices_and_metadata
+                assert "{}.csv.gz".format(matrix) in matrices_and_metadata
                 assert "{}.yaml".format(matrix) in matrices_and_metadata
 
     def test_validate_nonstrict(self):

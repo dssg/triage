@@ -1,12 +1,9 @@
 import datetime
-import logging
 from unittest import TestCase
 
 from triage.util.conf import convert_str_to_relativedelta
 
 from triage.component.timechop import Timechop
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 class test_calculate_train_test_split_times(TestCase):
