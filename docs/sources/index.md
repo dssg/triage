@@ -50,7 +50,7 @@ To get started with Audition, check out its [README](https://github.com/dssg/tri
 
 This questions, and other ones, are the kind of inquiries that the triage user may have in mind when scrolling trough the models selected by the Audition component. Choosing the right model for deployment and exploring its predictions and behavior in time is a pivotal task. postmodeling will help to answer some of this questions by exploring the outcomes of the model, and exploring "deeply" into the model behavior across time and features.
 
-To get started with Postmodeling, check out its [README](https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling/contrast)
+[Get started with Postmodeling](postmodeling/)
 
 
 ## Background

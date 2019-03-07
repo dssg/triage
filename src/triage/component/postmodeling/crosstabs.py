@@ -1,14 +1,26 @@
-
-
-from sys import exit
-import yaml
 import pandas as pd
-import os
-import argparse
 import logging
 from scipy import stats
-from sqlalchemy import create_engine
-from utils.configs_loader import ConfigsLoader
+import yaml
+
+
+class CrosstabsConfigLoader(object):
+    def __init__(self, config_path=None, config=None):
+        self.output = {}
+        self.models_list_query = None
+        self.as_of_dates_query = None
+        self.models_dates_join_query = None
+        self.features_query = None
+        self.predictions_query = None
+
+        if config:
+            config_to_load = config
+        elif config_path:
+            with open(config_path, 'r') as stream:
+                config_to_load = yaml.load(stream)
+        else:
+            raise ValueError("Either config_path or config are needed")
+        self.__dict__.update(config_to_load)
 
 # Later to be run against feature matrices of high- and low-risk entities.
 # Each function receives two arguments: A dataframe of high-risk entities'
@@ -24,14 +36,6 @@ low_risk_mean = lambda hr, lr: lr.mean(axis=0)
 high_risk_std = lambda hr, lr: hr.std(axis=0)
 low_risk_std = lambda hr, lr: lr.std(axis=0)
 hr_lr_ratio = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
-
-
-def get_engine(db_credentials_path):
-    with open(db_credentials_path, 'r') as f:
-        creds = yaml.load(f)
-    conn_str = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **creds)
-    return create_engine(conn_str)
 
 
 def hr_lr_ttest(hr, lr):
@@ -59,15 +63,6 @@ crosstab_functions = [
     ('ratio_predicted_positive_over_predicted_negative', hr_lr_ratio),
     (['ttest_T', 'ttest_p'], hr_lr_ttest)
 ]
-
-
-def create_crosstabs_table(engine=None, schema='results', table='crosstabs'):
-    if not engine:
-        engine = get_engine()
-
-    with open(os.path.join(os.path.dirname(__file__),
-                           'utils/create_crosstabs.sql'), 'r') as f:
-        engine.execute(f.read().format(schema=schema, table=table))
 
 
 def list_to_str(list_sql):
@@ -183,40 +178,7 @@ def populate_crosstabs_table(model_id, as_of_date,
         return df
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description= 'This is post-model analysis crosstabs.\n')
-
-    parser.add_argument('--db',
-                        action='store',
-                        dest='db_credentials',
-                        default=None,
-                        help='Absolute filepath for yaml file containing database credentials(database, host, user,password and port).')
-
-    parser.add_argument('--conf',
-                        action='store',
-                        dest='configs_path',
-                        default=None,
-                        help='Absolute filepath for input yaml containing crosstabs configurations. Please have a look to the README.')
-
-    return parser.parse_args()
-
-
-
-
-
-if __name__ == '__main__':
-    args = parse_args()
-    if args.db_credentials is None:
-        print('Please provide both --db and --confs args.\nUse --help for further details.')
-        exit(1)
-    if args.configs_path is None:
-        print('Please provide both --db and --confs args.\nUse --help for further details.')
-        exit(1)
-    engine = get_engine(args.db_credentials)
-    configs_loader = ConfigsLoader()
-    configs = configs_loader(configs_path=args.configs_path)
-    print(configs.models_list_query)
+def run_crosstabs(db_engine, crosstabs_config):
     crosstabs_query = """
         with models_list_query as (
         {models_list_query}
@@ -231,17 +193,15 @@ if __name__ == '__main__':
         )
         select * from predictions_query 
         left join features_query f using (model_id,entity_id, as_of_date)   
-        """.format(models_list_query=configs.models_list_query,
-                   as_of_dates_query=configs.as_of_dates_query,
-                   models_dates_join_query=configs.models_dates_join_query,
-                   features_query=configs.features_query,
-                   predictions_query=configs.predictions_query)
-    if len(configs.entity_id_list) > 0:
-        crosstabs_query += " where entity_id=ANY('{%s}') "%', '.join(map(str, configs.entity_id_list))
+        """.format(models_list_query=crosstabs_config.models_list_query,
+                   as_of_dates_query=crosstabs_config.as_of_dates_query,
+                   models_dates_join_query=crosstabs_config.models_dates_join_query,
+                   features_query=crosstabs_config.features_query,
+                   predictions_query=crosstabs_config.predictions_query)
+    if len(crosstabs_config.entity_id_list) > 0:
+        crosstabs_query += " where entity_id=ANY('{%s}') "%', '.join(map(str, crosstabs_config.entity_id_list))
     crosstabs_query += "  order by model_id, as_of_date, rank_abs asc;"
-    print(crosstabs_query)
-    df = pd.read_sql(crosstabs_query, engine)
-    print(df.model_id.unique())
+    df = pd.read_sql(crosstabs_query, db_engine)
     if len(df) == 0:
         raise ValueError("No data could be fetched.")
     groupby_obj = df.groupby(['model_id', 'as_of_date'])
@@ -249,10 +209,10 @@ if __name__ == '__main__':
         df_modelid_asofdate = groupby_obj.get_group(group)
         res = populate_crosstabs_table(model_id=group[0], as_of_date=group[1],
                                        df=df_modelid_asofdate,
-                                       thresholds=configs.thresholds,
+                                       thresholds=crosstabs_config.thresholds,
                                        crosstab_functions=crosstab_functions,
                                        push_to_db=True,
                                        return_df=False,
-                                       engine=engine,
-                                       schema=configs.output['schema'],
-                                       table=configs.output['table'])
+                                       engine=db_engine,
+                                       schema=crosstabs_config.output['schema'],
+                                       table=crosstabs_config.output['table'])

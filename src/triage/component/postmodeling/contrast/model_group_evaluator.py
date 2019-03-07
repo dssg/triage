@@ -50,7 +50,7 @@ class ModelGroupEvaluator(object):
                    m.train_end_time,
                    m.train_matrix_uuid,
                    m.training_label_timespan,
-                   mg.model_type,
+                   m.model_type,
                    mg.model_config
                 FROM model_metadata.models m
                 JOIN model_metadata.model_groups mg
