@@ -635,28 +635,49 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            zipped = gzip.GzipFile(fileobj=fd, mode='r')
-            print(zipped.read())
-            zipped.seek(0)
-            df = pd.read_csv(zipped, parse_dates=parse_dates_argument)
-            import ipdb
-            #ipdb.set_trace()
-            return df
+            return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
 
     def save(self):
-        with self.matrix_base_store.open('wb') as fd:
-            full = self.full_matrix_for_saving
-            with gzip.open(fd, 'wt') as g:
-                writer = csv.writer(g)
-                writer.writerow(full.columns)
-                    #PipeTextIO(self.full_matrix_for_saving.to_csv) as pipe:
-                #zipped = gzip.GzipFile(fileobj=fd, mode='wb')
-                for k, row in full.iterrows():
-                    newrow = [row[col] for col in full.columns]
-                    writer.writerow(newrow)
-                    #zipped.write(line.encode('utf-8'))
+        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
+
+    #@property
+    #def head_of_matrix(self):
+        #try:
+            #with self.matrix_base_store.open("rb") as fd:
+                #head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
+                #head_of_matrix.set_index(self.metadata["indices"], inplace=True)
+        #except FileNotFoundError as fnfe:
+            #logging.exception(f"Matrix isn't there: {fnfe}")
+            #logging.exception("Returning Empty data frame")
+            #head_of_matrix = pd.DataFrame()
+
+        #return head_of_matrix
+
+    #def _load(self):
+        #parse_dates_argument = (
+            #["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
+        #)
+        #with self.matrix_base_store.open("rb") as fd:
+            #zipped = gzip.GzipFile(fileobj=fd, mode='r')
+            #df = pd.read_csv(zipped, parse_dates=parse_dates_argument)
+            #return df
+
+    #def save(self):
+        #with self.matrix_base_store.open('wb') as fd:
+            #full = self.full_matrix_for_saving
+            #with gzip.open(fd, 'wt') as g:
+                #writer = csv.writer(g)
+                #writer.writerow(full.columns)
+                    #PipeTextIO(self.full_matrix_for_saving.to_csv) as pipe:
+                #zipped = gzip.GzipFile(fileobj=fd, mode='wb')
+                #for k, row in full.iterrows():
+                    #newrow = [row[col] for col in full.columns]
+                    #writer.writerow(newrow)
+                    #zipped.write(line.encode('utf-8'))
+        #with self.metadata_base_store.open("wb") as fd:
+            #yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType(object):
