@@ -311,16 +311,17 @@ class MatrixBuilder(BuilderBase):
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
 
-        design_matrix = self.feature_queries_to_df(feature_queries)
+        design_matrix = self.queries_to_df(feature_queries)
+        design_matrix['as_of_date'] = pandas.to_datetime(design_matrix['as_of_date'])
+        design_matrix.set_index(['entity_id', 'as_of_date'], inplace=True)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
 
         matrix_store.metadata = matrix_metadata
         # store the matrix
-        labels = self.query_to_df(label_query)
-        
-        import ipdb
-        #ipdb.set_trace()
-        design_matrix.set_index(['entity_id', 'as_of_date'], inplace=True)
+        labels = self.queries_to_df([label_query])
+        labels['as_of_date'] = pandas.to_datetime(labels['as_of_date'])
+        labels.set_index(['entity_id', 'as_of_date'], inplace=True)
+        labels = labels[labels.columns[0]]
         matrix_store.matrix_label_tuple = design_matrix, labels
         matrix_store.save()
         logging.info("Matrix %s saved", matrix_uuid)
@@ -464,7 +465,8 @@ class MatrixBuilder(BuilderBase):
         out = io.StringIO()
         cur.copy_expert(copy_sql, out)
         out.seek(0)
-        df = pandas.read_csv(out, parse_dates=["as_of_date"])
+        df = pandas.read_csv(out)
+        #df = pandas.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         return downcast_matrix(df)
 
@@ -477,8 +479,8 @@ class MatrixBuilder(BuilderBase):
         cur.copy_expert(copy_sql, file_like)
 
 
-    def feature_queries_to_df(self, feature_queries):
-        readers = [DictReader(PipeTextIO(partial(self._write_copy, query_string=query))) for query in feature_queries]
+    def queries_to_df(self, queries):
+        readers = [DictReader(PipeTextIO(partial(self._write_copy, query_string=query))) for query in queries]
         def record_generator():
             for record_chunks in zip(*readers):
                 new_dict = record_chunks[0]

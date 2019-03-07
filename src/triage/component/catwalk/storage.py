@@ -15,6 +15,7 @@ from triage.component.results_schema import (
 )
 from triage.util.pandas import downcast_matrix
 from ohio import PipeTextIO
+from io import TextIOWrapper
 
 import pandas as pd
 import s3fs
@@ -635,49 +636,29 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
+            zipped = gzip.GzipFile(fileobj=fd)
+            df = pd.read_csv(TextIOWrapper(zipped), parse_dates=parse_dates_argument)
+            return df
 
     def save(self):
-        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        #with self.matrix_base_store.open('wb') as fd:
+            #with gzip.open(fd, mode='wb') as g:
+                #buf = TextIOWrapper(g)
+                #self.full_matrix_for_saving.to_csv(buf)
+        #self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        with self.matrix_base_store.open('wb') as fd:
+            full = self.full_matrix_for_saving
+            with gzip.open(fd, mode='w') as g:
+                writer = csv.writer(TextIOWrapper(g))
+                header_row = ['entity_id', 'as_of_date'] + list(full.columns)
+                print(header_row)
+                writer.writerow(header_row)
+                for index, row in full.iterrows():
+                    newrow = list(index) + [row[col] for col in full.columns]
+                    print(newrow)
+                    writer.writerow(newrow)
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
-
-    #@property
-    #def head_of_matrix(self):
-        #try:
-            #with self.matrix_base_store.open("rb") as fd:
-                #head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
-                #head_of_matrix.set_index(self.metadata["indices"], inplace=True)
-        #except FileNotFoundError as fnfe:
-            #logging.exception(f"Matrix isn't there: {fnfe}")
-            #logging.exception("Returning Empty data frame")
-            #head_of_matrix = pd.DataFrame()
-
-        #return head_of_matrix
-
-    #def _load(self):
-        #parse_dates_argument = (
-            #["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
-        #)
-        #with self.matrix_base_store.open("rb") as fd:
-            #zipped = gzip.GzipFile(fileobj=fd, mode='r')
-            #df = pd.read_csv(zipped, parse_dates=parse_dates_argument)
-            #return df
-
-    #def save(self):
-        #with self.matrix_base_store.open('wb') as fd:
-            #full = self.full_matrix_for_saving
-            #with gzip.open(fd, 'wt') as g:
-                #writer = csv.writer(g)
-                #writer.writerow(full.columns)
-                    #PipeTextIO(self.full_matrix_for_saving.to_csv) as pipe:
-                #zipped = gzip.GzipFile(fileobj=fd, mode='wb')
-                #for k, row in full.iterrows():
-                    #newrow = [row[col] for col in full.columns]
-                    #writer.writerow(newrow)
-                    #zipped.write(line.encode('utf-8'))
-        #with self.metadata_base_store.open("wb") as fd:
-            #yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType(object):
