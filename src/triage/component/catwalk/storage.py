@@ -19,6 +19,7 @@ import pandas as pd
 import s3fs
 import yaml
 from boto3.s3.transfer import TransferConfig
+import gzip
 
 
 class Store(object):
@@ -603,22 +604,22 @@ class HDFMatrixStore(MatrixStore):
             complevel=4,
             complib="zlib",
         )
-        hdf.put(self.matrix_uuid, self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
+        hdf.put(f"matrix_{self.matrix_uuid}", self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
         hdf.close()
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
 class CSVMatrixStore(MatrixStore):
-    """Store and access matrices using CSV"""
+    """Store and access compressed matrices using CSV"""
 
-    suffix = "csv"
+    suffix = "csv.gz"
 
     @property
     def head_of_matrix(self):
         try:
             with self.matrix_base_store.open("rb") as fd:
-                head_of_matrix = pd.read_csv(fd, nrows=1)
+                head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
                 head_of_matrix.set_index(self.metadata["indices"], inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
@@ -632,10 +633,10 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, parse_dates=parse_dates_argument)
+            return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
 
     def save(self):
-        self.matrix_base_store.write(self.full_matrix_for_saving.to_csv(None).encode("utf-8"))
+        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

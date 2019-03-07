@@ -318,7 +318,7 @@ class MatrixBuilder(BuilderBase):
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
-        logging.info("Matrix {matrix_uuid} saved")
+        logging.info("Matrix %s saved", matrix_uuid)
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
         if matrix_type == "train":

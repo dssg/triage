@@ -108,7 +108,7 @@ of each model:
    all relevant features in the model. This allows a good comparison of
    true/false predicted groups and get the key differences between groups in
    the feature space. The function expects that the user run
-   [crosstabs](https://github.com/dssg/triage/component/postmodeling/crosstabs)
+   [crosstabs](docs/sources/postmodeling/index.md#crosstabs)
    first. 
 
 The `ModelEvaluator` also contain a set of miscellaneous methods to retrieve

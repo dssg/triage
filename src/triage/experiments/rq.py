@@ -84,7 +84,7 @@ class RQExperiment(ExperimentBase):
                 run_statements,
                 insert_batch,
                 self.db_engine,
-                timeout=DEFAULT_TIMEOUT,
+                job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
             )
@@ -105,7 +105,7 @@ class RQExperiment(ExperimentBase):
         jobs = [
             self.queue.enqueue(
                 self.matrix_builder.build_matrix,
-                timeout=DEFAULT_TIMEOUT,
+                job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
                 **build_task
@@ -125,7 +125,7 @@ class RQExperiment(ExperimentBase):
         jobs = [
             self.queue.enqueue(
                 self.model_train_tester.process_task,
-                timeout=DEFAULT_TIMEOUT,
+                job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
                 **task
@@ -145,7 +145,7 @@ class RQExperiment(ExperimentBase):
         jobs = [
             self.queue.enqueue(
                 self.subsetter.process_task,
-                timeout=DEFAULT_TIMEOUT,
+                job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
                 **task

@@ -15,13 +15,13 @@ from triage.component.architect.entity_date_table_generators import EntityDateTa
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import Store
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
+from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
@@ -302,7 +302,7 @@ class Experiment(Command):
             self.experiment.run()
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
-            project_storage = self.experiment.project_storage
+            project_storage = ProjectStorage(self.args.project_path)
             timechop_store = project_storage.get_store(
                 ["images"],
                 f"{experiment_name}.png"
@@ -369,6 +369,24 @@ class Audition(Command):
             self.runner.run()
         else:
             self.runner.run()
+
+
+@Triage.register
+class Crosstabs(Command):
+    """Run crosstabs for postmodeling"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "config",
+            help="config file for crosstabs"
+        )
+
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+        config_store = Store.factory(args.config)
+        with config_store.open() as fd:
+            config = CrosstabsConfigLoader(config=yaml.load(fd))
+        run_crosstabs(db_engine, config)
 
 
 @Triage.register
