@@ -14,7 +14,7 @@ from triage.component.results_schema import (
     TrainPrediction,
 )
 from triage.util.pandas import downcast_matrix
-from ohio import PipeTextIO
+from ohio import PipeTextIO, CsvWriterTextIO
 from io import TextIOWrapper
 
 import pandas as pd
@@ -622,8 +622,10 @@ class CSVMatrixStore(MatrixStore):
     def head_of_matrix(self):
         try:
             with self.matrix_base_store.open("rb") as fd:
-                head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
-                head_of_matrix.set_index(self.metadata["indices"], inplace=True)
+                with gzip.open(fd) as g:
+                    t = TextIOWrapper(g)
+                    head_of_matrix = pd.read_csv(t, nrows=1)
+                    head_of_matrix.set_index(self.metadata["indices"], inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
             logging.exception("Returning Empty data frame")
@@ -636,9 +638,11 @@ class CSVMatrixStore(MatrixStore):
             ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
         )
         with self.matrix_base_store.open("rb") as fd:
-            zipped = gzip.GzipFile(fileobj=fd)
-            df = pd.read_csv(TextIOWrapper(zipped), parse_dates=parse_dates_argument)
-            return df
+            with gzip.open(fd) as g:
+                t = TextIOWrapper(g)
+                df = pd.read_csv(t, parse_dates=parse_dates_argument)
+
+                return df
 
     def save(self):
         #with self.matrix_base_store.open('wb') as fd:
@@ -648,15 +652,21 @@ class CSVMatrixStore(MatrixStore):
         #self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
         with self.matrix_base_store.open('wb') as fd:
             full = self.full_matrix_for_saving
-            with gzip.open(fd, mode='w') as g:
-                writer = csv.writer(TextIOWrapper(g))
-                header_row = ['entity_id', 'as_of_date'] + list(full.columns)
-                print(header_row)
+            with gzip.open(fd, mode='wb') as g:
+                writer = CsvWriterTextIO()
+                index_row = ['entity_id', 'as_of_date']  if "as_of_date" in self.metadata["indices"] else ["entity_id"]
+                header_row = index_row + list(full.columns)
                 writer.writerow(header_row)
+                g.write(writer.read().encode('utf-8'))
                 for index, row in full.iterrows():
-                    newrow = list(index) + [row[col] for col in full.columns]
-                    print(newrow)
+                    if "as_of_date" in self.metadata["indices"]:
+                        idx = list(index)
+                    else:
+                        idx = [index]
+                    newrow = idx + [row[col] for col in full.columns]
                     writer.writerow(newrow)
+                    g.write(writer.read().encode('utf-8'))
+
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

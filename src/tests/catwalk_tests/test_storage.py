@@ -247,7 +247,6 @@ def test_s3_save():
 
             tosave = CSVMatrixStore(project_storage, [], "test")
             tosave.metadata = example.metadata
-            print(example)
             tosave.matrix_label_tuple = example.matrix_label_tuple
             tosave.save()
 
