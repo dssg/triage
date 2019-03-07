@@ -1,6 +1,6 @@
 output:
   schema: 'test_results'
-  table: 'crosstabs_test'
+  table: 'crosstabs'
 
 thresholds:
     rank_abs: [50]
