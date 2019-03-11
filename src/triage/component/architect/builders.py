@@ -4,6 +4,7 @@ import logging
 import pandas
 import itertools
 
+from memory_profiler import profile
 from sqlalchemy.orm import sessionmaker
 from functools import partial
 from ohio import PipeTextIO
@@ -313,8 +314,6 @@ class MatrixBuilder(BuilderBase):
         logging.info("Merging feature files for matrix %s", matrix_uuid)
 
         design_matrix = self.queries_to_df(feature_queries)
-        import ipdb
-        ipdb.set_trace()
         design_matrix['as_of_date'] = pandas.to_datetime(design_matrix['as_of_date'])
         design_matrix.set_index(['entity_id', 'as_of_date'], inplace=True)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
@@ -483,21 +482,14 @@ class MatrixBuilder(BuilderBase):
         cur.copy_expert(copy_sql, file_like)
 
 
+    @profile
     def queries_to_df(self, queries):
-        real_queries = [
-            "COPY ({query}) TO STDOUT WITH CSV {head}".format(query=query_string, head="HEADER")
-            for query_string in queries
-        ]
         with ExitStack() as stack:
-           connections = [self.db_engine.raw_connection() for _count in itertools.count(len(real_queries))]
-           cursors = [conn.cursor() for conn in connections]
-           writers = [partial(cursor.copy_expert, copy_sql) for (cursor, copy_sql) in zip(cursors, real_queries)]
-           pipes = [stack.enter_context(PipeTextIO(writer)) for writer in writers]
-           readers = [DictReader(pipe) for pipe in pipes]
-           joins = [(record.items() for record in join) for join in zip(*readers)]
-           records = [dict(itertools.chain.from_iterable(join)) for join in joins]
-           return pandas.DataFrame.from_records(records)
+            readers = [DictReader(stack.enter_context(PipeTextIO(partial(self._write_copy, query_string=query)))) for query in queries]
+            big_df = pandas.DataFrame.from_records(record_generator(*readers))
+            return big_df
 
+    @profile
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs
         Assumptions:
@@ -542,3 +534,11 @@ class MatrixBuilder(BuilderBase):
 
         big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
         return big_df
+
+@profile
+def record_generator(*readers):
+    for record_chunks in zip(*readers):
+        new_dict = record_chunks[0]
+        for chunk in record_chunks[1:]:
+            new_dict.update(chunk)
+        yield new_dict
