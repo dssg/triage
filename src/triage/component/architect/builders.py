@@ -2,11 +2,13 @@ import io
 import json
 import logging
 import pandas
+import itertools
 
 from sqlalchemy.orm import sessionmaker
 from functools import partial
 from ohio import PipeTextIO
 from csv import DictReader
+from contextlib import ExitStack
 
 from triage.component.catwalk.storage import MatrixStore
 from triage.component.results_schema import Matrix
@@ -307,11 +309,12 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata["label_timespan"],
         )
 
-        logging.info(f"Label data extracted for matrix {matrix_uuid}")
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
 
         design_matrix = self.queries_to_df(feature_queries)
+        import ipdb
+        ipdb.set_trace()
         design_matrix['as_of_date'] = pandas.to_datetime(design_matrix['as_of_date'])
         design_matrix.set_index(['entity_id', 'as_of_date'], inplace=True)
         logging.info(f"Features data merged for matrix {matrix_uuid}")
@@ -322,6 +325,7 @@ class MatrixBuilder(BuilderBase):
         labels['as_of_date'] = pandas.to_datetime(labels['as_of_date'])
         labels.set_index(['entity_id', 'as_of_date'], inplace=True)
         labels = labels[labels.columns[0]]
+        logging.info(f"Label data extracted for matrix {matrix_uuid}")
         matrix_store.matrix_label_tuple = design_matrix, labels
         matrix_store.save()
         logging.info("Matrix %s saved", matrix_uuid)
@@ -480,16 +484,19 @@ class MatrixBuilder(BuilderBase):
 
 
     def queries_to_df(self, queries):
-        readers = [DictReader(PipeTextIO(partial(self._write_copy, query_string=query))) for query in queries]
-        def record_generator():
-            for record_chunks in zip(*readers):
-                new_dict = record_chunks[0]
-                for chunk in record_chunks[1:]:
-                    new_dict.update(chunk)
-                yield new_dict
-        big_df = pandas.DataFrame.from_records(record_generator())
-        return big_df
-                  
+        real_queries = [
+            "COPY ({query}) TO STDOUT WITH CSV {head}".format(query=query_string, head="HEADER")
+            for query_string in queries
+        ]
+        with ExitStack() as stack:
+           connections = [self.db_engine.raw_connection() for _count in itertools.count(len(real_queries))]
+           cursors = [conn.cursor() for conn in connections]
+           writers = [partial(cursor.copy_expert, copy_sql) for (cursor, copy_sql) in zip(cursors, real_queries)]
+           pipes = [stack.enter_context(PipeTextIO(writer)) for writer in writers]
+           readers = [DictReader(pipe) for pipe in pipes]
+           joins = [(record.items() for record in join) for join in zip(*readers)]
+           records = [dict(itertools.chain.from_iterable(join)) for join in joins]
+           return pandas.DataFrame.from_records(records)
 
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs
