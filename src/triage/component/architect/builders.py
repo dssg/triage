@@ -482,14 +482,12 @@ class MatrixBuilder(BuilderBase):
         cur.copy_expert(copy_sql, file_like)
 
 
-    @profile
     def queries_to_df(self, queries):
         with ExitStack() as stack:
             readers = [DictReader(stack.enter_context(PipeTextIO(partial(self._write_copy, query_string=query)))) for query in queries]
             big_df = pandas.DataFrame.from_records(record_generator(*readers))
             return big_df
 
-    @profile
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs
         Assumptions:
@@ -535,7 +533,6 @@ class MatrixBuilder(BuilderBase):
         big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
         return big_df
 
-@profile
 def record_generator(*readers):
     for record_chunks in zip(*readers):
         new_dict = record_chunks[0]
