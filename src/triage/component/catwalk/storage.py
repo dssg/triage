@@ -399,11 +399,7 @@ class MatrixStore(object):
         """The raw metadata. Will load from storage into memory if not already loaded"""
         if self.__metadata is not None:
             return self.__metadata
-        metadata = self.load_metadata()
-        if self.should_cache:
-            self.__metadata = metadata
-        else:
-            return metadata
+        self.__metadata = self.load_metadata()
         return self.__metadata
 
     @metadata.setter
@@ -541,7 +537,6 @@ class MatrixStore(object):
 
     def clear_cache(self):
         self._matrix_label_tuple = None
-        self.metadata = None
 
     def __getstate__(self):
         """Remove object of a large size upon serialization.
@@ -550,7 +545,6 @@ class MatrixStore(object):
         """
         state = self.__dict__.copy()
         state['_matrix_label_tuple'] = None
-        state['__metadata'] = None
         return state
 
 
