@@ -1,4 +1,4 @@
-from triage.component.risklist import generate_risk_list
+from triage.risklist import generate_risk_list
 from tests.utils import sample_config, populate_source_data
 from triage.experiments import SingleThreadedExperiment
 from triage.validation_primitives import table_should_have_data
