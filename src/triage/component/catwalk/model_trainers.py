@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model, FeatureImportance
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
+from triage.tracking import built_model, skipped_model, errored_model
 
 from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
@@ -56,12 +57,14 @@ class ModelTrainer(object):
         db_engine,
         model_grouper=None,
         replace=True,
+        run_id=None,
     ):
         self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
         self.model_grouper = model_grouper or ModelGrouper()
         self.db_engine = db_engine
         self.replace = replace
+        self.run_id = run_id
 
     @property
     def sessionmaker(self):
@@ -346,36 +349,48 @@ class ModelTrainer(object):
             misc_db_parameters (dict) params to pass through to the database
         Returns: (int) model id
         """
-        saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
-        if (
-            not self.replace
-            and self.model_storage_engine.exists(model_hash)
-            and saved_model_id
-        ):
-            logging.info("Skipping %s/%s", class_path, parameters)
-            return saved_model_id
-
-        if self.replace:
-            reason = "replace flag has been set"
-        elif not self.model_storage_engine.exists(model_hash):
-            reason = "model pickle not found in store"
-        elif not saved_model_id:
-            reason = "model metadata not found"
-
-        logging.info(
-            f"Training {class_path} with parameters {parameters}"
-            f"(reason to train: {reason})"
-        )
         try:
-            model_id = self._train_and_store_model(
-                matrix_store, class_path, parameters, model_hash, misc_db_parameters
+            saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
+            if (
+                not self.replace
+                and self.model_storage_engine.exists(model_hash)
+                and saved_model_id
+            ):
+                logging.info("Skipping %s/%s", class_path, parameters)
+                if self.run_id:
+                    skipped_model(self.run_id, self.db_engine)
+                return saved_model_id
+
+            if self.replace:
+                reason = "replace flag has been set"
+            elif not self.model_storage_engine.exists(model_hash):
+                reason = "model pickle not found in store"
+            elif not saved_model_id:
+                reason = "model metadata not found"
+
+            logging.info(
+                f"Training {class_path} with parameters {parameters}"
+                f"(reason to train: {reason})"
             )
-        except BaselineFeatureNotInMatrix:
-            logging.warning(
-                "Tried to train baseline model without required feature in matrix. Skipping."
-            )
-            model_id = None
-        return model_id
+            try:
+                model_id = self._train_and_store_model(
+                    matrix_store, class_path, parameters, model_hash, misc_db_parameters
+                )
+            except BaselineFeatureNotInMatrix:
+                logging.warning(
+                    "Tried to train baseline model without required feature in matrix. Skipping."
+                )
+                if self.run_id:
+                    skipped_model(self.run_id, self.db_engine)
+                model_id = None
+            if self.run_id:
+                built_model(self.run_id, self.db_engine)
+            return model_id
+        except Exception as e:
+            errored_model(self.run_id, self.db_engine)
+
+    def flattened_grid_config(self, grid_config):
+        return flatten_grid_config(grid_config)
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
         """Train and store configured models, yielding the ids one by one
@@ -403,7 +418,7 @@ class ModelTrainer(object):
 
         tasks = []
 
-        for class_path, parameters in flatten_grid_config(grid_config):
+        for class_path, parameters in self.flattened_grid_config(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
             logging.info(
                 f"Computed model hash for {class_path} "

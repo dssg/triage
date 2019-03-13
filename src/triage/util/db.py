@@ -2,6 +2,8 @@
 
 import sqlalchemy
 import wrapt
+from contextlib import contextmanager
+from sqlalchemy.orm import sessionmaker
 
 
 class SerializableDbEngine(wrapt.ObjectProxy):
@@ -34,3 +36,17 @@ class SerializableDbEngine(wrapt.ObjectProxy):
 
 
 create_engine = SerializableDbEngine
+
+
+@contextmanager
+def scoped_session(db_engine):
+    """Provide a transactional scope around a series of operations."""
+    session = sessionmaker(bind=db_engine)()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
