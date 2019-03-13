@@ -166,6 +166,7 @@ def matrix_metadata_creator(**override_kwargs):
         "feature_names": FeatureNameList(["ft1", "ft2"]),
         "feature_groups": ["all: True"],
         "indices": ["entity_id", "as_of_date"],
+        "as_of_times": [datetime.date(2016, 12, 20)],
     }
     for override_key, override_value in override_kwargs.items():
         base_metadata[override_key] = override_value
@@ -195,7 +196,7 @@ def matrix_creator(index=None):
     return pandas.DataFrame.from_dict(source_dict).set_index(index)
 
 
-def get_matrix_store(project_storage, matrix=None, metadata=None):
+def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=True):
     """Return a matrix store associated with the given project storage.
     Also adds an entry in the matrices table if it doesn't exist already
 
@@ -216,12 +217,13 @@ def get_matrix_store(project_storage, matrix=None, metadata=None):
     matrix_store.matrix_label_tuple = new_matrix, labels
     matrix_store.save()
     matrix_store.clear_cache()
-    if (
-        session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
-        == 0
-    ):
-        MatrixFactory(matrix_uuid=matrix_store.uuid)
-        session.commit()
+    if write_to_db:
+        if (
+            session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
+            == 0
+        ):
+            MatrixFactory(matrix_uuid=matrix_store.uuid)
+            session.commit()
     return matrix_store
 
 
