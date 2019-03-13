@@ -5,7 +5,6 @@ from contextlib import contextmanager
 
 import numpy
 import pandas
-import numpy as np
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import testing.postgresql
