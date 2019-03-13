@@ -58,7 +58,7 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
             model_id (int) The id of a given model in the database
             matrix_storage_engine (catwalk.storage.matrix_storage_engine)
             model_storage_engine (catwalk.storage.model_storage_engine)
-
+            as_of_date (string) a date string like "YYYY-MM-DD"
     """
     upgrade_db(db_engine=db_engine)
     # 1. Get feature and cohort config from database
