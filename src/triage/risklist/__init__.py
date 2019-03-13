@@ -1,9 +1,9 @@
 from triage.component.results_schema import upgrade_db
-from triage.component.architect.cohort_table_generators import CohortTableGenerator, DEFAULT_ACTIVE_STATE
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, DEFAULT_ACTIVE_STATE
 from triage.component.architect.features import FeatureGenerator
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.predictors import Predictor
-from triage.component import metta
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.util.conf import dt_from_str
 
 from collections import OrderedDict
@@ -66,12 +66,12 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
 
     # 2. Generate cohort
     cohort_table_name = f"production.cohort_{model_info['cohort_config']['name']}"
-    cohort_table_generator = CohortTableGenerator(
+    cohort_table_generator = EntityDateTableGenerator(
         db_engine=db_engine,
         query=model_info['cohort_config']['query'],
-        cohort_table_name=cohort_table_name
+        entity_date_table_name=cohort_table_name
     )
-    cohort_table_generator.generate_cohort_table([dt_from_str(as_of_date)])
+    cohort_table_generator.generate_entity_date_table(as_of_dates=[dt_from_str(as_of_date)])
 
     # 3. Generate feature aggregations
     feature_generator = FeatureGenerator(
@@ -145,7 +145,7 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
         'feature_start_time': model_info['feature_start_time'],
     }
 
-    matrix_uuid = metta.generate_uuid(matrix_metadata)
+    matrix_uuid = filename_friendly_hash(matrix_metadata)
 
     matrix_builder.build_matrix(
         as_of_times=[as_of_date],
