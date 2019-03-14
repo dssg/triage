@@ -53,6 +53,8 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
+Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the `model_metadata.models` and `test_results.evaluations` tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.
+
 ## Multicore example
 
 Triage also offers the ability to locally parallelize both CPU-heavy and database-heavy tasks. Triage uses the [pebble](https://pythonhosted.org/Pebble) library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.

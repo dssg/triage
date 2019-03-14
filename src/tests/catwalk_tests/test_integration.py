@@ -1,124 +1,117 @@
-from triage.component.catwalk.model_trainers import ModelTrainer
-from triage.component.catwalk.predictors import Predictor
-from triage.component.catwalk.evaluation import ModelEvaluator
+from triage.component.catwalk import ModelTrainTester, Predictor, ModelTrainer, ModelEvaluator, IndividualImportanceCalculator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.catwalk.model_trainers import flatten_grid_config
 from triage.component.catwalk.storage import (
     ModelStorageEngine,
     MatrixStore,
+    MatrixStorageEngine,
 )
 from tests.utils import (
-    rig_engines,
     get_matrix_store,
-    matrix_creator,
     matrix_metadata_creator,
 )
 
-import datetime
-import pandas
+from unittest.mock import patch, create_autospec, MagicMock
 
 
-def test_integration():
-    with rig_engines() as (db_engine, project_storage):
-        train_store = get_matrix_store(
-            project_storage,
-            matrix_creator(),
-            matrix_metadata_creator(matrix_type="train"),
+def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_storage, sample_timechop_splits, sample_grid_config):
+    db_engine = db_engine_with_results_schema
+    model_storage_engine = ModelStorageEngine(project_storage)
+    matrix_storage_engine = MatrixStorageEngine(project_storage)
+    sample_matrix_store = get_matrix_store(project_storage)
+    experiment_hash = save_experiment_and_get_hash({}, db_engine)
+    # instantiate pipeline objects
+    trainer = ModelTrainer(
+        experiment_hash=experiment_hash,
+        model_storage_engine=model_storage_engine,
+        db_engine=db_engine,
+    )
+    train_tester = ModelTrainTester(
+        matrix_storage_engine=matrix_storage_engine,
+        model_trainer=trainer,
+        model_evaluator=None,
+        individual_importance_calculator=None,
+        predictor=None,
+        subsets=None,
+    )
+    with patch.object(matrix_storage_engine, 'get_store', return_value=sample_matrix_store):
+        batches = train_tester.generate_task_batches(
+            splits=sample_timechop_splits,
+            grid_config=sample_grid_config
         )
-        as_of_dates = [datetime.date(2016, 12, 21), datetime.date(2017, 1, 21)]
+        assert len(batches) == 3
+        # we expect to have a task for each combination of split and classifier
+        flattened_tasks = list(task for batch in batches for task in batch.tasks)
+        assert len(flattened_tasks) == \
+            len(sample_timechop_splits) * len(list(flatten_grid_config(sample_grid_config)))
+        # we also expect each task to match the call signature of process_task
+        with patch.object(train_tester, 'process_task', autospec=True):
+            for task in flattened_tasks:
+                train_tester.process_task(**task)
 
-        test_stores = []
-        for as_of_date in as_of_dates:
-            matrix_store = get_matrix_store(
-                project_storage,
-                pandas.DataFrame.from_dict(
-                    {
-                        "entity_id": [3],
-                        "as_of_date": [as_of_date],
-                        "feature_one": [8],
-                        "feature_two": [5],
-                        "label": [0],
-                    }
-                ),
-                matrix_metadata_creator(as_of_times=[as_of_date]),
-            )
-            test_stores.append(matrix_store)
 
-        model_storage_engine = ModelStorageEngine(project_storage)
+def setup_model_train_tester(project_storage, replace):
+    matrix_storage_engine = MatrixStorageEngine(project_storage)
+    train_matrix_store = get_matrix_store(
+        project_storage,
+        metadata=matrix_metadata_creator(matrix_type="train"),
+        write_to_db=False
+    )
+    test_matrix_store = get_matrix_store(
+        project_storage,
+        metadata=matrix_metadata_creator(matrix_type="test"),
+        write_to_db=False
+    )
+    sample_train_kwargs = {
+        'matrix_store': train_matrix_store,
+        'class_path': None,
+        'parameters': {},
+        'model_hash': None,
+        'misc_db_parameters': {}
+    }
+    train_test_task = {
+        'train_kwargs': sample_train_kwargs,
+        'train_store': train_matrix_store,
+        'test_store': test_matrix_store
+    }
 
-        experiment_hash = save_experiment_and_get_hash({}, db_engine)
-        # instantiate pipeline objects
-        trainer = ModelTrainer(
-            experiment_hash=experiment_hash,
-            model_storage_engine=model_storage_engine,
-            db_engine=db_engine,
-        )
-        predictor = Predictor(model_storage_engine, db_engine)
-        model_evaluator = ModelEvaluator(
-            [{"metrics": ["precision@"], "thresholds": {"top_n": [5]}}], [{}], db_engine
-        )
+    predictor = MagicMock(spec_set=create_autospec(Predictor))
+    trainer = MagicMock(spec_set=create_autospec(ModelTrainer))
+    evaluator = MagicMock(spec_set=create_autospec(ModelEvaluator))
+    individual_importance_calculator = MagicMock(spec_set=create_autospec(IndividualImportanceCalculator))
+    train_tester = ModelTrainTester(
+        matrix_storage_engine=matrix_storage_engine,
+        model_trainer=trainer,
+        model_evaluator=evaluator,
+        individual_importance_calculator=individual_importance_calculator,
+        predictor=predictor,
+        subsets=[None],
+        replace=replace
+    )
+    return train_tester, train_test_task
 
-        # run the pipeline
-        grid_config = {
-            "sklearn.linear_model.LogisticRegression": {
-                "C": [0.00001, 0.0001],
-                "penalty": ["l1", "l2"],
-                "random_state": [2193],
-            }
-        }
-        model_ids = trainer.train_models(
-            grid_config=grid_config, misc_db_parameters=dict(), matrix_store=train_store
-        )
 
-        for model_id in model_ids:
-            for as_of_date, test_store in zip(as_of_dates, test_stores):
-                predictions_proba = predictor.predict(
-                    model_id,
-                    test_store,
-                    misc_db_parameters=dict(),
-                    train_matrix_columns=["feature_one", "feature_two"],
-                )
+def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_storage):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=False)
+    train_tester.model_evaluator.needs_evaluations.return_value = True
+    train_tester.process_task(**train_test_task)
+    assert train_tester.model_evaluator.needs_evaluations.call_count == 2
+    assert train_tester.predictor.predict.call_count == 2
+    assert train_tester.model_evaluator.evaluate.call_count == 2
 
-                model_evaluator.evaluate(predictions_proba, test_store, model_id)
 
-        # assert
-        # 1. that the predictions table entries are present and
-        # can be linked to the original models
-        records = [
-            row
-            for row in db_engine.execute(
-                """select entity_id, model_id, as_of_date
-            from test_results.predictions
-            join model_metadata.models using (model_id)
-            order by 3, 2"""
-            )
-        ]
-        assert records == [
-            (3, 1, datetime.datetime(2016, 12, 21)),
-            (3, 2, datetime.datetime(2016, 12, 21)),
-            (3, 3, datetime.datetime(2016, 12, 21)),
-            (3, 4, datetime.datetime(2016, 12, 21)),
-            (3, 1, datetime.datetime(2017, 1, 21)),
-            (3, 2, datetime.datetime(2017, 1, 21)),
-            (3, 3, datetime.datetime(2017, 1, 21)),
-            (3, 4, datetime.datetime(2017, 1, 21)),
-        ]
+def test_ModelTrainTester_process_task_replace_False_no_evaluations(project_storage):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=False)
+    train_tester.model_evaluator.needs_evaluations.return_value = False
+    train_tester.process_task(**train_test_task)
+    assert train_tester.model_evaluator.needs_evaluations.call_count == 2
+    assert train_tester.predictor.predict.call_count == 0
+    assert train_tester.model_evaluator.evaluate.call_count == 0
 
-        # that evaluations are there
-        records = [
-            row
-            for row in db_engine.execute(
-                """
-                select model_id, evaluation_start_time, metric, parameter
-                from test_results.evaluations order by 2, 1"""
-            )
-        ]
-        assert records == [
-            (1, datetime.datetime(2016, 12, 21), "precision@", "5_abs"),
-            (2, datetime.datetime(2016, 12, 21), "precision@", "5_abs"),
-            (3, datetime.datetime(2016, 12, 21), "precision@", "5_abs"),
-            (4, datetime.datetime(2016, 12, 21), "precision@", "5_abs"),
-            (1, datetime.datetime(2017, 1, 21), "precision@", "5_abs"),
-            (2, datetime.datetime(2017, 1, 21), "precision@", "5_abs"),
-            (3, datetime.datetime(2017, 1, 21), "precision@", "5_abs"),
-            (4, datetime.datetime(2017, 1, 21), "precision@", "5_abs"),
-        ]
+
+def test_ModelTrainTester_process_task_replace_True(project_storage):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=True)
+    train_tester.process_task(**train_test_task)
+    assert train_tester.model_evaluator.needs_evaluations.call_count == 0
+    assert train_tester.predictor.predict.call_count == 2
+    assert train_tester.model_evaluator.evaluate.call_count == 2
