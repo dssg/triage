@@ -343,6 +343,23 @@ class FeatureAggregationsValidator(Validator):
                     impute_rule = imp_dict.get(metric, imp_dict.get("all", {}))
                     self._validate_imputation_rule(agg_type, impute_rule)
 
+    def _validate_prefixes(self, feature_aggregation_config):
+        """
+        Ensure that no prefix starts with another prefix + _ to avoid
+        an error with feature group subsets when the group names overlap
+        """
+        all_prefixes = [f['prefix'] for f in feature_aggregation_config]
+        for prefix1, prefix2 in permutations(all_prefixes, 2):
+            if prefix2.startswith(prefix1+'_'):
+                raise ValueError(
+                    dedent(
+                        """
+                Section: feature_aggregations -
+                Feature group prefixes must be distinct: %s and %s"""
+                        % (prefix1, prefix2)
+                    )
+                )
+
     def _validate_aggregation(self, aggregation_config):
         logging.info("Validating aggregation config %s", aggregation_config)
         self._validate_keys(aggregation_config)
@@ -375,6 +392,8 @@ class FeatureAggregationsValidator(Validator):
             )
         for aggregation in feature_aggregation_config:
             self._validate_aggregation(aggregation)
+
+        self._validate_prefixes(feature_aggregation_config)
 
 
 class LabelConfigValidator(Validator):
