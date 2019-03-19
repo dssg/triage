@@ -24,3 +24,4 @@ pebble==4.3.10
 seaborn==0.9.0
 adjustText==0.7.3
 graphviz==0.10.1
+ohio==0.1.2

@@ -144,15 +144,15 @@ class ModelTrainTester(object):
                                 "training unsuccessful. Not attempting to test")
                 return
             logging.info("Trained task %s and got model id %s", train_kwargs, model_id)
-            as_of_times = test_store.metadata["as_of_times"]
+            as_of_dates = test_store.as_of_dates
             logging.info(
                 "Testing and scoring model id %s with test matrix %s. "
                 "as_of_times min: %s max: %s num: %s",
                 model_id,
                 test_store.uuid,
-                min(as_of_times),
-                max(as_of_times),
-                len(as_of_times),
+                min(as_of_dates),
+                max(as_of_dates),
+                len(as_of_dates),
             )
 
             self.individual_importance_calculator.calculate_and_save_all_methods_and_dates(
