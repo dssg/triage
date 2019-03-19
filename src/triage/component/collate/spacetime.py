@@ -7,6 +7,7 @@ from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 from triage.component.architect.utils import remove_schema_from_table_name
 from triage.database_reflection import table_exists
 from triage.component.architect.feature_block import FeatureBlock
+from .from_obj import FromObj
 
 from .imputations import (
     ImputeMean,
@@ -301,6 +302,23 @@ class SpacetimeAggregation(FeatureBlock):
             if self.drop_interim_tables:
                 imp_queries.append(self.get_drop(imputed=False))  # drop the old aggregation table
             return imp_queries
+
+    def preprocess(self):
+        create_schema = self.get_create_schema()
+
+        if create_schema is not None:
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
+
+        if self.materialize_subquery_fromobjs:
+            # materialize from obj
+            from_obj = FromObj(
+                from_obj=self.from_obj.text,
+                name=f"{self.features_schema_name}.{self.prefix}",
+                knowledge_date_column=self.date_column
+            )
+            from_obj.maybe_materialize(self.db_engine)
+            self.from_obj = from_obj.table
 
     def _get_aggregates_sql(self, interval, date, group):
         """

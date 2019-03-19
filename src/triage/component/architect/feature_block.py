@@ -79,6 +79,10 @@ class FeatureBlock(ABC):
         """
         pass
 
+    def preprocess(self):
+        """Perform any needed preprocessing."""
+        pass
+
     def _cohort_table_sub(self):
         """Helper function to ensure we only include state table records
         in our set of input dates and after the feature_start_time.

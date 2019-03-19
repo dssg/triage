@@ -1,5 +1,6 @@
 import importlib
 import logging
+from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
 
@@ -499,7 +500,23 @@ class CohortConfigValidator(Validator):
 
 
 class FeatureGroupDefinitionValidator(Validator):
-    def _run(self, feature_group_definition):
+    def _validate_prefixes(self, prefix_list):
+        """
+        Ensure that no prefix starts with another prefix + _ to avoid
+        an error with feature group subsets when the group names overlap
+        """
+        for prefix1, prefix2 in permutations(prefix_list, 2):
+            if prefix2.startswith(prefix1):
+                raise ValueError(
+                    dedent(
+                        """
+                Section: feature_group_definition -
+                Feature group prefixes must not overlap when using `prefix`: %s and %s"""
+                        % (prefix1, prefix2)
+                    )
+                )
+
+    def _run(self, feature_group_definition, feature_blocks):
         if not isinstance(feature_group_definition, dict):
             raise ValueError(
                 dedent(
@@ -532,6 +549,29 @@ class FeatureGroupDefinitionValidator(Validator):
                 feature_group_definition value for {}, {}
                 should be a list""".format(
                             subsetter_name, value
+                        )
+                    )
+                )
+
+        if "prefix" in feature_group_definition:
+            self._validate_prefixes(feature_group_definition["prefix"])
+
+        if "tables" in feature_group_definition:
+            available_tables = {
+                feature_block.final_feature_table_name
+                for feature_block in feature_blocks
+            }
+            bad_tables = set(feature_group_definition["tables"]) - available_tables
+            if bad_tables:
+                raise ValueError(
+                    dedent(
+                        """
+                Section: feature_group_definition -
+                The following given feature group tables: '{}'
+                are invalid. Available tables from this experiment's features
+                are: '{}'
+                """.format(
+                            bad_tables, available_tables
                         )
                     )
                 )
@@ -798,7 +838,7 @@ class FeatureValidator(Validator):
 
 
 class ExperimentValidator(Validator):
-    def run(self, experiment_config):
+    def run(self, experiment_config, feature_blocks):
         TemporalValidator(strict=self.strict).run(
             experiment_config.get("temporal_config", {})
         )
@@ -813,6 +853,7 @@ class ExperimentValidator(Validator):
         )
         FeatureGroupDefinitionValidator(strict=self.strict).run(
             experiment_config.get("feature_group_definition", {}),
+            feature_blocks
         )
         FeatureGroupStrategyValidator(strict=self.strict).run(
             experiment_config.get("feature_group_strategies", [])

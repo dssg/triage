@@ -5,7 +5,6 @@ from contextlib import contextmanager
 
 import numpy
 import pandas
-import yaml
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import testing.postgresql
@@ -19,30 +18,6 @@ from triage.util.structs import FeatureNameList
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
-
-
-@contextmanager
-def fake_metta(matrix_dict, metadata):
-    """Stores matrix and metadata in a metta-data-like form
-
-    Args:
-    matrix_dict (dict) of form { columns: values }.
-        Expects an entity_id to be present which it will use as the index
-    metadata (dict). Any metadata that should be set
-
-    Yields:
-        tuple of filenames for matrix and metadata
-    """
-    matrix = pandas.DataFrame.from_dict(matrix_dict).set_index("entity_id")
-    with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile("w") as metadata_file:
-            hdf = pandas.HDFStore(matrix_file.name)
-            hdf.put("title", matrix, data_columns=True)
-            matrix_file.seek(0)
-
-            yaml.dump(metadata, metadata_file)
-            metadata_file.seek(0)
-            yield (matrix_file.name, metadata_file.name)
 
 
 def fake_labels(length):
@@ -73,7 +48,7 @@ class MockMatrixStore(MatrixStore):
             "matrix_id": "some_matrix",
             "label_name": "label",
             "label_timespan": "3month",
-            "indices": ["entity_id"],
+            "indices": MatrixStore.indices,
             "matrix_type": matrix_type,
             "as_of_times": [datetime.date(2014, 10, 1), datetime.date(2014, 7, 1)],
         }
@@ -83,11 +58,12 @@ class MockMatrixStore(MatrixStore):
             matrix = pandas.DataFrame.from_dict(
                 {
                     "entity_id": [1, 2],
+                    "as_of_date": [pandas.Timestamp(2014, 10, 1), pandas.Timestamp(2014, 7, 1)],
                     "feature_one": [3, 4],
                     "feature_two": [5, 6],
                     "label": [7, 8],
                 }
-            ).set_index("entity_id")
+            ).set_index(MatrixStore.indices)
         if init_labels is None:
             init_labels = []
         labels = matrix.pop("label")
@@ -165,7 +141,8 @@ def matrix_metadata_creator(**override_kwargs):
         "matrix_type": "test",
         "feature_names": FeatureNameList(["ft1", "ft2"]),
         "feature_groups": ["all: True"],
-        "indices": ["entity_id", "as_of_date"],
+        "indices": MatrixStore.indices,
+        "as_of_times": [datetime.date(2016, 12, 20)],
     }
     for override_key, override_value in override_kwargs.items():
         base_metadata[override_key] = override_value
@@ -173,29 +150,20 @@ def matrix_metadata_creator(**override_kwargs):
     return base_metadata
 
 
-def matrix_creator(index=None):
-    """Return a sample matrix.
+def matrix_creator():
+    """Return a sample matrix."""
 
-    Args:
-        index (list, optional): The matrix index column names. Defaults to ['entity_id', 'date']
-    """
-    if not index:
-        index = ["entity_id", "as_of_date"]
     source_dict = {
         "entity_id": [1, 2],
+        "as_of_date": [pandas.Timestamp(2016, 1, 1), pandas.Timestamp(2016, 1, 1)],
         "feature_one": [3, 4],
         "feature_two": [5, 6],
         "label": [0, 1],
     }
-    if "as_of_date" in index:
-        source_dict["as_of_date"] = [
-            datetime.datetime(2016, 1, 1),
-            datetime.datetime(2016, 1, 1),
-        ]
-    return pandas.DataFrame.from_dict(source_dict).set_index(index)
+    return pandas.DataFrame.from_dict(source_dict)
 
 
-def get_matrix_store(project_storage, matrix=None, metadata=None):
+def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=True):
     """Return a matrix store associated with the given project storage.
     Also adds an entry in the matrices table if it doesn't exist already
 
@@ -209,6 +177,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None):
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
+    matrix["as_of_date"] = matrix["as_of_date"].apply(pandas.Timestamp)
+    matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = project_storage.matrix_storage_engine().get_store(filename_friendly_hash(metadata))
     matrix_store.metadata = metadata
     new_matrix = matrix.copy()
@@ -216,12 +186,13 @@ def get_matrix_store(project_storage, matrix=None, metadata=None):
     matrix_store.matrix_label_tuple = new_matrix, labels
     matrix_store.save()
     matrix_store.clear_cache()
-    if (
-        session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
-        == 0
-    ):
-        MatrixFactory(matrix_uuid=matrix_store.uuid)
-        session.commit()
+    if write_to_db:
+        if (
+            session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
+            == 0
+        ):
+            MatrixFactory(matrix_uuid=matrix_store.uuid)
+            session.commit()
     return matrix_store
 
 

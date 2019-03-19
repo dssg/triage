@@ -1,9 +1,10 @@
 from triage.util.pandas import downcast_matrix
+from triage.component.catwalk.storage import MatrixStore
 from .utils import matrix_creator
 
 
 def test_downcast_matrix():
-    df = matrix_creator()
+    df = matrix_creator().set_index(MatrixStore.indices)
     downcasted_df = downcast_matrix(df)
 
     # make sure the contents are equivalent

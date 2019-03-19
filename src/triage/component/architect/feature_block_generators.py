@@ -5,7 +5,6 @@ from triage.component.collate import (
     Categorical,
     Compare,
     SpacetimeAggregation,
-    FromObj
 )
 
 
@@ -210,29 +209,9 @@ class SpacetimeAggregationGenerator(object):
 
     def aggregations(self, feature_aggregation_config, feature_dates, state_table):
         return [
-            self.preprocess_aggregation(
-                self._aggregation(aggregation_config, feature_dates, state_table)
-            )
+            self._aggregation(aggregation_config, feature_dates, state_table)
             for aggregation_config in feature_aggregation_config
         ]
-
-    def preprocess_aggregation(self, aggregation):
-        create_schema = aggregation.get_create_schema()
-
-        if create_schema is not None:
-            with self.db_engine.begin() as conn:
-                conn.execute(create_schema)
-
-        if self.materialize_subquery_fromobjs:
-            # materialize from obj
-            from_obj = FromObj(
-                from_obj=aggregation.from_obj.text,
-                name=f"{aggregation.features_schema_name}.{aggregation.prefix}",
-                knowledge_date_column=aggregation.date_column
-            )
-            from_obj.maybe_materialize(self.db_engine)
-            aggregation.from_obj = from_obj.table
-        return aggregation
 
 
 FEATURE_BLOCK_GENERATOR_LOOKUP = {

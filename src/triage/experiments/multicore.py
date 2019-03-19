@@ -53,14 +53,26 @@ class MultiCoreExperiment(ExperimentBase):
                 except Exception:
                     logging.exception('Child failure')
 
-    def process_train_test_tasks(self, tasks):
+    def process_train_test_batches(self, batches):
         partial_test = partial(
             run_task_with_splatted_arguments, self.model_train_tester.process_task
         )
 
-        logging.info("Starting parallel testing with %s processes", self.n_processes)
-        parallelize(partial_test, tasks, self.n_processes)
-        logging.info("Cleaned up concurrent pool")
+        for batch in batches:
+            if batch.parallelizable:
+                logging.info(
+                    "Starting parallelizable batch train/testing with %s tasks, %s processes",
+                    len(batch.tasks),
+                    self.n_processes
+                )
+                parallelize(partial_test, batch.tasks, self.n_processes)
+            else:
+                logging.info(
+                    "Starting serial batch train/testing with %s tasks",
+                    len(batch.tasks),
+                )
+                for serial_task in batch.tasks:
+                    self.model_train_tester.process_task(**serial_task)
 
     def process_inserts(self, inserts):
         logging.info("Processing query tasks with %s processes", self.n_db_processes)

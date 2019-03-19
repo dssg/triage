@@ -58,97 +58,7 @@ def fixture_predict_setup_args():
 
 
 @with_matrix_types
-def test_predictor_entity_index(matrix_type, predict_setup_args):
-    (project_storage, db_engine, model_id) = predict_setup_args
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
-
-    # Runs the same test for training and testing predictions
-    matrix = matrix_creator(index="entity_id")
-    metadata = matrix_metadata_creator(
-        end_time=AS_OF_DATE, matrix_type=matrix_type, indices=["entity_id"]
-    )
-
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
-    train_matrix_columns = matrix.columns[0:-1].tolist()
-
-    predict_proba = predictor.predict(
-        model_id,
-        matrix_store,
-        misc_db_parameters=dict(),
-        train_matrix_columns=train_matrix_columns,
-    )
-
-    # assert
-    # 1. that the returned predictions are of the desired length
-    assert len(predict_proba) == 2
-
-    # 2. that the predictions table entries are present and
-    # can be linked to the original models
-    records = [
-        row
-        for row in db_engine.execute(
-            """select entity_id, as_of_date
-        from {}_results.predictions
-        join model_metadata.models using (model_id)""".format(
-                matrix_type, matrix_type
-            )
-        )
-    ]
-    assert len(records) == 2
-
-    # 3. that the contained as_of_dates match what we sent in
-    for record in records:
-        assert record[1].date() == AS_OF_DATE
-
-    # 4. that the entity ids match the given dataset
-    assert sorted([record[0] for record in records]) == [1, 2]
-
-    # 5. running with same model_id, different as of date
-    # then with same as of date only replaces the records
-    # with the same date
-
-    # Runs the same test for training and testing predictions
-    new_matrix = matrix_creator(index="entity_id")
-    new_metadata = matrix_metadata_creator(
-        end_time=AS_OF_DATE + datetime.timedelta(days=1),
-        matrix_type=matrix_type,
-        indices=["entity_id"],
-    )
-    new_matrix_store = get_matrix_store(
-        project_storage, new_matrix, new_metadata
-    )
-
-    predictor.predict(
-        model_id,
-        new_matrix_store,
-        misc_db_parameters=dict(),
-        train_matrix_columns=train_matrix_columns,
-    )
-    predictor.predict(
-        model_id,
-        matrix_store,
-        misc_db_parameters=dict(),
-        train_matrix_columns=train_matrix_columns,
-    )
-    records = [
-        row
-        for row in db_engine.execute(
-            """select entity_id, as_of_date
-        from {}_results.predictions
-        join model_metadata.models using (model_id)""".format(
-                matrix_type, matrix_type
-            )
-        )
-    ]
-    assert len(records) == 4
-
-    # 6. That we can delete the model when done prediction on it
-    predictor.delete_model(model_id)
-    assert predictor.load_model(model_id) is None
-
-
-@with_matrix_types
-def test_predictor_composite_index(matrix_type, predict_setup_args):
+def test_predictor(matrix_type, predict_setup_args):
     (project_storage, db_engine, model_id) = predict_setup_args
     predictor = Predictor(project_storage.model_storage_engine(), db_engine)
 
@@ -162,9 +72,7 @@ def test_predictor_composite_index(matrix_type, predict_setup_args):
         "label": [7, 8, 8, 7],
     }
 
-    matrix = pandas.DataFrame.from_dict(source_dict).set_index(
-        ["entity_id", "as_of_date"]
-    )
+    matrix = pandas.DataFrame.from_dict(source_dict)
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
     matrix_store = get_matrix_store(project_storage, matrix, metadata)
 
@@ -200,13 +108,8 @@ def test_predictor_save_predictions(matrix_type, predict_setup_args):
     # if save_predictions is sent as False, don't save
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, save_predictions=False)
 
-    matrix = matrix_creator(index="entity_id")
-    metadata = matrix_metadata_creator(
-        end_time=AS_OF_DATE, matrix_type=matrix_type, indices=["entity_id"]
-    )
-
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
-    train_matrix_columns = matrix.columns[0:-1].tolist()
+    matrix_store = get_matrix_store(project_storage)
+    train_matrix_columns = matrix_store.columns()
 
     predict_proba = predictor.predict(
         model_id,
@@ -231,13 +134,9 @@ def test_predictor_needs_predictions(matrix_type, predict_setup_args):
     # needs_predictions should return true. else, false
     predictor = Predictor(project_storage.model_storage_engine(), db_engine)
 
-    matrix = matrix_creator(index="entity_id")
-    metadata = matrix_metadata_creator(
-        end_time=AS_OF_DATE, matrix_type=matrix_type, indices=["entity_id"]
-    )
-
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
-    train_matrix_columns = matrix.columns[0:-1].tolist()
+    metadata = matrix_metadata_creator(matrix_type=matrix_type)
+    matrix_store = get_matrix_store(project_storage, metadata=metadata)
+    train_matrix_columns = matrix_store.columns()
 
     # we haven't done anything yet, this should definitely need predictions
     assert predictor.needs_predictions(matrix_store, model_id)
@@ -305,15 +204,13 @@ def test_predictor_retrieve(predict_setup_args):
     )
 
     # create prediction set
-    matrix = matrix_creator()
-    metadata = matrix_metadata_creator()
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
+    matrix_store = get_matrix_store(project_storage)
 
     predict_proba = predictor.predict(
         model_id,
         matrix_store,
         misc_db_parameters=dict(),
-        train_matrix_columns=matrix.columns[0:-1].tolist(),
+        train_matrix_columns=matrix_store.columns()
     )
 
     # When run again, the predictions retrieved from the database
@@ -358,7 +255,7 @@ def test_predictor_retrieve(predict_setup_args):
         model_id,
         matrix_store,
         misc_db_parameters=dict(),
-        train_matrix_columns=matrix.columns[0:-1].tolist(),
+        train_matrix_columns=matrix_store.columns()
     )
     assert_array_equal(new_predict_proba, predict_proba)
     assert not predictor.load_model.called

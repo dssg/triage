@@ -114,7 +114,7 @@ class RQExperiment(ExperimentBase):
         ]
         return self.wait_for(jobs)
 
-    def process_train_test_tasks(self, train_test_tasks):
+    def process_train_test_batches(self, train_test_batches):
         """Run train tasks using RQ
 
         Args:
@@ -130,7 +130,8 @@ class RQExperiment(ExperimentBase):
                 ttl=DEFAULT_TIMEOUT,
                 **task
             )
-            for task in train_test_tasks
+            for batch in train_test_batches
+            for task in batch.tasks
         ]
         return self.wait_for(jobs)
 
