@@ -216,6 +216,8 @@ class BuilderBase(object):
 
 
 class MatrixBuilder(BuilderBase):
+
+    @profile
     def build_matrix(
         self,
         as_of_times,

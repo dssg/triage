@@ -2,6 +2,7 @@
 import argparse
 import importlib.util
 import logging
+import time
 import os
 import yaml
 from datetime import datetime
@@ -25,7 +26,29 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-logging.basicConfig(level=logging.INFO)
+
+class TimeProfileFilter(logging.Filter):
+
+    def __init__(self):
+        self.t0 = time.time()
+
+    @property
+    def elapsed(self):
+        return time.time() - self.t0
+
+    def filter(self, record):
+        record.elapsed = self.elapsed
+        return True
+
+
+logging.basicConfig(
+    format='%(elapsed)s %(message)s',
+    level=logging.INFO,
+)
+
+logging.getLogger().addFilter(
+    TimeProfileFilter()
+)
 
 
 def natural_number(value):
