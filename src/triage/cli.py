@@ -389,7 +389,7 @@ class Db(Command):
     @cmdmethod
     def upgrade(self, args):
         """Upgrade triage results database"""
-        upgrade_db(args.dbfile)
+        upgrade_db(dburl=self.root.db_url)
 
     @cmdmethod(
         "configversion",
@@ -408,7 +408,7 @@ class Db(Command):
             f"Based on config version {args.configversion} "
             f"we think your results schema is version {revision} and are upgrading to it"
         )
-        stamp_db(revision, args.dbfile)
+        stamp_db(revision, dburl=self.root.db_url)
 
 
 def execute():
