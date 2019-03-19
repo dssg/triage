@@ -4,14 +4,16 @@ import hashlib
 import json
 import logging
 import random
-import tempfile
 from triage.util.db import scoped_session
 from contextlib import contextmanager
+from itertools import chain
+from functools import partial
 
 import postgres_copy
 import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
+from ohio import PipeTextIO
 
 from triage.component.results_schema import (
     Experiment,
@@ -208,19 +210,33 @@ def retrieve_model_hash_from_id(db_engine, model_id):
         session.close()
 
 
+def _write_csv(file_like, db_objects, type_of_object):
+    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL)
+    for db_object in db_objects:
+        if type(db_object) != type_of_object:
+            raise TypeError("Cannot copy collection of objects to db as they are not all "
+                            f"of the same type. First object was {type_of_object} "
+                            f"and later encountered a {type(db_object)}")
+        writer.writerow(
+            [getattr(db_object, col.name) for col in db_object.__table__.columns]
+        )
+
+
 @db_retry
 def save_db_objects(db_engine, db_objects):
     """Saves a collection of SQLAlchemy model objects to the database using a COPY command
 
     Args:
         db_engine (sqlalchemy.engine)
-        db_objects (list) SQLAlchemy model objects, corresponding to a valid table
+        db_objects (iterable) SQLAlchemy model objects, corresponding to a valid table
     """
-    with tempfile.TemporaryFile(mode="w+") as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-        for db_object in db_objects:
-            writer.writerow(
-                [getattr(db_object, col.name) for col in db_object.__table__.columns]
-            )
-        f.seek(0)
-        postgres_copy.copy_from(f, type(db_objects[0]), db_engine, format="csv")
+    db_objects = iter(db_objects)
+    first_object = next(db_objects)
+    type_of_object = type(first_object)
+
+    with PipeTextIO(partial(
+            _write_csv,
+            db_objects=chain((first_object,), db_objects),
+            type_of_object=type_of_object
+    )) as pipe:
+        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")

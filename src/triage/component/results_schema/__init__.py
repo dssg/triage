@@ -61,13 +61,13 @@ def _base_alembic_args(db_config_filename=None):
     return base
 
 
-def upgrade_db(db_config_filehandle=None, db_engine=None):
-    if db_config_filehandle:
-        command.upgrade(alembic_config(db_config_filehandle=db_config_filehandle), "head")
-    elif db_engine:
+def upgrade_db(db_engine=None, dburl=None):
+    if db_engine:
         command.upgrade(alembic_config(dburl=db_engine.url), "head")
+    elif dburl:
+        command.upgrade(alembic_config(dburl=dburl), "head")
     else:
-        raise ValueError("Must pass either a db_config_filehandle or a db_engine")
+        raise ValueError("Must pass either a db_config_filehandle or a db_engine or a dburl")
 
 
 REVISION_MAPPING = {
@@ -80,21 +80,11 @@ REVISION_MAPPING = {
 }
 
 
-def stamp_db(revision, db_config_filehandle):
-    command.stamp(alembic_config(db_config_filehandle=db_config_filehandle), revision)
+def stamp_db(revision, dburl):
+    command.stamp(alembic_config(dburl=dburl), revision)
 
 
-def alembic_config(db_config_filehandle=None, dburl=None):
-    if db_config_filehandle:
-        config = yaml.load(db_config_filehandle)
-        dburl = URL(
-            "postgres",
-            host=config["host"],
-            username=config["user"],
-            database=config["db"],
-            password=config["pass"],
-            port=config["port"],
-        )
+def alembic_config(dburl):
     path = os.path.abspath(__file__)
     dir_path = os.path.dirname(path)
     alembic_ini_path = os.path.join(dir_path, "alembic.ini")

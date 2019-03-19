@@ -130,7 +130,6 @@ class IndividualImportanceCalculator(object):
             method_name (string) The name of the method that produced the importance records
 
         """
-        db_objects = []
         self.db_engine.execute(
             """delete from test_results.individual_importances
             where model_id = %s
@@ -140,8 +139,8 @@ class IndividualImportanceCalculator(object):
             as_of_date,
             method_name,
         )
-        for importance_record in importance_records:
-            db_object = IndividualImportance(
+        record_stream = (
+            IndividualImportance(
                 model_id=int(model_id),
                 entity_id=int(importance_record["entity_id"]),
                 as_of_date=as_of_date,
@@ -150,5 +149,6 @@ class IndividualImportanceCalculator(object):
                 method=method_name,
                 importance_score=float(importance_record["score"]),
             )
-            db_objects.append(db_object)
-        save_db_objects(self.db_engine, db_objects)
+            for importance_record in importance_records
+        )
+        save_db_objects(self.db_engine, record_stream)
