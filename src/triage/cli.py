@@ -9,6 +9,7 @@ from datetime import datetime
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
+from memory_profiler import profile
 
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
@@ -287,6 +288,7 @@ class Experiment(Command):
             experiment = SingleThreadedExperiment(**common_kwargs)
         return experiment
 
+    @profile
     def __call__(self, args):
         if args.validate_only:
             self.experiment.validate()
