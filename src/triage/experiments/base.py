@@ -96,6 +96,7 @@ class ExperimentBase(ABC):
         features_ignore_cohort=False,
         profile=False,
         save_predictions=True,
+        skip_validation=False,
     ):
         self._check_config_version(config)
         self.config = config
@@ -108,6 +109,7 @@ class ExperimentBase(ABC):
         self.project_path = project_path
         self.replace = replace
         self.save_predictions = save_predictions
+        self.skip_validation = skip_validation
         self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
 
@@ -643,6 +645,9 @@ class ExperimentBase(ABC):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
+        if not self.skip_validation:
+            self.validate()
+
         try:
             logging.info("Generating matrices")
             self.generate_matrices()
