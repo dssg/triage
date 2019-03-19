@@ -4,6 +4,7 @@ import sqlalchemy
 import wrapt
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine.url import make_url
 
 
 class SerializableDbEngine(wrapt.ObjectProxy):
@@ -16,7 +17,7 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     __slots__ = ("url", "creator", "kwargs")
 
     def __init__(self, url, *, creator=sqlalchemy.create_engine, **kwargs):
-        self.url = url
+        self.url = make_url(url)
         self.creator = creator
         self.kwargs = kwargs
 
