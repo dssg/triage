@@ -82,6 +82,24 @@ def finished_experiment(shared_db_engine, shared_project_storage):
     return experiment
 
 
+@pytest.fixture(scope="module")
+def finished_experiment_without_predictions(shared_db_engine, shared_project_storage):
+    """A successfully-run experiment. Its database schemas and project storage can be queried.
+
+    Returns: (triage.experiments.SingleThreadedExperiment)
+    """
+    populate_source_data(shared_db_engine)
+    base_config = sample_config()
+    experiment = SingleThreadedExperiment(
+        base_config,
+        db_engine=shared_db_engine,
+        project_path=shared_project_storage.project_path,
+        save_predictions=False
+    )
+    experiment.run()
+    return experiment
+
+
 @pytest.fixture(scope='module')
 def crosstabs_config():
     """Example crosstabs config.
