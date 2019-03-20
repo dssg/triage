@@ -233,24 +233,21 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         ))
         assert len(linked_matrices) == len(matrices)
 
-class TestConfigVersion(TestCase):
-    @parametrize_experiment_classes
-    def test_validate_default(self, experiment_class):
-        with testing.postgresql.Postgresql() as postgresql:
-            experiment_config = sample_config()
-            del(experiment_config["grid_config"])
-            db_engine = create_engine(postgresql.url())
-            populate_source_data(db_engine)
-            with TemporaryDirectory() as temp_dir:
-                experiment = experiment_class(
-                    config=sample_config(),
-                    db_engine=db_engine,
-                    project_path=os.path.join(temp_dir, "inspections"),
-                    cleanup=True,
-                )
-                with self.assertRaises(ValueError):
-                    experiment.run()
-
+@parametrize_experiment_classes
+def test_validate_default(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=True,
+            )
+            experiment.validate = mock.MagicMock()
+            experiment.run()
+            experiment.validate.assert_called_once()
 
 @parametrize_experiment_classes
 def test_restart_experiment(experiment_class):
