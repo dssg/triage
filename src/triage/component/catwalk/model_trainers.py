@@ -389,7 +389,8 @@ class ModelTrainer(object):
         except Exception as e:
             errored_model(self.run_id, self.db_engine)
 
-    def flattened_grid_config(self, grid_config):
+    @staticmethod
+    def flattened_grid_config(grid_config):
         return flatten_grid_config(grid_config)
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
@@ -418,7 +419,7 @@ class ModelTrainer(object):
 
         tasks = []
 
-        for class_path, parameters in self.flattened_grid_config(grid_config):
+        for class_path, parameters in ModelTrainer.flattened_grid_config(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
             logging.info(
                 f"Computed model hash for {class_path} "

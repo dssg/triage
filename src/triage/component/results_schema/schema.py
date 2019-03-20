@@ -1,5 +1,6 @@
 import os.path
 import enum
+import datetime
 
 from sqlalchemy import (
     Column,
@@ -336,18 +337,18 @@ class ExperimentRun(Base):
     working_directory = Column(Text)
     ec2_instance_type = Column(Text)
     log_location = Column(Text)
-    experiment_class_name = Column(Text)
+    experiment_class_path = Column(Text)
     experiment_kwargs = Column(JSONB)
     installed_libraries = Column(ARRAY(Text))
     matrix_building_started = Column(DateTime)
-    matrices_made = Column(Integer)
-    matrices_skipped = Column(Integer)
-    matrices_errored = Column(Integer)
+    matrices_made = Column(Integer, default=0)
+    matrices_skipped = Column(Integer, default=0)
+    matrices_errored = Column(Integer, default=0)
     model_building_started = Column(DateTime)
-    models_made = Column(Integer)
-    models_skipped = Column(Integer)
-    models_errored = Column(Integer)
-    last_updated_time = Column(DateTime)
+    models_made = Column(Integer, default=0)
+    models_skipped = Column(Integer, default=0)
+    models_errored = Column(Integer, default=0)
+    last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
     current_status = Column(Enum(ExperimentRunStatus))
     stacktrace = Column(Text)
 

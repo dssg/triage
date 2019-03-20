@@ -195,7 +195,7 @@ class ExperimentRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     working_directory = "/the/best/directory"
     ec2_instance_type = "x2.128xlarge"
     log_location = "/the/logs"
-    experiment_class_name = "SingleThreadedExperiment"
+    experiment_class_path = "triage.experiments.singlethreaded.SingleThreadedExperiment"
     experiment_kwargs = {}
     installed_libraries = ['triage']
     matrix_building_started = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))

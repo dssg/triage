@@ -7,12 +7,12 @@ import pytest
 import datetime
 from triage.tracking import (
     initialize_tracking_and_get_run_id,
-    get_run_obj_for_update,
+    get_run_for_update,
     increment_field
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(name="test_engine", scope="module")
 def shared_db_engine_with_source_data(shared_db_engine):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -22,8 +22,8 @@ def shared_db_engine_with_source_data(shared_db_engine):
     yield shared_db_engine
 
 
-def test_experiment_tracker(shared_db_engine_with_source_data, project_path):
-    db_engine = shared_db_engine_with_source_data
+def test_experiment_tracker(test_engine, project_path):
+    db_engine = test_engine
     experiment = MultiCoreExperiment(
         config=sample_config(),
         db_engine=db_engine,
@@ -34,7 +34,7 @@ def test_experiment_tracker(shared_db_engine_with_source_data, project_path):
         experiment_run = session.query(ExperimentRun).get(experiment.run_id)
         assert experiment_run.current_status == ExperimentRunStatus.started
         assert experiment_run.experiment_hash == experiment.experiment_hash
-        assert experiment_run.experiment_class_name == 'MultiCoreExperiment'
+        assert experiment_run.experiment_class_path == 'triage.experiments.multicore.MultiCoreExperiment'
         assert experiment_run.platform
         assert experiment_run.os_user
         assert experiment_run.installed_libraries
@@ -79,8 +79,8 @@ def test_experiment_tracker_exception(db_engine, project_path):
         assert experiment_run.stacktrace
 
 
-def test_experiment_tracker_in_parts(shared_db_engine_with_source_data, project_path):
-    db_engine = shared_db_engine_with_source_data
+def test_experiment_tracker_in_parts(test_engine, project_path):
+    db_engine = test_engine
     experiment = SingleThreadedExperiment(
         config=sample_config(),
         db_engine=db_engine,
@@ -99,7 +99,7 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
     experiment_hash = experiment.experiment_hash
     run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
-        experiment_class_name='MyClassName',
+        experiment_class_path='mymodule.MyClassName',
         experiment_kwargs={'key': 'value'},
         db_engine=db_engine_with_results_schema
     )
@@ -107,21 +107,21 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
     with scoped_session(db_engine_with_results_schema) as session:
         experiment_run = session.query(ExperimentRun).get(run_id)
         assert experiment_run.experiment_hash == experiment_hash
-        assert experiment_run.experiment_class_name == 'MyClassName'
+        assert experiment_run.experiment_class_path == 'mymodule.MyClassName'
         assert experiment_run.experiment_kwargs == {'key': 'value'}
     new_run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
-        experiment_class_name='MyClassName',
+        experiment_class_path='mymodule.MyClassName',
         experiment_kwargs={'key': 'value'},
         db_engine=db_engine_with_results_schema
     )
     assert new_run_id > run_id
 
 
-def test_get_run_obj_for_update(db_engine_with_results_schema):
+def test_get_run_for_update(db_engine_with_results_schema):
     experiment_run = ExperimentRunFactory()
     factory_session.commit()
-    with get_run_obj_for_update(
+    with get_run_for_update(
         db_engine=db_engine_with_results_schema,
         run_id=experiment_run.run_id
     ) as run_obj:

@@ -4,6 +4,8 @@ import cProfile
 import marshal
 import time
 import datetime
+import inspect
+import itertools
 from contextlib import contextmanager
 
 from descriptors import cachedproperty
@@ -28,7 +30,7 @@ from triage.component.architect.entity_date_table_generators import (
     EntityDateTableGeneratorNoOp,
 )
 from triage.component.timechop import Timechop
-from triage.component.results_schema import upgrade_db, Experiment
+from triage.component import results_schema
 from triage.component.catwalk import (
     ModelTrainer,
     ModelEvaluator,
@@ -42,7 +44,6 @@ from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
     associate_matrices_with_experiment,
-    checkout_row_for_update,
     missing_matrix_uuids,
     missing_model_hashes,
     filename_friendly_hash,
@@ -65,7 +66,8 @@ from triage.tracking import (
 
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
-
+from triage.util.db import get_for_update
+from triage.util.introspection import bound_call_signature, classpath
 
 
 class ExperimentBase(ABC):
@@ -107,8 +109,11 @@ class ExperimentBase(ABC):
         profile=False,
         save_predictions=True,
     ):
-        experiment_kwargs = {k: v for k, v in locals().items() if k not in {'db_engine', 'config', 'self'}}
-        experiment_class_name = self.__class__.__name__
+        experiment_kwargs = bound_call_signature(
+            self.__class__,
+            {key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
+        )
+
         self._check_config_version(config)
         self.config = config
 
@@ -121,7 +126,7 @@ class ExperimentBase(ABC):
         self.replace = replace
         self.save_predictions = save_predictions
         self.db_engine = db_engine
-        upgrade_db(db_engine=self.db_engine)
+        results_schema.upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
@@ -129,9 +134,9 @@ class ExperimentBase(ABC):
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
-            experiment_class_name,
-            experiment_kwargs,
-            self.db_engine
+            experiment_class_path=classpath(self.__class__),
+            experiment_kwargs=experiment_kwargs,
+            db_engine=self.db_engine
         )
         self.initialize_components()
 
@@ -311,6 +316,9 @@ class ExperimentBase(ABC):
             subsets=self.subsets,
         )
 
+    def get_for_update(self):
+        return get_for_update(self.db_engine, results_schema.Experiment, self.experiment_hash)
+
     @cachedproperty
     def split_definitions(self):
         """Temporal splits based on the experiment's configuration
@@ -366,7 +374,7 @@ class ExperimentBase(ABC):
                 )
             )
 
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.time_splits = len(split_definitions)
         return split_definitions
 
@@ -405,7 +413,7 @@ class ExperimentBase(ABC):
         logging.info(
             "You can view all as_of_times by inspecting `.all_as_of_times` on this Experiment"
         )
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.as_of_times = len(distinct_as_of_times)
         return distinct_as_of_times
 
@@ -425,7 +433,7 @@ class ExperimentBase(ABC):
             feature_dates=self.all_as_of_times,
             state_table=self.cohort_table_name,
         )
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.feature_blocks = len(aggregations)
         return aggregations
 
@@ -482,8 +490,8 @@ class ExperimentBase(ABC):
             ),
         )
         logging.info("Computed master feature dictionary: %s", result)
-        with self.checkout_experiment_for_update() as experiment:
-            experiment.total_features = len(list(feature for table_features in result.values() for feature in table_features))
+        with self.get_for_update() as experiment:
+            experiment.total_features = sum(1 for _feature in itertools.chain.from_iterable(result.values()))
         return result
 
     @cachedproperty
@@ -499,7 +507,7 @@ class ExperimentBase(ABC):
         combinations = self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.feature_group_combinations = len(combinations)
         return combinations
 
@@ -621,22 +629,13 @@ class ExperimentBase(ABC):
             ),
         )
 
-    @contextmanager
-    def checkout_experiment_for_update(self):
-        """Checks out the experiment metadata object in the database to update.
-
-        Yields: (triage.component.results_schema.Experiment) the experiment metadata object
-        """
-        with checkout_row_for_update(self.db_engine, Experiment, self.experiment_hash) as experiment:
-            yield experiment
-
     def build_matrices(self):
         associate_matrices_with_experiment(
             self.experiment_hash,
             self.matrix_build_tasks.keys(),
             self.db_engine
         )
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.matrices_needed = len(self.matrix_build_tasks.keys())
         record_matrix_building_started(self.run_id, self.db_engine)
         self.process_matrix_build_tasks(self.matrix_build_tasks)
@@ -684,8 +683,8 @@ class ExperimentBase(ABC):
             logging.warning("No train/test tasks found, so no training to do")
             return
 
-        with self.checkout_experiment_for_update() as experiment:
-            experiment.grid_size = len(list(self.trainer.flattened_grid_config(self.config.get('grid_config'))))
+        with self.get_for_update() as experiment:
+            experiment.grid_size = sum(1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
 
         logging.info("%s train/test batches found. Beginning training.", len(batches))
         model_hashes = set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks)
@@ -694,7 +693,7 @@ class ExperimentBase(ABC):
             model_hashes,
             self.db_engine
         )
-        with self.checkout_experiment_for_update() as experiment:
+        with self.get_for_update() as experiment:
             experiment.models_needed = len(list(model_hashes))
         record_model_building_started(self.run_id, self.db_engine)
         self.process_train_test_batches(batches)

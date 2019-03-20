@@ -6,9 +6,18 @@ import requests
 import subprocess
 import logging
 from functools import wraps
-from triage.util.db import scoped_session
+from triage.util.db import scoped_session, get_for_update
+from triage.util.introspection import classpath
 from contextlib import contextmanager
 from triage import __version__
+
+try:
+    try:
+        from pip._internal.operations import freeze as pip_freeze
+    except ImportError:  # pip < 10.0
+        from pip.operations import freeze as pip_freeze
+except ImportError:
+    pip_freeze = None
 
 
 from triage.component.results_schema import ExperimentRun, ExperimentRunStatus
@@ -21,8 +30,8 @@ def infer_git_hash():
     """
     try:
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
-    except Exception as e:
-        logging.info("Unable to infer git hash, error: %s", str(e))
+    except Exception as exc:
+        logging.info("Unable to infer git hash, error: %s", exc)
         git_hash = None
     return git_hash
 
@@ -36,9 +45,9 @@ def infer_installed_libraries():
 
     Returns: Either a list, or None
     """
-    try:
-        installed_libraries = subprocess.check_output(['pip', 'freeze']).split(b'\n')
-    except FileNotFoundError:
+    if pip_freeze is not None:
+        installed_libraries = pip_freeze.freeze()
+    else:
         logging.info("Unable to pip freeze, cannot list installed libraries")
         installed_libraries = []
     return installed_libraries
@@ -52,7 +61,7 @@ def infer_ec2_instance_type():
     try:
         ec2_instance_type = requests.get(
             'http://169.254.169.254/latest/meta-data/instance-type',
-            timeout=1
+            timeout=0.01
         ).text
     except requests.exceptions.ConnectionError:
         logging.info(
@@ -82,7 +91,7 @@ def infer_log_location():
 
 def initialize_tracking_and_get_run_id(
     experiment_hash,
-    experiment_class_name,
+    experiment_class_path,
     experiment_kwargs,
     db_engine
 ):
@@ -90,14 +99,14 @@ def initialize_tracking_and_get_run_id(
 
     Args:
         experiment_hash (str) An experiment hash that exists in the experiments table
-        experiment_class_name (str) The name of the experiment subclass used
+        experiment_class_path (str) The name of the experiment subclass used
         experiment_kwargs (dict) Any runtime Experiment keyword arguments that should be saved
         db_engine (sqlalchemy.engine)
     """
     # Any experiment kwargs that are types (e.g. MatrixStorageClass) can't
     # be serialized, so just use the class name if so
     cleaned_experiment_kwargs = {
-        k: (v.__name__ if isinstance(v, type) else v)
+        k: (classpath(v) if isinstance(v, type) else v)
         for k, v in experiment_kwargs.items()
     }
     run = ExperimentRun(
@@ -113,7 +122,7 @@ def initialize_tracking_and_get_run_id(
         working_directory=os.getcwd(),
         ec2_instance_type=infer_ec2_instance_type(),
         log_location=infer_log_location(),
-        experiment_class_name=experiment_class_name,
+        experiment_class_path=experiment_class_path,
         experiment_kwargs=cleaned_experiment_kwargs,
         matrices_made=0,
         matrices_errored=0,
@@ -133,7 +142,7 @@ def initialize_tracking_and_get_run_id(
 
 
 @contextmanager
-def get_run_obj_for_update(db_engine, run_id):
+def get_run_for_update(db_engine, run_id):
     """Yields an ExperimentRun at the given run_id for update
 
     Will kick the last_update_time timestamp of the row each time.
@@ -142,11 +151,8 @@ def get_run_obj_for_update(db_engine, run_id):
         db_engine (sqlalchemy.engine)
         run_id (int) The identifier/primary key of the run
     """
-    with scoped_session(db_engine) as session:
-        obj = session.query(ExperimentRun).get(run_id)
-        yield obj
-        obj.last_updated_time = datetime.datetime.now()
-        session.merge(obj)
+    with get_for_update(db_engine, ExperimentRun, run_id) as run:
+        yield run
 
 
 def experiment_entrypoint(entrypoint_func):
@@ -159,23 +165,24 @@ def experiment_entrypoint(entrypoint_func):
     Upon method exit, will update the ExperimentRun row with the status (either failed or completed)
     """
     @wraps(entrypoint_func)
-    def with_entrypoint(*args, **kwargs):
+    def with_entrypoint(self, *args, **kwargs):
         entrypoint_name = entrypoint_func.__name__
-        with get_run_obj_for_update(args[0].db_engine, args[0].run_id) as run_obj:
+        with get_run_for_update(self.db_engine, self.run_id) as run_obj:
             if not run_obj.start_method:
                 run_obj.start_method = entrypoint_name
         try:
-            entrypoint_func(*args, **kwargs)
-        except Exception as e:
-            with get_run_obj_for_update(args[0].db_engine, args[0].run_id) as run_obj:
+            return_value = entrypoint_func(self, *args, **kwargs)
+        except Exception as exc:
+            with get_run_for_update(self.db_engine, self.run_id) as run_obj:
                 run_obj.current_status = ExperimentRunStatus.failed
-                run_obj.stacktrace = str(e)
-            raise e
+                run_obj.stacktrace = str(exc)
+            raise exc
 
-        with get_run_obj_for_update(args[0].db_engine, args[0].run_id) as run_obj:
+        with get_run_for_update(self.db_engine, self.run_id) as run_obj:
             run_obj.current_status = ExperimentRunStatus.completed
 
-        entrypoint_name = None
+        return return_value
+
     return with_entrypoint
 
 
@@ -207,7 +214,7 @@ def record_matrix_building_started(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    with get_run_obj_for_update(db_engine, run_id) as run_obj:
+    with get_run_for_update(db_engine, run_id) as run_obj:
         run_obj.matrix_building_started = datetime.datetime.now()
 
 
@@ -218,7 +225,7 @@ def record_model_building_started(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    with get_run_obj_for_update(db_engine, run_id) as run_obj:
+    with get_run_for_update(db_engine, run_id) as run_obj:
         run_obj.model_building_started = datetime.datetime.now()
 
 

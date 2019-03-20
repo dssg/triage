@@ -8,6 +8,7 @@ Create Date: 2019-03-15 12:08:51.995548
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+import datetime
 
 # revision identifiers, used by Alembic.
 revision = 'cfd5c3386014'
@@ -30,18 +31,18 @@ def upgrade():
     sa.Column('working_directory', sa.Text(), nullable=True),
     sa.Column('ec2_instance_type', sa.Text(), nullable=True),
     sa.Column('log_location', sa.Text(), nullable=True),
-    sa.Column('experiment_class_name', sa.Text(), nullable=True),
+    sa.Column('experiment_class_path', sa.Text(), nullable=True),
     sa.Column('experiment_kwargs', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('installed_libraries', sa.ARRAY(sa.Text()), nullable=True),
     sa.Column('matrix_building_started', sa.DateTime(), nullable=True),
-    sa.Column('matrices_made', sa.Integer(), nullable=True),
-    sa.Column('matrices_skipped', sa.Integer(), nullable=True),
-    sa.Column('matrices_errored', sa.Integer(), nullable=True),
+    sa.Column('matrices_made', sa.Integer(), nullable=True, default=0),
+    sa.Column('matrices_skipped', sa.Integer(), nullable=True, default=0),
+    sa.Column('matrices_errored', sa.Integer(), nullable=True, default=0),
     sa.Column('model_building_started', sa.DateTime(), nullable=True),
-    sa.Column('models_made', sa.Integer(), nullable=True),
-    sa.Column('models_skipped', sa.Integer(), nullable=True),
-    sa.Column('models_errored', sa.Integer(), nullable=True),
-    sa.Column('last_updated_time', sa.DateTime(), nullable=True),
+    sa.Column('models_made', sa.Integer(), nullable=True, default=0),
+    sa.Column('models_skipped', sa.Integer(), nullable=True, default=0),
+    sa.Column('models_errored', sa.Integer(), nullable=True, default=0),
+    sa.Column('last_updated_time', sa.DateTime(), nullable=True, onupdate=datetime.datetime.now),
     sa.Column('current_status', sa.Enum('started', 'completed', 'failed', name='experimentrunstatus'), nullable=True),
     sa.Column('stacktrace', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['experiment_hash'], ['model_metadata.experiments.experiment_hash'], ),
