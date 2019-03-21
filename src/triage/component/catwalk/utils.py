@@ -4,8 +4,6 @@ import hashlib
 import json
 import logging
 import random
-from triage.util.db import scoped_session
-from contextlib import contextmanager
 from itertools import chain
 from functools import partial
 
@@ -21,7 +19,6 @@ from triage.component.results_schema import (
     Model,
     ExperimentMatrix,
     ExperimentModel,
-    Subset,
 )
 
 
@@ -87,14 +84,6 @@ def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
     session.commit()
     session.close()
     logging.info("Associated models with experiment in database")
-
-
-@contextmanager
-def checkout_row_for_update(db_engine, orm_class, primary_key):
-    with scoped_session(db_engine) as session:
-        obj = session.query(orm_class).get(primary_key)
-        yield obj
-        session.merge(obj)
 
 
 @db_retry

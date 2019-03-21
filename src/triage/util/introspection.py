@@ -2,11 +2,24 @@ import inspect
 
 
 def classpath(klass):
+    """Return the full class path
+
+    Args:
+        klass (class): A class
+    """
     return f"{klass.__module__}.{klass.__name__}"
 
 
-def bound_call_signature(klass, local_variables):
-    call_signature = inspect.signature(klass).bind_partial(**local_variables).arguments
+def bind_kwargs(callable, **kwargs):
+    """Bind keyword arguments to a callable and return as a dictionary
+
+    Args:
+        callable (callable): any callable
+        **kwargs: keyword arguments to bind
+
+    Returns: (dict)
+    """
+    call_signature = inspect.signature(callable).bind_partial(**kwargs).arguments
     if 'kwargs' in call_signature:
         passed_kwargs = call_signature['kwargs']
     else:

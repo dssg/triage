@@ -8,7 +8,6 @@ import logging
 from functools import wraps
 from triage.util.db import scoped_session, get_for_update
 from triage.util.introspection import classpath
-from contextlib import contextmanager
 from triage import __version__
 
 try:
@@ -124,12 +123,6 @@ def initialize_tracking_and_get_run_id(
         log_location=infer_log_location(),
         experiment_class_path=experiment_class_path,
         experiment_kwargs=cleaned_experiment_kwargs,
-        matrices_made=0,
-        matrices_errored=0,
-        matrices_skipped=0,
-        models_made=0,
-        models_errored=0,
-        models_skipped=0,
     )
     run_id = None
     with scoped_session(db_engine) as session:
@@ -141,7 +134,6 @@ def initialize_tracking_and_get_run_id(
     return run_id
 
 
-@contextmanager
 def get_run_for_update(db_engine, run_id):
     """Yields an ExperimentRun at the given run_id for update
 
@@ -151,8 +143,7 @@ def get_run_for_update(db_engine, run_id):
         db_engine (sqlalchemy.engine)
         run_id (int) The identifier/primary key of the run
     """
-    with get_for_update(db_engine, ExperimentRun, run_id) as run:
-        yield run
+    return get_for_update(db_engine, ExperimentRun, run_id)
 
 
 def experiment_entrypoint(entrypoint_func):

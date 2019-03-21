@@ -3,10 +3,7 @@ from abc import ABC, abstractmethod
 import cProfile
 import marshal
 import time
-import datetime
-import inspect
 import itertools
-from contextlib import contextmanager
 
 from descriptors import cachedproperty
 from timeout import timeout
@@ -67,7 +64,7 @@ from triage.tracking import (
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
 from triage.util.db import get_for_update
-from triage.util.introspection import bound_call_signature, classpath
+from triage.util.introspection import bind_kwargs, classpath
 
 
 class ExperimentBase(ABC):
@@ -109,9 +106,9 @@ class ExperimentBase(ABC):
         profile=False,
         save_predictions=True,
     ):
-        experiment_kwargs = bound_call_signature(
+        experiment_kwargs = bind_kwargs(
             self.__class__,
-            {key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
+            **{key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
         )
 
         self._check_config_version(config)
@@ -694,7 +691,7 @@ class ExperimentBase(ABC):
             self.db_engine
         )
         with self.get_for_update() as experiment:
-            experiment.models_needed = len(list(model_hashes))
+            experiment.models_needed = len(model_hashes)
         record_model_building_started(self.run_id, self.db_engine)
         self.process_train_test_batches(batches)
 

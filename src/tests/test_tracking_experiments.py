@@ -3,6 +3,7 @@ from triage.util.db import scoped_session
 from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
 from triage.component.results_schema import ExperimentRun, ExperimentRunStatus
 from tests.results_tests.factories import ExperimentFactory, ExperimentRunFactory, session as factory_session
+from sqlalchemy.orm import Session
 import pytest
 import datetime
 from triage.tracking import (
@@ -23,43 +24,40 @@ def shared_db_engine_with_source_data(shared_db_engine):
 
 
 def test_experiment_tracker(test_engine, project_path):
-    db_engine = test_engine
     experiment = MultiCoreExperiment(
         config=sample_config(),
-        db_engine=db_engine,
+        db_engine=test_engine,
         project_path=project_path,
         n_processes=4,
     )
-    with scoped_session(db_engine) as session:
-        experiment_run = session.query(ExperimentRun).get(experiment.run_id)
-        assert experiment_run.current_status == ExperimentRunStatus.started
-        assert experiment_run.experiment_hash == experiment.experiment_hash
-        assert experiment_run.experiment_class_path == 'triage.experiments.multicore.MultiCoreExperiment'
-        assert experiment_run.platform
-        assert experiment_run.os_user
-        assert experiment_run.installed_libraries
-        assert experiment_run.matrices_skipped == 0
-        assert experiment_run.matrices_errored == 0
-        assert experiment_run.matrices_made == 0
-        assert experiment_run.models_skipped == 0
-        assert experiment_run.models_errored == 0
-        assert experiment_run.models_made == 0
+    experiment_run = Session(bind=test_engine).query(ExperimentRun).get(experiment.run_id)
+    assert experiment_run.current_status == ExperimentRunStatus.started
+    assert experiment_run.experiment_hash == experiment.experiment_hash
+    assert experiment_run.experiment_class_path == 'triage.experiments.multicore.MultiCoreExperiment'
+    assert experiment_run.platform
+    assert experiment_run.os_user
+    assert experiment_run.installed_libraries
+    assert experiment_run.matrices_skipped == 0
+    assert experiment_run.matrices_errored == 0
+    assert experiment_run.matrices_made == 0
+    assert experiment_run.models_skipped == 0
+    assert experiment_run.models_errored == 0
+    assert experiment_run.models_made == 0
 
     experiment.run()
-    with scoped_session(db_engine) as session:
-        experiment_run = session.query(ExperimentRun).get(experiment.run_id)
-        assert experiment_run.start_method == "run"
-        assert experiment_run.matrices_made == len(experiment.matrix_build_tasks)
-        assert experiment_run.matrices_skipped == 0
-        assert experiment_run.matrices_errored == 0
-        assert experiment_run.models_skipped == 0
-        assert experiment_run.models_errored == 0
-        assert experiment_run.models_made == len(list(task['train_kwargs']['model_hash'] for batch in experiment._all_train_test_batches() for task in batch.tasks))
-        assert isinstance(experiment_run.matrix_building_started, datetime.datetime)
-        assert isinstance(experiment_run.model_building_started, datetime.datetime)
-        assert isinstance(experiment_run.last_updated_time, datetime.datetime)
-        assert not experiment_run.stacktrace
-        assert experiment_run.current_status == ExperimentRunStatus.completed
+    experiment_run = Session(bind=test_engine).query(ExperimentRun).get(experiment.run_id)
+    assert experiment_run.start_method == "run"
+    assert experiment_run.matrices_made == len(experiment.matrix_build_tasks)
+    assert experiment_run.matrices_skipped == 0
+    assert experiment_run.matrices_errored == 0
+    assert experiment_run.models_skipped == 0
+    assert experiment_run.models_errored == 0
+    assert experiment_run.models_made == len(list(task['train_kwargs']['model_hash'] for batch in experiment._all_train_test_batches() for task in batch.tasks))
+    assert isinstance(experiment_run.matrix_building_started, datetime.datetime)
+    assert isinstance(experiment_run.model_building_started, datetime.datetime)
+    assert isinstance(experiment_run.last_updated_time, datetime.datetime)
+    assert not experiment_run.stacktrace
+    assert experiment_run.current_status == ExperimentRunStatus.completed
 
 
 def test_experiment_tracker_exception(db_engine, project_path):
@@ -80,15 +78,14 @@ def test_experiment_tracker_exception(db_engine, project_path):
 
 
 def test_experiment_tracker_in_parts(test_engine, project_path):
-    db_engine = test_engine
     experiment = SingleThreadedExperiment(
         config=sample_config(),
-        db_engine=db_engine,
+        db_engine=test_engine,
         project_path=project_path,
     )
     experiment.generate_matrices()
     experiment.train_and_test_models()
-    with scoped_session(db_engine) as session:
+    with scoped_session(test_engine) as session:
         experiment_run = session.query(ExperimentRun).get(experiment.run_id)
         assert experiment_run.start_method == "generate_matrices"
 

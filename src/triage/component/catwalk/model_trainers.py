@@ -386,7 +386,15 @@ class ModelTrainer(object):
             if self.run_id:
                 built_model(self.run_id, self.db_engine)
             return model_id
-        except Exception as e:
+        except Exception as exc:
+            logging.warning("Model training for matrix %s, estimator %s/%s, model hash %s",
+                            "failed due to %s",
+                            matrix_store.uuid,
+                            class_path,
+                            parameters,
+                            model_hash,
+                            exc
+                            )
             errored_model(self.run_id, self.db_engine)
 
     @staticmethod
@@ -419,7 +427,7 @@ class ModelTrainer(object):
 
         tasks = []
 
-        for class_path, parameters in ModelTrainer.flattened_grid_config(grid_config):
+        for class_path, parameters in self.flattened_grid_config(grid_config):
             model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
             logging.info(
                 f"Computed model hash for {class_path} "
