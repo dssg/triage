@@ -70,7 +70,6 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 matrix_storage_class=matrix_storage_class,
                 cleanup=True,
-                skip_validation=True,
             ).run()
 
         # assert
@@ -250,7 +249,7 @@ def test_validate_default(experiment_class):
             experiment.validate.assert_called_once()
 
 @parametrize_experiment_classes
-def test_restart_experiment(experiment_class):
+def test_skip_validation(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
@@ -261,6 +260,22 @@ def test_restart_experiment(experiment_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
                 skip_validation=True,
+            )
+            experiment.validate = mock.MagicMock()
+            experiment.run()
+            experiment.validate.assert_not_called()
+
+@parametrize_experiment_classes
+def test_restart_experiment(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=True,
             )
             experiment.run()
 
@@ -273,7 +288,6 @@ def test_restart_experiment(experiment_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
                 replace=False,
-                skip_validation=True,
             )
             experiment.make_entity_date_table = mock.Mock()
             experiment.run()
@@ -291,7 +305,6 @@ class TestConfigVersion(TestCase):
                     config=experiment_config,
                     db_engine=db_engine,
                     project_path=os.path.join(temp_dir, "inspections"),
-                    skip_validation=True,
                 )
 
         assert isinstance(experiment, SingleThreadedExperiment)
@@ -305,7 +318,6 @@ class TestConfigVersion(TestCase):
                     config=experiment_config,
                     db_engine=None,
                     project_path=os.path.join(temp_dir, "inspections"),
-                    skip_validation=True,
                 )
 
 
@@ -326,7 +338,6 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
-                skip_validation=True,
             )
             with pytest.raises(TimeoutError):
                 experiment()
@@ -343,7 +354,7 @@ def test_build_error(experiment_class):
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
-                skip_validation=True,
+                skip_validation=True,   # avoid catching the missing data at validation stage
             )
 
             with mock.patch.object(experiment, "generate_matrices") as build_mock:
@@ -370,7 +381,7 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
-                skip_validation=True,
+                skip_validation=True,  # avoid catching the missing data at validation stage
             )
 
             with mock.patch.object(experiment, "generate_matrices") as build_mock:
@@ -395,7 +406,6 @@ def test_custom_label_name(experiment_class):
                 config=config,
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
-                skip_validation=True,
             )
             assert experiment.label_generator.label_name == "custom_label_name"
             assert experiment.planner.label_names == ["custom_label_name"]
@@ -410,7 +420,6 @@ def test_profiling(db_engine):
             db_engine=db_engine,
             project_path=project_path,
             profile=True,
-            skip_validation=True,
         ).run()
         assert len(os.listdir(os.path.join(project_path, "profiling_stats"))) == 1
 
@@ -440,7 +449,6 @@ def test_baselines_with_missing_features(experiment_class):
                 config=config,
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
-                skip_validation=True,
             ).run()
 
         # assert
@@ -558,5 +566,4 @@ def test_serializable_engine_check_sqlalchemy_fail():
                     config=sample_config(),
                     db_engine=db_engine,
                     project_path=os.path.join(temp_dir, "inspections"),
-                    skip_validation=True,
                 )
