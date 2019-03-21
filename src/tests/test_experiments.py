@@ -232,6 +232,38 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         ))
         assert len(linked_matrices) == len(matrices)
 
+@parametrize_experiment_classes
+def test_validate_default(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=True,
+            )
+            experiment.validate = mock.MagicMock()
+            experiment.run()
+            experiment.validate.assert_called_once()
+
+@parametrize_experiment_classes
+def test_skip_validation(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        with TemporaryDirectory() as temp_dir:
+            experiment = experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=True,
+                skip_validation=True,
+            )
+            experiment.validate = mock.MagicMock()
+            experiment.run()
+            experiment.validate.assert_not_called()
 
 @parametrize_experiment_classes
 def test_restart_experiment(experiment_class):
@@ -322,6 +354,7 @@ def test_build_error(experiment_class):
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
+                skip_validation=True,   # avoid catching the missing data at validation stage
             )
 
             with mock.patch.object(experiment, "generate_matrices") as build_mock:
@@ -348,6 +381,7 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=True,
                 cleanup_timeout=0.02,  # Set short timeout
+                skip_validation=True,  # avoid catching the missing data at validation stage
             )
 
             with mock.patch.object(experiment, "generate_matrices") as build_mock:
@@ -385,7 +419,7 @@ def test_profiling(db_engine):
             config=sample_config(),
             db_engine=db_engine,
             project_path=project_path,
-            profile=True
+            profile=True,
         ).run()
         assert len(os.listdir(os.path.join(project_path, "profiling_stats"))) == 1
 
