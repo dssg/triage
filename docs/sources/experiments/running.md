@@ -173,7 +173,9 @@ triage experiment example/config/experiment.yaml --project-path '/path/to/direct
 
 #### Python
 
-Experiments expose a `validate` method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.
+The python interface will also validate by default when running an experiment. If you would prefer to skip this step, you can pass `skip_validation=True` when constructing your experiment.
+
+You can also run this validation step directly. Experiments expose a `validate` method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.
 
 ```python
 experiment.validate()
@@ -228,7 +230,7 @@ Python: `SingleThreadedExperiment(..., save_predictions=False)`
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration), you will need to pass `skip_validation=True` when constructing your experiment object for a partial experiment.
 
 Running parts of an experiment is only supported through the Python interface.
 
