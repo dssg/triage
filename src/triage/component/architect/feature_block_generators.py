@@ -8,8 +8,9 @@ from triage.component.collate import (
 )
 
 
-def generate_spacetime_aggregations(
+def generate_spacetime_aggregation(
     feature_aggregation_config,
+    feature_table_name,
     as_of_dates,
     cohort_table,
     db_engine,
@@ -23,6 +24,7 @@ def generate_spacetime_aggregations(
     Args:
         feature_aggregation_config (list) all values, except for feature
             date, necessary to instantiate a collate.SpacetimeAggregation
+        feature_table_name (string) the table in which to put output features
         as_of_dates (list) dates to generate features as of
         cohort_table (string) schema.table_name for state table with all entity/date pairs
         db_engine (sqlalchemy.db.engine)
@@ -49,10 +51,11 @@ def generate_spacetime_aggregations(
         feature_start_time=feature_start_time,
         materialize_subquery_fromobjs=materialize_subquery_fromobjs,
         features_ignore_cohort=features_ignore_cohort,
-    ).aggregations(
+    ).aggregation(
         feature_aggregation_config,
         as_of_dates,
-        cohort_table
+        cohort_table,
+        feature_table_name
     )
 
 
@@ -158,7 +161,7 @@ class SpacetimeAggregationGenerator(object):
             for categorical in categorical_config
         ]
 
-    def _aggregation(self, aggregation_config, feature_dates, state_table):
+    def aggregation(self, aggregation_config, feature_dates, state_table, feature_table_name):
         logging.info(
             "Building collate.SpacetimeAggregation for config %s and %s as_of_dates",
             aggregation_config,
@@ -203,19 +206,13 @@ class SpacetimeAggregationGenerator(object):
             db_engine=self.db_engine,
             feature_start_time=self.feature_start_time,
             features_schema_name=self.features_schema_name,
-            prefix=aggregation_config["prefix"],
+            features_table_name=feature_table_name,
             features_ignore_cohort=self.features_ignore_cohort
         )
 
-    def aggregations(self, feature_aggregation_config, feature_dates, state_table):
-        return [
-            self._aggregation(aggregation_config, feature_dates, state_table)
-            for aggregation_config in feature_aggregation_config
-        ]
-
 
 FEATURE_BLOCK_GENERATOR_LOOKUP = {
-    'spacetime_aggregations': generate_spacetime_aggregations
+    'spacetime_aggregations': generate_spacetime_aggregation
 }
 
 
@@ -249,15 +246,17 @@ def feature_blocks_from_config(
     Returns: (list) of FeatureBlock objects
     """
     feature_blocks = []
-    for config_key, config_value in config.items():
-        feature_block_generator = FEATURE_BLOCK_GENERATOR_LOOKUP.get(config_key, None)
+    for feature_table_name, feature_block_configuration in config.items():
+        feature_generator_type = feature_block_configuration.pop("feature_generator_type")
+        feature_block_generator = FEATURE_BLOCK_GENERATOR_LOOKUP.get(feature_generator_type, None)
         if not feature_block_generator:
-            raise ValueError(f"feature config key {config_key} does not correspond to a recognized"
-                             " feature generator.  Recognized feature generator keys:"
+            raise ValueError(f"feature generator type {feature_generator_type} does not correspond to a recognized"
+                             " feature generator.  Recognized feature generator types:"
                              f"{FEATURE_BLOCK_GENERATOR_LOOKUP.keys()}")
 
         for feature_block in feature_block_generator(
-            config_value,
+            feature_block_configuration,
+            feature_table_name=feature_table_name,
             as_of_dates=as_of_dates,
             cohort_table=cohort_table,
             db_engine=db_engine,

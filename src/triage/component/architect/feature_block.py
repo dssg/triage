@@ -12,6 +12,7 @@ class FeatureBlock(ABC):
         db_engine,
         cohort_table,
         as_of_dates,
+        features_table_name,
         features_schema_name=None,
         feature_start_time=None,
         features_ignore_cohort=False,
@@ -19,15 +20,15 @@ class FeatureBlock(ABC):
         self.db_engine = db_engine
         self.cohort_table_name = cohort_table
         self.as_of_dates = as_of_dates
+        self.features_table_name_without_schema = features_table_name
         self.features_schema_name = features_schema_name
         self.feature_start_time = feature_start_time
         self.features_ignore_cohort = features_ignore_cohort
 
     @property
-    @abstractmethod
     def final_feature_table_name(self):
         "The name of the final table with all features filled in (no missing values)"
-        pass
+        return f"{self.features_schema_name}.{self.features_table_name_without_schema}"
 
     @property
     @abstractmethod

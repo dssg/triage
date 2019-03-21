@@ -71,6 +71,7 @@ def test_basic_spacetime():
             intervals=["1y", "2y", "all"],
             as_of_dates=["2016-01-01", "2015-01-01"],
             features_schema_name="schema",
+            features_table_name="myfeaturetable",
             cohort_table="states",
             entity_column="entity_id",
             date_column="event_date",
@@ -81,7 +82,7 @@ def test_basic_spacetime():
         engine.execute(st.get_create_schema())
         st.run_preimputation()
         r = engine.execute(
-            "select * from schema.events_entity_id order by entity_id, as_of_date"
+            "select * from schema.myfeaturetable_entity_id order by entity_id, as_of_date"
         )
         rows = [x for x in r]
         assert rows[0]["entity_id"] == 1
@@ -149,7 +150,7 @@ def test_basic_spacetime():
         st.run_imputation()
         # check some imputation results
         r = engine.execute(
-            "select * from schema.events_aggregation_imputed order by entity_id, as_of_date"
+            "select * from schema.myfeaturetable order by entity_id, as_of_date"
         )
         rows = [x for x in r]
         assert rows[6]["entity_id"] == 4

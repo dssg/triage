@@ -82,21 +82,19 @@ class SpacetimeAggregation(FeatureBlock):
         self.from_obj = make_sql_clause(from_obj, ex.text)
         self.entity_column = entity_column if entity_column else "entity_id"
         self.prefix = prefix if prefix else str(from_obj)
-        self.suffix = suffix if suffix else "aggregation"
         self.drop_interim_tables = drop_interim_tables
 
     def get_table_name(self, group=None, imputed=False):
         """
         Returns name for table for the given group
         """
-        if group is None and not imputed:
-            name = '"%s_%s"' % (self.prefix, self.suffix)
-        elif group is None and imputed:
-            name = '"%s_%s_%s"' % (self.prefix, self.suffix, "imputed")
-        elif imputed:
-            name = '"%s"' % to_sql_name("%s_%s_%s" % (self.prefix, group, "imputed"))
+        if imputed:
+            return self.final_feature_table_name
+        prefix = self.features_table_name_without_schema
+        if group is None:
+            name = '"%s_%s"' % (prefix, "aggregation")
         else:
-            name = '"%s"' % to_sql_name("%s_%s" % (self.prefix, group))
+            name = '"%s"' % to_sql_name("%s_%s" % (prefix, group))
         schema = '"%s".' % self.features_schema_name if self.features_schema_name else ""
         return "%s%s" % (schema, name)
 
@@ -220,11 +218,6 @@ class SpacetimeAggregation(FeatureBlock):
         return columns
 
     @property
-    def final_feature_table_name(self):
-        "The name of the final table with all features filled in (no missing values)"
-        return self.get_table_name(imputed=True)
-
-    @property
     def preinsert_queries(self):
         """
         Return all queries that should be run before inserting any data.
@@ -277,7 +270,7 @@ class SpacetimeAggregation(FeatureBlock):
         if not self.cohort_table_name:
             logging.warning(
                 "No cohort table defined in feature_block, cannot create imputation table for %s",
-                self.get_table_name(imputed=True),
+                self.final_feature_table_name
             )
             return []
 
@@ -285,7 +278,7 @@ class SpacetimeAggregation(FeatureBlock):
             logging.warning(
                 "Cohort table %s does not exist, cannot create imputation table for %s",
                 self.cohort_table_name,
-                self.get_table_name(imputed=True),
+                self.final_feature_table_name
             )
             return []
 

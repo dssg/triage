@@ -202,6 +202,21 @@ class ExperimentBase(ABC):
                 "you will not be able to make matrices."
             )
 
+        if "features" not in self.config:
+            logging.warning("No feature config is available")
+            return []
+        logging.info("Creating feature blocks from config")
+        self.feature_blocks = feature_blocks_from_config(
+            config=self.config["features"],
+            as_of_dates=self.all_as_of_times,
+            cohort_table=self.cohort_table_name,
+            features_schema_name=self.features_schema_name,
+            db_engine=self.db_engine,
+            feature_start_time=self.config["temporal_config"]["feature_start_time"],
+            features_ignore_cohort=self.features_ignore_cohort,
+            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
+        )
+
         self.feature_group_creator = FeatureGroupCreator(
             self.config.get("feature_group_definition", {"all": [True]})
         )
@@ -241,7 +256,7 @@ class ExperimentBase(ABC):
             replace=self.replace,
             as_of_times=self.all_as_of_times
         )
-        
+
         self.trainer = ModelTrainer(
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
@@ -373,28 +388,6 @@ class ExperimentBase(ABC):
             "You can view all as_of_times by inspecting `.all_as_of_times` on this Experiment"
         )
         return distinct_as_of_times
-
-    @cachedproperty
-    def feature_blocks(self):
-        """Collation of ``Aggregation`` objects used by this experiment.
-
-        Returns: (list) of ``collate.Aggregation`` objects
-
-        """
-        if "features" not in self.config:
-            logging.warning("No feature config is available")
-            return []
-        logging.info("Creating feature blocks from config")
-        return feature_blocks_from_config(
-            config=self.config["features"],
-            as_of_dates=self.all_as_of_times,
-            cohort_table=self.cohort_table_name,
-            features_schema_name=self.features_schema_name,
-            db_engine=self.db_engine,
-            feature_start_time=self.config["temporal_config"]["feature_start_time"],
-            features_ignore_cohort=self.features_ignore_cohort,
-            materialize_subquery_fromobjs=self.materialize_subquery_fromobjs,
-        )
 
     @cachedproperty
     def master_feature_dictionary(self):

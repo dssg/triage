@@ -73,42 +73,46 @@ label_config:
 
 # FEATURE GENERATION
 features:
-    spacetime_aggregations:
-    # The aggregate features to generate for each train/test split
+    # Every entry in the features section contains:
+    #   - a key that names the output feature table
+    #   - a value that configures the feature table based on the options 
+    #       for one of the available feature generator types
     #
-    # Implemented by wrapping collate: https://github.com/dssg/collate
-    # Most terminology here is taken directly from collate
-    #
-    # Each entry describes a collate.SpacetimeAggregation object, and the
-    # arguments needed to create it. Generally, each of these entries controls
-    # the features from one source table, though in the case of multiple groups
-    # may result in multiple output tables
-    #
-    # Rules specifying how to handle imputation of null values must be explicitly
-    # defined in your config file. These can be specified in two places: either
-    # within each feature or overall for each type of feature (aggregates_imputation,
-    # categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for
-    # each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
-    # can be specified with `all`. Aggregation function-specific rules will take
-    # precedence over the `all` rule and feature-specific rules will take
-    # precedence over the higher-level rules. Several examples are provided below.
-    #
-    # Available Imputation Rules:
-    #   * mean: The average value of the feature (for SpacetimeAggregation the
-    #           mean is taken within-date).
-    #   * constant: Fill with a constant value from a required `value` parameter.
-    #   * zero: Fill with zero.
-    #   * null_category: Only available for categorical features. Just flag null
-    #                    values with the null category column.
-    #   * binary_mode: Only available for aggregate column types. Takes the modal
-    #                  value for a binary feature.
-    #   * error: Raise an exception if any null values are encountered for this
-    #            feature.
-    -
-        # prefix given to the resultant tables
-        prefix: 'prefix'
-        # from_obj is usually a source table but can be an expression, such as
-        # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    my_feature_output_table: # the output from this will go into 'my_feature_output_table' 
+        feature_generator_type: "spacetime_aggregation"
+        # available types: 'spacetime_aggregation'
+        #
+        # SPACETIME_AGGREGATION
+        # The aggregate features to generate for each train/test split
+        #
+        # Implemented by wrapping collate: https://github.com/dssg/collate
+        # Most terminology here is taken directly from collate
+        #
+        # Each entry describes a collate.SpacetimeAggregation object, and the
+        # arguments needed to create it. Generally, each of these entries controls
+        # the features from one source table, though in the case of multiple groups
+        # may result in multiple output tables
+        #
+        # Rules specifying how to handle imputation of null values must be explicitly
+        # defined in your config file. These can be specified in two places: either
+        # within each feature or overall for each type of feature (aggregates_imputation,
+        # categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for
+        # each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all
+        # can be specified with `all`. Aggregation function-specific rules will take
+        # precedence over the `all` rule and feature-specific rules will take
+        # precedence over the higher-level rules. Several examples are provided below.
+        #
+        # Available Imputation Rules:
+        #   * mean: The average value of the feature (for SpacetimeAggregation the
+        #           mean is taken within-date).
+        #   * constant: Fill with a constant value from a required `value` parameter.
+        #   * zero: Fill with zero.
+        #   * null_category: Only available for categorical features. Just flag null
+        #                    values with the null category column.
+        #   * binary_mode: Only available for aggregate column types. Takes the modal
+        #                  value for a binary feature.
+        #   * error: Raise an exception if any null values are encountered for this
+        #            feature.
         from_obj: 'cool_stuff'
         # The date column to use for specifying which records to include
         # in temporal features. It is important that the column used specifies
@@ -208,10 +212,10 @@ features:
 # feature_group_definition allows you to create groups/subset of your features
 # by different criteria.
 # for instance,
-# - 'tables' allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
+# - 'tables' allows you to send a list of feature tables
 # - 'prefix' allows you to specify a list of feature name prefixes
 feature_group_definition:
-    tables: ['prefix_aggregation_imputed']
+    tables: ['my_feature_output_table']
 
 # strategies for generating combinations of groups
 # available: all, leave-one-out, leave-one-in, all-combinations
