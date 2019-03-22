@@ -10,7 +10,7 @@ def classpath(klass):
     return f"{klass.__module__}.{klass.__name__}"
 
 
-def bind_kwargs(callable, **kwargs):
+def bind_kwargs(kallable, **kwargs):
     """Bind keyword arguments to a callable and return as a dictionary
 
     Args:
@@ -19,7 +19,7 @@ def bind_kwargs(callable, **kwargs):
 
     Returns: (dict)
     """
-    call_signature = inspect.signature(callable).bind_partial(**kwargs).arguments
+    call_signature = inspect.signature(kallable).bind_partial(**kwargs).arguments
     if 'kwargs' in call_signature:
         passed_kwargs = call_signature['kwargs']
     else:
