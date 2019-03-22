@@ -9,10 +9,107 @@ from sqlalchemy.orm import sessionmaker
 from functools import partial
 from ohio import PipeTextIO, IteratorTextIO
 from memory_profiler import profile
+import shutil
+import yaml
+from gzip import GzipFile
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
 from triage.util.pandas import downcast_matrix
+
+class IOClosed(ValueError):
+
+    _default_message_ = "I/O operation on closed file"
+
+    def __init__(self, *args):
+        if not args:
+            args = (self._default_message_,)
+
+        super().__init__(*args)
+
+
+class StreamBufferedIOBase(io.BufferedIOBase):
+    """Readable file-like abstract base class.
+    Concrete classes may implemented method `__next_chunk__` to return
+    chunks (or all) of the text to be read.
+    """
+    def __init__(self):
+        self._remainder = ''
+
+    def __next_chunk__(self):
+        raise NotImplementedError("StreamTextIOBase subclasses must implement __next_chunk__")
+
+    def readable(self):
+        if self.closed:
+            raise IOClosed()
+
+        return True
+
+    def _read1(self, size=None):
+        while not self._remainder:
+            try:
+                self._remainder = self.__next_chunk__()
+            except StopIteration:
+                break
+
+        result = self._remainder[:size]
+        self._remainder = self._remainder[len(result):]
+
+        return result
+
+    def read(self, size=None):
+        if self.closed:
+            raise IOClosed()
+
+        if size is not None and size < 0:
+            size = None
+
+        result = b''
+
+        while size is None or size > 0:
+            content = self._read1(size)
+            if not content:
+                break
+
+            if size is not None:
+                size -= len(content)
+
+            result += content
+
+        return result
+
+    def readline(self):
+        if self.closed:
+            raise IOClosed()
+
+        result = ''
+
+        while True:
+            index = self._remainder.find('\n')
+            if index == -1:
+                result += self._remainder
+                try:
+                    self._remainder = self.__next_chunk__()
+                except StopIteration:
+                    self._remainder = ''
+                    break
+            else:
+                result += self._remainder[:(index + 1)]
+                self._remainder = self._remainder[(index + 1):]
+                break
+
+        return result
+
+class IteratorBytesIO(StreamBufferedIOBase):
+    """Readable file-like interface for iterable byte streams."""
+
+    def __init__(self, iterable):
+        super().__init__()
+        self.__iterator__ = iter(iterable)
+
+    def __next_chunk__(self):
+        return next(self.__iterator__)
+
 
 
 class BuilderBase(object):
@@ -217,7 +314,6 @@ class BuilderBase(object):
 
 class MatrixBuilder(BuilderBase):
 
-    @profile
     def build_matrix(
         self,
         as_of_times,
@@ -311,26 +407,15 @@ class MatrixBuilder(BuilderBase):
 
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
-        design_matrix = self.queries_to_df(
-            self.feature_load_queries(feature_dictionary, entity_date_table_name),
-            index_col=['entity_id', 'as_of_date'],
-            collapse_dupes=['entity_id', 'as_of_date'],
-            parse_dates=True,
-        )
-        logging.info(f"Features data merged for matrix {matrix_uuid}")
+        with matrix_store.matrix_base_store.open('wb') as out_fh:
+            self.queries_to_fh(
+                self.feature_load_queries(feature_dictionary, entity_date_table_name) + [label_query],
+                out_fh=out_fh
+            )
 
-        matrix_store.metadata = matrix_metadata
-        # store the matrix
-        labels = self.queries_to_df(
-            [label_query],
-            index_col=['entity_id', 'as_of_date'],
-            parse_dates=True,
-        )
-        labels = labels[labels.columns[0]]
-        logging.info(f"Label data extracted for matrix {matrix_uuid}")
-        matrix_store.matrix_label_tuple = design_matrix, labels
-        matrix_store.save()
-        logging.info("Matrix %s saved", matrix_uuid)
+        with matrix_store.metadata_base_store.open('wb') as fd:
+            yaml.dump(matrix_metadata, fd, encoding="utf-8")
+
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
         if matrix_type == "train":
@@ -343,7 +428,7 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=len(design_matrix),
+            num_observations=5,
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
@@ -426,9 +511,10 @@ class MatrixBuilder(BuilderBase):
         :rtype: tuple
         """
         # iterate! for each table, make query, write csv, save feature & file names
+        l = []
         for feature_table_name, feature_names in feature_dictionary.items():
             logging.info("Generating feature query for %s", feature_table_name)
-            yield self._outer_join_query(
+            l.append(self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
                     schema=self.db_config["features_schema_name"],
                     table=feature_table_name,
@@ -442,7 +528,8 @@ class MatrixBuilder(BuilderBase):
                 # a final check, raise a divide by zero error on export if the
                 # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
-            )
+            ))
+        return l
 
     def query_to_df(self, query_string, header="HEADER"):
         """ Given a query, write the requested data to csv.
@@ -478,15 +565,8 @@ class MatrixBuilder(BuilderBase):
             yield self.db_engine.raw_connection()
 
     @profile
-    def queries_to_df(self, queries, dtype=None, converters=None,
-                      parse_dates=False, index_col=None, collapse_dupes=()):
+    def queries_to_fh(self, queries, out_fh):
         copy_sqls = (f"COPY ({query}) TO STDOUT WITH CSV HEADER" for query in queries)
-
-        # pandas.read_csv doesn't actually support *not* mangling duplicate columns,
-        # (regardless of call signature);
-        # so, when individual queries include their shared index, or otherwise when
-        # queries produce duplicates columns, caller must filter out these out.
-        usecols_pattern = re.compile(r'^({})\.\d+$'.format('|'.join(collapse_dupes)))
 
         with contextlib.ExitStack() as stack:
             connections = (stack.enter_context(contextlib.closing(conn))
@@ -497,20 +577,13 @@ class MatrixBuilder(BuilderBase):
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
             pipes = (stack.enter_context(PipeTextIO(writer)) for writer in writers)
 
-            csv_buffer = IteratorTextIO(
-                ','.join(line.rstrip('\r\n') for line in join) + '\n'
+            csv_buffer = IteratorBytesIO(
+                ','.join(line.rstrip('\r\n') for line in join).encode('utf-8') + '\r\n'.encode('utf-8')
                 for join in zip(*pipes)
             )
+            with GzipFile(fileobj=out_fh, mode='w') as compressed_out:
+                shutil.copyfileobj(csv_buffer, compressed_out)
 
-            return pandas.read_csv(
-                csv_buffer,
-                index_col=index_col,
-                converters=converters,
-                dtype=dtype,
-                parse_dates=parse_dates,
-                usecols=((lambda x: not usecols_pattern.search(x))
-                         if collapse_dupes else None),
-            )
 
     def merge_feature_csvs(self, dataframes, matrix_uuid):
         """Horizontally merge a list of feature CSVs
