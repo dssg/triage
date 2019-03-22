@@ -14,7 +14,6 @@ import pytest
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
     FSStore,
-    HDFMatrixStore,
     S3Store,
     ProjectStorage,
     ModelStorageEngine,
@@ -98,16 +97,12 @@ def matrix_stores():
         df.to_csv(tmpcsv, compression="gzip")
         df.to_hdf(tmphdf, "matrix")
         csv = CSVMatrixStore(project_storage, [], "df")
-        hdf = HDFMatrixStore(project_storage, [], "df")
-        assert csv.design_matrix.equals(hdf.design_matrix)
         # first test with caching
-        with csv.cache(), hdf.cache():
+        with csv.cache():
             yield csv
-            yield hdf
         # with the caching out of scope they will be nuked
         # and these last two versions will not have any cache
         yield csv
-        yield hdf
 
 
 def test_MatrixStore_empty():

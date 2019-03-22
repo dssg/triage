@@ -1,115 +1,15 @@
-import re
-import io
 import json
 import logging
+import itertools
 
 import contextlib
-import pandas
 from sqlalchemy.orm import sessionmaker
 from functools import partial
-from ohio import PipeTextIO, IteratorTextIO
-from memory_profiler import profile
-import shutil
+from ohio import PipeTextIO
 import yaml
-from gzip import GzipFile
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
-from triage.util.pandas import downcast_matrix
-
-class IOClosed(ValueError):
-
-    _default_message_ = "I/O operation on closed file"
-
-    def __init__(self, *args):
-        if not args:
-            args = (self._default_message_,)
-
-        super().__init__(*args)
-
-
-class StreamBufferedIOBase(io.BufferedIOBase):
-    """Readable file-like abstract base class.
-    Concrete classes may implemented method `__next_chunk__` to return
-    chunks (or all) of the text to be read.
-    """
-    def __init__(self):
-        self._remainder = ''
-
-    def __next_chunk__(self):
-        raise NotImplementedError("StreamTextIOBase subclasses must implement __next_chunk__")
-
-    def readable(self):
-        if self.closed:
-            raise IOClosed()
-
-        return True
-
-    def _read1(self, size=None):
-        while not self._remainder:
-            try:
-                self._remainder = self.__next_chunk__()
-            except StopIteration:
-                break
-
-        result = self._remainder[:size]
-        self._remainder = self._remainder[len(result):]
-
-        return result
-
-    def read(self, size=None):
-        if self.closed:
-            raise IOClosed()
-
-        if size is not None and size < 0:
-            size = None
-
-        result = b''
-
-        while size is None or size > 0:
-            content = self._read1(size)
-            if not content:
-                break
-
-            if size is not None:
-                size -= len(content)
-
-            result += content
-
-        return result
-
-    def readline(self):
-        if self.closed:
-            raise IOClosed()
-
-        result = ''
-
-        while True:
-            index = self._remainder.find('\n')
-            if index == -1:
-                result += self._remainder
-                try:
-                    self._remainder = self.__next_chunk__()
-                except StopIteration:
-                    self._remainder = ''
-                    break
-            else:
-                result += self._remainder[:(index + 1)]
-                self._remainder = self._remainder[(index + 1):]
-                break
-
-        return result
-
-class IteratorBytesIO(StreamBufferedIOBase):
-    """Readable file-like interface for iterable byte streams."""
-
-    def __init__(self, iterable):
-        super().__init__()
-        self.__iterator__ = iter(iterable)
-
-    def __next_chunk__(self):
-        return next(self.__iterator__)
-
 
 
 class BuilderBase(object):
@@ -393,11 +293,6 @@ class MatrixBuilder(BuilderBase):
             "Extracting feature group data from database into file " "for matrix %s",
             matrix_uuid,
         )
-        # logging.info(f"Feature data extracted for matrix {matrix_uuid}")
-        # logging.info(
-        #     "Extracting label data from database into file for " "matrix %s",
-        #     matrix_uuid,
-        # )
         label_query = self.label_load_query(
             label_name,
             label_type,
@@ -407,12 +302,10 @@ class MatrixBuilder(BuilderBase):
 
         # stitch together the csvs
         logging.info("Merging feature files for matrix %s", matrix_uuid)
-        with matrix_store.matrix_base_store.open('wb') as out_fh:
-            self.queries_to_fh(
-                self.feature_load_queries(feature_dictionary, entity_date_table_name) + [label_query],
-                out_fh=out_fh
-            )
-
+        self.queries_to_matrixstore(
+            self.feature_load_queries(feature_dictionary, entity_date_table_name) + [label_query],
+            matrix_store
+        )
         with matrix_store.metadata_base_store.open('wb') as fd:
             yaml.dump(matrix_metadata, fd, encoding="utf-8")
 
@@ -531,41 +424,12 @@ class MatrixBuilder(BuilderBase):
             ))
         return l
 
-    def query_to_df(self, query_string, header="HEADER"):
-        """ Given a query, write the requested data to csv.
-
-        :param query_string: query to send
-        :param file_name: name to save the file as
-        :header: text to include in query indicating if a header should be saved
-                 in output
-        :type query_string: str
-        :type file_name: str
-        :type header: str
-
-        :return: none
-        :rtype: none
-        """
-        logging.debug("Copying to CSV query %s", query_string)
-        copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
-            query=query_string, head=header
-        )
-        conn = self.db_engine.raw_connection()
-        cur = conn.cursor()
-        out = io.StringIO()
-        cur.copy_expert(copy_sql, out)
-        out.seek(0)
-        df = pandas.read_csv(out)
-        # df = pandas.read_csv(out, parse_dates=["as_of_date"])
-        df.set_index(["entity_id", "as_of_date"], inplace=True)
-        return downcast_matrix(df)
-
     @property
     def _raw_connections(self):
         while True:
             yield self.db_engine.raw_connection()
 
-    @profile
-    def queries_to_fh(self, queries, out_fh):
+    def queries_to_matrixstore(self, queries, matrix_store):
         copy_sqls = (f"COPY ({query}) TO STDOUT WITH CSV HEADER" for query in queries)
 
         with contextlib.ExitStack() as stack:
@@ -576,56 +440,11 @@ class MatrixBuilder(BuilderBase):
             writers = (partial(cursor.copy_expert, copy_sql)
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
             pipes = (stack.enter_context(PipeTextIO(writer)) for writer in writers)
-
-            csv_buffer = IteratorBytesIO(
-                ','.join(line.rstrip('\r\n') for line in join).encode('utf-8') + '\r\n'.encode('utf-8')
+            row_buffer = (
+                itertools.chain(*(
+                    line.rstrip('\r\n').split(',')[2:] if i > 0 else line.rstrip('\r\n').split(',')
+                    for i, line in enumerate(join)
+                ))
                 for join in zip(*pipes)
             )
-            with GzipFile(fileobj=out_fh, mode='w') as compressed_out:
-                shutil.copyfileobj(csv_buffer, compressed_out)
-
-
-    def merge_feature_csvs(self, dataframes, matrix_uuid):
-        """Horizontally merge a list of feature CSVs
-        Assumptions:
-        - The first and second columns of each CSV are
-          the entity_id and date
-        - That the CSVs have the same list of entity_id/date combinations
-          in the same order.
-        - The first CSV is expected to be labels, and only have
-          entity_id, date, and label.
-        - All other CSVs do not have any labels (all non entity_id/date columns
-          will be treated as features)
-        - The label will be in the *last* column of the merged CSV
-
-        :param source_filenames: the filenames of each feature csv
-        :param out_filename: the desired filename of the merged csv
-        :type source_filenames: list
-        :type out_filename: str
-
-        :return: none
-        :rtype: none
-
-        :raises: ValueError if the first two columns in every CSV don't match
-        """
-
-        for i, df in enumerate(dataframes):
-            if df.index.names != ["entity_id", "as_of_date"]:
-                raise ValueError(
-                    f"index must be entity_id and as_of_date, value was {df.index}"
-                )
-            # check for any nulls. the labels, understood to be the first file,
-            # can have nulls but no features should. therefore, skip the first dataframe
-            if i > 0:
-                columns_with_nulls = [
-                    column for column in df.columns if df[column].isnull().values.any()
-                ]
-                if len(columns_with_nulls) > 0:
-                    raise ValueError(
-                        "Imputation failed for the following features: %s"
-                        % columns_with_nulls
-                    )
-            i += 1
-
-        big_df = dataframes[1].join(dataframes[2:] + [dataframes[0]])
-        return big_df
+            matrix_store.save(row_buffer)

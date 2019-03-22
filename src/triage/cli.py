@@ -17,7 +17,7 @@ from triage.component.architect.entity_date_table_generators import EntityDateTa
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
 from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -181,7 +181,6 @@ class Experiment(Command):
 
     matrix_storage_map = {
         "csv": CSVMatrixStore,
-        "hdf": HDFMatrixStore,
     }
     matrix_storage_default = "csv"
 
