@@ -439,7 +439,7 @@ class MatrixBuilder(BuilderBase):
 
             writers = (partial(cursor.copy_expert, copy_sql)
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
-            pipes = (stack.enter_context(PipeTextIO(writer)) for writer in writers)
+            pipes = (stack.enter_context(PipeTextIO(writer, buffer_size=100)) for writer in writers)
             row_buffer = (
                 itertools.chain(*(
                     line.rstrip('\r\n').split(',')[2:] if i > 0 else line.rstrip('\r\n').split(',')
