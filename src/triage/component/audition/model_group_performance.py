@@ -84,7 +84,7 @@ class ModelGroupPerformancePlotter(object):
                 metric,
                 parameter,
                 train_end_time,
-                best_case,
+                best_case as raw_value,
                 'best case' as model_type
             from {dist_table}
             where metric || parameter = '{metric}{parameter}'
