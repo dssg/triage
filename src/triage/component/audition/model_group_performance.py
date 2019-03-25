@@ -66,7 +66,7 @@ class ModelGroupPerformancePlotter(object):
         on the given metric over time
         """
 
-        base_df = pd.read_sql(
+        df = pd.read_sql(
             """
             select
                 model_group_id,
@@ -87,18 +87,20 @@ class ModelGroupPerformancePlotter(object):
                 best_case,
                 'best case' model_type
             from {dist_table}
-            group by 1, 2, 3, 4, 5, 6
+            where metric || parameter = '{metric}{parameter}'
+            and train_end_time in ({train_end_times})
+            group by model_group_id, metric, parameter, train_end_time, raw_value, mg.model_type
+            order by model_group_id asc, train_end_time asc
             """.format(
+                metric=metric,
+                parameter=parameter,
                 dist_table=self.distance_from_best_table.distance_table,
                 model_group_ids=str_in_sql(model_group_ids),
+                train_end_times=str_in_sql(train_end_times)
             ),
             self.distance_from_best_table.db_engine,
         )
-        df = base_df[
-            (base_df["train_end_time"].isin(train_end_times))
-            & (base_df["metric"] == metric)
-            & (base_df["parameter"] == parameter)
-        ]
+       
         return df
 
     def plot(
