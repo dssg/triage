@@ -68,28 +68,29 @@ class ModelGroupPerformancePlotter(object):
 
         df = pd.read_sql(
             """
-            select
-                model_group_id,
-                metric,
-                parameter,
-                train_end_time,
-                raw_value,
-                mg.model_type as model_type
-            from {dist_table} as dist
-            join model_metadata.model_groups mg using (model_group_id)
-            where model_group_id in ({model_group_ids})
-            union
-            select
-                0 as model_group_id,
-                metric,
-                parameter,
-                train_end_time,
-                best_case as raw_value,
-                'best case' as model_type
-            from {dist_table}
+            select distinct on(model_group_id, metric, parameter, train_end_time, raw_value, model_type) * from (
+                select
+                    model_group_id,
+                    metric,
+                    parameter,
+                    train_end_time,
+                    raw_value,
+                    mg.model_type as model_type
+                from {dist_table} as dist
+                join model_metadata.model_groups mg using (model_group_id)
+                where model_group_id in ({model_group_ids})
+                union
+                select
+                    0 as model_group_id,
+                    metric,
+                    parameter,
+                    train_end_time,
+                    best_case as raw_value,
+                    'best case' as model_type
+                from {dist_table}
+            ) as t
             where metric || parameter = '{metric}{parameter}'
             and train_end_time in ({train_end_times})
-            group by model_group_id, metric, parameter, train_end_time, raw_value, model_type
             order by model_group_id asc, train_end_time asc
             """.format(
                 metric=metric,
