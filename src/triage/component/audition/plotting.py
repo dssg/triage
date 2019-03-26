@@ -64,7 +64,7 @@ def _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict)
         df = frame.loc[frame[grp_col] == grp_val]
         cat = df.iloc[0][cat_col]
         df.plot(
-            x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False
+            x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False, alpha=0.4
         )
 
 
