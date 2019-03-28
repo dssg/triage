@@ -562,8 +562,10 @@ class MatrixBuilder(BuilderBase):
 
             writers = (partial(cursor.copy_expert, copy_sql)
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
-            pipes = (stack.enter_context(PipeTextIO(writer, buffer_size=100)) for writer in writers)
-            from_fileobj = IteratorBytesIO(b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n' for join in zip(*pipes))
+            pipes = (stack.enter_context(PipeTextIO(writer, buffer_size=10000)) for writer in writers)
+            buffer = io.BytesIO()
+            for join in zip(*pipes):
+                buffer.write(b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n')
+            buffer.seek(0)
             with matrix_store.matrix_base_store.open('wb') as fdesc:
-                with gzip.GzipFile(fileobj=fdesc, mode='w') as compressed_out:
-                    copyfileobj(from_fileobj, compressed_out)
+                fdesc.write(gzip.compress(buffer.read()))
