@@ -1,6 +1,7 @@
 import json
 import logging
 import itertools
+import gzip
 
 import contextlib
 from sqlalchemy.orm import sessionmaker
@@ -61,6 +62,8 @@ class BuilderBase(object):
         right_column_selections,
         entity_date_table_name,
         additional_conditions="",
+        include_index=False,
+        column_override=None,
     ):
         """ Given a (features or labels) table, a list of times, columns to
         select, and (optionally) a set of join conditions, perform an outer
@@ -81,23 +84,46 @@ class BuilderBase(object):
         """
 
         # put everything into the query
-        query = """
-            SELECT ed.entity_id,
-                   ed.as_of_date{columns}
-            FROM {entity_date_table_name} ed
-            LEFT OUTER JOIN {right_table} r
-            ON ed.entity_id = r.entity_id AND
-               ed.as_of_date = r.as_of_date
-               {more}
-            ORDER BY ed.entity_id,
-                     ed.as_of_date
-        """.format(
-            columns="".join(right_column_selections),
-            feature_schema=self.db_config["features_schema_name"],
-            entity_date_table_name=entity_date_table_name,
-            right_table=right_table_name,
-            more=additional_conditions,
-        )
+        
+        if include_index:
+            query = """
+                SELECT ed.entity_id,
+                       ed.as_of_date{columns}
+                FROM {entity_date_table_name} ed
+                LEFT OUTER JOIN {right_table} r
+                ON ed.entity_id = r.entity_id AND
+                   ed.as_of_date = r.as_of_date
+                   {more}
+                ORDER BY ed.entity_id,
+                         ed.as_of_date
+            """.format(
+                columns="".join(right_column_selections),
+                feature_schema=self.db_config["features_schema_name"],
+                entity_date_table_name=entity_date_table_name,
+                right_table=right_table_name,
+                more=additional_conditions,
+            )
+        else:
+            query = """
+                with r as (
+                    SELECT ed.entity_id,
+                           ed.as_of_date, {columns}
+                    FROM {entity_date_table_name} ed
+                    LEFT OUTER JOIN {right_table} r
+                    ON ed.entity_id = r.entity_id AND
+                       ed.as_of_date = r.as_of_date
+                       {more}
+                    ORDER BY ed.entity_id,
+                             ed.as_of_date
+                ) select {columns_maybe_override} from r
+            """.format(
+                columns="".join(right_column_selections)[2:],
+                columns_maybe_override="".join(right_column_selections)[2:] if not column_override else column_override,
+                feature_schema=self.db_config["features_schema_name"],
+                entity_date_table_name=entity_date_table_name,
+                right_table=right_table_name,
+                more=additional_conditions,
+            )
         return query
 
     def make_entity_date_table(
@@ -384,6 +410,8 @@ class MatrixBuilder(BuilderBase):
             """.format(
                 name=label_name, type=label_type, timespan=label_timespan
             ),
+            include_index=False,
+            column_override=label_name
         )
 
         return labels_query
@@ -405,7 +433,7 @@ class MatrixBuilder(BuilderBase):
         """
         # iterate! for each table, make query, write csv, save feature & file names
         l = []
-        for feature_table_name, feature_names in feature_dictionary.items():
+        for num, (feature_table_name, feature_names) in enumerate(feature_dictionary.items()):
             logging.info("Generating feature query for %s", feature_table_name)
             l.append(self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
@@ -421,6 +449,7 @@ class MatrixBuilder(BuilderBase):
                 # a final check, raise a divide by zero error on export if the
                 # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
+                include_index=True if num==0 else False,
             ))
         return l
 
@@ -440,11 +469,8 @@ class MatrixBuilder(BuilderBase):
             writers = (partial(cursor.copy_expert, copy_sql)
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
             pipes = (stack.enter_context(PipeTextIO(writer, buffer_size=100)) for writer in writers)
-            row_buffer = (
-                itertools.chain(*(
-                    line.rstrip('\r\n').split(',')[2:] if i > 0 else line.rstrip('\r\n').split(',')
-                    for i, line in enumerate(join)
-                ))
-                for join in zip(*pipes)
-            )
-            matrix_store.save(row_buffer)
+            with matrix_store.matrix_base_store.open('wb') as fdesc:
+                with gzip.GzipFile(fileobj=fdesc, mode='w') as compressed_out:
+                    for join in zip(*pipes):
+                        line = b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n'
+                        compressed_out.write(line)
