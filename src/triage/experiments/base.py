@@ -702,7 +702,7 @@ class ExperimentBase(ABC):
 
     def _run_profile(self):
         cp = cProfile.Profile()
-        cp.runcall(self._run)
+        cp.runcall(self.generate_matrices)
         store = self.project_storage.get_store(
             ["profiling_stats"],
             f"{int(time.time())}.profile"

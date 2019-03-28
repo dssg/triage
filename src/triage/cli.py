@@ -316,7 +316,7 @@ class Experiment(Command):
             self.experiment.validate()
         elif args.validate:
             self.experiment.validate()
-            self.experiment.generate_matrices()
+            self.experiment.run()
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
@@ -329,7 +329,7 @@ class Experiment(Command):
                 visualize_chops(self.experiment.chopper, save_target=fd)
 
         else:
-            self.experiment.generate_matrices()
+            self.experiment.run()
 
 
 @Triage.register
