@@ -27,3 +27,7 @@ def downcast_matrix(df):
     logging.debug("Downcasted matrix. Final memory usage: %s", new_df.memory_usage())
 
     return new_df
+
+
+def columns_with_nulls(df):
+    return [column for column in df.columns if df[column].isnull().values.any()]

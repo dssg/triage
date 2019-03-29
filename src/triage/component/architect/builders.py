@@ -1,111 +1,16 @@
 import json
 import logging
-import itertools
-import gzip
 
 import contextlib
 from sqlalchemy.orm import sessionmaker
 from functools import partial
-from ohio import PipeTextIO, IteratorTextIO
-import yaml
-from shutil import copyfileobj
+from ohio import PipeTextIO
+from triage.util.io import IteratorBytesIO
 
 from triage.component.results_schema import Matrix
-from triage.database_reflection import table_has_data
-import io
+from triage.database_reflection import table_has_data, table_row_count
+from triage.validation_primitives import table_should_have_entity_date_columns, table_should_have_data
 
-
-class IOClosed(ValueError):
-
-    _default_message_ = "I/O operation on closed file"
-
-    def __init__(self, *args):
-        if not args:
-            args = (self._default_message_,)
-
-        super().__init__(*args)
-
-class StreamBytesIOBase(io.BufferedIOBase):
-    """Readable file-like abstract base class.
-    Concrete classes may implemented method `__next_chunk__` to return
-    chunks (or all) of the text to be read.
-    """
-    def __init__(self):
-        self._remainder = ''
-
-    def __next_chunk__(self):
-        raise NotImplementedError("StreamTextIOBase subclasses must implement __next_chunk__")
-
-    def readable(self):
-        if self.closed:
-            raise IOClosed()
-
-        return True
-
-    def _read1(self, size=None):
-        while not self._remainder:
-            try:
-                self._remainder = self.__next_chunk__()
-            except StopIteration:
-                break
-
-        result = self._remainder[:size]
-        self._remainder = self._remainder[len(result):]
-
-        return result
-
-    def read(self, size=None):
-        if self.closed:
-            raise IOClosed()
-
-        if size is not None and size < 0:
-            size = None
-
-        result = b''
-
-        while size is None or size > 0:
-            content = self._read1(size)
-            if not content:
-                break
-
-            if size is not None:
-                size -= len(content)
-
-            result += content
-
-        return result
-
-    def readline(self):
-        if self.closed:
-            raise IOClosed()
-
-        result = ''
-
-        while True:
-            index = self._remainder.find('\n')
-            if index == -1:
-                result += self._remainder
-                try:
-                    self._remainder = self.__next_chunk__()
-                except StopIteration:
-                    self._remainder = ''
-                    break
-            else:
-                result += self._remainder[:(index + 1)]
-                self._remainder = self._remainder[(index + 1):]
-                break
-
-        return result
-
-class IteratorBytesIO(StreamBytesIOBase):
-    """Readable file-like interface for iterable text streams."""
-
-    def __init__(self, iterable):
-        super().__init__()
-        self.__iterator__ = iter(iterable)
-
-    def __next_chunk__(self):
-        return next(self.__iterator__)
 
 class BuilderBase(object):
     def __init__(
@@ -116,6 +21,7 @@ class BuilderBase(object):
         experiment_hash,
         replace=True,
         include_missing_labels_in_train_as=None,
+        constrain_memory=False,
     ):
         self.db_config = db_config
         self.matrix_storage_engine = matrix_storage_engine
@@ -123,6 +29,7 @@ class BuilderBase(object):
         self.experiment_hash = experiment_hash
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
+        self.constrain_memory = constrain_memory
 
     @property
     def sessionmaker(self):
@@ -371,15 +278,32 @@ class MatrixBuilder(BuilderBase):
         ):
             logging.warning("cohort table is not populated, cannot build matrix")
             return
+
+        # what should the labels table look like?
+        # 1. have data
+        # 2. entity date/column
+        labels_table_name = f"{self.db_config['labels_schema_name']}.{self.db_config['labels_table_name']}"
         if not table_has_data(
-            "{}.{}".format(
-                self.db_config["labels_schema_name"],
-                self.db_config["labels_table_name"],
-            ),
+            labels_table_name,
             self.db_engine,
         ):
             logging.warning("labels table is not populated, cannot build matrix")
             return
+
+        table_should_have_entity_date_columns(
+            labels_table_name,
+            self.db_engine
+        )
+
+        # what should the feature tables look like?
+        # 1. have data
+        # 2. entity/date column
+        for feature_table in feature_dictionary.keys():
+            full_feature_table = \
+                f"{self.db_config['features_schema_name']}.{feature_table}"
+            table_should_have_data(full_feature_table, self.db_engine)
+            table_should_have_entity_date_columns(full_feature_table,  self.db_engine)
+
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
@@ -409,10 +333,7 @@ class MatrixBuilder(BuilderBase):
                 exc_info=True,
             )
             return
-        logging.info(
-            "Extracting feature group data from database into file " "for matrix %s",
-            matrix_uuid,
-        )
+        feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
         label_query = self.label_load_query(
             label_name,
             label_type,
@@ -421,13 +342,12 @@ class MatrixBuilder(BuilderBase):
         )
 
         # stitch together the csvs
-        logging.info("Merging feature files for matrix %s", matrix_uuid)
-        self.queries_to_matrixstore(
-            self.feature_load_queries(feature_dictionary, entity_date_table_name) + [label_query],
-            matrix_store
+        logging.info("Building and saving matrix %s by querying and joining tables", matrix_uuid)
+        self._save_matrix(
+            queries=feature_queries + [label_query],
+            matrix_store=matrix_store,
+            matrix_metadata=matrix_metadata
         )
-        with matrix_store.metadata_base_store.open('wb') as fd:
-            yaml.dump(matrix_metadata, fd, encoding="utf-8")
 
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
@@ -436,12 +356,20 @@ class MatrixBuilder(BuilderBase):
         else:
             lookback = matrix_metadata["test_duration"]
 
+        row_count = table_row_count(
+            '{schema}."{table}"'.format(
+                schema=self.db_config["features_schema_name"],
+                table=entity_date_table_name,
+            ),
+            self.db_engine
+        )
+
         matrix = Matrix(
             matrix_id=matrix_metadata["matrix_id"],
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=5,
+            num_observations=row_count,
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
@@ -526,10 +454,10 @@ class MatrixBuilder(BuilderBase):
         :rtype: tuple
         """
         # iterate! for each table, make query, write csv, save feature & file names
-        l = []
+        queries = []
         for num, (feature_table_name, feature_names) in enumerate(feature_dictionary.items()):
             logging.info("Generating feature query for %s", feature_table_name)
-            l.append(self._outer_join_query(
+            queries.append(self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
                     schema=self.db_config["features_schema_name"],
                     table=feature_table_name,
@@ -538,23 +466,33 @@ class MatrixBuilder(BuilderBase):
                     schema=self.db_config["features_schema_name"],
                     table=entity_date_table_name,
                 ),
-                # collate imputation shouldn't leave any nulls and we double-check
-                # the imputed table in FeatureGenerator.create_all_tables() but as
-                # a final check, raise a divide by zero error on export if the
-                # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
                 include_index=True if num==0 else False,
             ))
-        return l
+        return queries
 
     @property
     def _raw_connections(self):
         while True:
             yield self.db_engine.raw_connection()
 
-    def queries_to_matrixstore(self, queries, matrix_store):
-        copy_sqls = (f"COPY ({query}) TO STDOUT WITH CSV HEADER" for query in queries)
+    def _save_matrix(self, queries, matrix_store, matrix_metadata):
+        """Construct and save a matrix CSV from a list of queries
 
+        The results of each query are expected to return the same number of rows in the same order.
+        The columns will be placed alongside each other in the CSV much as a SQL join would.
+        However, this code does not deduplicate the columns, so the actual row identifiers
+        (e.g. entity id, as of date) should only be present in one of the queries
+        unless you want duplicate columns.
+
+        The result, and the given metadata, will be given to the supplied MatrixStore for saving.
+
+        Args:
+            queries (iterable) SQL queries
+            matrix_store (triage.component.catwalk.storage.CSVMatrixStore)
+            matrix_metadata (dict) matrix metadata to save alongside the data
+        """
+        copy_sqls = (f"COPY ({query}) TO STDOUT WITH CSV HEADER" for query in queries)
         with contextlib.ExitStack() as stack:
             connections = (stack.enter_context(contextlib.closing(conn))
                            for conn in self._raw_connections)
@@ -562,10 +500,9 @@ class MatrixBuilder(BuilderBase):
 
             writers = (partial(cursor.copy_expert, copy_sql)
                        for (cursor, copy_sql) in zip(cursors, copy_sqls))
-            pipes = (stack.enter_context(PipeTextIO(writer, buffer_size=10000)) for writer in writers)
-            buffer = io.BytesIO()
-            for join in zip(*pipes):
-                buffer.write(b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n')
-            buffer.seek(0)
-            with matrix_store.matrix_base_store.open('wb') as fdesc:
-                fdesc.write(gzip.compress(buffer.read()))
+            pipes = (stack.enter_context(PipeTextIO(writer)) for writer in writers)
+            iterable = (
+                b','.join(line.rstrip('\r\n').encode('utf-8') for line in join) + b'\n'
+                for join in zip(*pipes)
+            )
+            matrix_store.save(from_fileobj=IteratorBytesIO(iterable), metadata=matrix_metadata)

@@ -13,114 +13,14 @@ from triage.component.results_schema import (
     TestPrediction,
     TrainPrediction,
 )
-from triage.util.pandas import downcast_matrix
-from ohio import PipeTextIO, CsvWriterTextIO
-from io import TextIOWrapper
+from triage.util.pandas import downcast_matrix, columns_with_nulls
 
 import pandas as pd
 import s3fs
 import yaml
-import csv
-import io
 from boto3.s3.transfer import TransferConfig
 import shutil
 import gzip
-
-import io
-
-
-class IOClosed(ValueError):
-
-    _default_message_ = "I/O operation on closed file"
-
-    def __init__(self, *args):
-        if not args:
-            args = (self._default_message_,)
-
-        super().__init__(*args)
-
-
-class StreamBufferedIOBase(io.BufferedIOBase):
-    """Readable file-like abstract base class.
-    Concrete classes may implemented method `__next_chunk__` to return
-    chunks (or all) of the text to be read.
-    """
-    def __init__(self):
-        self._remainder = ''
-
-    def __next_chunk__(self):
-        raise NotImplementedError("StreamTextIOBase subclasses must implement __next_chunk__")
-
-    def readable(self):
-        if self.closed:
-            raise IOClosed()
-
-        return True
-
-    def _read1(self, size=None):
-        while not self._remainder:
-            try:
-                self._remainder = self.__next_chunk__()
-            except StopIteration:
-                break
-
-        result = self._remainder[:size]
-        self._remainder = self._remainder[len(result):]
-
-        return result
-
-    def read(self, size=None):
-        if self.closed:
-            raise IOClosed()
-
-        if size is not None and size < 0:
-            size = None
-
-        result = b''
-
-        while size is None or size > 0:
-            content = self._read1(size)
-            if not content:
-                break
-
-            if size is not None:
-                size -= len(content)
-
-            result += content
-
-        return result
-
-    def readline(self):
-        if self.closed:
-            raise IOClosed()
-
-        result = ''
-
-        while True:
-            index = self._remainder.find('\n')
-            if index == -1:
-                result += self._remainder
-                try:
-                    self._remainder = self.__next_chunk__()
-                except StopIteration:
-                    self._remainder = ''
-                    break
-            else:
-                result += self._remainder[:(index + 1)]
-                self._remainder = self._remainder[(index + 1):]
-                break
-
-        return result
-
-class IteratorBytesIO(StreamBufferedIOBase):
-    """Readable file-like interface for iterable text streams."""
-
-    def __init__(self, iterable):
-        super().__init__()
-        self.__iterator__ = iter(iterable)
-
-    def __next_chunk__(self):
-        return next(self.__iterator__)
 
 
 class Store(object):
@@ -471,6 +371,11 @@ class MatrixStore(object):
         matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels
+        nullcols = columns_with_nulls(design_matrix)
+        if nullcols:
+            raise ValueError(f"Matrix {self.uuid} contains null values in feature columns."
+                             "Inspect matrix, feature tables, and cohort to locate source."
+                             "Null columns: {nullcols}")
         return design_matrix, labels
 
     @property
@@ -680,23 +585,18 @@ class CSVMatrixStore(MatrixStore):
         with self.matrix_base_store.open("rb") as fd:
             return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
 
+    def save(self, from_fileobj, metadata):
+        """Compress and save the matrix from a CSV bytestream file object
 
-    def save(self, row_buffer):
-        """
         Args:
+            from_fileobj (file-like): A readable file object containing a CSV bytestream to save
         """
-        csv_buffer = IteratorBytesIO((
-            b','.join(row)
-            for row in row_buffer
-        ))
-        with self.matrix_base_store.open('wb') as out_fh:
-            with gzip.GzipFile(fileobj=out_fh, mode='w') as compressed_out:
-                shutil.copyfileobj(csv_buffer, compressed_out)
-        
-#    def save(self):
-#        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
-#        with self.metadata_base_store.open("wb") as fd:
-#            yaml.dump(self.metadata, fd, encoding="utf-8")
+        with self.matrix_base_store.open('wb') as fdesc:
+            with gzip.GzipFile(fileobj=fdesc, mode='w') as compressor:
+                shutil.copyfileobj(from_fileobj, compressor)
+
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType(object):

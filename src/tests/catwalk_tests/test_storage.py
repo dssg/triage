@@ -1,4 +1,5 @@
 import os
+import io
 import tempfile
 from collections import OrderedDict
 
@@ -7,8 +8,9 @@ import yaml
 from moto import mock_s3
 import boto3
 from numpy.testing import assert_almost_equal
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from unittest import mock
+from triage.util.pandas import downcast_matrix
 import pytest
 
 from triage.component.catwalk.storage import (
@@ -167,24 +169,23 @@ def test_MatrixStore_labels_idempotency():
 
 
 def test_MatrixStore_save():
-    data = {
-        "entity_id": [1, 2],
-        "feature_one": [0.5, 0.6],
-        "feature_two": [0.5, 0.6],
-        "label": [1, 0]
-    }
-    df = pd.DataFrame.from_dict(data)
-    labels = df.pop("label")
-
     for matrix_store in matrix_stores():
-        matrix_store.metadata = METADATA
+        data = {
+            "entity_id": [1, 2],
+            "feature_one": [0.5, 0.6],
+            "feature_two": [0.5, 0.6],
+            "label": [1, 0]
+        }
+        df = pd.DataFrame.from_dict(data)
+        df.set_index(['entity_id'], inplace=True)
+        df = downcast_matrix(df)
+        bytestream = io.BytesIO(df.to_csv(None).encode('utf-8'))
 
-        matrix_store.matrix_label_tuple = df, labels
-        matrix_store.save()
-        assert_frame_equal(
-            matrix_store.design_matrix,
-            df
-        )
+        matrix_store.save(bytestream, METADATA)
+
+        labels = df.pop("label")
+        assert_frame_equal(matrix_store.design_matrix, df)
+        assert_series_equal(matrix_store.labels, labels)
 
 
 def test_MatrixStore_caching():
@@ -235,16 +236,21 @@ def test_s3_save():
     with mock_s3():
         client = boto3.client("s3")
         client.create_bucket(Bucket="fake-matrix-bucket", ACL="public-read-write")
-        for example in matrix_stores():
-            if not isinstance(example, CSVMatrixStore):
-                continue
-            project_storage = ProjectStorage("s3://fake-matrix-bucket")
+        project_storage = ProjectStorage("s3://fake-matrix-bucket")
+        matrix_store = project_storage.matrix_storage_engine().get_store('1234')
+        data = {
+            "entity_id": [1, 2],
+            "feature_one": [0.5, 0.6],
+            "feature_two": [0.5, 0.6],
+            "label": [1, 0]
+        }
+        df = pd.DataFrame.from_dict(data)
+        df.set_index(['entity_id'], inplace=True)
+        df = downcast_matrix(df)
+        bytestream = io.BytesIO(df.to_csv(None).encode('utf-8'))
 
-            tosave = CSVMatrixStore(project_storage, [], "test")
-            tosave.metadata = example.metadata
-            tosave.matrix_label_tuple = example.matrix_label_tuple
-            tosave.save()
+        matrix_store.save(bytestream, METADATA)
 
-            tocheck = CSVMatrixStore(project_storage, [], "test")
-            assert tocheck.metadata == example.metadata
-            assert tocheck.design_matrix.to_dict() == example.design_matrix.to_dict()
+        labels = df.pop("label")
+        assert_frame_equal(matrix_store.design_matrix, df)
+        assert_series_equal(matrix_store.labels, labels)
