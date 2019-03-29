@@ -328,6 +328,7 @@ class MatrixStore(object):
             Defaults to None, which means it will be loaded from storage on demand.
     """
     _matrix_label_tuple = None
+    indices = ['entity_id', 'as_of_date']
 
     def __init__(
         self, project_storage, directories, matrix_uuid, matrix=None, metadata=None
@@ -365,9 +366,11 @@ class MatrixStore(object):
         This includes setting the index (depending on the storage, may not be serializable)
         and downcasting.
         """
-        indices = self.metadata['indices']
-        if matrix_with_labels.index.names != indices:
-            matrix_with_labels.set_index(indices, inplace=True)
+        if matrix_with_labels.index.names != self.indices:
+            matrix_with_labels.set_index(self.indices, inplace=True)
+        index_of_date = matrix_with_labels.index.names.index('as_of_date')
+        if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
+            raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
         matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels
@@ -405,11 +408,7 @@ class MatrixStore(object):
         """The raw metadata. Will load from storage into memory if not already loaded"""
         if self.__metadata is not None:
             return self.__metadata
-        metadata = self.load_metadata()
-        if self.should_cache:
-            self.__metadata = metadata
-        else:
-            return metadata
+        self.__metadata = self.load_metadata()
         return self.__metadata
 
     @metadata.setter
@@ -450,6 +449,8 @@ class MatrixStore(object):
 
     @property
     def index(self):
+        if self.metadata['indices'] != self.indices:
+            raise ValueError(f"Indices must be {self.indices}")
         return self.design_matrix.index
 
     @property
@@ -459,23 +460,18 @@ class MatrixStore(object):
 
     @property
     def as_of_dates(self):
-        """The list of as-of-dates in the matrix"""
-        if "as_of_date" in self.design_matrix.index.names:
-            return sorted(
-                list(set([as_of_date for entity_id, as_of_date in self.design_matrix.index]))
-            )
-        else:
-            return [self.metadata["end_time"]]
+        """All as-of-dates in the matrix. Will be converted to datetime.date"""
+        return sorted(set(
+            as_of_date.date() if hasattr(as_of_date, 'date') else as_of_date
+            for entity_id, as_of_date in self.design_matrix.index
+        ))
 
     @property
     def num_entities(self):
         """The number of entities in the matrix"""
-        if self.design_matrix.index.names == ["entity_id"]:
-            return len(self.design_matrix.index.values)
-        elif "entity_id" in self.design_matrix.index.names:
-            return len(
-                self.design_matrix.index.levels[self.design_matrix.index.names.index("entity_id")]
-            )
+        return len(
+            self.design_matrix.index.levels[self.design_matrix.index.names.index("entity_id")]
+        )
 
     @property
     def matrix_type(self):
@@ -547,7 +543,6 @@ class MatrixStore(object):
 
     def clear_cache(self):
         self._matrix_label_tuple = None
-        self.metadata = None
 
     def __getstate__(self):
         """Remove object of a large size upon serialization.
@@ -556,7 +551,6 @@ class MatrixStore(object):
         """
         state = self.__dict__.copy()
         state['_matrix_label_tuple'] = None
-        state['__metadata'] = None
         return state
 
 
@@ -570,7 +564,7 @@ class CSVMatrixStore(MatrixStore):
         try:
             with self.matrix_base_store.open("rb") as fd:
                 head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
-                head_of_matrix.set_index(self.metadata["indices"], inplace=True)
+                head_of_matrix.set_index(self.indices, inplace=True)
         except FileNotFoundError as fnfe:
             logging.exception(f"Matrix isn't there: {fnfe}")
             logging.exception("Returning Empty data frame")
@@ -579,11 +573,8 @@ class CSVMatrixStore(MatrixStore):
         return head_of_matrix
 
     def _load(self):
-        parse_dates_argument = (
-            ["as_of_date"] if "as_of_date" in self.metadata["indices"] else False
-        )
         with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, compression="gzip", parse_dates=parse_dates_argument)
+            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
 
     def save(self, from_fileobj, metadata):
         """Compress and save the matrix from a CSV bytestream file object

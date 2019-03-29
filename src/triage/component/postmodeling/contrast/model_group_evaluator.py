@@ -41,8 +41,7 @@ class ModelGroupEvaluator(object):
     @cachedproperty
     def metadata(self):
         query_execute = list(self.engine.execute(
-            f'''WITH
-            individual_model_ids_metadata AS(
+            f'''
             SELECT m.model_id,
                    m.model_group_id,
                    m.hyperparameters,
@@ -56,30 +55,7 @@ class ModelGroupEvaluator(object):
                 JOIN model_metadata.model_groups mg
                 USING (model_group_id)
                 WHERE model_group_id IN {self.model_group_id}
-            ),
-            individual_model_id_matrices AS(
-            SELECT DISTINCT ON (matrix_uuid)
-                   model_id,
-                   matrix_uuid
-                FROM test_results.predictions
-                WHERE model_id = ANY(
-                    SELECT model_id
-                    FROM individual_model_ids_metadata
-                )
-            )
-            SELECT metadata.model_id,
-                   metadata.model_group_id,
-                   metadata.model_hash,
-                   metadata.hyperparameters,
-                   metadata.train_end_time,
-                   metadata.train_matrix_uuid,
-                   metadata.training_label_timespan,
-                   metadata.model_type,
-                   metadata.model_config,
-                   test.matrix_uuid AS test_matrix_uuid
-            FROM individual_model_ids_metadata AS metadata
-            LEFT JOIN individual_model_id_matrices AS test
-            USING(model_id);''')
+            ''')
         )
 
         row_dict, list_dict = {}, []
@@ -123,13 +99,7 @@ class ModelGroupEvaluator(object):
         return [dict_row['model_config'] for dict_row in self.metadata]
 
     def __repr__(self):
-        return (
-           str({ 'Model_ids':{self.model_id},
-                 'Model Groups': {self.model_group_id},
-                 'Model types': {self.model_type},
-                 'Model hyperparameters': {self.hyperparameters}
-                 })
-        )
+        return f"ModelGroupEvaluator(model_group_id={self.model_group_id})"
 
     @cachedproperty
     def predictions(self):
@@ -154,6 +124,11 @@ class ModelGroupEvaluator(object):
             WHERE model_id IN {tuple(self.model_id)}
             AND label_value IS NOT NULL
             ''', con=self.engine)
+        if preds.empty:
+            raise RuntimeError("No predictions were retrieved from the database."
+                               "Some functionality will not be available without predictions."
+                               "Please run catwalk.Predictor for each desired model and test matrix"
+                               )
         return preds
 
     @cachedproperty

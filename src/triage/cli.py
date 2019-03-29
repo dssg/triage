@@ -277,7 +277,7 @@ class Experiment(Command):
             help="Visualize time chops (temporal cross-validation blocks')"
         )
 
-        parser.set_defaults(validate=False, validate_only=False, materialize_fromobjs=True)
+        parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
 
     def _load_config(self):
         config_file = Store.factory(self.args.config)
@@ -298,7 +298,8 @@ class Experiment(Command):
             "features_ignore_cohort": self.args.features_ignore_cohort,
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
-            "save_predictions": self.args.save_predictions
+            "save_predictions": self.args.save_predictions,
+            "skip_validation": not self.args.validate
         }
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(
@@ -314,9 +315,6 @@ class Experiment(Command):
     def __call__(self, args):
         if args.validate_only:
             self.experiment.validate()
-        elif args.validate:
-            self.experiment.validate()
-            self.experiment.run()
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
@@ -413,7 +411,7 @@ class Db(Command):
     @cmdmethod
     def upgrade(self, args):
         """Upgrade triage results database"""
-        upgrade_db(args.dbfile)
+        upgrade_db(dburl=self.root.db_url)
 
     @cmdmethod(
         "configversion",
@@ -432,7 +430,7 @@ class Db(Command):
             f"Based on config version {args.configversion} "
             f"we think your results schema is version {revision} and are upgrading to it"
         )
-        stamp_db(revision, args.dbfile)
+        stamp_db(revision, dburl=self.root.db_url)
 
 
 def execute():

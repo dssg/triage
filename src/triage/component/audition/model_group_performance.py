@@ -66,39 +66,42 @@ class ModelGroupPerformancePlotter(object):
         on the given metric over time
         """
 
-        base_df = pd.read_sql(
+        df = pd.read_sql(
             """
-            select
-                model_group_id,
-                metric,
-                parameter,
-                train_end_time,
-                raw_value,
-                mg.model_type
-            from {dist_table} dist
-            join model_metadata.model_groups mg using (model_group_id)
-            where model_group_id in ({model_group_ids})
-            union
-            select
-                0 model_group_id,
-                metric,
-                parameter,
-                train_end_time,
-                best_case,
-                'best case' model_type
-            from {dist_table}
-            group by 1, 2, 3, 4, 5, 6
+            select distinct on(model_group_id, metric, parameter, train_end_time, raw_value, model_type) * from (
+                select
+                    model_group_id,
+                    metric,
+                    parameter,
+                    train_end_time,
+                    raw_value,
+                    mg.model_type as model_type
+                from {dist_table} as dist
+                join model_metadata.model_groups mg using (model_group_id)
+                where model_group_id in ({model_group_ids})
+                union
+                select
+                    0 as model_group_id,
+                    metric,
+                    parameter,
+                    train_end_time,
+                    best_case as raw_value,
+                    'best case' as model_type
+                from {dist_table}
+            ) as t
+            where metric || parameter = '{metric}{parameter}'
+            and train_end_time in ({train_end_times})
+            order by model_group_id asc, train_end_time asc
             """.format(
+                metric=metric,
+                parameter=parameter,
                 dist_table=self.distance_from_best_table.distance_table,
                 model_group_ids=str_in_sql(model_group_ids),
+                train_end_times=str_in_sql(train_end_times)
             ),
             self.distance_from_best_table.db_engine,
         )
-        df = base_df[
-            (base_df["train_end_time"].isin(train_end_times))
-            & (base_df["metric"] == metric)
-            & (base_df["parameter"] == parameter)
-        ]
+       
         return df
 
     def plot(

@@ -1,5 +1,6 @@
 import importlib
 import logging
+from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
 
@@ -499,6 +500,22 @@ class CohortConfigValidator(Validator):
 
 
 class FeatureGroupDefinitionValidator(Validator):
+    def _validate_prefixes(self, prefix_list):
+        """
+        Ensure that no prefix starts with another prefix + _ to avoid
+        an error with feature group subsets when the group names overlap
+        """
+        for prefix1, prefix2 in permutations(prefix_list, 2):
+            if prefix2.startswith(prefix1):
+                raise ValueError(
+                    dedent(
+                        """
+                Section: feature_group_definition -
+                Feature group prefixes must not overlap when using `prefix`: %s and %s"""
+                        % (prefix1, prefix2)
+                    )
+                )
+
     def _run(self, feature_group_definition, feature_aggregation_config):
         if not isinstance(feature_group_definition, dict):
             raise ValueError(
@@ -554,6 +571,7 @@ class FeatureGroupDefinitionValidator(Validator):
                         )
                     )
                 )
+            self._validate_prefixes(feature_group_definition["prefix"])
 
         if "tables" in feature_group_definition:
             available_tables = {

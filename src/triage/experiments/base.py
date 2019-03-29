@@ -65,7 +65,7 @@ class ExperimentBase(ABC):
     process_query_tasks
     process_matrix_build_tasks
     process_subset_tasks
-    process_train_test_tasks
+    process_train_test_batches
 
     Look at singlethreaded.py for reference implementation of each.
 
@@ -96,6 +96,7 @@ class ExperimentBase(ABC):
         features_ignore_cohort=False,
         profile=False,
         save_predictions=True,
+        skip_validation=False,
     ):
         self._check_config_version(config)
         self.config = config
@@ -108,6 +109,7 @@ class ExperimentBase(ABC):
         self.project_path = project_path
         self.replace = replace
         self.save_predictions = save_predictions
+        self.skip_validation = skip_validation
         self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
 
@@ -557,7 +559,7 @@ class ExperimentBase(ABC):
         pass
 
     @abstractmethod
-    def process_train_test_tasks(self, train_tasks):
+    def process_train_test_batches(self, train_test_batches):
         pass
 
     @abstractmethod
@@ -611,43 +613,41 @@ class ExperimentBase(ABC):
         else:
             logging.info("No subsets found. Proceeding to training and testing models")
 
-    def _all_train_test_tasks(self):
+    def _all_train_test_batches(self):
         if "grid_config" not in self.config:
             logging.warning(
                 "No grid_config was passed in the experiment config. No models will be trained"
             )
             return
 
-        train_test_tasks = []
-        for split_num, split in enumerate(self.full_matrix_definitions):
-            self.log_split(split_num, split)
-            for task in self.model_train_tester.generate_tasks(
-                split=split,
-                grid_config=self.config.get('grid_config'),
-                model_comment=self.config.get('model_comment', None)
-            ):
-                train_test_tasks.append(task)
-        return train_test_tasks
+        return self.model_train_tester.generate_task_batches(
+            splits=self.full_matrix_definitions,
+            grid_config=self.config.get('grid_config'),
+            model_comment=self.config.get('model_comment', None)
+        )
 
     def train_and_test_models(self):
         self.generate_subsets()
-        tasks = self._all_train_test_tasks()
-        if not tasks:
+        batches = self._all_train_test_batches()
+        if not batches:
             logging.warning("No train/test tasks found, so no training to do")
             return
 
-        logging.info("%s train/test tasks found. Beginning training.", len(tasks))
+        logging.info("%s train/test batches found. Beginning training.", len(batches))
         associate_models_with_experiment(
             self.experiment_hash,
-            set(task['train_kwargs']['model_hash'] for task in tasks),
+            set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks),
             self.db_engine
         )
-        self.process_train_test_tasks(tasks)
+        self.process_train_test_batches(batches)
 
     def validate(self, strict=True):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
+        if not self.skip_validation:
+            self.validate()
+
         try:
             logging.info("Generating matrices")
             self.generate_matrices()

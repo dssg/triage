@@ -14,6 +14,7 @@ from .utils import (
     get_subset_table_name,
     filename_friendly_hash
 )
+from triage.component.catwalk.storage import MatrixStore
 
 
 def subset_labels_and_predictions(
@@ -90,7 +91,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
     out.seek(0)
     df = pandas.read_csv(
         out, parse_dates=["as_of_date"],
-        index_col=["entity_id", "as_of_date"]
+        index_col=MatrixStore.indices
     )
     
     return df
