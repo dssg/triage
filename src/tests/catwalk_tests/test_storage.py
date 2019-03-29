@@ -181,7 +181,7 @@ def test_MatrixStore_save():
             "label": [1, 0]
         }
         df = pd.DataFrame.from_dict(data)
-        df.set_index(['entity_id'], inplace=True)
+        df.set_index(MatrixStore.indices, inplace=True)
         df = downcast_matrix(df)
         bytestream = io.BytesIO(df.to_csv(None).encode('utf-8'))
 
@@ -228,12 +228,13 @@ def test_s3_save():
         matrix_store = project_storage.matrix_storage_engine().get_store('1234')
         data = {
             "entity_id": [1, 2],
+            "as_of_date": [pd.Timestamp(2017, 1, 1), pd.Timestamp(2017, 1, 1)],
             "feature_one": [0.5, 0.6],
             "feature_two": [0.5, 0.6],
             "label": [1, 0]
         }
         df = pd.DataFrame.from_dict(data)
-        df.set_index(['entity_id'], inplace=True)
+        df.set_index(MatrixStore.indices, inplace=True)
         df = downcast_matrix(df)
         bytestream = io.BytesIO(df.to_csv(None).encode('utf-8'))
 
