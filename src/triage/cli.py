@@ -10,7 +10,6 @@ from datetime import datetime
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
-from memory_profiler import profile
 
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
@@ -25,30 +24,6 @@ from triage.experiments import (
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
-
-
-class TimeProfileFilter(logging.Filter):
-
-    def __init__(self):
-        self.t0 = time.time()
-
-    @property
-    def elapsed(self):
-        return time.time() - self.t0
-
-    def filter(self, record):
-        record.elapsed = self.elapsed
-        return True
-
-
-logging.basicConfig(
-    format='%(elapsed)s %(message)s',
-    level=logging.INFO,
-)
-
-logging.getLogger().addFilter(
-    TimeProfileFilter()
-)
 
 
 def natural_number(value):
@@ -311,7 +286,6 @@ class Experiment(Command):
             experiment = SingleThreadedExperiment(**common_kwargs)
         return experiment
 
-    @profile
     def __call__(self, args):
         if args.validate_only:
             self.experiment.validate()
