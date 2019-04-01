@@ -232,6 +232,7 @@ def test_feature_start_time():
             groups=["entity_id"],
             intervals=["all"],
             as_of_dates=["2016-01-01"],
+            features_table_name="event_features",
             cohort_table="states",
             entity_column="entity_id",
             date_column='"date"',
@@ -242,7 +243,7 @@ def test_feature_start_time():
 
         st.run_preimputation()
 
-        r = engine.execute("select * from events_entity_id order by entity_id")
+        r = engine.execute("select * from event_features_entity_id order by entity_id")
         rows = [x for x in r]
 
         assert rows[0]["entity_id"] == 1
@@ -262,6 +263,7 @@ def test_feature_start_time():
             groups=["entity_id"],
             intervals=["1y", "all"],
             as_of_dates=["2016-01-01", "2015-01-01"],
+            features_table_name="event_features",
             cohort_table="states",
             entity_column="entity_id",
             date_column='"date"',
