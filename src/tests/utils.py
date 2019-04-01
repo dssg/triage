@@ -1,4 +1,5 @@
 import datetime
+import io
 import random
 import tempfile
 from contextlib import contextmanager
@@ -180,12 +181,10 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     matrix["as_of_date"] = matrix["as_of_date"].apply(pandas.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = project_storage.matrix_storage_engine().get_store(filename_friendly_hash(metadata))
-    matrix_store.metadata = metadata
-    new_matrix = matrix.copy()
-    labels = new_matrix.pop(matrix_store.label_column_name)
-    matrix_store.matrix_label_tuple = new_matrix, labels
-    matrix_store.save()
-    matrix_store.clear_cache()
+    matrix_store.save(
+        from_fileobj=io.BytesIO(matrix.to_csv(None).encode('utf-8')),
+        metadata=metadata
+    )
     if write_to_db:
         if (
             session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
