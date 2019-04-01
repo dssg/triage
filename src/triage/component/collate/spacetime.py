@@ -95,7 +95,7 @@ class SpacetimeAggregation(FeatureBlock):
             name = '"%s_%s"' % (prefix, "aggregation")
         else:
             name = '"%s"' % to_sql_name("%s_%s" % (prefix, group))
-        schema = '"%s".' % self.features_schema_name if self.features_schema_name else ""
+        schema = '"%s".' % to_sql_name(self.features_schema_name) if self.features_schema_name else ""
         return "%s%s" % (schema, name)
 
     def get_drops(self):

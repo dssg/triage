@@ -310,6 +310,7 @@ def test_features_ignore_cohort(db_engine):
         groups=["entity_id"],
         intervals=["all"],
         as_of_dates=["2016-01-01", "2015-01-01"],
+        features_table_name="event_features",
         cohort_table="cohort",
         entity_column="entity_id",
         date_column='"date"',
@@ -320,7 +321,7 @@ def test_features_ignore_cohort(db_engine):
 
     st.run_preimputation()
 
-    r = db_engine.execute("select * from events_entity_id order by entity_id, date")
+    r = db_engine.execute("select * from event_features_entity_id order by entity_id, date")
     rows = [x for x in r]
 
     # these rows should be similar to the rows in the basic spacetime test,
@@ -350,43 +351,43 @@ def test_aggregation_table_name_no_schema():
     # no schema
     assert (
         SpacetimeAggregation(
-            [], from_obj="source", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+            [], from_obj="source", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[],
         ).get_table_name()
-        == '"source_aggregation"'
+        == '"source_features_aggregation"'
     )
     assert (
-        SpacetimeAggregation([], from_obj="source", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[]).get_table_name(
+        SpacetimeAggregation([], from_obj="source", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[]).get_table_name(
             imputed=True
         )
-        == '"source_aggregation_imputed"'
+        == '"source_features"'
     )
 
     # prefix
     assert (
         SpacetimeAggregation(
-            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[],
         ).get_table_name()
-        == '"mysource_aggregation"'
+        == '"source_features_aggregation"'
     )
     assert (
         SpacetimeAggregation(
-            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+            [], from_obj="source", prefix="mysource", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[],
         ).get_table_name(imputed=True)
-        == '"mysource_aggregation_imputed"'
+        == '"source_features"'
     )
 
     # schema
     assert (
         SpacetimeAggregation(
-            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[],
         ).get_table_name()
-        == '"schema"."source_aggregation"'
+        == '"schema"."source_features_aggregation"'
     )
     assert (
         SpacetimeAggregation(
-            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", db_engine=None, as_of_dates=[],
+            [], from_obj="source", features_schema_name="schema", groups=[], cohort_table="tbl", features_table_name="source_features", db_engine=None, as_of_dates=[],
         ).get_table_name(imputed=True)
-        == '"schema"."source_aggregation_imputed"'
+        == '"schema"."source_features"'
     )
 
 
@@ -400,6 +401,7 @@ def test_get_feature_columns():
             aggregates=[n, d, m],
             from_obj="source",
             features_schema_name="schema",
+            features_table_name="source_features",
             prefix="prefix",
             groups=["entity_id"],
             cohort_table="tbl",

@@ -28,7 +28,9 @@ class FeatureBlock(ABC):
     @property
     def final_feature_table_name(self):
         "The name of the final table with all features filled in (no missing values)"
-        return f"{self.features_schema_name}.{self.features_table_name_without_schema}"
+        schema = '"%s".' % self.features_schema_name if self.features_schema_name else ""
+        name = f'"{self.features_table_name_without_schema}"'
+        return "%s%s" % (schema, name)
 
     @property
     @abstractmethod
