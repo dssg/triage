@@ -193,10 +193,7 @@ Currently we have 7 rules:
 6. `best_avg_var_penalized`: Pick the model with the highest average metric value so far, penalized for relative variance as:
 <br>`avg_value - (stdev_penalty) * (stdev - min_stdev)`<br>
 where `min_stdev` is the minimum standard deviation of the metric across all model groups
-7. `best_avg_recency_weight`: Pick the model with the highest average metric value so far, penalized for relative variance as:
-<br>`avg_value - (stdev_penalty) * (stdev - min_stdev)`<br>
-where `min_stdev` is the minimum standard deviation of the metric across all
-model groups
+7. `best_avg_recency_weight`: Pick the model with the highest average metric value so far, placing less weight in older results. You need to specify two parameters: the shape of how the weight affects points (`decay_type`, linear or exponential) and the relative weight of the most recent point (`curr_weight`).
 
 **Register rules**
 
