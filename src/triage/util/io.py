@@ -1,5 +1,5 @@
 import io
-from ohio.baseio import IOClosed
+from ohio import IOClosed
 
 
 class StreamBytesIOBase(io.BufferedIOBase):
