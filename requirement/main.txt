@@ -7,7 +7,7 @@ scipy==1.2.1
 scikit-learn==0.20.3
 tables==3.3.0 # pyup: ignore
 matplotlib<2.2 # pyup: ignore
-pandas==0.24.1
+pandas==0.24.2
 boto3==1.9.105
 click==7.0
 inflection==0.3.1
