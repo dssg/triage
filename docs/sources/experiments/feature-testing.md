@@ -33,26 +33,29 @@ logging.basicConfig(level=logging.INFO)
 db_url = 'your db url here'
 db_engine = create_engine(db_url)
 
-feature_config = {'spacetime_aggregations': [{
-	'prefix': 'aprefix',
-	'aggregates': [
-		{
-		'quantity': 'quantity_one',
-		'metrics': ['sum', 'count'],
-        }
-	],
-	'categoricals': [
-		{
-			'column': 'cat_one',
-			'choices': ['good', 'bad'],
-			'metrics': ['sum']
-		},
-	],
-	'groups': ['entity_id', 'zip_code'],
-	'intervals': ['all'],
-	'knowledge_date_column': 'knowledge_date',
-	'from_obj': 'data'
-}]}
+feature_config = {
+    'myfeaturetable': {
+        'feature_generator_type': 'spacetime_aggregation', 
+	    'prefix': 'aprefix',
+        'aggregates': [
+            {
+            'quantity': 'quantity_one',
+            'metrics': ['sum', 'count'],
+            }
+        ],
+        'categoricals': [
+            {
+                'column': 'cat_one',
+                'choices': ['good', 'bad'],
+                'metrics': ['sum']
+            },
+        ],
+        'groups': ['entity_id', 'zip_code'],
+        'intervals': ['all'],
+        'knowledge_date_column': 'knowledge_date',
+        'from_obj': 'data'
+    }
+}
 
 feature_blocks = feature_blocks_from_config(
     feature_config,

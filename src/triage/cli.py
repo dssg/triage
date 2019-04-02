@@ -111,13 +111,13 @@ class Triage(RootCommand):
 
 @Triage.register
 class FeatureTest(Command):
-    """Test a feature aggregation by running it for one date"""
+    """Test features by running them for one date"""
 
     def __init__(self, parser):
         parser.add_argument(
-            "feature_config_file",
+            "experiment_config_file",
             type=argparse.FileType("r"),
-            help="Feature config YAML file, containing a list of feature_aggregation objects",
+            help="Experiment config YAML file, containing at least one feature configuration block. Cohort config will be used if present to filter the results. Any other keys will be ignored.",
         )
         parser.add_argument(
             "as_of_date",

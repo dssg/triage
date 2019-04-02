@@ -38,7 +38,7 @@ Name | Type | Purpose
 ------------ | ------------- | -------------
 as_of_dates | list | Features are created "as of" specific dates, and expects that each of these dates will be populated with a row for each member of the cohort on that date.
 cohort_table | string | The final shape of the feature table should at least include every entity id/date pair in this cohort table.
-final_feature_table_name | string | The name of the final table with all features filled in (no missing values). This is provided by the user in feature config, as the key that corresponds to the configuration block that instantiates.
+final_feature_table_name | string | The name of the final table with all features filled in (no missing values). This is provided by the user in feature config, as the key that corresponds to the configuration section that instantiates the feature block
 db_engine | sqlalchemy.engine | The engine to use to access the database. Although these instances are mostly returning queries, the engine may be useful for implementing imputation.
 features_schema_name | string | The database schema where all feature tables should reside. Defaults to None, which ends up in the public schema.
 feature_start_time | string/datetime | A time before which no data should be considered for features. This is generally only applicable if your FeatureBlock is doing temporal aggregations. Defaults to None, which means no data will be excluded.
@@ -63,10 +63,6 @@ class SimpleQueryFeature(FeatureBlock):
     def __init__(self, query, *args, **kwargs):
         self.query = query
         super().__init__(*args, **kwargs)
-
-    @property
-    def final_feature_table_name(self):
-        return f"{self.features_schema_name}.mytable"
 
     @property
     def feature_columns(self):
@@ -105,6 +101,7 @@ This class would allow many different uses: basically any query a user can come 
 feature_block = SimpleQueryFeature(
     query="select entity_id, as_of_date, quantity from source_table where date < '{as_of_date}'",
     as_of_dates=["2016-01-01"],
+    features_table_name="my_features",
     cohort_table="my_cohort_table",
     db_engine=triage.create_engine(<..mydbinfo..>)
 )
@@ -132,12 +129,17 @@ FEATURE_BLOCK_GENERATOR_LOOKUP = {
 }
 ```
 
-At this point, you could use it in an experiment configuration like this:
+At this point, you could use it in an experiment configuration by adding a feature table section and specifying the `feature_generator_type` key to be the name you just put in the lookup, `simple_query`. All other keys/values in that config block will be passed to the constructor to your class. Since the class you defined only takes in one extra keyword argument (the query), the only other key you need to specify in config is that query.
+
+An example:
 
 ```yaml
 
 features:
-    simple_query:
-        - query: "select entity_id, as_of_date, quantity from source_table where date < '{as_of_date}'"
-        - query: "select entity_id, as_of_date, other_quantity from other_source_table where date < '{as_of_date}'"
+    my_feature_table:
+        feature_generator_type: "simple_query" 
+        query: "select entity_id, as_of_date, quantity from source_table where date < '{as_of_date}'"
+    my_other_feature_table:
+        feature_generator_type: "simple_query"
+        query: "select entity_id, as_of_date, other_quantity from other_source_table where date < '{as_of_date}'"
 ```
