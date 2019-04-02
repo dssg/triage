@@ -516,7 +516,7 @@ class FeatureGroupDefinitionValidator(Validator):
                     )
                 )
 
-    def _run(self, feature_group_definition, feature_blocks):
+    def _run(self, feature_group_definition, feature_table_names):
         if not isinstance(feature_group_definition, dict):
             raise ValueError(
                 dedent(
@@ -557,10 +557,7 @@ class FeatureGroupDefinitionValidator(Validator):
             self._validate_prefixes(feature_group_definition["prefix"])
 
         if "tables" in feature_group_definition:
-            available_tables = {
-                feature_block.final_feature_table_name
-                for feature_block in feature_blocks
-            }
+            available_tables = feature_table_names
             bad_tables = set(feature_group_definition["tables"]) - available_tables
             if bad_tables:
                 raise ValueError(
@@ -819,7 +816,8 @@ class ScoringConfigValidator(Validator):
 class FeatureValidator(Validator):
     def _run(self, feature_config):
         feature_lookup = architect.feature_block_generators.FEATURE_BLOCK_GENERATOR_LOOKUP
-        bad_keys = feature_config.keys() - feature_lookup.keys()
+        given_keys = set(feature_block['feature_generator_type'] for feature_block in feature_config.values())
+        bad_keys = given_keys - feature_lookup.keys()
         if bad_keys:
             raise ValueError(
                 dedent(
@@ -838,7 +836,7 @@ class FeatureValidator(Validator):
 
 
 class ExperimentValidator(Validator):
-    def run(self, experiment_config, feature_blocks):
+    def run(self, experiment_config):
         TemporalValidator(strict=self.strict).run(
             experiment_config.get("temporal_config", {})
         )
@@ -853,7 +851,7 @@ class ExperimentValidator(Validator):
         )
         FeatureGroupDefinitionValidator(strict=self.strict).run(
             experiment_config.get("feature_group_definition", {}),
-            feature_blocks
+            set(experiment_config.get("features", {}).keys())
         )
         FeatureGroupStrategyValidator(strict=self.strict).run(
             experiment_config.get("feature_group_strategies", [])
