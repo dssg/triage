@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from triage.component.collate import (
@@ -247,7 +248,8 @@ def feature_blocks_from_config(
     """
     feature_blocks = []
     for feature_table_name, feature_block_configuration in config.items():
-        feature_generator_type = feature_block_configuration.pop("feature_generator_type")
+        config_to_pass = copy.deepcopy(feature_block_configuration)
+        feature_generator_type = config_to_pass.pop("feature_generator_type")
         feature_block_generator = FEATURE_BLOCK_GENERATOR_LOOKUP.get(feature_generator_type, None)
         if not feature_block_generator:
             raise ValueError(f"feature generator type {feature_generator_type} does not correspond to a recognized"
@@ -255,7 +257,7 @@ def feature_blocks_from_config(
                              f"{FEATURE_BLOCK_GENERATOR_LOOKUP.keys()}")
 
         feature_block = feature_block_generator(
-            feature_block_configuration,
+            config_to_pass,
             feature_table_name=feature_table_name,
             as_of_dates=as_of_dates,
             cohort_table=cohort_table,

@@ -115,7 +115,7 @@ class PreimputationFeatures(TestCase):
                 if "_aggregation" in table
             ]
 
-            assert len(generated_tables) == len(sample_config()["features"]["spacetime_aggregations"])
+            assert len(generated_tables) == len(sample_config()["features"])
             for table in generated_tables:
                 table_should_have_data(table, experiment.db_engine)
 
@@ -140,17 +140,8 @@ class PostimputationFeatures(TestCase):
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            generated_tables = [
-                table
-                for table in schema_tables(
-                    experiment.features_schema_name, experiment.db_engine
-                ).keys()
-                if "_aggregation_imputed" in table
-            ]
-
-            assert len(generated_tables) == len(sample_config()["features"]["spacetime_aggregations"])
-            for table in generated_tables:
-                table_should_have_data(table, experiment.db_engine)
+            for feature_table_name in self.config['features'].keys():
+                table_should_have_data("{}.{}".format(experiment.features_schema_name, feature_table_name), experiment.db_engine)
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:
