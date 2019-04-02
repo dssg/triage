@@ -128,7 +128,7 @@ class FeatureTest(Command):
     def __call__(self, args):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
-        full_config = yaml.load(args.feature_config_file)
+        full_config = yaml.load(args.experiment_config_file)
         feature_config = full_config['features']
         cohort_config = full_config.get('cohort_config', None)
         if cohort_config:
