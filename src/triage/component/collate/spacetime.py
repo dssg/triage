@@ -227,7 +227,11 @@ class SpacetimeAggregation(FeatureBlock):
 
         Returns a list of queries/executable statements
         """
-        return [self.get_create_schema(), self.get_drop()] + self.get_drops() + list(self.get_creates().values())
+        preinserts = [self.get_drop()] + self.get_drops() + list(self.get_creates().values())
+        create_schema = self.get_create_schema()
+        if create_schema:
+            preinserts.insert(0, create_schema)
+        return preinserts
 
     @property
     def insert_queries(self):

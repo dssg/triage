@@ -67,6 +67,7 @@ def test_basic_spacetime():
         st = SpacetimeAggregation(
             aggregates=[agg],
             from_obj="events",
+            prefix="events",
             groups=["entity_id"],
             intervals=["1y", "2y", "all"],
             as_of_dates=["2016-01-01", "2015-01-01"],
@@ -229,6 +230,7 @@ def test_feature_start_time():
         st = SpacetimeAggregation(
             aggregates=[agg],
             from_obj="events",
+            prefix="events",
             groups=["entity_id"],
             intervals=["all"],
             as_of_dates=["2016-01-01"],
@@ -260,6 +262,7 @@ def test_feature_start_time():
         st = SpacetimeAggregation(
             aggregates=[agg],
             from_obj="events",
+            prefix="events",
             groups=["entity_id"],
             intervals=["1y", "all"],
             as_of_dates=["2016-01-01", "2015-01-01"],
@@ -307,6 +310,7 @@ def test_features_ignore_cohort(db_engine):
     st = SpacetimeAggregation(
         aggregates=[agg],
         from_obj="events",
+        prefix="events",
         groups=["entity_id"],
         intervals=["all"],
         as_of_dates=["2016-01-01", "2015-01-01"],
