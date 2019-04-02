@@ -593,7 +593,7 @@ class ExperimentBase(ABC):
         self.process_train_test_batches(batches)
 
     def validate(self, strict=True):
-        ExperimentValidator(self.db_engine, strict=strict).run(self.config, self.feature_blocks)
+        ExperimentValidator(self.db_engine, strict=strict).run(self.config)
 
     def _run(self):
         try:
