@@ -108,7 +108,7 @@ def crosstabs_config():
           using (model_id, as_of_date)""",
         "features_query": """
 select m.model_id, f1.*
- from features.entity_features_aggregation_imputed f1 join
+ from features.entity_features f1 join
  models_dates_join_query m using (as_of_date)""",
         "predictions_query": """
 select model_id,

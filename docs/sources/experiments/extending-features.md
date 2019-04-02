@@ -10,7 +10,7 @@ A FeatureBlock represents a single feature table in the database and how to gene
 
 Class name | Experiment config key | Use
 ------------ | ------------- | ------------
-triage.component.collate.SpacetimeAggregation | spacetime_aggregations  | Temporal aggregations of event-based data
+triage.component.collate.SpacetimeAggregation | spacetime_aggregation  | Temporal aggregations of event-based data
 
 ## Writing a new FeatureBlock class
 
@@ -22,7 +22,6 @@ Any method here without parentheses afterwards is expected to be a property.
 
 Method | Task | Return Type
 ------------ | ------------- | -------------
-final_feature_table_name | The name of the final table with all features filled in (no missing values) | string
 feature_columns | The list of feature columns in the final, postimputation table. Should exclude any index columns (e.g. entity id, date) | list
 preinsert_queries | Return all queries that should be run before inserting any data. The creation of your feature table should happen here, and is expected to have `entity_id(integer)` and `as_of_date(timestamp)` columns. | list
 insert_queries | Return all inserts to populate this data. Each query in this list should be parallelizable, and should be valid after all `preinsert_queries` are run. | list
@@ -39,6 +38,7 @@ Name | Type | Purpose
 ------------ | ------------- | -------------
 as_of_dates | list | Features are created "as of" specific dates, and expects that each of these dates will be populated with a row for each member of the cohort on that date.
 cohort_table | string | The final shape of the feature table should at least include every entity id/date pair in this cohort table.
+final_feature_table_name | string | The name of the final table with all features filled in (no missing values). This is provided by the user in feature config, as the key that corresponds to the configuration block that instantiates.
 db_engine | sqlalchemy.engine | The engine to use to access the database. Although these instances are mostly returning queries, the engine may be useful for implementing imputation.
 features_schema_name | string | The database schema where all feature tables should reside. Defaults to None, which ends up in the public schema.
 feature_start_time | string/datetime | A time before which no data should be considered for features. This is generally only applicable if your FeatureBlock is doing temporal aggregations. Defaults to None, which means no data will be excluded.

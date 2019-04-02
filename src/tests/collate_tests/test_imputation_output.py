@@ -122,7 +122,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
         )
 
         engine.execute(
-            """create table prefix_aggregation (
+            """create table myfeatures_aggregation (
                 entity_id int
                 , as_of_date date
                 %s
@@ -130,7 +130,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
             % feat_sql
         )
         ins_sql = (
-            "insert into prefix_aggregation values (%s, %s"
+            "insert into myfeatures_aggregation values (%s, %s"
             + (", %s" * len(feat_list))
             + ")"
         )
@@ -159,6 +159,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                 st = SpacetimeAggregation(
                     aggregates=aggs,
                     db_engine=engine,
+                    features_table_name="myfeatures",
                     from_obj="prefix_events",
                     prefix="prefix",
                     groups=["entity_id"],
@@ -175,7 +176,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                 st.run_imputation()
 
                 # check the results
-                df = pd.read_sql("SELECT * FROM prefix_aggregation_imputed", engine)
+                df = pd.read_sql("SELECT * FROM myfeatures", engine)
 
                 # we should have a record for every entity/date combo
                 assert df.shape[0] == len(states_table)
