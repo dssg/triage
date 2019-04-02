@@ -405,8 +405,8 @@ def test_baselines_with_missing_features(experiment_class):
         }
         config["feature_group_definition"] = {
             "tables": [
-                "entity_features_aggregation_imputed",
-                "zip_code_features_aggregation_imputed",
+                "entity_features",
+                "zip_code_features",
             ]
         }
         config["feature_group_strategies"] = ["leave-one-in"]

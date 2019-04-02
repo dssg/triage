@@ -221,38 +221,38 @@ def basic_integration_test(
 
             feature_blocks = feature_blocks_from_config(
                 {
-                    'spacetime_aggregations': [
-                        {
-                            "prefix": "cat",
-                            "from_obj": "cat_complaints",
-                            "knowledge_date_column": "as_of_date",
-                            "aggregates": [
-                                {
-                                    "quantity": "cat_sightings",
-                                    "metrics": ["count", "avg"],
-                                    "imputation": {"all": {"type": "mean"}},
-                                }
-                            ],
-                            "intervals": ["1y"],
-                            "groups": ["entity_id"],
+                    'cat': {
+                        "feature_generator_type": "spacetime_aggregation",
+                        "prefix": "cat",
+                        "from_obj": "cat_complaints",
+                        "knowledge_date_column": "as_of_date",
+                        "aggregates": [
+                            {
+                                "quantity": "cat_sightings",
+                                "metrics": ["count", "avg"],
+                                "imputation": {"all": {"type": "mean"}},
+                            }
+                        ],
+                        "intervals": ["1y"],
+                        "groups": ["entity_id"],
+                    },
+                    'dog': {
+                        "feature_generator_type": "spacetime_aggregation",
+                        "prefix": "dog",
+                        "from_obj": "dog_complaints",
+                        "knowledge_date_column": "as_of_date",
+                        "aggregates_imputation": {
+                            "count": {"type": "constant", "value": 7},
+                            "sum": {"type": "mean"},
+                            "avg": {"type": "zero"},
                         },
-                        {
-                            "prefix": "dog",
-                            "from_obj": "dog_complaints",
-                            "knowledge_date_column": "as_of_date",
-                            "aggregates_imputation": {
-                                "count": {"type": "constant", "value": 7},
-                                "sum": {"type": "mean"},
-                                "avg": {"type": "zero"},
-                            },
-                            "aggregates": [
-                                {"quantity": "dog_sightings", "metrics": ["count", "avg"]}
+                        "aggregates": [
+                            {"quantity": "dog_sightings", "metrics": ["count", "avg"]}
 
-                            ],
-                            "intervals": ["1y"],
-                            "groups": ["entity_id"],
-                        },
-                    ]
+                        ],
+                        "intervals": ["1y"],
+                        "groups": ["entity_id"],
+                    },
                 },
                 as_of_dates=all_as_of_times,
                 cohort_table=entity_date_table_generator.entity_date_table_name,

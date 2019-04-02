@@ -81,7 +81,7 @@ class SpacetimeAggregation(FeatureBlock):
         self.aggregates = aggregates
         self.from_obj = make_sql_clause(from_obj, ex.text)
         self.entity_column = entity_column if entity_column else "entity_id"
-        self.prefix = prefix if prefix else str(from_obj)
+        self.prefix = prefix if prefix else self.features_table_name_without_schema
         self.drop_interim_tables = drop_interim_tables
 
     def get_table_name(self, group=None, imputed=False):
@@ -227,7 +227,7 @@ class SpacetimeAggregation(FeatureBlock):
 
         Returns a list of queries/executable statements
         """
-        return [self.get_drop()] + self.get_drops() + list(self.get_creates().values())
+        return [self.get_create_schema(), self.get_drop()] + self.get_drops() + list(self.get_creates().values())
 
     @property
     def insert_queries(self):

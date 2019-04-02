@@ -53,7 +53,12 @@ def populate_cohort(db_engine):
 
 
 def test_FeatureBlock_generate_preimpute_tasks(db_engine):
-    block = FeatureBlockExample(db_engine=db_engine, cohort_table="mycohort", as_of_dates=['2016-01-01', '2016-02-01'])
+    block = FeatureBlockExample(
+        db_engine=db_engine,
+        cohort_table="mycohort",
+        features_table_name="myfeaturetable",
+        as_of_dates=['2016-01-01', '2016-02-01']
+    )
     block.needs_features = lambda: True
     assert block.generate_preimpute_tasks(replace=False) == {
         "prepare": block.preinsert_queries,
@@ -71,7 +76,12 @@ def test_FeatureBlock_generate_preimpute_tasks(db_engine):
 
 
 def test_FeatureBlock_generate_impute_tasks(db_engine):
-    block = FeatureBlockExample(db_engine=db_engine, cohort_table="mycohort", as_of_dates=['2016-01-01', '2016-02-01'])
+    block = FeatureBlockExample(
+        db_engine=db_engine,
+        cohort_table="mycohort",
+        features_table_name="myfeaturetable",
+        as_of_dates=['2016-01-01', '2016-02-01']
+    )
     block.needs_features = lambda: True
     assert block.generate_impute_tasks(replace=False) == {
         "prepare": block.imputation_queries,
@@ -89,7 +99,12 @@ def test_FeatureBlock_generate_impute_tasks(db_engine):
 
 
 def test_FeatureBlock_log_verbose_task_info(db_engine):
-    block = FeatureBlockExample(db_engine=db_engine, cohort_table="mycohort", as_of_dates=['2016-01-01', '2016-02-01'])
+    block = FeatureBlockExample(
+        db_engine=db_engine,
+        cohort_table="mycohort",
+        features_table_name="myfeaturetable",
+        as_of_dates=['2016-01-01', '2016-02-01']
+    )
     task = block.generate_impute_tasks(replace=True)
     # just want to make sure that the logging doesn't error, no assertions
     block.log_verbose_task_info(task)
@@ -99,7 +114,12 @@ def test_FeatureBlock_needs_features(db_engine):
     # needs_features should function as following:
     # if there are members of the cohort without features, needs_features should return true
     # 1. a freshly created table should definitely need features
-    block = FeatureBlockExample(db_engine=db_engine, cohort_table="mycohort", as_of_dates=['2016-01-01', '2016-02-01'])
+    block = FeatureBlockExample(
+        db_engine=db_engine,
+        cohort_table="mycohort",
+        features_table_name="myfeaturetable",
+        as_of_dates=['2016-01-01', '2016-02-01']
+    )
     populate_cohort(db_engine)
     assert block.needs_features()
     block.run_preimputation()
@@ -116,7 +136,12 @@ def test_FeatureBlock_verify_nonulls(db_engine):
     # verify_no_nulls should function as following:
     # if there are members of the cohort without features, needs_features should return true
     # 1. a freshly created table should definitely need features
-    block = FeatureBlockExample(db_engine=db_engine, cohort_table="mycohort", as_of_dates=['2016-01-01', '2016-02-01'])
+    block = FeatureBlockExample(
+        db_engine=db_engine,
+        cohort_table="mycohort",
+        features_table_name="myfeaturetable",
+        as_of_dates=['2016-01-01', '2016-02-01']
+    )
     populate_cohort(db_engine)
     block.run_preimputation()
     with pytest.raises(ValueError):

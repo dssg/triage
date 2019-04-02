@@ -212,7 +212,7 @@ class SpacetimeAggregationGenerator(object):
 
 
 FEATURE_BLOCK_GENERATOR_LOOKUP = {
-    'spacetime_aggregations': generate_spacetime_aggregation
+    'spacetime_aggregation': generate_spacetime_aggregation
 }
 
 
@@ -254,7 +254,7 @@ def feature_blocks_from_config(
                              " feature generator.  Recognized feature generator types:"
                              f"{FEATURE_BLOCK_GENERATOR_LOOKUP.keys()}")
 
-        for feature_block in feature_block_generator(
+        feature_block = feature_block_generator(
             feature_block_configuration,
             feature_table_name=feature_table_name,
             as_of_dates=as_of_dates,
@@ -264,6 +264,6 @@ def feature_blocks_from_config(
             feature_start_time=feature_start_time,
             features_ignore_cohort=features_ignore_cohort,
             **kwargs
-        ):
-            feature_blocks.append(feature_block)
+        )
+        feature_blocks.append(feature_block)
     return feature_blocks
