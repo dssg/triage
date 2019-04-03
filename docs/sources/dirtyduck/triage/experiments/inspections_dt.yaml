@@ -1,6 +1,7 @@
 config_version: 'v6'
 
 model_comment: 'inspections: DT'
+random_seed: 12345
 
 user_metadata:
   label_definition: 'failed'
@@ -183,6 +184,9 @@ feature_group_definition:
      - 'inspection_types'
 
 feature_group_strategies: ['all']
+
+prediction:
+   rank_tiebreaker: "best"
 
 scoring:
     testing_metric_groups:

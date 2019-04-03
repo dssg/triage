@@ -11,6 +11,9 @@ config_version: 'v6'
 # model_comment (optional) will end up in the model_comment column of the
 # models table for each model created in this experiment
 model_comment: 'test'
+# random_seed will be set in Python at the beginning of the experiment and 
+# affect the generation of all model seeds
+random_seed: 23895478
 
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
@@ -297,6 +300,21 @@ grid_config:
     'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
         rules: [['feature_one > 3', 'feature_two <= 5']]
         logical_operator: 'and'
+
+
+# PREDICTION
+# How predictions are computed for train and test matrices
+# 
+# Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score 
+# are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+#
+# 'worst' will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+# 'best' will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
+# 'random' will choose one random ordering to break ties. The result will be affected by
+# current state of Postgres' random number generator. Before ranking, the generator is seeded
+# based on the *model*'s random seed.
+#prediction:
+#   rank_tiebreaker: "worst"
 
 
 # MODEL SCORING

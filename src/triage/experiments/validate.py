@@ -741,6 +741,17 @@ class GridConfigValidator(Validator):
                 )
 
 
+class PredictionConfigValidator(Validator):
+    def _run(self, prediction_config):
+        rank_tiebreaker = prediction_config.get("rank_tiebreaker", None)
+        # the tiebreaker is optional, so only try and validate if it's there
+        if rank_tiebreaker and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS:
+            raise ValueError(
+                "Section: prediction - "
+                f"given tiebreaker must be in {catwalk.utils.AVAILABLE_TIEBREAKERS}"
+            )
+
+
 class ScoringConfigValidator(Validator):
     def _run(self, scoring_config):
         if "testing_metric_groups" not in scoring_config:
@@ -863,6 +874,9 @@ class ExperimentValidator(Validator):
         )
         GridConfigValidator(strict=self.strict).run(
             experiment_config.get("grid_config", {})
+        )
+        PredictionConfigValidator(self.db_engine, strict=self.strict).run(
+            experiment_config.get("prediction", {})
         )
         ScoringConfigValidator(strict=self.strict).run(
             experiment_config.get("scoring", {})

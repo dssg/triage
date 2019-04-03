@@ -696,8 +696,8 @@ predictions_query: |
       entity_id,
       score,
       label_value,
-      coalesce(rank_abs, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
-      coalesce(rank_pct*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
+      coalesce(rank_abs_no_ties, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
+      coalesce(rank_pct_no_ties*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
       from test_results.predictions
       join models_dates_join_query using(model_id, as_of_date)
       where model_id in (select model_id from models_list_query)

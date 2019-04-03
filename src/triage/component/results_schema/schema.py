@@ -160,6 +160,7 @@ class Model(Base):
     train_matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     training_label_timespan = Column(Interval)
     model_size = Column(Float)
+    random_seed = Column(Integer)
 
     model_group_rel = relationship("ModelGroup")
     matrix_rel = relationship("Matrix")
@@ -214,14 +215,17 @@ class TestPrediction(Base):
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
-    score = Column(Numeric)
+    score = Column(Numeric(6, 5))
     label_value = Column(Integer)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+    matrix_rel = relationship("Matrix")
 
 
 class TrainPrediction(Base):
@@ -234,15 +238,43 @@ class TrainPrediction(Base):
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
-    score = Column(Numeric)
+    score = Column(Numeric(6, 5))
     label_value = Column(Integer)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+    matrix_rel = relationship("Matrix")
 
+
+class TestPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "test_results"}
+
+    model_id = Column(
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
+
+
+class TrainPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "train_results"}
+
+    model_id = Column(
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
 
 class IndividualImportance(Base):
 

@@ -322,7 +322,6 @@ A few different versions of tiebreaking are implemented to deal with the nuances
 * `stochastic_value` - If the `worst_value` and `best_value` are not the same (as defined by the floating point tolerance at catwalk.evaluation.RELATIVE_TOLERANCE), the sorting/thresholding/evaluation will be redone many times, and the mean of all these trials is written to this column. Otherwise, the `worst_value` is written here
 * `num_sort_trials` - If trials are needed to produce the `stochastic_value`, the number of trials taken is written here. Otherwise this will be 0
 * `standard_deviation` - If trials are needed to produce the `stochastic_value`, the standard deviation of these trials is written here. Otherwise this will be 0
-*
 
 Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
 

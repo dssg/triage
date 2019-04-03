@@ -117,8 +117,8 @@ class ModelEvaluator(object):
                    as_of_date,
                    score,
                    label_value,
-                   COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   COALESCE(rank_pct, percent_rank()
+                   COALESCE(rank_abs_with_ties, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
+                   COALESCE(rank_pct_with_ties, percent_rank()
                    OVER(ORDER BY score DESC)) * 100 as rank_pct,
                    test_label_timespan
             FROM test_results.predictions

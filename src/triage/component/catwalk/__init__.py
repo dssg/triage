@@ -223,6 +223,7 @@ class ModelTrainTester(object):
                             filename_friendly_hash(subset),
                             model_id
                         )
+                self.predictor.update_db_with_ranks(model_id, store.uuid, store.matrix_type)
 
 
 __all__ = (

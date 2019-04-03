@@ -113,9 +113,9 @@ class ModelGroupEvaluator(object):
                    EXTRACT('YEAR' from m.as_of_date) AS as_of_date_year,
                    m.score,
                    m.label_value,
-                   COALESCE(rank_abs, RANK() OVER(PARTITION BY m.model_id
+                   COALESCE(rank_abs_with_ties, RANK() OVER(PARTITION BY m.model_id
                    ORDER BY m.score DESC)) AS rank_abs,
-                   COALESCE(m.rank_pct, percent_rank() OVER(PARTITION BY
+                   COALESCE(m.rank_pct_with_ties, percent_rank() OVER(PARTITION BY
                    m.model_id ORDER BY m.score DESC)) * 100 AS rank_pct,
                    m.test_label_timespan
             FROM test_results.predictions m

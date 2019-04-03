@@ -274,8 +274,10 @@ After the experiment run, a variety of schemas and tables will be created and po
 * model_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
 * train_results.feature_importances - The sklearn feature importances results for each trained model
 * train_results.predictions - Prediction probabilities for train matrix entities generated against trained models
+* train_results.prediction_metadata - Metadata about the prediction stage for a model and train matrix, such as tiebreaking configuration
 * train_results.evaluations - Metric scores of trained models on the training data.
 * test_results.predictions - Prediction probabilities for test matrix entities generated against trained models
+* test_results.prediction_metadata - Metadata about the prediction stage for a model and test matrix, such as tiebreaking configuration
 * test_results.evaluations - Metric scores of trained models over given testing windows and subsets
 * test_results.individual_importances - Individual feature importance scores for test matrix entities.
 
