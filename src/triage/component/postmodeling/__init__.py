@@ -12,6 +12,8 @@ from sqlalchemy.orm import sessionmaker, relationship
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlalchemy import Column, ForeignKey
 
+import pandas as pd
+
 from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
 
 logging.basicConfig(level=logging.INFO)
@@ -61,6 +63,16 @@ def get_model_group(model_group_id):
     return session.query(ModelGroup).get(model_group_id)
 
 
+def get_predictions(model):
+    predictions = pd.DataFrame([prediction.__dict__ for prediction in model.predictions])
+    return predictions.drop('_sa_instance_state', axis=1).set_index(['as_of_date', 'entity_id'])
+
+
+def get_evaluations(model):
+    evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in model.evaluations])
+    return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'metric', 'parameter'])
+
+
 class ModelGroup(Base):
     __tablename__ = 'model_groups'
     __table_args__ = ({"schema": "model_metadata"})
@@ -69,6 +81,10 @@ class ModelGroup(Base):
     type = Column('model_type', postgresql.TEXT)
     features = Column('feature_list', postgresql.ARRAY(postgresql.TEXT))
     config = Column('model_config', postgresql.JSONB)
+
+    def get_models(self):
+        models = pd.DataFrame([model.__dict__ for model in self.models])
+        return models.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'id'])
 
 
 class Model(Base):
@@ -88,6 +104,18 @@ class Model(Base):
 
     model_group_id = Column('model_group_id', postgresql.INTEGER, ForeignKey('model_metadata.model_groups.model_group_id'))
     model_group = relationship("ModelGroup", backref="models")
+
+    def get_predictions(self):
+        predictions = pd.DataFrame([prediction.__dict__ for prediction in self.predictions])
+        return predictions.drop('_sa_instance_state', axis=1).set_index(['as_of_date', 'entity_id'])
+
+    def get_evaluations(self):
+        evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in self.evaluations])
+        return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'metric', 'parameter'])
+
+    def to_df(self):
+        model = pd.DataFrame.from_dict({k: v for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
+        return model.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id'])
 
 
 class Evaluation(Base):
