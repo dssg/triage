@@ -705,6 +705,7 @@ class TestBuildMatrix(TestCase):
                     matrix_type="train",
                 )
                 assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+                assert builder.sessionmaker().query(Matrix).get(uuid).feature_dictionary ==self.good_feature_dictionary
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:

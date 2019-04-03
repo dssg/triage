@@ -263,7 +263,8 @@ Running parts of an experiment is only supported through the Python interface.
 
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
-* model_metadata.experiments - The experiment configuration and a hash
+* model_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
+* model_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
 * model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
 * model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
 * model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.

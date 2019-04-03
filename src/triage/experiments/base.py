@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import cProfile
 import marshal
 import time
+import itertools
 
 from descriptors import cachedproperty
 from timeout import timeout
@@ -26,7 +27,7 @@ from triage.component.architect.entity_date_table_generators import (
     EntityDateTableGeneratorNoOp,
 )
 from triage.component.timechop import Timechop
-from triage.component.results_schema import upgrade_db
+from triage.component import results_schema
 from triage.component.catwalk import (
     ModelTrainer,
     ModelEvaluator,
@@ -53,9 +54,17 @@ from triage.component.catwalk.storage import (
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
+from triage.tracking import (
+    initialize_tracking_and_get_run_id,
+    experiment_entrypoint,
+    record_matrix_building_started,
+    record_model_building_started,
+)
 
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
+from triage.util.db import get_for_update
+from triage.util.introspection import bind_kwargs, classpath
 
 
 class ExperimentBase(ABC):
@@ -98,6 +107,11 @@ class ExperimentBase(ABC):
         save_predictions=True,
         skip_validation=False,
     ):
+        experiment_kwargs = bind_kwargs(
+            self.__class__,
+            **{key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
+        )
+
         self._check_config_version(config)
         self.config = config
 
@@ -111,12 +125,18 @@ class ExperimentBase(ABC):
         self.save_predictions = save_predictions
         self.skip_validation = skip_validation
         self.db_engine = db_engine
-        upgrade_db(db_engine=self.db_engine)
+        results_schema.upgrade_db(db_engine=self.db_engine)
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.features_ignore_cohort = features_ignore_cohort
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
+        self.run_id = initialize_tracking_and_get_run_id(
+            self.experiment_hash,
+            experiment_class_path=classpath(self.__class__),
+            experiment_kwargs=experiment_kwargs,
+            db_engine=self.db_engine
+        )
         self.initialize_components()
 
         self.cleanup = cleanup
@@ -247,6 +267,7 @@ class ExperimentBase(ABC):
             ),
             engine=self.db_engine,
             replace=self.replace,
+            run_id=self.run_id,
         )
 
         self.subsetter = Subsetter(
@@ -261,6 +282,7 @@ class ExperimentBase(ABC):
             model_grouper=ModelGrouper(self.config.get("model_group_keys", [])),
             db_engine=self.db_engine,
             replace=self.replace,
+            run_id=self.run_id,
         )
 
         self.predictor = Predictor(
@@ -292,6 +314,9 @@ class ExperimentBase(ABC):
             predictor=self.predictor,
             subsets=self.subsets,
         )
+
+    def get_for_update(self):
+        return get_for_update(self.db_engine, results_schema.Experiment, self.experiment_hash)
 
     @cachedproperty
     def split_definitions(self):
@@ -348,6 +373,8 @@ class ExperimentBase(ABC):
                 )
             )
 
+        with self.get_for_update() as experiment:
+            experiment.time_splits = len(split_definitions)
         return split_definitions
 
     @cachedproperty
@@ -385,6 +412,8 @@ class ExperimentBase(ABC):
         logging.info(
             "You can view all as_of_times by inspecting `.all_as_of_times` on this Experiment"
         )
+        with self.get_for_update() as experiment:
+            experiment.as_of_times = len(distinct_as_of_times)
         return distinct_as_of_times
 
     @cachedproperty
@@ -398,11 +427,15 @@ class ExperimentBase(ABC):
         if "feature_aggregations" not in self.config:
             logging.warning("No feature_aggregation config is available")
             return []
-        return self.feature_generator.aggregations(
+        aggregations = self.feature_generator.aggregations(
             feature_aggregation_config=self.config["feature_aggregations"],
             feature_dates=self.all_as_of_times,
             state_table=self.cohort_table_name,
         )
+        with self.get_for_update() as experiment:
+            experiment.feature_blocks = len(aggregations)
+        return aggregations
+
 
     @cachedproperty
     def feature_aggregation_table_tasks(self):
@@ -456,9 +489,11 @@ class ExperimentBase(ABC):
             ),
         )
         logging.info("Computed master feature dictionary: %s", result)
+        with self.get_for_update() as experiment:
+            experiment.total_features = sum(1 for _feature in itertools.chain.from_iterable(result.values()))
         return result
 
-    @property
+    @cachedproperty
     def feature_dicts(self):
         """Feature dictionaries, representing the feature tables and
         columns configured in this experiment after computing feature
@@ -468,9 +503,12 @@ class ExperimentBase(ABC):
         values being lists of feature names
 
         """
-        return self.feature_group_mixer.generate(
+        combinations = self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
+        with self.get_for_update() as experiment:
+            experiment.feature_group_combinations = len(combinations)
+        return combinations
 
     @cachedproperty
     def matrix_build_tasks(self):
@@ -526,6 +564,7 @@ class ExperimentBase(ABC):
     def subset_tasks(self):
         return self.subsetter.generate_tasks(self.subsets)
 
+    @experiment_entrypoint
     def generate_labels(self):
         """Generate labels based on experiment configuration
 
@@ -535,6 +574,7 @@ class ExperimentBase(ABC):
             self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
 
+    @experiment_entrypoint
     def generate_cohort(self):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
@@ -570,6 +610,7 @@ class ExperimentBase(ABC):
     def process_matrix_build_tasks(self, matrix_build_tasks):
         pass
 
+    @experiment_entrypoint
     def generate_preimputation_features(self):
         self.process_query_tasks(self.feature_aggregation_table_tasks)
         logging.info(
@@ -577,6 +618,7 @@ class ExperimentBase(ABC):
             ",".join(agg.get_table_name() for agg in self.collate_aggregations),
         )
 
+    @experiment_entrypoint
     def impute_missing_features(self):
         self.process_query_tasks(self.feature_imputation_table_tasks)
         logging.info(
@@ -592,8 +634,13 @@ class ExperimentBase(ABC):
             self.matrix_build_tasks.keys(),
             self.db_engine
         )
+        with self.get_for_update() as experiment:
+            experiment.matrices_needed = len(self.matrix_build_tasks.keys())
+        record_matrix_building_started(self.run_id, self.db_engine)
         self.process_matrix_build_tasks(self.matrix_build_tasks)
 
+
+    @experiment_entrypoint
     def generate_matrices(self):
         logging.info("Creating cohort")
         self.generate_cohort()
@@ -606,6 +653,7 @@ class ExperimentBase(ABC):
         logging.info("Building all matrices")
         self.build_matrices()
 
+    @experiment_entrypoint
     def generate_subsets(self):
         if self.subsets:
             logging.info("Beginning subset generation")
@@ -626,6 +674,7 @@ class ExperimentBase(ABC):
             model_comment=self.config.get('model_comment', None)
         )
 
+    @experiment_entrypoint
     def train_and_test_models(self):
         self.generate_subsets()
         batches = self._all_train_test_batches()
@@ -633,12 +682,19 @@ class ExperimentBase(ABC):
             logging.warning("No train/test tasks found, so no training to do")
             return
 
+        with self.get_for_update() as experiment:
+            experiment.grid_size = sum(1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
+
         logging.info("%s train/test batches found. Beginning training.", len(batches))
+        model_hashes = set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks)
         associate_models_with_experiment(
             self.experiment_hash,
-            set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks),
+            model_hashes,
             self.db_engine
         )
+        with self.get_for_update() as experiment:
+            experiment.models_needed = len(model_hashes)
+        record_model_building_started(self.run_id, self.db_engine)
         self.process_train_test_batches(batches)
 
     def validate(self, strict=True):
@@ -714,6 +770,7 @@ class ExperimentBase(ABC):
                          "in cProfile format.",
                          store)
 
+    @experiment_entrypoint
     def run(self):
         try:
             if self.profile:

@@ -19,7 +19,6 @@ from triage.component.results_schema import (
     Model,
     ExperimentMatrix,
     ExperimentModel,
-    Subset,
 )
 
 

@@ -1,4 +1,6 @@
 import os.path
+import enum
+import datetime
 
 from sqlalchemy import (
     Column,
@@ -19,7 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import ARRAY
+from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
 
 # One declarative_base object for each schema created
@@ -49,6 +51,14 @@ class Experiment(Base):
 
     experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
+    time_splits = Column(Integer)
+    as_of_times = Column(Integer)
+    feature_blocks = Column(Integer)
+    total_features = Column(Integer)
+    feature_group_combinations = Column(Integer)
+    matrices_needed = Column(Integer)
+    grid_size = Column(Integer)
+    models_needed = Column(Integer)
 
 
 class Subset(Base):
@@ -122,6 +132,7 @@ class Matrix(Base):
     built_by_experiment = Column(
         String, ForeignKey("model_metadata.experiments.experiment_hash")
     )
+    feature_dictionary = Column(JSONB)
 
 
 class Model(Base):
@@ -299,3 +310,46 @@ class TrainEvaluation(Base):
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
+
+
+class ExperimentRunStatus(enum.Enum):
+    started = 1
+    completed = 2
+    failed = 3
+
+
+class ExperimentRun(Base):
+
+    __tablename__ = "experiment_runs"
+    __table_args__ = {"schema": "model_metadata"}
+
+    run_id = Column("id", Integer, primary_key=True)
+    start_time = Column(DateTime)
+    start_method = Column(String)
+    git_hash = Column(String)
+    triage_version = Column(String)
+    experiment_hash = Column(
+        String,
+        ForeignKey("model_metadata.experiments.experiment_hash")
+    )
+    platform = Column(Text)
+    os_user = Column(Text)
+    working_directory = Column(Text)
+    ec2_instance_type = Column(Text)
+    log_location = Column(Text)
+    experiment_class_path = Column(Text)
+    experiment_kwargs = Column(JSONB)
+    installed_libraries = Column(ARRAY(Text))
+    matrix_building_started = Column(DateTime)
+    matrices_made = Column(Integer, default=0)
+    matrices_skipped = Column(Integer, default=0)
+    matrices_errored = Column(Integer, default=0)
+    model_building_started = Column(DateTime)
+    models_made = Column(Integer, default=0)
+    models_skipped = Column(Integer, default=0)
+    models_errored = Column(Integer, default=0)
+    last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
+    current_status = Column(Enum(ExperimentRunStatus))
+    stacktrace = Column(Text)
+
+    experiment_rel = relationship("Experiment")
