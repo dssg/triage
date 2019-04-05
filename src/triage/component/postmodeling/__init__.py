@@ -86,6 +86,8 @@ class ModelGroup(Base):
         models = pd.DataFrame([model.__dict__ for model in self.models])
         return models.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'id'])
 
+    def __iter__(self):
+        return iter(self.models)
 
 class Model(Base):
     __tablename__ = 'models'
