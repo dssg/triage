@@ -22,7 +22,7 @@ from triage.experiments import (
     SingleThreadedExperiment,
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
-from triage.component.postmodeling.bias import CrosstabsConfigLoader, run_aequitas
+from triage.component.postmodeling.bias import AequitasConfigLoader, run_bias
 
 from triage.util.db import create_engine
 
@@ -397,7 +397,7 @@ class Bias(Command):
         config_store = Store.factory(args.config)
         with config_store.open() as fd:
             config = AequitasConfigLoader(config=yaml.load(fd))
-        run_aequitas(db_engine, config)
+        run_bias(db_engine, config)
 
 
 @Triage.register

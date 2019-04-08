@@ -6,7 +6,6 @@ score_thresholds:
 
 #available options: "predefined", "majority" and "min_metric"
 ref_groups_method: "min_metric"
-
 # if "predefined" is selected, you need to provide the column:value pairs to be used as reference
 #ref_groups:
   #"attribute_1": "<0.30"
@@ -15,24 +14,19 @@ ref_groups_method: "min_metric"
 fairness_threshold: 0.8
 
 
-models: ['all']
+model_group_id: [] #if empty assumes all
+train_end_time: [] #if empty assumes all
 
-# the input query should return a table with score, label_value columns and then each attribute you want to use for bias analysis
-input_query: |
-    with demographic as (
-    select map.row_num as entity_id, demog.race, demog.sex, demog.birth_year from
-    semantic.entity_id_map map left join clean.demographic demog using (entity_id))
-            select model_id, entity_id, score, label_value, d.race,
-                        case when d.sex='m' then 'male'
-                        when d.sex='f' then 'female'
-                        else 'female' end as sex,
-                    case when (extract(year from '2016-06-01'::date)::int - birth_year) < 40 then '<40'
-                         when (extract(year from '2016-06-01'::date)::int - birth_year) < 71 then '40-70'
-                         when (extract(year from '2016-06-01'::date)::int - birth_year) > 70 then '>70'
+# the input query for attributes that will define the protected groups to run the bias audit on
+# needs to return **entity_id** and optionally **as_of_date** to be joined with predictions
+attributes_query: |
+            select entity_id,
+                   race,
+                   gender,
+                   case when age < 40 then '<40'
+                         when age < 71 '40-70'
+                         when age > 70 then '>70'
                         end as age_category
-                    from test_results.patient_predictions
-                    left join demographic d using (entity_id)
+            from demographic_table
 
-# the output schema is optional, default=public
-output_schema: test_results
-output_table: aequitas_group_test
+join_predictions_using: ['entity_id']

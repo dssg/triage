@@ -27,7 +27,7 @@ class AequitasConfigLoader(object):
 
 
 
-def audit(df, configs, model_id=1, preprocessed=False):
+def aequitas_audit(df, configs, model_id=1, preprocessed=False):
     """
 
     :param df:
@@ -68,27 +68,50 @@ def audit(df, configs, model_id=1, preprocessed=False):
     return group_value_df
 
 
-def run(df, configs, preprocessed=False):
-    """
 
-    :param df:
-    :param ref_groups_method:
-    :param configs:
-    :param report:
-    :return:
-    """
+
+def get_models_list(configs, engine):
+    models_query = "select model_id from model_metadata.models"
+    if configs['model_group_id'] or configs['train_end_time']:
+        models_query += " where "
+        if configs['model_group_id']:
+            models_query += " model_group_id in ({model_group_id_list}) ".format(
+                    model_group_id_list = ",".join(configs['model_group_id']))
+        if configs['train_end_time']:
+            if configs['model_group_id']:
+                models_query += " and "
+            models_query += " train_end_time in ({train_end_time_list}) ".format(
+                    train_end_time_list = ",".join(["'" + str(train_date) + "'::date " for train_date in configs['train_end_time']]))
+    models_query += " order by model_id asc"
+    models_list = pd.DataFrame.pg_copy_from(models_query, engine)['model_id'].tolist()
+    return models_list
+
+def get_predictions(model_id, predictions_schema, config, engine):
+    # the entity_id (and as_of_date if wanted) comes from the attributes_query
+    predictions_query = """ with attributes as ({attributes_query}) 
+                        select p.model_id, p.score, a.*
+                        from {predictions_schema}.predictions p
+                        left join attributes a using ({join_predictions_on})
+                        where model_id = {model_id}
+                        order by score desc""".format(
+                attributes_query=config['attributes_query'],
+                join_predictions_on=",".join(config['join_predictions_on']),
+                predictions_schema=predictions_schema,
+                model_id=model_id)
+    return pd.DataFrame.pg_copy_from(predictions_query, engine)
+
+
+def manage_audits(df, configs, preprocessed=False):
+
     group_value_df = None
     if df is not None:
         if 'model_id' in df.columns:
             model_df_list = []
-            report_list = []
             for model_id in df.model_id.unique():
-                model_df, model_report = audit(df.loc[df['model_id'] == model_id], model_id=model_id, configs=configs,
+                model_df = audit(df.loc[df['model_id'] == model_id], model_id=model_id, configs=configs,
                                                preprocessed=preprocessed)
                 model_df_list.append(model_df)
-                report_list.append(model_report)
             group_value_df = pd.concat(model_df_list)
-            report = '\n'.join(report_list)
 
         else:
             group_value_df, report = audit(df, configs=configs, preprocessed=preprocessed)
@@ -98,27 +121,16 @@ def run(df, configs, preprocessed=False):
     return group_value_df
 
 
-def run_aequitas(engine):
-    args = parse_args()
-    print(about)
-    configs = Configs.load_configs(args.config_file)
-    if 'output_schema' in configs.db:
-        output_schema = configs.db['output_schema']
-    else:
-        output_schema = 'public'
-    if 'output_table' in configs.db:
-        output_table = configs.db['output_table']
-    else:
-        output_table = 'aequitas_group'
+def run_bias(engine, config):
 
     create_tables = 'append'
     if args.create_tables:
         create_tables = 'replace'
-    input_query = configs.db['input_query']
+    input_query = config.db['input_query']
 
     df = pd.DataFrame.pg_copy_from(input_query, engine)
 
-    group_value_df = run(df, configs=configs, preprocessed=False)
+    group_value_df = run(df, configs=config, preprocessed=False)
     try:
         group_value_df.set_index(['model_id', 'attribute_name']).pg_copy_to(
             schema=output_schema,
