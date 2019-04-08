@@ -108,14 +108,6 @@ class Model(Base):
     model_group_id = Column('model_group_id', postgresql.INTEGER, ForeignKey('model_metadata.model_groups.model_group_id'))
     model_group = relationship("ModelGroup", backref="models")
 
-    def get_predictions(self):
-        predictions = pd.DataFrame([prediction.__dict__ for prediction in self.predictions])
-        return predictions.drop('_sa_instance_state', axis=1).set_index(['as_of_date', 'entity_id'])
-
-    def get_evaluations(self):
-        evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in self.evaluations])
-        return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'model_id', 'metric', 'parameter'])
-
     def to_df(self):
         model = pd.DataFrame.from_dict({k: v for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
         return model.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id'])
