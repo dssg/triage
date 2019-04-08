@@ -30,3 +30,6 @@ attributes_query: |
             from demographic_table
 
 join_predictions_using: ['entity_id']
+
+
+replace_flag: False
