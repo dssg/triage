@@ -22,6 +22,8 @@ from triage.experiments import (
     SingleThreadedExperiment,
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
+from triage.component.postmodeling.bias import CrosstabsConfigLoader, run_aequitas
+
 from triage.util.db import create_engine
 
 logging.basicConfig(level=logging.INFO)
@@ -378,6 +380,24 @@ class Crosstabs(Command):
         with config_store.open() as fd:
             config = CrosstabsConfigLoader(config=yaml.load(fd))
         run_crosstabs(db_engine, config)
+
+@Triage.register
+class Bias(Command):
+    """Run bias and fairness audit of the models using the Aequitas library."""
+
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "config",
+            help="config file for Aequitas"
+        )
+
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+        config_store = Store.factory(args.config)
+        with config_store.open() as fd:
+            config = AequitasConfigLoader(config=yaml.load(fd))
+        run_aequitas(db_engine, config)
 
 
 @Triage.register
