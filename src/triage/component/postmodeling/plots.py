@@ -1,55 +1,179 @@
 # coding: utf-8
 
-
 import itertools
 
 import math
+
+import numpy as np
+import pandas as pd
+
 import matplotlib
 #matplotlib.use('Agg')  ## Needed since we could use this in non-interactive mode
                        ## see https://matplotlib.org/faq/howto_faq.html
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.ticker import FuncFormatter
 
 import seaborn as sns
 sns.set(style="darkgrid")
-sns.set_context("paper", rc={"font.size": 8, "axes.labelsize": 5})
+
 
 import sklearn.metrics as metrics
 from sklearn.metrics import precision_recall_curve, roc_curve, auc, precision_score, recall_score
 from sklearn.tree import export_graphviz
+
 import pydotplus
 
-import numpy as np
-import pandas as pd
 
 from triage.component.postmodeling import get_predictions, get_model, get_model_group, get_evaluations
 
+def _store(fig, **kwargs):
+    output_type=kwargs.get('output_type', 'show')
 
-def plot_roc(model, output_type='show', **kwargs):
+    if (output_type == 'save'):
+        filename = kwargs.get('filename', f"{model}")
+        extension = kwargs.get('extension', 'png')
+        transparent = kwargs.get('transparent', False)
+        dpi = kwargs.get('dpi', 80)
+        bbox_inches = kwargs.get('bbox_inches', 'tight')
+        fig.savefig(f"{filename}.{extension}", transparent=transparent, dpi=dpi, bbox_inches=bbox_inches)
+
+
+def plot_roc(model, **kwargs):
+    fig, ax = plt.subplots()
+
     predictions = get_predictions(model)
     labels = predictions.label_value
     scores = predictions.score
     fpr, tpr, thresholds = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
 
-    plt.clf()
-    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlim([0.0, 1.05])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title(kwargs.get('title', ''))
-    plt.legend(loc="lower right")
+    fmt = kwargs.get('fmt', 'b')
 
-    if (output_type == 'save'):
-        filename = kwargs('filename', f"{model}")
-        extension = kwargs('extension', 'png')
-        plt.savefig(f"{filename}.{extension}")
-    elif (output_type == 'show'):
-        plt.show()
-    else:
-        plt.show()
+    # Random performance
+    ax.plot([0, 1], [0, 1], 'k--')
+
+    # Actual model
+    ax.plot(fpr, tpr, fmt, label='ROC curve (area = %0.2f)' % roc_auc)
+
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.0])
+
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+
+    ax.set_title(kwargs.get('title', f"(Model {model.id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
+
+    ax.legend(loc="lower right")
+
+    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group.id}"))
+
+    _store(fig, **kwargs)
+
+    return fig, ax
+
+
+def plot_precision_recall_n(model, **kwargs):
+    fig, ax1 = plt.subplots()
+
+    predictions = get_predictions(model)
+    labels = predictions.label_value
+    scores = predictions.score
+
+    y_axis = np.arange(0, 101, 1)
+
+    prec_k = precision_n(labels, scores)
+    rec_k = recall_n(labels, scores)
+
+    prec_color = kwargs.get('prec_fmt', 'tab:blue')
+    rec_color = kwargs.get('rec_fmt', 'tab:red')
+
+    ax1.plot(y_axis, prec_k, prec_color)
+    ax1.set_xlabel('Percent of population')
+    ax1.set_ylabel('Precision', color=prec_color)
+    ax1.tick_params(axis='y', labelcolor=prec_color)
+
+    ax1.set_ylim([0,1])
+    ax1.set_xlim([0,100])
+
+    ax1.set_title(kwargs.get('title', f"(Model {model.id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
+
+    ax2 = ax1.twinx()
+    ax2.plot(y_axis, rec_k, rec_color)
+    ax2.set_ylim([0,1])
+    ax2.set_ylabel('Recall', color=rec_color)
+    ax2.tick_params(axis='y', labelcolor=rec_color)
+
+
+    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group.id}"))
+
+    _store(fig, **kwargs)
+
+    return fig, ax1, ax2
+
+def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
+
+    def get_model_group_evaluations(model_group):
+        evaluations = pd.concat([get_evaluations(model).query(f"metric == '{metric}@' and parameter == '{parameter}'") for model in model_group])
+        evaluations = evaluations.sort_values('evaluation_start_time', ascending=True)
+        evaluations = evaluations[['evaluation_start_time', 'value']]
+        evaluations['type'] = model_group.type.split('.')[-1]
+        return evaluations
+
+    metric = metric.replace('@','')
+
+    fig, ax = plt.subplots()
+
+    evaluations = pd.concat([get_model_group_evaluations(model_group) for model_group in model_groups])
+
+    for name, mg in evaluations.groupby(by='model_group_id'):
+        type = mg.type.unique()[0]
+        ax.plot_date(x=mg.evaluation_start_time, y=mg.value,  xdate=True, linestyle='-', label=f"Model group {name} ({type})")
+        ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
+
+    ax.xaxis.set_major_locator(mdates.YearLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax.set_yticks(np.arange(0.0, 1.1, 0.1))
+
+    ax.set_xlabel('')
+    ax.set_ylabel(f"{metric.capitalize()} at {parameter.replace('_', ' ').replace('pct', '%')}")
+
+    ax.set_ylim([0, 1])
+
+    ax.legend(loc='best',
+              borderaxespad=0.,
+              title='Model Group')
+
+    ax.set_title(kwargs.get('title', f"Model Groups: performance over time"))
+
+    ax.grid(which='minor', linewidth='0.5', alpha=0.8)
+    ax.grid(which='major', linewidth='3.0', alpha=0.3)
+
+    ax.tick_params(which='major', # Options for both major and minor ticks
+                   top='off', # turn off top ticks
+                   left='off', # turn off left ticks
+                   right='off',  # turn off right ticks
+                   bottom='on') # turn off bottom ticks
+
+    _store(fig, **kwargs)
+
+    return fig, ax
+
+def get_subsets(l):
+    subsets = []
+    for i in range(1, len(l) + 1):
+        for combo in itertools.combinations(l, i):
+            subsets.append(list(combo))
+    return subsets
+
+
+def joint_sort_descending(l1, l2):
+    # l1 and l2 have to be numpy arrays
+    idx = np.argsort(l1)[::-1]
+    return l1[idx], l2[idx]
+
 
 def generate_binary_at_k(y_scores, k):
     cutoff_index = int(len(y_scores) * (k / 100.0))
@@ -83,51 +207,3 @@ def recall_n(y_true, y_scores):
         rec = recall_at_k(y_true, y_scores, i)
         recalls.append(rec)
     return recalls
-
-
-def plot_precision_recall_n(model, output_type='show', **kwargs):
-    predictions = get_predictions(model)
-    labels = predictions.label_value
-    scores = predictions.score
-
-    y_axis = np.arange(0, 101, 1)
-
-    prec_k = precision_n(labels, scores)
-    rec_k = recall_n(labels, scores)
-
-    plt.clf()
-    fig, ax1 = plt.subplots()
-    ax1.plot(y_axis, prec_k, 'b')
-    ax1.set_xlabel('percent of population')
-    ax1.set_ylabel('precision', color='b')
-    ax2 = ax1.twinx()
-    ax2.plot(y_axis, rec_k, 'r')
-    ax2.set_ylabel('recall', color='r')
-    ax1.set_ylim([0,1])
-    ax2.set_ylim([0,1])
-    ax1.set_xlim([0,100])
-    ax2.set_xlim([0,100])
-
-    plt.title(kwargs.get('title', ''))
-    if (output_type == 'save'):
-        filename = kwargs('filename', f"{model}")
-        extension = kwargs('extension', 'png')
-        plt.savefig(f"{filename}.{extension}")
-    elif (output_type == 'show'):
-        plt.show()
-    else:
-        plt.show()
-
-
-def get_subsets(l):
-    subsets = []
-    for i in range(1, len(l) + 1):
-        for combo in itertools.combinations(l, i):
-            subsets.append(list(combo))
-    return subsets
-
-
-def joint_sort_descending(l1, l2):
-    # l1 and l2 have to be numpy arrays
-    idx = np.argsort(l1)[::-1]
-    return l1[idx], l2[idx]

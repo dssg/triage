@@ -70,7 +70,8 @@ def get_predictions(model):
 
 def get_evaluations(model):
     evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in model.evaluations])
-    return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'metric', 'parameter'])
+    evaluations['model_group_id'] = model.model_group_id
+    return evaluations.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id', 'metric', 'parameter'])
 
 
 class ModelGroup(Base):
@@ -113,7 +114,7 @@ class Model(Base):
 
     def get_evaluations(self):
         evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in self.evaluations])
-        return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'metric', 'parameter'])
+        return evaluations.drop('_sa_instance_state', axis=1).set_index(['evaluation_start_time', 'model_id', 'metric', 'parameter'])
 
     def to_df(self):
         model = pd.DataFrame.from_dict({k: v for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
