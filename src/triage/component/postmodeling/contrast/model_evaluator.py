@@ -27,6 +27,7 @@ from descriptors import cachedproperty
 from sklearn import metrics
 from sklearn import tree
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
+import logging
 
 
 class ModelEvaluator(object):
@@ -1212,12 +1213,12 @@ class ModelEvaluator(object):
 
         Reliability curves allow checking if the predicted probabilities of a
         binary classifier are well calibrated. This function returns two arrays
-        which encode a mapping from predicted probability to empirical probability.
-        For this, the predicted probabilities are partitioned into equally sized
-        bins and the mean predicted probability and the mean empirical probabilties
-        in the bins are computed. For perfectly calibrated predictions, both
-        quantities whould be approximately equal (for sufficiently many test
-        samples).
+        which encode a mapping from predicted probability to empirical
+        probability. For this, the predicted probabilities are partitioned
+        into equally sized bins and the mean predicted probability and
+        the mean empirical probabilties in the bins are computed. For perfectly
+        calibrated predictions, both quantities whould be
+        approximately equal (for sufficiently many test samples).
 
         Note: this implementation is restricted to binary classification.
 
@@ -1278,13 +1279,15 @@ class ModelEvaluator(object):
                                      y_score <= threshold + bin_width / 2)
 
         y_score_bin_mean[i] = y_score[bin_idx].mean()
-        empirical_prob_pos[i] = y_true[bin_idx].mean()
+        emprical_prob_pos[i] = y_true[bin_idx].mean()
 
-        return y_score_bin_mean, emprical_prob_pos, y_score
+        return y_score_bin_mean, emprical_prob_pos, y_score, bins
 
-    def plot_reliability_curve(self, label='RC Curve', savefig='reliability_curve.png'):
+    def plot_reliability_curve(self,
+                               label='RC Curve',
+                               savefig='reliability_curve.png'):
 
-        y_score_bin_mean, empirical_prob_pos, y_score = self.calc_reliablity_curve()
+        y_score_bin_mean, empirical_prob_pos, y_score, bins = self.calc_reliablity_curve()
 
         plt.style.use('ggplot')
 
@@ -1302,7 +1305,7 @@ class ModelEvaluator(object):
 
         plt.subplot2grid((3, 1), (2, 0))
 
-        plt.hist(y_score_, range=(0, 1), bins=no_bins, label=label,
+        plt.hist(y_score_, range=(0, 1), bins=bins, label=label,
                  histtype="step", lw=2)
         plt.xticks(np.linspace(0, 0.9, 10) + 0)
         plt.xlabel("Predicted Probability")
