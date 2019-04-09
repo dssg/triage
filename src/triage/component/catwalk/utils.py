@@ -200,7 +200,7 @@ def retrieve_model_hash_from_id(db_engine, model_id):
 
 
 def _write_csv(file_like, db_objects, type_of_object):
-    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL)
+    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
     for db_object in db_objects:
         if type(db_object) != type_of_object:
             raise TypeError("Cannot copy collection of objects to db as they are not all "
