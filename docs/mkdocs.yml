@@ -8,13 +8,15 @@ site_description: 'Documentation for Triage.'
 markdown_extensions:
     - toc:
         permalink: True
-        baselevel: 2
+        baselevel: 1
+        toc_depth: 1
+    - pymdownx.superfences
 extra_javascript:
     - "js/mermaid.min.js"
 
 pages:
   - Home: index.md
-  - Dirty Duck Tutorial: https://dssg.github.io/dirtyduck
+  - Dirty Duck Tutorial: dirtyduck/docs/index.md
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
