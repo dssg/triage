@@ -1,10 +1,13 @@
 import functools
 import io
+import itertools
 import logging
-import time
+import math
 
 import numpy
 import pandas
+import statistics
+from collections import namedtuple, defaultdict
 from sqlalchemy.orm import sessionmaker
 
 from . import metrics
@@ -14,7 +17,13 @@ from .utils import (
     get_subset_table_name,
     filename_friendly_hash
 )
+from triage.util.db import scoped_session
+from triage.util.random import generate_python_random_seed
 from triage.component.catwalk.storage import MatrixStore
+
+
+RELATIVE_TOLERANCE = 0.01
+SORT_TRIALS = 30
 
 
 def subset_labels_and_predictions(
@@ -37,7 +46,7 @@ def subset_labels_and_predictions(
         to entity-date pairs in the subset
     """
     indexed_predictions = pandas.Series(predictions_proba, index=labels.index)
-    
+
     # The subset isn't specific to the cohort, so inner join to the labels/predictions
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
@@ -82,7 +91,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         out = io.StringIO()
         logging.debug(f"Running query %s to get subset", copy_sql)
         cur.copy_expert(copy_sql, out)
-        
+
         cur.close()
     
     finally:
@@ -101,21 +110,53 @@ def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
     """Assign predicted classes based based on top% or absolute rank of score
 
     Args:
-        test_predictions (list) A list of predictions, sorted by risk desc
+        test_predictions (numpy.array) A predictions, sorted by risk score descending
         x_value (int) The percentile or absolute value desired
         unit (string, default 'top_n') The thresholding method desired,
             either percentile or top_n
 
-    Returns: (list) The predicted classes
+    Returns: (numpy.array) The predicted classes
     """
+    len_predictions = len(test_predictions)
+    if len_predictions == 0:
+        return numpy.array([])
     if unit == "percentile":
-        cutoff_index = int(len(test_predictions) * (x_value / 100.00))
+        cutoff_index = int(len_predictions * (x_value / 100.00))
     else:
-        cutoff_index = x_value
-    test_predictions_binary = [
-        1 if x < cutoff_index else 0 for x in range(len(test_predictions))
-    ]
+        cutoff_index = int(x_value)
+    num_ones = cutoff_index if cutoff_index <= len_predictions else len_predictions
+    num_zeroes = len_predictions - cutoff_index if cutoff_index <= len_predictions else 0
+    test_predictions_binary = numpy.concatenate(
+        (numpy.ones(num_ones, numpy.int8), numpy.zeros(num_zeroes, numpy.int8))
+    )
     return test_predictions_binary
+
+
+class MetricDefinition(
+    namedtuple('MetricDefinition', [
+        'metric',
+        'threshold_unit',
+        'threshold_value',
+        'parameter_combination',
+        'parameter_string'
+    ])
+):
+    """A single metric, bound to a particular threshold and parameter combination"""
+
+class MetricEvaluationResult(
+    namedtuple('MetricEvaluationResult', [
+        'metric',
+        'parameter',
+        'value',
+        'num_labeled_examples',
+        'num_labeled_above_threshold',
+        'num_positive_labels'
+    ])
+):
+    """A metric and parameter combination alongside preliminary results.
+    
+    The 'value' could represent the worst, best, or a random version of tiebreaking.
+    """
 
 
 class ModelEvaluator(object):
@@ -147,7 +188,6 @@ class ModelEvaluator(object):
         testing_metric_groups,
         training_metric_groups,
         db_engine,
-        sort_seed=None,
         custom_metrics=None,
     ):
         """
@@ -176,8 +216,6 @@ class ModelEvaluator(object):
             training_metric_groups (list) metrics to be calculated on training set,
                 in the same form as testing_metric_groups
             db_engine (sqlalchemy.engine)
-            sort_seed (int) the seed to set in random.set_seed() to break ties
-                when sorting predictions
             custom_metrics (dict) Functions to generate metrics
                 not available by default
                 Each function is expected take in the following params:
@@ -187,7 +225,6 @@ class ModelEvaluator(object):
         self.testing_metric_groups = testing_metric_groups
         self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
-        self.sort_seed = sort_seed or int(time.time())
         if custom_metrics:
             self._validate_metrics(custom_metrics)
             self.available_metrics.update(custom_metrics)
@@ -237,7 +274,7 @@ class ModelEvaluator(object):
         )
         return parameter_string
 
-    def _filter_nan_labels(self, predicted_classes, labels):
+    def _filter_nan_labels(self, predicted_classes: numpy.array, labels: numpy.array):
         """Filter missing labels and their corresponding predictions
 
         Args:
@@ -246,87 +283,38 @@ class ModelEvaluator(object):
 
         Returns: (tuple) Copies of the input lists, with NaN labels removed
         """
-        labels = numpy.array(labels)
-        predicted_classes = numpy.array(predicted_classes)
         nan_mask = numpy.isfinite(labels)
-        return ((predicted_classes[nan_mask]).tolist(), (labels[nan_mask]).tolist())
+        return (predicted_classes[nan_mask], labels[nan_mask])
 
-    def _evaluations_for_threshold(
+    def _flatten_metric_threshold(
         self,
         metrics,
         parameters,
-        predictions_proba,
-        labels,
-        evaluation_table_obj,
         threshold_unit,
         threshold_value,
         threshold_specified_by_user=True,
     ):
-        """Generate evaluations for a given threshold in a metric group,
-        and create ORM objects to hold them
+        """Flatten lists of metrics and parameters for an individual threshold into individual metric definitions.
 
         Args:
             metrics (list) names of metric to compute
             parameters (list) dicts holding parameters to pass to metrics
-            predictions_proba (list) Probability predictions
-            labels (list) True labels (may have NaNs)
             threshold_unit (string) the type of threshold, either 'percentile' or 'top_n'
             threshold_value (int) the numeric threshold,
             threshold_specified_by_user (bool) Whether or not there was any threshold
                 specified by the user. Defaults to True
-            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation) specifies to
-                which table to add the evaluations
 
-        Returns: (list) results_schema.TrainEvaluation or TestEvaluation objects
+        Returns: (list) MetricDefinition objects
         Raises: UnknownMetricError if a given metric is not present in
             self.available_metrics
         """
 
-        # using threshold configuration, convert probabilities to predicted classes
-        predicted_classes = generate_binary_at_x(
-            predictions_proba, threshold_value, unit=threshold_unit
-        )
-        # filter out null labels
-        predicted_classes_with_labels, present_labels = self._filter_nan_labels(
-            predicted_classes, labels
-        )
-        num_labeled_examples = len(present_labels)
-        num_labeled_above_threshold = predicted_classes_with_labels.count(1)
-        num_positive_labels = present_labels.count(1)
-        evaluations = []
+        metric_definitions = []
         for metric in metrics:
             if metric not in self.available_metrics:
                 raise metrics.UnknownMetricError()
 
             for parameter_combination in parameters:
-                if len(predictions_proba) == 0:
-                    logging.warning(
-                        f"%s not defined for parameter %s because no entities "
-                        "are in the subset for this matrix. Inserting NULL for value.",
-                        metric,
-                        parameter_combination,
-                    )
-                    value = None
-                
-                else:
-                    try:
-                        value = self.available_metrics[metric](
-                            predictions_proba,
-                            predicted_classes_with_labels,
-                            present_labels,
-                            parameter_combination,
-                        )
-                    
-                    except ValueError:
-                        logging.warning(
-                            f"%s not defined for parameter %s because all labels "
-                            "are the same. Inserting NULL for value.",
-                            metric,
-                            parameter_combination,
-                        )
-                        value = None
-                
-
                 # convert the thresholds/parameters into something
                 # more readable
                 parameter_string = self._build_parameter_string(
@@ -336,82 +324,83 @@ class ModelEvaluator(object):
                     threshold_specified_by_user=threshold_specified_by_user,
                 )
 
-                logging.info(
-                    "%s for %s%s, labeled examples %s "
-                    "above threshold %s, positive labels %s, value %s",
-                    evaluation_table_obj,
-                    metric,
-                    parameter_string,
-                    num_labeled_examples,
-                    num_labeled_above_threshold,
-                    num_positive_labels,
-                    value,
+                result = MetricDefinition(
+                    metric=metric,
+                    parameter_string=parameter_string,
+                    parameter_combination=parameter_combination,
+                    threshold_unit=threshold_unit,
+                    threshold_value=threshold_value
                 )
-                evaluations.append(
-                    evaluation_table_obj(
-                        metric=metric,
-                        parameter=parameter_string,
-                        value=value,
-                        num_labeled_examples=num_labeled_examples,
-                        num_labeled_above_threshold=num_labeled_above_threshold,
-                        num_positive_labels=num_positive_labels,
-                        sort_seed=self.sort_seed,
-                    )
-                )
-        return evaluations
+                metric_definitions.append(result)
+        return metric_definitions
 
-    def _evaluations_for_group(
-        self,
-        group,
-        predictions_proba_sorted,
-        labels_sorted,
-        evaluation_table_obj,
-    ):
-        """Generate evaluations for a given metric group, and create ORM objects to hold them
+    def _flatten_metric_config_group(self, group):
+        """Flatten lists of metrics, parameters, and thresholds into individual metric definitions
 
         Args:
             group (dict) A configuration dictionary for the group.
                 Should contain the key 'metrics', and optionally 'parameters' or 'thresholds'
-            predictions_proba (list) Probability predictions
-            labels (list) True labels (may have NaNs)
-            evaluation_table_obj (schema.TestEvaluation or TrainEvaluation) specifies to
-                which table to add the evaluations
-        
-        Returns: (list) results_schema.Evaluation objects
+        Returns: (list) MetricDefinition objects
         """
-        logging.info("Creating evaluations for metric group %s", group)
+        logging.debug("Creating evaluations for metric group %s", group)
         parameters = group.get("parameters", [{}])
-        generate_evaluations = functools.partial(
-            self._evaluations_for_threshold,
+        generate_metrics = functools.partial(
+            self._flatten_metric_threshold,
             metrics=group["metrics"],
             parameters=parameters,
-            predictions_proba=predictions_proba_sorted,
-            labels=labels_sorted,
-            evaluation_table_obj=evaluation_table_obj,
         )
-        evaluations = []
+        metrics = []
         if "thresholds" not in group:
-            logging.info(
+            logging.debug(
                 "Not a thresholded group, generating evaluation based on all predictions"
             )
-            evaluations = evaluations + generate_evaluations(
+            metrics = metrics + generate_metrics(
                 threshold_unit="percentile",
                 threshold_value=100,
                 threshold_specified_by_user=False,
             )
 
         for pct_thresh in group.get("thresholds", {}).get("percentiles", []):
-            logging.info("Processing percent threshold %s", pct_thresh)
-            evaluations = evaluations + generate_evaluations(
+            logging.debug("Processing percent threshold %s", pct_thresh)
+            metrics = metrics + generate_metrics(
                 threshold_unit="percentile", threshold_value=pct_thresh
             )
 
         for abs_thresh in group.get("thresholds", {}).get("top_n", []):
-            logging.info("Processing absolute threshold %s", abs_thresh)
-            evaluations = evaluations + generate_evaluations(
+            logging.debug("Processing absolute threshold %s", abs_thresh)
+            metrics = metrics + generate_metrics(
                 threshold_unit="top_n", threshold_value=abs_thresh
             )
-        return evaluations
+        return metrics
+
+    def _flatten_metric_config_groups(self, metric_config_groups):
+        """Flatten lists of metrics, parameters, and thresholds into individual metric definitions
+
+        Args:
+            metric_config_groups (list) A list of metric group configuration dictionaries
+                Each dict should contain the key 'metrics', and optionally 'parameters' or 'thresholds'
+        Returns:
+            (list) MetricDefinition objects
+        """
+        return [
+            item
+            for group in metric_config_groups
+            for item in self._flatten_metric_config_group(group)
+        ]
+
+    def metric_definitions_from_matrix_type(self, matrix_type):
+        """Retrieve the correct metric config groups for the matrix type and flatten them into metric definitions
+
+        Args:
+            matrix_type (catwalk.storage.MatrixType) A matrix type definition
+
+        Returns:
+            (list) MetricDefinition objects
+        """
+        if matrix_type.is_test:
+            return self._flatten_metric_config_groups(self.testing_metric_groups)
+        else:
+            return self._flatten_metric_config_groups(self.training_metric_groups)
 
     def needs_evaluations(self, matrix_store, model_id, subset_hash=""):
         """Returns whether or not all the configured metrics are present in the
@@ -430,15 +419,7 @@ class ModelEvaluator(object):
         # by running the evaluation code with an empty list of predictions and labels
         eval_obj = matrix_store.matrix_type.evaluation_obj
         matrix_type = matrix_store.matrix_type
-        if matrix_type.is_test:
-            metric_groups_to_compute = self.testing_metric_groups
-        else:
-            metric_groups_to_compute = self.training_metric_groups
-        evaluation_objects_from_config = [
-            item
-            for group in metric_groups_to_compute
-            for item in self._evaluations_for_group(group, [], [], eval_obj)
-        ]
+        metric_definitions = self.metric_definitions_from_matrix_type(matrix_type)
 
         # assemble a list of evaluation objects from the database
         # by querying the unique metrics and parameters relevant to the passed-in matrix
@@ -454,19 +435,75 @@ class ModelEvaluator(object):
         # The list of needed metrics and parameters are all the unique metric/params from the config
         # not present in the unique metric/params from the db
         needed = bool(
-            {(obj.metric, obj.parameter) for obj in evaluation_objects_from_config} -
+            {(met.metric, met.parameter_string) for met in metric_definitions} -
             {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
         )
         session.close()
         return needed
 
-    def evaluate(
-        self,
-        predictions_proba,
-        matrix_store,
-        model_id,
-        subset=None,
-    ):
+    def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
+        """Compute evaluations for a set of predictions and labels
+
+        Args:
+            predictions_proba (numpy.array) predictions, sorted by score descending
+            labels (numpy.array) labels, sorted however the caller wishes to break ties
+            metric_definitions (list of MetricDefinition objects) metrics to compute
+
+        Returns: (list of MetricEvaluationResult objects) One result for each metric definition
+        """
+        evals = []
+        for (threshold_unit, threshold_value), metrics_for_threshold, in \
+                itertools.groupby(metric_definitions, lambda m: (m.threshold_unit, m.threshold_value)):
+            predicted_classes = generate_binary_at_x(
+                predictions_proba, threshold_value, unit=threshold_unit
+            )
+            # filter out null labels
+            predicted_classes_with_labels, present_labels = self._filter_nan_labels(
+                predicted_classes, labels
+            )
+            num_labeled_examples = len(present_labels)
+            num_labeled_above_threshold = numpy.count_nonzero(predicted_classes_with_labels)
+            num_positive_labels = numpy.count_nonzero(present_labels)
+            for metric_def in metrics_for_threshold:
+                # using threshold configuration, convert probabilities to predicted classes
+                if len(predictions_proba) == 0:
+                    logging.warning(
+                        f"%s not defined for parameter %s because no entities "
+                        "are in the subset for this matrix. Inserting NULL for value.",
+                        metric_def.metric,
+                        metric_def.parameter_combination,
+                    )
+                    value = None
+                else:
+                    try:
+                        value = self.available_metrics[metric_def.metric](
+                            predictions_proba,
+                            predicted_classes_with_labels,
+                            present_labels,
+                            metric_def.parameter_combination,
+                        )
+                    
+                    except ValueError:
+                        logging.warning(
+                            f"%s not defined for parameter %s because all labels "
+                            "are the same. Inserting NULL for value.",
+                            metric_def.metric,
+                            metric_def.parameter_combination,
+                        )
+                        value = None
+
+                result = MetricEvaluationResult(
+                    metric=metric_def.metric,
+                    parameter=metric_def.parameter_string,
+                    value=value,
+                    num_labeled_examples=num_labeled_examples,
+                    num_labeled_above_threshold=num_labeled_above_threshold,
+                    num_positive_labels=num_positive_labels,
+                )
+                evals.append(result)
+        return evals
+
+    def evaluate(self, predictions_proba, matrix_store, model_id, subset=None):
         """Evaluate a model based on predictions, and save the results
 
         Args:
@@ -477,8 +514,6 @@ class ModelEvaluator(object):
             subset (dict) A dictionary containing a query and a
                 name for the subset to evaluate on, if any
         """
-        evaluation_table_obj = matrix_store.matrix_type.evaluation_obj
-        
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:
@@ -497,43 +532,101 @@ class ModelEvaluator(object):
             labels = matrix_store.labels
             subset_hash = "" 
         
-        matrix_type = matrix_store.matrix_type.string_name
+        labels = numpy.array(labels)
+
+        matrix_type = matrix_store.matrix_type
+        metric_defs = self.metric_definitions_from_matrix_type(matrix_type)
+
+        logging.info("Found %s metric definitions total", len(metric_defs))
+        # 1. get worst sorting
+        predictions_proba_worst, labels_worst = sort_predictions_and_labels(
+            predictions_proba=predictions_proba,
+            labels=labels,
+            tiebreaker='worst',
+        )
+        worst_lookup = {
+            (eval.metric, eval.parameter): eval
+            for eval in
+            self._compute_evaluations(predictions_proba_worst, labels_worst, metric_defs)
+        }
+
+        # 2. get best sorting
+        predictions_proba_best, labels_best = sort_predictions_and_labels(
+            predictions_proba=predictions_proba_worst,
+            labels=labels_worst,
+            tiebreaker='best',
+        )
+        best_lookup = {
+            (eval.metric, eval.parameter): eval
+            for eval in
+            self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
+        }
+        random_eval_accumulator = defaultdict(list)
+
+        # 3. figure out which metrics have too far of a distance between best and worst
+        # and need random trials
+        metric_defs_to_trial = []
+        for metric_def in metric_defs:
+            worst_eval = worst_lookup[(metric_def.metric, metric_def.parameter_string)]
+            best_eval = best_lookup[(metric_def.metric, metric_def.parameter_string)]
+            if worst_eval.value is None or best_eval.value is None or math.isclose(worst_eval.value, best_eval.value, rel_tol=RELATIVE_TOLERANCE):
+                random_eval_accumulator[(worst_eval.metric, worst_eval.parameter)] = [worst_eval.value]
+            else:
+                metric_defs_to_trial.append(metric_def)
+
+        # 4. get average of n random trials
+        logging.info(
+            "%s metric definitions need %s random trials each as best/worst evals were different",
+            len(metric_defs_to_trial),
+            SORT_TRIALS
+        )
+        for _ in range(0, SORT_TRIALS):
+            sort_seed = generate_python_random_seed()
+            predictions_proba_random, labels_random = sort_predictions_and_labels(
+                predictions_proba=predictions_proba_worst,
+                labels=labels_worst,
+                tiebreaker='random',
+                sort_seed=sort_seed
+            )
+            for random_eval in self._compute_evaluations(
+                    predictions_proba_random,
+                    labels_random,
+                    metric_defs_to_trial
+            ):
+                random_eval_accumulator[(random_eval.metric, random_eval.parameter)].append(random_eval.value)
+
+        # 5. flatten best, worst, stochastic results for each metric definition
+        # into database records
         evaluation_start_time = matrix_store.as_of_dates[0]
         evaluation_end_time = matrix_store.as_of_dates[-1]
         as_of_date_frequency = matrix_store.metadata["as_of_date_frequency"]
-
-        logging.info(
-            "Generating evaluations for model id %s, evaluation range %s-%s, "
-            "as_of_date frequency %s, subset %s",
-            model_id,
-            evaluation_start_time,
-            evaluation_end_time,
-            as_of_date_frequency,
-            subset_hash
-        )
-
-        predictions_proba_sorted, labels_sorted = sort_predictions_and_labels(
-            predictions_proba, labels, self.sort_seed
-        )
+        matrix_uuid = matrix_store.uuid
         evaluations = []
-        matrix_type = matrix_store.matrix_type
-        if matrix_type.is_test:
-            metric_groups_to_compute = self.testing_metric_groups
-        else:
-            metric_groups_to_compute = self.training_metric_groups
-        for group in metric_groups_to_compute:
-            evaluations = evaluations + self._evaluations_for_group(
-                group,
-                predictions_proba_sorted,
-                labels_sorted,
-                evaluation_table_obj
+        for metric_def in metric_defs:
+            metric_key = (metric_def.metric, metric_def.parameter_string)
+            trial_results = [value for value in random_eval_accumulator[metric_key] if value is not None]
+            try:
+                stochastic_value = statistics.mean(trial_results)
+            except statistics.StatisticsError:
+                stochastic_value = None
+            try:
+                standard_deviation = statistics.stdev(trial_results)
+            except statistics.StatisticsError:
+                standard_deviation = None
+            evaluation = matrix_type.evaluation_obj(
+                metric=metric_def.metric,
+                parameter=metric_def.parameter_string,
+                num_labeled_examples=worst_lookup[metric_key].num_labeled_examples,
+                num_labeled_above_threshold=worst_lookup[metric_key].num_labeled_above_threshold,
+                num_positive_labels=worst_lookup[metric_key].num_positive_labels,
+                worst_value=worst_lookup[metric_key].value,
+                best_value=best_lookup[metric_key].value,
+                stochastic_value=stochastic_value,
+                num_sort_trials=len(trial_results),
+                standard_deviation=standard_deviation,
             )
+            evaluations.append(evaluation)
 
-        logging.info(
-            "Writing metrics to db: %s table for subset %s",
-            matrix_type,
-            subset_hash
-        )
         self._write_to_db(
             model_id,
             subset_hash,
@@ -542,12 +635,7 @@ class ModelEvaluator(object):
             as_of_date_frequency,
             matrix_store.uuid,
             evaluations,
-            evaluation_table_obj,
-        )
-        logging.info(
-            "Done writing metrics to db: %s table for subset %s",
-            matrix_type,
-            subset_hash
+            matrix_type.evaluation_obj,
         )
 
     @db_retry
@@ -563,12 +651,12 @@ class ModelEvaluator(object):
         evaluation_table_obj,
     ):
         """Write evaluation objects to the database
-
         Binds the model_id as as_of_date to the given ORM objects
         and writes them to the database
-
         Args:
             model_id (int) primary key of the model
+            subset_hash (str) the hash of the subset, if any, that the
+                evaluation is made on
             evaluation_start_time (pandas._libs.tslibs.timestamps.Timestamp)
                 first as_of_date included in the evaluation period
             evaluation_end_time (pandas._libs.tslibs.timestamps.Timestamp) last
@@ -579,28 +667,23 @@ class ModelEvaluator(object):
                 objects
             evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
                 specifies to which table to add the evaluations
-            subset_hash (str) the hash of the subset, if any, that the
-                evaluation is made on
         """
-        session = self.sessionmaker()
+        with scoped_session(self.db_engine) as session:
+            session.query(evaluation_table_obj).filter_by(
+                model_id=model_id,
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
+                as_of_date_frequency=as_of_date_frequency,
+                subset_hash=subset_hash
+            ).delete()
 
-        session.query(evaluation_table_obj).filter_by(
-            model_id=model_id,
-            evaluation_start_time=evaluation_start_time,
-            evaluation_end_time=evaluation_end_time,
-            as_of_date_frequency=as_of_date_frequency,
-            subset_hash=subset_hash
-        ).delete()
-
-        for evaluation in evaluations:
-            evaluation.model_id = model_id
-            evaluation.as_of_date_frequency = as_of_date_frequency
-            evaluation.subset_hash = subset_hash
-            evaluation.evaluation_start_time = evaluation_start_time
-            evaluation.evaluation_end_time = evaluation_end_time
-            evaluation.as_of_date_frequency = as_of_date_frequency
-            evaluation.matrix_uuid = matrix_uuid
-            evaluation.subset_hash = subset_hash
-            session.add(evaluation)
-        session.commit()
-        session.close()
+            for evaluation in evaluations:
+                evaluation.model_id = model_id
+                evaluation.as_of_date_frequency = as_of_date_frequency
+                evaluation.subset_hash = subset_hash
+                evaluation.evaluation_start_time = evaluation_start_time
+                evaluation.evaluation_end_time = evaluation_end_time
+                evaluation.as_of_date_frequency = as_of_date_frequency
+                evaluation.matrix_uuid = matrix_uuid
+                evaluation.subset_hash = subset_hash
+                session.add(evaluation)

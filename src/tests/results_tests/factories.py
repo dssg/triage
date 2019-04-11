@@ -170,11 +170,15 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     as_of_date_frequency = "3d"
     metric = "precision@"
     parameter = "100_abs"
-    value = factory.fuzzy.FuzzyDecimal(0, 1)
     num_labeled_examples = 10
     num_labeled_above_threshold = 8
     num_positive_labels = 5
     sort_seed = 8
+    best_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    worst_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    stochastic_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    num_sort_trials = 5
+    standard_deviation = 0.05
     matrix_rel = factory.SubFactory(MatrixFactory)
     matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
 
