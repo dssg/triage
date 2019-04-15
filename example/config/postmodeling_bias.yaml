@@ -11,8 +11,7 @@ ref_groups_method: "min_metric"
   #"attribute_1": "<0.30"
 
 # fairness threshold to be used for assessing fairness
-fairness_threshold: 0.8
-
+#fairness_threshold: 0.8
 
 model_group_id: [] #if empty assumes all
 train_end_time: [] #if empty assumes all

@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 import ohio.ext.pandas  # noqa
-
+import yaml
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
 from aequitas.group import Group
@@ -14,21 +14,21 @@ class AequitasConfigLoader(object):
         'FPR Parity', 'FNR Parity', 'FOR Parity', 'TPR Parity',
         'Precision Parity')
 
-    def __init__(self, ref_groups_method='min_metric', fairness_threshold=0.8,
-                 attr_cols=None, report=True, score_thresholds=None,
+    def __init__(self, ref_groups_method='min_metric', fairness_threshold=0.8
+                 , score_thresholds=None,
                  ref_groups=None,
+                 replace_flag=False,
+                 join_predictions_on = ['entity_id'],
                  fairness_measures=original_fairness_measures):
         self.ref_groups_method = ref_groups_method
         self.fairness_threshold = fairness_threshold
-        self.attr_cols = attr_cols
-        self.report = report
         self.score_thresholds = score_thresholds
         self.ref_groups = ref_groups
         self.fair_measures_requested = list(fairness_measures)
+        self.replace_flag = replace_flag
+        self.join_predictions_on = join_predictions_on
 
-
-
-def aequitas_audit(df, configs, model_id, preprocessed=False):
+def aequitas_audit(df, configs, model_id, subset_hash=None, schema, replace_flag, engine, preprocessed=False):
     """
 
     Args:
@@ -46,13 +46,9 @@ def aequitas_audit(df, configs, model_id, preprocessed=False):
         if not configs.attr_cols:
             configs.attr_cols = attr_cols_input
     g = Group()
-    logging.info('Welcome to Aequitas-Audit')
-    logging.info('Fairness measures requested:', ','.join(configs.fair_measures_requested))
     groups_model, attr_cols = g.get_crosstabs(df, score_thresholds=configs.score_thresholds, model_id=model_id,
                                               attr_cols=configs.attr_cols)
-    logging.info('audit: df shape from the crosstabs:', groups_model.shape)
     b = Bias()
-    # todo move this to the new configs object / the attr_cols now are passed through the configs object...
     ref_groups_method = configs.ref_groups_method
     if ref_groups_method == 'predefined' and configs.ref_groups:
         bias_df = b.get_disparity_predefined_groups(groups_model, df, configs.ref_groups)
@@ -60,17 +56,18 @@ def aequitas_audit(df, configs, model_id, preprocessed=False):
         bias_df = b.get_disparity_major_group(groups_model, df)
     else:
         bias_df = b.get_disparity_min_metric(groups_model, df)
-    logging.info('Any NaN?: ', bias_df.isnull().values.any())
-    logging.info('bias_df shape:', bias_df.shape)
-
-
     f = Fairness(tau=configs.fairness_threshold)
-    logging.info('Fairness Threshold:', configs.fairness_threshold)
-    logging.info('Fairness Measures:', configs.fair_measures_requested)
     group_value_df = f.get_group_value_fairness(bias_df, fair_measures_requested=configs.fair_measures_requested)
-    return group_value_df
-
-
+    group_value_df['subset_hash'] = subset_hash
+    if group_value_df.empty:
+        raise ValueError("""
+        Postmodeling bias audit: aequitas_audit() failed. Returned empty dataframe for model_id = {model_id}. 
+        and predictions_schema = {schema}""".format())
+    group_value_df.set_index(['model_id', 'evaluation_start_time', 'evaluation_end_time', 'score_threshold', 'subset_hash', 'attribute_name', 'attribute_value']).pg_copy_to(
+        schema=schema,
+        name='bias',
+        con=engine,
+        if_exists=replace_flag)
 
 
 def get_models_list(config, engine):
@@ -98,12 +95,54 @@ def get_models_list(config, engine):
     return pd.DataFrame.pg_copy_from(models_query, engine)['model_id'].tolist()
 
 
-def get_predictions(model_id, predictions_schema, config, engine):
+def get_distinct_evaluations(model_id, schema, engine):
     """
 
     Args:
         model_id:
-        predictions_schema:
+        schema:
+        engine:
+
+    Returns:
+
+    """
+    eval_query = """ select distinct evaluation_start_time, evaluation_end_time
+                from {schema}.evaluations
+                where model_id = {model_id}""".format(schema=schema, model_id=model_id)
+    evals_df = pd.DataFrame.pg_copy_from(eval_query, engine)
+    if evals_df.empty:
+        raise ValueError("No evalautions were found for model_id = {model_id} in the schema {schema}.".format())
+    return evals_df
+
+
+def get_distinct_subsets(model_id, evaluation_start_time, evaluation_end_time, schema, engine):
+    """
+
+    Args:
+        model_id:
+        schema:
+        engine:
+
+    Returns:
+
+    """
+    eval_query = """ select distinct subset_hash
+                from {schema}.evaluations
+                where model_id = {model_id} and evaluation_start_time='{evaluation_start_time}'::date 
+                 and evaluation_end_time = '{evaluation_end_time}'::date 
+                 and subset_hash is not null""".format(schema=schema,
+                                                    model_id=model_id,
+                                                    evaluation_start_time=evaluation_start_time,
+                                                    evaluation_end_time=evaluation_end_time)
+    return list(pd.DataFrame.pg_copy_from(eval_query, engine)['subset_hash'])
+
+
+def get_input_df(model_id, schema, evaluation_start_time, evaluation_end_time, config, engine):
+    """
+
+    Args:
+        model_id:
+        schema:
         config:
         engine:
 
@@ -111,17 +150,47 @@ def get_predictions(model_id, predictions_schema, config, engine):
 
     """
     # the entity_id (and as_of_date if wanted) comes from the attributes_query
-    predictions_query = """ with attributes as ({attributes_query}) 
-                        select p.model_id, p.score, a.*
+    input_query = """ with attributes as ({attributes_query}) 
+                        select p.model_id, 
+                        '{evaluation_start_time}'::date as evaluation_start_time,
+                        '{evaluation_end_time}'::date as evaluation_end_time,
+                        p.score, 
+                        coalesce(rank_abs, rank() over(order by score desc)) as rank_abs,
+                        coalesce(rank_pct, percent_rank() over(order by score desc)) * 100 as rank_pct,
+                        p.label_value,
+                        a.*
                         from {predictions_schema}.predictions p
                         left join attributes a using ({join_predictions_on})
-                        where model_id = {model_id}
-                        order by score desc""".format(
+                        where p.model_id = {model_id}
+                        and as_of_date <@ ('{evaluation_start_time}'::date, ('{evaluation_end_time}'::date + interval '1 days')::date)
+                        and p.label_value is not null
+                        order by p.score desc""".format(
                 attributes_query=config['attributes_query'],
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
                 join_predictions_on=",".join(config['join_predictions_on']),
-                predictions_schema=predictions_schema,
+                predictions_schema=schema,
                 model_id=model_id)
-    return pd.DataFrame.pg_copy_from(predictions_query, engine)
+
+    input_df = pd.DataFrame.pg_copy_from(input_query, engine)
+    if input_df.empty:
+        raise ValueError("No input_df for model_id = {model_id} and schema {schema}.".format())
+    return input_df
+
+
+def get_subset_df(subset_hash, engine):
+    metadata_query = """select config from model_metadata.subsets
+                            where subset_hash='{subset_hash}'""".format(subset_hash=subset_hash)
+    subset_config = yaml.load(pd.DataFrame.pg_copy_from(metadata_query, engine)['config'])
+    subset_query = """select entity_id, as_of_date
+                        from public.{subset_table} where active = true
+                        """.format(subset_table = "subset_{name}_{subset_hash}".format(
+                                name=subset_config['name'], subset_hash=subset_config['subset_hash']))
+    subset_df = pd.DataFrame.pg_copy_from(subset_query, engine)
+    if subset_df.empty:
+        raise ValueError("Subset with hash {subset_hash) return no entities from subset table.".format(subset_hash=subset_hash))
+    return subset_df
+
 
 
 def run_bias(engine, config, predictions_schemas=['test_results', 'train_results']):
@@ -137,24 +206,28 @@ def run_bias(engine, config, predictions_schemas=['test_results', 'train_results
     """
     models_list = get_models_list(config)
     if not models_list:
-        raise Exception("""
+        raise ValueError("""
             Postmodeling bias audit: get_models_list() returned empty model ids list.""")
     for model_id in models_list:
         for schema in predictions_schemas:
+            evals_df = get_distinct_evaluations(model_id, schema, engine)
             logging.info("Running aequitas audit for model_id={model_id} and predictions_schema={schema}".format())
-            input_df = get_predictions(model_id, schema, config, engine)
-            if not input_df:
-                raise Exception("""
-                Postmodeling bias audit: get_predictions() returned empty dataframe for model_id = {model_id}. 
-                and predictions_schema = {schema}""".format())
-            model_audit_df = aequitas_audit(input_df, model_id=model_id, configs=config, preprocessed=False)
-            if not model_audit_df:
-                raise Exception("""
-                Postmodeling bias audit: aequitas_audit() failed. Returned empty dataframe for model_id = {model_id}. 
-                and predictions_schema = {schema}""".format())
-            model_audit_df.set_index(['model_id', 'attribute_name']).pg_copy_to(
-                schema=schema,
-                name='bias_audit',
-                con=engine,
-                if_exists=config['replace_flag'])
+            for ind, row in evals_df.iterrows():
+                try:
+                    input_df = get_input_df(model_id, schema, row['evaluation_start_time'], row['evaluation_end_time'], config, engine)
+                    aequitas_audit(input_df, model_id=model_id, schema=schema,
+                                                    replace_flag=config['replace_flag'], preprocessed=False)
+                    subsets_list = get_distinct_subsets(model_id, row['evaluation_start_time'], row['evaluation_end_time'], config, engine)
+                    if subsets_list:
+                        for subset_hash in subsets_list:
+                            try:
+                                subset_df = get_subset_df(subset_hash, engine)
+                                input_subset_df = input_df.join(subset_df,how='inner', on=['entity_id','as_of_date'])
+                                aequitas_audit(input_subset_df, model_id=model_id, subset_hash=subset_hash, schema=schema,
+                                               replace_flag=config['replace_flag'], preprocessed=False)
+                            except ValueError:
+                                continue
+                except ValueError:
+                    continue
+
 
