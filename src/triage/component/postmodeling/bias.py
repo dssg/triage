@@ -28,7 +28,7 @@ class AequitasConfigLoader(object):
         self.replace_flag = replace_flag
         self.join_predictions_on = join_predictions_on
 
-def aequitas_audit(df, configs, model_id, subset_hash=None, schema, replace_flag, engine, preprocessed=False):
+def aequitas_audit(df, configs, model_id, schema, replace_flag, engine, subset_hash=None, preprocessed=False):
     """
 
     Args:
@@ -223,8 +223,8 @@ def run_bias(engine, config, predictions_schemas=['test_results', 'train_results
                             try:
                                 subset_df = get_subset_df(subset_hash, engine)
                                 input_subset_df = input_df.join(subset_df,how='inner', on=['entity_id','as_of_date'])
-                                aequitas_audit(input_subset_df, model_id=model_id, subset_hash=subset_hash, schema=schema,
-                                               replace_flag=config['replace_flag'], preprocessed=False)
+                                aequitas_audit(input_subset_df, model_id=model_id, schema=schema,
+                                               replace_flag=config['replace_flag'],subset_hash=subset_hash, preprocessed=False)
                             except ValueError:
                                 continue
                 except ValueError:
