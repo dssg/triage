@@ -1,0 +1,98 @@
+#+TITLE: Post-modeling analysis
+
+* Introduction
+
+/Postmodeling/ is about exploring the model group in a point of time
+(i.e. a model) or over time.
+
+Choosing the right model for deployment and exploring its predictions
+and behavior in time is a pivotal task. =postmodeling= will help to
+answer some of this questions by exploring the outcomes of the model,
+and exploring /deeply/ into the model behavior across time and
+features.
+
+This library lays at the end of the =triage= pipeline and will use the
+output of *audition* and some of its selection rules as a main
+input.
+
+* What you can do?
+
+** Compare model groups
+
+*** Metric
+
+*** Overlaps
+
+** Display the model group over time
+
+*** Metric
+
+*** Top Features
+
+*** Top predicted entities
+
+** Drill in a model group in a specific time
+
+*** Top Features
+
+*** Score distribution
+
+*** /Crosstabs/
+
+
+* New API
+
+We encapsulate the model groups from the database in two objects
+=ModelGroup= and =Model=.
+
+You could manipulate those objects using functions using functions:
+
+- =plot_XXXX(object, **kwargs)= for plotting, located in =plot.py=. The
+  arguments for this set of functions are =model= or a =model_group= and
+  they always return a =fig, ax= matplotlib objects so you can modify
+  them on the fly and tailor them for your specific purposes.
+
+* Use
+
+*NOTE*: This module use the =triage='s /default/ (and recommended) way of specify the
+database connection: an environment variable =DATABASE_URL= or it will
+try to read the connection file fro =DATABASE_FILE=.
+
+If you are playing with this module in Jupyter notebooks, remember
+that you can set environment variables with =%env=.
+
+
+Most of the time you will need to import these:
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+from triage.component.postmodeling import get_model_group, get_model
+from triage.component.postmodeling.plots import plot_roc, plot_precision_recall_n, plot_metric_over_time
+#+END_SRC
+
+If you want to get a particular =ModelGroup=
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+mg = get_model_group(model_group_id=14)
+#+END_SRC
+
+If you want to plot the performance over time:
+
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+## mgs is a list of ModelGroups
+plot_metric_over_time(mgs, metric='precision', parameter='10_pct')
+#+END_SRC
+
+or an individual =Model=
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+m = get_model(model_id = 5)
+#+END_SRC
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+plot_precision_recall_n(m)
+#+END_SRC
+
+#+BEGIN_SRC jupyter-python :session postmodeling
+plot_ROC(m)
+#+END_SRC

@@ -39,7 +39,6 @@ def _store(fig, **kwargs):
         bbox_inches = kwargs.get('bbox_inches', 'tight')
         fig.savefig(f"{filename}.{extension}", transparent=transparent, dpi=dpi, bbox_inches=bbox_inches)
 
-
 def plot_roc(model, **kwargs):
     fig, ax = plt.subplots()
 
@@ -160,6 +159,9 @@ def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
     _store(fig, **kwargs)
 
     return fig, ax
+
+
+
 
 def get_subsets(l):
     subsets = []
