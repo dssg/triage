@@ -152,7 +152,7 @@ class SpacetimeAggregation(Aggregation):
                         ")) cohorted_from_obj")
                 else:
                     from_obj = self.from_obj
-                query = ex.select(columns=columns, from_obj=from_obj).group_by(
+                query = ex.select(columns=columns, from_obj=make_sql_clause(from_obj, ex.text)).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))
@@ -236,7 +236,7 @@ class SpacetimeAggregation(Aggregation):
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=ex.text(self.from_obj))
+                ex.select(columns, from_obj=make_sql_clause(self.from_obj, ex.text))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )
