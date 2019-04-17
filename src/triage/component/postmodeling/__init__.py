@@ -3,6 +3,7 @@
 import os
 import yaml
 import logging
+import warnings
 
 import sqlalchemy
 from sqlalchemy.engine.url import URL
@@ -19,21 +20,18 @@ from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Sto
 logging.basicConfig(level=logging.INFO)
 
 
-def __db_url():
+def __db_url_from_environment():
     environ_url = os.getenv('DATABASE_URL')
     if environ_url:
         logging.info("Getting db connection credentials from DATABASE_URL")
         return environ_url
 
-    if os.path.isfile(os.getenv('DATABASE_FILE')):
+    if os.getenv('DATABASE_FILE') and os.path.isfile(os.getenv('DATABASE_FILE')):
         logging.info("Getting db connection credentials from DATABASE_FILE")
         dbfile = open(os.getenv('DATABASE_FILE'))
     else:
-        raise EnvironmentError(
-            f"could not determine database connection information from "
-            f"either process environment (DATABASE_URL) or filesystem "
-            f"(DATABASE_FILE)"
-        )
+        warnings.warn("There is no DATABASE_URL or DATABASE_FILE  environment variable")
+        return None
 
     with dbfile:
         dbconfig = yaml.load(dbfile)
@@ -48,12 +46,23 @@ def __db_url():
     )
 
 
-__engine = create_engine(__db_url())
-__session = sessionmaker(bind=__engine)
-session = __session()
+def create_session(engine=None):
+    if engine:
+        __engine = engine
+    else:
+        url = __db_url_from_environment()
+        if url:
+            __engine = create_engine()
+        else:
+            return None
+
+    session = sessionmaker(bind=__engine)()
+
+    return session
+
+session = create_session()
 
 Base = declarative_base()
-
 
 def get_model(model_id):
     return session.query(Model).get(model_id)
