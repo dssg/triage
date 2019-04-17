@@ -131,7 +131,7 @@ class SpacetimeAggregation(Aggregation):
             queries[group] = []
             for date in self.dates:
                 columns = [
-                    ex.column(groupby),
+                    make_sql_clause(groupby, ex.text),
                     ex.literal_column("'%s'::date" % date).label(
                         self.output_date_column
                     ),
@@ -227,7 +227,7 @@ class SpacetimeAggregation(Aggregation):
         Generates a join table, consisting of an entry for each combination of
         groups and dates in the from_obj
         """
-        groups = [ex.column(group) for group in self.groups.values()]
+        groups = [make_sql_clause(group, ex.text) for group in self.groups.values()]
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
