@@ -131,7 +131,7 @@ class SpacetimeAggregation(Aggregation):
             queries[group] = []
             for date in self.dates:
                 columns = [
-                    groupby,
+                    ex.column(groupby),
                     ex.literal_column("'%s'::date" % date).label(
                         self.output_date_column
                     ),
@@ -227,7 +227,7 @@ class SpacetimeAggregation(Aggregation):
         Generates a join table, consisting of an entry for each combination of
         groups and dates in the from_obj
         """
-        groups = list(self.groups.values())
+        groups = [ex.column(group) for group in self.groups.values()]
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
@@ -236,7 +236,7 @@ class SpacetimeAggregation(Aggregation):
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=self.from_obj)
+                ex.select(columns, from_obj=ex.text(self.from_obj))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )
