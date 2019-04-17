@@ -14,7 +14,7 @@ extra_javascript:
 
 pages:
   - Home: index.md
-  - Dirty Duck Tutorial: https://dssg.github.io/dirtyduck
+  - Dirty Duck Tutorial: dirtyduck/index.md
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
