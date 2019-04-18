@@ -9,6 +9,7 @@ markdown_extensions:
   - toc:
       permalink: True
       baselevel: 2
+      toc_depth: 1
   - admonition
   - codehilite:
       guess_lang: false
@@ -28,6 +29,7 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.superfences
 
 extra_javascript:
     - "js/mermaid.min.js"
