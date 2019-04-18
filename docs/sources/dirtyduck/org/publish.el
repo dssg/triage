@@ -37,9 +37,9 @@
          :base-directory "~/projects/dsapp/dirtyduck/org/"
          :base-extension "org"
          :exclude "[[:digit:]][[:digit:]]_.*\.org"
-         :publishing-directory "~/projects/dsapp/dirtyduck/docs/"
+         :publishing-directory ""
          :recursive t
-         :publishing-function org-gfm-export-to-markdown
+         :publishing-function org-md-export-to-markdown
          :headline-levels 4       ; Just the default for this project.
          :auto-preamble t
          :sitemap-title "Dirtyduck"
@@ -54,6 +54,6 @@
          )
 
 
-        ("dirtyduck" :components ("dirtyduck-static" "dirtyduck-notes"  "dirtyduck-notes-md"))
+        ("dirtyduck" :components ("dirtyduck-static"  "dirtyduck-notes-md"))
 
         ))

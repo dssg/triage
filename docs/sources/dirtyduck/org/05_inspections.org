@@ -1,3 +1,7 @@
+#+TITLE: Resource prioritization
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -16,11 +20,12 @@
 #+PROPERTY: header-args:sql+ :cmdline -q
 #+PROPERTY: header-args:sh  :results verbatim org
 #+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
-#+PROPERTY: header-args:ipython   :session food_inspections
-#+PROPERTY: header-args:ipython+ :results raw drawer
+#+PROPERTY: header-args:jupyter-python :eval never-export
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/inspections.md
+#+EXPORT_EXCLUDE_TAGS: noexport
 
 * Inpection prioritization
 ** Problem description
@@ -138,7 +143,7 @@ order by
 |  569377 |     5570 | 2011-06-01 | pass   | {NULL}                   | f      | f                    |
 :END:
 
-Remember from the section [[Cohorts, labels, event dates and as of dates][Cohorts, labels, event dates and as of dates]] that the /outcome/ will be used by
+The /outcome/ will be used by
 =triage= to generate the labels. The following image tries to
 show the meaning of the /outcomes/ for the /inspection failed/ problem definition.
 
@@ -1567,6 +1572,7 @@ use if you want to choose the best combination of hyperparameters and
 algorithm (i.e. the model group). In the =postmodeling= section we will
 solve this dilemma with the support of =audition=.
 
+
 ** Selecting the best model
 
 *45* /model groups/! How to pick the best one and use it for making
@@ -1788,6 +1794,7 @@ plot is hard to read, but is very helpful since it shows you the
 
 In the figure, you can see that the ~60% of the =DummyClassifier= models
 are ~18 percentual points below of the best.
+
 
 ** Selecting the best rule or strategy for choosing model groups
 

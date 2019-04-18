@@ -1,3 +1,7 @@
+#+TITLE: Data preparation
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -16,12 +20,12 @@
 #+PROPERTY: header-args:sql+ :cmdline -q
 #+PROPERTY: header-args:sh  :results verbatim org
 #+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
-#+PROPERTY: header-args:ipython   :session food_inspections
-#+PROPERTY: header-args:ipython+ :results raw drawer
-#+PROPERTY: header-args:ipython+ :eval no-export
+#+PROPERTY: header-args:jupyter-python :eval never-export
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/data_preparation.md
+#+EXPORT_EXCLUDE_TAGS: noexport
 
 * Data preparation
 
@@ -52,7 +56,7 @@ We will use some =postgresql= magic in order to get the data in our
 database. In particular we will use the powerful [[https://www.postgresql.org/docs/10/sql-copy.html][copy]] command
 and the City of Chicago's data API:
 
-#+BEGIN_SRC sql :async
+#+BEGIN_SRC sql
 \copy raw.inspections from program 'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"' HEADER CSV
 #+END_SRC
 
@@ -317,7 +321,7 @@ This column will require also cleaning.
 
 Finally, let's look =results= (should be 3)
 
-#+BEGIN_SRC  sql
+#+BEGIN_SRC sql
   select
       results,
       to_char(count(*), '999,999') as "number of inspections"
@@ -381,7 +385,7 @@ Let's review the status of the spatial columns (=state, city, zip, latitude,
 longitude=). Beginning with =state=, all the facilities in the
 data should be located in *Illinois*:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 select
     state,
     to_char(count(*), '999,999') as "number of inspections"
@@ -389,7 +393,7 @@ from
     raw.inspections
 group by
     state;
-#+end_src
+#+END_SRC
 
 #+RESULTS:
 :RESULTS:
@@ -485,7 +489,7 @@ and cleaning decisions separate from the /raw/ data in a schema that
 The =cleaned= schema will contain two tables: =cleaned.inspections=
 and =cleaned.violations=.
 
-#+BEGIN_SRC sql :tangle ./sql/create_cleaned_inspections_table.sql
+#+BEGIN_SRC sql
   create schema if not exists cleaned;
 #+END_SRC
 
@@ -493,7 +497,7 @@ and =cleaned.violations=.
 
 Then, we will create our mini *ETL* with our cleaning decisions:
 
-#+BEGIN_SRC sql :tangle ./sql/create_cleaned_inspections_table.sql :async
+#+BEGIN_SRC sql
 drop table if exists cleaned.inspections cascade;
 
 create table cleaned.inspections as (
@@ -529,7 +533,7 @@ create table cleaned.inspections as (
 
 You could execute this code from the command line using =psql=:
 
-#+BEGIN_SRC sh :dir /docker:root@tutorial_bastion:/ :results org drawer
+#+BEGIN_SRC sh
 psql ${DATABASE_URL} < /sql/create_cleaned_inspections_table.sql
 #+END_SRC
 
@@ -608,7 +612,7 @@ We will create a new table called =cleaned.violations= to store
    - description
    - comments
 
-#+BEGIN_SRC sql :tangle ./sql/create_violations_table.sql :async
+#+BEGIN_SRC sql
    drop table if exists cleaned.violations cascade;
 
    create table cleaned.violations as (
@@ -900,7 +904,7 @@ will use the date of the facility's first inspection as =start_time=,
 and either =NULL= or the date of inspection if the result was =out of business=
 or =business not located= as =end_time=.
 
-#+BEGIN_SRC sql :tangle ./sql/create_semantic_tables.sql :async
+#+BEGIN_SRC sql
 create schema if not exists semantic;
 
 drop table if exists semantic.entities cascade;
@@ -973,7 +977,7 @@ from
 
 We will add some indexes to this table[fn:19]:
 
-#+BEGIN_SRC sql :tangle ./sql/create_semantic_tables.sql :async
+#+BEGIN_SRC sql
 create index entities_ix on semantic.entities (entity_id);
 create index entities_license_num_ix on semantic.entities (license_num);
 create index entities_facility_ix on semantic.entities (facility);
@@ -996,7 +1000,7 @@ the inspection happened, and the inspection /result/. We will add
 the violations as a =JSONB= column.[fn:11] Finally, we'll rename
 =inspection= as =event_id=.[fn:13]
 
-#+begin_src sql :tangle ./sql/create_semantic_tables.sql :async
+#+BEGIN_SRC sql
 drop table if exists semantic.events cascade;
 
 create table semantic.events as (
@@ -1059,13 +1063,13 @@ create index events_violations_json_path on semantic.events using gin(violations
 
 create index events_event_entity_zip_code_date on semantic.events (event_id asc nulls last, entity_id asc nulls last, zip_code, date desc nulls last);
 
-#+end_src
+#+END_SRC
 
 #+RESULTS:
 
 Success! We have one row per event.[fn:12] Our semantic data looks like:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 select
     event_id,
     entity_id,
@@ -1077,7 +1081,7 @@ select
     zip_code
 from
     semantic.events limit 1;
-#+end_src
+#+END_SRC
 
 #+RESULTS:
 :RESULTS:
@@ -1113,22 +1117,6 @@ We will generate a few plots, just to know:
 - how many entities/events are every month?
 - how many entities/events ended in a failed state every month? and,
 - how many entities/events have in a critical violation in a failed inspection?
-
-#+BEGIN_SRC sh :dir /docker:root@tutorial_bastion:/triage :exports none :results none
-
-# Or jupyter-kernel if you want to interact from org-mode
-
-jupyter-kernel   \
-    --ip=0.0.0.0 \
-    --KernelManager.control_port=56406 \
-    --KernelManager.hb_port=56407      \
-    --KernelManager.iopub_port=56408   \
-    --KernelManager.shell_port=56409   \
-    --KernelManager.stdin_port=56410   \
-    --Session.keyfile=./session.key
-    --debug
-#+END_SRC
-
 
 #+BEGIN_SRC jupyter-python :session ./docker-kernel-connection.json :results none :exports none
 %matplotlib inline
@@ -1416,7 +1404,7 @@ algorithms only accept data in matrix form (i.e. one big table)
 
 #+NAME: data_road
 #+CAPTION: Data's transformation roadmap : from raw to triage
-#+BEGIN_SRC ditaa :file images/data_road.png :cmdline -r -s 1.2 :export results
+#+BEGIN_SRC ditaa :file images/data_road.png :cmdline -r -s 1.2 :export results :eval never-export
                    Data transformation roadmap
 ------------------------------------------------------------------
                        From raw to triage

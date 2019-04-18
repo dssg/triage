@@ -1,3 +1,7 @@
+#+TITLE: Scaling out
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -21,6 +25,9 @@
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/aws_batch.md
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 
 * Scaling out: AWS Batch
 
@@ -80,13 +87,13 @@ AWS Batch requires setup the following infrastructure:
 
 You can check if you have the =AWS S3= permissions like:
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] aws ls [your-bucket]   # (dont't forget the last backslash)
-#+END_EXAMPLE
+#+END_SRC
 
 And for the =AWS Batch= part:
 
-#+BEGIN_SRC sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] aws batch describe-job-queues
 [AWS_PROFILE=your_profile] aws batch describe-job-definitions
 #+END_SRC
@@ -117,9 +124,9 @@ S3_BUCKET={your-bucket}
 
 To check if everything is correct you can run:
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile]  ./deploy.sh -h
-#+END_EXAMPLE
+#+END_SRC
 
 Next, we need 3 files for running in AWS Batch, copy the files and remove
 the =.example= extension and adapt them to your case:
@@ -223,7 +230,7 @@ in =deploy.sh=)
 We provided a simple bash file for creating the image,
 uploading/updating the job definition and running the experiment:
 
-    #+BEGIN_EXAMPLE shell
+    #+BEGIN_SRC shell
     ./deploy.sh -h
 
     Usage: ./deploy.sh (-h | -i | -u | -b | -r | -a | --sync_{to,from}_s3 )
@@ -242,13 +249,13 @@ uploading/updating the job definition and running the experiment:
             $ ./deploy.sh -u
        Run triage experiments:
             $ ./deploy.sh -r --experiment_file=s3://your_project/experiments/test.yaml,project_path=s3://your_project/triage,replace=--replace
-    #+END_EXAMPLE
+    #+END_SRC
 
 If you have multiple AWS profiles use =deploy.sh= as follows:
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] ./deploy.sh -r [job-run-name] experiment_file=s3://{your_bucket}/experiments/simple_test_skeleton.yaml,output_path=s3://{your_bucket}/triage,replace=--no-replace,save_predictions=--no-save-predictions,profile=--profile,validate=--validate
-#+END_EXAMPLE
+#+END_SRC
 
 Where =your_profile= is the name of the profile in =~/.aws/credentials=
 
@@ -267,9 +274,9 @@ tailored to you (like not using the =cli= interface)
 
 - Create a /job definition/ and publish it:
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] ./deploy.sh -u
-#+END_EXAMPLE
+#+END_SRC
 
 #+BEGIN_QUOTE
 You could create different jobs if, for example, you want to have
@@ -281,12 +288,12 @@ resources for a big experiment)
 
 - Create experiment files and publish them to the =s3= bucket:
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] ./deploy.sh --synt-to-s3
-#+END_EXAMPLE
+#+END_SRC
 
 - Run the experiments
 
-#+BEGIN_EXAMPLE sh
+#+BEGIN_SRC sh :eval no
 [AWS_PROFILE=your_profile] ./deploy.sh -r [job-run-name] experiment_file=s3://{your_bucket}/experiments/simple_test_skeleton.yaml,output_path=s3://{your_bucket}/triage,replace=--no-replace,save_predictions=--no-save-predictions,profile=--profile,validate=--validate
-#+END_EXAMPLE
+#+END_SRC

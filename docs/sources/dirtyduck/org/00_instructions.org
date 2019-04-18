@@ -1,3 +1,7 @@
+#+TITLE: Welcome
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -14,12 +18,11 @@
 #+PROPERTY: header-args:sql+ :cmdline -q
 #+PROPERTY: header-args:sh  :results verbatim org
 #+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
-#+PROPERTY: header-args:ipython   :session Food_inspections
-#+PROPERTY: header-args:ipython+ :results raw drawer
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
-
+#+EXPORT_FILE_NAME: ../docs/index.md
+#+EXPORT_EXCLUDE_TAGS: noexport
 
 * Welcome!
 

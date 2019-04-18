@@ -2,19 +2,50 @@ site_name: Triage Documentation
 theme: readthedocs
 docs_dir: sources
 repo_url: http://github.com/dssg/triage
-edit_uri: blob/master/docs/templates
+edit_uri: ''
 site_description: 'Documentation for Triage.'
 
 markdown_extensions:
-    - toc:
-        permalink: True
-        baselevel: 2
+  - toc:
+      permalink: True
+      baselevel: 2
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - pymdownx.arithmatex
+  - pymdownx.b64
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.extrarawhtml
+  - pymdownx.keys
+  - pymdownx.highlight
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
 extra_javascript:
     - "js/mermaid.min.js"
 
-pages:
+nav:
   - Home: index.md
-  - Dirty Duck Tutorial: dirtyduck/index.md
+  - Dirty Duck Tutorial:
+    - Welcome: dirtyduck/docs/index.md
+    - Choose your own adventure: dirtyduck/docs/choose_your_own_adventure.md
+    - Setup:
+      - Infrastructure: dirtyduck/docs/infrastructure.md
+      - Data preparation: dirtyduck/docs/data_preparation.md
+    - Case studies:
+      - Problem description: dirtyduck/docs/intro.md
+      - Resource prioritization: dirtyduck/docs/inspections.md
+      - Early Warning System: dirtyduck/docs/eis.md
+    - Triage:
+      - A deeper look into triage: dirtyduck/docs/triage_intro.md
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
@@ -27,3 +58,5 @@ pages:
     - Experiment Architecture: experiments/architecture.md
   - Audition: https://github.com/dssg/triage/tree/master/src/triage/component/audition
   - Postmodeling: postmodeling/index.md
+  - Database's schema description:  dirtyduck/docs/schema.md
+  - Scaling out: dirtyduck/docs/aws_batch.md

@@ -1,3 +1,7 @@
+#+TITLE: Early Warning System
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -16,12 +20,14 @@
 #+PROPERTY: header-args:sql+ :cmdline -q
 #+PROPERTY: header-args:sh  :results verbatim org
 #+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
-#+PROPERTY: header-args:ipython   :session food_inspections
-#+PROPERTY: header-args:ipython+ :results raw drawer
+#+PROPERTY: header-args:jupyter-python :eval never-export
 #+PROPERTY: header-args:yaml :eval no-export
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/eis.md
+#+EXPORT_EXCLUDE_TAGS: noexport
+
 
 * An Early Intervention System
 

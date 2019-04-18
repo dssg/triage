@@ -1,3 +1,7 @@
+#+TITLE: Problem description
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
 #+STARTUP: showeverything
 #+STARTUP: nohideblocks
 #+STARTUP: indent
@@ -19,6 +23,8 @@
 #+OPTIONS: broken-links:mark
 #+OPTIONS: tasks:todo
 #+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/intro.md
+#+EXPORT_EXCLUDE_TAGS: noexport
 
 
 * Description of the problem
