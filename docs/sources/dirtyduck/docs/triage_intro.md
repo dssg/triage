@@ -42,8 +42,10 @@ We will show you how to setup the experiment while explaining the inner workings
 
 You can run that experiment with:
 
-    # Remember to run this in bastion NOT in your laptop!
-    triage experiment --matrix-format hdf experiments/simple_test_skeleton.yaml
+```shell
+# Remember to run this in bastion NOT in your laptop!
+triage experiment --matrix-format hdf experiments/simple_test_skeleton.yaml
+```
 
 Every time you modify the configuration file and see the effects, you should execute the experiment again using the previous command.
 
@@ -211,24 +213,24 @@ The *experiment configuration file* is used to create the `experiment` object. H
 
 The configuration file is a `yaml` file with the following main sections:
 
--   **[`temporal_config`](#org3e2540e):** Temporal specification of the data, used for creating the blocks for temporal crossvalidation.
+-   **[`temporal_config`](#orgecc6227):** Temporal specification of the data, used for creating the blocks for temporal crossvalidation.
 
 -   **`cohort_config`:** Using the state of the entities, define (using `sql`) *cohorts* to filter out objects that shouldn't be included in the training and prediction stages. This will generate a table call `cohort_{experiment_hash}`
 
 -   **`label_config`:** Specify (using `sql`) how to generate *labels* from the event's *outcome*. A table named `labels_{experiment_hash}` will be created.
 
--   **[`feature_aggregation`](#org998cbea):** Which spatio-temporal aggregations of the columns in the data set do you want to generate as features for the models?
+-   **[`feature_aggregation`](#orga9dbe41):** Which spatio-temporal aggregations of the columns in the data set do you want to generate as features for the models?
 
 -   **`model_group_keys`:** How do you want to identify the `model_group` in the database (so you can run analysis on them)?
 
--   **[`grid_config`](#org9a7c483):** Which combination of hyperparameters and algorithms will be trained and evaluated in the data set?
+-   **[`grid_config`](#org91afffc):** Which combination of hyperparameters and algorithms will be trained and evaluated in the data set?
 
 -   **`scoring`:** Which metrics will be calculated?
 
 Two of the more important (and potentially confusing) sections are `temporal_config` and `feature_generation`. We will explain them in detail in the next sections.
 
 
-<a id="org3e2540e"></a>
+<a id="orgecc6227"></a>
 
 ## Temporal crossvalidation
 
@@ -301,8 +303,10 @@ The following images (we will show how to generate them later) shows the time bl
 
 If you want to try the modifications (or your own) and generate the temporal blocks images run the following (they'll be generated in <./images/>):
 
-    # Remember to run this in bastion NOT in laptop's shell!
-    triage experiment experiments/simple_test_skeleton.yaml --show-timechop
+```shell
+# Remember to run this in bastion NOT in laptop's shell!
+triage experiment experiments/simple_test_skeleton.yaml --show-timechop
+```
 
 -   `{feature, label}_{end, start}_time`
 
@@ -316,201 +320,221 @@ If you want to try the modifications (or your own) and generate the temporal blo
 
     This is the temporal configuration that generated the previous image:
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '1y'
+        max_training_histories: '1y'
+    ```
 
     In that configuration the date ranges of features and labels are equal, but they can be different (maybe you have more data for features that data for labels) as is shown in the following image and in their configuration parameters.
 
     ![img](./images/timechop_2.png "feature<sub>start</sub><sub>time</sub> different different that label<sub>start</sub><sub>time</sub>.")
 
-        temporal_config:
-            feature_start_time: '2010-01-01'   # <------- The change happened here!
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2010-01-01'   # <------- The change happened here!
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '1y'
+        max_training_histories: '1y'
+    ```
 
 -   `model_update_frequency`
 
-    From our **baseline** `temporal_config` example ([102](#orgac8ef33)), we will change how often we want a new model, which generates more time blocks (if there are time-constrained data, obviously).
+    From our **baseline** `temporal_config` example ([102](#org5f54d1f)), we will change how often we want a new model, which generates more time blocks (if there are time-constrained data, obviously).
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '6month' # <------- The change happened here!
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '6month' # <------- The change happened here!
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '1y'
+        max_training_histories: '1y'
+    ```
 
     ![img](./images/timechop_3.png "A smaller model<sub>update</sub><sub>frequency</sub> (from 1y to 6month) (The number of blocks grew)")
 
 -   `max_training_histories`
 
-    With this parameter you could get a *growing window* for training (depicted in [110](#org91fe9f5)) or as in all the other examples, *fixed training windows*.
+    With this parameter you could get a *growing window* for training (depicted in [110](#orgc3fbafd)) or as in all the other examples, *fixed training windows*.
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '10y'  # <------- The change happened here!
+        max_training_histories: '10y'  # <------- The change happened here!
+    ```
 
     ![img](./images/timechop_4.png "The size of the block is bigger now")
 
 -   `_as_of_date_frequencies` and `test_durations`
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '3month' # <------- The change happened here!
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '3month' # <------- The change happened here!
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_5.png "Less rows per entity in the training block")
 
     Now, change `test_as_of_date_frequencies`:
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '3month'<------- The change happened here!
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '3month'<------- The change happened here!
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_6.png "We should get more rows per entity in the test matrix, but that didn't happen. Why?")
 
     Nothing changed because the test set doesn't have "space" to allow more spans. The "space" is controlled by `test_durations`, so let's change it to `6month`:
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '6month' <------- The change happened here!
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '6month' <------- The change happened here!
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_7.png "The test duration is bigger now, so we got 6 rows (since the "base" frequency is 1 month)")
 
     So, now we will move both parameters: `test_durations`, `test_as_of_date_frequencies`
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '6month' <------- The change happened here!
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '3month' <------- and also here!
+        test_durations: '6month' <------- The change happened here!
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '3month' <------- and also here!
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_8.png "With more room in testing, now test<sub>as</sub><sub>of</sub><sub>date</sub><sub>frequencies</sub> has some effect.")
 
 -   `_label_timespans`
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['1y']
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['1y']
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['3month']  <------- The change happened here!
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['3month']  <------- The change happened here!
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_9.png "The label time horizon in the test dataset now is smaller")
 
-        temporal_config:
-            feature_start_time: '2014-01-01'
-            feature_end_time: '2018-01-01'
-            label_start_time: '2014-01-02'
-            label_end_time: '2018-01-01'
+    ```yaml
+    temporal_config:
+        feature_start_time: '2014-01-01'
+        feature_end_time: '2018-01-01'
+        label_start_time: '2014-01-02'
+        label_end_time: '2018-01-01'
 
-            model_update_frequency: '1y'
-            training_label_timespans: ['3month'] <------- The change happened here!
-            training_as_of_date_frequencies: '1month'
+        model_update_frequency: '1y'
+        training_label_timespans: ['3month'] <------- The change happened here!
+        training_as_of_date_frequencies: '1month'
 
-            test_durations: '0d'
-            test_label_timespans: ['1y']
-            test_as_of_date_frequencies: '1month'
+        test_durations: '0d'
+        test_label_timespans: ['1y']
+        test_as_of_date_frequencies: '1month'
 
-            max_training_histories: '10y'
+        max_training_histories: '10y'
+    ```
 
     ![img](./images/timechop_10.png "The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity.")
 
@@ -519,7 +543,7 @@ If you want to try the modifications (or your own) and generate the temporal blo
     With the time blocks defined, `triage` will create the *labels* and then the features for our train and test sets. We will discuss *features* in the following section.
 
 
-<a id="org998cbea"></a>
+<a id="orga9dbe41"></a>
 
 ## Feature engineering
 
@@ -531,13 +555,17 @@ As before, we will try to mimic what `triage` does behind the scenario. `Collate
 
 Two possible features could be framed as:
 
-    As of 2016-01-01, how many inspections
-    has each facility had in the previous 6 months?
+```
+As of 2016-01-01, how many inspections
+has each facility had in the previous 6 months?
+```
 
 and
 
-    As of 2016-01-01, how many "high risk" findings has the
-    facility had in the previous 6 months?
+```
+As of 2016-01-01, how many "high risk" findings has the
+facility had in the previous 6 months?
+```
 
 In our data, that date range (between 2016-01-01 and 2015-07-01) looks like:
 
@@ -637,26 +665,28 @@ But fear not. `triage` will automate that for us!
 
 The following blocks of code represent a snippet of `triage`'s configuration file related to feature aggregation. It shows the `triage` syntax for the `inspections` feature constructed above:
 
-    feature_aggregations:
+```yaml
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates:
       -
-        prefix: 'inspections'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
+        quantity:
+          total: "*"
+        imputation:
+           count:
+              type: 'zero_noflag'
+        metrics:
+          - 'count'
 
-        aggregates:
-          -
-            quantity:
-              total: "*"
-            imputation:
-               count:
-                  type: 'zero_noflag'
-            metrics:
-              - 'count'
+    intervals: ['6month']
 
-        intervals: ['6month']
-
-        groups:
-            - 'entity_id'
+    groups:
+        - 'entity_id'
+```
 
 `feature_aggregations` is a `yaml` list<sup><a id="fnr.10" class="footref" href="#fn.10">10</a></sup> of *feature groups construction specification* or just *feature group*. A *feature group* is a way of grouping several features that share `intervals` and `groups`. `triage` requires the following configuration parameter for every *feature group*:
 
@@ -674,14 +704,16 @@ The last section to discuss is `imputation`. Imputation is very important step i
 
 `triage` will generate the following (or a very similar one), one per each combination of `interval` &times; `groups` &times; `quantity`:
 
-    select
-      metric(quantity) as alias
-    from
-      from_obj
-    where
-      as_of_date <@ (as_of_date - interval, as_of_date)
-    group by
-      groups
+```sql
+select
+  metric(quantity) as alias
+from
+  from_obj
+where
+  as_of_date <@ (as_of_date - interval, as_of_date)
+group by
+  groups
+```
 
 With the previous configuration `triage` will generate **1** feature with the following name:<sup><a id="fnr.12" class="footref" href="#fn.12">12</a></sup>
 
@@ -693,83 +725,92 @@ All the features of that *feature group* (in this case only 1) will be stored in
 
 In general the names of the generated tables are constructed as follows:
 
-    schema.prefix_group_aggregation_imputed
+```
+schema.prefix_group_aggregation_imputed
+```
 
 **NOTE**: the outputs are stored in the `features` schema.
 
 Inside each of those new tables, the feature name will follow this pattern:
 
-    prefix_group_interval_alias_aggregation_operation
+```
+prefix_group_interval_alias_aggregation_operation
+```
 
 If we complicate a little the above configuration adding new intervals:
 
-    feature_aggregations:
-      -
-        prefix: 'inspections'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
+```yaml
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
 
-        aggregates:
-          - # number of inspections
-            quantity:
-              total: "*"
+    aggregates:
+      - # number of inspections
+        quantity:
+          total: "*"
 
-            imputation:
-              count:
-                type: 'zero_noflag'
+        imputation:
+          count:
+            type: 'zero_noflag'
 
-            metrics: ['count']
+        metrics: ['count']
 
-        intervals: ['1month', '3month', '6month', '1y', 'all']
+    intervals: ['1month', '3month', '6month', '1y', 'all']
 
-        groups:
-            - 'entity_id'
+    groups:
+        - 'entity_id'
+```
 
 You will end with 5 new *features*, one for each interval (5) &times; the only aggregate definition we have. Note the weird `all` in the `intervals` definition. `all` is the time interval between the `feature_start_time` and the `as_of_date`.
 
 `triage` also supports `categorical` objects. The following code adds a *feature* for the `risk` flag.
 
-    feature_aggregations:
+```yaml
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates:
+      - # number of inspections
+        quantity:
+          total: "*"
+
+        imputation:
+          count:
+            type: 'zero_noflag'
+
+        metrics: ['count']
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+        - 'entity_id'
+  -
+    prefix: 'risks'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero'
+
+    categoricals:
       -
-        prefix: 'inspections'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
+        column: 'risk'
+        choice_query: 'select distinct risk from semantic.events'
+          metrics:
+            - 'sum'
 
-        aggregates:
-          - # number of inspections
-            quantity:
-              total: "*"
+    intervals: ['1month', '3month', '6month', '1y', 'all']
 
-            imputation:
-              count:
-                type: 'zero_noflag'
+    groups:
+      - 'entity_id'
 
-            metrics: ['count']
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-            - 'entity_id'
-      -
-        prefix: 'risks'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
-
-        categoricals_imputation:
-          sum:
-            type: 'zero'
-
-        categoricals:
-          -
-            column: 'risk'
-            choice_query: 'select distinct risk from semantic.events'
-              metrics:
-                - 'sum'
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-          - 'entity_id'
+```
 
 There are several changes. First, the imputation strategy in this new *feature group* is for every categorical features in that feature group (in that example only one). The next change is the type: instead of `aggregates`, it's `categoricals`. `categoricals` define a `yaml` list too. Each `categorical` feature needs to define a `column` to be aggregated and the query to get all the distinct values.
 
@@ -790,101 +831,109 @@ select distinct risk from semantic.events;
 
 returns 4 possible values (including `NULL`). When dealing with categorical aggregations you need to be careful. Could be the case that in some period of time, in your data, you don't have all the possible values of the categorical variable. This could cause problems down the road. Triage allows you to specify the possible values (*choices*) of the variable. Instead of using `choice_query`, you could use `choices` as follows:
 
-    feature_aggregations:
+```yaml
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates:
+      - # number of inspections
+        quantity:
+          total: "*"
+
+        imputation:
+          count:
+            type: 'mean'
+
+        metrics: ['count']
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+        - 'entity_id'
+  -
+    prefix: 'risks'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero'
+
+    categoricals:
       -
-        prefix: 'inspections'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
+        column: 'risk'
+        choices: ['low', 'medium', 'high']
+          metrics:
+            - 'sum'
 
-        aggregates:
-          - # number of inspections
-            quantity:
-              total: "*"
+    intervals: ['1month', '3month', '6month', '1y', 'all']
 
-            imputation:
-              count:
-                type: 'mean'
+    groups:
+      - 'entity_id'
 
-            metrics: ['count']
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-            - 'entity_id'
-      -
-        prefix: 'risks'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
-
-        categoricals_imputation:
-          sum:
-            type: 'zero'
-
-        categoricals:
-          -
-            column: 'risk'
-            choices: ['low', 'medium', 'high']
-              metrics:
-                - 'sum'
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-          - 'entity_id'
+```
 
 In both cases `triage` will generate `20` new features, as expected.
 
 The features generated from categorical objects will have the following pattern:
 
-    prefix_group_interval_column_choice_aggregation_operation
+```
+prefix_group_interval_column_choice_aggregation_operation
+```
 
 So, `risks_entity_id_1month_risk_medium_sum` will be among our new features in the last example.
 
 As a next step, let's investigate the effect of having several elements in the `groups` list.
 
-    feature_aggregations:
+```yaml
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates:
+      - # number of inspections
+        quantity:
+          total: "*"
+
+        imputation:
+          count:
+            type: 'mean'
+
+        metrics: ['count']
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+        - 'entity_id'
+
+  -
+    prefix: 'risks'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero'
+
+    categoricals:
       -
-        prefix: 'inspections'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
+        column: 'risk'
+        choices: ['low', 'medium', 'high']
+          metrics:
+            - 'sum'
 
-        aggregates:
-          - # number of inspections
-            quantity:
-              total: "*"
+    intervals: ['1month', '3month', '6month', '1y', 'all']
 
-            imputation:
-              count:
-                type: 'mean'
+    groups:
+      - 'entity_id'
+      - 'zip_code'
 
-            metrics: ['count']
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-            - 'entity_id'
-
-      -
-        prefix: 'risks'
-        from_obj: 'semantic.events'
-        knowledge_date_column: 'date'
-
-        categoricals_imputation:
-          sum:
-            type: 'zero'
-
-        categoricals:
-          -
-            column: 'risk'
-            choices: ['low', 'medium', 'high']
-              metrics:
-                - 'sum'
-
-        intervals: ['1month', '3month', '6month', '1y', 'all']
-
-        groups:
-          - 'entity_id'
-          - 'zip_code'
+```
 
 The number of features created in the table `features.risks_aggregation_imputed` is now 60 (`intervals` (5) &times; `groups` (2) &times; `metric` (2) &times; *features* (1) &times; *number of choices* (3).
 
@@ -922,13 +971,15 @@ Another interesting thing that `triage` controls is how many feature groups are 
 
 In `simple_test_skeleton.yaml` you will find the following blocks:
 
-    feature_group_definition:
-      prefix:
-        - 'results'
-        - 'risks'
-        - 'inspections'
+```yaml
+feature_group_definition:
+  prefix:
+    - 'results'
+    - 'risks'
+    - 'inspections'
 
-    feature_group_strategies: ['all']
+feature_group_strategies: ['all']
+```
 
 This configuration adds to the *number* of model groups to be created.
 
@@ -976,7 +1027,7 @@ If you are facing this difficulty, you can force `triage` to *cast* the column i
 ```
 
 
-<a id="org9a7c483"></a>
+<a id="org91afffc"></a>
 
 ## The Grid
 
@@ -994,361 +1045,7 @@ grid_config:
 
 Just one algorithm and one hyperparameter (also we have only one feature group strategy: `all`), and two time splits. So we will get 2 models, 1 model group.
 
-Keep in mind that the grid is providing more than way to select a model. You can use the tables generated by the grid (see next section, [Machine learning governance](#orgf25530c)) and *analyze* and *understand* your data. In other words, analyzing the results (evaluations, predictions, hyperparameter space, etc.) is like applying **Data mining** concepts to your data using Machine learning. We will return to this when we apply post modeling to our models.
-
-
-<a id="orgf25530c"></a>
-
-## Machine learning governance
-
-When `triage` executes the experiment, it creates a series of new schemas for storing the copious output of the experiment. The schemas are `test_results, train_results`, and `model_metadata`. These schemas store the metadata of the trained models, features, parameters, and hyperparameters used in their training. It also stores the predictions and evaluations of the models on the test sets.
-
-The schema `model_metadata` is composed by the tables:
-
-```sql
-\dt model_metadata.*
-```
-
-| List of relations        |                               |       |                     |
-|------------------------ |----------------------------- |----- |------------------- |
-| Schema                   | Name                          | Type  | Owner               |
-| model<sub>metadata</sub> | experiment<sub>matrices</sub> | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | experiment<sub>models</sub>   | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | experiments                   | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | list<sub>predictions</sub>    | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | matrices                      | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | model<sub>groups</sub>        | table | food<sub>user</sub> |
-| model<sub>metadata</sub> | models                        | table | food<sub>user</sub> |
-
-The tables contained in `test_results` are:
-
-```sql
-\dt test_results.*
-```
-
-| List of relations      |                                  |       |                     |
-|---------------------- |-------------------------------- |----- |------------------- |
-| Schema                 | Name                             | Type  | Owner               |
-| test<sub>results</sub> | evaluations                      | table | food<sub>user</sub> |
-| test<sub>results</sub> | individual<sub>importances</sub> | table | food<sub>user</sub> |
-| test<sub>results</sub> | predictions                      | table | food<sub>user</sub> |
-
-Lastly, if you have interest in how the model performed in the *training* data sets you could consult `train_results`
-
-```sql
-\dt train_results.*
-```
-
-| List of relations       |                               |       |                     |
-|----------------------- |----------------------------- |----- |------------------- |
-| Schema                  | Name                          | Type  | Owner               |
-| train<sub>results</sub> | evaluations                   | table | food<sub>user</sub> |
-| train<sub>results</sub> | feature<sub>importances</sub> | table | food<sub>user</sub> |
-| train<sub>results</sub> | predictions                   | table | food<sub>user</sub> |
-
-
-### What are all the results tables about?
-
-`model_groups` stores the algorithm (`model_type`), the hyperparameters (`hyperparameters`), and the features shared by a particular set of models. `models` contains data specific to a model: the `model_group` (you can use `model_group_id` for linking the model to a model group), temporal information (like `train_end_time`), and the train matrix UUID (`train_matrix_uuid`). This **UUID** is important because it's the name of the file in which the matrix is stored.
-
-Lastly, `{train, test}_results.predictions` contains all the *scores* generated by every model for every entity. `{train_test}_results.evaluation` stores the value of all the **metrics** for every model, which were specified in the `scoring` section in the config file.
-
--   `model_metadata.experiments`
-
-    This table has the two columns: `experiment_hash` and `config`
-
-    ```sql
-    \d model_metadata.experiments
-    ```
-
-    | Table "model<sub>metadata.experiments</sub>"                                                                                                                                                                                                                                    |                   |           |          |         |
-    |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |----------------- |--------- |-------- |------- |
-    | Column                                                                                                                                                                                                                                                                          | Type              | Collation | Nullable | Default |
-    | experiment<sub>hash</sub>                                                                                                                                                                                                                                                       | character varying |           | not null |         |
-    | config                                                                                                                                                                                                                                                                          | jsonb             |           |          |         |
-    | Indexes:                                                                                                                                                                                                                                                                        |                   |           |          |         |
-    | "experiments<sub>pkey</sub>" PRIMARY KEY, btree (experiment<sub>hash</sub>)                                                                                                                                                                                                     |                   |           |          |         |
-    | Referenced by:                                                                                                                                                                                                                                                                  |                   |           |          |         |
-    | TABLE "model<sub>metadata.experiment</sub><sub>matrices</sub>" CONSTRAINT "experiment<sub>matrices</sub><sub>experiment</sub><sub>hash</sub><sub>fkey</sub>" FOREIGN KEY (experiment<sub>hash</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>) |                   |           |          |         |
-    | TABLE "model<sub>metadata.experiment</sub><sub>models</sub>" CONSTRAINT "experiment<sub>models</sub><sub>experiment</sub><sub>hash</sub><sub>fkey</sub>" FOREIGN KEY (experiment<sub>hash</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>)     |                   |           |          |         |
-    | TABLE "model<sub>metadata.matrices</sub>" CONSTRAINT "matrices<sub>built</sub><sub>by</sub><sub>experiment</sub><sub>fkey</sub>" FOREIGN KEY (built<sub>by</sub><sub>experiment</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>)               |                   |           |          |         |
-    | TABLE "model<sub>metadata.models</sub>" CONSTRAINT "models<sub>experiment</sub><sub>hash</sub><sub>fkey</sub>" FOREIGN KEY (built<sub>by</sub><sub>experiment</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>)                                 |                   |           |          |         |
-
-    `experiment_hash` contains the hash of the configuration file that we used for our `triage` run.<sup><a id="fnr.13" class="footref" href="#fn.13">13</a></sup> `config` that contains the configuration experiment file that we used for our `triage` run, stored as `jsonb`.
-
-    ```sql
-    select experiment_hash,
-    config ->  'user_metadata' as user_metadata
-    from model_metadata.experiments;
-    ```
-
-    | experiment<sub>hash</sub>        | user<sub>metadata</sub>                                                                                                                                                                                  |
-    |-------------------------------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | 67a1d564d31811b9c20ca63672c25abd | {"org": "DSaPP", "team": "Tutorial", "author": "Adolfo De Unanue", "etl<sub>date</sub>": "2019-02-21", "experiment<sub>type</sub>": "test", "label<sub>definition</sub>": "failed<sub>inspection</sub>"} |
-
-    We could use the following advice: If we are interested in all models that resulted from a certain config, we could lookup that config in `model_metadata.experiments` and then use its `experiment_hash` on other tables to find all the models that resulted from that configuration.
-
--   `metadata_model.model_groups`
-
-    Do you remember how we defined in `grid_config` the different classifiers that we want `triage` to train? For example, we could use in a configuration file the following:
-
-        'sklearn.tree.DecisionTreeClassifier':
-            criterion: ['entropy']
-            max_depth: [1, 2, 5, 10]
-            random_state: [2193]
-
-    By doing so, we are saying that we want to train 4 decision trees (`max_depth` is one of `1, 2, 5, 10`). However, remember that we are using temporal crossvalidation to build our models, so we are going to have different temporal slices that we are training models on, e.g., 2010-2011, 2011-2012, etc.
-
-    Therefore, we are going to train our four decision trees on each temporal slice. Therefore, the trained model (or the instance of that model) will change across temporal splits, but the configuration will remain the same. This table lets us keep track of the different configurations (`model_groups`) and gives us an `id` for each configuration (`model_group_id`). We can leverage the `model_group_id` to find all the models that were trained using the same config but on different slices of time.
-
-    In our simple test configuration file we have:
-
-        'sklearn.dummy.DummyClassifier':
-            strategy: [most_frequent]
-
-    Therefore, if we run the following
-
-    ```sql
-    select
-        model_group_id,
-        model_type,
-        hyperparameters,
-        model_config -> 'feature_groups' as feature_groups,
-        model_config -> 'cohort_name' as cohort,
-        model_config -> 'label_name' as label,
-        model_config -> 'label_definition' as label_definition,
-        model_config -> 'experiment_type' as experiment_type,
-        model_config -> 'etl_date' as etl_date
-    from
-        model_metadata.model_groups;
-    ```
-
-    | model<sub>group</sub><sub>id</sub> | model<sub>type</sub>          | hyperparameters                         | feature<sub>groups</sub>                                    | cohort                      | label                          | label<sub>definition</sub>    | experiment<sub>type</sub> | etl<sub>date</sub> |
-    |---------------------------------- |----------------------------- |--------------------------------------- |----------------------------------------------------------- |--------------------------- |------------------------------ |----------------------------- |------------------------- |------------------ |
-    | 1                                  | sklearn.dummy.DummyClassifier | {"strategy": "most<sub>frequent</sub>"} | ["prefix: results", "prefix: risks", "prefix: inspections"] | "test<sub>facilities</sub>" | "failed<sub>inspections</sub>" | "failed<sub>inspection</sub>" | "test"                    | "2019-02-21"       |
-
-    You can see that a model group is defined by the classifier (`model_type`), its hyperparameters (`hyperparameters`), the features (`feature_list`) (not shown), and the `model_config`.
-
-    The field `model_config` is created using information from the block `model_group_keys`. In our test configuration file the block is:
-
-    ```yaml
-    model_group_keys:
-      - 'class_path'
-      - 'parameters'
-      - 'feature_names'
-      - 'feature_groups'
-      - 'cohort_name'
-      - 'state'
-      - 'label_name'
-      - 'label_timespan'
-      - 'training_as_of_date_frequency'
-      - 'max_training_history'
-      - 'label_definition'
-      - 'experiment_type'
-      - 'org'
-      - 'team'
-      - 'author'
-      - 'etl_date'
-    ```
-
-    *What can we learn from that?* For example, if we add a new feature and rerun `triage`, `triage` will create a new `model_group` even if the classifier and the `hyperparameters` are the same as before.
-
--   `model_metadata.models`
-
-    This table stores the information about our actual *models*, i.e., instances of our classifiers trained on specific temporal slices.
-
-    ```sql
-    \d model_metadata.models
-    ```
-
-    | Table "model<sub>metadata.models</sub>"                                                                                                                                                                                                                   |                             |           |          |                                                                                                 |
-    |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |--------------------------- |--------- |-------- |----------------------------------------------------------------------------------------------- |
-    | Column                                                                                                                                                                                                                                                    | Type                        | Collation | Nullable | Default                                                                                         |
-    | model<sub>id</sub>                                                                                                                                                                                                                                        | integer                     |           | not null | nextval('model<sub>metadata.models</sub><sub>model</sub><sub>id</sub><sub>seq</sub>'::regclass) |
-    | model<sub>group</sub><sub>id</sub>                                                                                                                                                                                                                        | integer                     |           |          |                                                                                                 |
-    | model<sub>hash</sub>                                                                                                                                                                                                                                      | character varying           |           |          |                                                                                                 |
-    | run<sub>time</sub>                                                                                                                                                                                                                                        | timestamp without time zone |           |          |                                                                                                 |
-    | batch<sub>run</sub><sub>time</sub>                                                                                                                                                                                                                        | timestamp without time zone |           |          |                                                                                                 |
-    | model<sub>type</sub>                                                                                                                                                                                                                                      | character varying           |           |          |                                                                                                 |
-    | hyperparameters                                                                                                                                                                                                                                           | jsonb                       |           |          |                                                                                                 |
-    | model<sub>comment</sub>                                                                                                                                                                                                                                   | text                        |           |          |                                                                                                 |
-    | batch<sub>comment</sub>                                                                                                                                                                                                                                   | text                        |           |          |                                                                                                 |
-    | config                                                                                                                                                                                                                                                    | json                        |           |          |                                                                                                 |
-    | built<sub>by</sub><sub>experiment</sub>                                                                                                                                                                                                                   | character varying           |           |          |                                                                                                 |
-    | train<sub>end</sub><sub>time</sub>                                                                                                                                                                                                                        | timestamp without time zone |           |          |                                                                                                 |
-    | test                                                                                                                                                                                                                                                      | boolean                     |           |          |                                                                                                 |
-    | train<sub>matrix</sub><sub>uuid</sub>                                                                                                                                                                                                                     | text                        |           |          |                                                                                                 |
-    | training<sub>label</sub><sub>timespan</sub>                                                                                                                                                                                                               | interval                    |           |          |                                                                                                 |
-    | model<sub>size</sub>                                                                                                                                                                                                                                      | real                        |           |          |                                                                                                 |
-    | Indexes:                                                                                                                                                                                                                                                  |                             |           |          |                                                                                                 |
-    | "models<sub>pkey</sub>" PRIMARY KEY, btree (model<sub>id</sub>)                                                                                                                                                                                           |                             |           |          |                                                                                                 |
-    | "ix<sub>results</sub><sub>models</sub><sub>model</sub><sub>hash</sub>" UNIQUE, btree (model<sub>hash</sub>)                                                                                                                                               |                             |           |          |                                                                                                 |
-    | Foreign-key constraints:                                                                                                                                                                                                                                  |                             |           |          |                                                                                                 |
-    | "matrix<sub>uuid</sub><sub>for</sub><sub>models</sub>" FOREIGN KEY (train<sub>matrix</sub><sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                                                                            |                             |           |          |                                                                                                 |
-    | "models<sub>experiment</sub><sub>hash</sub><sub>fkey</sub>" FOREIGN KEY (built<sub>by</sub><sub>experiment</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>)                                                              |                             |           |          |                                                                                                 |
-    | "models<sub>model</sub><sub>group</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>group</sub><sub>id</sub>) REFERENCES model<sub>metadata.model</sub><sub>groups</sub>(model<sub>group</sub><sub>id</sub>)                                      |                             |           |          |                                                                                                 |
-    | Referenced by:                                                                                                                                                                                                                                            |                             |           |          |                                                                                                 |
-    | TABLE "test<sub>results.evaluations</sub>" CONSTRAINT "evaluations<sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)                                           |                             |           |          |                                                                                                 |
-    | TABLE "train<sub>results.feature</sub><sub>importances</sub>" CONSTRAINT "feature<sub>importances</sub><sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)      |                             |           |          |                                                                                                 |
-    | TABLE "test<sub>results.individual</sub><sub>importances</sub>" CONSTRAINT "individual<sub>importances</sub><sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>) |                             |           |          |                                                                                                 |
-    | TABLE "model<sub>metadata.list</sub><sub>predictions</sub>" CONSTRAINT "list<sub>predictions</sub><sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)           |                             |           |          |                                                                                                 |
-    | TABLE "test<sub>results.predictions</sub>" CONSTRAINT "predictions<sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)                                           |                             |           |          |                                                                                                 |
-    | TABLE "train<sub>results.evaluations</sub>" CONSTRAINT "train<sub>evaluations</sub><sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)                          |                             |           |          |                                                                                                 |
-    | TABLE "train<sub>results.predictions</sub>" CONSTRAINT "train<sub>predictions</sub><sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)                          |                             |           |          |                                                                                                 |
-
-    Noteworthy columns are:
-
-    -   **`model_id`:** The id of the model (i.e., instance&#x2026;). We will use this ID to trace a model evaluation to a `model_group` and vice versa.
-    -   **`model_group_id`:** The id of the models *model group* we encountered above.
-    -   **`model_hash`:** The *hash* of our model. We can use the hash to load the actual model. It gets stored under `TRIAGE_OUTPUT_PATH/trained_models/{model_hash}`. We are going to this later to look at a trained decision tree.
-    -   **`run_time`:** Time when the model was trained.
-    -   **`model_type`:** The algorithm used for training.
-    -   **`model_comment`:** Literally the text in the `model_comment` block in the configuration file
-    -   **`hyperparameters`:** Hyperparameters used for the model configuration.
-    -   **`built_by_experiment`:** The hash of our experiment. We encountered this value in the `results.experiments` table before.
-    -   **`train_end_time`:** When building the training matrix, we included training samples up to this date.
-    -   **`train_matrix_uuid`:** The *hash* of the matrix that we used to train this model. The matrix gets stored as `csv` under `TRIAGE_OUTPUT_PATH/matrices/{train_matrix_uuid}.csv`. This is helpful when trying to inspect the matrix and features that were used for training.
-    -   **`train_label_timespan`:** How big was our window to get the labels for our training matrix? For example, a `train_label_window` of 1 year would mean that we look one year from a given date in the training matrix into the future to find the label for that training sample.
-
--   `model_metadata.matrices`
-
-    This schema contains information about the matrices used in the model's training. You could use this information to debug your models. Important columns are `matrix_uuid` (The matrix gets stored as `TRIAGE_OUTPUT_PATH/matrices/{train_matrix_uuid}.csv`), `matrix_type` (indicated if the matrix was used for *training* models or *testing* them), `lookback_duration` and `feature_starttime` (give information about the temporal setting of the features) and `num_observations` (size of the matrices).
-
-    ```sql
-    \d model_metadata.matrices
-    ```
-
-    | Table "model<sub>metadata.matrices</sub>"                                                                                                                                                                                                   |                             |           |          |         |
-    |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |--------------------------- |--------- |-------- |------- |
-    | Column                                                                                                                                                                                                                                      | Type                        | Collation | Nullable | Default |
-    | matrix<sub>id</sub>                                                                                                                                                                                                                         | character varying           |           |          |         |
-    | matrix<sub>uuid</sub>                                                                                                                                                                                                                       | character varying           |           | not null |         |
-    | matrix<sub>type</sub>                                                                                                                                                                                                                       | character varying           |           |          |         |
-    | labeling<sub>window</sub>                                                                                                                                                                                                                   | interval                    |           |          |         |
-    | num<sub>observations</sub>                                                                                                                                                                                                                  | integer                     |           |          |         |
-    | creation<sub>time</sub>                                                                                                                                                                                                                     | timestamp with time zone    |           |          | now()   |
-    | lookback<sub>duration</sub>                                                                                                                                                                                                                 | interval                    |           |          |         |
-    | feature<sub>start</sub><sub>time</sub>                                                                                                                                                                                                      | timestamp without time zone |           |          |         |
-    | matrix<sub>metadata</sub>                                                                                                                                                                                                                   | jsonb                       |           |          |         |
-    | built<sub>by</sub><sub>experiment</sub>                                                                                                                                                                                                     | character varying           |           |          |         |
-    | Indexes:                                                                                                                                                                                                                                    |                             |           |          |         |
-    | "matrices<sub>pkey</sub>" PRIMARY KEY, btree (matrix<sub>uuid</sub>)                                                                                                                                                                        |                             |           |          |         |
-    | "ix<sub>model</sub><sub>metadata</sub><sub>matrices</sub><sub>matrix</sub><sub>uuid</sub>" UNIQUE, btree (matrix<sub>uuid</sub>)                                                                                                            |                             |           |          |         |
-    | Foreign-key constraints:                                                                                                                                                                                                                    |                             |           |          |         |
-    | "matrices<sub>built</sub><sub>by</sub><sub>experiment</sub><sub>fkey</sub>" FOREIGN KEY (built<sub>by</sub><sub>experiment</sub>) REFERENCES model<sub>metadata.experiments</sub>(experiment<sub>hash</sub>)                                |                             |           |          |         |
-    | Referenced by:                                                                                                                                                                                                                              |                             |           |          |         |
-    | TABLE "test<sub>results.evaluations</sub>" CONSTRAINT "evaluations<sub>matrix</sub><sub>uuid</sub><sub>fkey</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                  |                             |           |          |         |
-    | TABLE "train<sub>results.evaluations</sub>" CONSTRAINT "evaluations<sub>matrix</sub><sub>uuid</sub><sub>fkey</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                 |                             |           |          |         |
-    | TABLE "model<sub>metadata.models</sub>" CONSTRAINT "matrix<sub>uuid</sub><sub>for</sub><sub>models</sub>" FOREIGN KEY (train<sub>matrix</sub><sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)           |                             |           |          |         |
-    | TABLE "test<sub>results.predictions</sub>" CONSTRAINT "matrix<sub>uuid</sub><sub>for</sub><sub>testpred</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                      |                             |           |          |         |
-    | TABLE "train<sub>results.predictions</sub>" CONSTRAINT "matrix<sub>uuid</sub><sub>for</sub><sub>trainpred</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                    |                             |           |          |         |
-    | TABLE "train<sub>results.predictions</sub>" CONSTRAINT "train<sub>predictions</sub><sub>matrix</sub><sub>uuid</sub><sub>fkey</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>) |                             |           |          |         |
-
--   `{test, train}_results.evaluations`
-
-    These tables lets us analyze how well our models are doing. Based on the config that we used for our `triage` run, `triage` is calculating metrics and storing them in this table, e.g., our model's precision in top 10%.
-
-    ```sql
-    \d test_results.evaluations
-    ```
-
-    | Table "test<sub>results.evaluations</sub>"                                                                                                                                                                                      |                             |           |          |         |
-    |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |--------------------------- |--------- |-------- |------- |
-    | Column                                                                                                                                                                                                                          | Type                        | Collation | Nullable | Default |
-    | model<sub>id</sub>                                                                                                                                                                                                              | integer                     |           | not null |         |
-    | evaluation<sub>start</sub><sub>time</sub>                                                                                                                                                                                       | timestamp without time zone |           | not null |         |
-    | evaluation<sub>end</sub><sub>time</sub>                                                                                                                                                                                         | timestamp without time zone |           | not null |         |
-    | as<sub>of</sub><sub>date</sub><sub>frequency</sub>                                                                                                                                                                              | interval                    |           | not null |         |
-    | metric                                                                                                                                                                                                                          | character varying           |           | not null |         |
-    | parameter                                                                                                                                                                                                                       | character varying           |           | not null |         |
-    | value                                                                                                                                                                                                                           | numeric                     |           |          |         |
-    | num<sub>labeled</sub><sub>examples</sub>                                                                                                                                                                                        | integer                     |           |          |         |
-    | num<sub>labeled</sub><sub>above</sub><sub>threshold</sub>                                                                                                                                                                       | integer                     |           |          |         |
-    | num<sub>positive</sub><sub>labels</sub>                                                                                                                                                                                         | integer                     |           |          |         |
-    | sort<sub>seed</sub>                                                                                                                                                                                                             | integer                     |           |          |         |
-    | matrix<sub>uuid</sub>                                                                                                                                                                                                           | text                        |           |          |         |
-    | Indexes:                                                                                                                                                                                                                        |                             |           |          |         |
-    | "evaluations<sub>pkey</sub>" PRIMARY KEY, btree (model<sub>id</sub>, evaluation<sub>start</sub><sub>time</sub>, evaluation<sub>end</sub><sub>time</sub>, as<sub>of</sub><sub>date</sub><sub>frequency</sub>, metric, parameter) |                             |           |          |         |
-    | Foreign-key constraints:                                                                                                                                                                                                        |                             |           |          |         |
-    | "evaluations<sub>matrix</sub><sub>uuid</sub><sub>fkey</sub>" FOREIGN KEY (matrix<sub>uuid</sub>) REFERENCES model<sub>metadata.matrices</sub>(matrix<sub>uuid</sub>)                                                            |                             |           |          |         |
-    | "evaluations<sub>model</sub><sub>id</sub><sub>fkey</sub>" FOREIGN KEY (model<sub>id</sub>) REFERENCES model<sub>metadata.models</sub>(model<sub>id</sub>)                                                                       |                             |           |          |         |
-
-    Its columns are:
-
-    -   **`model_id`:** Our beloved `model_id` that we have encountered before.
-    -   **`evaluation_start_time`:** After training the model, we evaluate it on a test matrix. This column tells us the earliest time that an example in our test matrix could have.
-    -   **`evaluation_end_time`:** After training the model, we evaluate it on a test matrix. This column tells us the latest time that an example in our test matrix could have.
-    -   **`metric`:** Indicates which metric we are evaluating, e.g., `precision@`.
-    -   `parameter` ::Indicates at which parameter we are evaluating our metric, e.g., a metric of precision@ and a parameter of `100.0_pct` shows us the `precision@100pct`.
-    -   **`value`:** The value observed for our metric@parameter.
-    -   **`num_labeled_examples`:** The number of labeled examples in our test matrix. Why does it matter? It could be the case that we have entities that have no label for the test timeframe (for example, not all facilities will have an inspection). We still want to make predictions for these entities but can't include them when calculating performance metrics.
-    -   **`num_labeled_above_threshold`:** How many examples above our threshold were labeled?
-    -   **`num_positive_labels`:** The number of rows that had true positive labels.
-
-    A look at the table shows that we have multiple rows for each model, each showing a different performance metric.
-
-    ```sql
-    select
-        evaluation_end_time,
-        model_id,
-        metric || parameter as metric,
-        value,
-        num_labeled_examples,
-        num_labeled_above_threshold,
-        num_positive_labels
-    from
-        test_results.evaluations
-    where
-        parameter = '100.0_pct';
-    ```
-
-    | evaluation<sub>end</sub><sub>time</sub> | model<sub>id</sub> | metric                        | value              | num<sub>labeled</sub><sub>examples</sub> | num<sub>labeled</sub><sub>above</sub><sub>threshold</sub> | num<sub>positive</sub><sub>labels</sub> |
-    |--------------------------------------- |------------------ |----------------------------- |------------------ |---------------------------------------- |--------------------------------------------------------- |--------------------------------------- |
-    | 2016-01-01 00:00:00                     | 1                  | precision@100.0<sub>pct</sub> | 0.6666666666666666 | 3                                        | 3                                                         | 2                                       |
-    | 2016-01-01 00:00:00                     | 1                  | recall@100.0<sub>pct</sub>    | 1.0                | 3                                        | 3                                                         | 2                                       |
-    | 2017-01-01 00:00:00                     | 2                  | precision@100.0<sub>pct</sub> | 0.3333333333333333 | 3                                        | 3                                                         | 1                                       |
-    | 2017-01-01 00:00:00                     | 2                  | recall@100.0<sub>pct</sub>    | 1.0                | 3                                        | 3                                                         | 1                                       |
-
-    > Remember that at 100%, the `recall` should be 1, and the `precision` is equal to the *baserate*. If these two things don't match, there are problems in your data, pipeline, etl. You must get this correct!
-
-    *What does this query tell us?*
-
-    We can now see how the different instances (trained on different temporal slices, but with the same model params) of a model group performs over time. Note how we only included the *models* that belong to our *model group* `1`.
-
--   `{test, train}_results.predictions`
-
-    You can think of the previous table `{test, train}_results.{test, train}_predictions` as a summary of individuals predictions that our model is making. But where can you find the individual predictions that our model is making? (So you can generate a list from here). And where can we find the test matrix that the predictions are based on? Let us introduce you to the `results.predictions` table.
-
-    Here is what its first row looks like:
-
-    ```sql
-    select
-        model_id,
-        entity_id,
-        as_of_date,
-        score,
-        label_value,
-        matrix_uuid
-    from
-        test_results.predictions
-    where
-        model_id = 1
-    order by score desc;
-    ```
-
-    | model<sub>id</sub> | entity<sub>id</sub> | as<sub>of</sub><sub>date</sub> | score | label<sub>value</sub> | matrix<sub>uuid</sub>            |
-    |------------------ |------------------- |------------------------------ |----- |--------------------- |-------------------------------- |
-    | 1                  | 229                 | 2016-01-01 00:00:00            | 1.0   | 1                     | cd0ae68d6ace43033b49ee0390c3583e |
-    | 1                  | 355                 | 2016-01-01 00:00:00            | 1.0   | 1                     | cd0ae68d6ace43033b49ee0390c3583e |
-    | 1                  | 840                 | 2016-01-01 00:00:00            | 1.0   | 0                     | cd0ae68d6ace43033b49ee0390c3583e |
-
-    As you can see, the table contains our models' predictions for a given entity and date.
-
-    And do you notice the field `matrix_uuid`? Doesn't it look similar to the fields from above that gave us the names of our training matrices? In fact, it is the same. You can find the test matrix that was used to make this prediction under `TRIAGE_OUTPUT_PATH/matrices/{matrix_uuid}.csv`.
-
--   `{test, train}_results.feature_importances`
-
-    This tables store the feature importance of all the models.
+Keep in mind that the grid is providing more than way to select a model. You can use the tables generated by the grid (see section [Machine Learning Governance](ml_governance.md) ) and *analyze* and *understand* your data. In other words, analyzing the results (evaluations, predictions, hyperparameter space, etc.) is like applying **Data mining** concepts to your data using Machine learning. We will return to this when we apply post modeling to our models.
 
 
 ## Audition
@@ -1430,5 +1127,3 @@ rm -r /triage/trained_models/*
 <sup><a id="fn.11" class="footnum" href="#fnr.11">11</a></sup> Note that the name `categoricals` is confusing here: The original variable (i.e. a column) is categorical, the aggregate of that column is not. The same with the `aggregates`: The original column could be a categorical or a numeric (to be fare most of the time is a numeric column, but see the example: *we are counting*), and then `triage` applies an aggregate that will be numeric. That is how triage named things, and yes, I know is confusing.
 
 <sup><a id="fn.12" class="footnum" href="#fnr.12">12</a></sup> `triage` will generate also a new binary column that indicates if the value of the feature was imputed (`1`) or not (`0`): `inspections_entity_id_6month_total_count_imp`.
-
-<sup><a id="fn.13" class="footnum" href="#fnr.13">13</a></sup> Literally from the configuration file. If you modify something it will generate a new hash. Handle with care!

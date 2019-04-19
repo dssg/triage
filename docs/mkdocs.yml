@@ -40,6 +40,7 @@ nav:
     - Welcome: dirtyduck/docs/index.md
     - Choose your own adventure: dirtyduck/docs/choose_your_own_adventure.md
     - Setup:
+      - For the impatient: dirtyduck/docs/for_the_impatient.md
       - Infrastructure: dirtyduck/docs/infrastructure.md
       - Data preparation: dirtyduck/docs/data_preparation.md
     - Case studies:
@@ -58,7 +59,7 @@ nav:
     - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
-  - Audition: https://github.com/dssg/triage/tree/master/src/triage/component/audition
+  - Model selection: dirtyduck/docs/audition.md
   - Postmodeling: postmodeling/index.md
-  - Database's schema description:  dirtyduck/docs/schema.md
+  - Model governance:  dirtyduck/docs/ml_governance.md
   - Scaling out: dirtyduck/docs/aws_batch.md
