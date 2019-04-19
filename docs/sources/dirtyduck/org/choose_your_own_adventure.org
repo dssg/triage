@@ -1,0 +1,49 @@
+#+TITLE: Choose your own adventure
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
+#+STARTUP: showeverything
+#+STARTUP: nohideblocks
+#+STARTUP: indent
+#+STARTUP: align
+#+STARTUP: inlineimages
+#+STARTUP: latexpreview
+#+PROPERTY: header-args:sql :engine postgresql
+#+PROPERTY: header-args:sql+ :dbhost 0.0.0.0
+#+PROPERTY: header-args:sql+ :dbport 5434
+#+PROPERTY: header-args:sql+ :dbuser food_user
+#+PROPERTY: header-args:sql+ :dbpassword some_password
+#+PROPERTY: header-args:sql+ :database food
+#+PROPERTY: header-args:sql+ :results table drawer
+#+PROPERTY: header-args:sql+ :exports both
+#+PROPERTY: header-args:sql+ :eval no-export
+#+PROPERTY: header-args:sql+ :cmdline -q
+#+PROPERTY: header-args:sh  :results verbatim org
+#+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
+#+PROPERTY: header-args:jupyter-python :eval never-export
+#+OPTIONS: broken-links:mark
+#+OPTIONS: tasks:todo
+#+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/choose_your_own_adventure.md
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* How to use this tutorial?
+
+- You are interested in the /learn/ how to use =triage= and have a /lot/ of
+  time:
+  - [[file:02_infrastructure.org][Infrastructure]]
+  - [[file:03_data_preparation.org][Data preparation]]
+  - [[file:01_intro.org][Problem description]]
+  - [[file:05_inspections.org][Resource prioritization]]
+  - [[file:06_eis.org][Early warning systems]]
+  - [[file:04_triage_intro.org][A deeper look into triage]]
+  - [[file:09_aws_batch.org][Scaling up]]
+- You want to know about =triage=
+  - [[file:04_triage_intro.org][A deeper look into triage]]
+  - [[file:ml_governance.org][Model governance]]
+  - [[file:audition.org][Model selection]]
+- You want to learn about case studies
+  - [[file:07_quick_setup.org][Quick setup]]
+  - [[file:05_inspections.org][Resource prioritization]]  and/or  [[file:06_eis.org][Early warning systems]]
+- You /already/ know =triage= but want to use it on the cloud
+  - [[file:09_aws_batch.org][Scaling up]]

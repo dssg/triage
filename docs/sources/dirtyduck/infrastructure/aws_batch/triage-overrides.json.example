@@ -1,0 +1,32 @@
+{
+    "environment": [
+        {
+            "name":"AWS_DEFAULT_REGION",
+            "value":"us-west-2"
+        },
+        {
+            "name":"AWS_JOB_QUEUE",
+            "value":""
+        },
+        {
+            "name":"POSTGRES_PASSWORD",
+            "value":""
+        },
+        {
+            "name":"POSTGRES_USER",
+            "value":""
+        },
+        {
+            "name":"POSTGRES_DB",
+            "value":""
+        },
+        {
+            "name":"POSTGRES_PORT",
+            "value":""
+        },
+        {
+            "name":"POSTGRES_HOST",
+            "value":""
+        }
+    ]
+}

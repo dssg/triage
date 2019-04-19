@@ -1,0 +1,14 @@
+Sphinx
+sphinx_rtd_theme
+coverage
+flake8
+mkdocs
+tox
+tox-pyenv
+nose
+mock
+colorama
+ipython
+jupyter
+httpie
+psycopg2-binary

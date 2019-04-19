@@ -23,3 +23,18 @@ def alembic(context, args):
         '-x', 'db_config_file=database.yaml',
         args.remainder,
     ]
+
+
+@Development.register
+class Docs(Local):
+
+    @local
+    def prepare_dirtyduck(context):
+        """convert dirtyduck org files to markdown format"""
+        return context.local['emacs'][
+            '--batch',
+            '-l', 'org/publish.el', 'org/index.org',
+            '--eval', '(org-publish "dirtyduck" t)',
+        ]
+
+    prepare_dirtyduck.__name__ = 'prepare-dirtyduck'  # or whatever; I just find underscores weird in sh

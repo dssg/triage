@@ -1,0 +1,46 @@
+# -*- mode: org; -*-
+
+#+TITLE: Dirty Duck: A Guided Tour of Triage
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
+#+STARTUP: showeverything
+#+STARTUP: nohideblocks
+#+STARTUP: indent
+#+STARTUP: align
+#+STARTUP: inlineimages
+#+STARTUP: latexpreview
+#+PROPERTY: header-args :cache yes
+#+PROPERTY: header-args :eval never-export
+#+PROPERTY: header-args:sql :engine postgresql
+#+PROPERTY: header-args:sql+ :dbhost 0.0.0.0
+#+PROPERTY: header-args:sql+ :dbport 5434
+#+PROPERTY: header-args:sql+ :dbuser food_user
+#+PROPERTY: header-args:sql+ :dbpassword some_password
+#+PROPERTY: header-args:sql+ :database food
+#+PROPERTY: header-args:sql+ :results table drawer
+#+PROPERTY: header-args:sql+ :exports both
+#+PROPERTY: header-args:sql+ :eval no-export
+#+PROPERTY: header-args:sql+ :cmdline -q
+#+PROPERTY: header-args:sh  :results verbatim org
+#+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
+#+PROPERTY: header-args:ipython  :session food_inspections
+#+PROPERTY: header-args:ipython+ :results raw drawer
+#+PROPERTY: header-args:ipython+ :eval no-export
+#+OPTIONS: broken-links:mark
+#+OPTIONS: tasks:todo
+#+OPTIONS: LaTeX:t
+#+SETUPFILE: tutorial.setup
+
+#+INCLUDE: 00_instructions.org :minlevel 1
+#+INCLUDE: 01_intro.org :minlevel 1
+#+INCLUDE: 02_infrastructure.org :minlevel 1
+#+INCLUDE: 03_data_preparation.org :minlevel 1
+#+INCLUDE: 04_triage_intro.org :minlevel 1
+#+INCLUDE: 05_inspections.org :minlevel 1
+#+INCLUDE: 06_eis.org :minlevel 1
+#+INCLUDE: 09_aws_batch.org :minlevel 1
+#+INCLUDE: 100_whats_next.org :minlevel 1
+#+INCLUDE: 07_quick_setup.org :minlevel 1
+
+#+EXPORT_EXCLUDE_TAGS: noexport
