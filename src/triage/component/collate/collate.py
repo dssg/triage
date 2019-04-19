@@ -500,11 +500,11 @@ class Aggregation(object):
         queries = {}
 
         for group, groupby in self.groups.items():
-            columns = [groupby]
+            columns = [make_sql_clause(groupby, ex.text)]
             columns += self._get_aggregates_sql(group)
 
             gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=self.from_obj).group_by(
+            query = ex.select(columns=columns, from_obj=make_sql_clause(self.from_obj, ex.text)).group_by(
                 gb_clause
             )
 
@@ -607,7 +607,10 @@ class Aggregation(object):
         """
         Generate a query for a join table
         """
-        return ex.Select(columns=self.groups.values(), from_obj=self.from_obj).group_by(
+        return ex.Select(
+            columns=[make_sql_clause(group, ex.column) for group in self.groups.values()],
+            from_obj=self.from_obj
+        ).group_by(
             *self.groups.values()
         )
 

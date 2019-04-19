@@ -179,6 +179,38 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
 
 
+class ExperimentRunFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = schema.ExperimentRun
+        sqlalchemy_session = session
+
+    experiment_rel = factory.SubFactory(ExperimentFactory)
+
+    start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    start_method = "run"
+    git_hash = "abcd"
+    triage_version = "3.3.0"
+    platform = "Linux!!!"
+    os_user = "dsapp"
+    working_directory = "/the/best/directory"
+    ec2_instance_type = "x2.128xlarge"
+    log_location = "/the/logs"
+    experiment_class_path = "triage.experiments.singlethreaded.SingleThreadedExperiment"
+    experiment_kwargs = {}
+    installed_libraries = ['triage']
+    matrix_building_started = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    matrices_made = 0
+    matrices_skipped = 0
+    matrices_errored = 0
+    model_building_started = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    models_made = 0
+    models_skipped = 0
+    models_errored = 0
+    last_updated_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
+    current_status = schema.ExperimentRunStatus.started
+    stacktrace = ""
+
+
 def init_engine(new_engine):
     global sessionmaker, engine, session
     engine = new_engine

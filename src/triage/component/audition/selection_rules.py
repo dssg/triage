@@ -294,11 +294,11 @@ def best_average_two_metrics(
 
 
 def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty, n=1):
-    """Pick the model with the highest average metric value so far, penalized
-    for relative variance as:
-        avg_value - (stdev_penalty) * (stdev - min_stdev)
-    where min_stdev is the minimum standard deviation of the metric across all
-    model groups
+    """Pick the model with the highest
+     average metric value so far, placing less weight in older
+     results. You need to specify two parameters: the shape of how the
+     weight affects points (decay_type, linear or exponential) and the relative
+     weight of the most recent point (curr_weight).
 
     Arguments:
         stdev_penalty (float) -- penalty for instability
