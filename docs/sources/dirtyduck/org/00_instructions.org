@@ -38,8 +38,6 @@ are difficult to model because their conceptualization and
 and implementation are prone to error, thanks to their multi-dimensional,
 multi-entity, time-series structure.
 
-The last version of this tutorial is published in [[https://dssg.github.io/dirtyduck/]]
-
 *NOTE* This tutorial is in sync with the latest version of =triage=. At
 this moment [[https://github.com/dssg/triage/releases/tag/v3.3.0][v3.3.0 (Arepa)]].
 
@@ -61,10 +59,10 @@ supported, such as =GNU/Linux= and =MacOS=. Recent versions of
 First, clone this repository on your laptop
 
 #+BEGIN_EXAMPLE
- git clone https://github.com/dssg/dirtyduck.git
+ git clone https://github.com/dssg/triage
 #+END_EXAMPLE
 
-Second, run
+Second, in the =triage/docs/sources/dirtyduck/= directory run
 
 #+BEGIN_EXAMPLE
 ./tutorial.sh start
