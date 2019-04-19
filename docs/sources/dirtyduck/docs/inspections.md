@@ -1,4 +1,4 @@
-# Inpection prioritization
+# Resource prioritization
 
 
 ## Problem description

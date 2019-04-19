@@ -27,7 +27,7 @@
 #+EXPORT_FILE_NAME: ../docs/inspections.md
 #+EXPORT_EXCLUDE_TAGS: noexport
 
-* Inpection prioritization
+* Resource prioritization
 ** Problem description
 
  We will begin with the *inspection prioritization* problem. We want to generate a list of
