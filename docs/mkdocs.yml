@@ -1,9 +1,31 @@
 site_name: Triage Documentation
-theme: readthedocs
+theme:
+  name: 'material'
+  palette:
+    primary: 'blue grey'
+    accent: 'deep orange'
+  font:
+    text: 'Ubuntu'
+    code: 'Ubuntu Mono'
+  logo:
+    icon: 'book'
+  favicon: 'assets/images/favicon.ico'
+
 docs_dir: sources
+repo_name: 'dssg/triage'
 repo_url: http://github.com/dssg/triage
 edit_uri: ''
 site_description: 'Documentation for Triage.'
+
+extra:
+  social:
+    - type: 'github'
+      link: 'https://github.com/dssg/hitchhikers-guide'
+    - type: 'twitter'
+      link: 'https://twitter.com/datascifellows'
+    - type: 'linkedin'
+      link: 'https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago'
+
 
 markdown_extensions:
   - toc:
