@@ -84,4 +84,4 @@ nav:
   - Model selection: dirtyduck/docs/audition.md
   - Postmodeling: postmodeling/index.md
   - Model governance:  dirtyduck/docs/ml_governance.md
-  - Scaling out: dirtyduck/docs/aws_batch.md
+  - Scaling up: dirtyduck/docs/aws_batch.md
