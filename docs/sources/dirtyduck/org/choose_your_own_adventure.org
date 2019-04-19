@@ -31,19 +31,19 @@
 
 - You are interested in the /learn/ how to use =triage= and have a /lot/ of
   time:
-  - [[file:02_infrastructure.org][Infrastructure]]
-  - [[file:03_data_preparation.org][Data preparation]]
-  - [[file:01_intro.org][Problem description]]
-  - [[file:05_inspections.org][Resource prioritization]]
-  - [[file:06_eis.org][Early warning systems]]
-  - [[file:04_triage_intro.org][A deeper look into triage]]
-  - [[file:09_aws_batch.org][Scaling up]]
+  - [[file:infrastructure.md][Infrastructure]]
+  - [[file:data_preparation.md][Data preparation]]
+  - [[file:intro.md][Problem description]]
+  - [[file:inspections.md][Resource prioritization]]
+  - [[file:eis.md][Early warning systems]]
+  - [[file:triage_intro.md][A deeper look into triage]]
+  - [[file:aws_batch.md][Scaling up]]
 - You want to know about =triage=
-  - [[file:04_triage_intro.org][A deeper look into triage]]
+  - [[file:triage_intro.md][A deeper look into triage]]
   - [[file:ml_governance.org][Model governance]]
   - [[file:audition.org][Model selection]]
 - You want to learn about case studies
-  - [[file:07_quick_setup.org][Quick setup]]
-  - [[file:05_inspections.org][Resource prioritization]]  and/or  [[file:06_eis.org][Early warning systems]]
+  - [[file:for_the_impatient.md][Quick setup]]
+  - [[file:inspections.md][Resource prioritization]]  and/or  [[file:eis.md][Early warning systems]]
 - You /already/ know =triage= but want to use it on the cloud
-  - [[file:09_aws_batch.org][Scaling up]]
+  - [[file:aws_batch.md][Scaling up]]
