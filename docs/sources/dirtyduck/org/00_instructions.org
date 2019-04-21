@@ -71,4 +71,4 @@ This will take several minutes the first time you do it.
 
 ** How you can help to improve this tutorial
 
-If you want to contribute, please follow the suggestions in the [[file:~/projects/dsapp/triage/docs/sources/dirtyduck/README.org::*How%20you%20can%20help][README]]
+If you want to contribute, please follow the suggestions in the [[../README.org][README]]
