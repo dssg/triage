@@ -30,15 +30,12 @@ This tutorial will show you how to use =triage=, a data science
  modeling tool developed at the [[http://dsapp.uchicago.edu][Center for Data Science and Public
  Policy]] (DSaPP) at the University of Chicago.
 
-=triage= helps build models for three [[https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/][common applied problems]]: (a) Early
+=triage= helps build models for two [[https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/][common applied problems]]: (a) Early
 warning systems (*EWS* or *EIS*), (b) /resource prioritization/ (a.k.a "an
-inspections problem") and (c) interaction level predictions (a.k.a
-"appointment level"). These problems
+inspections problem") . These problems
 are difficult to model because their conceptualization and
 and implementation are prone to error, thanks to their multi-dimensional,
 multi-entity, time-series structure.
-
-The last version of this tutorial is published in [[https://dssg.github.io/dirtyduck/]]
 
 *NOTE* This tutorial is in sync with the latest version of =triage=. At
 this moment [[https://github.com/dssg/triage/releases/tag/v3.3.0][v3.3.0 (Arepa)]].
@@ -61,10 +58,10 @@ supported, such as =GNU/Linux= and =MacOS=. Recent versions of
 First, clone this repository on your laptop
 
 #+BEGIN_EXAMPLE
- git clone https://github.com/dssg/dirtyduck.git
+ git clone https://github.com/dssg/triage
 #+END_EXAMPLE
 
-Second, run
+Second, in the =triage/docs/sources/dirtyduck/= directory run
 
 #+BEGIN_EXAMPLE
 ./tutorial.sh start
@@ -72,7 +69,6 @@ Second, run
 
 This will take several minutes the first time you do it.
 
-
 ** How you can help to improve this tutorial
 
-If you want to contribute, please follow the suggestions in the [[file:~/projects/dsapp/dirtyduck/README.org::*How%20you%20can%20help][README]]
+If you want to contribute, please follow the suggestions in the [[../README.org][README]]
