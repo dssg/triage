@@ -1,0 +1,1769 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for Triage.">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.1.2">
+    
+    
+      
+        <title>Early Warning System - Triage Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.3020aac5.css">
+      
+        <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="deep-orange">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Triage Documentation" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">book</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Triage Documentation
+            </span>
+            <span class="md-header-nav__topic">
+              Early Warning System
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="http://github.com/dssg/triage" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Triage Documentation" class="md-nav__button md-logo">
+      
+        <i class="md-icon">book</i>
+      
+    </a>
+    Triage Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="http://github.com/dssg/triage" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Dirty Duck Tutorial
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Dirty Duck Tutorial
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../" title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../choose_your_own_adventure/" title="Choose your own adventure" class="md-nav__link">
+      Choose your own adventure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../for_the_impatient/" title="For the impatient" class="md-nav__link">
+      For the impatient
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infrastructure/" title="Infrastructure" class="md-nav__link">
+      Infrastructure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data_preparation/" title="Data preparation" class="md-nav__link">
+      Data preparation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Case studies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Case studies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../intro/" title="Problem description" class="md-nav__link">
+      Problem description
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inspections/" title="Resource prioritization" class="md-nav__link">
+      Resource prioritization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+    <a href="./" title="Early Warning System" class="md-nav__link md-nav__link--active">
+      Early Warning System
+    </a>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Triage
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Triage
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../triage_intro/" title="A deeper look into triage" class="md-nav__link">
+      A deeper look into triage
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Experiment
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Experiment
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
+      Defining an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
+      Testing Feature Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/running/" title="Running an Experiment" class="md-nav__link">
+      Running an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/upgrading/" title="Upgrading an Experiment" class="md-nav__link">
+      Upgrading an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/temporal-validation/" title="Temporal Validation Deep Dive" class="md-nav__link">
+      Temporal Validation Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/cohort-labels/" title="Cohort and Label Deep Dive" class="md-nav__link">
+      Cohort and Label Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/features/" title="Feature Generation Recipe Book" class="md-nav__link">
+      Feature Generation Recipe Book
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/algorithm/" title="Experiment Algorithm" class="md-nav__link">
+      Experiment Algorithm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../experiments/architecture/" title="Experiment Architecture" class="md-nav__link">
+      Experiment Architecture
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../audition/" title="Model selection" class="md-nav__link">
+      Model selection
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../postmodeling/" title="Postmodeling" class="md-nav__link">
+      Postmodeling
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../ml_governance/" title="Model governance" class="md-nav__link">
+      Model governance
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../aws_batch/" title="Scaling up" class="md-nav__link">
+      Scaling up
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>Early Warning System</h1>
+                
+                <h2>An Early Intervention System</h2>
+<h3>Problem description</h3>
+<p><code>triage</code> is designed to also build early warning systems (also called early intervention, EIS). While there are several differences between modeling early warnings and inspection prioritization, perhaps the biggest is that the <em>entity</em> is active (i.e. it is doing stuff for which an outcome will happen) in EIS but passive (i.e. inspected) in <strong>inspection prioritization</strong>. Among other things, this difference affects the way the <em>outcome</em> is built.</p>
+<p>Here's the question we want to answer:</p>
+<blockquote>
+<p>Will my restaurant be inspected in the <em>next X period of time?</em></p>
+</blockquote>
+<p>Where <span><span class="MathJax_Preview">X</span><script type="math/tex">X</script></span> could be 3 days, 2 months, 1 year, etc.</p>
+<p>Knowing the answer to this question enables you (as the restaurant owner or manager) to prepare for the inspection.</p>
+<h3>What are the labels? What are the outcomes?</h3>
+<p>The trick to note is that on any given day there are two possible outcomes: <em>the facility was inspected</em> and <em>the facility wasn't inspected</em>. Our <em>outcomes</em> table will be larger than in the inspection prioritization example because we need an <em>outcome</em> for every <em>active</em> facility on every date. The following image tries to exemplify this reasoning:</p>
+<p><img alt="img" src="../images/outcomes-eis.png" title="The image shows three facilities, and next to each, a temporal line with 6 days (0-5). Each dot represents the event (whether an inspection happened). Yellow means the inspection happened (TRUE outcome) and blue means it didn't (FALSE outcome). Each facility in the image had two inspections, six in total." /></p>
+<p>Fortunately, <code>triage</code> will help us to create this table. The <em>cohort</em> table is the same as the <em>cohort</em> table in the inspection case.</p>
+<p>First the usual stuff. Note that we are changing <code>model_comment</code> and <code>label_definition</code> (remember that this is used for generating the <em>hash</em> that differentiates models and model groups).</p>
+<div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span> <span class="s">&#39;v6&#39;</span>
+
+<span class="nt">model_comment</span><span class="p">:</span> <span class="nt">&#39;eis</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">01&#39;</span>
+
+<span class="nt">user_metadata</span><span class="p">:</span>
+  <span class="nt">label_definition</span><span class="p">:</span> <span class="s">&#39;inspected&#39;</span>
+  <span class="nt">experiment_type</span><span class="p">:</span> <span class="s">&#39;eis&#39;</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+    <span class="no">EIS 01</span>
+  <span class="nt">purpose</span><span class="p">:</span> <span class="s">&#39;model</span><span class="nv"> </span><span class="s">creation&#39;</span>
+  <span class="nt">org</span><span class="p">:</span> <span class="s">&#39;DSaPP&#39;</span>
+  <span class="nt">team</span><span class="p">:</span> <span class="s">&#39;Tutorial&#39;</span>
+  <span class="nt">author</span><span class="p">:</span> <span class="s">&#39;Your</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">here&#39;</span>
+  <span class="nt">etl_date</span><span class="p">:</span> <span class="s">&#39;2019-02-21&#39;</span>
+
+<span class="nt">model_group_keys</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;class_path&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;parameters&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;feature_names&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;feature_groups&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;cohort_name&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;state&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;label_name&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;label_timespan&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;training_as_of_date_frequency&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;max_training_history&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;label_definition&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;experiment_type&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;org&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;team&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;author&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;purpose&#39;</span>
+  <span class="p p-Indicator">-</span> <span class="s">&#39;etl_date&#39;</span>
+</pre></div>
+
+<p>For the labels the query is pretty simple, if the facility showed in the data, it will get a <em>positive</em> outcome, if not they will get a <em>negative</em> outcome</p>
+<div class="highlight"><pre><span></span><span class="nt">label_config</span><span class="p">:</span>
+  <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+    <span class="no">select</span>
+    <span class="no">entity_id,</span>
+    <span class="no">True::integer as outcome</span>
+    <span class="no">from semantic.events</span>
+    <span class="no">where &#39;{as_of_date}&#39;::timestamp &lt;= date</span>
+    <span class="no">and date &lt; &#39;{as_of_date}&#39;::timestamp + interval &#39;{label_timespan}&#39;</span>
+    <span class="no">group by entity_id</span>
+  <span class="nt">include_missing_labels_in_train_as</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+  <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;inspected&#39;</span>
+</pre></div>
+
+<p>Note the two introduced changes in this block, first, the <em>outcome</em> is <code>True</code> , because all our observations represent <em>inspected</em> facilities (see discussion above and in particular previous image), second, we added the line <code>include_missing_labels_in_train_as: False</code>. This line tells <code>triage</code> to incorporate all the missing facilities in the <em>training</em> matrices with <code>False</code> as the <em>label</em>.</p>
+<p>As stated we will use the same configuration block for <em>cohorts</em> that we used in inspections:</p>
+<div class="highlight"><pre><span></span><span class="nt">cohort_config</span><span class="p">:</span>
+  <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+    <span class="no">with buckets as (</span>
+    <span class="no">select *, ntile(5) over (order by number_of_inspections asc) as bucket</span>
+    <span class="no">from (</span>
+    <span class="no">select entity_id, count(*) as number_of_inspections</span>
+    <span class="no">from semantic.events</span>
+    <span class="no">group by entity_id</span>
+    <span class="no">) as t</span>
+    <span class="no">)</span>
+    <span class="no">select e.entity_id</span>
+    <span class="no">from semantic.entities as e</span>
+    <span class="no">inner join</span>
+    <span class="no">buckets as b</span>
+    <span class="no">using (entity_id)</span>
+    <span class="no">where</span>
+    <span class="no">daterange(start_time, end_time, &#39;[]&#39;) @&gt; &#39;{as_of_date}&#39;::date</span>
+    <span class="no">and bucket in (5)</span>
+  <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;active_facilities&#39;</span>
+</pre></div>
+
+<h3>Modeling Using Machine Learning</h3>
+<p>We need to specify the temporal configuration too</p>
+<ul>
+<li>
+<p>Temporal configuration</p>
+<div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
+    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2010-01-04&#39;</span>
+    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2019-01-01&#39;</span>
+    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">&#39;2015-02-01&#39;</span>
+    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">&#39;2019-01-01&#39;</span>
+
+    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">&#39;1y&#39;</span>
+    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">]</span>
+    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">&#39;1month&#39;</span>
+
+    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">&#39;1y&#39;</span>
+    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">]</span>
+    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">&#39;1month&#39;</span>
+
+    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;5y&#39;</span>
+</pre></div>
+
+<p>As before, you can generate the image of the temporal blocks:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+triage experiment experiments/eis_01.yaml --show-timechop
+</pre></div>
+
+<p><img alt="img" src="../triage/images/eis_01.png" title="Temporal blocks for the Early Warning System. We want to predict the most likely facilities to be inspected in the following month." /></p>
+</li>
+<li>
+<p>Features</p>
+<p>Regarding the features, we will use the same ones that were used in <a href="../inspections/">inspections prioritization</a>:</p>
+<div class="highlight"><pre><span></span><span class="nt">feature_aggregations</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span>
+    <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;inspections&#39;</span>
+    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
+    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+
+    <span class="nt">aggregates_imputation</span><span class="p">:</span>
+      <span class="nt">count</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero_noflag&#39;</span>
+
+    <span class="nt">aggregates</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">quantity</span><span class="p">:</span>
+          <span class="nt">total</span><span class="p">:</span> <span class="s">&quot;*&quot;</span>
+        <span class="nt">metrics</span><span class="p">:</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;count&#39;</span>
+
+    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+
+    <span class="nt">groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+
+  <span class="p p-Indicator">-</span>
+    <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;risks&#39;</span>
+    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
+    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+
+    <span class="nt">categoricals_imputation</span><span class="p">:</span>
+      <span class="nt">sum</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+      <span class="nt">avg</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+
+    <span class="nt">categoricals</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;risk&#39;</span>
+        <span class="nt">choices</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;low&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;medium&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;high&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">metrics</span><span class="p">:</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;avg&#39;</span>
+
+    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+
+    <span class="nt">groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;zip_code&#39;</span>
+
+  <span class="p p-Indicator">-</span>
+    <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;results&#39;</span>
+    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
+    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+
+    <span class="nt">categoricals_imputation</span><span class="p">:</span>
+      <span class="nt">all</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+
+    <span class="nt">categoricals</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;result&#39;</span>
+        <span class="nt">choice_query</span><span class="p">:</span> <span class="s">&#39;select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">result</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events&#39;</span>
+        <span class="nt">metrics</span><span class="p">:</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;avg&#39;</span>
+
+    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+
+    <span class="nt">groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+
+  <span class="p p-Indicator">-</span>
+    <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;inspection_types&#39;</span>
+    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
+    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+
+    <span class="nt">categoricals_imputation</span><span class="p">:</span>
+      <span class="nt">sum</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero_noflag&#39;</span>
+
+    <span class="nt">categoricals</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;type&#39;</span>
+        <span class="nt">choice_query</span><span class="p">:</span> <span class="s">&#39;select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events</span><span class="nv"> </span><span class="s">where</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">null&#39;</span>
+        <span class="nt">metrics</span><span class="p">:</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
+
+    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+
+    <span class="nt">groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;zip_code&#39;</span>
+</pre></div>
+
+<p>We declare that we want to use all possible feature-group combinations for training:</p>
+<div class="highlight"><pre><span></span><span class="nt">feature_group_definition</span><span class="p">:</span>
+   <span class="nt">prefix</span><span class="p">:</span>
+     <span class="p p-Indicator">-</span> <span class="s">&#39;inspections&#39;</span>
+     <span class="p p-Indicator">-</span> <span class="s">&#39;results&#39;</span>
+     <span class="p p-Indicator">-</span> <span class="s">&#39;risks&#39;</span>
+     <span class="p p-Indicator">-</span> <span class="s">&#39;inspection_types&#39;</span>
+
+<span class="nt">feature_group_strategies</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;all&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;leave-one-out&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;leave-one-in&#39;</span><span class="p p-Indicator">]</span>
+</pre></div>
+
+<p>i.e. <code>all</code> will train models with all the features groups, <code>leave-one-in</code> will use only one of the feature groups for traning, and lastly, <code>leave-one-out</code> will train the model with all the features except one.</p>
+</li>
+<li>
+<p>Algorithm and hyperparameters</p>
+<p>We will collapse the baseline (<code>DummyClassifier</code>) and the exploratory configuration together:</p>
+<div class="highlight"><pre><span></span><span class="nt">grid_config</span><span class="p">:</span>
+    <span class="nt">&#39;sklearn.tree.DecisionTreeClassifier&#39;</span><span class="p">:</span>
+        <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nv">null</span><span class="p p-Indicator">]</span>
+    <span class="nt">&#39;sklearn.ensemble.RandomForestClassifier&#39;</span><span class="p">:</span>
+        <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;sqrt&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;gini&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">n_estimators</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">500</span><span class="p p-Indicator">]</span>
+        <span class="nt">min_samples_leaf</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">]</span>
+        <span class="nt">min_samples_split</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">]</span>
+    <span class="nt">&#39;sklearn.dummy.DummyClassifier&#39;</span><span class="p">:</span>
+        <span class="nt">strategy</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">most_frequent</span><span class="p p-Indicator">]</span>
+</pre></div>
+
+<p><code>triage</code> will create <strong>36</strong> <em>model groups</em>: <strong>4</strong> algorithms and hyperparameters (2 <code>DecisionTreeClassifier</code>, 1 <code>RandomForestClassifier</code>, 1 <code>DummyClassifier</code>) &times; <strong>9</strong> features sets (1 <code>all</code>, 4 <code>leave-one-out</code>, <code>4 leave-one-in</code>). The total number of <em>models</em> is three times that (we have 3 time blocks, so <strong>108</strong> models).</p>
+<div class="highlight"><pre><span></span><span class="nt">scoring</span><span class="p">:</span>
+    <span class="nt">testing_metric_groups</span><span class="p">:</span>
+        <span class="p p-Indicator">-</span>
+          <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">,</span> <span class="nv">recall@</span><span class="p p-Indicator">]</span>
+          <span class="nt">thresholds</span><span class="p">:</span>
+            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1.0</span><span class="p p-Indicator">,</span> <span class="nv">2.0</span><span class="p p-Indicator">,</span> <span class="nv">3.0</span><span class="p p-Indicator">,</span> <span class="nv">4.0</span><span class="p p-Indicator">,</span> <span class="nv">5.0</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">15</span><span class="p p-Indicator">,</span> <span class="nv">20</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">30</span><span class="p p-Indicator">,</span> <span class="nv">35</span><span class="p p-Indicator">,</span> <span class="nv">40</span><span class="p p-Indicator">,</span> <span class="nv">45</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">55</span><span class="p p-Indicator">,</span> <span class="nv">60</span><span class="p p-Indicator">,</span> <span class="nv">65</span><span class="p p-Indicator">,</span> <span class="nv">70</span><span class="p p-Indicator">,</span> <span class="nv">75</span><span class="p p-Indicator">,</span> <span class="nv">80</span><span class="p p-Indicator">,</span> <span class="nv">85</span><span class="p p-Indicator">,</span> <span class="nv">90</span><span class="p p-Indicator">,</span> <span class="nv">95</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">]</span>
+            <span class="nt">top_n</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">,</span> <span class="nv">250</span><span class="p p-Indicator">,</span> <span class="nv">500</span><span class="p p-Indicator">,</span> <span class="nv">1000</span><span class="p p-Indicator">]</span>
+
+
+    <span class="nt">training_metric_groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">accuracy</span><span class="p p-Indicator">]</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">,</span> <span class="nv">recall@</span><span class="p p-Indicator">]</span>
+        <span class="nt">thresholds</span><span class="p">:</span>
+          <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1.0</span><span class="p p-Indicator">,</span> <span class="nv">2.0</span><span class="p p-Indicator">,</span> <span class="nv">3.0</span><span class="p p-Indicator">,</span> <span class="nv">4.0</span><span class="p p-Indicator">,</span> <span class="nv">5.0</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">15</span><span class="p p-Indicator">,</span> <span class="nv">20</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">30</span><span class="p p-Indicator">,</span> <span class="nv">35</span><span class="p p-Indicator">,</span> <span class="nv">40</span><span class="p p-Indicator">,</span> <span class="nv">45</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">55</span><span class="p p-Indicator">,</span> <span class="nv">60</span><span class="p p-Indicator">,</span> <span class="nv">65</span><span class="p p-Indicator">,</span> <span class="nv">70</span><span class="p p-Indicator">,</span> <span class="nv">75</span><span class="p p-Indicator">,</span> <span class="nv">80</span><span class="p p-Indicator">,</span> <span class="nv">85</span><span class="p p-Indicator">,</span> <span class="nv">90</span><span class="p p-Indicator">,</span> <span class="nv">95</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">]</span>
+          <span class="nt">top_n</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">,</span> <span class="nv">250</span><span class="p p-Indicator">,</span> <span class="nv">500</span><span class="p p-Indicator">,</span> <span class="nv">1000</span><span class="p p-Indicator">]</span>
+</pre></div>
+
+<p>As a last step, we validate that the configuration file is correct:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+triage experiment experiments/eis_01.yaml  --validate-only
+</pre></div>
+
+<p>And then just run it:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+triage experiment --matrix-format hdf experiments/eis_01.yaml --profile
+</pre></div>
+
+<p>This will take a <strong>lot</strong> amount of time (on my computer took 3h 42m), so, grab your coffee, chat with your coworkers, check your email, or read the <a href="https://dssg.uchicago.edu/blog">DSSG blog</a>. It's taking that long for several reasons:</p>
+<ol>
+<li>There are a lot of models, parameters, etc.</li>
+<li>We are running in serial mode (i.e. not in parallel).</li>
+<li>The database is running on your laptop.</li>
+</ol>
+<p>You can solve 2 and 3. For the second point you could use the <code>docker</code> container that has the multicore option enabled. For 3, I recommed you to use a PostgreSQL database in the cloud, such as Amazon's <strong>PostgreSQL RDS</strong> (we will explore this later in running triage in AWS Batch).</p>
+<p>After the experiment finishes, we can create the following table:</p>
+<div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">features_groups</span> <span class="k">as</span> <span class="p">(</span>
+<span class="k">select</span>
+    <span class="n">model_group_id</span><span class="p">,</span>
+    <span class="n">split_part</span><span class="p">(</span><span class="k">unnest</span><span class="p">(</span><span class="n">feature_list</span><span class="p">),</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">feature_groups</span>
+<span class="k">from</span>
+    <span class="n">model_metadata</span><span class="p">.</span><span class="n">model_groups</span>
+<span class="p">),</span>
+
+<span class="n">features_arrays</span> <span class="k">as</span> <span class="p">(</span>
+<span class="k">select</span>
+    <span class="n">model_group_id</span><span class="p">,</span>
+    <span class="n">array_agg</span><span class="p">(</span><span class="k">distinct</span> <span class="n">feature_groups</span><span class="p">)</span> <span class="k">as</span> <span class="n">feature_groups</span>
+<span class="k">from</span>
+    <span class="n">features_groups</span>
+<span class="k">group</span> <span class="k">by</span>
+    <span class="n">model_group_id</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+    <span class="n">model_group_id</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="p">,</span>
+    <span class="n">hyperparameters</span><span class="p">,</span>
+    <span class="n">feature_groups</span><span class="p">,</span>
+    <span class="n">array_agg</span><span class="p">(</span><span class="n">model_id</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="n">models</span><span class="p">,</span>
+    <span class="n">array_agg</span><span class="p">(</span><span class="n">train_end_time</span><span class="p">::</span><span class="nb">date</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="n">times</span><span class="p">,</span>
+    <span class="n">array_agg</span><span class="p">(</span><span class="n">to_char</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;0.999&#39;</span><span class="p">)</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;precision@10%&quot;</span>
+<span class="k">from</span>
+    <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span>
+    <span class="k">join</span>
+    <span class="n">features_arrays</span> <span class="k">using</span><span class="p">(</span><span class="n">model_group_id</span><span class="p">)</span>
+    <span class="k">join</span>
+    <span class="n">test_results</span><span class="p">.</span><span class="n">evaluations</span> <span class="k">using</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+<span class="k">where</span>
+    <span class="n">model_comment</span> <span class="o">~</span> <span class="s1">&#39;eis&#39;</span>
+    <span class="k">and</span>
+    <span class="n">metric</span> <span class="o">||</span> <span class="k">parameter</span> <span class="o">=</span> <span class="s1">&#39;precision@10_pct&#39;</span>
+<span class="k">group</span> <span class="k">by</span>
+    <span class="n">model_group_id</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="p">,</span>
+    <span class="n">hyperparameters</span><span class="p">,</span>
+    <span class="n">feature_groups</span>
+<span class="k">order</span> <span class="k">by</span>
+    <span class="n">model_group_id</span><span class="p">;</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>model<sub>group</sub><sub>id</sub></th>
+<th>model<sub>type</sub></th>
+<th>hyperparameters</th>
+<th>feature<sub>groups</sub></th>
+<th>models</th>
+<th>times</th>
+<th>precision@10%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>46</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspection,inspections,results,risks}</td>
+<td>{136,154,172}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.271"," 0.265"," 0.181"}</td>
+</tr>
+<tr>
+<td>47</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspection,inspections,results,risks}</td>
+<td>{137,155,173}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.200"," 0.211"," 0.138"}</td>
+</tr>
+<tr>
+<td>48</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspection,results,risks}</td>
+<td>{138,156,174}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.271"," 0.265"," 0.181"}</td>
+</tr>
+<tr>
+<td>49</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspection,results,risks}</td>
+<td>{139,157,175}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.197"," 0.213"," 0.138"}</td>
+</tr>
+<tr>
+<td>50</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspection,inspections,risks}</td>
+<td>{140,158,176}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.253"," 0.224"," 0.142"}</td>
+</tr>
+<tr>
+<td>51</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspection,inspections,risks}</td>
+<td>{141,159,177}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.175"," 0.171"," 0.129"}</td>
+</tr>
+<tr>
+<td>52</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspection,inspections,results}</td>
+<td>{142,160,178}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.271"," 0.265"," 0.181"}</td>
+</tr>
+<tr>
+<td>53</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspection,inspections,results}</td>
+<td>{143,161,179}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.213"," 0.201"," 0.133"}</td>
+</tr>
+<tr>
+<td>54</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspections,results,risks}</td>
+<td>{144,162,180}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.271"," 0.265"," 0.181"}</td>
+</tr>
+<tr>
+<td>55</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspections,results,risks}</td>
+<td>{145,163,181}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.204"," 0.205"," 0.146"}</td>
+</tr>
+<tr>
+<td>56</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspections}</td>
+<td>{146,164,182}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.171"," 0.145"," 0.113"}</td>
+</tr>
+<tr>
+<td>57</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspections}</td>
+<td>{147,165,183}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.168"," 0.168"," 0.131"}</td>
+</tr>
+<tr>
+<td>58</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{results}</td>
+<td>{148,166,184}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.271"," 0.265"," 0.181"}</td>
+</tr>
+<tr>
+<td>59</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{results}</td>
+<td>{149,167,185}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.243"," 0.232"," 0.180"}</td>
+</tr>
+<tr>
+<td>60</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{risks}</td>
+<td>{150,168,186}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.253"," 0.224"," 0.142"}</td>
+</tr>
+<tr>
+<td>61</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{risks}</td>
+<td>{151,169,187}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.174"," 0.158"," 0.122"}</td>
+</tr>
+<tr>
+<td>62</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": 2}</td>
+<td>{inspection}</td>
+<td>{152,170,188}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.201"," 0.191"," 0.124"}</td>
+</tr>
+<tr>
+<td>63</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+<td>{"max<sub>depth</sub>": null}</td>
+<td>{inspection}</td>
+<td>{153,171,189}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.166"," 0.165"," 0.124"}</td>
+</tr>
+<tr>
+<td>64</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspection,inspections,results,risks}</td>
+<td>{190,208,226}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.348"," 0.346"," 0.239"}</td>
+</tr>
+<tr>
+<td>65</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspection,inspections,results,risks}</td>
+<td>{191,209,227}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>66</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspection,results,risks}</td>
+<td>{192,210,228}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.350"," 0.348"," 0.244"}</td>
+</tr>
+<tr>
+<td>67</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspection,results,risks}</td>
+<td>{193,211,229}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>68</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspection,inspections,risks}</td>
+<td>{194,212,230}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.283"," 0.271"," 0.186"}</td>
+</tr>
+<tr>
+<td>69</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspection,inspections,risks}</td>
+<td>{195,213,231}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>70</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspection,inspections,results}</td>
+<td>{196,214,232}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.339"," 0.335"," 0.245"}</td>
+</tr>
+<tr>
+<td>71</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspection,inspections,results}</td>
+<td>{197,215,233}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>72</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspections,results,risks}</td>
+<td>{198,216,234}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.344"," 0.342"," 0.239"}</td>
+</tr>
+<tr>
+<td>73</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspections,results,risks}</td>
+<td>{199,217,235}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>74</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspections}</td>
+<td>{200,218,236}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.168"," 0.169"," 0.131"}</td>
+</tr>
+<tr>
+<td>75</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspections}</td>
+<td>{201,219,237}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>76</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{results}</td>
+<td>{202,220,238}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.314"," 0.301"," 0.213"}</td>
+</tr>
+<tr>
+<td>77</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{results}</td>
+<td>{203,221,239}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>78</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{risks}</td>
+<td>{204,222,240}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.280"," 0.263"," 0.178"}</td>
+</tr>
+<tr>
+<td>79</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{risks}</td>
+<td>{205,223,241}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+<tr>
+<td>80</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{inspection}</td>
+<td>{206,224,242}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.272"," 0.259"," 0.179"}</td>
+</tr>
+<tr>
+<td>81</td>
+<td>sklearn.dummy.DummyClassifier</td>
+<td>{"strategy": "most<sub>frequent</sub>"}</td>
+<td>{inspection}</td>
+<td>{207,225,243}</td>
+<td>{2015-12-01,2016-12-01,2017-12-01}</td>
+<td>{" 0.121"," 0.119"," 0.088"}</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+<h3>Audition: So many models, how can I choose the best one?</h3>
+<p>Let’s select the best model groups, using Audition. We need to make small changes to the <a href="file:///home/nanounanue/projects/dsapp/dirtyduck/triage/eis_audition_config.yaml">configuration file</a> compared to the inspection’s one:</p>
+<div class="highlight"><pre><span></span><span class="c1"># CHOOSE MODEL GROUPS</span>
+<span class="nt">model_groups</span><span class="p">:</span>
+    <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+        <span class="no">select distinct(model_group_id)</span>
+        <span class="no">from model_metadata.model_groups</span>
+        <span class="no">where model_config -&gt;&gt; &#39;experiment_type&#39; ~ &#39;eis&#39;</span>
+<span class="c1"># CHOOSE TIMESTAMPS/TRAIN END TIMES</span>
+<span class="nt">time_stamps</span><span class="p">:</span>
+    <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+        <span class="no">select distinct train_end_time</span>
+        <span class="no">from model_metadata.models</span>
+        <span class="no">where model_group_id in ({})</span>
+        <span class="no">and extract(day from train_end_time) in (1)</span>
+        <span class="no">and train_end_time &gt;= &#39;2015-01-01&#39;</span>
+<span class="c1"># FILTER</span>
+<span class="nt">filter</span><span class="p">:</span>
+    <span class="nt">metric</span><span class="p">:</span> <span class="s">&#39;precision@&#39;</span> <span class="c1"># metric of interest</span>
+    <span class="nt">parameter</span><span class="p">:</span> <span class="s">&#39;10_pct&#39;</span> <span class="c1"># parameter of interest</span>
+    <span class="nt">max_from_best</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1.0</span> <span class="c1"># The maximum value that the given metric can be worse than the best model for a given train end time.</span>
+    <span class="nt">threshold_value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span> <span class="c1"># The worst absolute value that the given metric should be.</span>
+    <span class="nt">distance_table</span><span class="p">:</span> <span class="s">&#39;eis_distance_table&#39;</span> <span class="c1"># name of the distance table</span>
+    <span class="nt">models_table</span><span class="p">:</span> <span class="s">&#39;models&#39;</span> <span class="c1"># name of the models table</span>
+
+<span class="c1"># RULES</span>
+<span class="nt">rules</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">shared_parameters</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">metric</span><span class="p">:</span> <span class="s">&#39;precision@&#39;</span>
+                <span class="nt">parameter</span><span class="p">:</span> <span class="s">&#39;10_pct&#39;</span>
+
+        <span class="nt">selection_rules</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;best_current_value&#39;</span> <span class="c1"># Pick the model group with the best current metric value</span>
+                <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;best_average_value&#39;</span> <span class="c1"># Pick the model with the highest average metric value</span>
+                <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;lowest_metric_variance&#39;</span> <span class="c1"># Pick the model with the lowest metric variance</span>
+                <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;most_frequent_best_dist&#39;</span> <span class="c1"># Pick the model that is most frequently within `dist_from_best_case`</span>
+                <span class="nt">dist_from_best_case</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.05</span><span class="p p-Indicator">]</span>
+                <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+</pre></div>
+
+<p>And then we run the simulation of the rules againts the experiment as:</p>
+<div class="highlight"><pre><span></span>triage --tb audition -c eis_audition_config.yaml --directory audition/eis
+</pre></div>
+
+<p><code>Audition</code> will create several plots that will help you to sort out which is the <em>best</em> model group to use (like in a production setting or just to generate your list).</p>
+<h4>Filtering model groups</h4>
+<p><code>Audition</code> will generate two plots that are meant to be used together: <em>model performance over time</em> and <em>distance from best</em>.</p>
+<p><img alt="img" src="../audition/eis/metric_over_time_precision@10_pct.png" title="Model group performance over time. In this case the metric show is precision@10%. The black dashed line represents the (theoretical) system's performance if we select the best performant model in a every evaluation date. The colored lines represents different model groups. All the model groups that share an algorithm will be colored the same." /></p>
+<p><img alt="img" src="../audition/eis/distance_from_best_precision@10_pct.png" title="Proportion of **all** the *models* in a *model group* that are separated from the best model. The distance is measured in percentual points, i.e. How much less precision at 10 percent of the population compared to the best model in that date." /></p>
+<h4>Selecting the best rule or strategy for choosing model groups</h4>
+<p>In this phase of the audition, you will see what will happen in the next time if you choose your model group with an specific strategy or rule.</p>
+<p>You then, can calculate the <em>regret</em>. <em>Regret</em> is defined as the difference between the performance of the best model evaluated on the "next time" and the performance of the model selected by a particular rule.</p>
+<p><img alt="img" src="../audition/eis/precision@10_pct_next_time.png" title="Given a strategy for selecting model groups (in the plot 4 are shown), What will be the performace of the model group chosen by that strategy in the next evaluation date?" /></p>
+<p><img alt="img" src="../audition/eis/regret_distance_from_best_rules_precision@10_pct.png" title="Given a strategy for selecting model groups (in the plot 4 are shown). What will be the distance (*regret*) to the best theoretical model in the following evaluation date? This plot is similar to the [@fig:distance-from-best-2]" /></p>
+<p><img alt="img" src="../audition/eis/regret_over_time_precision@10_pct.png" title="Expected regret for the strategies. The less the better." /></p>
+<p>It seems that the <em>worst</em> strategy (the one with the bigger “regret”) for selecting a <em>model<sub>group</sub></em> is <code>lowest_metric_variance_precision</code>. The other three seem almost indistinguishable. We will dig in using Postmodeling. And afterwards instead of using the feature importance to characterize the facilities, we will explore how the model is splitting the facilities using <em>crosstabs</em>.</p>
+<p>As before, the best <strong>3</strong> <em>model groups</em> per strategy will be stored in the file <code>[[file:audition/eis/results_model_group_ids.json][results_model_group_ids.json]]</code>:</p>
+<div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;best_current_value_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">70</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span> <span class="nt">&quot;best_average_value_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">66</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">72</span><span class="p">],</span> <span class="nt">&quot;lowest_metric_variance_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">65</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">69</span><span class="p">],</span> <span class="nt">&quot;most_frequent_best_dist_precision@_10_pct_0.05&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">70</span><span class="p">]}</span>
+</pre></div>
+
+<h3>Postmodeling: Inspecting the best models closely</h3>
+<p>Given that almost all the strategies perform well, we will change the parameter <code>model_group_id</code> in the <a href="file:///home/nanounanue/projects/dsapp/dirtyduck/triage/eis_postmodeling_config.yaml">postmodeling's configuration file</a> and we will use the complete set of model groups selected by audition:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Postmodeling Configuration File</span>
+
+  <span class="nt">project_path</span><span class="p">:</span> <span class="s">&#39;/triage&#39;</span> <span class="c1"># Project path defined in triage with matrices and models</span>
+  <span class="nt">audition_output_path</span><span class="p">:</span> <span class="s">&#39;/triage/audition/eis/results_model_group_ids.json&#39;</span>
+
+  <span class="nt">thresholds</span><span class="p">:</span> <span class="c1"># Thresholds for2 defining positive predictions</span>
+        <span class="nt">rank_abs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">,</span> <span class="nv">250</span><span class="p p-Indicator">]</span>
+        <span class="nt">rank_pct</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">]</span>
+
+  <span class="nt">baseline_query</span><span class="p">:</span> <span class="p p-Indicator">|</span> <span class="c1"># SQL query for defining a baseline for comparison in plots. It needs a metric and parameter</span>
+      <span class="no">select g.model_group_id,</span>
+             <span class="no">m.model_id,</span>
+             <span class="no">extract(&#39;year&#39; from m.evaluation_end_time) as as_of_date_year,</span>
+             <span class="no">m.metric,</span>
+             <span class="no">m.parameter,</span>
+             <span class="no">m.value,</span>
+             <span class="no">m.num_labeled_examples,</span>
+             <span class="no">m.num_labeled_above_threshold,</span>
+             <span class="no">m.num_positive_labels</span>
+       <span class="no">from test_results.evaluations m</span>
+       <span class="no">left join model_metadata.models g</span>
+       <span class="no">using(model_id)</span>
+       <span class="no">where g.model_group_id = 81</span>
+             <span class="no">and metric = &#39;precision@&#39;</span>
+             <span class="no">and parameter = &#39;10_pct&#39;</span>
+
+  <span class="nt">max_depth_error_tree</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> <span class="c1"># For error trees, how depth the decision trees should go?</span>
+  <span class="nt">n_features_plots</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span> <span class="c1"># Number of features for importances</span>
+  <span class="nt">figsize</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">12</span><span class="p p-Indicator">,</span> <span class="nv">12</span><span class="p p-Indicator">]</span> <span class="c1"># Default size for plots</span>
+  <span class="nt">fontsize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">20</span> <span class="c1"># Default fontsize for plots</span>
+</pre></div>
+
+<p>Again launch jupyter in <code>bastion</code>:</p>
+<h4>Setup</h4>
+<p>The first lines of code are the same as in the inspection’s section</p>
+<div class="highlight"><pre><span></span>%matplotlib inline
+import pandas as pd
+import numpy as np
+from collections import OrderedDict
+from triage.component.postmodeling.contrast.utils.aux_funcs import create_pgconn, get_models_ids
+from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
+from triage.component.postmodeling.contrast.parameters import PostmodelParameters
+from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
+from triage.component.postmodeling.contrast.model_group_evaluator import ModelGroupEvaluator
+
+params = PostmodelParameters(&#39;../triage/eis_postmodeling_config.yaml&#39;)
+
+engine = create_pgconn(&#39;database.yaml&#39;)
+
+# Model group object (useful to compare across model_groups and models in time)
+audited_models_class = ModelGroupEvaluator(tuple(params.model_group_id), engine)
+</pre></div>
+
+<h4>Model groups</h4>
+<p>Let’s start with the behavior in time of the selected model groups</p>
+<div class="highlight"><pre><span></span>audited_models_class.plot_prec_across_time(param_type=&#39;rank_pct&#39;,
+                                           param=10,
+                                           baseline=True,
+                                           baseline_query=params.baseline_query,
+                                           metric=&#39;precision@&#39;,
+                                           figsize=params.figsize)
+</pre></div>
+
+<p><img alt="img" src="../images/eis_mg_prec_over_time.png" title="Precision@10% over time from the best performing model groups selected by Audition" /></p>
+<p>Every model selected by audition has a very similar performance across time, and they are ~2.5 times above the baseline in precision@10%. We could also check the recall of the model groups.</p>
+<div class="highlight"><pre><span></span>audited_models_class.plot_prec_across_time(param_type=&#39;rank_pct&#39;,
+                                           param=10,
+                                           metric=&#39;recall@&#39;,
+                                           figsize=params.figsize)
+</pre></div>
+
+<p><img alt="img" src="../images/eis_mg_recall_over_time.png" title="Recall@10% over time from the best performing model groups selected by Audition" /></p>
+<p>That behavior is similar for the recall@10%, except for the model group <strong>69</strong></p>
+<div class="highlight"><pre><span></span>audited_models_class.plot_jaccard_preds(param_type=&#39;rank_pct&#39;,
+                                        param=10,
+                                        temporal_comparison=True)
+</pre></div>
+
+<p><img alt="img" src="../images/eis_jaccard_on_lists_over_time.png" title="How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists." /></p>
+<p>There are a high jaccard similarity between some model groups across time. This could be an indicator that they are so similar that you can choose any and it won’t matter.</p>
+<h4>Going deeper with a model</h4>
+<p>We will choose the model group <strong>64</strong> as the winner.</p>
+<div class="highlight"><pre><span></span><span class="k">select</span>
+    <span class="n">mg</span><span class="p">.</span><span class="n">model_group_id</span><span class="p">,</span>
+    <span class="n">mg</span><span class="p">.</span><span class="n">model_type</span><span class="p">,</span>
+    <span class="n">mg</span><span class="p">.</span><span class="n">hyperparameters</span><span class="p">,</span>
+    <span class="n">array_agg</span><span class="p">(</span><span class="n">model_id</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span><span class="p">)</span> <span class="k">as</span> <span class="n">models</span>
+<span class="k">from</span>
+    <span class="n">model_metadata</span><span class="p">.</span><span class="n">model_groups</span> <span class="k">as</span> <span class="n">mg</span>
+    <span class="k">inner</span> <span class="k">join</span>
+    <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span>
+    <span class="k">using</span> <span class="p">(</span><span class="n">model_group_id</span><span class="p">)</span>
+<span class="k">where</span> <span class="n">model_group_id</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="k">group</span> <span class="k">by</span> <span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>model<sub>group</sub><sub>id</sub></th>
+<th>model<sub>type</sub></th>
+<th>hyperparameters</th>
+<th>models</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>64</td>
+<td>sklearn.ensemble.RandomForestClassifier</td>
+<td>{"criterion": "gini", "max<sub>features</sub>": "sqrt", "n<sub>estimators</sub>": 500, "min<sub>samples</sub><sub>leaf</sub>": 1, "min<sub>samples</sub><sub>split</sub>": 50}</td>
+<td>{190,208,226}</td>
+</tr>
+</tbody>
+</table>
+<p>But before going to production and start making predictions in unseen data, let’s see what the particular models are doing. <em>Postmodeling</em> created a <code>ModelEvaluator</code> (similar to the <code>ModelGroupEvaluator</code>) to do this exploration:</p>
+<div class="highlight"><pre><span></span>models_64 = { f&#39;{model}&#39;: ModelEvaluator(64, model, engine) for model in [190,208,226] }
+</pre></div>
+
+<p>In this tutorial, we will just show some parts of the analysis in the most recent model, but feel free of exploring the behavior of all the models in this model group, and check if you can detect any pattern.</p>
+<ul>
+<li>
+<p>Feature importances</p>
+<div class="highlight"><pre><span></span>models_64[&#39;226&#39;].plot_feature_importances(path=params.project_path,
+                                          n_features_plots=params.n_features_plots,
+                                          figsize=params.figsize)
+</pre></div>
+
+<p><img alt="img" src="../images/eis_model_group_64_feature_importances.png" title="Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226)." /></p>
+<div class="highlight"><pre><span></span>models_64[&#39;226&#39;].plot_feature_group_average_importances()
+</pre></div>
+
+<p><img alt="img" src="../images/eis_model_group_64_feature_group_importances.png" title="Feature group “importance” (we are basically taking the average of all the feature importances in a feature group) for the model group 64, model 226." /></p>
+</li>
+</ul>
+<h3>Crosstabs: How are the entities classified?</h3>
+<p>Model interpretation is a huge topic nowadays, the most obvious path is using the <em>features importance</em> from the model. This could be useful, but we could do a lot better.</p>
+<p><code>Triage</code> uses <code>crosstabs</code> as a different approach that complements the list of <em>features importance</em>. <code>crosstabs</code> will run statistical tests to compare the predicted positive and the predicted false facilities in <em>each</em> feature.</p>
+<div class="highlight"><pre><span></span><span class="nt">output</span><span class="p">:</span>
+  <span class="nt">schema</span><span class="p">:</span> <span class="s">&#39;test_results&#39;</span>
+  <span class="nt">table</span><span class="p">:</span> <span class="s">&#39;eis_crosstabs&#39;</span>
+
+<span class="nt">thresholds</span><span class="p">:</span>
+    <span class="nt">rank_abs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">]</span>
+    <span class="nt">rank_pct</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">5</span><span class="p p-Indicator">]</span>
+
+<span class="c1">#(optional): a list of entity_ids to subset on the crosstabs analysis</span>
+<span class="nt">entity_id_list</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
+
+<span class="nt">models_list_query</span><span class="p">:</span> <span class="s">&quot;select</span><span class="nv"> </span><span class="s">unnest(ARRAY[226])</span><span class="nv"> </span><span class="s">::</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">as</span><span class="nv"> </span><span class="s">model_id&quot;</span>
+
+<span class="nt">as_of_dates_query</span><span class="p">:</span> <span class="s">&quot;select</span><span class="nv"> </span><span class="s">generate_series(&#39;2017-12-01&#39;::date,</span><span class="nv"> </span><span class="s">&#39;2018-09-01&#39;::date,</span><span class="nv"> </span><span class="s">interval</span><span class="nv"> </span><span class="s">&#39;1month&#39;)</span><span class="nv">  </span><span class="s">as</span><span class="nv"> </span><span class="s">as_of_date&quot;</span>
+
+<span class="c1">#don&#39;t change this query unless strictly necessary. It is just validating pairs of (model_id,as_of_date)</span>
+<span class="c1">#it is just a join with distinct (model_id, as_of_date) in a predictions table</span>
+<span class="nt">models_dates_join_query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+  <span class="no">select model_id,</span>
+  <span class="no">as_of_date</span>
+  <span class="no">from models_list_query as m</span>
+  <span class="no">cross join as_of_dates_query a join (select distinct model_id, as_of_date from test_results.predictions) as p</span>
+  <span class="no">using (model_id, as_of_date)</span>
+
+<span class="c1">#features_query must join models_dates_join_query with 1 or more features table using as_of_date</span>
+<span class="nt">features_query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+  <span class="no">select m.model_id, m.as_of_date, f4.entity_id, f4.results_entity_id_1month_result_fail_avg, f4.results_entity_id_3month_result_fail_avg, f4.results_entity_id_6month_result_fail_avg,</span>
+  <span class="no">f2.inspection_types_zip_code_1month_type_canvass_sum, f3.risks_zip_code_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,</span>
+  <span class="no">f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_zip_code_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,</span>
+  <span class="no">f2.inspection_types_entity_id_all_type_canvass_sum</span>
+  <span class="no">from features.inspection_types_aggregation_imputed as f2</span>
+  <span class="no">inner join features.risks_aggregation_imputed as f3 using (entity_id, as_of_date)</span>
+  <span class="no">inner join features.results_aggregation_imputed as f4 using (entity_id, as_of_date)</span>
+  <span class="no">inner join models_dates_join_query as m using (as_of_date)</span>
+
+<span class="c1">#the predictions query must return model_id, as_of_date, entity_id, score, label_value, rank_abs and rank_pct</span>
+<span class="c1">#it must join models_dates_join_query using both model_id and as_of_date</span>
+<span class="nt">predictions_query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+  <span class="no">select model_id,</span>
+      <span class="no">as_of_date,</span>
+      <span class="no">entity_id,</span>
+      <span class="no">score,</span>
+      <span class="no">label_value,</span>
+      <span class="no">coalesce(rank_abs, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,</span>
+      <span class="no">coalesce(rank_pct*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct</span>
+      <span class="no">from test_results.predictions</span>
+      <span class="no">join models_dates_join_query using(model_id, as_of_date)</span>
+      <span class="no">where model_id in (select model_id from models_list_query)</span>
+      <span class="no">and as_of_date in (select as_of_date from as_of_dates_query)</span>
+</pre></div>
+
+<div class="highlight"><pre><span></span>triage --tb crosstabs /triage/eis_crosstabs_config.yaml
+</pre></div>
+
+<p>When it finish, you could explore the table with the following code:</p>
+<div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">significant_features</span> <span class="k">as</span> <span class="p">(</span>
+<span class="k">select</span>
+    <span class="n">feature_column</span><span class="p">,</span>
+    <span class="n">as_of_date</span><span class="p">,</span>
+    <span class="n">threshold_unit</span>
+<span class="k">from</span>
+    <span class="n">test_results</span><span class="p">.</span><span class="n">eis_crosstabs</span>
+<span class="k">where</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="s1">&#39;ttest_p&#39;</span>
+    <span class="k">and</span>
+    <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">05</span> <span class="k">and</span> <span class="n">as_of_date</span> <span class="o">=</span> <span class="s1">&#39;2018-09-01&#39;</span>
+    <span class="p">)</span>
+
+<span class="k">select</span>
+    <span class="k">distinct</span>
+    <span class="n">model_id</span><span class="p">,</span>
+    <span class="n">as_of_date</span><span class="p">::</span><span class="nb">date</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
+    <span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span> <span class="n">threshold_value</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span><span class="p">)</span> <span class="k">as</span> <span class="n">threshold</span><span class="p">,</span>
+    <span class="n">feature_column</span><span class="p">,</span>
+    <span class="n">value</span> <span class="k">as</span> <span class="ss">&quot;ratio PP / PN&quot;</span>
+<span class="k">from</span>
+    <span class="n">test_results</span><span class="p">.</span><span class="n">eis_crosstabs</span> <span class="k">as</span> <span class="n">t1</span>
+    <span class="k">inner</span> <span class="k">join</span>
+    <span class="n">significant_features</span> <span class="k">as</span> <span class="n">t2</span> <span class="k">using</span><span class="p">(</span><span class="n">feature_column</span><span class="p">,</span> <span class="n">as_of_date</span><span class="p">)</span>
+<span class="k">where</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="s1">&#39;ratio_predicted_positive_over_predicted_negative&#39;</span>
+    <span class="k">and</span>
+    <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span> <span class="o">=</span> <span class="s1">&#39;pct&#39;</span>
+<span class="k">order</span> <span class="k">by</span> <span class="n">value</span> <span class="k">desc</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>model<sub>id</sub></th>
+<th>as<sub>of</sub><sub>date</sub></th>
+<th>threshold</th>
+<th>feature<sub>column</sub></th>
+<th>ratio PP / PN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>results<sub>entity</sub><sub>id</sub><sub>1month</sub><sub>result</sub><sub>fail</sub><sub>avg</sub></td>
+<td>11.7306052855925</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>results<sub>entity</sub><sub>id</sub><sub>3month</sub><sub>result</sub><sub>fail</sub><sub>avg</sub></td>
+<td>3.49082798996376</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>results<sub>entity</sub><sub>id</sub><sub>6month</sub><sub>result</sub><sub>fail</sub><sub>avg</sub></td>
+<td>1.27344759545161</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>risks<sub>zip</sub><sub>code</sub><sub>1month</sub><sub>risk</sub><sub>high</sub><sub>sum</sub></td>
+<td>1.17488357227451</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>inspection<sub>types</sub><sub>entity</sub><sub>id</sub><sub>all</sub><sub>type</sub><sub>canvass</sub><sub>sum</sub></td>
+<td>0.946432281075976</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>inspection<sub>types</sub><sub>zip</sub><sub>code</sub><sub>3month</sub><sub>type</sub><sub>canvass</sub><sub>sum</sub></td>
+<td>0.888940127100436</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>results<sub>entity</sub><sub>id</sub><sub>6month</sub><sub>result</sub><sub>pass</sub><sub>sum</sub></td>
+<td>0.041806916457784</td>
+</tr>
+<tr>
+<td>226</td>
+<td>2018-09-01</td>
+<td>5 pct</td>
+<td>results<sub>entity</sub><sub>id</sub><sub>6month</sub><sub>result</sub><sub>pass</sub><sub>avg</sub></td>
+<td>0.0232523724927717</td>
+</tr>
+</tbody>
+</table>
+<p>This table represents the ratio between the predicted positives at the top 5% and predicted negatives (the rest). For example, you can see that in PP are eleven times more inspected if they have a failed inspection in the last month, 3.5 times more if they have a failed inspection in the previous 3 months, etc.</p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../inspections/" title="Resource prioritization" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Resource prioritization
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../triage_intro/" title="A deeper look into triage" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                A deeper look into triage
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/dssg/hitchhikers-guide" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://twitter.com/datascifellows" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" class="md-footer-social__link fa fa-linkedin"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.267712eb.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      
+        <script src="../../../js/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

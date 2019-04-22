@@ -1,5 +1,0 @@
-host: localhost
-user: results_schema
-pass: results_schema
-port: 5432
-db: results_schema
