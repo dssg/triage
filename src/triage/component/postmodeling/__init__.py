@@ -25,14 +25,16 @@ def _db_url_from_environment():
         logging.info("Getting db connection credentials from DATABASE_URL")
         return environ_url
 
-    if os.getenv('DATABASE_FILE') and os.path.isfile(os.getenv('DATABASE_FILE')):
-        logging.info("Getting db connection credentials from DATABASE_FILE")
-        dbfile = open(os.getenv('DATABASE_FILE'))
+    dbfile_path = os.getenv('DATABASE_FILE')
+    if dbfile_path:
+        if not os.path.isfile(dbfile_path):
+            logging.error('No such database file path: %s', dbfile_path)
+            return None
     else:
-        logging.warn("There is no DATABASE_URL or DATABASE_FILE  environment variable")
+        logging.warn("Neither environment variable DATABASE_URL or DATABASE_FILE set")
         return None
 
-    with dbfile:
+    with open(dbfile_path) as dbfile:
         dbconfig = yaml.load(dbfile)
 
     return URL(
