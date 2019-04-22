@@ -1,0 +1,87 @@
+site_name: Triage Documentation
+theme:
+  name: 'material'
+  palette:
+    primary: 'blue grey'
+    accent: 'deep orange'
+  font:
+    text: 'Ubuntu'
+    code: 'Ubuntu Mono'
+  logo:
+    icon: 'book'
+  favicon: 'assets/images/favicon.ico'
+
+docs_dir: sources
+repo_name: 'dssg/triage'
+repo_url: http://github.com/dssg/triage
+edit_uri: ''
+site_description: 'Documentation for Triage.'
+
+extra:
+  social:
+    - type: 'github'
+      link: 'https://github.com/dssg/hitchhikers-guide'
+    - type: 'twitter'
+      link: 'https://twitter.com/datascifellows'
+    - type: 'linkedin'
+      link: 'https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago'
+
+
+markdown_extensions:
+  - toc:
+      permalink: True
+      baselevel: 2
+      toc_depth: 1
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - pymdownx.arithmatex
+  - pymdownx.b64
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.extrarawhtml
+  - pymdownx.keys
+  - pymdownx.highlight
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.superfences
+
+extra_javascript:
+    - "js/mermaid.min.js"
+
+nav:
+  - Home: index.md
+  - Dirty Duck Tutorial:
+    - Welcome: dirtyduck/docs/index.md
+    - Choose your own adventure: dirtyduck/docs/choose_your_own_adventure.md
+    - Setup:
+      - For the impatient: dirtyduck/docs/for_the_impatient.md
+      - Infrastructure: dirtyduck/docs/infrastructure.md
+      - Data preparation: dirtyduck/docs/data_preparation.md
+    - Case studies:
+      - Problem description: dirtyduck/docs/intro.md
+      - Resource prioritization: dirtyduck/docs/inspections.md
+      - Early Warning System: dirtyduck/docs/eis.md
+    - Triage:
+      - A deeper look into triage: dirtyduck/docs/triage_intro.md
+  - Experiment:
+    - Defining an Experiment: experiments/defining.md
+    - Testing Feature Configuration: experiments/feature-testing.md
+    - Running an Experiment: experiments/running.md
+    - Upgrading an Experiment: experiments/upgrading.md
+    - Temporal Validation Deep Dive: experiments/temporal-validation.md
+    - Cohort and Label Deep Dive: experiments/cohort-labels.md
+    - Feature Generation Recipe Book: experiments/features.md
+    - Experiment Algorithm: experiments/algorithm.md
+    - Experiment Architecture: experiments/architecture.md
+  - Model selection: dirtyduck/docs/audition.md
+  - Postmodeling: postmodeling/index.md
+  - Model governance:  dirtyduck/docs/ml_governance.md
+  - Scaling up: dirtyduck/docs/aws_batch.md

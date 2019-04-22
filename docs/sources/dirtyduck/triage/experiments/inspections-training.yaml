@@ -1,0 +1,106 @@
+config_version: 'v3'
+
+model_comment: 'test_triage_inspections'
+
+temporal_config:
+  feature_start_time=np.min(df.date)
+  feature_end_time=np.max(df.date)
+  label_start_time=np.min(df.date)
+  label_end_time=np.max(df.date)
+
+  model_update_frequency='3months'
+  training_label_timespans='1day'
+  training_as_of_date_frequencies='1day'
+  max_training_histories='1year'
+
+  test_durations='1day'
+  test_label_timespans='3month'
+  test_as_of_date_frequencies='1day'
+
+events_table: 'inspections.events'
+
+feature_aggregations:
+  -
+    # Number of violations of a specific code and proportion, grouped by entity
+    prefix: 'violations'
+    from_obj: 'cleaned.violations'
+    knowledge_date_column: 'knowledge_date'
+
+    categoricals:
+      -
+        column: 'violation_code'
+        choice_query: 'select distinct violation_code from cleaned.violations'
+        metrics:
+          - 'sum'
+          - 'avg'
+
+    intervals:
+      - '1 y'
+
+    groups:
+      - 'entity_id'
+
+  -  # inspections in the last year associated with this entity
+    prefix: 'inspections'
+    from_obj: 'cleaned.inspections'
+    knowledge_date_column: 'date'
+    aggregates:
+      -
+          quantity: '*'
+          metrics:
+              - 'count'
+    intervals:
+      - '1 y'
+
+    groups:
+      - 'license_num'
+
+  - # inspections that happened in the last year grouped  by type of facility
+    prefix: 'inspections'
+    from_obj: 'cleaned.inspections'
+    knowledge_date_column: 'date'
+
+    aggregates:
+      -
+          quantity: '*'
+          metrics:
+              - 'count'
+    intervals:
+      - '1 y'
+
+    groups:
+      - 'facility_type'
+
+  - # inspections that happened in the last year grouped  by zip code
+    prefix: 'inspections'
+    from_obj: 'cleaned.inspections'
+    knowledge_date_column: 'date'
+
+    aggregates:
+      -
+          quantity: '*'
+          metrics:
+              - 'count'
+    intervals:
+      - '1 y'
+
+    groups:
+      - 'zip_code'
+
+feature_group_strategies: ['all']
+
+model_group_keys: []
+
+grid_config:
+  'sklearn.tree.DecisionTreeClassifier':
+    criterion: ['gini']
+    max_depth: [3]
+    min_samples_split: [10]
+
+scoring:
+  metric_groups:
+    -
+      metrics: ['precision@', 'recall@', 'fpr@']
+      thresholds:
+        percentiles: [1.0, 2.0, 5.0, 10.0, 25.0]
+        top_n: [25, 75, 150, 300, 500, 1000, 1500]

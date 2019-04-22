@@ -1,0 +1,14 @@
+include AUTHORS.rst
+include CONTRIBUTING.rst
+include HISTORY.rst
+include LICENSE
+include README.rst
+
+recursive-include requirement *.txt
+recursive-include src alembic.ini
+recursive-include src model_group_stored_procedure.sql
+recursive-include src/tests *
+recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
