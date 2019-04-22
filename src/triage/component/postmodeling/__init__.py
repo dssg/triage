@@ -8,7 +8,7 @@ import sqlalchemy
 from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import Session, relationship
 import sqlalchemy.dialects.postgresql as postgresql
 from sqlalchemy import Column, ForeignKey
 
@@ -55,7 +55,7 @@ def create_session(engine=None):
 
         engine = create_engine(url)
 
-    return sessionmaker(bind=engine)()
+    return Session(bind=engine)
 
 session = create_session()
 
