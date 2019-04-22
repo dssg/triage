@@ -56,7 +56,7 @@ You could manipulate those objects using functions using functions:
 
 *NOTE*: This module use the =triage='s /default/ (and recommended) way of specify the
 database connection: an environment variable =DATABASE_URL= or it will
-try to read the connection file fro =DATABASE_FILE=.
+try to read the connection file from a =DATABASE_FILE=.
 
 If you are playing with this module in Jupyter notebooks, remember
 that you can set environment variables with =%env=.
