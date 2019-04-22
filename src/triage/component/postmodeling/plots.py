@@ -114,7 +114,7 @@ def plot_precision_recall_n(model, **kwargs):
 def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
 
     def get_model_group_evaluations(model_group):
-        evaluations = pd.concat([get_evaluations(model).query(f"metric == '{metric}@' and parameter == '{parameter}'") for model in model_group])
+        evaluations = pd.concat(get_evaluations(model).query(f"metric == '{metric}@' and parameter == '{parameter}'") for model in model_group)
         evaluations = evaluations.sort_values('evaluation_start_time', ascending=True)
         evaluations = evaluations[['evaluation_start_time', 'value']]
         evaluations['type'] = model_group.type.split('.')[-1]
