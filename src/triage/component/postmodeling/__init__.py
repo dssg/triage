@@ -20,7 +20,7 @@ from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Sto
 logging.basicConfig(level=logging.INFO)
 
 
-def __db_url_from_environment():
+def _db_url_from_environment():
     environ_url = os.getenv('DATABASE_URL')
     if environ_url:
         logging.info("Getting db connection credentials from DATABASE_URL")
