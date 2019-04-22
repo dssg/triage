@@ -124,7 +124,7 @@ def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
 
     fig, ax = plt.subplots()
 
-    evaluations = pd.concat([get_model_group_evaluations(model_group) for model_group in model_groups])
+    evaluations = pd.concat(get_model_group_evaluations(model_group) for model_group in model_groups)
 
     for name, mg in evaluations.groupby(by='model_group_id'):
         type = mg.type.unique()[0]
