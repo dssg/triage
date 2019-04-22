@@ -48,18 +48,14 @@ def _db_url_from_environment():
 
 
 def create_session(engine=None):
-    if engine:
-        __engine = engine
-    else:
-        url = __db_url_from_environment()
-        if url:
-            __engine = create_engine()
-        else:
+    if engine is None:
+        url = _db_url_from_environment()
+        if not url:
             return None
 
-    session = sessionmaker(bind=__engine)()
+        engine = create_engine(url)
 
-    return session
+    return sessionmaker(bind=engine)()
 
 session = create_session()
 
