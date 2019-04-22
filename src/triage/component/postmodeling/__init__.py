@@ -3,7 +3,6 @@
 import os
 import yaml
 import logging
-import warnings
 
 import sqlalchemy
 from sqlalchemy.engine.url import URL
@@ -30,7 +29,7 @@ def _db_url_from_environment():
         logging.info("Getting db connection credentials from DATABASE_FILE")
         dbfile = open(os.getenv('DATABASE_FILE'))
     else:
-        warnings.warn("There is no DATABASE_URL or DATABASE_FILE  environment variable")
+        logging.warn("There is no DATABASE_URL or DATABASE_FILE  environment variable")
         return None
 
     with dbfile:
