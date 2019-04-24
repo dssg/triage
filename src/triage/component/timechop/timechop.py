@@ -16,8 +16,6 @@ from . import utils
 #   label_start_time: '2012-01-01',
 #   label_end_time: '2017-07-01',
 #
-#   model_update_frequency: '1year',
-#
 #   training_label_timespans: ['6month'],
 #   test_label_timespans: ['6month'],
 #
@@ -25,7 +23,10 @@ from . import utils
 #   test_durations: ['3month'],
 #
 #   training_as_of_date_frequencies='1day',
-#   test_as_of_date_frequencies='1month'
+#   test_as_of_date_frequencies='1month',
+#
+#   test_evaluation_frequency='1month'
+#   model_update_frequency: '1year',
 #
 # }
 
@@ -37,13 +38,14 @@ class Timechop(object):
         feature_end_time,
         label_start_time,
         label_end_time,
-        model_update_frequency,
         training_as_of_date_frequencies,
         max_training_histories,
         training_label_timespans,
         test_as_of_date_frequencies,
         test_durations,
         test_label_timespans,
+        test_evaluation_frequency,
+        model_update_frequency,
     ):
         self.feature_start_time = dt_from_str(
             feature_start_time
@@ -63,10 +65,6 @@ class Timechop(object):
         if self.label_start_time > self.label_end_time:
             raise ValueError("Label start time after label end time.")
 
-        # how frequently to retrain models
-        self.model_update_frequency = convert_str_to_relativedelta(
-            model_update_frequency
-        )
 
         # time between rows for same entity in train matrix
         self.training_as_of_date_frequencies = utils.convert_to_list(
@@ -89,6 +87,15 @@ class Timechop(object):
 
         # how much time is included in a label in the test matrix
         self.test_label_timespans = utils.convert_to_list(test_label_timespans)
+
+        # how often should we evaluate the model in test?
+        self.test_evaluation_frequency = convert_str_to_relativedelta(test_evaluation_frequency)
+        
+        # how frequently to retrain models
+        self.model_update_frequency = convert_str_to_relativedelta(
+            model_update_frequency
+        )
+
 
     def chop_time(self):
         """ Given the attributes of the object, define all train/test splits
@@ -189,16 +196,16 @@ class Timechop(object):
         # ensuring we leave enough of a buffer for the test_label_timespan to get a full
         # set of labels for our last testing as_of_date
         #
-        # in our example, last_test_label_time = 2017-07-01 - 6month = 2017-01-01
-        last_test_label_time = self.label_end_time - test_label_timespan
+        # in our example, self.last_test_label_time = 2017-07-01 - 6month = 2017-01-01
+        self.last_test_label_time = self.label_end_time - test_label_timespan
 
         # final label must be able to have feature data associated with it
-        if last_test_label_time > self.feature_end_time:
-            last_test_label_time = self.feature_end_time
+        if self.last_test_label_time > self.feature_end_time:
+            self.last_test_label_time = self.feature_end_time
             raise ValueError(
                 "Final test label date cannot be after end of feature time."
             )
-        logging.info("Final label as of date: {}".format(last_test_label_time))
+        logging.info("Final label as of date: {}".format(self.last_test_label_time))
 
         # all split times have to allow at least one training label before them
         # e.g., earliest_possible_split_time = max(1995-01-01, 2012-01-01) + 6month = 2012-01-01
@@ -218,7 +225,7 @@ class Timechop(object):
         #
         # e.g., last_split_time = 2017-01-01 - 3month = 2016-10-01
         test_delta = convert_str_to_relativedelta(test_duration)
-        last_split_time = last_test_label_time - test_delta
+        last_split_time = self.last_test_label_time - test_delta
         logging.info("Final split time: {}".format(last_split_time))
         if last_split_time < earliest_possible_split_time:
             raise ValueError("No valid train/test split times in temporal config.")
@@ -484,57 +491,88 @@ class Timechop(object):
         #   test_duration = 3month
         #   test_label_timespan = 6month
 
-        # the as_of_time_limit is simply the split time plus the test_duration and we
-        # can avoid checking here for any issues with the label_end_time or
-        # feature_end_time since we've guaranteed that those limits would be
-        # satisfied when we calculated the train_test_split_times initially
+        # triage will keep testing a model until the end of your modeling time
+        # at a frequency defined by test_evaluation_frequency. this allows you
+        # to see how a model's performance degrades over time, so we will build
+        # multiple test matrices starting at the train_test_split_time and
+        # moving the matrix's start time forward until the matrix's final
+        # as_of_date exceeds self.last_test_label_time.
         #
-        # for the example, as_of_time_limit = 2016-10-01 + 3month = 2017-01-01
-        # (note as well that this will be treated as an _exclusive_ limit)
+        # recall that for our example, self.last_test_label_time = 2017-10-01
+        # and self.test_evaluation_frequency = '3month'
         logging.info(
             "Generating test matrix definitions for train/test split %s",
             train_test_split_time
         )
         test_definitions = []
+
+        # we start our first matrix at the train_test_split_time, 2016-10-01
+        matrix_test_start_time = train_test_split_time
+
+        # the matrix_as_of_time_limit is simply the start time of the current
+        # test matrix plus the test_duration, and we can avoid checking here
+        # for any issues with the label_end_time or feature_end_time since
+        # we've guaranteed that those limits would be satisfied for at least
+        # one test matrix when we calculated the train_test_split_times
+        # initially
+        #
+        # for the first test matrix in our example,
+        # matrix_as_of_time_limit = 2016-10-01 + 3month = 2017-01-01
+        # (note as well that this will be treated as an _exclusive_ limit)
         test_delta = convert_str_to_relativedelta(test_duration)
-        as_of_time_limit = train_test_split_time + test_delta
-        logging.info("All test as of times before %s", as_of_time_limit)
+        matrix_as_of_time_limit = train_test_split_time + test_delta
+        logging.info("All test as of times before %s", matrix_as_of_time_limit)
+        
+        while matrix_as_of_time_limit <= self.last_test_label_time: 
 
-        # calculate the as_of_times associated with each test data frequency
-        # for our example, we just have one, 1month
-        for test_as_of_date_frequency in self.test_as_of_date_frequencies:
-            logging.info(
-                "Generating test matrix definitions for test data frequency %s",
-                test_as_of_date_frequency
-            )
+            # calculate the as_of_times associated with each test data frequency
+            # for our example, we just have one, 1month
+            for test_as_of_date_frequency in self.test_as_of_date_frequencies:
+                logging.info(
+                    "Generating test matrix definitions for test data frequency %s",
+                    test_as_of_date_frequency
+                )
 
-            # for test as_of_times we step _forwards_ from the train_test_split_time
-            # to ensure that we always have a prediction set made immediately after
-            # training is done (so, the freshest possible predictions) even if the
-            # frequency doesn't divide the test_duration evenly so there's a gap before
-            # the as_of_time_limit
-            #
-            # for our example, this will give three as_of_dates:
-            #   [2016-10-01, 2016-11-01, 2016-12-01]
-            # since we start at the train_test_split_time (2016-10-01) and walk forward by
-            # the test_as_of_date_frequency (1 month) until we've exhausted the test_duration
-            # (3 months), exclusive (see comments in the method for details)
-            test_as_of_times = self.calculate_as_of_times(
-                as_of_start_limit=train_test_split_time,
-                as_of_end_limit=as_of_time_limit,
-                data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
-                forward=True,
-            )
-            logging.info("test as of times: %s", test_as_of_times)
-            test_definition = {
-                "first_as_of_time": train_test_split_time,
-                "last_as_of_time": max(test_as_of_times),
-                "matrix_info_end_time": max(test_as_of_times)
-                + convert_str_to_relativedelta(test_label_timespan),
-                "as_of_times": AsOfTimeList(test_as_of_times),
-                "test_label_timespan": test_label_timespan,
-                "test_as_of_date_frequency": test_as_of_date_frequency,
-                "test_duration": test_duration,
-            }
-            test_definitions.append(test_definition)
+                # for test as_of_times we step _forwards_ from the train_test_split_time
+                # to ensure that we always have a prediction set made immediately after
+                # training is done (so, the freshest possible predictions) even if the
+                # frequency doesn't divide the test_duration evenly so there's a gap before
+                # the matrix_as_of_time_limit
+                #
+                # for our example, this will give three as_of_dates:
+                #   [2016-10-01, 2016-11-01, 2016-12-01]
+                # since we start at the train_test_split_time (2016-10-01) and walk forward by
+                # the test_as_of_date_frequency (1 month) until we've exhausted the test_duration
+                # (3 months), exclusive (see comments in the method for details)
+                test_as_of_times = self.calculate_as_of_times(
+                    as_of_start_limit=matrix_test_start_time,
+                    as_of_end_limit=matrix_as_of_time_limit,
+                    data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
+                    forward=True,
+                )
+                logging.info("test as of times: %s", test_as_of_times)
+                test_definition = {
+                    "first_as_of_time": matrix_test_start_time,
+                    "last_as_of_time": max(test_as_of_times),
+                    "matrix_info_end_time": max(test_as_of_times)
+                    + convert_str_to_relativedelta(test_label_timespan),
+                    "as_of_times": AsOfTimeList(test_as_of_times),
+                    "test_label_timespan": test_label_timespan,
+                    "test_as_of_date_frequency": test_as_of_date_frequency,
+                    "test_duration": test_duration,
+                }
+                test_definitions.append(test_definition)
+            
+            # after weve've built our first test matrix starting at 2016-10-01,
+            # we step forward by our test_evaluation_frequency, and the
+            # current_test_start_time = 2016-10-01 + 3month = 2017-01-01
+            matrix_test_start_time = matrix_test_start_time + self.test_evaluation_frequency
+
+            # a matrix starting at that time will have a
+            # matrix_as_of_time_limit = 2017-01-01 + 3month = 2017-04-01
+            # because this is less than self.last_label_start_time, we will
+            # continue in the loop and add another test matrix covering
+            # 2017-01-01 up to (but excluding) 2017-04-01
+            matrix_as_of_time_limit = matrix_test_start_time + test_delta
+
         return test_definitions
