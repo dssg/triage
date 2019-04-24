@@ -37,6 +37,7 @@ def make_tuple(a):
 
 
 DISTINCT_REGEX = re.compile(r"distinct[ (]")
+AGGFUNCS_NEED_MULTIPLE_VALUES = set(['stddev', 'stddev_samp', 'variance', 'var_samp'])
 
 
 def split_distinct(quantity):
@@ -727,7 +728,10 @@ class Aggregation(object):
                 if hasattr(self.colname_aggregate_lookup[col], 'functions'):
                     agg_functions = self.colname_aggregate_lookup[col].functions
                     used_function = next(funcname for funcname in agg_functions if col.endswith(funcname))
-                    impflag_basecol = col.rstrip('_' + used_function)
+                    if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+                        impflag_basecol = col
+                    else:
+                        impflag_basecol = col.rstrip('_' + used_function)
                 else:
                     logging.warning("Imputation flag merging is not implemented for "
                                     "AggregateExpression objects that don't define an aggregate "
