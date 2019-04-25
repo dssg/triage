@@ -17,7 +17,8 @@ class Development(LocalRoot):
 @local('remainder', metavar='alembic arguments', nargs=argparse.REMAINDER)
 def alembic(context, args):
     """Configuration wrapper to use the Alembic schema migrations library for Triage development.
-    Try alembic -h to see description of all available subcommands"""
+    Try `alembic -h` or `manage alembic -- -h` to see a description of all
+    the available subcommands"""
     return context.local['env'][
         'PYTHONPATH=' + str(ROOT_PATH / 'src'),
         'alembic',
@@ -31,5 +32,5 @@ def alembic(context, args):
 class Docs(Local):
     """View Triage documentation through local server"""
     def prepare(self, args):
-        with plumlocal.cwd(plumlocal.cwd / 'docs'):
+        with plumlocal.cwd(ROOT_PATH / 'docs'):
             yield plumlocal['mkdocs']['serve']
