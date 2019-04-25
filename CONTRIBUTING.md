@@ -34,8 +34,7 @@ pip install -r requirements/dev.txt
 
 Once this is done, you can modify any of the pages under the documentation root directory, and change general doc site configuration in [docs/mkdocs.yml](docs/mkdocs.yml). While modifying a documentation page, you can preview your changes by running the mkdocs dev server:
 ```
-cd docs
-mkdocs serve
+manage docs
 ```
 
 ### Submit Feedback
