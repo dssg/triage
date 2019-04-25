@@ -126,7 +126,8 @@ in the aggregation, pre-imputation. Its output location is generally `{prefix}_a
 A table that looks similar, but with imputed values is created. The cohort table from above is passed into collate as
 the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the
 `from_obj`. Each feature column has an imputation rule, inherited from some level of the feature definition. The
-imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value.
+imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value. 
+In addition, each column that needs imputation has an imputation flag column created, which contains a boolean flagging which rows were imputed or not. Since the values of these columns are redundant for most aggregate functions that look at a given timespan's worth of data (they will be imputed only if zero events in their timespan are seen), only one imputation flag column per timespan is created. An exception to this are some statistical functions that require not one, but two values, like standard deviation and variance. These boolean imputation flags are *not* merged in with the others.
 Its output location is generally `{prefix}_aggregation_imputed`
 
 ### Recap

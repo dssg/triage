@@ -212,15 +212,15 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                         and imp != "zero_noflag"
                     ):
                         assert (
-                            "prefix_entity_id_1y_%s_max_imp" % feat in df.columns.values
+                            "prefix_entity_id_1y_%s_imp" % feat in df.columns.values
                         )
                         assert (
-                            df["prefix_entity_id_1y_%s_max_imp" % feat].isnull().sum()
+                            df["prefix_entity_id_1y_%s_imp" % feat].isnull().sum()
                             == 0
                         )
                     else:
                         # should not generate an imputed column when not needed
                         assert (
-                            "prefix_entity_id_1y_%s_max_imp" % feat
+                            "prefix_entity_id_1y_%s_imp" % feat
                             not in df.columns.values
                         )
