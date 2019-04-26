@@ -7,7 +7,8 @@ import math
 import numpy
 import pandas
 import statistics
-from collections import namedtuple, defaultdict
+import typing
+from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
 
 from . import metrics
@@ -93,16 +94,16 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         cur.copy_expert(copy_sql, out)
 
         cur.close()
-    
+
     finally:
         conn.close()
-    
+
     out.seek(0)
     df = pandas.read_csv(
         out, parse_dates=["as_of_date"],
         index_col=MatrixStore.indices
     )
-    
+
     return df
 
 
@@ -132,31 +133,26 @@ def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
     return test_predictions_binary
 
 
-class MetricDefinition(
-    namedtuple('MetricDefinition', [
-        'metric',
-        'threshold_unit',
-        'threshold_value',
-        'parameter_combination',
-        'parameter_string'
-    ])
-):
+class MetricDefinition(typing.NamedTuple):
     """A single metric, bound to a particular threshold and parameter combination"""
+    metric: str
+    threshold_unit: str
+    threshold_value: int
+    parameter_combination: dict
+    parameter_string: str
 
-class MetricEvaluationResult(
-    namedtuple('MetricEvaluationResult', [
-        'metric',
-        'parameter',
-        'value',
-        'num_labeled_examples',
-        'num_labeled_above_threshold',
-        'num_positive_labels'
-    ])
-):
+
+class MetricEvaluationResult(typing.NamedTuple):
     """A metric and parameter combination alongside preliminary results.
-    
+
     The 'value' could represent the worst, best, or a random version of tiebreaking.
     """
+    metric: str
+    parameter: str
+    value: float
+    num_labeled_examples: int
+    num_labeled_above_threshold: int
+    num_positive_labels: int
 
 
 class ModelEvaluator(object):
@@ -294,7 +290,8 @@ class ModelEvaluator(object):
         threshold_value,
         threshold_specified_by_user=True,
     ):
-        """Flatten lists of metrics and parameters for an individual threshold into individual metric definitions.
+        """Flatten lists of metrics and parameters for an individual threshold
+        into individual metric definitions.
 
         Args:
             metrics (list) names of metric to compute
@@ -561,7 +558,7 @@ class ModelEvaluator(object):
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
-        random_eval_accumulator = defaultdict(list)
+        evals_without_trials = dict()
 
         # 3. figure out which metrics have too far of a distance between best and worst
         # and need random trials
@@ -570,7 +567,7 @@ class ModelEvaluator(object):
             worst_eval = worst_lookup[(metric_def.metric, metric_def.parameter_string)]
             best_eval = best_lookup[(metric_def.metric, metric_def.parameter_string)]
             if worst_eval.value is None or best_eval.value is None or math.isclose(worst_eval.value, best_eval.value, rel_tol=RELATIVE_TOLERANCE):
-                random_eval_accumulator[(worst_eval.metric, worst_eval.parameter)] = [worst_eval.value]
+                evals_without_trials[(worst_eval.metric, worst_eval.parameter)] = worst_eval.value
             else:
                 metric_defs_to_trial.append(metric_def)
 
@@ -580,6 +577,7 @@ class ModelEvaluator(object):
             len(metric_defs_to_trial),
             SORT_TRIALS
         )
+        random_eval_accumulator = defaultdict(list)
         for _ in range(0, SORT_TRIALS):
             sort_seed = generate_python_random_seed()
             predictions_proba_random, labels_random = sort_predictions_and_labels(
@@ -604,15 +602,16 @@ class ModelEvaluator(object):
         evaluations = []
         for metric_def in metric_defs:
             metric_key = (metric_def.metric, metric_def.parameter_string)
-            trial_results = [value for value in random_eval_accumulator[metric_key] if value is not None]
-            try:
+            if metric_key in evals_without_trials:
+                stochastic_value = evals_without_trials[metric_key]
+                standard_deviation = 0
+                num_sort_trials = 0
+            else:
+                trial_results = [value for value in random_eval_accumulator[metric_key] if value is not None]
                 stochastic_value = statistics.mean(trial_results)
-            except statistics.StatisticsError:
-                stochastic_value = None
-            try:
                 standard_deviation = statistics.stdev(trial_results)
-            except statistics.StatisticsError:
-                standard_deviation = None
+                num_sort_trials = len(trial_results)
+
             evaluation = matrix_type.evaluation_obj(
                 metric=metric_def.metric,
                 parameter=metric_def.parameter_string,
@@ -622,7 +621,7 @@ class ModelEvaluator(object):
                 worst_value=worst_lookup[metric_key].value,
                 best_value=best_lookup[metric_key].value,
                 stochastic_value=stochastic_value,
-                num_sort_trials=len(trial_results),
+                num_sort_trials=num_sort_trials,
                 standard_deviation=standard_deviation,
             )
             evaluations.append(evaluation)

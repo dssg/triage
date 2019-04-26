@@ -169,7 +169,7 @@ def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', 
         if not sort_seed:
             raise ValueError("If random tiebreaker is used, a sort seed must be given")
         random.seed(sort_seed)
-        numpy.random.seed(abs(sort_seed))
+        numpy.random.seed(sort_seed)
         random_arr = numpy.random.rand(*predictions_proba.shape)
         mask = numpy.lexsort((random_arr, predictions_proba))
         return numpy.flip(predictions_proba[mask]), numpy.flip(labels[mask])

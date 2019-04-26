@@ -477,8 +477,8 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
         assert record["worst_value"] == 0.625
         assert record["best_value"] == 0.625
         assert record["stochastic_value"] == 0.625
-        assert record["num_sort_trials"] == 1 # best/worst are same, should shortcut trials
-        assert record["standard_deviation"] == None
+        assert record["num_sort_trials"] == 0 # best/worst are same, should shortcut trials
+        assert record["standard_deviation"] == 0
 
 
 def test_evaluation_with_sort_ties(db_engine_with_results_schema):
