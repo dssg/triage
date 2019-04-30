@@ -5,13 +5,12 @@ import json
 import logging
 import random
 from itertools import chain
-from functools import partial
 
 import postgres_copy
 import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
-from ohio import PipeTextIO
+from ohio import CsvTextIO
 
 from triage.component.results_schema import (
     Experiment,
@@ -199,16 +198,14 @@ def retrieve_model_hash_from_id(db_engine, model_id):
         session.close()
 
 
-def _write_csv(file_like, db_objects, type_of_object):
-    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+def _serialize_stream(db_objects, type_of_object=None):
+    """Serialize a given stream of ``db_objects`` into lists of values."""
     for db_object in db_objects:
-        if type(db_object) != type_of_object:
+        if type_of_object is not None and type(db_object) != type_of_object:
             raise TypeError("Cannot copy collection of objects to db as they are not all "
                             f"of the same type. First object was {type_of_object} "
                             f"and later encountered a {type(db_object)}")
-        writer.writerow(
-            [getattr(db_object, col.name) for col in db_object.__table__.columns]
-        )
+        yield [getattr(db_object, col.name) for col in db_object.__table__.columns]
 
 
 @db_retry
@@ -218,14 +215,13 @@ def save_db_objects(db_engine, db_objects):
     Args:
         db_engine (sqlalchemy.engine)
         db_objects (iterable) SQLAlchemy model objects, corresponding to a valid table
+
     """
     db_objects = iter(db_objects)
     first_object = next(db_objects)
+    db_objects = chain((first_object,), db_objects)
     type_of_object = type(first_object)
+    serialized = _serialize_stream(db_objects, type_of_object)
 
-    with PipeTextIO(partial(
-            _write_csv,
-            db_objects=chain((first_object,), db_objects),
-            type_of_object=type_of_object
-    )) as pipe:
-        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")
+    with CsvTextIO(serialized, quoting=csv.QUOTE_MINIMAL, lineterminator='\n') as csv_buffer:
+        postgres_copy.copy_from(csv_buffer, type_of_object, db_engine, format='csv')
