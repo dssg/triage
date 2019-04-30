@@ -5,13 +5,12 @@ import json
 import logging
 import random
 from itertools import chain
-from functools import partial
 
 import postgres_copy
 import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
-from ohio import PipeTextIO
+from ohio import pipe_text
 
 from triage.component.results_schema import (
     Experiment,
@@ -218,14 +217,12 @@ def save_db_objects(db_engine, db_objects):
     Args:
         db_engine (sqlalchemy.engine)
         db_objects (iterable) SQLAlchemy model objects, corresponding to a valid table
+
     """
     db_objects = iter(db_objects)
     first_object = next(db_objects)
+    db_objects = chain((first_object,), db_objects)
     type_of_object = type(first_object)
 
-    with PipeTextIO(partial(
-            _write_csv,
-            db_objects=chain((first_object,), db_objects),
-            type_of_object=type_of_object
-    )) as pipe:
-        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")
+    with pipe_text(_write_csv, db_objects, type_of_object) as pipe:
+        postgres_copy.copy_from(pipe, type_of_object, db_engine, format='csv')
