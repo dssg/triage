@@ -14,6 +14,13 @@ from triage.component.architect.label_generators import (
     DEFAULT_LABEL_NAME,
 )
 
+from triage.component.architect.protected_groups_generators import (
+    ProtectedGroupsGenerator,
+    ProtectedGroupsGeneratorNoOp,
+    DEFAULT_PROTECTED_GROUPS_NAME,
+)
+
+
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -220,6 +227,25 @@ class ExperimentBase(ABC):
             logging.warning(
                 "label_config missing or unrecognized. Without labels, "
                 "you will not be able to make matrices."
+            )
+
+        if "bias_audit_config" in self.config:
+            bias_config = self.config["bias_audit_config"]
+            self.protected_groups_table_name = "protected_groups_{}_{}".format(
+                bias_config.get('name', 'default'),
+                filename_friendly_hash(bias_config['protected_groups_query'])
+            )
+            self.protected_groups_generator = ProtectedGroupsGenerator(
+                query=bias_config.get("protected_groups_query", None),
+                replace=self.replace,
+                db_engine=self.db_engine
+            )
+        else:
+            self.labels_table_name = "protected_groups_{}".format(self.experiment_hash)
+            self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
+            logging.warning(
+                "bias_audit_config missing or unrecognized. Without protected groups, "
+                "you will not audit your models for bias and fairness."
             )
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
