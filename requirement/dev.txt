@@ -3,5 +3,5 @@ bumpversion==0.5.3
 mkdocs==1.0.4
 pymdown-extensions==6.0
 black==19.3b0
-mkdocs-material
+mkdocs-material==4.2.0
 black==19.3b0
