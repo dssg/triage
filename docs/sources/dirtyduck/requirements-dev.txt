@@ -9,6 +9,6 @@ nose
 mock
 colorama
 ipython==7.5.0
-jupyter
+jupyter==1.0.0
 httpie
 psycopg2-binary
