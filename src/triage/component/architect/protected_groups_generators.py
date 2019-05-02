@@ -21,11 +21,11 @@ class ProtectedGroupsGeneratorNoOp(object):
 
 
 class ProtectedGroupsGenerator(object):
-    def __init__(self, db_engine, source_table_name, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name=None, replace=True):
+    def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name=None, replace=True):
         self.db_engine = db_engine
         self.replace = replace
         self.protected_groups_table_name = protected_groups_table_name if protected_groups_table_name else DEFAULT_PROTECTED_GROUPS_NAME
-        self.source_table_name = source_table_name
+        self.from_obj = from_obj
         self.attribute_columns = attribute_columns
         self.entity_id_column = entity_id_column
         self.knowledge_date_column = knowledge_date_column
@@ -96,22 +96,22 @@ class ProtectedGroupsGenerator(object):
             """
             insert into {protected_groups_table}
             select distinct on (cohort.entity_id, cohort.as_of_date)
-                entity_id,
+                cohort.entity_id,
                 '{as_of_date}'::date as as_of_date,
                 {attribute_columns} 
             from {cohort_table_name} cohort 
-            left join {source_table_name} source_table  on 
+            left join (select * from ({from_obj})) source_table  on 
                 cohort.entity_id = source_table.{entity_id_column} and
                 cohort.as_of_date > source_table.{knowledge_date_column}
             where cohort.as_of_date = '{as_of_date}'::date
-            order by entity_id, as_of_date, {knowledge_date_column} desc
+            order by cohort.entity_id, cohort.as_of_date, {knowledge_date_column} desc
         """
         ).format(
             protected_groups_table=self.protected_groups_table_name,
             as_of_date=start_date,
             attribute_columns=", ".join([str(col) for col in self.attribute_columns]),
             cohort_table_name=cohort_table_name,
-            source_table_name=self.source_table_name,
+            from_obj=self.source_table_name,
             knowledge_date_column=self.knowledge_date_column,
             entity_id_column=self.entity_id_column
         )

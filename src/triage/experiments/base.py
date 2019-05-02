@@ -236,7 +236,7 @@ class ExperimentBase(ABC):
 
             self.protected_groups_generator = ProtectedGroupsGenerator(
                 db_engine=self.db_engine,
-                source_table_name=bias_config.get("source_table_name", None),
+                from_obj=bias_config.get("from_obj", None),
                 attribute_columns=bias_config.get("attribute_columns", None),
                 entity_id_column=bias_config.get("entity_id_column", None),
                 knowledge_date_column=bias_config.get("knowledge_date_column", None),
