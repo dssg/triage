@@ -58,7 +58,7 @@ class ProtectedGroupsGenerator(object):
         for as_of_date in as_of_dates:
             if not self.replace:
                 logging.info(
-                    "Looking for existing protected_groups for as of date %s and label timespan %s",
+                    "Looking for existing protected_groups for as of date %s",
                     as_of_date
                 )
                 any_existing_rows = list(self.db_engine.execute(
@@ -112,7 +112,8 @@ class ProtectedGroupsGenerator(object):
             attribute_columns=", ".join([str(col) for col in self.attribute_columns]),
             cohort_table_name=cohort_table_name,
             source_table_name=self.source_table_name,
-            knowledge_date_column=self.knowledge_date_column
+            knowledge_date_column=self.knowledge_date_column,
+            entity_id_column=self.entity_id_column
         )
         logging.debug("Running protected_groups creation query")
         logging.debug(full_insert_query)
