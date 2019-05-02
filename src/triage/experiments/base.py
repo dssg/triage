@@ -14,6 +14,12 @@ from triage.component.architect.label_generators import (
     DEFAULT_LABEL_NAME,
 )
 
+from triage.component.architect.protected_groups_generators import (
+    ProtectedGroupsGenerator,
+    ProtectedGroupsGeneratorNoOp,
+    DEFAULT_PROTECTED_GROUPS_NAME
+)
+
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -222,6 +228,27 @@ class ExperimentBase(ABC):
                 "you will not be able to make matrices."
             )
 
+        if "bias_audit_config" in self.config:
+            bias_config = self.config["bias_audit_config"]
+            self.protected_groups_table_name = "protected_groups_{}_{}".format(
+                bias_config.get('name', 'default'),
+                filename_friendly_hash(bias_config['protected_groups_query'])
+            )
+            self.protected_groups_generator = ProtectedGroupsGenerator(
+                query=bias_config.get("protected_groups_query", None),
+                protected_groups_table_name=self.protected_groups_table_name,
+                cohort_table_name=self.cohort_table_name,
+                replace=self.replace,
+                db_engine=self.db_engine
+            )
+        else:
+            self.protected_groups_table_name = "protected_groups_{}".format(self.experiment_hash)
+            self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
+            logging.warning(
+                "bias_audit_config missing or unrecognized. Without protected groups, "
+                "you will not audit your models for bias and fairness."
+            )
+
         self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name=self.features_schema_name, db_engine=self.db_engine
         )
@@ -275,7 +302,7 @@ class ExperimentBase(ABC):
             replace=self.replace,
             as_of_times=self.all_as_of_times
         )
-        
+
         self.trainer = ModelTrainer(
             experiment_hash=self.experiment_hash,
             model_storage_engine=self.model_storage_engine,
@@ -436,7 +463,6 @@ class ExperimentBase(ABC):
             experiment.feature_blocks = len(aggregations)
         return aggregations
 
-
     @cachedproperty
     def feature_aggregation_table_tasks(self):
         """All feature table query tasks specified by this
@@ -580,6 +606,16 @@ class ExperimentBase(ABC):
             as_of_dates=self.all_as_of_times
         )
 
+    @experiment_entrypoint
+    def generate_labels(self):
+        """Generate labels based on experiment configuration
+
+        Results are stored in the database, not returned
+        """
+        self.protected_groups_generator.generate_protected_groups_table(
+            self.labels_table_name, self.all_as_of_times, self.all_label_timespans
+        )
+
     def generate_subset(self, subset_hash):
         self.subsets["subset_hash"].subset_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
@@ -639,7 +675,6 @@ class ExperimentBase(ABC):
         record_matrix_building_started(self.run_id, self.db_engine)
         self.process_matrix_build_tasks(self.matrix_build_tasks)
 
-
     @experiment_entrypoint
     def generate_matrices(self):
         logging.info("Creating cohort")
@@ -683,7 +718,8 @@ class ExperimentBase(ABC):
             return
 
         with self.get_for_update() as experiment:
-            experiment.grid_size = sum(1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
+            experiment.grid_size = sum(
+                1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
 
         logging.info("%s train/test batches found. Beginning training.", len(batches))
         model_hashes = set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks)
