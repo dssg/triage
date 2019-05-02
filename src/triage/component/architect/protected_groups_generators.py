@@ -6,14 +6,14 @@ DEFAULT_PROTECTED_GROUPS_NAME = "protected_groups"
 
 
 class ProtectedGroupsGeneratorNoOp(object):
-    def generate_protected_groups_table(self, protected_groups_table_name, protected_groups_query):
+    def generate_all_dates(self):
         logging.warning(
-            "No protected_groups configuration is available, so no labels will be created"
+            "No bias audit configuration is available, so protected groups will not be created"
         )
 
-    def generate_protected_groups_table(self, protected_groups_table_name, protected_groups_query):
+    def generate(self):
         logging.warning(
-            "No protected_groups configuration is available, so no labels will be created"
+            "No bias audit configuration is available, so protected groups will not be created"
         )
 
     def clean_up(self, protected_groups_table_name):
