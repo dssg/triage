@@ -100,9 +100,9 @@ class ProtectedGroupsGenerator(object):
                 '{as_of_date}'::date as as_of_date,
                 {attribute_columns} 
             from {cohort_table_name} cohort 
-            left join (select * from ({from_obj})) source_table  on 
-                cohort.entity_id = source_table.{entity_id_column} and
-                cohort.as_of_date > source_table.{knowledge_date_column}
+            left join (select * from ({from_obj})) from_obj  on 
+                cohort.entity_id = from_obj.{entity_id_column} and
+                cohort.as_of_date > from_obj.{knowledge_date_column}
             where cohort.as_of_date = '{as_of_date}'::date
             order by cohort.entity_id, cohort.as_of_date, {knowledge_date_column} desc
         """
@@ -111,7 +111,7 @@ class ProtectedGroupsGenerator(object):
             as_of_date=start_date,
             attribute_columns=", ".join([str(col) for col in self.attribute_columns]),
             cohort_table_name=cohort_table_name,
-            from_obj=self.source_table_name,
+            from_obj=self.from_obj,
             knowledge_date_column=self.knowledge_date_column,
             entity_id_column=self.entity_id_column
         )
