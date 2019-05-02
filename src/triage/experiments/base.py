@@ -230,19 +230,20 @@ class ExperimentBase(ABC):
 
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
-            self.protected_groups_table_name = "protected_groups_{}_{}".format(
-                bias_config.get('name', 'default'),
+            self.protected_groups_table_name = "protected_groups_{}".format(
                 filename_friendly_hash(bias_config['protected_groups_query'])
             )
+
             self.protected_groups_generator = ProtectedGroupsGenerator(
-                query=bias_config.get("protected_groups_query", None),
+                db_engine=self.db_engine,
+                source_table_name=bias_config.get("source_table_name", None),
+                attribute_columns=bias_config.get("attribute_columns", None),
+                entity_id_column=bias_config.get("entity_id_column", None),
+                knowledge_date_column=bias_config.get("knowledge_date_column", None),
                 protected_groups_table_name=self.protected_groups_table_name,
-                cohort_table_name=self.cohort_table_name,
-                replace=self.replace,
-                db_engine=self.db_engine
+                replace=self.replace
             )
         else:
-            self.protected_groups_table_name = "protected_groups_{}".format(self.experiment_hash)
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logging.warning(
                 "bias_audit_config missing or unrecognized. Without protected groups, "
@@ -607,13 +608,13 @@ class ExperimentBase(ABC):
         )
 
     @experiment_entrypoint
-    def generate_labels(self):
-        """Generate labels based on experiment configuration
+    def generate_protected_groups(self):
+        """Generate protected groups table based on experiment configuration
 
         Results are stored in the database, not returned
         """
-        self.protected_groups_generator.generate_protected_groups_table(
-            self.labels_table_name, self.all_as_of_times, self.all_label_timespans
+        self.protected_groups_generator.generate_all_dates(
+            self.all_as_of_times, self.cohort_table_name
         )
 
     def generate_subset(self, subset_hash):
@@ -681,6 +682,8 @@ class ExperimentBase(ABC):
         self.generate_cohort()
         logging.info("Creating labels")
         self.generate_labels()
+        logging.info("Creating protected groups table")
+        self.generate_protected_groups()
         logging.info("Creating feature aggregation tables")
         self.generate_preimputation_features()
         logging.info("Creating feature imputation tables")
