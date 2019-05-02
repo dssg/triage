@@ -12,7 +12,7 @@ boto3==1.9.125
 click==7.0
 inflection==0.3.1
 numpy>=1.12
-sqlalchemy-postgres-copy==0.5.0
+sqlalchemy-postgres-copy @ https://github.com/blainehansen/sqlalchemy-postgres-copy/archive/f78da4f0f8b921805862b749b1e10de98ebe9779.zip
 retrying==1.3.3
 Dickens==1.0.1
 signalled-timeout==1.0.0
