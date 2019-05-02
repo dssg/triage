@@ -268,7 +268,8 @@ user_metadata:
 # BIAS AUDIT (optional, please comment the bias_audit_config section if not interested in knowing the biases and equity of the models)
 # Every evaluation will include a bias audit (using the Aequitas toolkit).
 # To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
-# It is expected the user to have the protected attributes in a single table with a entity_id and knowledge date column
+# from_obj parameter: it can be a table name or a query (such as with features generators)
+# The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
 # Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
 # Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit
 # Please have a look to Aequitas documentation for further information about the ref_groups_method
