@@ -70,7 +70,7 @@ class MockMatrixStore(MatrixStore):
         self.matrix_label_tuple = matrix, labels
         self.metadata = base_metadata
         self.label_count = label_count
-        self.init_labels = init_labels
+        self.init_labels = pandas.Series(init_labels)
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
 

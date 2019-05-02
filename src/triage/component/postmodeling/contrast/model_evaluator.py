@@ -237,7 +237,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels
@@ -253,7 +253,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels

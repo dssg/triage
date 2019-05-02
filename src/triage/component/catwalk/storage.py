@@ -395,6 +395,8 @@ class MatrixStore(object):
 
     @property
     def labels(self):
+        if type(self.matrix_label_tuple[1]) != pd.Series:
+            raise TypeError("Label stored as something other than pandas Series")
         return self.matrix_label_tuple[1]
 
     @property

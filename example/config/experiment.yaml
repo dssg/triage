@@ -313,10 +313,6 @@ grid_config:
 # Thresholds are more specific: The list is dichotomized and only the
 # top percentile or top n entities are scored as positive labels
 #
-# sort_seed, if passed, will seed the random number generator for each model's
-# metric creation phase. This affects how entities with the same probabilities
-# are sorted
-#
 # subsets, if passed, will add evaluations for subset(s) of the predictions to
 # the subset_evaluations tables, using the same testing and training metric
 # groups as used for overall evaluations but with any thresholds reapplied only
@@ -337,7 +333,6 @@ grid_config:
 #                subset on a given as_of_date with a placeholder for the
 #                as_of_date being queried
 scoring:
-    sort_seed: 5
     testing_metric_groups:
         -
             metrics: [precision@, recall@]

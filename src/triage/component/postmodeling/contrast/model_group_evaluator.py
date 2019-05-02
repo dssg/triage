@@ -156,7 +156,7 @@ class ModelGroupEvaluator(object):
                    EXTRACT('YEAR' FROM m.evaluation_end_time) AS as_of_date_year,
                    m.metric,
                    m.parameter,
-                   m.value,
+                   m.stochastic_value as value,
                    m.num_labeled_examples,
                    m.num_labeled_above_threshold,
                    m.num_positive_labels

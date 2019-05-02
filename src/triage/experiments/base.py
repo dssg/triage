@@ -301,7 +301,6 @@ class ExperimentBase(ABC):
 
         self.evaluator = ModelEvaluator(
             db_engine=self.db_engine,
-            sort_seed=self.config.get("scoring", {}).get("sort_seed", None),
             testing_metric_groups=self.config.get("scoring", {}).get("testing_metric_groups", []),
             training_metric_groups=self.config.get("scoring", {}).get("training_metric_groups", []),
         )
