@@ -231,7 +231,7 @@ class ExperimentBase(ABC):
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
             self.protected_groups_table_name = "protected_groups_{}".format(
-                filename_friendly_hash(bias_config)
+                self.experiment_hash
             )
 
             self.protected_groups_generator = ProtectedGroupsGenerator(
