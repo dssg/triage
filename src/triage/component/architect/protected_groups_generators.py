@@ -100,7 +100,7 @@ class ProtectedGroupsGenerator(object):
                 '{as_of_date}'::date as as_of_date,
                 {attribute_columns} 
             from {cohort_table_name} cohort 
-            left join (select * from ({from_obj})) from_obj  on 
+            left join (select * from {from_obj}) from_obj  on 
                 cohort.entity_id = from_obj.{entity_id_column} and
                 cohort.as_of_date > from_obj.{knowledge_date_column}
             where cohort.as_of_date = '{as_of_date}'::date

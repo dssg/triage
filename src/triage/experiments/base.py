@@ -68,7 +68,7 @@ from triage.tracking import (
 )
 
 from triage.database_reflection import table_has_data
-from triage.util.conf import dt_from_str
+from triage.util.conf import dt_from_str, parse_from_obj
 from triage.util.db import get_for_update
 from triage.util.introspection import bind_kwargs, classpath
 
@@ -236,7 +236,7 @@ class ExperimentBase(ABC):
 
             self.protected_groups_generator = ProtectedGroupsGenerator(
                 db_engine=self.db_engine,
-                from_obj=bias_config.get("from_obj", None),
+                from_obj=parse_from_obj(bias_config, 'bias_from_obj'),
                 attribute_columns=bias_config.get("attribute_columns", None),
                 entity_id_column=bias_config.get("entity_id_column", None),
                 knowledge_date_column=bias_config.get("knowledge_date_column", None),
