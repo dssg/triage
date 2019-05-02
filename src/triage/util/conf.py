@@ -17,7 +17,7 @@ def parse_from_obj(config, alias):
     from_obj = config.get("from_obj_table", None)
     if not from_obj:
         from_obj = config.get("from_obj_query", None)
-        return " (%s) %s ".format(from_obj, alias) if from_obj else None
+        return " ({}) {} ".format(from_obj, alias) if from_obj else None
     return from_obj
 
 def dt_from_str(dt_str):
