@@ -275,7 +275,7 @@ user_metadata:
 # By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
 # Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
 bias_audit_config:
-    from_obj_table: 'semantic.demographics'
+    from_obj: 'semantic.demographics'
     attribute_columns: ['race', 'sex','age']
     knowledge_date_column: 'event_date'
     entity_id_column: 'person_id'
