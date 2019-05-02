@@ -42,7 +42,7 @@ class ProtectedGroupsGenerator(object):
 
             )""".format(
                     self.protected_groups_table_name,
-                    ", ".join([str(col) + " varchar(30)" for col in self.attribute_columns])
+                    ", ".join([str(col) + " varchar(60)" for col in self.attribute_columns])
                 )
             )
         else:
