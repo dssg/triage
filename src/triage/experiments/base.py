@@ -17,7 +17,7 @@ from triage.component.architect.label_generators import (
 from triage.component.architect.protected_groups_generators import (
     ProtectedGroupsGenerator,
     ProtectedGroupsGeneratorNoOp,
-    DEFAULT_PROTECTED_GROUPS_NAME,
+    DEFAULT_PROTECTED_GROUPS_NAME
 )
 
 
@@ -237,11 +237,13 @@ class ExperimentBase(ABC):
             )
             self.protected_groups_generator = ProtectedGroupsGenerator(
                 query=bias_config.get("protected_groups_query", None),
+                protected_groups_table_name=self.protected_groups_table_name,
+                cohort_table_name=self.cohort_table_name,
                 replace=self.replace,
                 db_engine=self.db_engine
             )
         else:
-            self.labels_table_name = "protected_groups_{}".format(self.experiment_hash)
+            self.protected_groups_table_name = "protected_groups_{}".format(self.experiment_hash)
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logging.warning(
                 "bias_audit_config missing or unrecognized. Without protected groups, "
@@ -604,6 +606,16 @@ class ExperimentBase(ABC):
     def generate_cohort(self):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
+        )
+
+    @experiment_entrypoint
+    def generate_labels(self):
+        """Generate labels based on experiment configuration
+
+        Results are stored in the database, not returned
+        """
+        self.protected_groups_generator.generate_protected_groups_table(
+            self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
 
     def generate_subset(self, subset_hash):
