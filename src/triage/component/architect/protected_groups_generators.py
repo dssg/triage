@@ -50,7 +50,7 @@ class ProtectedGroupsGenerator(object):
                          "replace flag was set to False and table was found to exist")
 
     def generate_all_dates(self,  as_of_dates,  cohort_table_name):
-        self._create_protected_groups_table(self.protected_groups_table_name)
+        self._create_protected_groups_table()
         logging.info(
             "Creating protected_groups for %s as of dates and %s label timespans",
             len(as_of_dates)
