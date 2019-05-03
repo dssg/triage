@@ -160,7 +160,7 @@ def update_ranks_test(
     )
     ranks = tuple(
         row for row in predictor.db_engine.execute(f'''
-select entity_id, {rank_col}
+select entity_id, {rank_col}::float
 from {matrix_type}_results.predictions
 where as_of_date = %s and model_id = %s and matrix_uuid = %s order by {rank_col} asc''',
                                                    (as_of_date, model_id, matrix_uuid)
