@@ -7,9 +7,9 @@ The predictions tables in the `train_results` and `test_results` schemas contain
 | Column name | Behavior |
 | ----------- | ------- |
 | rank_abs_with_ties | Absolute ranking, with ties. Ranks will skip after a set of ties, so if two entities are tied at rank 3, the next entity after them will have rank 5. |
-| rank_pct_with_ties | Percentile ranking, with ties. Percentiles will skip after a set of ties, so if two entities out of ten are tied at 0.1 (tenth percentile), the next entity after them will have 0.3 (thirtieth percentile) |
+| rank_pct_with_ties | Percentile ranking, with ties. Percentiles will skip after a set of ties, so if two entities out of ten are tied at 0.1 (tenth percentile), the next entity after them will have 0.3 (thirtieth percentile). At most five decimal places. |
 | rank_abs_no_ties | Absolute ranking, with no ties. Ties are broken according to a configured choice: 'best', 'worst', or 'random', which is recorded in the `prediction_metadata` table |
-| rank_pct_no_ties | Percentile ranking, with no ties. Ties are broken according to a configured choice: 'best', 'worst', or 'random', which is recorded in the `prediction_metadata` table |
+| rank_pct_no_ties | Percentile ranking, with no ties. Ties are broken according to a configured choice: 'best', 'worst', or 'random', which is recorded in the `prediction_metadata` table. At most five decimal places. |
 
 
 ## Viewing prediction metadata

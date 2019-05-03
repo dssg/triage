@@ -219,8 +219,8 @@ class TestPrediction(Base):
     label_value = Column(Integer)
     rank_abs_no_ties = Column(Integer)
     rank_abs_with_ties = Column(Integer)
-    rank_pct_no_ties = Column(Float)
-    rank_pct_with_ties = Column(Float)
+    rank_pct_no_ties = Column(Numeric(6, 5))
+    rank_pct_with_ties = Column(Numeric(6, 5))
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 

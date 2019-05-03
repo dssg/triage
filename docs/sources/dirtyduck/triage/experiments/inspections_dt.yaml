@@ -185,9 +185,6 @@ feature_group_definition:
 
 feature_group_strategies: ['all']
 
-prediction:
-   rank_tiebreaker: "best"
-
 scoring:
     testing_metric_groups:
         -

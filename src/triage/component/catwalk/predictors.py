@@ -279,7 +279,8 @@ class Predictor(object):
         ranking_df['rank_pct_no_ties'] = numpy.array([1 - (rank - 1) / len(ranking_df) for rank in ranking_df['rank_abs_no_ties']])
         ranking_df['rank_pct_with_ties'] = ranking_df['score'].rank(method='min', pct=True)
 
-        # with our rankings computed, upsert these ranks into the predictions table
+        # with our rankings computed, update these ranks into the existing rows
+        # in the predictions table
         temp_table_name = f"ranks_mod{model_id}_mat{matrix_uuid}"
         ranking_df.pg_copy_to(temp_table_name, self.db_engine)
         self.db_engine.execute(f"""update {matrix_type.string_name}_results.predictions as p
