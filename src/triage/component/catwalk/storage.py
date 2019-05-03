@@ -12,6 +12,8 @@ from triage.component.results_schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    TestPredictionMetadata,
+    TrainPredictionMetadata
 )
 from triage.util.pandas import downcast_matrix
 
@@ -638,6 +640,7 @@ class TestMatrixType(object):
     string_name = "test"
     evaluation_obj = TestEvaluation
     prediction_obj = TestPrediction
+    prediction_metadata_obj = TestPredictionMetadata
     is_test = True
 
 
@@ -645,4 +648,5 @@ class TrainMatrixType(object):
     string_name = "train"
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction
+    prediction_metadata_obj = TrainPredictionMetadata
     is_test = False

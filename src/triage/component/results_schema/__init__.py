@@ -24,6 +24,8 @@ from .schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    TestPredictionMetadata,
+    TrainPredictionMetadata,
 )
 
 
@@ -45,6 +47,8 @@ __all__ = (
     "TrainEvaluation",
     "TestPrediction",
     "TrainPrediction",
+    "TestPredictionMetadata",
+    "TrainPredictionMetadata",
     "mark_db_as_upgraded",
     "upgrade_db",
 )

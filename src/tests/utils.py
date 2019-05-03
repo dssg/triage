@@ -398,6 +398,7 @@ def sample_config():
 
     return {
         "config_version": CONFIG_VERSION,
+        "random_seed": 1234,
         "label_config": label_config,
         "entity_column_name": "entity_id",
         "model_comment": "test2-final-final",
@@ -406,6 +407,7 @@ def sample_config():
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
+        "prediction": {"rank_tiebreaker": "random"},
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},
         "individual_importance": {"n_ranks": 2},

@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 import cProfile
 import marshal
+import random
 import time
 import itertools
 
@@ -114,6 +115,7 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
+        random.seed(config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -290,6 +292,7 @@ class ExperimentBase(ABC):
             model_storage_engine=self.model_storage_engine,
             save_predictions=self.save_predictions,
             replace=self.replace,
+            rank_order=self.config.get("prediction", {}).get("rank_tiebreaker", "worst"),
         )
 
         self.individual_importance_calculator = IndividualImportanceCalculator(

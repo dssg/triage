@@ -1,6 +1,7 @@
 config_version: 'v6'
 
 model_comment: 'inspections: DT'
+random_seed: 12345
 
 user_metadata:
   label_definition: 'failed'

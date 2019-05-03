@@ -577,6 +577,7 @@ class ModelEvaluator(object):
             len(metric_defs_to_trial),
             SORT_TRIALS
         )
+
         random_eval_accumulator = defaultdict(list)
         for _ in range(0, SORT_TRIALS):
             sort_seed = generate_python_random_seed()
