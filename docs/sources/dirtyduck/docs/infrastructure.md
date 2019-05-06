@@ -152,6 +152,7 @@ That's it. We will work from this table of raw data.
 
 You can disconnect from the database typing `\q`. But don't leave the database yet! We still need to do a lot of things <sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup>
 
+
 ## Footnotes
 
 <sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> Reproducible, scalable, flexible, etc.

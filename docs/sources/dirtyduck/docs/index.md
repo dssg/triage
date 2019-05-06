@@ -29,7 +29,7 @@ Second, in the `triage/docs/sources/dirtyduck/` directory run
 
     ./tutorial.sh start
 
-This will take several minutes the first time you do it.
+This will take several minutes the first time you do it.\
 
 
 ## How you can help to improve this tutorial

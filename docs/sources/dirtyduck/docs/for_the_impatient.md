@@ -1,4 +1,4 @@
-# Appendix: For the impatient
+# For the impatient
 
 If you want to skip all the cleansing and transformation and deep directly into `triage` you can execute the following *inside bastion*:
 
@@ -25,10 +25,10 @@ You could check that (from `psql`) With
 | List of schemas |                     |
 |--------------- |------------------- |
 | Name            | Owner               |
-| cleaned         | food<sub>user</sub> |
-| postgis         | food<sub>user</sub> |
+| cleaned         | food\_user |
+| postgis         | food\_user |
 | public          | postgres            |
-| raw             | food<sub>user</sub> |
-| semantic        | food<sub>user</sub> |
+| raw             | food\_user |
+| semantic        | food\_user |
 
 Now you can continue to the introduction to triage section.
