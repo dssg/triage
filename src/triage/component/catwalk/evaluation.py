@@ -420,7 +420,7 @@ class ModelEvaluator(object):
     def needs_evaluations(self, matrix_store, model_id, subset_hash=""):
         """Returns whether or not all the configured metrics are present in the
         database for the given matrix and model.
-
+train_results
         Args:
             matrix_store (triage.component.catwalk.storage.MatrixStore)
             model_id (int) A model id
