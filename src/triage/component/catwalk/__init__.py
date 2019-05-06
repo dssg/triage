@@ -1,7 +1,7 @@
 """Main application"""
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
-from .evaluation import ModelEvaluator
+from .evaluation import ModelEvaluator, query_protected_groups_table
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
@@ -23,6 +23,7 @@ class ModelTrainTester(object):
         individual_importance_calculator,
         predictor,
         subsets,
+        protected_groups_table_name=None,
         replace=True
     ):
         self.matrix_storage_engine = matrix_storage_engine
@@ -32,6 +33,7 @@ class ModelTrainTester(object):
         self.predictor = predictor
         self.subsets = subsets
         self.replace = replace
+        self.protected_groups_table_name = protected_groups_table_name
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
         train_test_tasks = []
@@ -58,6 +60,7 @@ class ModelTrainTester(object):
                         }
                     )
         return self.order_and_batch_tasks(train_test_tasks)
+
 
     def order_and_batch_tasks(self, tasks):
         batches = (
@@ -162,6 +165,7 @@ class ModelTrainTester(object):
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
                 predictions_proba = numpy.array(None)
+                protected_df = None
                 if self.replace:
                     logging.info(
                         "Replace flag set; generating new predictions and evaluations for"
@@ -177,7 +181,6 @@ class ModelTrainTester(object):
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
                     )
-
                 for subset in self.subsets:
                     if self.replace or self.model_evaluator.needs_evaluations(
                         store, model_id, filename_friendly_hash(subset)
@@ -205,12 +208,18 @@ class ModelTrainTester(object):
                                 misc_db_parameters=dict(),
                                 train_matrix_columns=train_store.columns(),
                             )
+                        if not protected_df and self.protected_groups_table_name:
+                            protected_df = query_protected_groups_table(db_engine=self.db_engine,
+                                                                        as_of_dates=store.as_of_dates,
+                                                                        protected_group_table_name=self.protected_groups_table_name,
+                                                                        labels=store.labels)
 
                         self.model_evaluator.evaluate(
                             predictions_proba=predictions_proba,
                             matrix_store=store,
                             model_id=model_id,
                             subset=subset,
+                            protected_df=protected_df
                         )
 
                     else:

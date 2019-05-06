@@ -306,6 +306,7 @@ class ExperimentBase(ABC):
             db_engine=self.db_engine,
             testing_metric_groups=self.config.get("scoring", {}).get("testing_metric_groups", []),
             training_metric_groups=self.config.get("scoring", {}).get("training_metric_groups", []),
+            protected_groups_table_name=self.protected_groups_table_name
         )
 
         self.model_train_tester = ModelTrainTester(
