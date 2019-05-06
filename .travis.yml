@@ -14,8 +14,8 @@ env:
   matrix:
     - BOTO_CONFIG=/tmp/nowhere
   global:
-    secure: U00z8IVLCenhcgaf2k+orF2zrNuQDbuSZs7ob+HvUPUHbFf8nadGN7RQ1E/AeiDPuqqOB03gQnqEEM1/o6EzzTGICsjUuSwGkmXXVwkpk5DZeEv6zIlrXpIaPvD0ZRTDh9g2GohmL4AEc7v7cKxMCSW2zYfP9qhiHMmxD98yB3llc3Z/zBjCC1Wp9d6/2+MEiUWytqYg1pI4vamL+awHrgjpImrMYnC4guMpvwHqslL1t/HhvHzzrob1EjxIPZuDzzSmXAcRTDkrX56gFKn6+wPyGf7M8BbiyilqFThN93hhNc3XYXTV+ptQgi6Rn8EfKpKuL0qBW3wOw9e6SExtz8ESNB+DjSe7zTPNXGH1WbeyMUCrArdZj0+FVCjoT8dG9bDUMl+kgMn2J5VBS4umpmIVaJCJvmldojax4W+fuR4nrfnb3pIP+hDjemlgbpdmjBh39c+A3ZC7Zcv3fhpvGIyg8/2GBzNRaNc4wiVcd8An+VlToJLLwuBekA0J1NDWvKmuMX5Kew+Y4w1w1WgJAW8kWMEY51tlIwuWYdsdIRGLFgOucbtLMJpQXjtP8OxKHcWsCDiIEZJk49IMdcU3q6Wmss1TfElNwxpdpECrLEn8y1CDIhzb+PcUYdqHWPgW30TKOs4URags4m/XVmDJZrgv3JcwiQiYbUepZ8hPdTY=
-script: tox
+    secure: PsHUI1DwmHz2+gPv5N0LZ08m+1xW1pcz216vIfVp69QOIpgRbWxxzi2p1peXjaT8dnH2RCOSRIMxey4cNnuFuK1nalRwsEIlXAv7Qt4mjQnJzdYap73v6xgPQzx1nz9f/0laqumVtmLfEN9vYqgoR3OOUMFOF6Yh9189h4j/Zar4wlEZw1OTJc4nu6ppPaqmjcZmVRtoZeNY1Ve9x4T2RCyaaVixL/4OauGccgChx56IFVlU6tfg7D3SUwqsfZnxAHZMg4sVnS505Lse9jTIeT9wTbl7WVBuaGq8P0Mxu+mkn57u7z5asPlJ0Yl9FZrlJyrkp92ZS1xdXHG//2A85DCaKqqnkHd8lCzPaQzfNmiqaHEq9Ru5bh3koOE/BFPf6iLL0yFAYLADc3NtC82B05o2JM1whWFsbsR1w/AMWMztceZXiFKYJclW7Ha/4JuTZkWFfLNdDtsAzBzTEzbeo0AyG0hJO0KYFtpVp1JvbGnFFlwovbvKTyOXzghW1txddoi2ZzgluXki6EA2+qjrbPnsRsexZ9g45R8NumbfGZV8cbaWYjdNDwES7D1tvzbvhw6xhgQENd32MsxJtsHZBoOye9BXdlEzfyqqgspJ+EHnGX6/zEOxzn785SpVXFTVhYn2oizsriXdNSsQHQcIZ8UpZx8msRu+jtg7eMMFrxo=
+script: tox -e py3 src/tests/test_cli.py
 notifications:
   email: false
 after_success: codecov
@@ -34,4 +34,5 @@ deploy:
     provider: script
     script: manage docsdeploy
     on:
-      tags: true
+      branch: doc_deploy_task
+      #tags: true
