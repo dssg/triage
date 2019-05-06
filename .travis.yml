@@ -32,7 +32,7 @@ deploy:
        tags: true
   -
     provider: script
-    script: "manage docsdeploy"
+    script: python manage.py docsdeploy
     on:
       branch: doc_deploy_task
       #tags: true
