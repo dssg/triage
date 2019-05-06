@@ -44,7 +44,7 @@ You can run that experiment with:
 
 ```shell
 # Remember to run this in bastion NOT in your laptop!
-triage experiment --matrix-format hdf experiments/simple_test_skeleton.yaml
+triage experiment experiments/simple_test_skeleton.yaml
 ```
 
 Every time you modify the configuration file and see the effects, you should execute the experiment again using the previous command.
