@@ -29,8 +29,17 @@ def alembic(context, args):
 
 
 @Development.register
-class Docs(Local):
+class DocsPreview(Local):
     """View Triage documentation through local server"""
     def prepare(self, args):
         with plumlocal.cwd(ROOT_PATH / 'docs'):
             yield plumlocal['mkdocs']['serve']
+
+
+@Development.register
+class DocsDeploy(Local):
+    """View Triage documentation through local server"""
+    def prepare(self, args):
+        with plumlocal.cwd(ROOT_PATH / 'docs'):
+            yield plumlocal['mkdocs']['build']
+            yield plumlocal['mkdocs']['gh-deploy']

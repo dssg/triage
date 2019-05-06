@@ -31,10 +31,7 @@ deploy:
        repo: dssg/triage
        tags: true
   -
-    provider: pages
-    skip_cleanup: true
-    keep_history: true
+    provider: script
+    script: manage docsdeploy
     on:
       tags: true
-    github_token:
-      secure: k9B6boJecrnckJaei63Ulyqq0Guj1D6hEGcnvChqlG0K7rbC8ItK9WAB+l349mPzFVflQqXvovcr+skB3FuVTiv8nD6y5ACKZTYy9IAC0OURHIBYEwnTyBFc7xuUKRlHsGok5DfQkUeQgiyUGTPLAExDkufjSAamnevATSGk3uCzpDzexRqSKm69Py1ZMEgSmTriH+Z90p/OET0lZPn0rkBXlgeReElJ2ffPjE8HaE9JovL22/9ZoNlBjnK85fAt4WEAWSdoL1f2Ye+XILlfIx2abFzbthU+0mPZf3U3bvzPWNwYzMs5fwnV635yHEMT2yRDA8Hrpbe+EFEk+/GfwITnVpSawmZutsuH4xjmh9owCTqMvI2IWNJ5cTVgs4NoRIlqU0Eiaxyn2Iv123WNO3SjoLKJ7i3CXK82V2rMkufbVBEzG010G24wJ087w+mZux7wxxQ5DQmgm1leNBLqGmkdGMYVBQubAyS5rKBW8akvBX+T3b8c/CUoamOnWXP6nTS3jGfSP0doBBqhe8C7qA75FfwS350ln/CJBfuU2mS7ya1PawS1sdZ9M8eYm1gl3ueLQjaXnG2BcbDqDGRNHrrXDGtNCdD7AeoQ+3jVUR1hoyHS+zxMxRUBb/Gpd7sKwyiF4kR5sQ2M3mLLo2YCk9+l8Y/nY9E3MuZggfq1d7c=
