@@ -37,7 +37,7 @@ from
 
 | facilities inspected |
 |-------------------- |
-| 182,419              |
+| 186,354              |
 
 You'll probably get a different number because the data are updated every day. Let's peek inside the table<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
 
@@ -73,10 +73,10 @@ The `entities` table should contain a unique identifier for the entity and some 
 
 Before starting the cleaning, make your life easier by following this rule:
 
-> *Do not change the original data*
+!!! important
+     *Do not change the original data*
 
 The reason is, if you make a mistake or want to try a different data transformation, you can always can go back to the `raw` data and start over.
-
 
 ### Data road
 
@@ -89,10 +89,16 @@ The transformation "road" that we will take in this tutorial is as follows:
 
 ![img](images/data_road.png)
 
-
 <a id="orga5ba5d1"></a>
 
 ### Dataset documentation
+
+!!! info
+    For an updated version of the documentation of this dataset see
+    [Food Protection Services](https://www.chicago.gov/city/en/depts/cdph/provdrs/healthy_restaurants/svcs/food-protection-services.html)
+
+!!! info
+    The Food Code Rules (effective 2/1/2019) could be consulted [here](https://www.chicago.gov/content/dam/city/depts/cdph/food_env/general/Food_Protection/FoodCodeRules_Effective_Feb12019.pdf)
 
 The Chicago Food Inspection dataset has documentation [here](https://data.cityofchicago.org/api/assets/BAD5301B-681A-4202-9D25-51B2CAE672FF?download=true).
 
@@ -100,23 +106,48 @@ We can make sense there about the column's meaning, and the process that generat
 
 Most columns are self-explanatory, but some are not:<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup>
 
--   ****Risk category of facility** (`risk`):**
+-   ***Risk category of facility* (`risk`):**
 
 > Each establishment is categorized as to its risk of adversely affecting the public’s health, with 1 being the highest and 3 the lowest. The frequency of inspection is tied to this risk, with risk 1 establishments inspected most frequently and risk 3 least frequently.
 
--   ****Inspection type** (`type`):**
+-   ***Inspection type* (`type`):**
 
 > An inspection can be one of the following types: canvass, the most common type of inspection performed at a frequency relative to the risk of the establishment; consultation, when the inspection is done at the request of the owner prior to the opening of the establishment; complaint, when the inspection is done in response to a complaint against the establishment; license, when the inspection is done as a requirement for the establishment to receive its license to operate; suspect food poisoning, when the inspection is done in response to one or more persons claiming to have gotten ill as a result of eating at the establishment (a specific type of complaint-based inspection); task-force inspection, when an inspection of a bar or tavern is done. Re-inspections can occur for most types of these inspections and are indicated as such.
 
--   ****Results** (`results`):**
+-   ***Results* (`results`):**
 
 > An inspection can pass, pass with conditions, or fail. Establishments receiving a ‘pass’ were found to have no critical or serious violations (violation number 1-14 and 15-29, respectively). Establishments receiving a ‘pass with conditions’ were found to have critical or serious violations, but these were corrected during the inspection. Establishments receiving a ‘fail’ were found to have critical or serious violations that were not correctable during the inspection. An establishment receiving a ‘fail’ does not necessarily mean the establishment’s licensed is suspended. Establishments found to be out of business or not located are indicated as such.
 
--   ****Violations** (`violations`):**
+!!! info
+    The result of the inspections (pass, pass with conditions or fail)
+    as well as the violations noted are based on the findings
+    identified and reported by the inspector at the time of the
+    inspection, and may not reflect the findings noted at other
+    times.
+
+-   ***Violations* (`violations`):**
 
 > An establishment can receive **one or more** of 45 distinct violations (violation numbers 1-44 and 70). For each violation number listed for a given establishment, *the requirement the establishment must meet in order for it* to **NOT** *receive a violation is noted, followed by a specific description of the findings that caused the violation to be issued*.
 
 We added emphasis to the last one.
+
+
+!!! warning
+    On 7/1/2018 the Chicago Department of Public Health’s Food
+    Protection unit changed the definition of violations.
+    The changes don’t affect structurally the dataset (e.g. how the
+    violations are inputted to the database), but the redefinition
+    will change the distribution and interpretation of the violation codes.
+    See
+    [here](https://www.cityofchicago.org/content/dam/city/depts/cdph/FoodProtection/ChicagoFoodCodeMajorChangesFinal2018.pdf).
+
+!!! warning
+    On 2/1/2019 the Chicago Department of Public Health’s Food
+    Protection unit changed the requirements that the facilities must
+    follow.
+    See [here](https://www.chicago.gov/content/dam/city/depts/cdph/food_env/general/Food_Protection/2019_ChicagoFoodCodeMajorChanges.pdf)
+
+
 
 From these definitions, we can infer the following:
 
@@ -125,11 +156,28 @@ From these definitions, we can infer the following:
 3.  *complaint* and *suspected food poisoning* are triggered by people.
 4.  *consultation* is triggered by the owner of the facility.
 5.  *task-force* occurs at bars or taverns.
-6.  **Critical violations** are coded between `1-14`, **serious violations** between `15-29`. We can assume that the violations code `30` and higher are *minor* violations.
+6.  **Critical violations** are coded between `1-14`, **serious
+    violations** between `15-29`. We can assume that the violations
+    code `30` and higher are *minor* violations. (see below)
 7.  *violation* describes the problems found, and the comment section describes the steps the facility should take to fix the problem.
 8.  There are only three possible results of the inspection. (Also, an inspection may not happen if the facility was not located or went out of business).
 9.  There can be several `violations` per `inspection`.
 
+!!! info
+    On 7/1/2018 *Critical violation* changed to **Priority (P)
+    Violation**, *Serious violation* changed to **Priority Foundation
+    (PF) Violation** and *Minor violation* changed to **Core (C)
+    Violation**.
+
+!!! info
+    On 7/1/2018 the number of potential violations has increased from
+    45 to **63**.
+
+!!! info
+    On 7/1/2018 *Corrected Dduring Inspection (CDI)* has been changed
+    to **Corrected on Site (COS)**. *Potentially Hazardous Foods
+    (PHF)* changed to **Time/Temperature Control for Safety Foods (TCS
+    Foods)**.
 
 ### Reality check
 

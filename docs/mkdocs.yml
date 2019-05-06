@@ -62,7 +62,7 @@ nav:
     - Welcome: dirtyduck/docs/index.md
     - Choose your own adventure: dirtyduck/docs/choose_your_own_adventure.md
     - Setup:
-      - For the impatient: dirtyduck/docs/for_the_impatient.md
+      - Quick setup: dirtyduck/docs/for_the_impatient.md
       - Infrastructure: dirtyduck/docs/infrastructure.md
       - Data preparation: dirtyduck/docs/data_preparation.md
     - Case studies:

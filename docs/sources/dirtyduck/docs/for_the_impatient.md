@@ -3,9 +3,7 @@
 If you want to skip all the cleansing and transformation and deep directly into `triage` you can execute the following *inside bastion*:
 
 ```sh
-     curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD" > data/inspections.csv
-
-     psql ${DATABASE_URL} -c "\copy raw.inspections FROM '/data/inspections.csv' WITH HEADER CSV"
+     psql ${DATABASE_URL} -c "\copy raw.inspections from program 'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"' HEADER CSV"
 
      psql ${DATABASE_URL} < /sql/create_cleaned_inspections_table.sql
 
@@ -30,5 +28,3 @@ You could check that (from `psql`) With
 | public          | postgres            |
 | raw             | food\_user |
 | semantic        | food\_user |
-
-Now you can continue to the introduction to triage section.

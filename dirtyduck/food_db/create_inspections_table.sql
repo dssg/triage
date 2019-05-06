@@ -17,5 +17,12 @@ create table raw.inspections (
        violations varchar,
        latitude decimal,
        longitude decimal,
-       location varchar
+       location varchar,
+       historical_wards varchar,
+       zip_codes varchar,
+       community_areas varchar,
+       census_tracts varchar,
+       wards varchar
 );
+
+comment on column raw.inspections.historical_wards is 'Historical wards 2003-2015';
