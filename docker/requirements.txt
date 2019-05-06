@@ -1,2 +1,3 @@
+numpy
 ## Triage from the github repository
-git+https://github.com/dssg/triage.git@master
+git+https://github.com/dssg/triage.git
