@@ -1,0 +1,1012 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for Triage.">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.1.2">
+    
+    
+      
+        <title>Running an Experiment - Triage Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.3020aac5.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="deep-orange">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Triage Documentation" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">book</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Triage Documentation
+            </span>
+            <span class="md-header-nav__topic">
+              Running an Experiment
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="http://github.com/dssg/triage" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Triage Documentation" class="md-nav__button md-logo">
+      
+        <i class="md-icon">book</i>
+      
+    </a>
+    Triage Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="http://github.com/dssg/triage" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Dirty Duck Tutorial
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Dirty Duck Tutorial
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/" title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/choose_your_own_adventure/" title="Choose your own adventure" class="md-nav__link">
+      Choose your own adventure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/for_the_impatient/" title="For the impatient" class="md-nav__link">
+      For the impatient
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/infrastructure/" title="Infrastructure" class="md-nav__link">
+      Infrastructure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/data_preparation/" title="Data preparation" class="md-nav__link">
+      Data preparation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Case studies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Case studies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/intro/" title="Problem description" class="md-nav__link">
+      Problem description
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/inspections/" title="Resource prioritization" class="md-nav__link">
+      Resource prioritization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/eis/" title="Early Warning System" class="md-nav__link">
+      Early Warning System
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Triage
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Triage
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/triage_intro/" title="A deeper look into triage" class="md-nav__link">
+      A deeper look into triage
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Experiment
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Experiment
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../defining/" title="Defining an Experiment" class="md-nav__link">
+      Defining an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
+      Testing Feature Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+    <a href="./" title="Running an Experiment" class="md-nav__link md-nav__link--active">
+      Running an Experiment
+    </a>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../upgrading/" title="Upgrading an Experiment" class="md-nav__link">
+      Upgrading an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../temporal-validation/" title="Temporal Validation Deep Dive" class="md-nav__link">
+      Temporal Validation Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../cohort-labels/" title="Cohort and Label Deep Dive" class="md-nav__link">
+      Cohort and Label Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../prediction-ranking/" title="Prediction Ranking" class="md-nav__link">
+      Prediction Ranking
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../features/" title="Feature Generation Recipe Book" class="md-nav__link">
+      Feature Generation Recipe Book
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../algorithm/" title="Experiment Algorithm" class="md-nav__link">
+      Experiment Algorithm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../architecture/" title="Experiment Architecture" class="md-nav__link">
+      Experiment Architecture
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/audition/" title="Model selection" class="md-nav__link">
+      Model selection
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
+      Postmodeling
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/ml_governance/" title="Model governance" class="md-nav__link">
+      Model governance
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../dirtyduck/docs/aws_batch/" title="Scaling up" class="md-nav__link">
+      Scaling up
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>Running an Experiment</h1>
+                
+                <h2>Running an Experiment</h2>
+<h3>Prerequisites</h3>
+<p>To use a Triage experiment, you first need:</p>
+<ul>
+<li>Python 3.5</li>
+<li>A PostgreSQL database with your source data (events, geographical data, etc) loaded.</li>
+<li>Ample space on an available disk (or S3) to store the needed matrices and models for your experiment</li>
+<li>An experiment definition (see <a href="../defining/">Defining an Experiment</a>)</li>
+</ul>
+<p>You may run a Triage experiment two ways: through the Triage command line tool, or through instantiating an Experiment object in your own Python code and running it. The rest of this document will introduce experiment runs of increasing complexity, through both the CLI and Python interfaces.</p>
+<h3>Simple Example</h3>
+<p>To run an experiment, you need to tell triage at a minimum where to find the experiment file (in YAML format), and how to connect to the database, In this simple example, we're assuming that the experiment will be run with only one process, and that the matrices and models should be stored on the local filesystem.</p>
+<h4>CLI</h4>
+<p>The Triage CLI defaults database connection information to a file stored in 'database.yaml', so with this you can omit any mention of the database. In addition, if you leave out the project path. In addition, the 'project path' (where matrices and models are stored) defaults to the current working directory. So this is the simplest possible invocation:</p>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml
+</pre></div>
+
+<p>If you have the database information stored somewhere else, you may pass it to the top-level 'triage' command:</p>
+<div class="highlight"><pre><span></span>triage -d mydbconfig.yaml experiment example/config/experiment.yaml
+</pre></div>
+
+<p>Assuming you want the matrices and models stored somewhere else, pass it as the <code>--project-path</code>:</p>
+<div class="highlight"><pre><span></span>triage -d mydbconfig.yaml experiment example/config/experiment.yaml --project-path <span class="s1">&#39;/path/to/directory/to/save/data&#39;</span>
+</pre></div>
+
+<h4>Python</h4>
+<p>When running an experiment in Python, the database information is passed in the form of a SQLAlchemy database engine, and the experiment information is passed as a dictionary rather as YAML specifically.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span><span class="p">,</span> <span class="c1"># a dictionary</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="c1"># http://docs.sqlalchemy.org/en/latest/core/engines.html</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;/path/to/directory/to/save/data&#39;</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the <code>model_metadata.models</code> and <code>test_results.evaluations</code> tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.</p>
+<h3>Multicore example</h3>
+<p>Triage also offers the ability to locally parallelize both CPU-heavy and database-heavy tasks. Triage uses the <a href="https://pythonhosted.org/Pebble">pebble</a> library to perform both of these, but they are separately configurable as the database tasks will more likely be bounded by the number of connections/cores available on the database server instead of the number of cores available on the experiment running machine.</p>
+<h4>CLI</h4>
+<p>The Triage CLI allows parallelization to be specified through the <code>--n-processes</code> and <code>--n-db-processes</code> parameters.</p>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --project-path <span class="s1">&#39;/path/to/directory/to/save/data&#39;</span> --n-db-processes <span class="m">4</span> --n-processes <span class="m">8</span>
+</pre></div>
+
+<h4>Python</h4>
+<p>In Python, you can use the <code>MultiCoreExperiment</code> instead of the <code>SingleThreadedExperiment</code>, and similarly pass the <code>n_processes</code> and <code>n_db_processes</code> parameters. We also recommend using <code>triage.create_engine</code>. It will create a serializable version of the engine that will be fully reconstructed in multiprocess contexts. If you pass a regular SQLAlchemy engine, in these contexts the engine will be reconstructed with the <a href="http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls">database URL only</a>, which may cancel other settings you have used to configure your engine.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">MultiCoreExperiment</span>
+<span class="kn">from</span> <span class="nn">triage</span> <span class="kn">import</span> <span class="n">create_engine</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">MultiCoreExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span><span class="p">,</span> <span class="c1"># a dictionary</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;/path/to/directory/to/save/data&#39;</span><span class="p">,</span>
+    <span class="n">n_db_processes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">n_processes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>The <a href="https://pythonhosted.org/Pebble">pebble</a> library offers an interface around Python3's <code>concurrent.futures</code> module that adds in a very helpful tool: watching for killed subprocesses . Model training (and sometimes, matrix building) can be a memory-hungry task, and Triage can not guarantee that the operating system you're running on won't kill the worker processes in a way that prevents them from reporting back to the parent Experiment process. With Pebble, this occurrence is caught like a regular Exception, which allows the Process pool to recover and include the information in the Experiment's log.</p>
+<h3>Using S3 to store matrices and models</h3>
+<p>Triage can operate on different storage engines for matrices and models, and besides the standard filesystem engine comes with S3 support out of the box. To use this, just use the <code>s3://</code> scheme for your <code>project_path</code> (this is similar for both Python and the CLI).</p>
+<h4>CLI</h4>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --project-path <span class="s1">&#39;s3://bucket/directory/to/save/data&#39;</span>
+</pre></div>
+
+<h4>Python</h4>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span><span class="p">,</span> <span class="c1"># a dictionary</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;s3://bucket/directory/to/save/data&#39;</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<h3>Using HDF5 as a matrix storage format</h3>
+<p>Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.</p>
+<h4>CLI</h4>
+<p>On the command-line, this is configurable using the <code>--matrix-format</code> option, and supports <code>csv</code> and <code>hdf</code>.</p>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --matrix-format hdf
+</pre></div>
+
+<h4>Python</h4>
+<p>In Python, this is configurable using the <code>matrix_storage_class</code> keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in <code>triage.component.catwalk.storage</code>. If you'd like to write your own storage module, you can use the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py">existing modules</a> as a guide.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+<span class="kn">from</span> <span class="nn">triage.component.catwalk.storage</span> <span class="kn">import</span> <span class="n">HDFMatrixStore</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">matrix_storage_class</span><span class="o">=</span><span class="n">HDFMatrixStore</span><span class="p">,</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;/path/to/directory/to/save/data&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<p>Note: The HDF storage option is <em>not</em> compatible with S3.</p>
+<h3>Validating an Experiment</h3>
+<p>Configuring an experiment is complex, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the <code>cat_complaints</code> table in a feature aggregation but it doesn't exist, I'll see something like this:</p>
+<div class="highlight"><pre><span></span>*** ValueError: from_obj query does not run.
+from_obj: &quot;cat_complaints&quot;
+Full error: (psycopg2.ProgrammingError) relation &quot;cat_complaints&quot; does not exist
+LINE 1: explain select * from cat_complaints
+                              ^
+ [SQL: &#39;explain select * from cat_complaints&#39;]
+</pre></div>
+
+<h4>CLI</h4>
+<p>The CLI, by default, validates before running. You can tweak this behavior, and make it not validate, or make it <em>only</em> validate.</p>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --project-path <span class="s1">&#39;/path/to/directory/to/save/data&#39;</span> --no-validate
+</pre></div>
+
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --project-path <span class="s1">&#39;/path/to/directory/to/save/data&#39;</span> --validate-only
+</pre></div>
+
+<h5>Python</h5>
+<p>The python interface will also validate by default when running an experiment. If you would prefer to skip this step, you can pass <code>skip_validation=True</code> when constructing your experiment.</p>
+<p>You can also run this validation step directly. Experiments expose a <code>validate</code> method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.</p>
+<div class="highlight"><pre><span></span><span class="n">experiment</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+</pre></div>
+
+<p>By default, the <code>validate</code> method will stop as soon as it encounters an error ('strict' mode). If you would like it to validate each section without stopping (i.e. if you have only written part of the experiment configuration), call <code>validate(strict=False)</code> and all of the errors will be changed to warnings.</p>
+<p>We'd like to add more validations for common misconfiguration problems over time. If you got an unexpected error that turned out to be related to a confusing configuration value, help us out by adding to the <a href="https://github.com/dssg/triage/blob/master/src/triage/experiments/validate.py">validation module</a> and submitting a pull request!</p>
+<h3>Restarting an Experiment</h3>
+<p>If an experiment fails for any reason, you can restart it.</p>
+<p>By default, all work will be recreated. This includes label queries, feature queries, matrix building, model training, etc. However, if you pass the <code>replace=False</code> keyword argument, the Experiment will reuse what work it can.</p>
+<ul>
+<li>Cohort Table: The Experiment refers to a cohort table namespaced by the cohort name and a hash of the cohort query, and in that way allows you to reuse cohorts between different experiments if their label names and queries are identical. When referring to this table, it will check on an as-of-date level whether or not there are any existing rows for that date, and skip the cohort query for that date if so. For this reason, it is <em>not</em> aware of specific entities or source events so if the source data has changed, ensure that <code>replace</code> is set to True. </li>
+<li>Labels Table: The Experiment refers to a labels table namespaced by the label name and a hash of the label query, and in that way allows you to reuse labels between different experiments if their label names and queries are identical. When referring to this table, it will check on a per-<code>as_of_date</code>/<code>label timespan</code> level whether or not there are <em>any</em> existing rows, and skip the label query if so. For this reason, it is <em>not</em> aware of specific entities or source events so if the label query has changed or the source data has changed, ensure that <code>replace</code> is set to True.</li>
+<li>Features Tables: The Experiment will check on a per-table basis whether or not it exists and contains rows for the entire cohort, and skip the feature generation if so. It does not look at the column list for the feature table or inspect the feature data itself. So, if you have modified any source data that affects a feature aggregation, or added any columns to that aggregation, you won't want to set <code>replace</code> to False. However, it is cohort-and-date aware so you can change around your cohort and temporal configuration safely.</li>
+<li>Matrix Building: Each matrix's metadata is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.</li>
+<li>Model Training: Each model's metadata (which includes its train matrix's hash) is hashed to create a unique id. If a file exists in storage with that hash, it will be reused.</li>
+</ul>
+<h4>CLI</h4>
+<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --project-path <span class="s1">&#39;/path/to/directory/to/save/data&#39;</span> --replace
+</pre></div>
+
+<h4>Python</h4>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span><span class="p">,</span> <span class="c1"># a dictionary</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;s3://bucket/directory/to/save/data&#39;</span><span class="p">,</span>
+    <span class="n">replace</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+<h3>Optimizing an Experiment</h3>
+<h4>Skipping Prediction Syncing</h4>
+<p>By default, the Experiment will save predictions to the database. This can take a long time if your test matrices have a lot of rows, and isn't quite necessary if you just want to see the high-level performance of your grid. By switching <code>save_predictions</code> to <code>False</code>, you can skip the prediction saving. You'll still get your evaluation metrics, so you can look at performance. Don't worry, you can still get your predictions back later by rerunning the Experiment later at default settings, which will find your already-trained models, generate predictions, and save them.</p>
+<p>CLI: <code>triage experiment myexperiment.yaml --no-save-predictions</code></p>
+<p>Python: <code>SingleThreadedExperiment(..., save_predictions=False)</code></p>
+<h3>Running parts of an Experiment</h3>
+<p>If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">experiment config</a> to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration), you will need to pass <code>skip_validation=True</code> when constructing your experiment object for a partial experiment.</p>
+<p>Running parts of an experiment is only supported through the Python interface.</p>
+<h4>Python</h4>
+<ol>
+<li>
+<p><code>experiment.run()</code> will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with <code>cleanup=False</code>, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.</p>
+<ul>
+<li><code>labels_*&lt;experiment_hash&gt;*</code> for the labels generated per entity and as of date.</li>
+<li><code>tmp_sparse_states_*&lt;experiment_hash&gt;*</code> for the membership in each cohort per entity and as_of_date</li>
+</ul>
+</li>
+<li>
+<p>To reproduce the entire Experiment piece by piece, you can run the following. Each one of these methods requires some portion of <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">experiment config</a> to be passed:</p>
+<ul>
+<li>
+<p><code>experiment.split_definitions</code> will parse temporal config and create time splits. It only requires <code>temporal_config</code>.</p>
+</li>
+<li>
+<p><code>experiment.generate_cohort()</code> will use the cohort config and as of dates from the temporal config to generate an internal table keeping track of what entities are in the cohort on different dates. It requires <code>temporal_config</code> and <code>cohort_config</code>.</p>
+</li>
+<li>
+<p><code>experiment.generate_labels()</code> will use the label config and as of dates from the temporal config to generate an internal labels table. It requires <code>temporal_config</code> and <code>label_config</code>.</p>
+</li>
+<li>
+<p><code>experiment.generate_preimputation_features()</code> will use the feature aggregation config and as of dates from the temporal config to generate internal features tables. It requires <code>temporal_config</code> and <code>feature_aggregations</code>.</p>
+</li>
+<li>
+<p><code>experiment.generate_imputed_features()</code> will use the imputation sections of the feature aggregation config and the results from the preimputed features to create internal imputed features tables. It requires <code>temporal_config</code> and <code>feature_aggregations</code>.</p>
+</li>
+<li>
+<p><code>experiment.build_matrices()</code> will use all of the internal tables generated before this point, along with feature grouping config, to generate all needed matrices.  It requires <code>temporal_config</code>, <code>cohort_config</code>, <code>label_config</code>, and <code>feature_aggregations</code>, though it will also use <code>feature_group_definitions</code>, <code>feature_group_strategies</code>, and <code>user_metadata</code> if present.</p>
+</li>
+<li>
+<p><code>experiment.train_and_test_models()</code> will use the generated matrices, grid config and evaluation metric config to train and test all needed models. It requires all configuration keys.</p>
+</li>
+</ul>
+</li>
+</ol>
+<h3>Evaluating results of an Experiment</h3>
+<p>After the experiment run, a variety of schemas and tables will be created and populated in the configured database:</p>
+<ul>
+<li>model_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration</li>
+<li>model_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results</li>
+<li>model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata</li>
+<li>model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it</li>
+<li>model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.</li>
+<li>model_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it</li>
+<li>model_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but <em>have different training windows</em>. Look at these to see how classifiers perform over different training windows.</li>
+<li>model_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.</li>
+<li>model_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here</li>
+<li>train_results.feature_importances - The sklearn feature importances results for each trained model</li>
+<li>train_results.predictions - Prediction probabilities for train matrix entities generated against trained models</li>
+<li>train_results.prediction_metadata - Metadata about the prediction stage for a model and train matrix, such as tiebreaking configuration</li>
+<li>train_results.evaluations - Metric scores of trained models on the training data.</li>
+<li>test_results.predictions - Prediction probabilities for test matrix entities generated against trained models</li>
+<li>test_results.prediction_metadata - Metadata about the prediction stage for a model and test matrix, such as tiebreaking configuration</li>
+<li>test_results.evaluations - Metric scores of trained models over given testing windows and subsets</li>
+<li>test_results.individual_importances - Individual feature importance scores for test matrix entities.</li>
+</ul>
+<p>Here's an example query, which returns the top 10 model groups by precision at the top 100 entities:</p>
+<div class="highlight"><pre><span></span>    select
+        model_groups.model_group_id,
+        model_groups.model_type,
+        model_groups.hyperparameters,
+        max(test_evaluations.value) as max_precision
+    from model_metadata.model_groups
+        join model_metadata.models using (model_group_id)
+        join test_results.evaluations using (model_id)
+    where
+        metric = &#39;precision@&#39;
+        and parameter = &#39;100_abs&#39;
+    group by 1,2,3
+    order by 4 desc
+    limit 10
+</pre></div>
+
+<h3>Inspecting an Experiment before running</h3>
+<p>Before you run an experiment, you can inspect properties of the Experiment object to ensure that it is configured in the way you want. Some examples:</p>
+<ul>
+<li><code>experiment.all_as_of_times</code> for debugging temporal config. This will show all dates that features and labels will be calculated at.</li>
+<li><code>experiment.feature_dicts</code> will output a list of feature dictionaries, representing the feature tables and columns configured in this experiment</li>
+<li><code>experiment.matrix_build_tasks</code> will output a list representing each matrix that will be built.</li>
+</ul>
+<h3>Optimizing Experiment Performance</h3>
+<h4>Profiling an Experiment</h4>
+<p>Experiment running slowly? Try the <code>profile</code> keyword argument, or <code>--profile</code> in the command line. This will output a cProfile file to the project path's <code>profiling_stats</code> directory.  This is a binary format but can be read with a variety of visualization programs.</p>
+<p><a href="https://jiffyclub.github.io/snakeviz/">snakeviz</a> - A browser based graphical viewer.
+<a href="https://github.com/nschloe/tuna">tuna</a> - Another browser based graphical viewer
+<a href="https://github.com/jrfonseca/gprof2dot">gprof2dot</a> - A command-line tool to convert files to graphviz format
+<a href="https://pypi.org/project/pyprof2calltree/">pyprof2calltree</a> - A command-line tool to convert files to Valgrind log format, for viewing in established viewers like KCacheGrind</p>
+<p>Looking at the profile through a visualization program, you can see which portions of the experiment are taking up the most time. Based on this, you may be able to prioritize changes. For instance, if cohort/label/feature table generation are taking up the bulk of the time, you may add indexes to source tables, or increase the number of database processes. On the other hand, if model training is the culprit, you may temporarily try a smaller grid to get results more quickly.</p>
+<h4>materialize_subquery_fromobjs</h4>
+<p>By default, experiments will inspect the <code>from_obj</code> of every feature aggregation to see if it looks like a subquery, create a table out of it if so, index it on the <code>knowledge_date_column</code> and <code>entity_id</code>, and use that for running feature queries. This can make feature generation go a lot faster if the <code>from_obj</code> takes a decent amount of time to run and/or there are a lot of as-of-dates in the experiment. It won't do this for <code>from_objs</code> that are just tables, or simple joins (e.g. <code>entities join events using (entity_id)</code>) as the existing indexes you have on those tables should work just fine.</p>
+<p>You can turn this off if you'd like, which you may want to do if the <code>from_obj</code> subqueries return a lot of data and you want to save as much disk space as possible. The option is turned off by passing <code>materialize_subquery_fromobjs=False</code> to the Experiment.</p>
+<h4>Build Features Independently of Cohort</h4>
+<p>By default the feature queries generated by your feature configuration on any given date are joined with the cohort table on that date, which means that no features for entities not in the cohort are saved. This is to save time and database disk space when your cohort on any given date is not very large and allow you to iterate on feature building quickly by default. However, this means that anytime you change your cohort, you have to rebuild all of your features. Depending on your experiment setup (for instance, multiple large cohorts that you experiment with), this may be time-consuming. Change this by passing <code>features_ignore_cohort=True</code> to the Experiment constructor, or <code>--save-all-features</code> to the command-line.</p>
+<h3>Experiment Classes</h3>
+<ul>
+<li><em>SingleThreadedExperiment</em>: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.</li>
+<li><em>MultiCoreExperiment</em>: An experiment that makes use of the pebble library to parallelize various time-consuming steps. Takes an <code>n_processes</code> keyword argument to control how many workers to use.</li>
+<li><em>RQExperiment</em>: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( <code>pip install triage[rq]</code> )</li>
+</ul>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../feature-testing/" title="Testing Feature Configuration" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Testing Feature Configuration
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../upgrading/" title="Upgrading an Experiment" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Upgrading an Experiment
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/dssg/hitchhikers-guide" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://twitter.com/datascifellows" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" class="md-footer-social__link fa fa-linkedin"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.267712eb.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="../../js/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

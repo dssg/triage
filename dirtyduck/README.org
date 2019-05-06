@@ -1,0 +1,95 @@
+#+TITLE: Dirty Duck: A Guided Tour of Triage
+#+AUTHOR: Center for Data Science and Public Policy
+#+EMAIL: adolfo@uchicago.edu
+#+STARTUP: showeverything
+#+STARTUP: nohideblocks
+#+STARTUP: Indent
+
+
+* Welcome!
+
+This tutorial will show you how to use =triage=, a data science
+ modeling tool developed at the [[http://dsapp.uchicago.edu][Center for Data Science and Public
+ Policy]] (DSaPP) at the University of Chicago.
+
+=triage= helps build models for three [[https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/][common applied problems]]: (a) Early
+warning systems (*EWS* or *EIS*), (b) /resource prioritization/ (a.k.a "an
+inspections problem") and (c) interaction level predictions (a.k.a
+"appointment level"). These problems
+are difficult to model because their conceptualization and
+and implementation are prone to error, thanks to their multi-dimensional,
+multi-entity, time-series structure.
+
+The last version of this tutorial is published in [[https://dssg.github.io/dirtyduck/]]
+
+*NOTE* This tutorial is in sync with the latest version of =triage=. At
+this moment [[https://github.com/dssg/triage/releases/tag/v3.3.0][v3.3.0 (Arepa)]].
+
+* What you need for this tutorial
+
+Install [[http://www.docker.com][Docker CE]] and [[https://docs.docker.com/compose/][Docker Compose]]. That's it.
+Follow the links for installation instructions.
+
+Note that if you are using =GNU/Linux= you should add your user to the
+=docker= group following the instructions at this [[https://docs.docker.com/install/linux/linux-postinstall/][link]].
+
+At the moment only operative systems with *nix-type command lines are
+supported, such as =GNU/Linux= and =MacOS=. Recent versions of
+=Windows= may also work.
+
+* How to use this tutorial
+
+First, clone this repository on your laptop
+
+#+BEGIN_EXAMPLE
+ git clone https://github.com/dssg/dirtyduck.git
+#+END_EXAMPLE
+
+Second, run
+
+#+BEGIN_EXAMPLE
+./tutorial.sh start
+#+END_Example
+
+This will take several minutes the first time you do it.
+
+* How you can help
+
+Help is always welcome! You can report errors, improve
+the tutorial, or propose improvements to
+=triage=. These three cases are discussed below.
+
+** How to report errors
+
+There are almost surely errors. Please open an [[https://github.com/dssg/dirtyduck/issues][issue]] and
+we will try to issue a fix as soon as possible.
+
+** How to improve the tutorial
+
+This tutorial was created following the practices of [[https://www-cs-faculty.stanford.edu/~knuth/lp.html][Literate
+Programming]] using [[https://orgmode.org/][org-mode]][fn:1] in [[https://www.gnu.org/software/emacs/][GNU Emacs]][fn:2]. That means the tutorial is a /live/ document that mixes code and text.
+
+The steps to help are:
+
+- clone the repository
+- edit the source =org= files in the =org= folder
+- From your terminal run
+
+#+BEGIN_SRC shell
+emacs  --batch -l org/publish.el org/index.org --eval '(org-publish "dirtyduck" t)'
+#+END_SRC
+
+#+RESULTS:
+
+- create a *pull request*.
+
+
+** How to help develop =triage=
+
+Go to the [[https://github.com/dssg/triage][triage]] repository and follow the instructions there.
+
+* Footnotes
+
+[fn:2] But it is supported in =vim= if you install a plugin.
+
+[fn:1] It's similar to =markdown= so you won't have any problem.
