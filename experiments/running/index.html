@@ -739,28 +739,6 @@
 <span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 
-<h3>Using HDF5 as a matrix storage format</h3>
-<p>Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.</p>
-<h4>CLI</h4>
-<p>On the command-line, this is configurable using the <code>--matrix-format</code> option, and supports <code>csv</code> and <code>hdf</code>.</p>
-<div class="highlight"><pre><span></span>triage experiment example/config/experiment.yaml --matrix-format hdf
-</pre></div>
-
-<h4>Python</h4>
-<p>In Python, this is configurable using the <code>matrix_storage_class</code> keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in <code>triage.component.catwalk.storage</code>. If you'd like to write your own storage module, you can use the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py">existing modules</a> as a guide.</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
-<span class="kn">from</span> <span class="nn">triage.component.catwalk.storage</span> <span class="kn">import</span> <span class="n">HDFMatrixStore</span>
-
-<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
-    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span>
-    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
-    <span class="n">matrix_storage_class</span><span class="o">=</span><span class="n">HDFMatrixStore</span><span class="p">,</span>
-    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;/path/to/directory/to/save/data&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</pre></div>
-
-<p>Note: The HDF storage option is <em>not</em> compatible with S3.</p>
 <h3>Validating an Experiment</h3>
 <p>Configuring an experiment is complex, and running an experiment can take a long time as data scales up. If there are any misconfigured values, it's going to help out a lot to figure out what they are before we run the Experiment. So when you have completed your experiment config and want to test it out, it's best to validate the Experiment first. If any problems are detectable in your Experiment, either in configuration or the database tables referenced by it, this method will throw an exception. For instance, if I refer to the <code>cat_complaints</code> table in a feature aggregation but it doesn't exist, I'll see something like this:</p>
 <div class="highlight"><pre><span></span>*** ValueError: from_obj query does not run.

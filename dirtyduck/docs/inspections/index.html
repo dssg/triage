@@ -1003,10 +1003,10 @@ triage experiment experiments/inspections_baseline.yaml  --validate-only
 <p>If everything was ok, you should see an <code>Experiment validation ran to completion with no errors</code>.</p>
 <p>You can execute the experiment as<sup><a id="fnr.8" class="footref" href="#fn.8">8</a></sup></p>
 <div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
-triage experiment --matrix-format hdf experiments/inspections_baseline.yaml --profile
+triage experiment experiments/inspections_baseline.yaml --profile
 </pre></div>
 
-<p>This will print a lot of output, and if everything is correct it will create <strong>6</strong> matrices (3 for training, 3 for testing) in <code>triage/matrices</code> and every matrix will be represented by two files, one with the metadata of the matrix (a <code>yaml</code> file) and one with the actual matrix (the <code>h5</code> file).</p>
+<p>This will print a lot of output, and if everything is correct it will create <strong>6</strong> matrices (3 for training, 3 for testing) in <code>triage/matrices</code> and every matrix will be represented by two files, one with the metadata of the matrix (a <code>yaml</code> file) and one with the actual matrix (the <code>csv.gz</code> file).</p>
 <div class="highlight"><pre><span></span><span class="c1"># We will use some bash magic</span>
 
 ls matrices <span class="p">|</span> awk -F . <span class="s1">&#39;{print $NF}&#39;</span> <span class="p">|</span> sort <span class="p">|</span> uniq -c
@@ -1719,7 +1719,7 @@ triage experiment experiments/inspections_dt.yaml --show-timechop
 <p><img alt="img" src="../triage/images/inspections_dt.png" title="Temporal blocks for inspections experiment. The label is a failed inspection in the next month." /></p>
 <p>You can execute the experiment like this:</p>
 <div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
-triage experiment --matrix-format hdf experiments/inspections_dt.yaml  --profile
+triage experiment experiments/inspections_dt.yaml  --profile
 </pre></div>
 
 <p>After the experiment finishes, you will get <strong>6</strong> new <code>model_groups</code> (1 per combination in <code>grid_config</code>)</p>
@@ -2203,7 +2203,7 @@ triage experiment experiments/inspections_label_failed_01.yaml  --validate-only
 
 <p>You can execute the experiment with</p>
 <div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
-triage experiment --matrix-format hdf experiments/inspections_label_failed_01.yaml  --profile
+triage experiment experiments/inspections_label_failed_01.yaml  --profile
 </pre></div>
 
 <p>This will take a looooong time to run. The reason for that is easy to understand: We are computing a <em>lot</em> of models: 3 time splits, 4 model groups and 9 features sets (one for <code>all</code>, four for <code>leave_one_in</code> and four for <code>leave_one_out</code>), so <span><span class="MathJax_Preview">3 \times 4 \times 9 = 108</span><script type="math/tex">3 \times 4 \times 9 = 108</script></span> extra models.</p>
