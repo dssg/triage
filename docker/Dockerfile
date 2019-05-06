@@ -1,6 +1,6 @@
 ## -*- docker-image-name: "triage-v4.0.0" -*-
 
-FROM python:3.6.2-alpine
+FROM python:3.7-alpine
 
 LABEL triage.version="v4.0.0" \
       triage.from="cli" \

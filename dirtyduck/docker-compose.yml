@@ -1,0 +1,33 @@
+version: "3.7"
+
+services:
+  food_db:
+    build:
+      context: ./food_db
+    image: tutorial/db
+    container_name: tutorial_db
+    env_file: .env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+  bastion:
+    build:
+      context: ./bastion
+    image: tutorial/bastion
+    container_name: tutorial_bastion
+    command: bash
+    tty: true
+    environment:
+      JUPYTER_SESSION_KEY: "c2e3bb2a-f80c7b34d4fe02d7e5be87d9"
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@food_db/${POSTGRES_DB}"
+    volumes:
+      - "../data:/data"
+      - "../triage:/triage"
+      - "../src/sql:/sql"
+    ports:
+      - "56406-56410:56406-56410"
+
+volumes:
+  db-data:

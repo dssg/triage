@@ -4,7 +4,7 @@ This tutorial will show you how to use `triage`, a data science modeling tool de
 
 `triage` helps build models for two [common applied problems](https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/): (a) Early warning systems (**EWS** or **EIS**), (b) *resource prioritization* (a.k.a "an inspections problem") . These problems are difficult to model because their conceptualization and and implementation are prone to error, thanks to their multi-dimensional, multi-entity, time-series structure.
 
-**NOTE** This tutorial is in sync with the latest version of `triage`. At this moment [v3.3.0 (Arepa)](https://github.com/dssg/triage/releases/tag/v3.3.0).
+**NOTE** This tutorial is in sync with the latest version of `triage`. At this moment [v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
 
 
 # Before you start
@@ -34,4 +34,4 @@ This will take several minutes the first time you do it.
 
 ## How you can help to improve this tutorial
 
-If you want to contribute, please follow the suggestions in the [README](../README.org)
+If you want to contribute, please follow the suggestions in the triage’s (github repository)[https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck].
