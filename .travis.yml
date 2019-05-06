@@ -32,7 +32,7 @@ deploy:
        tags: true
   -
     provider: script
-    script: python manage.py docsdeploy
+    script: source ~/virtualenv/python3.6/bin/activate && python manage.py docsdeploy
     skip_cleanup: true
     on:
       branch: doc_deploy_task
