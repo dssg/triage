@@ -33,6 +33,7 @@ deploy:
   -
     provider: script
     script: python manage.py docsdeploy
+    skip_cleanup: true
     on:
       branch: doc_deploy_task
       #tags: true
