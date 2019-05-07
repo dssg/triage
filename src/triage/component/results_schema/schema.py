@@ -353,7 +353,7 @@ class TrainEvaluation(Base):
 
 
 class TestBias(Base):
-    __tablename__ = "bias"
+    __tablename__ = "bias_audits"
     __table_args__ = {"schema": "test_results"}
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
@@ -366,6 +366,20 @@ class TestBias(Base):
     parameter = Column(String, primary_key=True)
     attribute_name = Column(String, primary_key=True)
     attribute_value = Column(String, primary_key=True)
+    total_entities = Column(Integer)
+    group_label_pos = Column(Integer)
+    group_label_neg = Column(Integer)
+    group_size = Column(Integer)
+    group_size_pct = Column(Numeric)
+    prev = Column(Numeric)
+    pp = Column(Integer)
+    pn = Column(Integer)
+    fp = Column(Integer)
+    fn = Column(Integer)
+    tn = Column(Integer)
+    tp = Column(Integer)
+    ppr = Column(Numeric)
+    pprev = Column(Numeric)
     tpr = Column(Numeric)
     tnr = Column(Numeric)
     for_ = Column("for", Numeric)
@@ -374,20 +388,6 @@ class TestBias(Base):
     fnr = Column(Numeric)
     npv = Column(Numeric)
     precision = Column(Numeric)
-    pp = Column(Integer)
-    pn = Column(Integer)
-    ppr = Column(Numeric)
-    pprev = Column(Numeric)
-    fp = Column(Integer)
-    fn = Column(Integer)
-    tn = Column(Integer)
-    tp = Column(Integer)
-    group_label_pos = Column(Integer)
-    group_label_neg = Column(Integer)
-    group_size = Column(Integer)
-    group_size_pct = Column(Numeric)
-    total_entities = Column(Integer)
-    prev = Column(Numeric)
     ppr_disparity = Column(Numeric)
     ppr_ref_group_value = Column(String)
     pprev_disparity = Column(Numeric)
@@ -425,7 +425,7 @@ class TestBias(Base):
 
 
 class TrainBias(Base):
-    __tablename__ = "bias"
+    __tablename__ = "bias_audits"
     __table_args__ = {"schema": "train_results"}
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
@@ -438,6 +438,20 @@ class TrainBias(Base):
     parameter = Column(String, primary_key=True)
     attribute_name = Column(String, primary_key=True)
     attribute_value = Column(String, primary_key=True)
+    total_entities = Column(Integer)
+    group_label_pos = Column(Integer)
+    group_label_neg = Column(Integer)
+    group_size = Column(Integer)
+    group_size_pct = Column(Numeric)
+    prev = Column(Numeric)
+    pp = Column(Integer)
+    pn = Column(Integer)
+    fp = Column(Integer)
+    fn = Column(Integer)
+    tn = Column(Integer)
+    tp = Column(Integer)
+    ppr = Column(Numeric)
+    pprev = Column(Numeric)
     tpr = Column(Numeric)
     tnr = Column(Numeric)
     for_ = Column("for", Numeric)
@@ -446,20 +460,6 @@ class TrainBias(Base):
     fnr = Column(Numeric)
     npv = Column(Numeric)
     precision = Column(Numeric)
-    pp = Column(Integer)
-    pn = Column(Integer)
-    ppr = Column(Numeric)
-    pprev = Column(Numeric)
-    fp = Column(Integer)
-    fn = Column(Integer)
-    tn = Column(Integer)
-    tp = Column(Integer)
-    group_label_pos = Column(Integer)
-    group_label_neg = Column(Integer)
-    group_size = Column(Integer)
-    group_size_pct = Column(Numeric)
-    total_entities = Column(Integer)
-    prev = Column(Numeric)
     ppr_disparity = Column(Numeric)
     ppr_ref_group_value = Column(String)
     pprev_disparity = Column(Numeric)

@@ -530,6 +530,30 @@ train_results
             con=db_engine,
             if_exists=bias_config['replace_flag'])
 
+        with scoped_session(self.db_engine) as session:
+            session.query(evaluation_table_obj).filter_by(
+                model_id=model_id,
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
+                as_of_date_frequency=as_of_date_frequency,
+                subset_hash=subset_hash
+            ).delete()
+
+            for evaluation in evaluations:
+                evaluation.model_id = model_id
+                evaluation.as_of_date_frequency = as_of_date_frequency
+                evaluation.subset_hash = subset_hash
+                evaluation.evaluation_start_time = evaluation_start_time
+                evaluation.evaluation_end_time = evaluation_end_time
+                evaluation.as_of_date_frequency = as_of_date_frequency
+                evaluation.matrix_uuid = matrix_uuid
+                evaluation.subset_hash = subset_hash
+                session.add(evaluation)
+
+
+
+
+
     def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
         """Compute evaluations for a set of predictions and labels
 
