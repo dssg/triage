@@ -1,15 +1,16 @@
-# Infrastructure
+# Setting up the Infrastructure
 
 In every data science project you will need several tools to help
 analyze the data in an efficient[^1] manner. Examples include a place
-to store the data (a database management system or **DBMS**); a way to
-put your model to work, i.e. a way that allows the model to ingest new
+to store the data (e.g. database management system or **DBMS**); a way to
+put your model to work, e.g. a way that allows the model to ingest new
 data and make predictions (an **API**); and a way to examine the
-performance of trained models (monitor tools).
+performance of trained models (e.g. monitor tools).
 
-This tutorial includes a script for managing the infrastructure[^2] in a transparent way.
+This tutorial includes a script for managing the infrastructure[^2] in
+a transparent way.
 
-The infrastructure of this tutorial has *four* pieces:
+The infrastructure of this tutorial has *three* pieces:
 
 -   a `postgresql` database called `food_db`,
 -   a container that executes `triage` experiments (we will use this when trying to scale up),
@@ -21,7 +22,7 @@ modify the things for the tutorial).
 
 The only thing you need installed on your laptop is `docker`.
 
-From your command line (terminal) run the following from the repo directory:
+From your command line (terminal) run the following command from the repo directory:
 
 ```shell
     ./tutorial.sh
@@ -64,7 +65,8 @@ Following the instructions on the screen, we can start the infrastructure with:
     ./tutorial.sh up
 ```
 
-You can check that everything is running smoothly with `status`
+You can check that everything is running smoothly with `status` by
+using the following command:
 
 ```sh
     ./tutorial.sh status
@@ -76,7 +78,7 @@ You can check that everything is running smoothly with `status`
    tutorial_db   docker-entrypoint.sh postgres   Up      0.0.0.0:5434->5432/tcp
 ```
 
-To access `bastion`, where the `postgresql` client is, type:
+To access `bastion`, where the `postgresql` client is, submit the command:
 
 ```sh
    ./tutorial.sh bastion
@@ -106,7 +108,7 @@ for the Postgresql database. If you want to use this client fully,
 check [psql's
 documentation](https://www.postgresql.org/docs/10/static/app-psql.html).
 
-The database is running and it's named `food`. It should contain a
+The database is now running and is named `food`. It should contain a
 single table named `inspections` in the `schema` `raw`. Let's check
 the structure of the `inspections` table. Type the following command:
 
@@ -142,9 +144,10 @@ the structure of the `inspections` table. Type the following command:
 !!! info
     Column `historical_wards` contains the wards code from 2003 - 2015
 
-That's it. We will work from this table of raw data.
+That's it! We will work with thi table of raw inspections data.
 
-You can disconnect from the database typing `\q`. But don't leave the database yet! We still need to do a lot of things[^4]
+You can disconnect from the database by typing `\q`. But don't leave
+the database yet! We still need to do a lot of things[^4]
 
 
 
