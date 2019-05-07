@@ -488,6 +488,7 @@ train_results
         Returns:
 
         """
+        bias_audits = []
         protected_df['model_id'] = model_id
         protected_df['score'] = predictions_proba
         protected_df['label_value'] = labels
@@ -518,37 +519,21 @@ train_results
             raise ValueError("""
             Bias audit: aequitas_audit() failed. Returned empty dataframe for model_id = {model_id}, and subset_hash = {subset_hash}
             and predictions_schema = {schema}""".format())
-        group_value_df.set_index(
-            ['model_id', 'evaluation_start_time',
-             'evaluation_end_time', 'parameter',
-             'subset_hash', 'tie_breaker',
-             'evaluation_start_time', 'evaluation_end_time',
-             'matrix_uuid','attribute_name',
-             'attribute_value']).pg_copy_to(
-            schema="{}_results".format(matrix_type),
-            name='bias',
-            con=db_engine,
-            if_exists=bias_config['replace_flag'])
-
         with scoped_session(self.db_engine) as session:
-            session.query(evaluation_table_obj).filter_by(
-                model_id=model_id,
-                evaluation_start_time=evaluation_start_time,
-                evaluation_end_time=evaluation_end_time,
-                as_of_date_frequency=as_of_date_frequency,
-                subset_hash=subset_hash
-            ).delete()
+            for index, row in group_value_df.iterrows():
+                session.query(matrix_type.aequitas_obj).filter_by(
+                    model_id=model_id,
+                    evaluation_start_time=evaluation_start_time,
+                    evaluation_end_time=evaluation_end_time,
+                    subset_hash=subset_hash,
+                    parameter=parameter,
+                    tie_breaker=tie_breaker,
+                    matrix_uuid=matrix_uuid,
+                    attribute_name=row['attribute_name'],
+                    attribute_value=row['attribute_value']
+                ).delete()
+            session.bulk_insert_mappings(matrix_type.aequitas_obj, group_value_df.to_dict(orient="records"))
 
-            for evaluation in evaluations:
-                evaluation.model_id = model_id
-                evaluation.as_of_date_frequency = as_of_date_frequency
-                evaluation.subset_hash = subset_hash
-                evaluation.evaluation_start_time = evaluation_start_time
-                evaluation.evaluation_end_time = evaluation_end_time
-                evaluation.as_of_date_frequency = as_of_date_frequency
-                evaluation.matrix_uuid = matrix_uuid
-                evaluation.subset_hash = subset_hash
-                session.add(evaluation)
 
 
 
@@ -762,7 +747,7 @@ train_results
                 labels=labels_worst,
                 tie_breaker='worst',
                 subset_hash=subset_hash,
-                matrix_type=matrix_type
+                matrix_type=matrix_type,
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
                 matrix_uuid=matrix_store.uuid)
@@ -773,12 +758,12 @@ train_results
                 labels=labels_best,
                 tie_breaker='best',
                 subset_hash=subset_hash,
-                matrix_type=matrix_type
+                matrix_type=matrix_type,
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
                 matrix_uuid = matrix_store.uuid)
 
-            @db_retry
+    @db_retry
     def _write_to_db(
         self,
         model_id,
