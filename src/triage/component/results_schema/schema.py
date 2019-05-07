@@ -352,8 +352,8 @@ class TrainEvaluation(Base):
     model_rel = relationship("Model")
 
 
-class TestBias(Base):
-    __tablename__ = "bias_audits"
+class TestAequitas(Base):
+    __tablename__ = "aequitas"
     __table_args__ = {"schema": "test_results"}
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
@@ -424,8 +424,8 @@ class TestBias(Base):
     model_rel = relationship("Model")
 
 
-class TrainBias(Base):
-    __tablename__ = "bias_audits"
+class TrainAequitas(Base):
+    __tablename__ = "aequitas"
     __table_args__ = {"schema": "train_results"}
     model_id = Column(
         Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
