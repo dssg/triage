@@ -142,12 +142,31 @@ class SpacetimeAggregation(FeatureBlock):
             schema=self.features_schema_name or 'public',
             suffix=IMPUTATION_COLNAME_SUFFIX
         )
-        print(feature_names_query)
         feature_names = [
             row[0]
             for row in self.db_engine.execute(feature_names_query)
         ]
         return feature_names
+
+    def _basecol_of_impflag(self, impflag_col):
+        # we don't want to add redundant imputation flags. for a given source
+        # column and time interval, all of the functions will have identical 
+        # sets of rows that needed imputation
+        # to reliably merge these, we lookup the original aggregate that produced
+        # the function, and see its available functions. we expect exactly one of
+        # these functions to end the column name and remove it if so
+        if hasattr(self.colname_aggregate_lookup[impflag_col], 'functions'):
+            agg_functions = self.colname_aggregate_lookup[impflag_col].functions
+            used_function = next(funcname for funcname in agg_functions if impflag_col.endswith(funcname))
+            if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+                return impflag_col
+            else:
+                return impflag_col.rstrip('_' + used_function)
+        else:
+            logging.warning("Imputation flag merging is not implemented for "
+                            "AggregateExpression objects that don't define an aggregate "
+                            "function (e.g. composites)")
+            return impflag_col
 
     def _get_impute_select(self, impute_cols, nonimpute_cols, partitionby=None):
 
@@ -172,26 +191,6 @@ class SpacetimeAggregation(FeatureBlock):
             # for columns that do require imputation, include SQL to do the imputation work
             # and a flag for whether the value was imputed
             if col in impute_cols:
-                # we don't want to add redundant imputation flags. for a given source
-                # column and time interval, all of the functions will have identical 
-                # sets of rows that needed imputation
-                # to reliably merge these, we lookup the original aggregate that produced
-                # the function, and see its available functions. we expect exactly one of
-                # these functions to end the column name and remove it if so
-                # this is passed to the imputer
-                if hasattr(self.colname_aggregate_lookup[col], 'functions'):
-                    agg_functions = self.colname_aggregate_lookup[col].functions
-                    used_function = next(funcname for funcname in agg_functions if col.endswith(funcname))
-                    if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
-                        impflag_basecol = col
-                    else:
-                        impflag_basecol = col.rstrip('_' + used_function)
-                else:
-                    logging.warning("Imputation flag merging is not implemented for "
-                                    "AggregateExpression objects that don't define an aggregate "
-                                    "function (e.g. composites)")
-                    impflag_basecol = col
-
                 impute_rule = imprules[col]
 
                 try:
@@ -202,6 +201,7 @@ class SpacetimeAggregation(FeatureBlock):
                         % (impute_rule.get("type", ""), col)
                     ) from err
 
+                impflag_basecol = self._basecol_of_impflag(col)
                 imputer = imputer(column=col, column_base_for_impflag=impflag_basecol, partitionby=partitionby, **impute_rule)
 
                 query += "\n,%s" % imputer.to_sql()
@@ -236,13 +236,21 @@ class SpacetimeAggregation(FeatureBlock):
 
         Should exclude any index columns (e.g. entity id, date)
         """
-        columns = self.feature_columns_sans_impflags
+        # start with all columns defined in the feature block.
+        # this is important as we don't want to return columns in the final feature table that
+        # aren't defined in the feature block (e.g. from an earlier run with more features);
+        # this will exclude impflag columns as they are decided after initial features are written
+        feature_columns = self.feature_columns_sans_impflags
+        impflag_columns = set()
+
+        # our list of imputation flag columns comes from the database,
+        # but it may contain columns from prior runs that we didn't specify
         imputation_flag_feature_cols = self.imputed_flag_column_names()
-        print(imputation_flag_feature_cols)
-        for imp_flag_col in imputation_flag_feature_cols:
-            if imp_flag_col[:-len(IMPUTATION_COLNAME_SUFFIX)] in columns:
-                columns.add(imp_flag_col)
-        return columns
+        for feature_column in feature_columns:
+            impflag_name = self._basecol_of_impflag(feature_column) + IMPUTATION_COLNAME_SUFFIX
+            if impflag_name in imputation_flag_feature_cols:
+                impflag_columns.add(impflag_name)
+        return feature_columns | impflag_columns
 
     @property
     def preinsert_queries(self):
@@ -354,9 +362,8 @@ class SpacetimeAggregation(FeatureBlock):
         for group, groupby in self.groups.items():
             intervals = self.intervals[group]
             for interval in intervals:
-                date = self.dates[0]
                 for agg in self.aggregates:
-                    for col in self._cols_for_aggregate(agg, group, interval, date):
+                    for col in self._cols_for_aggregate(agg, group, interval, None):
                         if col.name in lookup:
                             raise ValueError("Duplicate feature column name found: ", col.name)
                         lookup[col.name] = agg

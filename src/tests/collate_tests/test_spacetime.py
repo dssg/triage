@@ -199,17 +199,20 @@ def test_basic_spacetime():
 
         assert st.feature_columns == {
             "events_entity_id_1y_outcome::int_sum",
-            "events_entity_id_1y_outcome::int_sum_imp",
             "events_entity_id_1y_outcome::int_avg",
-            "events_entity_id_1y_outcome::int_avg_imp",
+            "events_entity_id_1y_outcome::int_stddev",
+            "events_entity_id_1y_outcome::int_imp",
+            "events_entity_id_1y_outcome::int_stddev_imp",
             "events_entity_id_2y_outcome::int_sum",
-            "events_entity_id_2y_outcome::int_sum_imp",
             "events_entity_id_2y_outcome::int_avg",
-            "events_entity_id_2y_outcome::int_avg_imp",
+            "events_entity_id_2y_outcome::int_stddev",
+            "events_entity_id_2y_outcome::int_imp",
+            "events_entity_id_2y_outcome::int_stddev_imp",
             "events_entity_id_all_outcome::int_sum",
-            "events_entity_id_all_outcome::int_sum_imp",
             "events_entity_id_all_outcome::int_avg",
-            "events_entity_id_all_outcome::int_avg_imp"
+            "events_entity_id_all_outcome::int_stddev",
+            "events_entity_id_all_outcome::int_imp",
+            "events_entity_id_all_outcome::int_stddev_imp",
         }
 
 

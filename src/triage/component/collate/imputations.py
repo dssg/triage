@@ -29,7 +29,7 @@ class BaseImputation(object):
     def imputed_flag_select_and_alias(self):
         if not self.noflag:
             template = """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END"""
-            alias_template = "{base_for_impflag}_{suffix}"
+            alias_template = "{base_for_impflag}{suffix}"
             if self.column_base_for_impflag:
                 return (
                     template.format(col=self.column),
