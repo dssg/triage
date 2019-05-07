@@ -6,8 +6,8 @@
        license_num::integer,
        date::date,
        btrim(tuple[1]) as code,
-       btrim(tuple[2]) as description,
-       btrim(tuple[3]) as comment,
+       lower(btrim(tuple[2])) as description,
+       lower(btrim(tuple[3])) as comment,
        (case
            when btrim(tuple[1]) = '' then NULL
            when btrim(tuple[1])::int between 1 and 14 then 'critical' -- From the documentation
@@ -27,6 +27,7 @@
                        , '- Comments:')
                    , '\|')  -- Split the violations
                , '(?<=\d+)\.\s*|\s*-\s*Comments:')  -- Split each violation in three
+            -- , '\.\s*|\s*-\s*Comments:')  -- Split each violation in three (Use this if your postgresql is kind off old
            as tuple
        from raw.inspections
        where results in ('Fail', 'Pass', 'Pass w/ Conditions') and license_num is not null

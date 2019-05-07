@@ -29,9 +29,10 @@ extra:
 
 markdown_extensions:
   - toc:
-      permalink: True
+      permalink: "#"
       baselevel: 2
       toc_depth: 1
+      separator: "-"
   - admonition
   - codehilite:
       guess_lang: false
