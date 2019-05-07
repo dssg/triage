@@ -356,16 +356,16 @@ class TestAequitas(Base):
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "test_results"}
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True, index=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     tie_breaker = Column(String, primary_key=True)
-    evaluation_start_time = Column(DateTime, primary_key=True)
-    evaluation_end_time = Column(DateTime, primary_key=True)
+    evaluation_start_time = Column(DateTime, primary_key=True, index=True)
+    evaluation_end_time = Column(DateTime, primary_key=True, index=True)
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
-    parameter = Column(String, primary_key=True)
-    attribute_name = Column(String, primary_key=True)
-    attribute_value = Column(String, primary_key=True)
+    parameter = Column(String, primary_key=True, index=True)
+    attribute_name = Column(String, primary_key=True, index=True)
+    attribute_value = Column(String, primary_key=True, index=True)
     total_entities = Column(Integer)
     group_label_pos = Column(Integer)
     group_label_neg = Column(Integer)
@@ -428,16 +428,16 @@ class TrainAequitas(Base):
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "train_results"}
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True, index=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     tie_breaker = Column(String, primary_key=True)
-    evaluation_start_time = Column(DateTime, primary_key=True)
-    evaluation_end_time = Column(DateTime, primary_key=True)
+    evaluation_start_time = Column(DateTime, primary_key=True, index=True)
+    evaluation_end_time = Column(DateTime, primary_key=True, index=True)
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
-    parameter = Column(String, primary_key=True)
-    attribute_name = Column(String, primary_key=True)
-    attribute_value = Column(String, primary_key=True)
+    parameter = Column(String, primary_key=True, index=True)
+    attribute_name = Column(String, primary_key=True, index=True)
+    attribute_value = Column(String, primary_key=True, index=True)
     total_entities = Column(Integer)
     group_label_pos = Column(Integer)
     group_label_neg = Column(Integer)
