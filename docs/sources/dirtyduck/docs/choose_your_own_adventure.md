@@ -3,7 +3,7 @@
 -   You are interested in the *learn* how to use `triage` and have a *lot* of time:
     -   [Infrastructure](infrastructure.md)
     -   [Data preparation](data_preparation.md)
-    -   [Problem description](intro.md)
+    -   [Problem description](problem_description.md)
     -   [Resource prioritization](inspections.md)
     -   [Early warning systems](eis.md)
     -   [A deeper look into triage](triage_intro.md)
