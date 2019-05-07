@@ -494,8 +494,11 @@ train_results
         protected_df['label_value'] = labels
         df, attr_cols_input = preprocess_input_df(protected_df)
         g = Group()
+        score_thresholds = {}
+        score_thresholds['rank_abs'] = bias_config['thresholds'].get('top_n', [])
+        score_thresholds['rank_pct'] = bias_config['thresholds'].get('percentiles', [])
         groups_model, attr_cols = g.get_crosstabs(df,
-                                                  score_thresholds=bias_config.score_thresholds,
+                                                  score_thresholds=score_thresholds,
                                                   model_id=model_id,
                                                   attr_cols=attr_cols_input)
         b = Bias()
