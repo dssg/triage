@@ -10,12 +10,12 @@ cd "$INFRASTRUCTURE_HOME"
 
 function help_menu () {
 cat << EOF
-Usage: ${0} {start|stop|build|rebuild|run|logs|status|destroy|all|}
+Usage: ${0} {up|down|build|rebuild|run|logs|status|clean}
 
 OPTIONS:
    -h|help             Show this message
-   start               Starts Food DB
-   stop                Stops Food DB
+   up                  Starts Food DB
+   down                Stops Food DB
    build               Builds images (food_db and bastion)
    rebuild             Builds images (food_db and bastion) ignoring if they already exists
    -l|logs             Shows container's logs
@@ -23,14 +23,14 @@ OPTIONS:
    -d|clean            Removes containers, images, volumes, netrowrks
 
 INFRASTRUCTURE:
-   Build the infrastructure:
-        $ ./tutorial.sh start
+   Build the DB's infrastructure:
+        $ ./tutorial.sh up
 
    Check the status of the containers:
         $ ./tutorial.sh status
 
-   Stop the tutorial's infrastructure:
-        $ ./tutorial.sh stop
+   Stop the tutorial's DB's infrastructure:
+        $ ./tutorial.sh down
 
    Destroy all the resources related to the tutorial:
         $ ./tutorial.sh clean
@@ -82,11 +82,11 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 case "$1" in
-    start)
+    up)
         start_infrastructure
 		shift
         ;;
-    stop)
+    down)
         stop_infrastructure
 		shift
         ;;

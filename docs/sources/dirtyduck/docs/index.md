@@ -27,7 +27,7 @@ First, clone this repository on your laptop
 
 Second, in the `triage/docs/sources/dirtyduck/` directory run
 
-    ./tutorial.sh start
+    ./tutorial.sh up
 
 This will take several minutes the first time you do it.\
 
