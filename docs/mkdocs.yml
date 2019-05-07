@@ -55,6 +55,7 @@ markdown_extensions:
 
 extra_javascript:
     - "js/mermaid.min.js"
+    - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
 
 nav:
   - Home: index.md
@@ -66,7 +67,7 @@ nav:
       - Infrastructure: dirtyduck/docs/infrastructure.md
       - Data preparation: dirtyduck/docs/data_preparation.md
     - Case studies:
-      - Problem description: dirtyduck/docs/intro.md
+      - Problem description: dirtyduck/docs/problem_description.md
       - Resource prioritization: dirtyduck/docs/inspections.md
       - Early Warning System: dirtyduck/docs/eis.md
     - Triage:
