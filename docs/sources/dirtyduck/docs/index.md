@@ -51,4 +51,6 @@ This will take several minutes the first time you do it.
 
 ## How you can help to improve this tutorial
 
-If you want to contribute, please follow the suggestions in the triage’s (github repository)[https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck].
+If you want to contribute, please follow the suggestions in the
+triage’s [github
+repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
