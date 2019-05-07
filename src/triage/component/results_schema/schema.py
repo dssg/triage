@@ -1,4 +1,6 @@
 import os.path
+import enum
+import datetime
 
 from sqlalchemy import (
     Column,
@@ -19,7 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import ARRAY
+from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
 
 # One declarative_base object for each schema created
@@ -49,6 +51,14 @@ class Experiment(Base):
 
     experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
+    time_splits = Column(Integer)
+    as_of_times = Column(Integer)
+    feature_blocks = Column(Integer)
+    total_features = Column(Integer)
+    feature_group_combinations = Column(Integer)
+    matrices_needed = Column(Integer)
+    grid_size = Column(Integer)
+    models_needed = Column(Integer)
 
 
 class Subset(Base):
@@ -122,6 +132,7 @@ class Matrix(Base):
     built_by_experiment = Column(
         String, ForeignKey("model_metadata.experiments.experiment_hash")
     )
+    feature_dictionary = Column(JSONB)
 
 
 class Model(Base):
@@ -149,6 +160,7 @@ class Model(Base):
     train_matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     training_label_timespan = Column(Interval)
     model_size = Column(Float)
+    random_seed = Column(Integer)
 
     model_group_rel = relationship("ModelGroup")
     matrix_rel = relationship("Matrix")
@@ -203,14 +215,17 @@ class TestPrediction(Base):
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
-    score = Column(Numeric)
+    score = Column(Numeric(6, 5))
     label_value = Column(Integer)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Numeric(6, 5))
+    rank_pct_with_ties = Column(Numeric(6, 5))
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+    matrix_rel = relationship("Matrix")
 
 
 class TrainPrediction(Base):
@@ -223,15 +238,43 @@ class TrainPrediction(Base):
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
-    score = Column(Numeric)
+    score = Column(Numeric(6, 5))
     label_value = Column(Integer)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+    matrix_rel = relationship("Matrix")
 
+
+class TestPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "test_results"}
+
+    model_id = Column(
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
+
+
+class TrainPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "train_results"}
+
+    model_id = Column(
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
 
 class IndividualImportance(Base):
 
@@ -266,11 +309,15 @@ class TestEvaluation(Base):
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
-    value = Column(Numeric)
     num_labeled_examples = Column(Integer)
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
+    best_value = Column(Numeric)
+    worst_value = Column(Numeric)
+    stochastic_value = Column(Numeric)
+    num_sort_trials = Column(Integer)
+    standard_deviation = Column(Numeric)
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
@@ -291,11 +338,58 @@ class TrainEvaluation(Base):
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
-    value = Column(Numeric)
     num_labeled_examples = Column(Integer)
     num_labeled_above_threshold = Column(Integer)
     num_positive_labels = Column(Integer)
     sort_seed = Column(Integer)
+    best_value = Column(Numeric)
+    worst_value = Column(Numeric)
+    stochastic_value = Column(Numeric)
+    num_sort_trials = Column(Integer)
+    standard_deviation = Column(Numeric)
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
+
+
+class ExperimentRunStatus(enum.Enum):
+    started = 1
+    completed = 2
+    failed = 3
+
+
+class ExperimentRun(Base):
+
+    __tablename__ = "experiment_runs"
+    __table_args__ = {"schema": "model_metadata"}
+
+    run_id = Column("id", Integer, primary_key=True)
+    start_time = Column(DateTime)
+    start_method = Column(String)
+    git_hash = Column(String)
+    triage_version = Column(String)
+    experiment_hash = Column(
+        String,
+        ForeignKey("model_metadata.experiments.experiment_hash")
+    )
+    platform = Column(Text)
+    os_user = Column(Text)
+    working_directory = Column(Text)
+    ec2_instance_type = Column(Text)
+    log_location = Column(Text)
+    experiment_class_path = Column(Text)
+    experiment_kwargs = Column(JSONB)
+    installed_libraries = Column(ARRAY(Text))
+    matrix_building_started = Column(DateTime)
+    matrices_made = Column(Integer, default=0)
+    matrices_skipped = Column(Integer, default=0)
+    matrices_errored = Column(Integer, default=0)
+    model_building_started = Column(DateTime)
+    models_made = Column(Integer, default=0)
+    models_skipped = Column(Integer, default=0)
+    models_errored = Column(Integer, default=0)
+    last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
+    current_status = Column(Enum(ExperimentRunStatus))
+    stacktrace = Column(Text)
+
+    experiment_rel = relationship("Experiment")

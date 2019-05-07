@@ -115,3 +115,16 @@ def test_ModelTrainTester_process_task_replace_True(project_storage):
     assert train_tester.model_evaluator.needs_evaluations.call_count == 0
     assert train_tester.predictor.predict.call_count == 2
     assert train_tester.model_evaluator.evaluate.call_count == 2
+
+
+def test_ModelTrainTester_process_task_empty_train(project_storage):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=True)
+    train_store = MagicMock()
+    train_store.empty = True
+    train_test_task['train_store'] = train_store
+    train_tester.process_task(**train_test_task)
+
+    assert train_tester.model_trainer.process_train_task.call_count == 0
+    assert train_tester.model_evaluator.needs_evaluations.call_count == 0
+    assert train_tester.predictor.predict.call_count == 0
+    assert train_tester.model_evaluator.evaluate.call_count == 0

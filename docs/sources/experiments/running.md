@@ -114,36 +114,6 @@ experiment.run()
 
 ```
 
-## Using HDF5 as a matrix storage format
-
-Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.
-
-### CLI
-
-On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
-
-```bash
-triage experiment example/config/experiment.yaml --matrix-format hdf
-```
-
-### Python
-
-In Python, this is configurable using the `matrix_storage_class` keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in `triage.component.catwalk.storage`. If you'd like to write your own storage module, you can use the [existing modules](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py) as a guide.
-
-```python
-from triage.experiments import SingleThreadedExperiment
-from triage.component.catwalk.storage import HDFMatrixStore
-
-experiment = SingleThreadedExperiment(
-    config=experiment_config
-    db_engine=create_engine(...),
-    matrix_storage_class=HDFMatrixStore,
-    project_path='/path/to/directory/to/save/data',
-)
-experiment.run()
-```
-
-Note: The HDF storage option is *not* compatible with S3.
 
 ## Validating an Experiment
 
@@ -173,7 +143,9 @@ triage experiment example/config/experiment.yaml --project-path '/path/to/direct
 
 #### Python
 
-Experiments expose a `validate` method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.
+The python interface will also validate by default when running an experiment. If you would prefer to skip this step, you can pass `skip_validation=True` when constructing your experiment.
+
+You can also run this validation step directly. Experiments expose a `validate` method that can be run as needed. Experiment instantiation doesn't change from the run examples at all.
 
 ```python
 experiment.validate()
@@ -228,7 +200,7 @@ Python: `SingleThreadedExperiment(..., save_predictions=False)`
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration), you will need to pass `skip_validation=True` when constructing your experiment object for a partial experiment.
 
 Running parts of an experiment is only supported through the Python interface.
 
@@ -261,7 +233,8 @@ Running parts of an experiment is only supported through the Python interface.
 
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
-* model_metadata.experiments - The experiment configuration and a hash
+* model_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
+* model_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
 * model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
 * model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
 * model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
@@ -271,8 +244,10 @@ After the experiment run, a variety of schemas and tables will be created and po
 * model_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
 * train_results.feature_importances - The sklearn feature importances results for each trained model
 * train_results.predictions - Prediction probabilities for train matrix entities generated against trained models
+* train_results.prediction_metadata - Metadata about the prediction stage for a model and train matrix, such as tiebreaking configuration
 * train_results.evaluations - Metric scores of trained models on the training data.
 * test_results.predictions - Prediction probabilities for test matrix entities generated against trained models
+* test_results.prediction_metadata - Metadata about the prediction stage for a model and test matrix, such as tiebreaking configuration
 * test_results.evaluations - Metric scores of trained models over given testing windows and subsets
 * test_results.individual_importances - Individual feature importance scores for test matrix entities.
 

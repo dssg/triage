@@ -12,6 +12,8 @@ from triage.component.results_schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    TestPredictionMetadata,
+    TrainPredictionMetadata
 )
 from triage.util.pandas import downcast_matrix
 
@@ -313,7 +315,7 @@ class MatrixStorageEngine(object):
 class MatrixStore(object):
     """Base class for classes that allow access of a matrix and its metadata.
 
-    Subclasses should be scoped to a storage format (e.g. CSV, HDF)
+    Subclasses should be scoped to a storage format (e.g. CSV)
         and implement the _load, save, and head_of_matrix methods for that storage format
 
     Args:
@@ -395,6 +397,8 @@ class MatrixStore(object):
 
     @property
     def labels(self):
+        if type(self.matrix_label_tuple[1]) != pd.Series:
+            raise TypeError("Label stored as something other than pandas Series")
         return self.matrix_label_tuple[1]
 
     @property
@@ -548,62 +552,6 @@ class MatrixStore(object):
         return state
 
 
-class HDFMatrixStore(MatrixStore):
-    """Store and access matrices using HDF
-
-    Instead of overriding head_of_matrix, which cannot be easily and reliably done
-    using HDFStore without loading the whole matrix into memory,
-    we individually override 'empty' and 'columns'
-    to obviate the need for a performant 'head_of_matrix' operation.
-    """
-
-    suffix = "h5"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if isinstance(self.matrix_base_store, S3Store):
-            raise ValueError("HDFMatrixStore cannot be used with S3")
-
-    def columns(self, include_label=False):
-        """The matrix's column list"""
-        head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=0)
-        columns = head_of_matrix.columns.tolist()
-        if include_label:
-            return columns
-        else:
-            return [col for col in columns if col != self.metadata["label_name"]]
-
-    @property
-    def empty(self):
-        """Whether or not the matrix has at least one row"""
-        if not self.matrix_base_store.exists():
-            return True
-        else:
-            try:
-                head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=1)
-                return head_of_matrix.empty
-            except ValueError:
-                # There is no known way to make the start/stop operations work all the time
-                # , there is often a ValueError when trying to load just the first row
-                # However, if we do get a ValueError that means there is data so it can't be empty
-                return False
-
-    def _load(self):
-        return pd.read_hdf(self.matrix_base_store.path)
-
-    def save(self):
-        hdf = pd.HDFStore(
-            self.matrix_base_store.path,
-            mode="w",
-            complevel=4,
-            complib="zlib",
-        )
-        hdf.put(f"matrix_{self.matrix_uuid}", self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
-        hdf.close()
-        with self.metadata_base_store.open("wb") as fd:
-            yaml.dump(self.metadata, fd, encoding="utf-8")
-
-
 class CSVMatrixStore(MatrixStore):
     """Store and access compressed matrices using CSV"""
 
@@ -636,6 +584,7 @@ class TestMatrixType(object):
     string_name = "test"
     evaluation_obj = TestEvaluation
     prediction_obj = TestPrediction
+    prediction_metadata_obj = TestPredictionMetadata
     is_test = True
 
 
@@ -643,4 +592,5 @@ class TrainMatrixType(object):
     string_name = "train"
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction
+    prediction_metadata_obj = TrainPredictionMetadata
     is_test = False

@@ -15,6 +15,8 @@ from .schema import (
     ExperimentMatrix,
     Matrix,
     ExperimentModel,
+    ExperimentRun,
+    ExperimentRunStatus,
     Model,
     ModelGroup,
     Subset,
@@ -22,6 +24,8 @@ from .schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    TestPredictionMetadata,
+    TrainPredictionMetadata,
 )
 
 
@@ -34,6 +38,8 @@ __all__ = (
     "ExperimentMatrix",
     "Matrix",
     "ExperimentModel",
+    "ExperimentRun",
+    "ExperimentRunStatus",
     "Model",
     "ModelGroup",
     "Subset",
@@ -41,6 +47,8 @@ __all__ = (
     "TrainEvaluation",
     "TestPrediction",
     "TrainPrediction",
+    "TestPredictionMetadata",
+    "TrainPredictionMetadata",
     "mark_db_as_upgraded",
     "upgrade_db",
 )

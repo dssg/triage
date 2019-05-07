@@ -8,6 +8,7 @@ from triage.component.architect.utils import remove_schema_from_table_name
 from triage.database_reflection import table_exists
 from triage.component.architect.feature_block import FeatureBlock
 from .from_obj import FromObj
+from descriptors import cachedproperty
 
 from .imputations import (
     ImputeMean,
@@ -29,6 +30,8 @@ available_imputations = {
     "binary_mode": ImputeBinaryMode,
     "error": ImputeError,
 }
+
+AGGFUNCS_NEED_MULTIPLE_VALUES = set(['stddev', 'stddev_samp', 'variance', 'var_samp'])
 
 
 class SpacetimeAggregation(FeatureBlock):
@@ -149,6 +152,7 @@ class SpacetimeAggregation(FeatureBlock):
     def _get_impute_select(self, impute_cols, nonimpute_cols, partitionby=None):
 
         imprules = self.get_imputation_rules()
+        used_impflags = set()
 
         # check if we're missing any columns relative to the full set and raise an
         # exception if we are
@@ -168,6 +172,25 @@ class SpacetimeAggregation(FeatureBlock):
             # for columns that do require imputation, include SQL to do the imputation work
             # and a flag for whether the value was imputed
             if col in impute_cols:
+                # we don't want to add redundant imputation flags. for a given source
+                # column and time interval, all of the functions will have identical 
+                # sets of rows that needed imputation
+                # to reliably merge these, we lookup the original aggregate that produced
+                # the function, and see its available functions. we expect exactly one of
+                # these functions to end the column name and remove it if so
+                # this is passed to the imputer
+                if hasattr(self.colname_aggregate_lookup[col], 'functions'):
+                    agg_functions = self.colname_aggregate_lookup[col].functions
+                    used_function = next(funcname for funcname in agg_functions if col.endswith(funcname))
+                    if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+                        impflag_basecol = col
+                    else:
+                        impflag_basecol = col.rstrip('_' + used_function)
+                else:
+                    logging.warning("Imputation flag merging is not implemented for "
+                                    "AggregateExpression objects that don't define an aggregate "
+                                    "function (e.g. composites)")
+                    impflag_basecol = col
 
                 impute_rule = imprules[col]
 
@@ -179,13 +202,17 @@ class SpacetimeAggregation(FeatureBlock):
                         % (impute_rule.get("type", ""), col)
                     ) from err
 
-                imputer = imputer(column=col, partitionby=partitionby, **impute_rule)
+                imputer = imputer(column=col, column_base_for_impflag=impflag_basecol, partitionby=partitionby, **impute_rule)
 
                 query += "\n,%s" % imputer.to_sql()
                 if not imputer.noflag:
                     # Add an imputation flag for non-categorical columns (this is handeled
                     # for categorical columns with a separate NULL category)
-                    query += "\n,%s" % imputer.imputed_flag_sql()
+                    # but only add it if another functionally equivalent impflag hasn't already been added
+                    impflag_select, impflag_alias = imputer.imputed_flag_select_and_alias()
+                    if impflag_alias not in used_impflags:
+                        used_impflags.add(impflag_alias)
+                        query += "\n,%s as \"%s\" " % (impflag_select, impflag_alias)
 
         return query
 
@@ -317,10 +344,41 @@ class SpacetimeAggregation(FeatureBlock):
             from_obj.maybe_materialize(self.db_engine)
             self.from_obj = from_obj.table
 
-    def _get_aggregates_sql(self, interval, date, group):
+    @cachedproperty
+    def colname_aggregate_lookup(self):
+        """A reverse lookup from column name to the source collate.Aggregate
+
+        Will error if the Aggregation contains duplicate column names
         """
-        Helper for getting aggregates sql
+        lookup = {}
+        for group, groupby in self.groups.items():
+            intervals = self.intervals[group]
+            for interval in intervals:
+                date = self.dates[0]
+                for agg in self.aggregates:
+                    for col in self._cols_for_aggregate(agg, group, interval, date):
+                        if col.name in lookup:
+                            raise ValueError("Duplicate feature column name found: ", col.name)
+                        lookup[col.name] = agg
+
+        return lookup
+            
+    def _col_prefix(self, group, interval):
+        """
+        Helper for creating a column prefix for the group
+            group: group clause, for naming columns
+            interval: SQL time interval string, or "all"
+        Returns: string for a common column prefix for columns in that group and interval
+        """
+        return "{prefix}_{group}_{interval}_".format(
+            prefix=self.prefix, interval=interval, group=group
+        )
+
+    def _cols_for_aggregate(self, agg, group, interval, date):
+        """
+        Helper for getting the sql for a particular aggregate
         Args:
+            agg: collate.Aggregate
             interval: SQL time interval string, or "all"
             date: SQL date string
             group: group clause, for naming columns
@@ -332,19 +390,25 @@ class SpacetimeAggregation(FeatureBlock):
             )
         else:
             when = None
-
-        prefix = "{prefix}_{group}_{interval}_".format(
-            prefix=self.prefix, interval=interval, group=group
+        return agg.get_columns(
+            when,
+            self._col_prefix(group, interval),
+            format_kwargs={"collate_date": date, "collate_interval": interval},
         )
 
+    def _get_aggregates_sql(self, interval, date, group):
+        """
+        Helper for getting aggregates sql
+        Args:
+            interval: SQL time interval string, or "all"
+            date: SQL date string
+            group: group clause, for naming columns
+        Returns: collection of aggregate column SQL strings
+        """
         return chain(
             *[
-                a.get_columns(
-                    when,
-                    prefix,
-                    format_kwargs={"collate_date": date, "collate_interval": interval},
-                )
-                for a in self.aggregates
+                self._cols_for_aggregate(agg, group, interval, date)
+                for agg in self.aggregates
             ]
         )
 
@@ -376,7 +440,7 @@ class SpacetimeAggregation(FeatureBlock):
             queries[group] = []
             for date in self.as_of_dates:
                 columns = [
-                    groupby,
+                    make_sql_clause(groupby, ex.text),
                     ex.literal_column("'%s'::date" % date).label(
                         self.output_date_column
                     ),
@@ -397,7 +461,7 @@ class SpacetimeAggregation(FeatureBlock):
                         ")) cohorted_from_obj")
                 else:
                     from_obj = self.from_obj
-                query = ex.select(columns=columns, from_obj=from_obj).group_by(
+                query = ex.select(columns=columns, from_obj=make_sql_clause(from_obj, ex.text)).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))
@@ -472,7 +536,7 @@ class SpacetimeAggregation(FeatureBlock):
         Generates a join table, consisting of an entry for each combination of
         groups and dates in the from_obj
         """
-        groups = list(self.groups.values())
+        groups = [make_sql_clause(group, ex.text) for group in self.groups.values()]
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
@@ -481,7 +545,7 @@ class SpacetimeAggregation(FeatureBlock):
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=self.from_obj)
+                ex.select(columns, from_obj=make_sql_clause(self.from_obj, ex.text))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )

@@ -68,8 +68,8 @@ class ModelEvaluator(object):
                     SELECT DISTINCT ON (matrix_uuid)
                            model_id,
                            matrix_uuid,
-                           as_of_date
-                        FROM test_results.predictions
+                           evaluation_start_time as as_of_date
+                        FROM test_results.evaluations
                         WHERE model_id = ANY(
                             SELECT model_id
                             FROM individual_model_ids_metadata
@@ -106,13 +106,7 @@ class ModelEvaluator(object):
         return self.metadata['as_of_date']
 
     def __repr__(self):
-        return (
-        str({'model_id': self.model_id,
-             'model_group': self.model_group_id,
-             'model_type': self.model_type,
-             'as_of_date': self.as_of_date.strftime("%B %d, %Y"),
-             'model_hyperparameters': self.hyperparameters})
-        )
+        return f"ModelEvaluator(model_group_id={self.model_group_id}, model_id={self.model_id})"
 
     @cachedproperty
     def predictions(self):
@@ -123,8 +117,8 @@ class ModelEvaluator(object):
                    as_of_date,
                    score,
                    label_value,
-                   COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   COALESCE(rank_pct, percent_rank()
+                   COALESCE(rank_abs_with_ties, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
+                   COALESCE(rank_pct_with_ties, percent_rank()
                    OVER(ORDER BY score DESC)) * 100 as rank_pct,
                    test_label_timespan
             FROM test_results.predictions
@@ -132,6 +126,11 @@ class ModelEvaluator(object):
             AND label_value IS NOT NULL
             ''', con=self.engine)
 
+        if preds.empty:
+            raise RuntimeError("No predictions were retrieved from the database."
+                               "Some functionality will not be available without predictions."
+                               "Please run catwalk.Predictor for each desired model and test matrix"
+                               )
         return preds
 
     def _feature_importance_slr(self, path):
@@ -238,7 +237,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels
@@ -254,7 +253,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels

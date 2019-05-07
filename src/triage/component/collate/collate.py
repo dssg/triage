@@ -3,11 +3,8 @@ from numbers import Number
 from itertools import product
 import sqlalchemy.sql.expression as ex
 import re
-import logging
-from triage.database_reflection import table_exists
-from triage.component.architect.utils import remove_schema_from_table_name
 
-from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
+from .sql import to_sql_name
 
 
 def make_list(a):
@@ -19,6 +16,7 @@ def make_tuple(a):
 
 
 DISTINCT_REGEX = re.compile(r"distinct[ (]")
+AGGFUNCS_NEED_MULTIPLE_VALUES = set(['stddev', 'stddev_samp', 'variance', 'var_samp'])
 
 
 def split_distinct(quantity):

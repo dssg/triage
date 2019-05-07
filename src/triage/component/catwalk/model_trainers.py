@@ -2,6 +2,7 @@ import copy
 import datetime
 import importlib
 import logging
+import random
 import sys
 from contextlib import contextmanager
 
@@ -10,8 +11,10 @@ import pandas
 from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
+from triage.util.random import generate_python_random_seed
 from triage.component.results_schema import Model, FeatureImportance
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
+from triage.tracking import built_model, skipped_model, errored_model
 
 from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
@@ -56,12 +59,14 @@ class ModelTrainer(object):
         db_engine,
         model_grouper=None,
         replace=True,
+        run_id=None,
     ):
         self.experiment_hash = experiment_hash
         self.model_storage_engine = model_storage_engine
         self.model_grouper = model_grouper or ModelGrouper()
         self.db_engine = db_engine
         self.replace = replace
+        self.run_id = run_id
 
     @property
     def sessionmaker(self):
@@ -70,7 +75,7 @@ class ModelTrainer(object):
     def unique_parameters(self, parameters):
         return {key: parameters[key] for key in parameters.keys() if key != "n_jobs"}
 
-    def _model_hash(self, matrix_metadata, class_path, parameters):
+    def _model_hash(self, matrix_metadata, class_path, parameters, random_seed):
         """Generates a unique identifier for a trained model
         based on attributes of the model that together define
         equivalence; in other words, if we train a second model with these
@@ -79,6 +84,7 @@ class ModelTrainer(object):
         Args:
         class_path (string): a full class path for the classifier
         parameters (dict): all hyperparameters to be passed to the classifier
+        random_seed (int) an integer suitable for seeding the random generator before training
 
         Returns: (string) a unique identifier
         """
@@ -88,6 +94,7 @@ class ModelTrainer(object):
             "parameters": self.unique_parameters(parameters),
             "project_path": self.model_storage_engine.project_storage.project_path,
             "training_metadata": matrix_metadata,
+            "random_seed": random_seed,
         }
         logging.info("Creating model hash from unique data %s", unique)
         return filename_friendly_hash(unique)
@@ -235,7 +242,7 @@ class ModelTrainer(object):
         return model_id
 
     def _train_and_store_model(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters
+        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed
     ):
         """Train a model, cache it, and write metadata to a database
 
@@ -248,6 +255,8 @@ class ModelTrainer(object):
 
         Returns: (int) a database id for the model
         """
+        random.seed(random_seed)
+        misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logging.info("Training and storing model for matrix uuid %s", matrix_store.uuid)
         trained_model = self._train(matrix_store, class_path, parameters)
@@ -334,7 +343,7 @@ class ModelTrainer(object):
         ]
 
     def process_train_task(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters
+        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed=None
     ):
         """Trains and stores a model, or skips it and returns the existing id
 
@@ -344,38 +353,60 @@ class ModelTrainer(object):
             parameters (dict): all hyperparameters to be passed to the classifier
             model_hash (string) a unique id for the model
             misc_db_parameters (dict) params to pass through to the database
+            random_seed (int, optional) a number to use to seed the random number generator before training. if none given, will generate one to store
         Returns: (int) model id
         """
-        saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
-        if (
-            not self.replace
-            and self.model_storage_engine.exists(model_hash)
-            and saved_model_id
-        ):
-            logging.info("Skipping %s/%s", class_path, parameters)
-            return saved_model_id
-
-        if self.replace:
-            reason = "replace flag has been set"
-        elif not self.model_storage_engine.exists(model_hash):
-            reason = "model pickle not found in store"
-        elif not saved_model_id:
-            reason = "model metadata not found"
-
-        logging.info(
-            f"Training {class_path} with parameters {parameters}"
-            f"(reason to train: {reason})"
-        )
         try:
-            model_id = self._train_and_store_model(
-                matrix_store, class_path, parameters, model_hash, misc_db_parameters
+            saved_model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
+            if (
+                not self.replace
+                and self.model_storage_engine.exists(model_hash)
+                and saved_model_id
+            ):
+                logging.info("Skipping %s/%s", class_path, parameters)
+                if self.run_id:
+                    skipped_model(self.run_id, self.db_engine)
+                return saved_model_id
+
+            if self.replace:
+                reason = "replace flag has been set"
+            elif not self.model_storage_engine.exists(model_hash):
+                reason = "model pickle not found in store"
+            elif not saved_model_id:
+                reason = "model metadata not found"
+
+            logging.info(
+                f"Training {class_path} with parameters {parameters}"
+                f"(reason to train: {reason})"
             )
-        except BaselineFeatureNotInMatrix:
-            logging.warning(
-                "Tried to train baseline model without required feature in matrix. Skipping."
-            )
-            model_id = None
-        return model_id
+            try:
+                model_id = self._train_and_store_model(
+                    matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed
+                )
+            except BaselineFeatureNotInMatrix:
+                logging.warning(
+                    "Tried to train baseline model without required feature in matrix. Skipping."
+                )
+                if self.run_id:
+                    skipped_model(self.run_id, self.db_engine)
+                model_id = None
+            if self.run_id:
+                built_model(self.run_id, self.db_engine)
+            return model_id
+        except Exception as exc:
+            logging.warning("Model training for matrix %s, estimator %s/%s, model hash %s",
+                            "failed due to %s",
+                            matrix_store.uuid,
+                            class_path,
+                            parameters,
+                            model_hash,
+                            exc
+                            )
+            errored_model(self.run_id, self.db_engine)
+
+    @staticmethod
+    def flattened_grid_config(grid_config):
+        return flatten_grid_config(grid_config)
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
         """Train and store configured models, yielding the ids one by one
@@ -403,8 +434,14 @@ class ModelTrainer(object):
 
         tasks = []
 
-        for class_path, parameters in flatten_grid_config(grid_config):
-            model_hash = self._model_hash(matrix_store.metadata, class_path, parameters)
+        for class_path, parameters in self.flattened_grid_config(grid_config):
+            random_seed = generate_python_random_seed()
+            model_hash = self._model_hash(
+                matrix_store.metadata,
+                class_path,
+                parameters,
+                random_seed
+            )
             logging.info(
                 f"Computed model hash for {class_path} "
                 f"with parameters {parameters}: {model_hash}"
@@ -427,6 +464,7 @@ class ModelTrainer(object):
                     "parameters": parameters,
                     "model_hash": model_hash,
                     "misc_db_parameters": misc_db_parameters,
+                    "random_seed": random_seed
                 }
             )
         logging.info("Found %s unique model training tasks", len(tasks))

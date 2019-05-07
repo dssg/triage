@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data
+from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
 
 
@@ -19,6 +20,7 @@ class BuilderBase(object):
         experiment_hash,
         replace=True,
         include_missing_labels_in_train_as=None,
+        run_id=None,
     ):
         self.db_config = db_config
         self.matrix_storage_engine = matrix_storage_engine
@@ -26,6 +28,7 @@ class BuilderBase(object):
         self.experiment_hash = experiment_hash
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
+        self.run_id = run_id
 
     @property
     def sessionmaker(self):
@@ -247,6 +250,8 @@ class MatrixBuilder(BuilderBase):
             self.db_config["cohort_table_name"], self.db_engine
         ):
             logging.warning("cohort table is not populated, cannot build matrix")
+            if self.run_id:
+                errored_matrix(self.run_id, self.db_engine)
             return
         if not table_has_data(
             "{}.{}".format(
@@ -256,11 +261,15 @@ class MatrixBuilder(BuilderBase):
             self.db_engine,
         ):
             logging.warning("labels table is not populated, cannot build matrix")
+            if self.run_id:
+                errored_matrix(self.run_id, self.db_engine)
             return
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
             logging.info("Skipping %s because matrix already exists", matrix_uuid)
+            if self.run_id:
+                skipped_matrix(self.run_id, self.db_engine)
             return
 
         logging.info(
@@ -285,6 +294,8 @@ class MatrixBuilder(BuilderBase):
                 "Not able to build entity-date table due to: %s - will not build matrix",
                 exc_info=True,
             )
+            if self.run_id:
+                errored_matrix(self.run_id, self.db_engine)
             return
         logging.info(
             "Extracting feature group data from database into file " "for matrix %s",
@@ -334,6 +345,7 @@ class MatrixBuilder(BuilderBase):
             num_observations=len(output),
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
+            feature_dictionary=feature_dictionary,
             matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
             built_by_experiment=self.experiment_hash
         )
@@ -341,6 +353,9 @@ class MatrixBuilder(BuilderBase):
         session.merge(matrix)
         session.commit()
         session.close()
+        if self.run_id:
+            built_matrix(self.run_id, self.db_engine)
+
 
     def load_labels_data(
         self,

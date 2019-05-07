@@ -26,6 +26,7 @@ def prepare_experiment(config):
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=False,
+                skip_validation=True,
             )
             yield experiment
 
@@ -34,6 +35,7 @@ class GetSplits(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):
@@ -56,6 +58,7 @@ class Cohort(TestCase):
         "temporal_config": sample_config()["temporal_config"],
         "cohort_config": sample_config()["cohort_config"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):
@@ -80,6 +83,7 @@ class Labels(TestCase):
         "temporal_config": sample_config()["temporal_config"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):
@@ -102,6 +106,7 @@ class PreimputationFeatures(TestCase):
         "temporal_config": sample_config()["temporal_config"],
         "features": sample_config()["features"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):
@@ -135,6 +140,7 @@ class PostimputationFeatures(TestCase):
         "features": sample_config()["features"],
         "cohort_config": sample_config()["cohort_config"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):
@@ -160,6 +166,7 @@ class Matrices(TestCase):
         "cohort_config": sample_config()["cohort_config"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
+        "random_seed": sample_config()["random_seed"],
     }
 
     def test_run(self):

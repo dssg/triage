@@ -1,4 +1,5 @@
 from triage.component.catwalk.evaluation import (
+    SORT_TRIALS,
     ModelEvaluator,
     generate_binary_at_x,
     query_subset_table,
@@ -11,6 +12,7 @@ import re
 
 import factory
 import numpy
+from numpy.testing import assert_almost_equal, assert_array_equal
 import pandas
 from sqlalchemy.sql.expression import text
 from triage.component.catwalk.utils import filename_friendly_hash, get_subset_table_name
@@ -133,8 +135,8 @@ def test_all_same_labels(db_engine_with_results_schema):
             trained_model.predict_proba(labels)[:, 1], fake_matrix_store, model_id
         )
         
-        for row in db_engine_with_results_schema.execute(
-            f"""select metric, value
+        for metric, best, worst, stochastic in db_engine_with_results_schema.execute(
+            f"""select metric, best_value, worst_value, stochastic_value
             from train_results.evaluations
             where model_id = %s and
             evaluation_start_time = %s
@@ -144,10 +146,14 @@ def test_all_same_labels(db_engine_with_results_schema):
                 fake_matrix_store.as_of_dates[0]
             ),
         ):
-            if row[0] == "accuracy":
-                assert row[1] is not None
+            if metric == "accuracy":
+                assert best is not None
+                assert worst is not None
+                assert stochastic is not None
             else:
-                assert row[1] is None
+                assert best is None
+                assert worst is None
+                assert stochastic is None
 
 
 def test_subset_labels_and_predictions(db_engine_with_results_schema):
@@ -415,11 +421,11 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
         db_engine_with_results_schema,
     )
 
-    testing_labels = numpy.array([True, False, numpy.nan, True, False])
+    testing_labels = numpy.array([1, 0, numpy.nan, 1, 0])
     testing_prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
 
     training_labels = numpy.array(
-        [False, False, True, True, True, False, True, True]
+        [0, 0, 1, 1, 1, 0, 1, 1]
     )
     training_prediction_probas = numpy.array(
         [0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6]
@@ -468,7 +474,52 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
     ):
         assert record["num_labeled_examples"] == 8
         assert record["num_positive_labels"] == 5
-        assert record["value"] == 0.625
+        assert record["worst_value"] == 0.625
+        assert record["best_value"] == 0.625
+        assert record["stochastic_value"] == 0.625
+        assert record["num_sort_trials"] == 0 # best/worst are same, should shortcut trials
+        assert record["standard_deviation"] == 0
+
+
+def test_evaluation_with_sort_ties(db_engine_with_results_schema):
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        db_engine=db_engine_with_results_schema,
+    )
+    testing_labels = numpy.array([1, 0, 1, 0, 0])
+    testing_prediction_probas = numpy.array([0.56, 0.55, 0.5, 0.5, 0.3])
+
+    fake_test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema, testing_labels
+    )
+
+    trained_model, model_id = fake_trained_model(
+        db_engine_with_results_schema,
+        train_end_time=TRAIN_END_TIME,
+    )
+    model_evaluator.evaluate(
+        testing_prediction_probas, fake_test_matrix_store, model_id
+    )
+    for record in db_engine_with_results_schema.execute(
+        """select * from test_results.evaluations
+        where model_id = %s and evaluation_start_time = %s
+        order by 1""",
+        (model_id, fake_test_matrix_store.as_of_dates[0]),
+    ):
+        assert record["num_labeled_examples"] == 5
+        assert record["num_positive_labels"] == 2
+        assert_almost_equal(float(record["worst_value"]), 0.33333, 5)
+        assert_almost_equal(float(record["best_value"]), 0.66666, 5)
+        assert record["num_sort_trials"] == SORT_TRIALS
+        assert record["stochastic_value"] > record["worst_value"]
+        assert record["stochastic_value"] < record["best_value"]
+        assert record["standard_deviation"]
 
 
 def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
@@ -597,20 +648,20 @@ def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
 
 
 def test_generate_binary_at_x():
-    input_list = [0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6]
+    input_array = numpy.array([0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
 
     # bug can arise when the same value spans both sides of threshold
-    assert generate_binary_at_x(input_list, 50, "percentile") == [
-        1,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-    ]
+    assert_array_equal(
+        generate_binary_at_x(input_array, 50, "percentile"),
+        numpy.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+    )
 
-    assert generate_binary_at_x(input_list, 2) == [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert_array_equal(
+        generate_binary_at_x(input_array, 2),
+        numpy.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+    )
+
+    assert_array_equal(
+        generate_binary_at_x(numpy.array([]), 2),
+        numpy.array([])
+    )
