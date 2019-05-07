@@ -25,6 +25,7 @@ services:
     volumes:
       - "./triage:/triage"
       - "./sql:/sql"
+      - "./experiments:/experiments"
     ports:
       - "56406-56410:56406-56410"
 
