@@ -1,29 +1,53 @@
-# Resource prioritization
+# Resource prioritization systems: Chicago food inspections
 
 
 ## Problem description
 
-We will begin with the **inspection prioritization** problem. We want to generate a list of facilities that will have a **critical** or **serious** food violation *if* inspected.
+We want to generate a list of facilities that will have a **critical** or
+**serious** food violation *if* inspected.
 
-The scenario is the following: you work for the City of Chicago and you have limited food inspectors, so you try to prioritize them to focus on the highest-risk facilities. So you will use the data to answer the next question:
+The scenario is the following: you work for the City of Chicago and
+you have limited food inspectors, so you try to prioritize them to
+focus on the highest-risk facilities. So you will use the data to
+answer the next question:
 
-> Which X facilities are most likely to fail a food inspection in the following Y period of time?
+!!! quote ""
+    Which $X$ facilities are most likely to fail a food inspection in the following $Y$ period of time?
 
-A more technical way of writing the question is: What is the *probability distribution* of facilities that are at **risk** of fail a food inspection if they are inspected in the following period of time?<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
+A more technical way of writing the question is: What is the
+*probability distribution* of facilities that are at **risk** of fail
+a food inspection if they are inspected in the following period of
+time?[^1]
 
 If you want to focus on major violations only, you can do that too:
 
-> Which X facilities are most likely to have a critical or serious violation in the following Y period of time?
+!!! quote ""
+    Which $X$ facilities are most likely to have a critical or serious violation in the following $Y$ period of time?
 
-This situation is very common in governmental agencies that provide social services: *they need to prioritize their resources and use them in the facilities that are most likely to have problems*
+This situation is very common in governmental agencies that provide
+social services: *they need to prioritize their resources and use them
+in the facilities that are most likely to have problems*
 
-We will use Machine Learning to accomplish this. This means that we will use *historical* data to train our models, and we will use temporal cross validation to test the performance of them.
+We will use machine learning to accomplish this. This means that we
+will use *historical* data to train our models, and we will use
+temporal cross validation to test the performance of them.
 
-For the **resource prioritization** problems there are commonly two problems with the data: (a) bias and (b) incompleteness.
+For the **resource prioritization** problems there are commonly two
+problems with the data: (a) bias and (b) incompleteness.
 
-First, note that our data have bias: We only have data on facilities that *were* inspected. That means that our data set contains information about the probability of have a violation (\(V\)) given that the facility was inspected (\(I\)), \(P(V|I)\). But the probability that we try to find is \(P(V)\).
+First, note that our data have bias: We only have data on facilities
+that *were* inspected. That means that our data set contains
+information about the probability of have a violation (\(V\)) given
+that the facility was inspected (\(I\)), \(P(V|I)\). But the
+probability that we try to find is \(P(V)\).
 
-A different problem that our data set could have is if our dataset contains **all** the facilities in Chicago, i.e. if our *entities* table represents the Universe of facilities. There are almost 40,000 entities in our database. We could make the case that **every** facility in Chicago is in the database, since **every** facility that opens will be subject to an inspection. We will assume that **all** the facilities are in our data.
+A different problem that our data set could have is if our dataset
+contains **all** the facilities in Chicago, i.e. if our *entities*
+table represents the Universe of facilities. There are almost 40,000
+entities in our database. We could make the case that **every**
+facility in Chicago is in the database, since **every** facility that
+opens will be subject to an inspection. We will assume that **all**
+the facilities are in our data.
 
 
 ## Creating the labels
@@ -36,7 +60,11 @@ The label takes a 1 if the inspection had at least one `result` = `'fail'` and a
 
 -   **Which facilities fail an inspection with a major violation?**
 
-Critical violations are coded between `1-14`, serious violations between `15-29`, everything above `30` is assumed to be a minor violation. The label takes a 1 if the inspection had at least one `result` = `'fail'` and a violation between 1 and 29, and a 0 otherwise.
+Critical violations are coded between `1-14`, serious violations
+between `15-29`, everything above `30` is assumed to be a minor
+violation. The label takes a 1 if the inspection had at least one
+`result` = `'fail'` and a violation between 1 and 29, and a 0
+otherwise.
 
 We can extract the severity of the violation using the following code:
 
@@ -71,7 +99,7 @@ order by
    date desc;
 ```
 
-| event<sub>id</sub> | entity<sub>id</sub> | date       | result | violations<sub>severity</sub> | failed | failed<sub>major</sub><sub>violation</sub> |
+| event\_id | entity\_id | date       | result | violations\_severity | failed | failed\_major\_violation |
 |------------------ |------------------- |---------- |------ |----------------------------- |------ |------------------------------------------ |
 | 1770568            | 30841               | 2016-05-11 | pass   | {minor}                       | f      | f                                          |
 | 1763967            | 30841               | 2016-05-03 | fail   | {critical,minor,serious}      | t      | t                                          |
@@ -81,25 +109,61 @@ order by
 | 537439             | 13458               | 2011-06-10 | fail   | {NULL}                        | t      | f                                          |
 | 569377             | 5570                | 2011-06-01 | pass   | {NULL}                        | f      | f                                          |
 
-The *outcome* will be used by `triage` to generate the labels. The following image tries to show the meaning of the *outcomes* for the *inspection failed* problem definition.
+The *outcome* will be used by `triage` to generate the labels. The
+following image tries to show the meaning of the *outcomes* for the
+*inspection failed* problem definition.
 
-![img](./images/outcomes-inspections.png "The image shows three facilities and, next to each, a temporal line with 6 days (0-5). Each dot represents an inspection. Color is the *outcome* of the inspection. Green means the facility passed the inspection, and red means it failed. Each facility in the image had two inspections, but only the facility in the middle passed both.")
+![img](./images/outcomes-inspections.png "The image shows three
+facilities and, next to each, a temporal line with 6 days (0-5). Each
+dot represents an inspection. Color is the *outcome* of the
+inspection. Green means the facility passed the inspection, and red
+means it failed. Each facility in the image had two inspections, but
+only the facility in the middle passed both.")
+*Figure. The image shows three
+facilities and, next to each, a temporal line with 6 days (0-5). Each
+dot represents an inspection. Color is the **outcome** of the
+inspection. Green means the facility passed the inspection, and red
+means it failed. Each facility in the image had two inspections, but
+only the facility in the middle passed both.*
 
 
 ## Modeling Using Machine Learning
 
-It is time to put these steps together. All the coding is complete (`triage` dev team did that for us); we just need to modify the `triage` experiment’s configuration file.
+It is time to put these steps together. All the coding is complete
+(`triage` dev team did that for us); we just need to modify the
+`triage` experiment’s configuration file.
 
 
 ### Defining a baseline
 
-As a first step, lets do an experiment that defines our *baseline*. The rationale of this is that the knowing the *baseline* will allow us to verify if our Machine Learning model is better than the baseline<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>. It is also very fast to train ( `DummyClassifier` is not computationally expensive, so it will help us to verify that the experiment configuration is correct without waiting for a long time).
+As a first step, lets do an experiment that defines our
+*baseline*. The rationale of this is that the knowing the *baseline*
+will allow us to verify if our Machine Learning model is better than
+the baseline[^2]. It is also very fast to train ( `DummyClassifier` is
+not computationally expensive, so it will help us to verify that the
+experiment configuration is correct without waiting for a long time).
 
-We need to write the experiment config file for that. Let's break it down and explain the sections.
+We need to write the experiment config file for that. Let's break it
+down and explain the sections.
 
-The config file for this first experiment is located in [triage/experiments/inspections<sub>baseline.yaml</sub>](./triage/experiments/inspections_baseline.yaml).
+The config file for this first experiment is located in
+[triage/experiments/inspections_baseline.yaml](./triage/experiments/inspections_baseline.yaml).
 
-The first lines of the experiment config file specify the config-file version (`v6` at the moment of writing this tutorial), a comment (`model_comment`, which will end up as a value in the `model_metadata.models` table), and a list of user-defined metadata (`user_metadata`) that can help to identify the resulting model groups. For this example, if you run experiments that share a temporal configuration but that use different label definitions (say, labeling inspections with **any** violation as positive versus only labeling inspections with major violations as positive), you can use the user metadata keys to indicate that the matrices from these experiments have different labeling criteria. The matrices from the two experiments will have different filenames (and should not be overwritten or incorrectly used), and if you add the `label_definition` key to the `model_group_keys`, models made on different label definitions will belong to different model groups.
+The first lines of the experiment config file specify the config-file
+version (`v6` at the moment of writing this tutorial), a comment
+(`model_comment`, which will end up as a value in the
+`model_metadata.models` table), and a list of user-defined metadata
+(`user_metadata`) that can help to identify the resulting model
+groups. For this example, if you run experiments that share a temporal
+configuration but that use different label definitions (say, labeling
+inspections with **any** violation as positive versus only labeling
+inspections with major violations as positive), you can use the user
+metadata keys to indicate that the matrices from these experiments
+have different labeling criteria. The matrices from the two
+experiments will have different filenames (and should not be
+overwritten or incorrectly used), and if you add the
+`label_definition` key to the `model_group_keys`, models made on
+different label definitions will belong to different model groups.
 
 ```yaml
 config_version: 'v6'
@@ -141,15 +205,19 @@ model_group_keys:
 
 (Obviously, change `'Your name here'` for your name)
 
-Next comes the **temporal configuration** section. The first four parameters are related to the availability of data: How much data you have for feature creation? How much data you have for label generation? For simplicity we will assume that we can use the full `semantic.events` time span for both.
+Next comes the **temporal configuration** section. The first four
+parameters are related to the availability of data: How much data you
+have for feature creation? How much data you have for label
+generation? For simplicity we will assume that we can use the full
+`semantic.events` time span for both.
 
 ```sql
-select min(date), max(date) from semantic.events
+select min(date), max(date) from semantic.events;
 ```
 
 | min        | max        |
 |---------- |---------- |
-| 2010-01-04 | 2019-02-20 |
+| 2010-01-04 | 2018-06-29 |
 
 The next parameters are related to the training intervals:
 
@@ -165,7 +233,7 @@ The remaining elements are related to the **testing** matrices. For **inspection
 
 Let's assume that we need to do rounds of inspections every month (`test_as_of_date_frequencies = 1month`) and we need to complete that round in exactly one month (`test_durations = test_label_timespan = 1month`).
 
-We will assume that the data is more or less stable<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>, at least for one year, so `model_update_frequency` = `1 year.`
+We will assume that the data is more or less stable[^3], at least for one year, so `model_update_frequency` = `1 year.`
 
 ```yaml
 temporal_config:
@@ -210,11 +278,11 @@ label_config:
   name: 'failed_inspections'
 ```
 
-It should be obvious, but let's state it anyway: We are only training in facilities that **were** inspected, but we will **test** our model in all the facilities in our cohort<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup>. So, in the train matrices we will have only `0` and `1` as possible labels, but in the test matrices we will found `0`, `1` and `NULL`.
+It should be obvious, but let's state it anyway: We are only training in facilities that **were** inspected, but we will **test** our model in all the facilities in our cohort[^4]. So, in the train matrices we will have only `0` and `1` as possible labels, but in the test matrices we will found `0`, `1` and `NULL`.
 
 In the section regarding to *Early Warning Systems* we will learn how to incorporate *all* the facilities of the cohort in the train matrices.
 
-We just want to include **active** facilities<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup> in our matrices, so we tell `triage` to take that in account:
+We just want to include **active** facilities[^5] in our matrices, so we tell `triage` to take that in account:
 
 ```yaml
 cohort_config:
@@ -280,7 +348,7 @@ grid_config:
         strategy: [prior,uniform, most_frequent]
 ```
 
-Finally, we should define wich metrics we care about for evaluating our model. Here we will concentrate only in `precision` and `recall` at an specific value \(k\) <sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup>.
+Finally, we should define wich metrics we care about for evaluating our model. Here we will concentrate only in `precision` and `recall` at an specific value \(k\) [^6].
 
 In this setting \(k\) represents the resource’s constraint: It is the number of inspections that the city could do in a month given all the inspectors available.
 
@@ -303,7 +371,7 @@ scoring:
           top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
 ```
 
-You should be warned that precision and recall at \(k\) in this setting is kind of ill-defined (because you will end with a lot of `NULL` labels, remember, only a few of facilities are inspected in each period)<sup><a id="fnr.7" class="footref" href="#fn.7">7</a></sup>.
+You should be warned that precision and recall at \(k\) in this setting is kind of ill-defined (because you will end with a lot of `NULL` labels, remember, only a few of facilities are inspected in each period)[^7].
 
 We will want a **list** of facilities to be inspected. The length of our list is constrained by our inspection resources, i.e. the answer to the question *How many facilities can I inspect in a month?* In this experiment we are assuming that the maximum capacity is **10%** but we are evaluating for a larger space of possibilities (see `top_n`, `percentiles` above).
 
@@ -317,7 +385,7 @@ triage experiment experiments/inspections_baseline.yaml  --validate-only
 
 If everything was ok, you should see an `Experiment validation ran to completion with no errors`.
 
-You can execute the experiment as<sup><a id="fnr.8" class="footref" href="#fn.8">8</a></sup>
+You can execute the experiment as[^8]
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
@@ -820,9 +888,9 @@ limit 20
 
 Note that at the top of the list (sorted by `as_of_date`, and then by `score`), the *labels* are `NULL`. This means that the facilities that you are classifying as high risk, actually weren't inspected in that *as of date*. So, you actually don't know if this is a correct prediction or not.
 
-This is a **characteristic** of all the resource optimization problems: You do not have all the information about the elements in your system<sup><a id="fnr.9" class="footref" href="#fn.9">9</a></sup>.
+This is a **characteristic** of all the resource optimization problems: You do not have all the information about the elements in your system[^9].
 
-So, how the precision/recall is calculated? The number that is show in the `evaluations` table is calculated using only the rows that have a non-null label. You could argue that this is fine, if you assume that the distribution of the label in the non-observed facilities is the same that the ones that were inspected that month<sup><a id="fnr.10" class="footref" href="#fn.10">10</a></sup>. We will come back to this problem in the Early Warning problem.
+So, how the precision/recall is calculated? The number that is show in the `evaluations` table is calculated using only the rows that have a non-null label. You could argue that this is fine, if you assume that the distribution of the label in the non-observed facilities is the same that the ones that were inspected that month[^10]. We will come back to this problem in the Early Warning problem.
 
 There is a second problem: *How do you break ties in the score?* If you run the previous query you will see why. The order within all the equal scores will be *random*. This again will affect the calculation of your metrics. One potential solution to this is calculate the metric in the *best case scenario* (all the true labels are at the top), and then in the *worst case scenario* (all the true labels are at the bottom) and then calculate the metric several times with the labels shuffled, so you get the *mean* metric, plus some confidence intervals. This second problem is **not** specific of an inspection problem, is more related to simple models like a shallow Decision Tree or a Dummy Classifier.
 
@@ -1196,7 +1264,7 @@ Compared to the previous sections, *postmodeling* is not an automated process (y
 jupyter-notebook –-ip=0.0.0.0  --port=56406
 ```
 
-And then in your browser type<sup><a id="fnr.11" class="footref" href="#fn.11">11</a></sup>: <http://0.0.0.0:56406>
+And then in your browser type[^11]: <http://0.0.0.0:56406>
 
 Now that you are in a jupyter notebook, type the following:
 
@@ -1327,40 +1395,56 @@ In this tutorial, we will just show some parts of the analysis in the most recen
 
     ![img](images/inspection_model_group_11_rayid_curve.png "Plot of Precision and Recall over the proportion of the facilities. This plot is used as a "policy menu" since allows you to see how much you will gain if you invest more resources or how much you will sacrifice if you reduce your budget for resources. This is also known as “Rayid plot” at DSaPP.")
 
-    We selected this model group because it was the best at precision at 10% (i.e. the model group consistently chose facilities will fail inspections at the top 10% of the risk). With the plot above you could decide to double your resources (maybe hiring more inspectors so you could inspect 20% of the facilities) and with this model you will double the detection of facilities that will fail inspections (from ~18% to ~30% in recall) with only a few percent points less of precision ~45% to ~40% (this means that 6 in 10 facilities that the inspectors visit will pass the inspection). You could also go the other way around: if you reduce the length of the list from 10% to 5%, well you will gain a little of precision, but your recall will be ~5%.
+    We selected this model group because it was the best at precision
+    at 10% (i.e. the model group consistently chose facilities will
+    fail inspections at the top 10% of the risk). With the plot above
+    you could decide to double your resources (maybe hiring more
+    inspectors so you could inspect 20% of the facilities) and with
+    this model you will double the detection of facilities that will
+    fail inspections (from ~18% to ~30% in recall) with only a few
+    percent points less of precision ~45% to ~40% (this means that 6
+    in 10 facilities that the inspectors visit will pass the
+    inspection). You could also go the other way around: if you reduce
+    the length of the list from 10% to 5%, well you will gain a little
+    of precision, but your recall will be ~5%.
 
-## Footnotes
 
-<sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> If you assume a *uniform* distribution, it will make sense to select facilities at random.
 
-<sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> The underlying assumption here is that the City of Chicago is *currently* doing *random* selection for the inspections. This is not true (and probably unfair). In a real project, you will setup a **real** baseline and you will compare your models against it. This baseline could be a rule or a model.
+[^1]: If you assume a *uniform* distribution, it will make sense to select facilities at random.
 
-<sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> You need to check this! Fortunately, `triage` allows you to try several options here, so, if you think that this is too high or too low you can change that and fit your needs.
+[^2]: The underlying assumption here is that the City of Chicago is *currently* doing *random* selection for the inspections. This is not true (and probably unfair). In a real project, you will setup a **real** baseline and you will compare your models against it. This baseline could be a rule or a model.
 
-<sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> Think about it: we **can’t** learn the relationship between the *features* and the *label* if we **don't know** the label.
+[^3]: You need to check this! Fortunately, `triage` allows you to try several options here, so, if you think that this is too high or too low you can change that and fit your needs.
 
-<sup><a id="fn.5" class="footnum" href="#fnr.5">5</a></sup> In order to reduce the computational time that takes running this tutorial, we sample the facilities. If you want to train in the complete set of **active** ones, please remove the `CTE` part of the query and the `WHERE` clause referring the `bucket`.
+[^4]: Think about it: we **can’t** learn the relationship between the *features* and the *label* if we **don't know** the label.
 
-<sup><a id="fn.6" class="footnum" href="#fnr.6">6</a></sup> The formulas are, for `precision@k`, is the proportion of facilities correctly identified in the top-\(k\) facilities ranked by risk:
+[^5]: In order to reduce the computational time that takes running this tutorial, we sample the facilities. If you want to train in the complete set of **active** ones, please remove the `CTE` part of the query and the `WHERE` clause referring the `bucket`.
 
-\[ precision@k = \frac{TP \in k}{k} \]
+[^6]: The formulas are, for `precision@k`, is the proportion of facilities correctly identified in the top-\(k\) facilities ranked by risk:
 
-This is a measure about *how efficiently* are your system using your resources.
+      $$
+      precision@k = \frac{TP \in k}{k}
+      $$
 
-`recall@k`, in the other hand is the proportion of *all* the facilities that are risk found in the top-\(k\)
+      This is a measure about *how efficiently* are your system using your resources.
 
-\[ recall@k = \frac{TP \in k}{TP} \]
+       `recall@k`, in the other hand is the proportion of *all* the facilities that are risk found in the top-\(k\)
 
-*recall* is a measure about the *coverage* of your system, i.e. *how good is identifying in the top-\(k\) the facilities at risk*.
+      $$
+      recall@k = \frac{TP \in k}{TP}
+      $$
 
-One possible variation of this is to **only** include in the denominator the *labeled* rows in \(k\). **This the approach** used by `triage`.
+      *recall* is a measure about the *coverage* of your system, i.e. *how good is identifying in the top-\(k\) the facilities at risk*.
 
-<sup><a id="fn.7" class="footnum" href="#fnr.7">7</a></sup> We will explore how to one way to tackle this in the advance part of this tutorial.
+      One possible variation of this is to **only** include in the
+      denominator the *labeled* rows in \(k\). **This is the approach** used by `triage`.
 
-<sup><a id="fn.8" class="footnum" href="#fnr.8">8</a></sup> The flags `-no-save-predictions` and `profile` are not necessary but useful. The first one configure triage to not store the predictions (at this stage you don't need them, and you can always could recreate them from the model and the matrix). This will save you execution time. The flag `profile` stores the *execution* profile times in a file, so you can check which models or matrices are taking a lot of time on been built.
+[^7]: We will explore how to one way to tackle this in the advance part of this tutorial.
 
-<sup><a id="fn.9" class="footnum" href="#fnr.9">9</a></sup> From a more mathematical point of view: Your data actually reflects the empirical probability: \(P(violation|inspected)\), i.e. the probability of find a violation given that the facility is inspected. But the probability that you want is \(P(violation)\) (yes, I know that there are no such things as unconditional probabilities, please bare with me),i.e. the probability that the facility is in violation.
+[^8]: The flags `-no-save-predictions` and `profile` are not necessary but useful. The first one configure triage to not store the predictions (at this stage you don't need them, and you can always could recreate them from the model and the matrix). This will save you execution time. The flag `profile` stores the *execution* profile times in a file, so you can check which models or matrices are taking a lot of time on been built.
 
-<sup><a id="fn.10" class="footnum" href="#fnr.10">10</a></sup> You should see that this assumption is very dangerous in other settings, for example, crime prediction.
+[^9]: From a more mathematical point of view: Your data actually reflects the empirical probability: \(P(violation|inspected)\), i.e. the probability of find a violation given that the facility is inspected. But the probability that you want is \(P(violation)\) (yes, I know that there are no such things as unconditional probabilities, please bare with me),i.e. the probability that the facility is in violation.
 
-<sup><a id="fn.11" class="footnum" href="#fnr.11">11</a></sup> This assumes that you are in a GNU/Linux machine, if not (you should reconsider what are you doing with your life) you should change the ip address (`0.0.0.0`) and use the one from the docker virtual machine.
+[^10]: You should see that this assumption is very dangerous in other settings, for example, crime prediction.
+
+[^11]: This assumes that you are in a GNU/Linux machine, if not (you should reconsider what are you doing with your life) you should change the ip address (`0.0.0.0`) and use the one from the docker virtual machine.
