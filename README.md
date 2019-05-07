@@ -53,11 +53,13 @@ Once you've defined your experiment, you can run it from the command-line or fro
 
 The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example_database.yaml](example_database.yaml)), so with this you can omit any mention of the database.
 
+CLI:
 ```bash
 
 triage experiment example/config/experiment.yaml
 ```
 
+Python:
 ```python
 from triage.experiments import SingleThreadedExperiment
 
@@ -69,7 +71,7 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
-This are a plethora of options available for experiment running, which we won't cover here in the README. See details in the [Running an Experiment](https://dssg.github.io/triage/experiments/running/) page.
+There are a plethora of options available for experiment running, affecting things like parallelization, storage, and more. These options are detailed in the [Running an Experiment](https://dssg.github.io/triage/experiments/running/) page.
 
 
 ## Triage Phase Details
