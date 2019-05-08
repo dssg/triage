@@ -1,7 +1,6 @@
 import logging
 
-from triage.component.architect.database_reflection import table_has_data
-from triage.database_reflection import table_row_count, table_exists
+from triage.database_reflection import table_row_count, table_exists, table_has_data
 
 
 DEFAULT_ACTIVE_STATE = "active"

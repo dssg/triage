@@ -1,7 +1,6 @@
 import importlib
 import logging
 from itertools import permutations
-from datetime import datetime
 from textwrap import dedent
 
 from sklearn.model_selection import ParameterGrid
@@ -10,7 +9,7 @@ from triage.component import architect
 from triage.component import catwalk
 from triage.component.timechop import Timechop
 
-from triage.util.conf import convert_str_to_relativedelta
+from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.validation_primitives import string_is_tablesafe
 
 
@@ -34,9 +33,6 @@ class Validator(object):
 
 class TemporalValidator(Validator):
     def _run(self, temporal_config):
-        def dt_from_str(dt_str):
-            return datetime.strptime(dt_str, "%Y-%m-%d")
-
         splits = []
         try:
             chopper = Timechop(

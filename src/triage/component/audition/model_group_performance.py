@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from .plotting import plot_cats
-from .utils import str_in_sql
+from triage.util.sql import str_in_sql
 
 
 class ModelGroupPerformancePlotter(object):

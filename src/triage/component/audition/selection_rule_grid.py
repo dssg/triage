@@ -2,7 +2,7 @@ from itertools import product
 import logging
 
 from .selection_rules import BoundSelectionRule
-from .utils import make_list
+from triage.util.conf import make_list
 
 
 def _expand_param_sets(rule_instances, values):

@@ -4,6 +4,10 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
 
+def make_list(a):
+    return [a] if not isinstance(a, list) else a
+
+
 def dt_from_str(dt_str):
     if isinstance(dt_str, datetime):
         return dt_str

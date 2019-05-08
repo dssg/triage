@@ -5,6 +5,7 @@ from itertools import product, chain
 import sqlalchemy.sql.expression as ex
 import re
 from descriptors import cachedproperty
+from triage.util.conf import make_list
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 from .imputations import (
@@ -26,10 +27,6 @@ available_imputations = {
     "binary_mode": ImputeBinaryMode,
     "error": ImputeError,
 }
-
-
-def make_list(a):
-    return [a] if not isinstance(a, list) else a
 
 
 def make_tuple(a):

@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from .utils import str_in_sql
+from triage.util.sql import str_in_sql
 from .metric_directionality import sql_rank_order
 from .plotting import plot_cats, plot_bounds
 

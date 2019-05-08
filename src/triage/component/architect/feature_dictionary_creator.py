@@ -1,5 +1,5 @@
 import logging
-from triage.component.architect.utils import str_in_sql
+from triage.util.sql import str_in_sql
 from triage.util.structs import FeatureNameList
 
 

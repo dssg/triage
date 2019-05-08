@@ -1,11 +1,18 @@
 import logging
 
-import pandas
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
-from triage.component.catwalk.utils import (filename_friendly_hash, get_subset_table_name)
+from triage.util.hash import filename_friendly_hash
 from triage.component.results_schema import Subset
+
+
+def get_subset_table_name(subset_config):
+    return "subset_{}_{}".format(
+        subset_config.get("name", "default"),
+        filename_friendly_hash(subset_config),
+    )
+
 
 class Subsetter(object):
     def __init__(
