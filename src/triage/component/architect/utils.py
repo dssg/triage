@@ -1,8 +1,6 @@
 import functools
 import operator
 
-import sqlalchemy
-
 from triage.util.structs import FeatureNameList
 
 
@@ -25,7 +23,3 @@ def feature_list(feature_dictionary):
             (feature_dictionary[key] for key in feature_dictionary.keys()),
         )
     ))
-
-
-def retry_if_db_error(exception):
-    return isinstance(exception, sqlalchemy.exc.OperationalError)
