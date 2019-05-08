@@ -19,6 +19,8 @@ create or replace function nuke_triage()
     execute 'drop table if exists results_schema_versions';
     raise notice 'results_schema_versions deleted';
 
+    execute 'drop type if exists experimentrunstatus';
+    raise notice 'experimentrunstatus type deleted';
 
 select into query
     string_agg(
