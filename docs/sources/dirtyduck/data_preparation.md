@@ -106,7 +106,7 @@ The transformation "road" that we will take in this tutorial is as follows:
     semantic schema: `events` and `entities`.
 4.  Run `triage`. It will create several schemas (`model_metadata`, `test_results`, `train_results`).
 
-![img](images/data_road.png)
+![img](figures/data_road.png)
 
 <a id="orga5ba5d1"></a>
 
@@ -1059,7 +1059,7 @@ We will generate a few plots, just to know:
 
 First, we will try the answer the question: *how many inspections are realized every month?*
 
-![img](./images/inspections_over_time.png "Number of inspections per month across our whole dataset")
+![img](./images/EDA/inspections_over_time.png "Number of inspections per month across our whole dataset")
 
 
 ### Number of facilities *inspected* over time
@@ -1073,14 +1073,14 @@ One question, that is useful to answer is: Are there facilities that are inspect
     contain **all** the facilities in Chicago. This will have an effect
     on the modeling stage.
 
-![img](./images/facilities_inspected_over_time.png "Number of unique facilities inspected every month.")
+![img](./images/EDA/facilities_inspected_over_time.png "Number of unique facilities inspected every month.")
 
 
 ### Number of failed inspections over time
 
 What is the proportion of inspections every month that actually end in a failed inspection?
 
-![img](./images/failed_inspections_over_time.png "Number of failed inspections every month.")
+![img](./images/EDA/failed_inspections_over_time.png "Number of failed inspections every month.")
 
 
 ### Number of facilities with failed inspections over time
@@ -1088,7 +1088,7 @@ What is the proportion of inspections every month that actually end in a failed 
 Now let's see the behavior of the *outcomes* of the inspection across
 time. First just if the inspection failed.
 
-![img](./images/facilities_with_inspections_failed_over_time.png "Number of unique facilities with failed inspections every month.")
+![img](./images/EDA/facilities_with_inspections_failed_over_time.png "Number of unique facilities with failed inspections every month.")
 
 
 ### Number of severe violations found in a failed inspection over time
@@ -1096,12 +1096,12 @@ time. First just if the inspection failed.
 Finally let's analyze the evolution of failed inspections with severe
 violations (violation code in 15-29)
 
-![img](./images/failed_inspections_severe_violations_over_time.png "Number of failed inspection with critical violation found")
+![img](./images/EDA/failed_inspections_severe_violations_over_time.png "Number of failed inspection with critical violation found")
 
 
 ### Number of facilities with severe violations found in a failed inspection over time
 
-![img](./images/facilities_with_failed_inspections_severe_violations_over_time.png "Number of facilities which failed inspections with severe violations.")
+![img](./images/EDA/facilities_with_failed_inspections_severe_violations_over_time.png "Number of facilities which failed inspections with severe violations.")
 
 This few plots give us a sense of how the data behaves and will help
 us in detect weird bugs or model-behavior later.
@@ -1109,14 +1109,12 @@ us in detect weird bugs or model-behavior later.
 [^1]: If you want to try different columns (or you don't remember
     which columns try `\d raw.inspectios` first
 
-[^2]:  We
-    are following the [event's definition from
+[^2]:  We are following the [event's definition from
     physics](https://en.wikipedia.org/wiki/Event_(relativity)): "an
     event is the instantaneous physical situation or occurrence
     associated with a point in spacetime"
 
-[^3]:  It
-    will make your life easier and most of the Machine Learning
+[^3]:  It will make your life easier and most of the Machine Learning
     algorithms only accept data in matrix form (i.e. one big table)
 
 [^4]: Verbatim from the datasource documentation.
