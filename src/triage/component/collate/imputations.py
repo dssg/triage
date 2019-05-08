@@ -1,3 +1,6 @@
+IMPUTATION_COLNAME_SUFFIX = "_imp"
+
+
 class BaseImputation(object):
     """Base class for various imputation methods
     """
@@ -25,17 +28,17 @@ class BaseImputation(object):
 
     def imputed_flag_select_and_alias(self):
         if not self.noflag:
-            template = """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END""" 
-            alias_template = "{base_for_impflag}_imp"
+            template = """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END"""
+            alias_template = "{base_for_impflag}{suffix}"
             if self.column_base_for_impflag:
                 return (
                     template.format(col=self.column),
-                    alias_template.format(base_for_impflag=self.column_base_for_impflag)
+                    alias_template.format(base_for_impflag=self.column_base_for_impflag, suffix=IMPUTATION_COLNAME_SUFFIX)
                 )
             else:
                 return (
                     template.format(col=self.column),
-                    alias_template.format(base_for_impflag=self.column)
+                    alias_template.format(base_for_impflag=self.column, suffix=IMPUTATION_COLNAME_SUFFIX)
                 )
 
         else:

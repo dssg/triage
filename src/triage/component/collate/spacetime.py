@@ -1,90 +1,356 @@
 # -*- coding: utf-8 -*-
 from itertools import chain
 import sqlalchemy.sql.expression as ex
+import logging
+
+from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
+from triage.component.architect.utils import remove_schema_from_table_name
+from triage.database_reflection import table_exists
+from triage.component.architect.feature_block import FeatureBlock
+from .from_obj import FromObj
 from descriptors import cachedproperty
 
-from .sql import make_sql_clause
-from .collate import Aggregation
+from .imputations import (
+    ImputeMean,
+    ImputeConstant,
+    ImputeZero,
+    ImputeZeroNoFlag,
+    ImputeNullCategory,
+    ImputeBinaryMode,
+    ImputeError,
+    IMPUTATION_COLNAME_SUFFIX
+)
+
+available_imputations = {
+    "mean": ImputeMean,
+    "constant": ImputeConstant,
+    "zero": ImputeZero,
+    "zero_noflag": ImputeZeroNoFlag,
+    "null_category": ImputeNullCategory,
+    "binary_mode": ImputeBinaryMode,
+    "error": ImputeError,
+}
+
+AGGFUNCS_NEED_MULTIPLE_VALUES = set(['stddev', 'stddev_samp', 'variance', 'var_samp'])
 
 
-class SpacetimeAggregation(Aggregation):
+class SpacetimeAggregation(FeatureBlock):
     def __init__(
         self,
         aggregates,
         groups,
-        intervals,
         from_obj,
-        dates,
-        state_table,
-        state_group=None,
+        intervals=None,
+        entity_column=None,
         prefix=None,
         suffix=None,
-        schema=None,
         date_column=None,
         output_date_column=None,
-        input_min_date=None,
-        join_with_cohort_table=False,
+        drop_interim_tables=True,
+        *args,
+        **kwargs
     ):
         """
         Args:
+            aggregates: collection of Aggregate objects.
+            from_obj: defines the from clause, e.g. the name of the table. can use
+            groups: a list of expressions to group by in the aggregation or a dictionary
+                pairs group: expr pairs where group is the alias (used in column names)
+            entity_column: the group level found in the state table (e.g., "entity_id")
+            prefix: prefix for aggregation tables and column names, defaults to from_obj
+            suffix: suffix for aggregation table, defaults to "aggregation"
             intervals: the intervals to aggregate over. either a list of
                 datetime intervals, e.g. ["1 month", "1 year"], or
                 a dictionary of group : intervals pairs where
                 group is a group in groups and intervals is a collection
                 of datetime intervals, e.g. {"address_id": ["1 month", "1 year]}
-            dates: list of PostgreSQL date strings,
-                e.g. ["2012-01-01", "2013-01-01"]
-            state_table: schema.table to query for valid state_group/date combinations
-            state_group: the group level found in the state table (e.g., "entity_id")
+            entity_column: the group level found in the cohort table (e.g., "entity_id")
             date_column: name of date column in from_obj, defaults to "date"
             output_date_column: name of date column in aggregated output, defaults to "date"
-            input_min_date: minimum date for which rows shall be included, defaults
-                to no absolute time restrictions on the minimum date of included rows
-
-        For all other arguments see collate.Aggregation
         """
-        Aggregation.__init__(
-            self,
-            aggregates=aggregates,
-            from_obj=from_obj,
-            groups=groups,
-            state_table=state_table,
-            state_group=state_group,
-            prefix=prefix,
-            suffix=suffix,
-            schema=schema,
+        super().__init__(*args, **kwargs)
+        self.groups = (
+            groups if isinstance(groups, dict) else {str(g): g for g in groups}
         )
-
         if isinstance(intervals, dict):
             self.intervals = intervals
-        else:
+        elif intervals:
             self.intervals = {g: intervals for g in self.groups}
-        self.dates = dates
+        else:
+            self.intervals = {g: ["all"] for g in self.groups}
+
         self.date_column = date_column if date_column else "date"
         self.output_date_column = output_date_column if output_date_column else "date"
-        self.input_min_date = input_min_date
-        self.join_with_cohort_table = join_with_cohort_table
+        self.aggregates = aggregates
+        self.from_obj = make_sql_clause(from_obj, ex.text)
+        self.entity_column = entity_column if entity_column else "entity_id"
+        self.prefix = prefix if prefix else self.features_table_name_without_schema
+        self.drop_interim_tables = drop_interim_tables
 
-    def _state_table_sub(self):
-        """Helper function to ensure we only include state table records
-        in our set of input dates and after the input_min_date.
+    def get_table_name(self, group=None, imputed=False):
         """
-        datestr = ", ".join(["'%s'::date" % dt for dt in self.dates])
-        mindtstr = (
-            " AND %s >= '%s'::date" % (self.output_date_column, self.input_min_date)
-            if self.input_min_date is not None
-            else ""
+        Returns name for table for the given group
+        """
+        if imputed:
+            return self.final_feature_table_name
+        prefix = self.features_table_name_without_schema
+        if group is None:
+            name = '"%s_%s"' % (prefix, "aggregation")
+        else:
+            name = '"%s"' % to_sql_name("%s_%s" % (prefix, group))
+        schema = '"%s".' % to_sql_name(self.features_schema_name) if self.features_schema_name else ""
+        return "%s%s" % (schema, name)
+
+    def get_drops(self):
+        """
+        Generate drop queries for this aggregation
+
+        Returns: a dictionary of group : drop pairs where
+            group are the same keys as groups
+            drop is a raw drop table query for the corresponding table
+        """
+        return [
+            "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
+            for group in self.groups
+        ]
+
+    def get_drop(self, imputed=False):
+        """
+        Generate a drop table statement for the aggregation table
+        Returns: string sql query
+        """
+        return "DROP TABLE IF EXISTS %s" % self.get_table_name(imputed=imputed)
+
+    def get_create_schema(self):
+        """
+        Generate a create schema statement
+        """
+        if self.features_schema_name is not None:
+            return "CREATE SCHEMA IF NOT EXISTS %s" % self.features_schema_name
+
+    def imputed_flag_column_names(self):
+        # format the query that gets column names,
+        # excluding indices from result
+        feature_names_query = """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = '{table}' AND
+                  table_schema = '{schema}' AND
+                  column_name like '%%{suffix}'
+        """.format(
+            table=remove_schema_from_table_name(self.get_table_name(imputed=True)),
+            schema=self.features_schema_name or 'public',
+            suffix=IMPUTATION_COLNAME_SUFFIX
         )
-        return """(
-        SELECT *
-        FROM {st}
-        WHERE {datecol} IN ({datestr})
-        {mindtstr})""".format(
-            st=self.state_table,
-            datecol=self.output_date_column,
-            datestr=datestr,
-            mindtstr=mindtstr,
+        feature_names = [
+            row[0]
+            for row in self.db_engine.execute(feature_names_query)
+        ]
+        return feature_names
+
+    def _basecol_of_impflag(self, impflag_col):
+        # we don't want to add redundant imputation flags. for a given source
+        # column and time interval, all of the functions will have identical 
+        # sets of rows that needed imputation
+        # to reliably merge these, we lookup the original aggregate that produced
+        # the function, and see its available functions. we expect exactly one of
+        # these functions to end the column name and remove it if so
+        if hasattr(self.colname_aggregate_lookup[impflag_col], 'functions'):
+            agg_functions = self.colname_aggregate_lookup[impflag_col].functions
+            used_function = next(funcname for funcname in agg_functions if impflag_col.endswith(funcname))
+            if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+                return impflag_col
+            else:
+                return impflag_col.rstrip('_' + used_function)
+        else:
+            logging.warning("Imputation flag merging is not implemented for "
+                            "AggregateExpression objects that don't define an aggregate "
+                            "function (e.g. composites)")
+            return impflag_col
+
+    def _get_impute_select(self, impute_cols, nonimpute_cols, partitionby=None):
+
+        imprules = self.get_imputation_rules()
+        used_impflags = set()
+
+        # check if we're missing any columns relative to the full set and raise an
+        # exception if we are
+        missing_cols = set(imprules.keys()) - set(nonimpute_cols + impute_cols)
+        if len(missing_cols) > 0:
+            raise ValueError("Missing columns in get_impute_create: %s" % missing_cols)
+
+        # key columns and date column
+        query = ""
+
+        # pre-sort and iterate through the combined set to ensure column order
+        for col in sorted(nonimpute_cols + impute_cols):
+            # just pass through columns that don't require imputation (no nulls found)
+            if col in nonimpute_cols:
+                query += '\n,"%s"' % col
+
+            # for columns that do require imputation, include SQL to do the imputation work
+            # and a flag for whether the value was imputed
+            if col in impute_cols:
+                impute_rule = imprules[col]
+
+                try:
+                    imputer = available_imputations[impute_rule["type"]]
+                except KeyError as err:
+                    raise ValueError(
+                        "Invalid imputation type %s for column %s"
+                        % (impute_rule.get("type", ""), col)
+                    ) from err
+
+                impflag_basecol = self._basecol_of_impflag(col)
+                imputer = imputer(column=col, column_base_for_impflag=impflag_basecol, partitionby=partitionby, **impute_rule)
+
+                query += "\n,%s" % imputer.to_sql()
+                if not imputer.noflag:
+                    # Add an imputation flag for non-categorical columns (this is handeled
+                    # for categorical columns with a separate NULL category)
+                    # but only add it if another functionally equivalent impflag hasn't already been added
+                    impflag_select, impflag_alias = imputer.imputed_flag_select_and_alias()
+                    if impflag_alias not in used_impflags:
+                        used_impflags.add(impflag_alias)
+                        query += "\n,%s as \"%s\" " % (impflag_select, impflag_alias)
+
+        return query
+
+    def get_index(self, imputed=False):
+        return "CREATE INDEX ON {} ({})".format(
+            self.get_table_name(imputed=imputed),
+            self.entity_column,
         )
+
+    def get_creates(self):
+        return {
+            group: CreateTableAs(self.get_table_name(group), next(iter(sels)).limit(0))
+            for group, sels in self.get_selects().items()
+        }
+
+    # implement the FeatureBlock interface
+    @property
+    def feature_columns(self):
+        """
+        The list of feature columns in the final, postimputation table
+
+        Should exclude any index columns (e.g. entity id, date)
+        """
+        # start with all columns defined in the feature block.
+        # this is important as we don't want to return columns in the final feature table that
+        # aren't defined in the feature block (e.g. from an earlier run with more features);
+        # this will exclude impflag columns as they are decided after initial features are written
+        feature_columns = self.feature_columns_sans_impflags
+        impflag_columns = set()
+
+        # our list of imputation flag columns comes from the database,
+        # but it may contain columns from prior runs that we didn't specify
+        imputation_flag_feature_cols = self.imputed_flag_column_names()
+        for feature_column in feature_columns:
+            impflag_name = self._basecol_of_impflag(feature_column) + IMPUTATION_COLNAME_SUFFIX
+            if impflag_name in imputation_flag_feature_cols:
+                impflag_columns.add(impflag_name)
+        return feature_columns | impflag_columns
+
+    @property
+    def preinsert_queries(self):
+        """
+        Return all queries that should be run before inserting any data.
+
+        Consists of all queries to drop tables from previous runs, as well as all creates
+        needed for this run.
+
+        Returns a list of queries/executable statements
+        """
+        preinserts = [self.get_drop()] + self.get_drops() + list(self.get_creates().values())
+        create_schema = self.get_create_schema()
+        if create_schema:
+            preinserts.insert(0, create_schema)
+        return preinserts
+
+    @property
+    def insert_queries(self):
+        """
+        Return all inserts to populate this data. Each query in this list should be parallelizable.
+
+        Returns a list of queries/executable statements
+        """
+        return [
+            InsertFromSelect(self.get_table_name(group), sel)
+            for group, sels in self.get_selects().items()
+            for sel in sels
+        ]
+
+    @property
+    def postinsert_queries(self):
+        """
+        Return all queries that should be run after inserting all data
+
+        Consists of indexing queries for each group table as well as a
+        query to create the aggregation table that encompasses all groups.
+
+        Returns a list of queries/executable statements
+        """
+        postinserts = [
+            "CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby)
+            for group, groupby in self.groups.items()
+        ] + [self.get_create(), self.get_index()]
+        if self.drop_interim_tables:
+            postinserts += self.get_drops()
+        return postinserts
+
+    @property
+    def imputation_queries(self):
+        """
+        Return all queries that should be run to fill in missing data with imputed values.
+
+        Returns a list of queries/executable statements
+        """
+        if not self.cohort_table_name:
+            logging.warning(
+                "No cohort table defined in feature_block, cannot create imputation table for %s",
+                self.final_feature_table_name
+            )
+            return []
+
+        if not table_exists(self.cohort_table_name, self.db_engine):
+            logging.warning(
+                "Cohort table %s does not exist, cannot create imputation table for %s",
+                self.cohort_table_name,
+                self.final_feature_table_name
+            )
+            return []
+
+        with self.db_engine.begin() as conn:
+            results = conn.execute(self.find_nulls())
+            null_counts = results.first().items()
+            impute_cols = [col for (col, val) in null_counts if val > 0]
+            nonimpute_cols = [col for (col, val) in null_counts if val == 0]
+            imp_queries = [
+                self.get_drop(imputed=True),  # clear out old imputed data
+                self._get_impute_create(impute_cols, nonimpute_cols),  # create the imputed table
+                self.get_index(imputed=True),  # index the imputed table
+            ]
+            if self.drop_interim_tables:
+                imp_queries.append(self.get_drop(imputed=False))  # drop the old aggregation table
+            return imp_queries
+
+    def preprocess(self):
+        create_schema = self.get_create_schema()
+
+        if create_schema is not None:
+            with self.db_engine.begin() as conn:
+                conn.execute(create_schema)
+
+        if self.materialize_subquery_fromobjs:
+            # materialize from obj
+            from_obj = FromObj(
+                from_obj=self.from_obj.text,
+                name=f"{self.features_schema_name}.{self.prefix}",
+                knowledge_date_column=self.date_column
+            )
+            from_obj.maybe_materialize(self.db_engine)
+            self.from_obj = from_obj.table
 
     @cachedproperty
     def colname_aggregate_lookup(self):
@@ -96,9 +362,8 @@ class SpacetimeAggregation(Aggregation):
         for group, groupby in self.groups.items():
             intervals = self.intervals[group]
             for interval in intervals:
-                date = self.dates[0]
                 for agg in self.aggregates:
-                    for col in self._cols_for_aggregate(agg, group, interval, date):
+                    for col in self._cols_for_aggregate(agg, group, interval, None):
                         if col.name in lookup:
                             raise ValueError("Duplicate feature column name found: ", col.name)
                         lookup[col.name] = agg
@@ -154,6 +419,19 @@ class SpacetimeAggregation(Aggregation):
             ]
         )
 
+    def index_query(self, imputed=False):
+        return "CREATE INDEX ON {} ({}, {})".format(
+            self.get_table_name(imputed=imputed),
+            self.entity_column,
+            self.output_date_column,
+        )
+
+    def index_columns(self):
+        return sorted(
+            [group for group in self.groups.keys()]
+            + [self.output_date_column]
+        )
+
     def get_selects(self):
         """
         Constructs select queries for this aggregation
@@ -167,7 +445,7 @@ class SpacetimeAggregation(Aggregation):
         for group, groupby in self.groups.items():
             intervals = self.intervals[group]
             queries[group] = []
-            for date in self.dates:
+            for date in self.as_of_dates:
                 columns = [
                     make_sql_clause(groupby, ex.text),
                     ex.literal_column("'%s'::date" % date).label(
@@ -181,10 +459,10 @@ class SpacetimeAggregation(Aggregation):
                 )
 
                 gb_clause = make_sql_clause(groupby, ex.literal_column)
-                if self.join_with_cohort_table:
+                if not self.features_ignore_cohort:
                     from_obj = ex.text(
                         f"(select from_obj.* from ("
-                        f"(select * from {self.from_obj}) from_obj join {self.state_table} cohort on ( "
+                        f"(select * from {self.from_obj}) from_obj join {self.cohort_table_name} cohort on ( "
                         "cohort.entity_id = from_obj.entity_id and "
                         f"cohort.{self.output_date_column} = '{date}'::date)"
                         ")) cohorted_from_obj")
@@ -240,9 +518,9 @@ class SpacetimeAggregation(Aggregation):
             w += "AND {date_column} >= {min_date}".format(
                 date_column=self.date_column, min_date=min_date
             )
-        if self.input_min_date is not None:
+        if self.feature_start_time is not None:
             w += "AND {date_column} >= '{bot}'::date".format(
-                date_column=self.date_column, bot=self.input_min_date
+                date_column=self.date_column, bot=self.feature_start_time
             )
         return ex.text(w)
 
@@ -269,7 +547,7 @@ class SpacetimeAggregation(Aggregation):
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
-        for date in self.dates:
+        for date in self.as_of_dates:
             columns = groups + [
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
@@ -304,9 +582,9 @@ class SpacetimeAggregation(Aggregation):
         SpacetimeAggregations ensure that no intervals extend beyond the absolute
         minimum time.
         """
-        if self.input_min_date is not None:
+        if self.feature_start_time is not None:
             all_intervals = set(*self.intervals.values())
-            for date in self.dates:
+            for date in self.as_of_dates:
                 for interval in all_intervals:
                     if interval == "all":
                         continue
@@ -314,23 +592,23 @@ class SpacetimeAggregation(Aggregation):
                     # it this way allows for nicer error messages.
                     r = conn.execute(
                         "select ('%s'::date - '%s'::interval) < '%s'::date"
-                        % (date, interval, self.input_min_date)
+                        % (date, interval, self.feature_start_time)
                     )
                     if r.fetchone()[0]:
                         raise ValueError(
-                            "date '%s' - '%s' is before input_min_date ('%s')"
-                            % (date, interval, self.input_min_date)
+                            "date '%s' - '%s' is before feature_start_time ('%s')"
+                            % (date, interval, self.feature_start_time)
                         )
                     r.close()
-        for date in self.dates:
+        for date in self.as_of_dates:
             r = conn.execute(
                 "select count(*) from %s where %s = '%s'::date"
-                % (self.state_table, self.output_date_column, date)
+                % (self.cohort_table_name, self.output_date_column, date)
             )
             if r.fetchone()[0] == 0:
                 raise ValueError(
                     "date '%s' is not present in states table ('%s')"
-                    % (date, self.state_table)
+                    % (date, self.cohort_table_name)
                 )
             r.close()
 
@@ -356,13 +634,13 @@ class SpacetimeAggregation(Aggregation):
 
         return query_template.format(
             cols=cols_sql,
-            state_tbl=self._state_table_sub(),
+            state_tbl=self._cohort_table_sub(),
             aggs_tbl=self.get_table_name(imputed=imputed),
-            group=self.state_group,
+            group=self.entity_column,
             date_col=self.output_date_column,
         )
 
-    def get_impute_create(self, impute_cols, nonimpute_cols):
+    def _get_impute_create(self, impute_cols, nonimpute_cols):
         """
         Generates the CREATE TABLE query for the aggregation table with imputation.
 
@@ -385,11 +663,22 @@ class SpacetimeAggregation(Aggregation):
         )
 
         # imputation starts from the state table and left joins into the aggregation table
-        query += "\nFROM %s t1" % self._state_table_sub()
+        query += "\nFROM %s t1" % self._cohort_table_sub()
         query += "\nLEFT JOIN %s t2 USING(%s, %s)" % (
             self.get_table_name(),
-            self.state_group,
+            self.entity_column,
             self.output_date_column,
         )
 
         return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)
+
+    @property
+    def feature_columns_sans_impflags(self):
+        columns = chain.from_iterable(
+            chain.from_iterable(
+                self._get_aggregates_sql(interval, "2016-01-01", group)
+                for interval in self.intervals[group]
+            )
+            for (group, groupby) in self.groups.items()
+        )
+        return {label.name for label in columns}

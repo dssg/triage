@@ -10,11 +10,11 @@ from sqlalchemy import create_engine
 from triage.component.results_schema import Base
 from triage.component.timechop import Timechop
 from triage.component.architect.features import (
-    FeatureGenerator,
-    FeatureDictionaryCreator,
     FeatureGroupCreator,
     FeatureGroupMixer,
+    FeatureDictionary,
 )
+from triage.component.architect.feature_block_generators import feature_blocks_from_config
 from triage.component.architect.label_generators import LabelGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.architect.planner import Planner
@@ -170,14 +170,6 @@ def basic_integration_test(
                 db_engine=db_engine, query=sample_config()["label_config"]["query"]
             )
 
-            feature_generator = FeatureGenerator(
-                db_engine=db_engine, features_schema_name="features", replace=True
-            )
-
-            feature_dictionary_creator = FeatureDictionaryCreator(
-                db_engine=db_engine, features_schema_name="features"
-            )
-
             feature_group_creator = FeatureGroupCreator(feature_group_create_rules)
 
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
@@ -227,12 +219,10 @@ def basic_integration_test(
                 label_timespans=["6months"],
             )
 
-            # create feature table tasks
-            # we would use FeatureGenerator#create_all_tables but want to use
-            # the tasks dict directly to create a feature dict
-            aggregations = feature_generator.aggregations(
-                feature_aggregation_config=[
-                    {
+            feature_blocks = feature_blocks_from_config(
+                {
+                    'cat': {
+                        "feature_generator_type": "spacetime_aggregation",
                         "prefix": "cat",
                         "from_obj": "cat_complaints",
                         "knowledge_date_column": "as_of_date",
@@ -246,7 +236,8 @@ def basic_integration_test(
                         "intervals": ["1y"],
                         "groups": ["entity_id"],
                     },
-                    {
+                    'dog': {
+                        "feature_generator_type": "spacetime_aggregation",
                         "prefix": "dog",
                         "from_obj": "dog_complaints",
                         "knowledge_date_column": "as_of_date",
@@ -257,34 +248,23 @@ def basic_integration_test(
                         },
                         "aggregates": [
                             {"quantity": "dog_sightings", "metrics": ["count", "avg"]}
+
                         ],
                         "intervals": ["1y"],
                         "groups": ["entity_id"],
                     },
-                ],
-                feature_dates=all_as_of_times,
-                state_table=entity_date_table_generator.entity_date_table_name,
-            )
-            feature_table_agg_tasks = feature_generator.generate_all_table_tasks(
-                aggregations, task_type="aggregation"
-            )
-
-            # create feature aggregation tables
-            feature_generator.process_table_tasks(feature_table_agg_tasks)
-
-            feature_table_imp_tasks = feature_generator.generate_all_table_tasks(
-                aggregations, task_type="imputation"
+                },
+                as_of_dates=all_as_of_times,
+                cohort_table=entity_date_table_generator.entity_date_table_name,
+                db_engine=db_engine,
+                features_schema_name='features',
             )
 
-            # create feature imputation tables
-            feature_generator.process_table_tasks(feature_table_imp_tasks)
+            for feature_block in feature_blocks:
+                feature_block.run_preimputation()
+                feature_block.run_imputation()
 
-            # build feature dictionaries from feature tables and
-            # subsetting config
-            master_feature_dict = feature_dictionary_creator.feature_dictionary(
-                feature_table_names=feature_table_imp_tasks.keys(),
-                index_column_lookup=feature_generator.index_column_lookup(aggregations),
-            )
+            master_feature_dict = FeatureDictionary(feature_blocks)
 
             feature_dicts = feature_group_mixer.generate(
                 feature_group_creator.subsets(master_feature_dict)

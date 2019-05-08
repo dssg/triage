@@ -4,6 +4,8 @@ from functools import partial
 from pebble import ProcessPool
 from multiprocessing.reduction import ForkingPickler
 
+from triage.util.db import run_statements
+
 from triage.component.catwalk.utils import Batch
 
 from triage.experiments import ExperimentBase
@@ -72,21 +74,16 @@ class MultiCoreExperiment(ExperimentBase):
                 for serial_task in batch.tasks:
                     self.model_train_tester.process_task(**serial_task)
 
-    def process_query_tasks(self, query_tasks):
+    def process_inserts(self, inserts):
         logging.info("Processing query tasks with %s processes", self.n_db_processes)
-        for table_name, tasks in query_tasks.items():
-            logging.info("Processing features for %s", table_name)
-            self.feature_generator.run_commands(tasks.get("prepare", []))
-            partial_insert = partial(
-                insert_into_table, feature_generator=self.feature_generator
-            )
+        partial_insert = partial(
+            insert_into_table, db_engine=self.db_engine
+        )
 
-            insert_batches = [
-                list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
-            ]
-            parallelize(partial_insert, insert_batches, n_processes=self.n_db_processes)
-            self.feature_generator.run_commands(tasks.get("finalize", []))
-            logging.info("%s completed", table_name)
+        insert_batches = [
+            list(task_batch) for task_batch in Batch(inserts, 25)
+        ]
+        parallelize(partial_insert, insert_batches, n_processes=self.n_db_processes)
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         partial_build_matrix = partial(
@@ -116,10 +113,10 @@ class MultiCoreExperiment(ExperimentBase):
         )
 
 
-def insert_into_table(insert_statements, feature_generator):
+def insert_into_table(insert_statements, db_engine):
     try:
         logging.info("Beginning insert batch")
-        feature_generator.run_commands(insert_statements)
+        run_statements(insert_statements, db_engine)
         return True
     except Exception:
         logging.error("Child error: %s", traceback.format_exc())

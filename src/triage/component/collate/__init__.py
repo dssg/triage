@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from .collate import available_imputations, Aggregation, Aggregate, Compare, Categorical
+from .collate import Aggregate, Compare, Categorical
 from .from_obj import FromObj
-from .spacetime import SpacetimeAggregation
+from .spacetime import SpacetimeAggregation, available_imputations
 
 __all__ = [
     "available_imputations",
-    "Aggregation",
     "Aggregate",
     "FromObj",
     "Compare",

@@ -365,9 +365,9 @@ def sample_config():
         }
     }
 
-    feature_config = [
-        {
-            "prefix": "entity_features",
+    feature_config = {
+        "entity_features": {
+            "feature_generator_type": "spacetime_aggregation",
             "from_obj": "cat_complaints",
             "knowledge_date_column": "as_of_date",
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
@@ -375,8 +375,8 @@ def sample_config():
             "intervals": ["1year"],
             "groups": ["entity_id"],
         },
-        {
-            "prefix": "zip_code_features",
+        "zip_code_features": {
+            "feature_generator_type": "spacetime_aggregation",
             "from_obj": "entity_zip_codes join zip_code_events using (zip_code)",
             "knowledge_date_column": "as_of_date",
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
@@ -384,7 +384,7 @@ def sample_config():
             "intervals": ["1year"],
             "groups": ["entity_id", "zip_code"],
         },
-    ]
+    }
 
     cohort_config = {
         "query": "select distinct(entity_id) from events "
@@ -413,7 +413,7 @@ def sample_config():
         "entity_column_name": "entity_id",
         "model_comment": "test2-final-final",
         "model_group_keys": ["label_name", "label_type", "custom_key"],
-        "feature_aggregations": feature_config,
+        "features": feature_config,
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,

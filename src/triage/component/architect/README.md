@@ -13,7 +13,7 @@ The Architect addresses these issues with functionality aimed at all tasks betwe
 ## Components
 
 - [LabelGenerator](architect/label_generators.py): Create binary labels suitable for a design matrix by querying a database table containing outcome events.
-- [FeatureGenerator](architect/feature_generators.py): Create aggregate features suitable for a design matrix from a set of database tables containing events. Uses [collate](https://github.com/dssg/collate/) to build aggregation SQL queries.
+- [FeatureBlockGenerator](architect/feature_block_generators.py): Create features suitable for a design matrix from a set of database tables containing events. Uses [collate](https://github.com/dssg/collate/) to build aggregation SQL queries.
 - [FeatureGroupCreator](architect/feature_group_creator.py), [FeatureGroupMixer](architect/feature_group_mixer.py): Create groupings of features, and mix them using different strategies (like 'leave one out') to test their effectiveness.
 - [Planner](architect/planner.py), [Builder](architect/builders.py): Build all design matrices needed for an experiment, taking into account different labels, state configurations, and feature groups.
 

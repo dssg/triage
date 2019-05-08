@@ -451,7 +451,7 @@ class MatrixBuilder(BuilderBase):
                     table=entity_date_table_name,
                 ),
                 # collate imputation shouldn't leave any nulls and we double-check
-                # the imputed table in FeatureGenerator.create_all_tables() but as
+                # the imputed table in FeatureBlock.run_imputation() but as
                 # a final check, raise a divide by zero error on export if the
                 # database encounters any during the outer join
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],

@@ -38,6 +38,11 @@ def feature_list(feature_dictionary):
     ))
 
 
+def remove_schema_from_table_name(table_name):
+    # remove the schema and quotes from the name
+    return table_name.split(".")[1].replace('"', "")
+
+
 def convert_string_column_to_date(column):
     return [datetime.datetime.strptime(date, "%Y-%m-%d").date() for date in column]
 

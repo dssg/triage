@@ -120,8 +120,9 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
         feat_sql = "\n".join(
             [", prefix_entity_id_1y_%s_max int" % f for f in feat_list]
         )
+
         engine.execute(
-            """create table prefix_aggregation (
+            """create table myfeatures_aggregation (
                 entity_id int
                 , as_of_date date
                 %s
@@ -129,7 +130,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
             % feat_sql
         )
         ins_sql = (
-            "insert into prefix_aggregation values (%s, %s"
+            "insert into myfeatures_aggregation values (%s, %s"
             + (", %s" * len(feat_list))
             + ")"
         )
@@ -157,43 +158,25 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                 ]
                 st = SpacetimeAggregation(
                     aggregates=aggs,
+                    db_engine=engine,
+                    features_table_name="myfeatures",
                     from_obj="prefix_events",
                     prefix="prefix",
                     groups=["entity_id"],
                     intervals=["1y"],
-                    dates=["2016-01-01", "2016-02-03", "2016-03-14"],
-                    state_table="states",
-                    state_group="entity_id",
+                    as_of_dates=["2016-01-01", "2016-02-03", "2016-03-14"],
+                    cohort_table="states",
+                    entity_column="entity_id",
                     date_column="as_of_date",
-                    input_min_date="2000-01-01",
+                    feature_start_time="2000-01-01",
                     output_date_column="as_of_date",
+                    drop_interim_tables=False,
                 )
 
-                conn = engine.connect()
-
-                trans = conn.begin()
-
-                # excute query to find columns with null values and create lists of columns
-                # that do and do not need imputation when creating the imputation table
-                res = conn.execute(st.find_nulls())
-                null_counts = list(zip(res.keys(), res.fetchone()))
-                impute_cols = [col for col, val in null_counts if val > 0]
-                nonimpute_cols = [col for col, val in null_counts if val == 0]
-
-                # sql to drop and create the imputation table
-                drop_imp = st.get_drop(imputed=True)
-                create_imp = st.get_impute_create(
-                    impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
-                )
-
-                # create the imputation table
-                conn.execute(drop_imp)
-                conn.execute(create_imp)
-
-                trans.commit()
+                st.run_imputation()
 
                 # check the results
-                df = pd.read_sql("SELECT * FROM prefix_aggregation_imputed", engine)
+                df = pd.read_sql("SELECT * FROM myfeatures", engine)
 
                 # we should have a record for every entity/date combo
                 assert df.shape[0] == len(states_table)

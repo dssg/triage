@@ -51,7 +51,7 @@ def test_cli_crosstabs():
 
 
 def test_featuretest():
-    with patch('triage.cli.FeatureGenerator', autospec=True) as featuremock:
+    with patch('triage.cli.feature_blocks_from_config', autospec=True) as featuremock:
         with patch('triage.cli.EntityDateTableGenerator', autospec=True) as cohortmock:
             try_command('featuretest', 'example/config/experiment.yaml', '2017-06-06')
             featuremock.assert_called_once()
