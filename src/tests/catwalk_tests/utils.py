@@ -14,10 +14,6 @@ from triage.component.catwalk.storage import (
 from triage.util.structs import FeatureNameList
 
 
-def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
-
-
 @pytest.fixture
 def sample_metadata():
     return {

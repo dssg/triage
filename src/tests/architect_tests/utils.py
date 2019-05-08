@@ -2,12 +2,9 @@ import datetime
 import shutil
 import sys
 import tempfile
-import random
 from contextlib import contextmanager
 
 import pandas as pd
-import yaml
-import numpy
 
 
 def convert_string_column_to_date(column):
@@ -136,10 +133,6 @@ def TemporaryDirectory():
         yield name
     finally:
         shutil.rmtree(name)
-
-
-def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
 
 
 def assert_index(engine, table, column):
