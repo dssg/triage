@@ -1,12 +1,20 @@
 # coding: utf-8
 
-import os
-from os.path import dirname
-import pathlib
+import itertools
 import logging
+import os
+import pathlib
 from contextlib import contextmanager
-from sklearn.externals import joblib
+from os.path import dirname
 from urllib.parse import urlparse
+
+import gzip
+import pandas as pd
+import s3fs
+import wrapt
+import yaml
+from sklearn.externals import joblib
+
 from triage.component.results_schema import (
     TestEvaluation,
     TrainEvaluation,
@@ -16,12 +24,6 @@ from triage.component.results_schema import (
     TrainPredictionMetadata
 )
 from triage.util.pandas import downcast_matrix
-
-import pandas as pd
-import s3fs
-import yaml
-from boto3.s3.transfer import TransferConfig
-import gzip
 
 
 class Store(object):
@@ -74,9 +76,6 @@ class Store(object):
         raise NotImplementedError
 
 
-GB = 1024 ** 3
-
-
 class S3Store(Store):
     """Store an object in S3.
 
@@ -93,22 +92,29 @@ class S3Store(Store):
         **config: arguments to be passed to the S3Fs client constructor.
 
     """
-    transfer_multipart_threshold = 5 * GB
+    class S3FileWrapper(wrapt.ObjectProxy):
+
+        # don't allow wrapped object to take wrapper's place
+        # upon __enter__
+        def __enter__(self):
+            return self
+
+        def write(self, data, block_size=(5 * 2 ** 20)):
+            out = 0
+
+            for offset in itertools.count(0, block_size):
+                chunk = data[offset:(offset + block_size)]
+
+                if not chunk:
+                    return out
+
+                out += self.__wrapped__.write(chunk)
 
     def __init__(self, path_head, *path_parts, **config):
         self.path = str(
             pathlib.PurePosixPath(path_head.replace('s3://', ''),
                                   *path_parts)
         )
-
-        default_addl_kwargs = {
-            'Config': TransferConfig(
-                multipart_threshold=self.transfer_multipart_threshold,
-            ),
-        }
-        user_addl_kwargs = config.get('s3_additional_kwargs', {})
-        config['s3_additional_kwargs'] = dict(default_addl_kwargs, **user_addl_kwargs)
-
         self.config = config
 
     @property
@@ -122,7 +128,11 @@ class S3Store(Store):
         self.client.rm(self.path)
 
     def open(self, *args, **kwargs):
-        return self.client.open(self.path, *args, **kwargs)
+        # NOTE: remove S3FileWrapper as soon as s3fs properly
+        # NOTE: chunks out too-large writes
+        # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
+        s3file = self.client.open(self.path, *args, **kwargs)
+        return self.S3FileWrapper(s3file)
 
 
 class FSStore(Store):
