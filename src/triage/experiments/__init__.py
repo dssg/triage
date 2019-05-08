@@ -1,5 +1,5 @@
 # Avoid circular import (required by base)
-CONFIG_VERSION = "v6"  # noqa: E402
+CONFIG_VERSION = "v7"  # noqa: E402
 
 from .base import ExperimentBase
 from .multicore import MultiCoreExperiment
