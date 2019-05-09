@@ -7,7 +7,7 @@ from mock import Mock
 from sqlalchemy import create_engine
 from contextlib import contextmanager
 
-from triage.component.catwalk.utils import filename_friendly_hash
+from triage.util.hash import filename_friendly_hash
 from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db

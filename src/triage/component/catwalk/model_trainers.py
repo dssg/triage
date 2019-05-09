@@ -11,19 +11,16 @@ import pandas
 from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
+from triage.util.db import db_retry, save_db_objects
+from triage.util.hash import filename_friendly_hash
 from triage.util.random import generate_python_random_seed
-from triage.component.results_schema import Model, FeatureImportance
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
+from triage.component.results_schema import Model, FeatureImportance
+from triage.component.results_schema.utils import retrieve_model_id_from_hash
 from triage.tracking import built_model, skipped_model, errored_model
 
 from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
-from .utils import (
-    filename_friendly_hash,
-    retrieve_model_id_from_hash,
-    db_retry,
-    save_db_objects,
-)
 
 NO_FEATURE_IMPORTANCE = (
     "Algorithm does not support a standard way" + " to calculate feature importance."

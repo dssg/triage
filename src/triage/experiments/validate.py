@@ -741,10 +741,10 @@ class PredictionConfigValidator(Validator):
     def _run(self, prediction_config):
         rank_tiebreaker = prediction_config.get("rank_tiebreaker", None)
         # the tiebreaker is optional, so only try and validate if it's there
-        if rank_tiebreaker and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS:
+        if rank_tiebreaker and rank_tiebreaker not in catwalk.ranking.AVAILABLE_TIEBREAKERS:
             raise ValueError(
                 "Section: prediction - "
-                f"given tiebreaker must be in {catwalk.utils.AVAILABLE_TIEBREAKERS}"
+                f"given tiebreaker must be in {catwalk.ranking.AVAILABLE_TIEBREAKERS}"
             )
 
 

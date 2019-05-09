@@ -12,13 +12,10 @@ from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
 
 from . import metrics
-from .utils import (
-    db_retry,
-    sort_predictions_and_labels,
-    get_subset_table_name,
-    filename_friendly_hash
-)
-from triage.util.db import scoped_session
+from triage.component.catwalk.ranking import sort_predictions_and_labels
+from triage.component.catwalk.subsetters import get_subset_table_name
+from triage.util.db import scoped_session, db_retry
+from triage.util.hash import filename_friendly_hash
 from triage.util.random import generate_python_random_seed
 from triage.component.catwalk.storage import MatrixStore
 

@@ -5,7 +5,7 @@ from .evaluation import ModelEvaluator
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
-from .utils import filename_friendly_hash
+from triage.util.hash import filename_friendly_hash
 import logging
 from collections import namedtuple
 

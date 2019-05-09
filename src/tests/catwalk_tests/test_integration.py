@@ -1,5 +1,5 @@
 from triage.component.catwalk import ModelTrainTester, Predictor, ModelTrainer, ModelEvaluator, IndividualImportanceCalculator
-from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.component.results_schema.utils import save_experiment_and_get_hash
 from triage.component.catwalk.model_trainers import flatten_grid_config
 from triage.component.catwalk.storage import (
     ModelStorageEngine,

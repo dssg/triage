@@ -6,6 +6,8 @@ from triage.component.catwalk.evaluation import (
     subset_labels_and_predictions,
 )
 from triage.component.catwalk.metrics import Metric
+from triage.component.catwalk.subsetters import get_subset_table_name
+from triage.util.hash import filename_friendly_hash
 import testing.postgresql
 import datetime
 import re
@@ -15,7 +17,6 @@ import numpy
 from numpy.testing import assert_almost_equal, assert_array_equal
 import pandas
 from sqlalchemy.sql.expression import text
-from triage.component.catwalk.utils import filename_friendly_hash, get_subset_table_name
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
 from tests.results_tests.factories import (
     ModelFactory,

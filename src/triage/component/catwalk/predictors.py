@@ -5,9 +5,10 @@ import numpy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import or_
 
-from .utils import db_retry, retrieve_model_hash_from_id, save_db_objects, sort_predictions_and_labels, AVAILABLE_TIEBREAKERS
+from triage.component.catwalk.ranking import sort_predictions_and_labels, AVAILABLE_TIEBREAKERS
 from triage.component.results_schema import Model
-from triage.util.db import scoped_session
+from triage.component.results_schema.utils import retrieve_model_hash_from_id
+from triage.util.db import scoped_session, db_retry, save_db_objects
 from triage.util.random import generate_python_random_seed
 import ohio.ext.pandas
 import pandas

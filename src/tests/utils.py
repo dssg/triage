@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import testing.postgresql
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.utils import filename_friendly_hash
+from triage.util.hash import filename_friendly_hash
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION

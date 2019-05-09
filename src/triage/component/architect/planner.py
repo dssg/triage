@@ -2,7 +2,7 @@ import copy
 import itertools
 import logging
 
-from triage.component.catwalk.utils import filename_friendly_hash
+from triage.util.hash import filename_friendly_hash
 from . import utils, entity_date_table_generators
 
 

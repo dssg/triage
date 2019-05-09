@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.orm import sessionmaker
 from triage.util.db import db_retry
-from triage.util.has import filename_friendly_hash
+from triage.util.hash import filename_friendly_hash
 
 from .schema import (
     Experiment,

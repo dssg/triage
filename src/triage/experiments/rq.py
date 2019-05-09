@@ -1,6 +1,6 @@
 import logging
 import time
-from triage.component.catwalk.utils import Batch
+from triage.util.iteration import Batch
 from triage.experiments import ExperimentBase
 
 try:

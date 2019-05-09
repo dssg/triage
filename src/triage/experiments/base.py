@@ -38,13 +38,12 @@ from triage.component.catwalk import (
     ModelTrainTester,
     Subsetter
 )
-from triage.component.catwalk.utils import (
+from triage.component.results_schema.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
     associate_matrices_with_experiment,
     missing_matrix_uuids,
     missing_model_hashes,
-    filename_friendly_hash,
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -65,6 +64,7 @@ from triage.tracking import (
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str
 from triage.util.db import get_for_update
+from triage.util.hash import filename_friendly_hash
 from triage.util.introspection import bind_kwargs, classpath
 
 
