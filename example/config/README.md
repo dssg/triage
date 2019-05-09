@@ -79,16 +79,16 @@ Available Imputation Rules:
             - `quantity`: Each quantity is a number of some and the list of metrics are applied to each quantity.
             - `imputation`:  Imputation rules specified at the level of specific features will take precedence over the higer-level rules specified above. Note that the 'count' and 'sum' metrics will be imputed differently here.
                 - `count`:
-                    - `type`: 'mean'
+                    - `type`: `mean`
                 - `sum`:
-                    - `type`: 'constant'
-                    - `value`: 137
+                    - `type`: `constant`
+                    - `value`: `137`
             - `metrics`:
                 - `count`
                 - `sum`
-            - `coltype`: 'smallint' (Optional, if you want to control the column type in the generated features tables)
+            - `coltype`: `smallint` (Optional, if you want to control the column type in the generated features tables)
         - (Second quantity)
-            - `quantity`: 'some_flag' (Since we're specifying `aggregates_imputation` above, a feature-specific imputation rule can be omitted)
+            - `quantity`: `some_flag` (Since we're specifying `aggregates_imputation` above, a feature-specific imputation rule can be omitted)
             - `metrics`: 
                 - `max`
                 - `sum`
@@ -98,16 +98,16 @@ Available Imputation Rules:
         - `column`: Note that we haven't specified a top level `categoricals_imputation` set of rules, so we have to include feature-specific imputation rules for both of our categoricals here.
         - `imputation`:
             - `sum`:
-                - `type`: 'null_category'
+                - `type`: `null_category`
             - `max`:
-                - `type`: 'mean'
+                - `type`: `mean`
         - `choices`:
-        - `metrics`: 'sum'
+        - `metrics`: `sum`
     - (Second column)
         - `column`: 'shape' (As with the top-level imputation rules, `all` can be used for the feature-level rules to specify the same type of imputation for all aggregation functions)
         - `imputation`:
             - `all`:
-                `type`: 'zero'
+                `type`: `zero`
         - `choice_query`: `select distinct shape from cool stuff`
         - `metrics`: 
             - `sum`
@@ -126,7 +126,7 @@ define how to group features and generate combinations
 ### User Metadata
 These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the 'model_group_keys' below. For example, if you run experiments that share a temporal configuration but that use different label definitions (say, labeling building inspections with **any** violation as positive or labeling only building inspections with severe health and safety violations as positive), you can use the user metadata keys to indicate that the matrices from these experiments have different labeling criteria. The matrices from the two experiments will have different filenames (and not be overwritten or inappropriately reused), and if you add the label_definition key to the model group keys, models made on different label definition will have different groups. In this way, user metadata can be used to expand Triage beyond its explicitly supported functionality.
 
-- `user_metadata`: 'severe_violations'
+- `user_metadata`: `'severe_violations'`
 
 ### Model Grouping (optional)
 Model groups are a way of partitioning trained models in a way that makes for easier analysis.
@@ -142,4 +142,25 @@ If you want to override this list, you can supply a 'model_group_keys' value. Al
 'first_as_of_time', 'last_as_of_time', 'matrix_info_end_time', 'as_of_times', 'feature_start_time'
 
 You can also use any pieces of user_metadata that you included in this experiment definition, as they will be present in the matrix metadata. 
-- model_group_keys: ['feature_groups', 'label_definition']
+- `model_group_keys`: ['feature_groups', 'label_definition']
+
+### Grid Configuration
+The classifier/hyperparameter combinations that should be trained
+
+Each top-level key should be a class name, importable from triage. sklearn is available, and if you have another classifier package you would like available, contribute it to requirement/main.txt
+
+- `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the grid_config session in `experiment.yaml` as for a detailed example.
+
+
+### Prediction
+How predictions are computed for train and test matrices?
+
+- `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+-
+**worst** will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+**best** will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
+**random** will choose one random ordering to break ties. The result will be affected by  current state of Postgres' random number generator. Before ranking, the generator is seeded based on the *model*'s random seed.
+
+### Model Scoring
+How each trained model is scored?
+
