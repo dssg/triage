@@ -156,7 +156,8 @@ Each top-level key should be a class name, importable from triage. sklearn is av
 How predictions are computed for train and test matrices?
 
 - `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
--
+
+
 **worst** will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
 **best** will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
 **random** will choose one random ordering to break ties. The result will be affected by  current state of Postgres' random number generator. Before ranking, the generator is seeded based on the *model*'s random seed.
