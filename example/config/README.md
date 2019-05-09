@@ -57,13 +57,14 @@ Each entry describes a collate.SpacetimeAggregation object, and the arguments ne
 Rules specifying how to handle imputation of null values must be explicitly defined in your config file. These can be specified in two places: either within each feature or overall for each type of feature (aggregates_imputation, categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all can be specified with `all`. Aggregation function-specific rules will take precedence over the `all` rule and feature-specific rules will take precedence over the higher-level rules. Several examples are provided below.
 
 Available Imputation Rules: 
-    - `mean`: The average value of the feature (for SpacetimeAggregation the mean is taken within-date).
-    - `constant`: Fill with a constant value from a required `value` parameter.
-    - `zero`: Fill with zero.
-    - `null_category`: Only available for categorical features. Just flag null values with the null category column.
-    - `binary_mode`: Only available for aggregate column types. Takes the modal value for a binary feature.
-    - `error`: Raise an exception if any null values are encountered for this feature.
+- `mean`: The average value of the feature (for SpacetimeAggregation the mean is taken within-date).
+- `constant`: Fill with a constant value from a required `value` parameter.
+- `zero`: Fill with zero.
+- `null_category`: Only available for categorical features. Just flag null values with the null category column.
+- `binary_mode`: Only available for aggregate column types. Takes the modal value for a binary feature.
+- `error`: Raise an exception if any null values are encountered for this feature.
 
+    
 - `feature_aggregations`: 
     - `prefix`: prefix given to the resultant tables
     - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie 'cool_stuff join other_stuff using (stuff_id)')
@@ -73,4 +74,72 @@ Available Imputation Rules:
             - `type`: every imputation rule must have a `type` parameter, while some (like 'constant') have other required parameters (`value` here)
             - `value`
         - `max`: specifying `max` here will take precedence over the `all` rule for aggregations using a MAX() function
-            - `type`:  
+    - `aggregates`: aggregates and categoricals define the actual features created. So at least one is required. Aggregates of numerical columns.
+        - (First quantity)
+            - `quantity`: Each quantity is a number of some and the list of metrics are applied to each quantity.
+            - `imputation`:  Imputation rules specified at the level of specific features will take precedence over the higer-level rules specified above. Note that the 'count' and 'sum' metrics will be imputed differently here.
+                - `count`:
+                    - `type`: 'mean'
+                - `sum`:
+                    - `type`: 'constant'
+                    - `value`: 137
+            - `metrics`:
+                - `count`
+                - `sum`
+            - `coltype`: 'smallint' (Optional, if you want to control the column type in the generated features tables)
+        - (Second quantity)
+            - `quantity`: 'some_flag' (Since we're specifying `aggregates_imputation` above, a feature-specific imputation rule can be omitted)
+            - `metrics`: 
+                - `max`
+                - `sum`
+
+    - `categoricals`:  Categorical features. The column given can be of any type, but the choices must comparable to that type for equality within SQL The result will be one feature for each choice/metric combination.
+    - (First column)
+        - `column`: Note that we haven't specified a top level `categoricals_imputation` set of rules, so we have to include feature-specific imputation rules for both of our categoricals here.
+        - `imputation`:
+            - `sum`:
+                - `type`: 'null_category'
+            - `max`:
+                - `type`: 'mean'
+        - `choices`:
+        - `metrics`: 'sum'
+    - (Second column)
+        - `column`: 'shape' (As with the top-level imputation rules, `all` can be used for the feature-level rules to specify the same type of imputation for all aggregation functions)
+        - `imputation`:
+            - `all`:
+                `type`: 'zero'
+        - `choice_query`: `select distinct shape from cool stuff`
+        - `metrics`: 
+            - `sum`
+    - `intervals`: The time intervals over which to aggregate features
+    - `groups`: A list of different columns to separately group by
+
+### Feature Grouping
+define how to group features and generate combinations
+
+- `feature_group_definition`: feature_group_definition allows you to create groups/subset of your features by different criteria. for instance,
+    - `tables`: allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
+    - `prefix`: allows you to specify a list of feature name prefixes
+
+- `feature_group_strategies`: strategies for generating combinations of groups. available: all, leave-one-out, leave-one-in, all-combinations
+
+### User Metadata
+These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the 'model_group_keys' below. For example, if you run experiments that share a temporal configuration but that use different label definitions (say, labeling building inspections with **any** violation as positive or labeling only building inspections with severe health and safety violations as positive), you can use the user metadata keys to indicate that the matrices from these experiments have different labeling criteria. The matrices from the two experiments will have different filenames (and not be overwritten or inappropriately reused), and if you add the label_definition key to the model group keys, models made on different label definition will have different groups. In this way, user metadata can be used to expand Triage beyond its explicitly supported functionality.
+
+- `user_metadata`: 'severe_violations'
+
+### Model Grouping (optional)
+Model groups are a way of partitioning trained models in a way that makes for easier analysis.
+
+`model_group_keys` defines a list of training matrix metadata and classifier keys that should be considered when creating a model group.
+
+There is an extensive default configuration, which is aimed at producing groups whose constituent models are equivalent to each other in all ways except for when they were trained. This makes the analysis of model stability easier.
+
+To accomplish this, the following default keys are used: 'class_path', 'parameters', 'feature_names', 'feature_groups', 'cohort_name', 'state', 'label_name', 'label_timespan', 'as_of_date_frequency', 'max_training_history'
+
+If you want to override this list, you can supply a 'model_group_keys' value. All of the defaults are available, along with some other temporal information that could be useful for more specialized analyses:
+
+'first_as_of_time', 'last_as_of_time', 'matrix_info_end_time', 'as_of_times', 'feature_start_time'
+
+You can also use any pieces of user_metadata that you included in this experiment definition, as they will be present in the matrix metadata. 
+- model_group_keys: ['feature_groups', 'label_definition']
