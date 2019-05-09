@@ -3,26 +3,55 @@
 
 ## Problem description
 
-`triage` is designed to also build early warning systems (also called early intervention, EIS). While there are several differences between modeling early warnings and inspection prioritization, perhaps the biggest is that the *entity* is active (i.e. it is doing stuff for which an outcome will happen) in EIS but passive (i.e. inspected) in **inspection prioritization**. Among other things, this difference affects the way the *outcome* is built.
+`Triage` is designed to also build early warning systems (also called
+early intervention, EIS). While there are several differences between
+modeling early warnings and inspection prioritization, perhaps the
+biggest is that the *entity* is active (i.e. it is doing stuff for
+which an outcome will happen) in EIS but passive (i.e. inspected) in
+**inspection prioritization**. Among other things, this difference
+affects the way the *outcome* is built.
 
 Here's the question we want to answer:
 
-> Will my restaurant be inspected in the *next X period of time?*
+!!! quote ""
+    Will my restaurant be inspected in the next $Y$ period of time?
 
 Where \(X\) could be 3 days, 2 months, 1 year, etc.
 
-Knowing the answer to this question enables you (as the restaurant owner or manager) to prepare for the inspection.
+We will translate that problem to
+
+!!! quote ""
+    Will my restaurant be at the top-$X$ facilities most likely to be
+    inspected in the next $Y$ period of time?
+
+
+Knowing the answer to this question enables you (as the restaurant
+owner or manager) to prepare for the inspection.
+
 
 
 ## What are the labels? What are the outcomes?
 
-The trick to note is that on any given day there are two possible outcomes: *the facility was inspected* and *the facility wasn't inspected*. Our *outcomes* table will be larger than in the inspection prioritization example because we need an *outcome* for every *active* facility on every date. The following image tries to exemplify this reasoning:
+The trick to note is that on any given day there are two possible
+outcomes: *the facility was inspected* and *the facility wasn't
+inspected*. Our *outcomes* table will be larger than in the inspection
+prioritization example because we need an *outcome* for every *active*
+facility on every date. The following image tries to exemplify this
+reasoning:
 
-![img](./images/outcomes-eis.png "The image shows three facilities, and next to each, a temporal line with 6 days (0-5). Each dot represents the event (whether an inspection happened). Yellow means the inspection happened (`TRUE` outcome) and blue means it didn't (`FALSE` outcome). Each facility in the image had two inspections, six in total.")
+![img](./images/outcomes-eis.png "The image shows three facilities,
+and next to each, a temporal line with 6 days (0-5). Each dot
+represents the event (whether an inspection happened). Yellow means
+the inspection happened (`TRUE` outcome) and blue means it didn't
+(`FALSE` outcome). Each facility in the image had two inspections, six
+in total.")
 
-Fortunately, `triage` will help us to create this table. The *cohort* table is the same as the *cohort* table in the inspection case.
+Fortunately, `triage` will help us to create this table. The *cohort*
+table is the same as the *cohort* table in the inspection case.
 
-First the usual stuff. Note that we are changing `model_comment` and `label_definition` (remember that this is used for generating the *hash* that differentiates models and model groups).
+First the usual stuff. Note that we are changing `model_comment` and
+`label_definition` (remember that this is used for generating the
+*hash* that differentiates models and model groups).
 
 ```yaml
 config_version: 'v6'

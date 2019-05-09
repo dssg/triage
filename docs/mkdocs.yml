@@ -69,8 +69,8 @@ nav:
       - Data preparation: dirtyduck/data_preparation.md
     - Case studies:
       - Problem description: dirtyduck/problem_description.md
-      - Resource prioritization: dirtyduck/inspections.md
       - Early Warning System: dirtyduck/eis.md
+      - Resource prioritization: dirtyduck/inspections.md
     - Triage:
       - A deeper look into triage: dirtyduck/triage_intro.md
   - Experiment:
