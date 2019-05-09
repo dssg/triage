@@ -20,7 +20,7 @@ site_description: 'Documentation for Triage.'
 extra:
   social:
     - type: 'github'
-      link: 'https://github.com/dssg/hitchhikers-guide'
+      link: 'https://github.com/dssg/triage'
     - type: 'twitter'
       link: 'https://twitter.com/datascifellows'
     - type: 'linkedin'
@@ -61,18 +61,18 @@ extra_javascript:
 nav:
   - Home: index.md
   - Dirty Duck Tutorial:
-    - Welcome: dirtyduck/docs/index.md
-    - Choose your own adventure: dirtyduck/docs/choose_your_own_adventure.md
+    - Welcome: dirtyduck/index.md
+    - Choose your own adventure: dirtyduck/choose_your_own_adventure.md
     - Setup:
-      - Quick setup: dirtyduck/docs/for_the_impatient.md
-      - Infrastructure: dirtyduck/docs/infrastructure.md
-      - Data preparation: dirtyduck/docs/data_preparation.md
+      - Quick setup: dirtyduck/for_the_impatient.md
+      - Infrastructure: dirtyduck/infrastructure.md
+      - Data preparation: dirtyduck/data_preparation.md
     - Case studies:
-      - Problem description: dirtyduck/docs/problem_description.md
-      - Resource prioritization: dirtyduck/docs/inspections.md
-      - Early Warning System: dirtyduck/docs/eis.md
+      - Problem description: dirtyduck/problem_description.md
+      - Resource prioritization: dirtyduck/inspections.md
+      - Early Warning System: dirtyduck/eis.md
     - Triage:
-      - A deeper look into triage: dirtyduck/docs/triage_intro.md
+      - A deeper look into triage: dirtyduck/triage_intro.md
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
@@ -84,7 +84,7 @@ nav:
     - Feature Generation Recipe Book: experiments/features.md
     - Experiment Algorithm: experiments/algorithm.md
     - Experiment Architecture: experiments/architecture.md
-  - Model selection: dirtyduck/docs/audition.md
+  - Model selection: dirtyduck/audition.md
   - Postmodeling: postmodeling/index.md
-  - Model governance:  dirtyduck/docs/ml_governance.md
-  - Scaling up: dirtyduck/docs/aws_batch.md
+  - Model governance:  dirtyduck/ml_governance.md
+  - Scaling up: dirtyduck/aws_batch.md

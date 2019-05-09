@@ -24,8 +24,6 @@ services:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@food_db/${POSTGRES_DB}"
     volumes:
       - "./triage:/triage"
-      - "./sql:/sql"
-      - "./experiments:/experiments"
     ports:
       - "56406-56410:56406-56410"
 
