@@ -23,6 +23,7 @@ services:
       JUPYTER_SESSION_KEY: "c2e3bb2a-f80c7b34d4fe02d7e5be87d9"
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@food_db/${POSTGRES_DB}"
     volumes:
+      - "./sql:/sql"
       - "./triage:/triage"
     ports:
       - "56406-56410:56406-56410"
