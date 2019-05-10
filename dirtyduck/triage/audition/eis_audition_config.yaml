@@ -11,7 +11,7 @@ time_stamps:
         from model_metadata.models
         where model_group_id in ({})
         and extract(day from train_end_time) in (1)
-        and train_end_time >= '2015-01-01'
+        and train_end_time >= '2014-01-01'
 # FILTER
 filter:
     metric: 'precision@' # metric of interest
@@ -32,14 +32,14 @@ rules:
         selection_rules:
             -
                 name: 'best_current_value' # Pick the model group with the best current metric value
-                n: 3
+                n: 5
             -
                 name: 'best_average_value' # Pick the model with the highest average metric value
-                n: 3
+                n: 5
             -
                 name: 'lowest_metric_variance' # Pick the model with the lowest metric variance
-                n: 3
+                n: 5
             -
                 name: 'most_frequent_best_dist' # Pick the model that is most frequently within `dist_from_best_case`
                 dist_from_best_case: [0.05]
-                n: 3
+                n: 5

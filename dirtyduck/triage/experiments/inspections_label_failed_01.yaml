@@ -1,4 +1,4 @@
-config_version: 'v6'
+config_version: 'v7'
 
 model_comment: 'inspections: advanced'
 random_seed: 23895478
@@ -63,22 +63,10 @@ label_config:
 
 cohort_config:
   query: |
-    with buckets as (
-    select *, ntile(5) over (order by number_of_inspections asc) as bucket
-    from (
-    select entity_id, count(*) as number_of_inspections
-    from semantic.events
-    group by entity_id
-    ) as t
-    )
     select e.entity_id
     from semantic.entities as e
-    inner join
-    buckets as b
-    using (entity_id)
     where
     daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
-    and bucket in (5)
   name: 'active_facilities'
 
 feature_aggregations:

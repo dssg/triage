@@ -1,6 +1,7 @@
-config_version: 'v6'
+config_version: 'v7'
 
 model_comment: 'eis: 01'
+random_seed: 23895478
 
 user_metadata:
   label_definition: 'inspected'
@@ -11,7 +12,7 @@ user_metadata:
   org: 'DSaPP'
   team: 'Tutorial'
   author: 'Your name here'
-  etl_date: '2019-02-21'
+  etl_date: '2019-05-07'
 
 model_group_keys:
   - 'class_path'
@@ -46,37 +47,25 @@ label_config:
 
 cohort_config:
   query: |
-    with buckets as (
-    select *, ntile(5) over (order by number_of_inspections asc) as bucket
-    from (
-    select entity_id, count(*) as number_of_inspections
-    from semantic.events
-    group by entity_id
-    ) as t
-    )
     select e.entity_id
     from semantic.entities as e
-    inner join
-    buckets as b
-    using (entity_id)
     where
     daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
-    and bucket in (5)
   name: 'active_facilities'
 
 temporal_config:
     feature_start_time: '2010-01-04'
-    feature_end_time: '2019-01-01'
-    label_start_time: '2015-02-01'
-    label_end_time: '2019-01-01'
+    feature_end_time: '2018-06-01'
+    label_start_time: '2013-01-01'
+    label_end_time: '2018-06-01'
 
     model_update_frequency: '1y'
-    training_label_timespans: ['1month']
-    training_as_of_date_frequencies: '1month'
+    training_label_timespans: ['1y']
+    training_as_of_date_frequencies: '1y'
 
     test_durations: '1y'
-    test_label_timespans: ['1month']
-    test_as_of_date_frequencies: '1month'
+    test_label_timespans: ['1y']
+    test_as_of_date_frequencies: '1y'
 
     max_training_histories: '5y'
 
@@ -190,20 +179,21 @@ grid_config:
         min_samples_leaf: [1]
         min_samples_split: [50]
     'sklearn.dummy.DummyClassifier':
-        strategy: [most_frequent]
+        strategy: ['prior']
 
 scoring:
     testing_metric_groups:
         -
-          metrics: [precision@, recall@]
+          metrics: [precision@, recall@, 'false negatives@', 'false positives@', 'true positives@', 'true negatives@']
           thresholds:
             percentiles: [1.0, 2.0, 3.0, 4.0, 5.0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
             top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
-
+        -
+          metrics: [roc_auc, accuracy]
 
     training_metric_groups:
       -
-        metrics: [accuracy]
+        metrics: [roc_auc, accuracy]
       -
         metrics: [precision@, recall@]
         thresholds:
