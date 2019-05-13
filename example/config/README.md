@@ -219,4 +219,4 @@ The selection rules for Audition to simulate the model selection process for eac
     - `shared_parameters`:
         - `metric`: The metric and parameter in shared_parameters have to be the same in the `Filter` section.
         - `parameter`: The metric and parameter in shared_parameters have to be the same in the `Filter` section.
-    - `selection_rules`: Rules for selecting the best model. All supported rules can be found in the [Audtion's README]()https://github.com/dssg/triage/tree/master/src/triage/component/audition).
+    - `selection_rules`: Rules for selecting the best model. All supported rules can be found in the [Audtion's README](https://github.com/dssg/triage/tree/master/src/triage/component/audition).
