@@ -67,7 +67,7 @@ Available Imputation Rules:
     
 - `feature_aggregations`: 
     - `prefix`: prefix given to the resultant tables
-    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie ```cool_stuff join other_stuff using (stuff_id)```)
+    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie ```"cool_stuff join other_stuff using (stuff_id)"```)
     - `knowledge_date_column`: The date column to use for specifying which records to include in temporal features. It is important that the column used specifies the date at which the event is known about, which may be different from the date the event happened.
     - `aggregates_imputation`: top-level imputation rules that will apply to all aggregates functions can also specify `categoricals_imputation` or `array_categoricals_imputation`. You must specified at least one of the top-level or feature-level imputation to cover ever feature being defined.
         - `all`: The `all` rule will apply to all aggregation functions, unless overridden by more specific one
@@ -104,7 +104,7 @@ Available Imputation Rules:
         - `choices`:
         - `metrics`: `sum`
     - (Second column)
-        - `column`: 'shape' (As with the top-level imputation rules, `all` can be used for the feature-level rules to specify the same type of imputation for all aggregation functions)
+        - `column`: `shape` (As with the top-level imputation rules, `all` can be used for the feature-level rules to specify the same type of imputation for all aggregation functions)
         - `imputation`:
             - `all`:
                 `type`: `zero`
@@ -155,14 +155,14 @@ Each top-level key should be a class name, importable from triage. sklearn is av
 ### Prediction
 How predictions are computed for train and test matrices?
 
-- `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+- `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the `worst` or `best` options. `worst` is the default.
 
 
-**worst** will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+`worst` will break ties with the ascending label value, so if you take the top **k** predictions, and there are ties across the **k** threshold, the predictions above the threshold will be negative labels if possible.
 
-**best** will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
+`best` will break ties with the descending label value, so if you take the top **k** predictions, and there are ties across the **k** threshold, the predictions above the threshold will be positive labels if possible.
 
-**random** will choose one random ordering to break ties. The result will be affected by  current state of Postgres' random number generator. Before ranking, the generator is seeded based on the **model*'s random seed.
+`random` will choose one random ordering to break ties. The result will be affected by current state of Postgres' random number generator. Before ranking, the generator is seeded based on the **model**'s random seed.
 
 
 ### Model Scoring
