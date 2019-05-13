@@ -67,7 +67,7 @@ Available Imputation Rules:
     
 - `feature_aggregations`: 
     - `prefix`: prefix given to the resultant tables
-    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie 'cool_stuff join other_stuff using (stuff_id)')
+    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie ```cool_stuff join other_stuff using (stuff_id)```)
     - `knowledge_date_column`: The date column to use for specifying which records to include in temporal features. It is important that the column used specifies the date at which the event is known about, which may be different from the date the event happened.
     - `aggregates_imputation`: top-level imputation rules that will apply to all aggregates functions can also specify `categoricals_imputation` or `array_categoricals_imputation`. You must specified at least one of the top-level or feature-level imputation to cover ever feature being defined.
         - `all`: The `all` rule will apply to all aggregation functions, unless overridden by more specific one
@@ -118,7 +118,7 @@ Available Imputation Rules:
 define how to group features and generate combinations
 
 - `feature_group_definition`: feature_group_definition allows you to create groups/subset of your features by different criteria. for instance,
-    - `tables`: allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
+    - `tables`: allows you to send a list of collate feature tables (collate builds these by appending `aggregation_imputed` to the prefix)
     - `prefix`: allows you to specify a list of feature name prefixes
 
 - `feature_group_strategies`: strategies for generating combinations of groups. available: all, leave-one-out, leave-one-in, all-combinations
@@ -174,13 +174,13 @@ Each entry in `testing_metric_groups` needs a list of one of the metrics defined
 
 - `thresholds` are more specific: The list is dichotomized and only the top percentile or top n entities are scored as positive labels
 
-subsets, if passed, will add evaluations for subset(s) of the predictions to the subset_evaluations tables, using the same testing and training metric groups as used for overall evaluations but with any thresholds reapplied only to entities in the subset on the relevant as_of_dates. For example, when calculating precision@5_pct for the subset of women, the ModelEvaluator will count as positively labeled the top 5% of women, rather than any women in the top 5% overall. This is useful if, for example, different interventions will be applied to different subsets of entities (e.g., one program will provide subsidies to the top 500 women with children and another program will provide shelter to the top 150 women without children) and you would like to see whether a single model can be used for both applications. Subsets can also be used to see how a model's performance would be affected if the requirements for intervention eligibility became more restricted.
+subsets, if passed, will add evaluations for subset(s) of the predictions to the subset_evaluations tables, using the same testing and training metric groups as used for overall evaluations but with any thresholds reapplied only to entities in the subset on the relevant as_of_dates. For example, when calculating **precision@5_pct** for the subset of women, the ModelEvaluator will count as positively labeled the top 5% of women, rather than any women in the top 5% overall. This is useful if, for example, different interventions will be applied to different subsets of entities (e.g., one program will provide subsidies to the top 500 women with children and another program will provide shelter to the top 150 women without children) and you would like to see whether a single model can be used for both applications. Subsets can also be used to see how a model's performance would be affected if the requirements for intervention eligibility became more restricted.
 
 ### Individual Importances
 How feature importances for individuals should be computed. This entire section can be left blank, in which case the defaults will be used.
 
 - `individual_importance`:
-    - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to 'uniform', or just the global importances. Empty list means don't calculate individual importances.
+    - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to `uniform`, or just the global importances. Empty list means don't calculate individual importances.
     - `n_ranks`: The number of top features per individual to compute importances for. Will default to 5.
 
 
