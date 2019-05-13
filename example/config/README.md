@@ -2,11 +2,11 @@
 
 Explain the parameters for running Triage experiments
 
-Triage is a great tool to make our life easier by semi-automating many different tasks when we are doing predictive anlaytics projects, so that the usres can focus more on the problem formulation and modeling than implementation. The configuration helps users define the parameters in an experiment. To run a full Triage experiment, users are required to define `experiment.yaml`, `feature.yaml` and `audition.yaml`. The `postmodeling_config.yaml` and `postmodeling_crosstabs.yaml` are
+Triage is a great tool to make our life easier by semi-automating many different tasks when we are doing predictive anlaytics projects, so that the usres can focus more on the problem formulation and modeling than implementation. The configuration helps users define the parameters in an experiment. To run a full Triage experiment, users are required to define `experiment.yaml` and `audition.yaml`. The `postmodeling_config.yaml` and `postmodeling_crosstabs.yaml` are
 optional, only for users who want to use `triage.postmodeling` module after experiment. 
 
 ## Experiment Configuration
-Also check out the the example file `experiment.yaml`.
+Also check out the example file `experiment.yaml`.
 
 ### Config Version
 
@@ -182,3 +182,41 @@ How feature importances for individuals should be computed. This entire section 
 - `individual_importance`:
     - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to 'uniform', or just the global importances. Empty list means don't calculate individual importances.
     - `n_ranks`: The number of top features per individual to compute importances for. Will default to 5.
+
+
+## Audition Configuration
+Also check out the example file `audition.yaml`.
+
+### Choose Model Groups
+Audtion needs a buch of `model_group_id's to help users select the models.
+
+- `model_groups`:
+    - `query`: The query is to choose what the model groups you want to include in the first round of model selection.
+
+
+### Choose Timestamps/Train end times
+The timestamps when audition happens for each model group.
+
+- `time_stamps`:
+    - `query`: There's a hard rule in Audition that all of the chosen model groups for audition should have the same train end times as the timestamps or the subset of the timestamps from this query, otherwise those model groups with unmatched train end times will be pruned in the first round.
+
+
+### Filter
+Configuration for the Auditioner
+
+- `filter`:
+    - `metric`: metric of interest, e.g. `precision@`
+    - `parameter`: parameter of interest, e.g. `50_abs`
+    - `max_from_best`: The maximum value that the given metric can be worse than the best model for a given train end time.
+    - `threshold_value`: The worst absolute value that the given metric should be. 
+    - `distance_table`: name of the distance table.
+    - `models_table`: name of the models table.
+
+### Rules
+The selection rules for Audition to simulate the model selection process for each timestamps.
+
+- `rules`:
+    - `shared_parameters`:
+        - `metric`: The metric and parameter in shared_parameters have to be the same in the `Filter` section.
+        - `parameter`: The metric and parameter in shared_parameters have to be the same in the `Filter` section.
+    - `selection_rules`: Rules for selecting the best model. All supported rules can be found in the (Audtion's README)[https://github.com/dssg/triage/tree/master/src/triage/component/audition].
