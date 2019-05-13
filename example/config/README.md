@@ -149,7 +149,7 @@ The classifier/hyperparameter combinations that should be trained
 
 Each top-level key should be a class name, importable from triage. sklearn is available, and if you have another classifier package you would like available, contribute it to requirement/main.txt
 
-- `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the grid_config session in `experiment.yaml` as for a detailed example.
+- `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the [grid_config session](https://github.com/dssg/triage/blob/6cb43f9cca032a980cbc25a9501e9559135fd04d/example/config/experiment.yaml#L276) in `experiment.yaml` as for a detailed example.
 
 
 ### Prediction
@@ -159,9 +159,26 @@ How predictions are computed for train and test matrices?
 
 
 **worst** will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+
 **best** will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
-**random** will choose one random ordering to break ties. The result will be affected by  current state of Postgres' random number generator. Before ranking, the generator is seeded based on the *model*'s random seed.
+
+**random** will choose one random ordering to break ties. The result will be affected by  current state of Postgres' random number generator. Before ranking, the generator is seeded based on the **model*'s random seed.
+
 
 ### Model Scoring
 How each trained model is scored?
 
+Each entry in `testing_metric_groups` needs a list of one of the metrics defined in catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!) Depending on the metric, either thresholds or parameters.
+
+`Parameters`: specify any hyperparameters needed. For most metrics, which are simply wrappers of sklearn functions, these are passed directly to sklearn. 
+
+- `thresholds` are more specific: The list is dichotomized and only the top percentile or top n entities are scored as positive labels
+
+subsets, if passed, will add evaluations for subset(s) of the predictions to the subset_evaluations tables, using the same testing and training metric groups as used for overall evaluations but with any thresholds reapplied only to entities in the subset on the relevant as_of_dates. For example, when calculating precision@5_pct for the subset of women, the ModelEvaluator will count as positively labeled the top 5% of women, rather than any women in the top 5% overall. This is useful if, for example, different interventions will be applied to different subsets of entities (e.g., one program will provide subsidies to the top 500 women with children and another program will provide shelter to the top 150 women without children) and you would like to see whether a single model can be used for both applications. Subsets can also be used to see how a model's performance would be affected if the requirements for intervention eligibility became more restricted.
+
+### Individual Importances
+How feature importances for individuals should be computed. This entire section can be left blank, in which case the defaults will be used.
+
+- `individual_importance`:
+    - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to 'uniform', or just the global importances. Empty list means don't calculate individual importances.
+    - `n_ranks`: The number of top features per individual to compute importances for. Will default to 5.
