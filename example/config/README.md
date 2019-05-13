@@ -50,7 +50,7 @@ Labels are configured by passing a query with placeholders for the `as_of_date` 
 
 
 ### Feature Generation
-The aggregate features to generate for each train/test split. Implemented by wrapping [collate](https://github.com/dssg/collate). Most terminology here is taken directly from collate.
+The aggregate features to generate for each train/test split. Implemented by wrapping [collate](https://github.com/dssg/triage/tree/config_doc/src/triage/component/collate). Most terminology here is taken directly from [collate](https://github.com/dssg/triage/tree/config_doc/src/triage/component/collate).
 
 Each entry describes a collate.SpacetimeAggregation object, and the arguments needed to create it. Generally, each of these entries controls the features from one source table, though in the case of multiple groups may result in multiple output tables.
 
@@ -135,14 +135,14 @@ Model groups are a way of partitioning trained models in a way that makes for ea
 
 There is an extensive default configuration, which is aimed at producing groups whose constituent models are equivalent to each other in all ways except for when they were trained. This makes the analysis of model stability easier.
 
-To accomplish this, the following default keys are used: 'class_path', 'parameters', 'feature_names', 'feature_groups', 'cohort_name', 'state', 'label_name', 'label_timespan', 'as_of_date_frequency', 'max_training_history'
+To accomplish this, the following default keys are used: `class_path`, `parameters`, `feature_names`, `feature_groups`, `cohort_name`, `state`, `label_name`, `label_timespan`, `as_of_date_frequency`, `max_training_history`
 
-If you want to override this list, you can supply a 'model_group_keys' value. All of the defaults are available, along with some other temporal information that could be useful for more specialized analyses:
+If you want to override this list, you can supply a `model_group_keys` value. All of the defaults are available, along with some other temporal information that could be useful for more specialized analyses:
 
-'first_as_of_time', 'last_as_of_time', 'matrix_info_end_time', 'as_of_times', 'feature_start_time'
+`first_as_of_time`, `last_as_of_time`, `matrix_info_end_time`, `as_of_times`, `feature_start_time`
 
 You can also use any pieces of user_metadata that you included in this experiment definition, as they will be present in the matrix metadata. 
-- `model_group_keys`: ['feature_groups', 'label_definition']
+- `model_group_keys`: [`feature_groups`, `label_definition`]
 
 ### Grid Configuration
 The classifier/hyperparameter combinations that should be trained
