@@ -156,7 +156,7 @@ Each top-level key should be a class name, importable from triage. sklearn is av
 
 
 ### Prediction
-How predictions are computed for train and test matrices? This is used only for *stored* predcitions and only affect postmodeling analysis (not model scoring), so if user is stroing predictions, this will not affect anything.
+How predictions are computed for train and test matrices? This is used only for *stored* predcitions and only affect postmodeling analysis (not model scoring), so if you are not stroing predictions, this will not affect anything.
 
 - `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the `worst` or `best` options. `worst` is the default.
 
