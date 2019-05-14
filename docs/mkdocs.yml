@@ -74,6 +74,7 @@ nav:
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md
+    - Experiment Configuration: example/conifg/README.md
     - Running an Experiment: experiments/running.md
     - Upgrading an Experiment:
         - v6 -> v7: experiments/upgrade-to-v7.md

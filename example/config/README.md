@@ -2,7 +2,7 @@
 
 Explain the parameters for running Triage experiments
 
-Triage is a great tool to make our life easier by semi-automating many different tasks when we are doing predictive anlaytics projects, so that the usres can focus more on the problem formulation and modeling than implementation. The configuration helps users define the parameters in an experiment. To run a full Triage experiment, users are required to define `experiment.yaml` and `audition.yaml`. The `postmodeling_config.yaml` and `postmodeling_crosstabs.yaml` are
+Triage is a great tool to make our life easier by semi-automating many different tasks when we are doing predictive anlaytics projects, so that the users can focus more on the problem formulation and modeling than implementation. The configuration helps users define the parameters in an experiment. To run a full Triage experiment, users are required to define `experiment.yaml` and `audition.yaml`. The `postmodeling_config.yaml` and `postmodeling_crosstabs.yaml` are
 optional, only for users who want to use `triage.postmodeling` module after experiment. 
 
 ## Experiment Configuration
@@ -44,8 +44,8 @@ Cohorts are configured by passing a query with placeholders for the **as_of_date
 Labels are configured by passing a query with placeholders for the `as_of_date` and `label_timespan`.
 
 - `label_config`:
-    - `query`: The query must return two columns: `entity_id` and `outcome`, based on a given `as_of_date` and `label_timespan`. The `as_of_date` and `label_timespan` must be represented by placeholders marked by curly brackets. The example below reproduces the inspection outcome boolean-or logic: In addition, you can configure what label is given to entities that are in the matrix (see **cohort_config** section) but that do not show up in this label query. By default, these will show up as missing/null.
-    - `include_missing_labels_in_train_as`: However, passing the key `include_missing_labels_in_train_as` allows you to pick True or False.
+    - `query`: The query must return two columns: `entity_id` and `outcome`, based on a given `as_of_date` and `label_timespan`. The `as_of_date` and `label_timespan` must be represented by placeholders marked by curly brackets. The example in `experiment.yaml` reproduces the inspection outcome boolean-or logic. In addition, you can configure what label is given to entities that are in the matrix (see **cohort_config** section) but that do not show up in this label query.
+    - `include_missing_labels_in_train_as`: However, passing the key `include_missing_labels_in_train_as` allows you to pick True or False. By default, these will show up as missing/null.
     - `name`: In addition to these configuration options, you can pass a name to apply to the label configuration that will be present in matrix metadata for each matrix created by this experiment, under the `label_name` key. The default label_name is `outcome`.
 
 
@@ -54,40 +54,41 @@ The aggregate features to generate for each train/test split. Implemented by wra
 
 Each entry describes a collate.SpacetimeAggregation object, and the arguments needed to create it. Generally, each of these entries controls the features from one source table, though in the case of multiple groups may result in multiple output tables.
 
-Rules specifying how to handle imputation of null values must be explicitly defined in your config file. These can be specified in two places: either within each feature or overall for each type of feature (aggregates_imputation, categoricals_imputation, array_categoricals_imputation). In either case, a rule must be given for each aggregation function (e.g., sum, max, avg, etc) used, or a catch-all can be specified with `all`. Aggregation function-specific rules will take precedence over the `all` rule and feature-specific rules will take precedence over the higher-level rules. Several examples are provided below.
+Rules specifying how to handle imputation of null values must be explicitly defined in your config file. These can be specified in two places: either within each feature or overall for each type of feature (`aggregates_imputation`, `categoricals_imputation`, `array_categoricals_imputation`). In either case, a rule must be given for each aggregation function/metric (e.g., `sum`, `max`, `avg`, etc) used, or a catch-all can be specified with `all`. Aggregation function-specific rules will take precedence over the `all` rule and feature-specific rules will take precedence over the higher-level rules. Several examples are provided below. The supported aggregation functions/metrics are subject to the aggreagtion functions of the version of postgres being used.
 
 Available Imputation Rules: 
 - `mean`: The average value of the feature (for SpacetimeAggregation the mean is taken within-date).
 - `constant`: Fill with a constant value from a required `value` parameter.
 - `zero`: Fill with zero.
+- `zero_noflag`: Fill with zero without generating an **imputed** flag. This option should be used only for cases where null values are explicitly known to be zero such as absence of an entity from an events table indicating that no such event has occurred.
 - `null_category`: Only available for categorical features. Just flag null values with the null category column.
 - `binary_mode`: Only available for aggregate column types. Takes the modal value for a binary feature.
 - `error`: Raise an exception if any null values are encountered for this feature.
 
-    
+
 - `feature_aggregations`: 
     - `prefix`: prefix given to the resultant tables
-    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie ```"cool_stuff join other_stuff using (stuff_id)"```)
+    - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie `cool_stuff join other_stuff using (stuff_id)`)
     - `knowledge_date_column`: The date column to use for specifying which records to include in temporal features. It is important that the column used specifies the date at which the event is known about, which may be different from the date the event happened.
-    - `aggregates_imputation`: top-level imputation rules that will apply to all aggregates functions can also specify `categoricals_imputation` or `array_categoricals_imputation`. You must specified at least one of the top-level or feature-level imputation to cover ever feature being defined.
+    - `aggregates_imputation`: top-level imputation rules that will apply to all aggregates functions can also specify `categoricals_imputation` or `array_categoricals_imputation`. You must specify at least one of the top-level or feature-level imputation to cover every feature being defined.
         - `all`: The `all` rule will apply to all aggregation functions, unless overridden by more specific one
             - `type`: every imputation rule must have a `type` parameter, while some (like 'constant') have other required parameters (`value` here)
             - `value`
-        - `max`: specifying `max` here will take precedence over the `all` rule for aggregations using a MAX() function
+        - `some aggregation function`: The reudction function used by the aggreagate such as `sum`, `count`, `avg`, `max` etc. Function-specific rules will take precedence over the catch-all rule.
     - `aggregates`: aggregates and categoricals define the actual features created. So at least one is required. Aggregates of numerical columns.
-        - (First quantity)
-            - `quantity`: Each quantity is a number of some and the list of metrics are applied to each quantity.
+        - No keys are used on this line, which marks the first aggregate in a list
+            - `quantity`: Each quantity is a number of some and the list of metrics are applied to each quantity, e.g. `homeless::INT`
             - `imputation`:  Imputation rules specified at the level of specific features will take precedence over the higer-level rules specified above. Note that the 'count' and 'sum' metrics will be imputed differently here.
                 - `count`:
                     - `type`: `mean`
                 - `sum`:
                     - `type`: `constant`
                     - `value`: `137`
-            - `metrics`:
+            - `metrics`: the metrics/aggreagtion functions listed here will be used for the current aggregation only and must be defined separately for all aggregations.
                 - `count`
                 - `sum`
             - `coltype`: `smallint` (Optional, if you want to control the column type in the generated features tables)
-        - (Second quantity)
+        - No keys are used on this line, which marks the second aggregate in a list
             - `quantity`: `some_flag` (Since we're specifying `aggregates_imputation` above, a feature-specific imputation rule can be omitted)
             - `metrics`: 
                 - `max`
@@ -117,16 +118,18 @@ Available Imputation Rules:
 ### Feature Grouping
 define how to group features and generate combinations
 
-- `feature_group_definition`: feature_group_definition allows you to create groups/subset of your features by different criteria. for instance,
+- `feature_group_definition`: `feature_group_definition` allows you to create groups/subset of your features by different criteria. One can either specify `tables` or `prefix`. 
     - `tables`: allows you to send a list of collate feature tables (collate builds these by appending `aggregation_imputed` to the prefix)
-    - `prefix`: allows you to specify a list of feature name prefixes
+    - `prefix`: allows you to specify a list of feature name prefixes. Triage will consider prefixes sharing their initial string as the same (e.g., `bookings` will encompass `bookings_charges` as well as `bookings`). In other words, it's not actually maintaining a list of prefixes and searching for exact matches but trusting that prefixes do not overlap in this way.
 
 - `feature_group_strategies`: strategies for generating combinations of groups. available: all, leave-one-out, leave-one-in, all-combinations
 
 ### User Metadata
-These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the 'model_group_keys' below. For example, if you run experiments that share a temporal configuration but that use different label definitions (say, labeling building inspections with **any** violation as positive or labeling only building inspections with severe health and safety violations as positive), you can use the user metadata keys to indicate that the matrices from these experiments have different labeling criteria. The matrices from the two experiments will have different filenames (and not be overwritten or inappropriately reused), and if you add the label_definition key to the model group keys, models made on different label definition will have different groups. In this way, user metadata can be used to expand Triage beyond its explicitly supported functionality.
+These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the `model_group_keys` below. For example, if you run the entity matching algorithm before running the experiment, one can include a `matchdatetime` in the `user_metadata` that signifies which set of `entity_id`s was used to create a given model/model group. That way, we don't accidentally match old predictions with new staged data without looking up the new `entity_id`s first. 
 
-- `user_metadata`: `'severe_violations'`
+- `user_metadata`: 
+    - `matchdatetime`: `2019-01-01` 
+
 
 ### Model Grouping (optional)
 Model groups are a way of partitioning trained models in a way that makes for easier analysis.
@@ -149,11 +152,11 @@ The classifier/hyperparameter combinations that should be trained
 
 Each top-level key should be a class name, importable from triage. sklearn is available, and if you have another classifier package you would like available, contribute it to requirement/main.txt
 
-- `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the [grid_config session](https://github.com/dssg/triage/blob/6cb43f9cca032a980cbc25a9501e9559135fd04d/example/config/experiment.yaml#L276) in `experiment.yaml` as for a detailed example.
+- `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the [grid_config section](https://github.com/dssg/triage/blob/6cb43f9cca032a980cbc25a9501e9559135fd04d/example/config/experiment.yaml#L276) in `experiment.yaml` as for a detailed example.
 
 
 ### Prediction
-How predictions are computed for train and test matrices?
+How predictions are computed for train and test matrices? This is used only for *stored* predcitions and only affect postmodeling analysis (not model scoring), so if user is stroing predictions, this will not affect anything.
 
 - `prediction`: Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score are broken either at random or based on the `worst` or `best` options. `worst` is the default.
 
@@ -180,7 +183,7 @@ subsets, if passed, will add evaluations for subset(s) of the predictions to the
 How feature importances for individuals should be computed. This entire section can be left blank, in which case the defaults will be used.
 
 - `individual_importance`:
-    - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to `uniform`, or just the global importances. Empty list means don't calculate individual importances.
+    - `methods`: Refer to *how to compute* individual importances. Each entry in this list should represent a different method. Available methods are in the catwalk library's: `catwalk.individual_importance.CALCULATE_STRATEGIES` list. Will default to `uniform`, or just the global importances. Empty list means don't calculate individual importances. Individual importances take up the largest amount of database space, so an empty list is a good idea unless you need them.
     - `n_ranks`: The number of top features per individual to compute importances for. Will default to 5.
 
 
@@ -188,7 +191,7 @@ How feature importances for individuals should be computed. This entire section 
 Also check out the example file `audition.yaml`.
 
 ### Choose Model Groups
-Audtion needs a buch of `model_group_id's to help users select the models.
+Audtion needs a buch of `model_group_id`s to help users select the models.
 
 - `model_groups`:
     - `query`: The query is to choose what the model groups you want to include in the first round of model selection.
@@ -198,7 +201,7 @@ Audtion needs a buch of `model_group_id's to help users select the models.
 The timestamps when audition happens for each model group.
 
 - `time_stamps`:
-    - `query`: There's a hard rule in Audition that all of the chosen model groups for audition should have the same train end times as the timestamps or the subset of the timestamps from this query, otherwise those model groups with unmatched train end times will be pruned in the first round.
+    - `query`: There's a hard rule in Audition that all of the chosen model groups for audition should have the same train end times as the timestamps or the subset of the timestamps from this query, otherwise those model groups with missing temstamps will be pruned in the first round.
 
 
 ### Filter
@@ -209,7 +212,7 @@ Configuration for the Auditioner
     - `parameter`: parameter of interest, e.g. `50_abs`
     - `max_from_best`: The maximum value that the given metric can be worse than the best model for a given train end time.
     - `threshold_value`: The worst absolute value that the given metric should be. 
-    - `distance_table`: name of the distance table.
+    - `distance_table`: name of the distance table that will be created by Auditioner.
     - `models_table`: name of the models table.
 
 ### Rules
