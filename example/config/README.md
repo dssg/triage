@@ -71,7 +71,7 @@ Available Imputation Rules:
     - `from_obj`: from_obj is usually a source table but can be an expression, such as a join (ie `cool_stuff join other_stuff using (stuff_id)`)
     - `knowledge_date_column`: The date column to use for specifying which records to include in temporal features. It is important that the column used specifies the date at which the event is known about, which may be different from the date the event happened.
     - `aggregates_imputation`: top-level imputation rules that will apply to all aggregates functions can also specify `categoricals_imputation` or `array_categoricals_imputation`. You must specify at least one of the top-level or feature-level imputation to cover every feature being defined.
-        - `all`: The `all` rule will apply to all aggregation functions, unless overridden by more specific one
+        - `all`: The `all` rule will apply to all aggregation functions, unless overridden by more specific one. This is a default/fallback imputation method for any aggregation from this `from_obj`
             - `type`: every imputation rule must have a `type` parameter, while some (like 'constant') have other required parameters (`value` here)
             - `value`
         - `some aggregation function`: The reudction function used by the aggreagate such as `sum`, `count`, `avg`, `max` etc. Function-specific rules will take precedence over the catch-all rule.
