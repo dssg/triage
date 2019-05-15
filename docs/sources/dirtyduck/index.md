@@ -1,5 +1,3 @@
-# Welcome!
-
 This tutorial will show you how to use `Triage`, a data science
 modeling tool developed at the [Center for Data Science and Public
 Policy](http://dsapp.uchicago.edu) (DSaPP) at the University of
@@ -18,10 +16,10 @@ multi-entity, time-series structure.
 [v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
 
 
-# Before you start
+## Before you start
 
 
-## What you need for this tutorial
+### What you need for this tutorial
 
 Install [Docker CE](http://www.docker.com) and [Docker
 Compose](https://docs.docker.com/compose/). That's it! Follow the
@@ -35,8 +33,7 @@ At the moment only operative systems with \*nix-type command lines are
 supported, such as `GNU/Linux` and `MacOS`. Recent versions of
 `Windows` may also work.
 
-
-## How to use this tutorial
+### How to use this tutorial
 
 First, clone this repository on your laptop
 
@@ -48,9 +45,10 @@ Second, in the `triage/docs/sources/dirtyduck/` directory run
 
 This will take several minutes the first time you do it.
 
+After this, you need to decide [how do you want to use this tutorial](choose_your_own_adventure.md).
 
-## How you can help to improve this tutorial
 
-If you want to contribute, please follow the suggestions in the
-triage’s [github
-repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
+!!! info "How you can help to improve this tutorial"
+
+    If you want to contribute, please follow the suggestions in the
+    triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).

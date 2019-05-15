@@ -9,8 +9,8 @@ dataset](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4
 
 We will present the two problems that `Triage` was built to model[^2]:
 
-1.  **Resource Prioritization Systems** (also known as an *inspections problem*)[^3] and
-2.  **Early Warning Systems**[^4].
+1.  [**Resource Prioritization Systems**](inspections.md) (also known as an *inspections problem*)[^3] and
+2.  [**Early Warning Systems**](eis.md)[^4].
 
 
 ## Resource Prioritization Systems
@@ -30,17 +30,24 @@ target the most serious violations. Then we'd define the problem as:
 
 > Which $n$ facilities will have a critical or serious violation in the following $X$ period of time?
 
+If you want to continue to this case studie click [here](inspections.md)
+
 ## Early Warning Systems
 
-Using the same data set, facility owners or managers would pose the
+Using the same dataset (*Chicago Food Inspections dataset*), facility
+owners or managers would pose the
 machine learning (ML) problem as an early warning problem. They'd like
 to know whether an inspector is going to visit their facility so they
 can prepare for it. They can define the problem as:
 
 > Will my facility be inspected in the next $X$ period of time?
 
-Note that in both cases, we are defining a period of time in which the
-event will potentially happen.
+If you want to continue to this case studie click [here](eis.md)
+
+!!! note "Important"
+    Note that in both case studies, *resource prioritization* and
+    *early warning* systems we are defining a period of time in which
+    the event will potentially happen.
 
 
 ## What do they have in common?
@@ -78,6 +85,12 @@ very careful about interpreting the metrics in an inspections
 problem. Finally, when you are designing the field validation of your
 model, you need to take in account **selection bias**. If not, you
 will be inspecting the same facilities over and over[^6].
+
+
+## What's next?
+
+- Learn more about [early warning systems](eis.md)
+- Learn more about [resource prioritization systems](inspections.md)
 
 
 [^1]: Several examples use this dataset, such as [City of Chicago Food Inspection Forecasting](https://chicago.github.io/food-inspections-evaluation/), [PyCon 2016 keynote: Built in Super Heroes](https://youtu.be/lyDLAutA88s), and [PyData 2016: Forecasting critical food violations at restaurants using open data](https://youtu.be/1dKonIT-Yak).

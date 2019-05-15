@@ -31,7 +31,7 @@ markdown_extensions:
   - toc:
       permalink: "#"
       baselevel: 2
-      toc_depth: 1
+      toc_depth: 2
       separator: "-"
   - admonition
   - codehilite:
@@ -61,7 +61,7 @@ extra_javascript:
 nav:
   - Home: index.md
   - Dirty Duck Tutorial:
-    - Welcome: dirtyduck/index.md
+    - Welcome!: dirtyduck/index.md
     - Choose your own adventure: dirtyduck/choose_your_own_adventure.md
     - Setup:
       - Quick setup: dirtyduck/for_the_impatient.md

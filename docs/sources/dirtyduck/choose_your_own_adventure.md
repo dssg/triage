@@ -1,9 +1,10 @@
 # How to use this tutorial?
 
+
 -   You are interested in the *learn* how to use `triage` and have a *lot* of time:
+    -   [Problem description](problem_description.md)
     -   [Infrastructure](infrastructure.md)
     -   [Data preparation](data_preparation.md)
-    -   [Problem description](problem_description.md)
     -   [Resource prioritization](inspections.md)
     -   [Early warning systems](eis.md)
     -   [A deeper look into triage](triage_intro.md)
@@ -17,3 +18,5 @@
     -   [Resource prioritization](inspections.md) and/or [Early warning systems](eis.md)
 -   You *already* know `triage` but want to use it on the cloud
     -   [Scaling up](aws_batch.md)
+- You *just* want to use the database for your own purposes
+    -  [Quick setup](for_the_impatient.md)
