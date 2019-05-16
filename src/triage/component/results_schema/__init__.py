@@ -104,7 +104,7 @@ def upgrade_if_clean(dburl):
         upgrade_db(dburl=dburl)
         return
     with engine.begin() as conn:
-        current_revision = list(conn.execute('select version_num from results_schema_versions limit 1'))[0][0]
+        current_revision = conn.execute('select version_num from results_schema_versions limit 1').scalar()
         logging.info("Database's results schema version is %s", current_revision)
         triage_head = script_.get_current_head()
         logging.info("Code's results schema version is %s", triage_head)
