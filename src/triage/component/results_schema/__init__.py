@@ -114,7 +114,7 @@ def upgrade_if_clean(dburl):
                 "Your database's results schema version, %s, is not a known revision to this"
                 "version of Triage knows about. Usually, this happens if you use a branch with a"
                 "new results schema version and upgrade the database to that version. To use this"
-                "version of Triage, you will likely need to check out that branch out"
+                "version of Triage, you will likely need to check out that branch out "
                 "and downgrade to %s",
                 current_revision,
                 triage_head
