@@ -6,12 +6,12 @@ DEFAULT_PROTECTED_GROUPS_NAME = "protected_groups"
 
 
 class ProtectedGroupsGeneratorNoOp(object):
-    def generate_all_dates(self):
+    def generate_all_dates(self, as_of_dates, cohort_table_name):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
-    def generate(self):
+    def generate(self, start_date, cohort_table_name):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
         )
@@ -30,27 +30,31 @@ class ProtectedGroupsGenerator(object):
         self.entity_id_column = entity_id_column
         self.knowledge_date_column = knowledge_date_column
 
-    def _create_protected_groups_table(self):
-        if self.replace or not table_exists(self.protected_groups_table_name, self.db_engine):
-            self.db_engine.execute("drop table if exists {}".format(self.protected_groups_table_name))
+    def generate_all_dates(self, as_of_dates, cohort_table_name):
+        table_is_new = False
+        if not table_exists(self.protected_groups_table_name, self.db_engine):
             self.db_engine.execute(
                 """
-                create table {} (
+                create table if not exists {} (
                 entity_id int,
                 as_of_date date,
-                {}
-
+                {},
+                cohort_table_name text
             )""".format(
                     self.protected_groups_table_name,
                     ", ".join([str(col) + " varchar(60)" for col in self.attribute_columns])
                 )
             )
+            table_is_new = True
         else:
             logging.info("Not dropping and recreating protected groups table because "
                          "replace flag was set to False and table was found to exist")
+        if self.replace:
+            self.db_engine.execute(
+                f'delete from {self.protected_groups_table_name} where cohort_table_name = %s',
+                cohort_table_name
+            )
 
-    def generate_all_dates(self,  as_of_dates,  cohort_table_name):
-        self._create_protected_groups_table()
         logging.info(
             "Creating protected_groups for %s as of dates and %s label timespans",
             len(as_of_dates)
@@ -62,13 +66,11 @@ class ProtectedGroupsGenerator(object):
                     as_of_date
                 )
                 any_existing_rows = list(self.db_engine.execute(
-                    """select 1 from {protected_groups_table}
+                    f"""select 1 from {self.protected_groups_table_name}
                     where as_of_date = '{as_of_date}'
+                    and cohort_table_name = '{cohort_table_name}'
                     limit 1
-                    """.format(
-                        protected_groups_table=self.protected_groups_table_name,
-                        as_of_date=as_of_date
-                    )
+                    """
                 ))
                 if len(any_existing_rows) == 1:
                     logging.info("Since nonzero existing protected_groups found, skipping")
@@ -79,12 +81,11 @@ class ProtectedGroupsGenerator(object):
                 as_of_date
             )
             self.generate(start_date=as_of_date, cohort_table_name=cohort_table_name)
-        nrows = [
-            row[0]
-            for row in self.db_engine.execute(
-                "select count(*) from {}".format(self.protected_groups_table_name)
-            )
-        ][0]
+        if table_is_new:
+            self.db_engine.execute(f"create index on {self.protected_groups_table_name} (cohort_table_name, as_of_date)")
+        nrows = self.db_engine.execute(
+            "select count(*) from {}".format(self.protected_groups_table_name)
+        ).scalar()
         if nrows == 0:
             logging.warning("Done creating protected_groups, but no rows in protected_groups table!")
         else:
@@ -98,7 +99,8 @@ class ProtectedGroupsGenerator(object):
             select distinct on (cohort.entity_id, cohort.as_of_date)
                 cohort.entity_id,
                 '{as_of_date}'::date as as_of_date,
-                {attribute_columns} 
+                {attribute_columns},
+                \'{cohort_table_name}\' as cohort_table_name
             from {cohort_table_name} cohort 
             left join (select * from {from_obj}) from_obj  on 
                 cohort.entity_id = from_obj.{entity_id_column} and
@@ -121,5 +123,3 @@ class ProtectedGroupsGenerator(object):
 
     def clean_up(self, protected_groups_table_name):
         self.db_engine.execute("drop table if exists {}".format(protected_groups_table_name))
-
-

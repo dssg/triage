@@ -1,74 +1,151 @@
-from datetime import datetime
+from datetime import datetime, date
 
 import pytest
 import testing.postgresql
 from sqlalchemy.engine import create_engine
+from unittest.mock import MagicMock
 
 from triage.component.architect.protected_groups_generators import ProtectedGroupsGenerator
 
 from . import utils
 
+def create_demographics_table(db_engine, data):
+    db_engine.execute(
+        """drop table if exists demographics;
+        create table demographics (person_id int, event_date date, race text, sex text)
+        """
+    )
+    for event in data:
+        db_engine.execute(
+            "insert into demographics values (%s, %s, %s, %s)", event
+        )
 
-def test_entity_date_table_generator_replace():
-    input_data = [
-        (1, datetime(2016, 1, 1), True),
-        (1, datetime(2016, 4, 1), False),
-        (1, datetime(2016, 3, 1), True),
-        (2, datetime(2016, 1, 1), False),
-        (2, datetime(2016, 1, 1), True),
-        (3, datetime(2016, 1, 1), True),
-        (5, datetime(2016, 3, 1), True),
-        (5, datetime(2016, 4, 1), True),
+
+def create_cohort_table(db_engine, data):
+    db_engine.execute(
+        "create table cohort_abcdef (entity_id int, as_of_date timestamp)"
+    )
+    for event in data:
+        db_engine.execute(
+            "insert into cohort_abcdef values (%s, %s)", event
+        )
+
+
+def default_demographics():
+    return [
+        (1, datetime(2015, 12, 30), 'aa', 'male'),
+        (1, datetime(2016, 2, 1), 'aa', 'male'),
+        (1, datetime(2016, 3, 1), 'aa', 'female'),
+        (2, datetime(2015, 12, 30), 'wh', 'male'),
+        (2, datetime(2016, 3, 1), 'wh', 'male'),
+        (3, datetime(2015, 12, 30), 'aa', 'male'),
+        (3, datetime(2016, 3, 1), 'aa', 'male'),
+        (5, datetime(2016, 2, 1), 'wh', 'female'),
+        (5, datetime(2016, 3, 1), 'wh', 'female'),
     ]
+
+
+def default_cohort():
+    return [
+        (1, datetime(2016, 1, 1)),
+        (1, datetime(2016, 3, 1)),
+        (1, datetime(2016, 4, 1)),
+        (2, datetime(2016, 1, 1)),
+        (2, datetime(2016, 3, 1)),
+        (2, datetime(2016, 4, 1)),
+        (3, datetime(2016, 1, 1)),
+        (3, datetime(2016, 3, 1)),
+        (3, datetime(2016, 4, 1)),
+        (4, datetime(2016, 1, 1)),
+        (4, datetime(2016, 3, 1)),
+        (4, datetime(2016, 4, 1)),
+        (5, datetime(2016, 1, 1)),
+        (5, datetime(2016, 3, 1)),
+        (5, datetime(2016, 4, 1)),
+    ]
+
+def assert_data(table_generator):
+    expected_output = [
+        (1, date(2016, 1, 1), 'aa', 'male', 'cohort_abcdef'),
+        (1, date(2016, 3, 1), 'aa', 'male', 'cohort_abcdef'),
+        (1, date(2016, 4, 1), 'aa', 'female', 'cohort_abcdef'),
+        (2, date(2016, 1, 1), 'wh', 'male', 'cohort_abcdef'),
+        (2, date(2016, 3, 1), 'wh', 'male', 'cohort_abcdef'),
+        (2, date(2016, 4, 1), 'wh', 'male', 'cohort_abcdef'),
+        (3, date(2016, 1, 1), 'aa', 'male', 'cohort_abcdef'),
+        (3, date(2016, 3, 1), 'aa', 'male', 'cohort_abcdef'),
+        (3, date(2016, 4, 1), 'aa', 'male', 'cohort_abcdef'),
+        (4, date(2016, 1, 1), None, None, 'cohort_abcdef'),
+        (4, date(2016, 3, 1), None, None, 'cohort_abcdef'),
+        (4, date(2016, 4, 1), None, None, 'cohort_abcdef'),
+        (5, date(2016, 1, 1), None, None, 'cohort_abcdef'),
+        (5, date(2016, 3, 1), 'wh', 'female', 'cohort_abcdef'),
+        (5, date(2016, 4, 1), 'wh', 'female', 'cohort_abcdef'),
+    ]
+    results = list(
+        table_generator.db_engine.execute(
+            f"""
+            select entity_id, as_of_date, race, sex, cohort_table_name from {table_generator.protected_groups_table_name}
+            order by entity_id, as_of_date
+        """
+        )
+    )
+    assert results == expected_output
+
+def test_protected_groups_generator_replace():
+    demographics_data = default_demographics()
+    cohort_data = default_cohort()
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        utils.create_binary_outcome_events(engine, "events", input_data)
-        table_generator = EntityDateTableGenerator(
-            query="select entity_id from events where outcome_date < '{as_of_date}'::date",
+        create_demographics_table(engine, demographics_data)
+        create_cohort_table(engine, cohort_data)
+        table_generator = ProtectedGroupsGenerator(
+            from_obj="demographics",
+            attribute_columns=['race', 'sex'],
+            entity_id_column="person_id",
+            knowledge_date_column="event_date",
             db_engine=engine,
-            entity_date_table_name="exp_hash_entity_date",
+            protected_groups_table_name="protected_groups_abcdef",
             replace=True
         )
         as_of_dates = [
             datetime(2016, 1, 1),
-            datetime(2016, 2, 1),
             datetime(2016, 3, 1),
             datetime(2016, 4, 1),
-            datetime(2016, 5, 1),
-            datetime(2016, 6, 1),
         ]
-        table_generator.generate_entity_date_table(as_of_dates)
-        expected_output = [
-            (1, datetime(2016, 2, 1), True),
-            (1, datetime(2016, 3, 1), True),
-            (1, datetime(2016, 4, 1), True),
-            (1, datetime(2016, 5, 1), True),
-            (1, datetime(2016, 6, 1), True),
-            (2, datetime(2016, 2, 1), True),
-            (2, datetime(2016, 3, 1), True),
-            (2, datetime(2016, 4, 1), True),
-            (2, datetime(2016, 5, 1), True),
-            (2, datetime(2016, 6, 1), True),
-            (3, datetime(2016, 2, 1), True),
-            (3, datetime(2016, 3, 1), True),
-            (3, datetime(2016, 4, 1), True),
-            (3, datetime(2016, 5, 1), True),
-            (3, datetime(2016, 6, 1), True),
-            (5, datetime(2016, 4, 1), True),
-            (5, datetime(2016, 5, 1), True),
-            (5, datetime(2016, 6, 1), True),
-        ]
-        results = list(
-            engine.execute(
-                f"""
-                select entity_id, as_of_date, active from {table_generator.entity_date_table_name}
-                order by entity_id, as_of_date
-            """
-            )
-        )
-        assert results == expected_output
-        utils.assert_index(engine, table_generator.entity_date_table_name, "entity_id")
-        utils.assert_index(engine, table_generator.entity_date_table_name, "as_of_date")
+        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        utils.assert_index(engine, table_generator.protected_groups_table_name, "cohort_table_name")
+        utils.assert_index(engine, table_generator.protected_groups_table_name, "as_of_date")
+        assert_data(table_generator)
 
-        table_generator.generate_entity_date_table(as_of_dates)
-        assert results == expected_output
+        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        assert_data(table_generator)
+
+
+def test_protected_groups_generator_noreplace():
+    demographics_data = default_demographics()
+    cohort_data = default_cohort()
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        create_demographics_table(engine, demographics_data)
+        create_cohort_table(engine, cohort_data)
+        table_generator = ProtectedGroupsGenerator(
+            from_obj="demographics",
+            attribute_columns=['race', 'sex'],
+            entity_id_column="person_id",
+            knowledge_date_column="event_date",
+            db_engine=engine,
+            protected_groups_table_name="protected_groups_abcdef",
+            replace=False
+        )
+        as_of_dates = [
+            datetime(2016, 1, 1),
+            datetime(2016, 3, 1),
+            datetime(2016, 4, 1),
+        ]
+        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        assert_data(table_generator)
+        table_generator.generate = MagicMock()
+        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        table_generator.generate.assert_not_called()
+        assert_data(table_generator)
