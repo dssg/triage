@@ -108,7 +108,7 @@ def upgrade_if_clean(dburl):
         logging.info("Database's results schema version is %s", current_revision)
         triage_head = script_.get_current_head()
         logging.info("Code's results schema version is %s", triage_head)
-        database_is_ahead = current_revision not in set(migration.revision for migration in script_.walk_revisions())
+        database_is_ahead = not any(migration.revision == current_revision for migration in script_.walk_revisions())
         if database_is_ahead:
             raise ValueError(
                 "Your database's results schema version, %s, is not a known revision to this"
