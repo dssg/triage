@@ -99,7 +99,7 @@ def upgrade_if_clean(dburl):
     engine = create_engine(dburl)
     script_ = script.ScriptDirectory.from_config(alembic_cfg)
     if not table_exists('results_schema_versions', engine):
-        logging.info("No results_schema_versions table exists, which means that this installation"
+        logging.info("No results_schema_versions table exists, which means that this installation "
                      "is fresh. Upgrading db.")
         upgrade_db(dburl=dburl)
         return
