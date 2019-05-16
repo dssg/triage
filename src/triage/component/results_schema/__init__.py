@@ -104,29 +104,33 @@ def upgrade_if_clean(dburl):
         upgrade_db(dburl=dburl)
         return
     with engine.begin() as conn:
-        current_revision = conn.execute('select version_num from results_schema_versions limit 1').scalar()
+        current_revision = conn.execute(
+            'select version_num from results_schema_versions limit 1'
+        ).scalar()
         logging.info("Database's results schema version is %s", current_revision)
         triage_head = script_.get_current_head()
         logging.info("Code's results schema version is %s", triage_head)
-        database_is_ahead = not any(migration.revision == current_revision for migration in script_.walk_revisions())
+        database_is_ahead = not any(
+            migration.revision == current_revision
+            for migration in script_.walk_revisions()
+        )
         if database_is_ahead:
             raise ValueError(
-                "Your database's results schema version, %s, is not a known revision to this"
-                "version of Triage knows about. Usually, this happens if you use a branch with a"
-                "new results schema version and upgrade the database to that version. To use this"
-                "version of Triage, you will likely need to check out that branch out "
-                "and downgrade to %s",
-                current_revision,
-                triage_head
+                f"Your database's results schema version, {current_revision}, is not a known "
+                "revision to this version of Triage. Usually, this happens if you use a branch "
+                "with a new results schema version and upgrade the database to that version. "
+                "To use this version of Triage, you will likely need to check out that branch "
+                f"and downgrade to {triage_head}",
             )
         elif current_revision != triage_head:
             raise ValueError(
-                "Your database's results schema revision, %s, does not equal the revision used"
-                "by this version of Triage. However, your database can be upgraded to this "
-                "revision. If you would like to upgrade the database, call "
-                "`triage db upgrade` if this is installed version of Triage, or "
-                "`manage alembic upgrade head` if this is a cloned Triage repository."
-                "The database changes may take a long time if this is a heavily populated database"
+                f"Your database's results schema revision, {current_revision}, is out of date "
+                "for this version of Triage. However, your database can be upgraded to this "
+                "revision. If you would like to upgrade your database from the console, and "
+                "you've installed Triage, you may execute `triage db upgrade`. "
+                "If the `triage` command is unavailable, (because you are running Triage directly "
+                " from a repository checkout), then `manage alembic upgrade head`. "
+                "The database changes may take a long time on a heavily populated database. "
                 "Otherwise, you can also downgrade your Triage version to match your database."
             )
 
