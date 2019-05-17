@@ -15,9 +15,6 @@ class ProtectedGroupsGeneratorNoOp(object):
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
-    def clean_up(self, protected_groups_table_name):
-        pass
-
 
 class ProtectedGroupsGenerator(object):
     def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name, replace=True):
@@ -124,6 +121,3 @@ class ProtectedGroupsGenerator(object):
         logging.debug("Running protected_groups creation query")
         logging.debug(full_insert_query)
         self.db_engine.execute(full_insert_query)
-
-    def clean_up(self, protected_groups_table_name):
-        self.db_engine.execute("drop table if exists {}".format(protected_groups_table_name))
