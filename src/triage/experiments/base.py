@@ -230,10 +230,8 @@ class ExperimentBase(ABC):
 
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
-            self.protected_groups_table_name = "protected_groups_{}".format(
-                self.experiment_hash
-            )
-
+            bias_hash = filename_friendly_hash(bias_config)
+            self.protected_groups_table_name = f"protected_groups_{bias_hash}"
             self.protected_groups_generator = ProtectedGroupsGenerator(
                 db_engine=self.db_engine,
                 from_obj=parse_from_obj(bias_config, 'bias_from_obj'),

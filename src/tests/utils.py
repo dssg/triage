@@ -238,7 +238,13 @@ def populate_source_data(db_engine):
 
     entity_zip_codes = [(1, "60120"), (2, "60123"), (3, "60123")]
 
+    zip_code_demographics = [
+        ("60120", "hispanic", "2011-01-01"),
+        ("60123", "white", "2011-01-01"),
+    ]
+
     zip_code_events = [("60120", "2012-10-01", 1), ("60123", "2012-10-01", 10)]
+
 
     events = [
         (1, 1, "2011-01-01"),
@@ -280,6 +286,10 @@ def populate_source_data(db_engine):
         zip_code text
         )"""
     )
+
+    db_engine.execute("create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+    for demographic_row in zip_code_demographics:
+        db_engine.execute("insert into zip_code_demographics values (%s, %s, %s)", demographic_row)
 
     for entity_zip_code in entity_zip_codes:
         db_engine.execute(
@@ -395,6 +405,17 @@ def sample_config():
         "name": "custom_label_name",
         "include_missing_labels_in_train_as": False,
     }
+    bias_audit_config = {
+        'from_obj_query': 'select * from zip_code_demographics join entity_zip_codes using (zip_code)',
+        'attribute_columns': ['ethnicity'],
+        'knowledge_date_column': 'as_of_date',
+        'entity_id_column': 'entity_id',
+        'ref_groups_method': 'min_metric',
+        'thresholds': {
+            'percentiles': [],
+            'top_n': [2]
+        }
+    }
 
     return {
         "config_version": CONFIG_VERSION,
@@ -406,6 +427,7 @@ def sample_config():
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
+        "bias_audit_config": bias_audit_config,
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},
         "individual_importance": {"n_ranks": 2},
