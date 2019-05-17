@@ -127,7 +127,7 @@ class ExperimentBase(ABC):
         self.save_predictions = save_predictions
         self.skip_validation = skip_validation
         self.db_engine = db_engine
-        results_schema.upgrade_db(db_engine=self.db_engine)
+        results_schema.upgrade_if_clean(dburl=self.db_engine.url)
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
