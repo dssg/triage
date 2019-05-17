@@ -383,12 +383,12 @@ class Crosstabs(Command):
 class Db(Command):
     """Manage experiment database"""
 
-    @cmdmethod("revision", help="database schema revision to upgrade to (see triage db history)")
+    @cmdmethod("-r", "--revision", default="head", help="database schema revision to upgrade to (see triage db history)")
     def upgrade(self, args):
         """Upgrade triage results database"""
         upgrade_db(revision=args.revision, dburl=self.root.db_url)
 
-    @cmdmethod("revision", help="database schema revision to downgrade to (see triage db history)")
+    @cmdmethod("-r", "--revision", default="-1", help="database schema revision to downgrade to (see triage db history)")
     def downgrade(self, args):
         """Downgrade triage results database"""
         downgrade_db(revision=args.revision, dburl=self.root.db_url)
