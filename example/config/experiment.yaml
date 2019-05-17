@@ -284,10 +284,10 @@ bias_audit_config:
     knowledge_date_column: 'event_date'
     entity_id_column: 'person_id'
     ref_groups_method: 'predefined'
-        ref_groups:
-            -  'race': 'w'
-            -  'sex': 'm'
-            -  'age': '35-49'
+    ref_groups:
+        -  'race': 'w'
+        -  'sex': 'm'
+        -  'age': '35-49'
     thresholds:
         percentiles: []
         top_n: [100]
