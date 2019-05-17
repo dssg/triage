@@ -276,6 +276,7 @@ user_metadata:
 # Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
 # Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit
 # Please have a look to Aequitas documentation for further information about the ref_groups_method
+# https://dssg.github.io/aequitas/config.html
 # By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
 # Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
 bias_audit_config:
