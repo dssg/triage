@@ -681,8 +681,6 @@ class ExperimentBase(ABC):
         self.generate_cohort()
         logging.info("Creating labels")
         self.generate_labels()
-        logging.info("Creating protected groups table")
-        self.generate_protected_groups()
         logging.info("Creating feature aggregation tables")
         self.generate_preimputation_features()
         logging.info("Creating feature imputation tables")
@@ -714,6 +712,8 @@ class ExperimentBase(ABC):
     @experiment_entrypoint
     def train_and_test_models(self):
         self.generate_subsets()
+        logging.info("Creating protected groups table")
+        self.generate_protected_groups()
         batches = self._all_train_test_batches()
         if not batches:
             logging.warning("No train/test tasks found, so no training to do")

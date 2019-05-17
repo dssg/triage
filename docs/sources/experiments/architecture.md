@@ -20,6 +20,7 @@ graph TD
     subgraph Catwalk, per-model
     MT[Model Trainer]
     PR[Predictor]
+    PG[Protected Group Generator]
     EV[Model Evaluator]
     end
     TC --> LG
@@ -31,6 +32,8 @@ graph TD
     MB --> MT
     MB --> PR
     MT --> PR
+    EDG --> PG
+    PG --> EV
     PR --> EV
 </div>
 
@@ -75,6 +78,7 @@ These are where the interesting data science work is done.
     - [Model Grouper](#model-grouper)
     - [Model Trainer](#model-trainer)
     - [Predictor](#predictor)
+    - [Protected Group Table Generator](#protected-group-table-generator)
     - [Model Evaluator](#model-evaluator)
     - [Individual Importance Calculator](#individual-importance-calculator)
 
@@ -276,6 +280,21 @@ Generates predictions for a given model and matrix, both returning them for imme
 
 - The predictions as an array
 - Each prediction saved to the database, unless configured not to. The table they are stored in depends on which type of matrix it is (e.g. `test_results.predictions` or `train_results.predictions`)
+
+### Protected Group Table Generator
+
+Generates a table containing *protected group attributes* (e.g. race, sex, age).
+
+**Input**
+
+- A cohort table name and its configuration's unique hash
+- Bias audit configuration, specifically a from object (either a table or query), and column names in the from object for protected attributes, knowledge date, and entity id.
+- A name for the protected groups table
+
+**Output**
+
+- A protected groups table, containing all rows from the cohort and any protected group information present in the from object, as well as the cohort hash so multiple cohorts can live in the same table.
+
 
 ### ModelEvaluator
 

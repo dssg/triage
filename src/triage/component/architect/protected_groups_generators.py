@@ -3,8 +3,6 @@ import textwrap
 from sqlalchemy import text
 from triage.database_reflection import table_exists
 
-DEFAULT_PROTECTED_GROUPS_NAME = "protected_groups"
-
 
 class ProtectedGroupsGeneratorNoOp(object):
     def generate_all_dates(self, as_of_dates, cohort_table_name):
@@ -22,10 +20,10 @@ class ProtectedGroupsGeneratorNoOp(object):
 
 
 class ProtectedGroupsGenerator(object):
-    def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name=None, replace=True):
+    def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name, replace=True):
         self.db_engine = db_engine
         self.replace = replace
-        self.protected_groups_table_name = protected_groups_table_name if protected_groups_table_name else DEFAULT_PROTECTED_GROUPS_NAME
+        self.protected_groups_table_name = protected_groups_table_name
         self.from_obj = from_obj
         self.attribute_columns = attribute_columns
         self.entity_id_column = entity_id_column
