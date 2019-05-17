@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 import cProfile
 import marshal
+import random
 import time
 import itertools
 
@@ -119,6 +120,7 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
+        random.seed(config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -130,7 +132,7 @@ class ExperimentBase(ABC):
         self.save_predictions = save_predictions
         self.skip_validation = skip_validation
         self.db_engine = db_engine
-        results_schema.upgrade_db(db_engine=self.db_engine)
+        results_schema.upgrade_if_clean(dburl=self.db_engine.url)
 
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
@@ -316,6 +318,7 @@ class ExperimentBase(ABC):
             model_storage_engine=self.model_storage_engine,
             save_predictions=self.save_predictions,
             replace=self.replace,
+            rank_order=self.config.get("prediction", {}).get("rank_tiebreaker", "worst"),
         )
 
         self.individual_importance_calculator = IndividualImportanceCalculator(
@@ -327,7 +330,6 @@ class ExperimentBase(ABC):
 
         self.evaluator = ModelEvaluator(
             db_engine=self.db_engine,
-            sort_seed=self.config.get("scoring", {}).get("sort_seed", None),
             testing_metric_groups=self.config.get("scoring", {}).get("testing_metric_groups", []),
             training_metric_groups=self.config.get("scoring", {}).get("training_metric_groups", []),
         )

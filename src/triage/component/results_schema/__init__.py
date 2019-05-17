@@ -1,9 +1,11 @@
 import os.path
 
+import logging
 from alembic.config import Config
+from alembic import script
 from alembic import command
-import yaml
-from sqlalchemy.engine.url import URL
+from triage import create_engine
+from triage.database_reflection import table_exists
 
 
 from .schema import (
@@ -24,6 +26,8 @@ from .schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    TestPredictionMetadata,
+    TrainPredictionMetadata,
 )
 
 
@@ -45,6 +49,8 @@ __all__ = (
     "TrainEvaluation",
     "TestPrediction",
     "TrainPrediction",
+    "TestPredictionMetadata",
+    "TrainPredictionMetadata",
     "mark_db_as_upgraded",
     "upgrade_db",
 )
@@ -82,6 +88,51 @@ REVISION_MAPPING = {
 
 def stamp_db(revision, dburl):
     command.stamp(alembic_config(dburl=dburl), revision)
+
+
+def upgrade_if_clean(dburl):
+    """Upgrade the database only if the results schema hasn't been created yet.
+
+    Raises: ValueError if the database results schema version does not equal the code's version
+    """
+    alembic_cfg = alembic_config(dburl)
+    engine = create_engine(dburl)
+    script_ = script.ScriptDirectory.from_config(alembic_cfg)
+    if not table_exists('results_schema_versions', engine):
+        logging.info("No results_schema_versions table exists, which means that this installation "
+                     "is fresh. Upgrading db.")
+        upgrade_db(dburl=dburl)
+        return
+    with engine.begin() as conn:
+        current_revision = conn.execute(
+            'select version_num from results_schema_versions limit 1'
+        ).scalar()
+        logging.info("Database's results schema version is %s", current_revision)
+        triage_head = script_.get_current_head()
+        logging.info("Code's results schema version is %s", triage_head)
+        database_is_ahead = not any(
+            migration.revision == current_revision
+            for migration in script_.walk_revisions()
+        )
+        if database_is_ahead:
+            raise ValueError(
+                f"Your database's results schema version, {current_revision}, is not a known "
+                "revision to this version of Triage. Usually, this happens if you use a branch "
+                "with a new results schema version and upgrade the database to that version. "
+                "To use this version of Triage, you will likely need to check out that branch "
+                f"and downgrade to {triage_head}",
+            )
+        elif current_revision != triage_head:
+            raise ValueError(
+                f"Your database's results schema revision, {current_revision}, is out of date "
+                "for this version of Triage. However, your database can be upgraded to this "
+                "revision. If you would like to upgrade your database from the console, and "
+                "you've installed Triage, you may execute `triage db upgrade`. "
+                "If the `triage` command is unavailable, (because you are running Triage directly "
+                " from a repository checkout), then `manage alembic upgrade head`. "
+                "The database changes may take a long time on a heavily populated database. "
+                "Otherwise, you can also downgrade your Triage version to match your database."
+            )
 
 
 def alembic_config(dburl):

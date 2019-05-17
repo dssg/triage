@@ -62,7 +62,7 @@ def infer_ec2_instance_type():
             'http://169.254.169.254/latest/meta-data/instance-type',
             timeout=0.01
         ).text
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         logging.info(
             "Unable to retrieve metadata about ec2 instance, will not set ec2 instance type"
         )

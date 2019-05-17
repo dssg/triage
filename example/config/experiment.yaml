@@ -5,12 +5,15 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v6'
+config_version: 'v7'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
 # models table for each model created in this experiment
 model_comment: 'test'
+# random_seed will be set in Python at the beginning of the experiment and 
+# affect the generation of all model seeds
+random_seed: 23895478
 
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
@@ -290,6 +293,21 @@ bias_audit_config:
         top_n: [100]
 
 
+# PREDICTION
+# How predictions are computed for train and test matrices
+# 
+# Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score 
+# are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+#
+# 'worst' will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+# 'best' will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
+# 'random' will choose one random ordering to break ties. The result will be affected by
+# current state of Postgres' random number generator. Before ranking, the generator is seeded
+# based on the *model*'s random seed.
+#prediction:
+#   rank_tiebreaker: "worst"
+
+
 # MODEL SCORING
 # How each trained model is scored
 #
@@ -303,10 +321,6 @@ bias_audit_config:
 #
 # Thresholds are more specific: The list is dichotomized and only the
 # top percentile or top n entities are scored as positive labels
-#
-# sort_seed, if passed, will seed the random number generator for each model's
-# metric creation phase. This affects how entities with the same probabilities
-# are sorted
 #
 # subsets, if passed, will add evaluations for subset(s) of the predictions to
 # the subset_evaluations tables, using the same testing and training metric
@@ -328,7 +342,6 @@ bias_audit_config:
 #                subset on a given as_of_date with a placeholder for the
 #                as_of_date being queried
 scoring:
-    sort_seed: 5
     testing_metric_groups:
         -
             metrics: [precision@, recall@]
