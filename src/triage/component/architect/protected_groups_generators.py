@@ -1,5 +1,6 @@
 import logging
 import textwrap
+from sqlalchemy import text
 from triage.database_reflection import table_exists
 
 DEFAULT_PROTECTED_GROUPS_NAME = "protected_groups"
@@ -30,7 +31,7 @@ class ProtectedGroupsGenerator(object):
         self.entity_id_column = entity_id_column
         self.knowledge_date_column = knowledge_date_column
 
-    def generate_all_dates(self, as_of_dates, cohort_table_name):
+    def generate_all_dates(self, as_of_dates, cohort_table_name, cohort_hash):
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
             self.db_engine.execute(
@@ -39,7 +40,7 @@ class ProtectedGroupsGenerator(object):
                 entity_id int,
                 as_of_date date,
                 {},
-                cohort_table_name text
+                cohort_hash text
             )""".format(
                     self.protected_groups_table_name,
                     ", ".join([str(col) + " varchar(60)" for col in self.attribute_columns])
@@ -51,12 +52,12 @@ class ProtectedGroupsGenerator(object):
                          "replace flag was set to False and table was found to exist")
         if self.replace:
             self.db_engine.execute(
-                f'delete from {self.protected_groups_table_name} where cohort_table_name = %s',
-                cohort_table_name
+                f'delete from {self.protected_groups_table_name} where cohort_hash = %s',
+                cohort_hash
             )
 
         logging.info(
-            "Creating protected_groups for %s as of dates and %s label timespans",
+            "Creating protected_groups for %s as of dates",
             len(as_of_dates)
         )
         for as_of_date in as_of_dates:
@@ -68,7 +69,7 @@ class ProtectedGroupsGenerator(object):
                 any_existing_rows = list(self.db_engine.execute(
                     f"""select 1 from {self.protected_groups_table_name}
                     where as_of_date = '{as_of_date}'
-                    and cohort_table_name = '{cohort_table_name}'
+                    and cohort_hash = '{cohort_hash}'
                     limit 1
                     """
                 ))
@@ -80,9 +81,13 @@ class ProtectedGroupsGenerator(object):
                 "Generating protected groups for as of date %s ",
                 as_of_date
             )
-            self.generate(start_date=as_of_date, cohort_table_name=cohort_table_name)
+            self.generate(
+                start_date=as_of_date,
+                cohort_table_name=cohort_table_name,
+                cohort_hash=cohort_hash
+            )
         if table_is_new:
-            self.db_engine.execute(f"create index on {self.protected_groups_table_name} (cohort_table_name, as_of_date)")
+            self.db_engine.execute(f"create index on {self.protected_groups_table_name} (cohort_hash, as_of_date)")
         nrows = self.db_engine.execute(
             "select count(*) from {}".format(self.protected_groups_table_name)
         ).scalar()
@@ -92,31 +97,32 @@ class ProtectedGroupsGenerator(object):
             logging.info("Done creating protected_groups table %s: rows: %s", self.protected_groups_table_name, nrows)
 
 
-    def generate(self, start_date, cohort_table_name):
-        full_insert_query = textwrap.dedent(
-            """
+    def generate(self, start_date, cohort_table_name, cohort_hash):
+        full_insert_query = text(textwrap.dedent(
+            '''
             insert into {protected_groups_table}
             select distinct on (cohort.entity_id, cohort.as_of_date)
                 cohort.entity_id,
                 '{as_of_date}'::date as as_of_date,
                 {attribute_columns},
-                \'{cohort_table_name}\' as cohort_table_name
+                \'{cohort_hash}\' as cohort_hash
             from {cohort_table_name} cohort 
             left join (select * from {from_obj}) from_obj  on 
                 cohort.entity_id = from_obj.{entity_id_column} and
                 cohort.as_of_date > from_obj.{knowledge_date_column}
             where cohort.as_of_date = '{as_of_date}'::date
             order by cohort.entity_id, cohort.as_of_date, {knowledge_date_column} desc
-        """
+        '''
         ).format(
             protected_groups_table=self.protected_groups_table_name,
             as_of_date=start_date,
             attribute_columns=", ".join([str(col) for col in self.attribute_columns]),
+            cohort_hash=cohort_hash,
             cohort_table_name=cohort_table_name,
             from_obj=self.from_obj,
             knowledge_date_column=self.knowledge_date_column,
             entity_id_column=self.entity_id_column
-        )
+        ))
         logging.debug("Running protected_groups creation query")
         logging.debug(full_insert_query)
         self.db_engine.execute(full_insert_query)

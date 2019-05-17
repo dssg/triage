@@ -186,9 +186,10 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get("cohort_config", {})
         if "query" in cohort_config:
+            self.cohort_hash = filename_friendly_hash(cohort_config['query'])
             self.cohort_table_name = "cohort_{}_{}".format(
                 cohort_config.get('name', 'default'),
-                filename_friendly_hash(cohort_config['query'])
+                self.cohort_hash
             )
             self.cohort_table_generator = EntityDateTableGenerator(
                 entity_date_table_name=self.cohort_table_name,
@@ -230,8 +231,8 @@ class ExperimentBase(ABC):
 
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
-            bias_hash = filename_friendly_hash(bias_config)
-            self.protected_groups_table_name = f"protected_groups_{bias_hash}"
+            self.bias_hash = filename_friendly_hash(bias_config)
+            self.protected_groups_table_name = f"protected_groups_{self.bias_hash}"
             self.protected_groups_generator = ProtectedGroupsGenerator(
                 db_engine=self.db_engine,
                 from_obj=parse_from_obj(bias_config, 'bias_from_obj'),
@@ -612,7 +613,7 @@ class ExperimentBase(ABC):
         Results are stored in the database, not returned
         """
         self.protected_groups_generator.generate_all_dates(
-            self.all_as_of_times, self.cohort_table_name
+            self.all_as_of_times, self.cohort_table_name, self.cohort_hash
         )
 
     def generate_subset(self, subset_hash):

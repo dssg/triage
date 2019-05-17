@@ -66,26 +66,26 @@ def default_cohort():
 
 def assert_data(table_generator):
     expected_output = [
-        (1, date(2016, 1, 1), 'aa', 'male', 'cohort_abcdef'),
-        (1, date(2016, 3, 1), 'aa', 'male', 'cohort_abcdef'),
-        (1, date(2016, 4, 1), 'aa', 'female', 'cohort_abcdef'),
-        (2, date(2016, 1, 1), 'wh', 'male', 'cohort_abcdef'),
-        (2, date(2016, 3, 1), 'wh', 'male', 'cohort_abcdef'),
-        (2, date(2016, 4, 1), 'wh', 'male', 'cohort_abcdef'),
-        (3, date(2016, 1, 1), 'aa', 'male', 'cohort_abcdef'),
-        (3, date(2016, 3, 1), 'aa', 'male', 'cohort_abcdef'),
-        (3, date(2016, 4, 1), 'aa', 'male', 'cohort_abcdef'),
-        (4, date(2016, 1, 1), None, None, 'cohort_abcdef'),
-        (4, date(2016, 3, 1), None, None, 'cohort_abcdef'),
-        (4, date(2016, 4, 1), None, None, 'cohort_abcdef'),
-        (5, date(2016, 1, 1), None, None, 'cohort_abcdef'),
-        (5, date(2016, 3, 1), 'wh', 'female', 'cohort_abcdef'),
-        (5, date(2016, 4, 1), 'wh', 'female', 'cohort_abcdef'),
+        (1, date(2016, 1, 1), 'aa', 'male', 'abcdef'),
+        (1, date(2016, 3, 1), 'aa', 'male', 'abcdef'),
+        (1, date(2016, 4, 1), 'aa', 'female', 'abcdef'),
+        (2, date(2016, 1, 1), 'wh', 'male', 'abcdef'),
+        (2, date(2016, 3, 1), 'wh', 'male', 'abcdef'),
+        (2, date(2016, 4, 1), 'wh', 'male', 'abcdef'),
+        (3, date(2016, 1, 1), 'aa', 'male', 'abcdef'),
+        (3, date(2016, 3, 1), 'aa', 'male', 'abcdef'),
+        (3, date(2016, 4, 1), 'aa', 'male', 'abcdef'),
+        (4, date(2016, 1, 1), None, None, 'abcdef'),
+        (4, date(2016, 3, 1), None, None, 'abcdef'),
+        (4, date(2016, 4, 1), None, None, 'abcdef'),
+        (5, date(2016, 1, 1), None, None, 'abcdef'),
+        (5, date(2016, 3, 1), 'wh', 'female', 'abcdef'),
+        (5, date(2016, 4, 1), 'wh', 'female', 'abcdef'),
     ]
     results = list(
         table_generator.db_engine.execute(
             f"""
-            select entity_id, as_of_date, race, sex, cohort_table_name from {table_generator.protected_groups_table_name}
+            select entity_id, as_of_date, race, sex, cohort_hash from {table_generator.protected_groups_table_name}
             order by entity_id, as_of_date
         """
         )
@@ -113,12 +113,20 @@ def test_protected_groups_generator_replace():
             datetime(2016, 3, 1),
             datetime(2016, 4, 1),
         ]
-        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
-        utils.assert_index(engine, table_generator.protected_groups_table_name, "cohort_table_name")
+        table_generator.generate_all_dates(
+            as_of_dates,
+            cohort_table_name='cohort_abcdef',
+            cohort_hash='abcdef'
+        )
+        utils.assert_index(engine, table_generator.protected_groups_table_name, "cohort_hash")
         utils.assert_index(engine, table_generator.protected_groups_table_name, "as_of_date")
         assert_data(table_generator)
 
-        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        table_generator.generate_all_dates(
+            as_of_dates,
+            cohort_table_name='cohort_abcdef',
+            cohort_hash='abcdef'
+        )
         assert_data(table_generator)
 
 
@@ -143,9 +151,17 @@ def test_protected_groups_generator_noreplace():
             datetime(2016, 3, 1),
             datetime(2016, 4, 1),
         ]
-        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        table_generator.generate_all_dates(
+            as_of_dates,
+            cohort_table_name='cohort_abcdef',
+            cohort_hash='abcdef'
+        )
         assert_data(table_generator)
         table_generator.generate = MagicMock()
-        table_generator.generate_all_dates(as_of_dates, cohort_table_name='cohort_abcdef')
+        table_generator.generate_all_dates(
+            as_of_dates,
+            cohort_table_name='cohort_abcdef',
+            cohort_hash='abcdef'
+        )
         table_generator.generate.assert_not_called()
         assert_data(table_generator)

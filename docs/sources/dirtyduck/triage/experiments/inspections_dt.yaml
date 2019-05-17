@@ -188,14 +188,14 @@ bias_audit_config:
     from_obj_query: |
         select
             entity_id,
-            start_date,
+            start_time,
             case when facility_type similar to '%school%|daycare%|child%|' then 'kids_facility'
             when facility_type = 'restaurant' then 'restaurant'
             when facility_type = 'grocery_store' then 'grocery_store'
             when facility_type = 'unknown' then 'unknown'
             else 'other' end as facility_type from semantic.entities
     attribute_columns: ['facility_type']
-    knowledge_date_column: 'start_date'
+    knowledge_date_column: 'start_time'
     entity_id_column: 'entity_id'
     ref_groups_method: 'min_metric'
     thresholds:
