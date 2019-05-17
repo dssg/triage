@@ -1,13 +1,11 @@
 from datetime import datetime, date
 
-import pytest
 import testing.postgresql
 from sqlalchemy.engine import create_engine
 from unittest.mock import MagicMock
 
-from triage.component.architect.protected_groups_generators import ProtectedGroupsGenerator
+from triage.component.catwalk.protected_groups_generators import ProtectedGroupsGenerator
 
-from . import utils
 
 def create_demographics_table(db_engine, data):
     db_engine.execute(
@@ -64,6 +62,7 @@ def default_cohort():
         (5, datetime(2016, 4, 1)),
     ]
 
+
 def assert_data(table_generator):
     expected_output = [
         (1, date(2016, 1, 1), 'aa', 'male', 'abcdef'),
@@ -85,12 +84,14 @@ def assert_data(table_generator):
     results = list(
         table_generator.db_engine.execute(
             f"""
-            select entity_id, as_of_date, race, sex, cohort_hash from {table_generator.protected_groups_table_name}
+            select entity_id, as_of_date, race, sex, cohort_hash
+            from {table_generator.protected_groups_table_name}
             order by entity_id, as_of_date
         """
         )
     )
     assert results == expected_output
+
 
 def test_protected_groups_generator_replace():
     demographics_data = default_demographics()
@@ -118,8 +119,6 @@ def test_protected_groups_generator_replace():
             cohort_table_name='cohort_abcdef',
             cohort_hash='abcdef'
         )
-        utils.assert_index(engine, table_generator.protected_groups_table_name, "cohort_hash")
-        utils.assert_index(engine, table_generator.protected_groups_table_name, "as_of_date")
         assert_data(table_generator)
 
         table_generator.generate_all_dates(

@@ -14,12 +14,6 @@ from triage.component.architect.label_generators import (
     DEFAULT_LABEL_NAME,
 )
 
-from triage.component.architect.protected_groups_generators import (
-    ProtectedGroupsGenerator,
-    ProtectedGroupsGeneratorNoOp,
-    DEFAULT_PROTECTED_GROUPS_NAME
-)
-
 from triage.component.architect.features import (
     FeatureGenerator,
     FeatureDictionaryCreator,
@@ -43,6 +37,11 @@ from triage.component.catwalk import (
     ModelTrainTester,
     Subsetter
 )
+from triage.component.catwalk.protected_groups_generators import (
+    ProtectedGroupsGenerator,
+    ProtectedGroupsGeneratorNoOp,
+)
+
 from triage.component.catwalk.utils import (
     save_experiment_and_get_hash,
     associate_models_with_experiment,
@@ -742,17 +741,13 @@ class ExperimentBase(ABC):
         if not self.skip_validation:
             self.validate()
 
+        logging.info("Generating matrices")
         try:
-            logging.info("Generating matrices")
             self.generate_matrices()
-        finally:
-            if self.cleanup:
-                self.clean_up_matrix_building_tables()
-
-        try:
             self.train_and_test_models()
         finally:
             if self.cleanup:
+                self.clean_up_matrix_building_tables()
                 self.clean_up_subset_tables()
             logging.info("Experiment complete")
             self._log_end_of_run_report()
