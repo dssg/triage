@@ -5,12 +5,12 @@ from triage.database_reflection import table_exists
 
 
 class ProtectedGroupsGeneratorNoOp(object):
-    def generate_all_dates(self, as_of_dates, cohort_table_name):
+    def generate_all_dates(self, *args, **kwargs):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
-    def generate(self, start_date, cohort_table_name):
+    def generate(self, *args, **kwargs):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
         )

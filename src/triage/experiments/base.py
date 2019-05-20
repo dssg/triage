@@ -180,6 +180,13 @@ class ExperimentBase(ABC):
                 "Will not run experiment.".format(config_version, CONFIG_VERSION)
             )
 
+    @cachedproperty
+    def cohort_hash(self):
+        if "query" in self.config.get("cohort_config", {}):
+            return filename_friendly_hash(self.config["cohort_config"]["query"])
+        else:
+            return None
+
     def initialize_components(self):
         split_config = self.config["temporal_config"]
 
@@ -187,7 +194,6 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get("cohort_config", {})
         if "query" in cohort_config:
-            self.cohort_hash = filename_friendly_hash(cohort_config['query'])
             self.cohort_table_name = "cohort_{}_{}".format(
                 cohort_config.get('name', 'default'),
                 self.cohort_hash
