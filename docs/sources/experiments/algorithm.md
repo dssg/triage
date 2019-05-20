@@ -330,6 +330,8 @@ Sometimes test matrices may not have labels for every row, so it's worth mention
 labels
 * `num_positive_labels` - The number of positive labels in the test matrix
 
+Triage supports performing a bias audit using the Aequitas library, if a 'bias_audit_config' is passed in configuration. This is handled first through creating a 'protected groups'table which retrieves the configured protected group information for each member of the cohort, and the time that this protected group information was first known. This table is named using a hash of the bias audit configuration, so data can be reused across experiments as long as the bias configuration does not change. The bias audit itself is yet to be built.
+
 Triage also supports evaluating a model on a subset of the predictions made.
 This is done by passing a subset query in the prediction config. The model
 evaluator will then subset the predictions on valid entity-date pairs for the

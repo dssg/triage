@@ -844,6 +844,47 @@ class ScoringConfigValidator(Validator):
                         )
 
 
+class BiasAuditConfigValidator(Validator):
+    def _run(self, bias_audit_config):
+        if not bias_audit_config:
+            # if empty, that's fine, shortcut out
+            return
+        if 'from_obj_query' in bias_audit_config and 'from_obj_table' in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+            Section: bias_audit_config -
+            Both 'from_obj_query' and 'from_obj_table' specified .
+            Please only specify one."""
+                )
+            )
+        if 'from_obj_query' not in bias_audit_config and 'from_obj_table' not in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+            Section: bias_audit_config -
+            Neither 'from_obj_query' and 'from_obj_table' specified .
+            Please specify one."""
+                )
+            )
+        for key in [
+            "attribute_columns",
+            "knowledge_date_column",
+            "entity_id_column",
+            "ref_groups_method",
+        ]:
+            if key not in bias_audit_config:
+                raise ValueError(
+                    dedent(
+                        """
+                Section: bias_audit_config -
+                '{} required as key: bias_audit_config config: {}""".format(
+                            key, bias_audit_config
+                        )
+                    )
+                )
+
+
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
         TemporalValidator(strict=self.strict).run(
@@ -880,6 +921,9 @@ class ExperimentValidator(Validator):
         )
         ScoringConfigValidator(strict=self.strict).run(
             experiment_config.get("scoring", {})
+        )
+        BiasAuditConfigValidator(strict=self.strict).run(
+            experiment_config.get("bias_audit_config", {})
         )
 
         # show the success message in the console as well as the logger
