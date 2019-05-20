@@ -67,27 +67,30 @@ def _base_alembic_args(db_config_filename=None):
     return base
 
 
-def upgrade_db(db_engine=None, dburl=None):
+def upgrade_db(db_engine=None, dburl=None, revision="head"):
     if db_engine:
-        command.upgrade(alembic_config(dburl=db_engine.url), "head")
+        command.upgrade(alembic_config(dburl=db_engine.url), revision)
     elif dburl:
-        command.upgrade(alembic_config(dburl=dburl), "head")
+        command.upgrade(alembic_config(dburl=dburl), revision)
     else:
         raise ValueError("Must pass either a db_config_filehandle or a db_engine or a dburl")
 
 
-REVISION_MAPPING = {
-    "v1": "72ac5cbdca05",  # may add some logic to tag earlier ones if needed, could be 26 or 0d
-    "v2": "72ac5cbdca05",
-    "v3": "7d57d1cf3429",
-    "v4": "89a8ce240bae",
-    "v5": "2446a931de7a",
-    "pre-v1": "8b3f167d0418",
-}
+def downgrade_db(db_engine=None, dburl=None, revision="-1"):
+    if db_engine:
+        command.downgrade(alembic_config(dburl=db_engine.url), revision)
+    elif dburl:
+        command.downgrade(alembic_config(dburl=dburl), revision)
+    else:
+        raise ValueError("Must pass either a db_config_filehandle or a db_engine or a dburl")
 
 
 def stamp_db(revision, dburl):
     command.stamp(alembic_config(dburl=dburl), revision)
+
+
+def db_history(dburl):
+    command.history(alembic_config(dburl=dburl))
 
 
 def upgrade_if_clean(dburl):
