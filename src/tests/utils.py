@@ -1,23 +1,31 @@
 import datetime
+import functools
+import importlib
 import random
 import tempfile
 from contextlib import contextmanager
+from unittest import mock
 
+import matplotlib
 import numpy
 import pandas
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 import testing.postgresql
+from descriptors import cachedproperty
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
-from tests.results_tests.factories import init_engine, session, MatrixFactory
 from triage.util.structs import FeatureNameList
-import matplotlib
+
+from tests.results_tests.factories import init_engine, session, MatrixFactory
+
 matplotlib.use("Agg")
-from matplotlib import pyplot as plt
+
+from matplotlib import pyplot as plt  # noqa
 
 
 def fake_labels(length):
@@ -77,11 +85,11 @@ class MockMatrixStore(MatrixStore):
         session = sessionmaker(db_engine)()
         session.add(Matrix(matrix_uuid=matrix_uuid))
         session.commit()
-    
+
     @property
     def as_of_dates(self):
         """The list of as-of-dates in the matrix"""
-        return self.init_as_of_dates or self.metadata["as_of_times"] 
+        return self.init_as_of_dates or self.metadata["as_of_times"]
 
     @property
     def labels(self):
@@ -179,7 +187,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
         metadata = matrix_metadata_creator()
     matrix["as_of_date"] = matrix["as_of_date"].apply(pandas.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
-    matrix_store = project_storage.matrix_storage_engine().get_store(filename_friendly_hash(metadata))
+    matrix_store = (project_storage.matrix_storage_engine()
+                    .get_store(filename_friendly_hash(metadata)))
     matrix_store.metadata = metadata
     new_matrix = matrix.copy()
     labels = new_matrix.pop(matrix_store.label_column_name)
@@ -238,7 +247,13 @@ def populate_source_data(db_engine):
 
     entity_zip_codes = [(1, "60120"), (2, "60123"), (3, "60123")]
 
+    zip_code_demographics = [
+        ("60120", "hispanic", "2011-01-01"),
+        ("60123", "white", "2011-01-01"),
+    ]
+
     zip_code_events = [("60120", "2012-10-01", 1), ("60123", "2012-10-01", 10)]
+
 
     events = [
         (1, 1, "2011-01-01"),
@@ -280,6 +295,10 @@ def populate_source_data(db_engine):
         zip_code text
         )"""
     )
+
+    db_engine.execute("create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+    for demographic_row in zip_code_demographics:
+        db_engine.execute("insert into zip_code_demographics values (%s, %s, %s)", demographic_row)
 
     for entity_zip_code in entity_zip_codes:
         db_engine.execute(
@@ -378,7 +397,8 @@ def sample_config():
     ]
 
     cohort_config = {
-        "query": "select distinct(entity_id) from events where '{as_of_date}'::date >= outcome_date",
+        "query": "select distinct(entity_id) from events "
+                 "where '{as_of_date}'::date >= outcome_date",
         "name": "has_past_events",
     }
 
@@ -395,6 +415,17 @@ def sample_config():
         "name": "custom_label_name",
         "include_missing_labels_in_train_as": False,
     }
+    bias_audit_config = {
+        'from_obj_query': 'select * from zip_code_demographics join entity_zip_codes using (zip_code)',
+        'attribute_columns': ['ethnicity'],
+        'knowledge_date_column': 'as_of_date',
+        'entity_id_column': 'entity_id',
+        'ref_groups_method': 'min_metric',
+        'thresholds': {
+            'percentiles': [],
+            'top_n': [2]
+        }
+    }
 
     return {
         "config_version": CONFIG_VERSION,
@@ -407,6 +438,7 @@ def sample_config():
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
+        "bias_audit_config": bias_audit_config,
         "prediction": {"rank_tiebreaker": "random"},
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},
@@ -420,3 +452,89 @@ def assert_plot_figures_added():
     yield
     num_figures_after = plt.gcf().number
     assert num_figures_before < num_figures_after
+
+
+class CallSpy:
+    """Callable-wrapper and -patcher to record invocations.
+
+    ``CallSpy``, (unlike ``Mock``), makes it easy to wrap callables for
+    the express purpose of recording how they're invoked – without
+    modifying functionality. And ``CallSpy``, (unlike ``Mock``),
+    reproduces the descriptor interface, such that methods can be
+    patched and proxied for this purpose, as easily as functions.
+
+    For example, as a context manager::
+
+        with CallSpy('my_module.MyClass.my_method') as spy:
+            ...
+
+        assert (('arg0',), {'param0': 0}) in spy.calls
+
+    """
+    def __init__(self, signature):
+        self.calls = []
+        self.signature = signature
+
+    @cachedproperty
+    def target_path(self):
+        return self.signature.split('.')
+
+    @cachedproperty
+    def target_name(self):
+        return self.target_path[-1]
+
+    @cachedproperty
+    def target_base(self):
+        # walk target path until can no longer import it as a module path
+        for index in range(len(self.target_path)):
+            path_parts = self.target_path[:(index + 1)]
+            import_path = '.'.join(path_parts)
+
+            try:
+                base = importlib.import_module(import_path)
+            except ImportError:
+                # we've imported all that we can import
+                # walk the remainder by attribute access
+                remainder = self.target_path[index:-1]
+                for part in remainder:
+                    base = getattr(base, part)
+
+                return base
+
+        raise ValueError(f"cannot patch signature {self.signature!r}")
+
+    @cachedproperty
+    def target_object(self):
+        return getattr(self.target_base, self.target_name)
+
+    @cachedproperty
+    def patch(self):
+        return mock.patch.object(self.target_base, self.target_name, new=self)
+
+    def start(self):
+        if not callable(self.target_object):
+            # 1. ensure target_object set before patching
+            # 2. check that it's sane (needn't be done here but reasonable)
+            raise TypeError(f"signature target not callable {self.target_object!r}")
+
+        self.patch.start()
+
+    def stop(self):
+        self.patch.stop()
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        return self.target_object(*args, **kwargs)
+
+    def __get__(self, instance, cls=None):
+        if instance is None:
+            return self
+
+        return functools.partial(self, instance)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.stop()

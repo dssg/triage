@@ -5,7 +5,7 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v6'
+config_version: 'v7'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
@@ -72,6 +72,8 @@ label_config:
             group by entity_id
     #include_missing_labels_in_train_as: False
     #name: 'inspections'
+
+
 
 
 # FEATURE GENERATION
@@ -263,43 +265,33 @@ user_metadata:
 #
 # model_group_keys: ['feature_groups', 'label_definition']
 
-# GRID CONFIGURATION
-# The classifier/hyperparameter combinations that should be trained
-#
-# Each top-level key should be a class name, importable from triage. sklearn is
-# available, and if you have another classifier package you would like available,
-# contribute it to requirement/main.txt
-#
-# Each lower-level key is a hyperparameter name for the given classifier, and
-# each value is a list of potential values. All possible combinations of
-# classifiers and hyperparameters are trained.
-grid_config:
-    'sklearn.ensemble.ExtraTreesClassifier':
-        n_estimators: [100,100]
-        criterion: [gini, entropy]
-        max_depth: [1,5,10,20,50]
-        max_features: [sqrt,log2]
-        min_samples_split: [2,5,10]
-    # catwalk's custom model wrapper ScaledLogisticRegression will
-    # automatically scale the train data prior to fitting the model
-    # and then use the same scaling for the test data
-    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
-        penalty: ['l1', 'l2']
-        C: [0.01, 1]
-    # catwalk's PercentileRankOneFeature baseline will score each entity as
-    # as its percentile on the named feature. This is useful for comparing
-    # predictive models to simply ranking entities on a single feature.
-    'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
-        feature: ['feature_one', 'feature_two']
-        descend: True
-    # catwalk's SimpleThresholder baseline will evaluate each entity against
-    # a list of rules and classify entities as 1 based on whether they meet
-    # any or all of these rules, depending on whether 'or' or 'and' is
-    # passed as the logical_operator. This is useful for comparing
-    # predictive modeling against simple rule-based classification.
-    'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
-        rules: [['feature_one > 3', 'feature_two <= 5']]
-        logical_operator: 'and'
+
+
+
+# BIAS AUDIT (optional, please comment the bias_audit_config section if not interested in knowing the biases and equity of the models)
+# Every evaluation will include a bias audit (using the Aequitas toolkit).
+# To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
+# from_obj parameter: it can be a table name or a query (such as with features generators)
+# The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
+# Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
+# Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit
+# Please have a look to Aequitas documentation for further information about the ref_groups_method
+# https://dssg.github.io/aequitas/config.html
+# By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
+# Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
+bias_audit_config:
+    from_obj_table: 'semantic.demographics'
+    attribute_columns: ['race', 'sex','age']
+    knowledge_date_column: 'event_date'
+    entity_id_column: 'person_id'
+    ref_groups_method: 'predefined'
+    ref_groups:
+        -  'race': 'w'
+        -  'sex': 'm'
+        -  'age': '35-49'
+    thresholds:
+        percentiles: []
+        top_n: [100]
 
 
 # PREDICTION
@@ -379,6 +371,9 @@ scoring:
                 and demographic_date < '{as_of_date}'::date
 
 
+
+
+
 # INDIVIDUAL IMPORTANCES
 # How feature importances for individuals should be computed
 # There are two variables here:
@@ -397,3 +392,42 @@ individual_importance:
     methods: [] # empty list means don't calculate individual importances
     # methods: ['uniform']
     n_ranks: 5
+
+
+# GRID CONFIGURATION
+# The classifier/hyperparameter combinations that should be trained
+#
+# Each top-level key should be a class name, importable from triage. sklearn is
+# available, and if you have another classifier package you would like available,
+# contribute it to requirement/main.txt
+#
+# Each lower-level key is a hyperparameter name for the given classifier, and
+# each value is a list of potential values. All possible combinations of
+# classifiers and hyperparameters are trained.
+grid_config:
+    'sklearn.ensemble.ExtraTreesClassifier':
+        n_estimators: [100,100]
+        criterion: [gini, entropy]
+        max_depth: [1,5,10,20,50]
+        max_features: [sqrt,log2]
+        min_samples_split: [2,5,10]
+    # catwalk's custom model wrapper ScaledLogisticRegression will
+    # automatically scale the train data prior to fitting the model
+    # and then use the same scaling for the test data
+    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        penalty: ['l1', 'l2']
+        C: [0.01, 1]
+    # catwalk's PercentileRankOneFeature baseline will score each entity as
+    # as its percentile on the named feature. This is useful for comparing
+    # predictive models to simply ranking entities on a single feature.
+    'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
+        feature: ['feature_one', 'feature_two']
+        descend: True
+    # catwalk's SimpleThresholder baseline will evaluate each entity against
+    # a list of rules and classify entities as 1 based on whether they meet
+    # any or all of these rules, depending on whether 'or' or 'and' is
+    # passed as the logical_operator. This is useful for comparing
+    # predictive modeling against simple rule-based classification.
+    'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
+        rules: [['feature_one > 3', 'feature_two <= 5']]
+        logical_operator: 'and'

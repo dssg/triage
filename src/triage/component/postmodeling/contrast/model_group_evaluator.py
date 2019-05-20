@@ -272,8 +272,8 @@ class ModelGroupEvaluator(object):
         model_metrics = self.metrics
         model_metrics[['param', 'param_type']] = \
                 model_metrics['parameter'].str.split('_', 1, expand=True)
-        model_metrics['param'] =  model_metrics['param'].astype(str).astype(float)
-        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
+        model_metrics['param'] =  model_metrics['param'].replace('',np.nan).astype('float')
+        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: f'rank_{x}' if x is not None else x)
 
         # Filter model_group_id metrics and create pivot table by each
         # model_group_id.

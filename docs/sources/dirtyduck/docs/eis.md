@@ -304,7 +304,7 @@ We need to specify the temporal configuration too
 
     ```sh
     # Remember to run this in bastion  NOT in your laptop shell!
-    triage experiment --matrix-format hdf experiments/eis_01.yaml --profile
+    triage experiment experiments/eis_01.yaml --profile
     ```
 
     This will take a **lot** amount of time (on my computer took 3h 42m), so, grab your coffee, chat with your coworkers, check your email, or read the [DSSG blog](https://dssg.uchicago.edu/blog). It's taking that long for several reasons:
