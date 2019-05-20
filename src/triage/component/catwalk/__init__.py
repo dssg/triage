@@ -1,7 +1,8 @@
 """Main application"""
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
-from .evaluation import ModelEvaluator, query_protected_groups_table
+from .evaluation import ModelEvaluator
+from .bias_auditing import query_protected_groups_table
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
@@ -24,6 +25,7 @@ class ModelTrainTester(object):
         predictor,
         subsets,
         protected_groups_table_name=None,
+        cohort_hash=None,
         replace=True
     ):
         self.matrix_storage_engine = matrix_storage_engine
@@ -34,6 +36,7 @@ class ModelTrainTester(object):
         self.subsets = subsets
         self.replace = replace
         self.protected_groups_table_name = protected_groups_table_name
+        self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
         train_test_tasks = []
@@ -182,6 +185,8 @@ class ModelTrainTester(object):
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
                     )
+                    print('just got predictions', len(predictions_proba))
+
                 for subset in self.subsets:
                     if self.replace or self.model_evaluator.needs_evaluations(
                         store, model_id, filename_friendly_hash(subset)
@@ -209,11 +214,14 @@ class ModelTrainTester(object):
                                 misc_db_parameters=dict(),
                                 train_matrix_columns=train_store.columns(),
                             )
-                        if not protected_df and self.protected_groups_table_name:
-                            protected_df = query_protected_groups_table(db_engine=self.db_engine,
-                                                                        as_of_dates=store.as_of_dates,
-                                                                        protected_group_table_name=self.protected_groups_table_name,
-                                                                        labels=store.labels)
+                        if protected_df is None and self.protected_groups_table_name:
+                            protected_df = query_protected_groups_table(
+                                db_engine=self.predictor.db_engine,
+                                as_of_dates=store.as_of_dates,
+                                protected_group_table_name=self.protected_groups_table_name,
+                                labels=store.labels,
+                                cohort_hash=self.cohort_hash
+                            )
 
                         self.model_evaluator.evaluate(
                             predictions_proba=predictions_proba,

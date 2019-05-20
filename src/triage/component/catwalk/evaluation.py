@@ -1,5 +1,4 @@
 import functools
-import io
 import itertools
 import logging
 import math
@@ -22,6 +21,7 @@ from .utils import (
 from triage.util.db import scoped_session
 from triage.util.random import generate_python_random_seed
 from triage.component.catwalk.storage import MatrixStore
+from triage.component.catwalk.bias_auditing import bias_audit
 
 
 RELATIVE_TOLERANCE = 0.01
@@ -54,7 +54,7 @@ def subset_labels_and_predictions(
     # The subset isn't specific to the cohort, so inner join to the labels/predictions
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
-    protected_df_subset = protected_df.align(subset_df, join="inner")[0] if protected_df else None
+    protected_df_subset = protected_df.align(subset_df, join="inner")[0] if protected_df is not None else None
     logging.debug(
         "%s entities in subset out of %s in matrix.",
         len(labels_subset),
@@ -172,7 +172,7 @@ class ModelEvaluator(object):
         training_metric_groups,
         db_engine,
         custom_metrics=None,
-        protected_groups_table_name=None
+        bias_config=None,
     ):
         """
         Args:
@@ -209,6 +209,7 @@ class ModelEvaluator(object):
         self.testing_metric_groups = testing_metric_groups
         self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
+        self.bias_config = bias_config
         if custom_metrics:
             self._validate_metrics(custom_metrics)
             self.available_metrics.update(custom_metrics)
@@ -626,10 +627,12 @@ class ModelEvaluator(object):
             evaluations,
             matrix_type.evaluation_obj,
         )
-        if protected_df:
-            self._bias_audit(
+        if protected_df is not None:
+            bias_audit(
+                db_engine=self.db_engine,
                 model_id=model_id,
                 protected_df=protected_df,
+                bias_config=self.bias_config,
                 predictions_proba=predictions_proba_worst,
                 labels=labels_worst,
                 tie_breaker='worst',
@@ -638,9 +641,11 @@ class ModelEvaluator(object):
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
                 matrix_uuid=matrix_store.uuid)
-            self._bias_audit(
+            bias_audit(
+                db_engine=self.db_engine,
                 model_id=model_id,
                 protected_df=protected_df,
+                bias_config=self.bias_config,
                 predictions_proba=predictions_proba_best,
                 labels=labels_best,
                 tie_breaker='best',
@@ -648,7 +653,7 @@ class ModelEvaluator(object):
                 matrix_type=matrix_type,
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
-                matrix_uuid = matrix_store.uuid)
+                matrix_uuid=matrix_store.uuid)
 
     @db_retry
     def _write_to_db(

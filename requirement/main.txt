@@ -25,3 +25,4 @@ adjustText==0.7.3
 graphviz==0.10.1
 ohio==0.4.0
 requests==2.21.0
+aequitas==0.38.0
