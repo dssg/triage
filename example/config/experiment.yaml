@@ -123,8 +123,8 @@ feature_aggregations:
         # top-level imputation rules that will apply to all aggregates functions
         # can also specify categoricals_imputation or array_categoricals_imputation
         #
-        # You must specified at least one of the top-level or feature-level imputation
-        # to cover ever feature being defined.
+        # You must specify at least one of the top-level or feature-level imputation
+        # to cover every feature being defined.
         aggregates_imputation:
             # The `all` rule will apply to all aggregation functions, unless over-
             # ridden by a more specific one
@@ -225,19 +225,13 @@ feature_group_strategies: ['all']
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the
 # metadata for every matrix in the experiment. Any keys you include here can
-# be used in the 'model_group_keys' below. For example, if you run experiments
-# that share a temporal configuration but that use different label definitions
-# (say, labeling building inspections with *any* violation as positive or
-# labeling only building inspections with severe health and safety violations
-# as positive), you can use the user metadata keys to indicate that the matrices
-# from these experiments have different labeling criteria. The matrices from the
-# two experiments will have different filenames (and not be overwritten or
-# inappropriately reused), and if you add the label_definition key to the model
-# group keys, models made on different label definition will have different
-# groups. In this way, user metadata can be used to expand Triage beyond its
-# explicitly supported functionality.
+# be used in the 'model_group_keys' below. For example, if you run the entity 
+# matching algorithm before running the experiment, one can include a `matchdatetime` 
+# in the `user_metadata` that signifies which set of `entity_id`s was used 
+# to create a given model/model group. That way, we don't accidentally match 
+# old predictions with new staged data without looking up the new `entity_id`s first.
 user_metadata:
-    label_definition: 'severe_violations'
+    'matchdatetime': '2019-01-01'
 
 # MODEL GROUPING (optional)
 # Model groups are a way of partitioning trained models in a way that makes for easier analysis.
