@@ -348,7 +348,7 @@ class ExperimentBase(ABC):
             individual_importance_calculator=self.individual_importance_calculator,
             predictor=self.predictor,
             subsets=self.subsets,
-            protected_groups_table_name=self.protected_groups_table_name,
+            protected_groups_generator=self.protected_groups_generator,
             cohort_hash=self.cohort_hash
         )
 

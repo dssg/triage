@@ -2,7 +2,6 @@
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
 from .evaluation import ModelEvaluator
-from .bias_auditing import query_protected_groups_table
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
@@ -11,6 +10,7 @@ import logging
 from collections import namedtuple
 
 import numpy
+import pandas
 
 TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
 
@@ -24,7 +24,7 @@ class ModelTrainTester(object):
         individual_importance_calculator,
         predictor,
         subsets,
-        protected_groups_table_name=None,
+        protected_groups_generator,
         cohort_hash=None,
         replace=True
     ):
@@ -35,7 +35,7 @@ class ModelTrainTester(object):
         self.predictor = predictor
         self.subsets = subsets
         self.replace = replace
-        self.protected_groups_table_name = protected_groups_table_name
+        self.protected_groups_generator = protected_groups_generator
         self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
@@ -185,7 +185,6 @@ class ModelTrainTester(object):
                         misc_db_parameters=dict(),
                         train_matrix_columns=train_store.columns(),
                     )
-                    print('just got predictions', len(predictions_proba))
 
                 for subset in self.subsets:
                     if self.replace or self.model_evaluator.needs_evaluations(
@@ -214,11 +213,9 @@ class ModelTrainTester(object):
                                 misc_db_parameters=dict(),
                                 train_matrix_columns=train_store.columns(),
                             )
-                        if protected_df is None and self.protected_groups_table_name:
-                            protected_df = query_protected_groups_table(
-                                db_engine=self.predictor.db_engine,
+                        if protected_df is None:
+                            protected_df = self.protected_groups_generator.as_dataframe(
                                 as_of_dates=store.as_of_dates,
-                                protected_group_table_name=self.protected_groups_table_name,
                                 labels=store.labels,
                                 cohort_hash=self.cohort_hash
                             )

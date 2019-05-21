@@ -11,6 +11,11 @@ import typing
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
 
+from aequitas.bias import Bias
+from aequitas.fairness import Fairness
+from aequitas.group import Group
+from aequitas.preprocessing import preprocess_input_df
+
 from . import metrics
 from .utils import (
     db_retry,
@@ -21,7 +26,6 @@ from .utils import (
 from triage.util.db import scoped_session
 from triage.util.random import generate_python_random_seed
 from triage.component.catwalk.storage import MatrixStore
-from triage.component.catwalk.bias_auditing import bias_audit
 
 
 RELATIVE_TOLERANCE = 0.01
@@ -33,7 +37,7 @@ def subset_labels_and_predictions(
     subset_df,
     labels,
     predictions_proba,
-    protected_df=None
+    protected_df=None,
 ):
     """Reduce the labels and predictions to only those relevant to the current
        subset.
@@ -45,16 +49,19 @@ def subset_labels_and_predictions(
             as the index
         predictions_proba (numpy.array) An array of predictions for the same
             entity_date pairs as the labels and in the same order
+        protected_df (pandas.DataFrame)
 
     Returns: (pandas.Series, numpy.array) The labels and predictions that refer
         to entity-date pairs in the subset
     """
     indexed_predictions = pandas.Series(predictions_proba, index=labels.index)
+    if protected_df is None:
+        protected_df = pandas.DataFrame()
 
     # The subset isn't specific to the cohort, so inner join to the labels/predictions
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
-    protected_df_subset = protected_df.align(subset_df, join="inner")[0] if protected_df is not None else None
+    protected_df_subset = protected_df if protected_df.empty else protected_df.align(subset_df, join="inner")[0]
     logging.debug(
         "%s entities in subset out of %s in matrix.",
         len(labels_subset),
@@ -628,11 +635,9 @@ class ModelEvaluator(object):
             matrix_type.evaluation_obj,
         )
         if protected_df is not None:
-            bias_audit(
-                db_engine=self.db_engine,
+            self._write_audit_to_db(
                 model_id=model_id,
                 protected_df=protected_df,
-                bias_config=self.bias_config,
                 predictions_proba=predictions_proba_worst,
                 labels=labels_worst,
                 tie_breaker='worst',
@@ -641,11 +646,9 @@ class ModelEvaluator(object):
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
                 matrix_uuid=matrix_store.uuid)
-            bias_audit(
-                db_engine=self.db_engine,
+            self._write_audit_to_db(
                 model_id=model_id,
                 protected_df=protected_df,
-                bias_config=self.bias_config,
                 predictions_proba=predictions_proba_best,
                 labels=labels_best,
                 tie_breaker='best',
@@ -654,6 +657,98 @@ class ModelEvaluator(object):
                 evaluation_start_time=evaluation_start_time,
                 evaluation_end_time=evaluation_end_time,
                 matrix_uuid=matrix_store.uuid)
+
+    def _write_audit_to_db(
+        self,
+        model_id,
+        protected_df,
+        predictions_proba,
+        labels,
+        tie_breaker,
+        subset_hash,
+        matrix_type,
+        evaluation_start_time,
+        evaluation_end_time,
+        matrix_uuid
+    ):
+        """
+        Runs the bias audit and saves the result in the bias table.
+
+        Args:
+            db_engine:
+            model_id:
+            protected_df:
+            predictions_proba:
+            labels:
+            tie_breaker:
+            subset_hash:
+            matrix_type:
+            evaluation_start_time:
+            evaluation_end_time:
+            matrix_uuid:
+
+        Returns:
+
+        """
+        if protected_df.empty:
+            return
+
+        # to preprocess aequitas requires the following columns:
+        # score, label value, model_id, protected attributes 
+        # fill out the protected_df, which just has protected attributes at this point
+        protected_df = protected_df.copy()
+        protected_df['model_id'] = model_id
+        protected_df['score'] = predictions_proba
+        protected_df['label_value'] = labels
+        aequitas_df, attr_cols_input = preprocess_input_df(protected_df)
+
+        # create group crosstabs
+        g = Group()
+        score_thresholds = {}
+        score_thresholds['rank_abs'] = self.bias_config['thresholds'].get('top_n', [])
+        score_thresholds['rank_pct'] = self.bias_config['thresholds'].get('percentiles', [])
+        groups_model, attr_cols = g.get_crosstabs(aequitas_df,
+                                                  score_thresholds=score_thresholds,
+                                                  model_id=model_id,
+                                                  attr_cols=attr_cols_input)
+        # analyze bias from reference groups
+        bias = Bias()
+        ref_groups_method = self.bias_config.get('ref_groups_method', None)
+        if ref_groups_method == 'predefined' and self.bias_config['ref_groups']:
+            bias_df = bias.get_disparity_predefined_groups(groups_model, aequitas_df, self.bias_config['ref_groups'])
+        elif ref_groups_method == 'majority':
+            bias_df = bias.get_disparity_major_group(groups_model, aequitas_df)
+        else:
+            bias_df = bias.get_disparity_min_metric(groups_model, aequitas_df)
+
+        # analyze fairness for each group
+        f = Fairness(tau=0.8) # the default fairness threshold is 0.8
+        group_value_df = f.get_group_value_fairness(bias_df)
+        group_value_df['subset_hash'] = subset_hash
+        group_value_df['tie_breaker'] = tie_breaker
+        group_value_df['evaluation_start_time'] = evaluation_start_time
+        group_value_df['evaluation_end_time'] = evaluation_end_time
+        group_value_df['matrix_uuid'] = matrix_uuid
+        group_value_df = group_value_df.rename(index=str, columns={"score_threshold": "parameter"})
+        if group_value_df.empty:
+            raise ValueError(f"""
+            Bias audit: aequitas_audit() failed.
+            Returned empty dataframe for model_id = {model_id}, and subset_hash = {subset_hash}
+            and matrix_type = {matrix_type}""")
+        with scoped_session(self.db_engine) as session:
+            for index, row in group_value_df.iterrows():
+                session.query(matrix_type.aequitas_obj).filter_by(
+                    model_id=row['model_id'],
+                    evaluation_start_time=row['evaluation_start_time'],
+                    evaluation_end_time=row['evaluation_end_time'],
+                    subset_hash=row['subset_hash'],
+                    parameter=row['parameter'],
+                    tie_breaker=row['tie_breaker'],
+                    matrix_uuid=row['matrix_uuid'],
+                    attribute_name=row['attribute_name'],
+                    attribute_value=row['attribute_value']
+                ).delete()
+            session.bulk_insert_mappings(matrix_type.aequitas_obj, group_value_df.to_dict(orient="records"))
 
     @db_retry
     def _write_to_db(
