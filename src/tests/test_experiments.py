@@ -60,15 +60,13 @@ def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        #with TemporaryDirectory() as temp_dir:
-        temp_dir = '/mnt/teradactyl/src/triage/testrun'
-        experiment_class(
-            config=sample_config(),
-            db_engine=db_engine,
-            project_path=os.path.join(temp_dir, "inspections"),
-            cleanup=True,
-            profile=True
-        ).run()
+        with TemporaryDirectory() as temp_dir:
+            experiment_class(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+                cleanup=True,
+            ).run()
 
         # assert
         # 1. that model groups entries are present

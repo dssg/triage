@@ -324,6 +324,75 @@ where
 We can now see how the different instances (trained on different temporal slices, but with the same model params) of a model group performs over time. Note how we only included the *models* that belong to our *model group* `1`.
 
 
+### `{test_train}_results.aequitas`
+
+| Table "test_results.aequitas"
+|---------------------------|-----------------------------|-----------|----------|--------- |
+| Column           |            Type             | Collation | Nullable | Default  |
+|---------------------------|-----------------------------|-----------|----------|--------- |
+| model_id                  | integer                     |           | not null | |
+| subset_hash               | character varying           |           | not null | |
+| tie_breaker               | character varying           |           | not null | |
+| evaluation_start_time     | timestamp without time zone |           | not null | |
+| evaluation_end_time       | timestamp without time zone |           | not null | |
+| matrix_uuid               | text                        |           |          | |
+| parameter                 | character varying           |           | not null | |
+| attribute_name            | character varying           |           | not null | |
+| attribute_value           | character varying           |           | not null | |
+| total_entities            | integer                     |           |          | |
+| group_label_pos           | integer                     |           |          | |
+| group_label_neg           | integer                     |           |          | |
+| group_size                | integer                     |           |          | |
+| group_size_pct            | numeric                     |           |          | |
+| prev                      | numeric                     |           |          | |
+| pp                        | integer                     |           |          | |
+| pn                        | integer                     |           |          | |
+| fp                        | integer                     |           |          | |
+| fn                        | integer                     |           |          | |
+| tn                        | integer                     |           |          | |
+| tp                        | integer                     |           |          | |
+| ppr                       | numeric                     |           |          | |
+| pprev                     | numeric                     |           |          | |
+| tpr                       | numeric                     |           |          | |
+| tnr                       | numeric                     |           |          | |
+| for                       | numeric                     |           |          | |
+| fdr                       | numeric                     |           |          | |
+| fpr                       | numeric                     |           |          | |
+| fnr                       | numeric                     |           |          | |
+| npv                       | numeric                     |           |          | |
+| precision                 | numeric                     |           |          | |
+| ppr_disparity             | numeric                     |           |          | |
+| ppr_ref_group_value       | character varying           |           |          | |
+| pprev_disparity           | numeric                     |           |          | |
+| pprev_ref_group_value     | character varying           |           |          | |
+| precision_disparity       | numeric                     |           |          | |
+| precision_ref_group_value | character varying           |           |          | |
+| fdr_disparity             | numeric                     |           |          | |
+| fdr_ref_group_value       | character varying           |           |          | |
+| for_disparity             | numeric                     |           |          | |
+| for_ref_group_value       | character varying           |           |          | |
+| fpr_disparity             | numeric                     |           |          | |
+| fpr_ref_group_value       | character varying           |           |          | |
+| fnr_disparity             | numeric                     |           |          | |
+| fnr_ref_group_value       | character varying           |           |          | |
+| tpr_disparity             | numeric                     |           |          | |
+| tpr_ref_group_value       | character varying           |           |          | |
+| tnr_disparity             | numeric                     |           |          | |
+| tnr_ref_group_value       | character varying           |           |          | |
+| npv_disparity             | numeric                     |           |          | |
+| npv_ref_group_value       | character varying           |           |          | |
+| Statistical_Parity        | boolean                     |           |          | |
+| Impact_Parity             | boolean                     |           |          | |
+| FDR_Parity                | boolean                     |           |          | |
+| FPR_Parity                | boolean                     |           |          | |
+| FOR_Parity                | boolean                     |           |          | |
+| FNR_Parity                | boolean                     |           |          | |
+| TypeI_Parity              | boolean                     |           |          | |
+| TypeII_Parity             | boolean                     |           |          | |
+| Equalized_Odds            | boolean                     |           |          | |
+| Unsupervised_Fairness     | boolean                     |           |          | |
+| Supervised_Fairness       | boolean                     |           |          | |
+
 ### `{test, train}_results.predictions`
 
 You can think of the previous table `{test, train}_results.{test, train}_predictions` as a summary of individuals predictions that our model is making. But where can you find the individual predictions that our model is making? (So you can generate a list from here). And where can we find the test matrix that the predictions are based on? Let us introduce you to the `results.predictions` table.
