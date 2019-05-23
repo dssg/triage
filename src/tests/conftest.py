@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import pytest
 import testing.postgresql
 import tempfile
