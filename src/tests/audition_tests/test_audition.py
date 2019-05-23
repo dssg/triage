@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from datetime import datetime
 import tempfile
 import os
