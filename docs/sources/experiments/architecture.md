@@ -306,10 +306,13 @@ Generates evaluation metrics for a given model and matrix over the entire matrix
 - array of predictions
 - the [MatrixStore](#matrix-store) and model_id that the predictions were generated from
 - the subset to be evaluated (or `None` for the whole matrix)
+- the reference group and thresholding rules from `bias_audit_config` in experiment config
+- the protected group generator object (for retrieving protected group data)
 
 **Output**
 
 - A row in the database for each evaluation metric for each subset. The table they are stored in depends on which type of matrix it is (e.g. `test_results.evaluations` or `train_results.evaluations`).
+- A row in the database for each Aequitas bias report. Either `test_results.aequitas` or `train_results.aequitas`.
 
 ### Individual Importance Calculator
 

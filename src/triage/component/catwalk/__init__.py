@@ -5,6 +5,7 @@ from .evaluation import ModelEvaluator
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
+from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
 from .utils import filename_friendly_hash
 import logging
 from collections import namedtuple
@@ -35,7 +36,7 @@ class ModelTrainTester(object):
         self.predictor = predictor
         self.subsets = subsets
         self.replace = replace
-        self.protected_groups_generator = protected_groups_generator
+        self.protected_groups_generator = protected_groups_generator or ProtectedGroupsGeneratorNoOp()
         self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
