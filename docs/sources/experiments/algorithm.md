@@ -332,7 +332,7 @@ labels
 
 Triage supports performing a bias audit using the Aequitas library, if a `bias_audit_config` is passed in configuration. This is handled first through creating a 'protected groups'table which retrieves the configured protected group information for each member of the cohort, and the time that this protected group information was first known. This table is named using a hash of the bias audit configuration, so data can be reused across experiments as long as the bias configuration does not change.
 
-A bias audit is performed alongside metric calculation time for each model that is built, on both the train and test matrices, and each subset. This is very similar The bias audit has its reference groups configured from the `bias_audit_config` 
+A bias audit is performed alongside metric calculation time for each model that is built, on both the train and test matrices, and each subset. This is very similar to the evaluations table schema, in that for each slice of data that has evaluation metrics generated for it, also receives a bias audit. The change is that thresholds are not borrowed from the evaluation configuration, as aequitas audits are computationally expensive and large threshold grids are common in Triage experiments; the bias audit has its evaluation thresholds configured in the `bias_audit_config`. All data from the bias audit is saved to either the `train_results.aequitas` or `test_results.aequitas` tables.
 
 Triage also supports evaluating a model on a subset of the predictions made.
 This is done by passing a subset query in the prediction config. The model
