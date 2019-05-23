@@ -28,6 +28,7 @@ The tables contained in `test_results` are:
 | List of relations      |                                  |       |                     |
 |---------------------- |-------------------------------- |----- |------------------- |
 | Schema                 | Name                             | Type  | Owner               |
+| test<sub>results</sub> | aequitas                      | table | food<sub>user</sub> |
 | test<sub>results</sub> | evaluations                      | table | food<sub>user</sub> |
 | test<sub>results</sub> | individual<sub>importances</sub> | table | food<sub>user</sub> |
 | test<sub>results</sub> | predictions                      | table | food<sub>user</sub> |
@@ -41,6 +42,7 @@ Lastly, if you have interest in how the model performed in the *training* data s
 | List of relations       |                               |       |                     |
 |----------------------- |----------------------------- |----- |------------------- |
 | Schema                  | Name                          | Type  | Owner               |
+| train<sub>results</sub> | aequitas                   | table | food<sub>user</sub> |
 | train<sub>results</sub> | evaluations                   | table | food<sub>user</sub> |
 | train<sub>results</sub> | feature<sub>importances</sub> | table | food<sub>user</sub> |
 | train<sub>results</sub> | predictions                   | table | food<sub>user</sub> |
@@ -326,10 +328,22 @@ We can now see how the different instances (trained on different temporal slices
 
 ### `{test_train}_results.aequitas`
 
-| Table "test_results.aequitas"
+Standard evaluation metrics don't tell us the entire story: how fair are our models? Given the `bias_audit_config` in the experiment config, an Aequitas bias report will be run on each model and matrix, similar to standard evaluation metrics. The `aequitas` tables will have a row for each combination of:
+- model_id
+- subset_hash
+- tie_breaker (e.g. best, worst)
+- evaluation_start_time
+- evaluation_end_time
+- parameter (e.g. `25_abs`, similar to evaluation metric thresholds)
+- attribute_name (e.g. 'facility_type')
+- attribute_value (e.g. 'kids_facility', 'restaurant')
+
+To read about the bias metrics saved in this table, look at the [Aequitas documentation](https://dssg.github.io/aequitas/output_data.html).
+
+
+| Table "test_results.aequitas" | | | | |
 |---------------------------|-----------------------------|-----------|----------|--------- |
 | Column           |            Type             | Collation | Nullable | Default  |
-|---------------------------|-----------------------------|-----------|----------|--------- |
 | model_id                  | integer                     |           | not null | |
 | subset_hash               | character varying           |           | not null | |
 | tie_breaker               | character varying           |           | not null | |
