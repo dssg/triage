@@ -129,15 +129,13 @@ class ProtectedGroupsGenerator(object):
         logging.debug(full_insert_query)
         self.db_engine.execute(full_insert_query)
 
-    def as_dataframe(self, as_of_dates, cohort_hash, labels):
+    def as_dataframe(self, as_of_dates, cohort_hash):
         """Queries the protected groups table to retrieve the protected attributes for each date
         Args:
             db_engine (sqlalchemy.engine) a database engine
             as_of_dates (list) the as_of_Dates to query
-            protected_group_table_name (str) the name of the table to query
 
-        Returns: (pandas.DataFrame) a dataframe indexed by the entity-date pairs
-            active in the subset
+        Returns: (pandas.DataFrame) a dataframe with protected attributes for the given dates
         """
         as_of_dates_sql = "[{}]".format(
             ", ".join("'{}'".format(date.strftime("%Y-%m-%d %H:%M:%S.%f")) for date in as_of_dates)
@@ -158,7 +156,4 @@ class ProtectedGroupsGenerator(object):
             index_col=MatrixStore.indices,
         )
         del protected_df['cohort_hash']
-        if protected_df.empty:
-            return protected_df
-        else:
-            return protected_df.align(labels, join="inner", axis=0)[0]
+        return protected_df

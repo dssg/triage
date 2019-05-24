@@ -217,8 +217,7 @@ class ModelTrainTester(object):
                         if protected_df is None:
                             protected_df = self.protected_groups_generator.as_dataframe(
                                 as_of_dates=store.as_of_dates,
-                                labels=store.labels,
-                                cohort_hash=self.cohort_hash
+                                cohort_hash=self.cohort_hash,
                             )
 
                         self.model_evaluator.evaluate(
