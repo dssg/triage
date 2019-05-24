@@ -146,6 +146,16 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
                 )
+                if not string_is_tablesafe(aggregation_config['prefix']):
+                    raise ValueError(
+                        dedent(
+                            f"""Section: feature_aggregations -
+                            Feature aggregation prefix should only contain
+                            lowercase letters, numbers, and underscores.
+                            Aggregation config: {aggregation_config}
+                            """
+                        )
+                    )
 
     def _validate_aggregates(self, aggregation_config):
         if (
@@ -453,7 +463,7 @@ class LabelConfigValidator(Validator):
             )
         if 'name' in label_config and not string_is_tablesafe(label_config['name']):
             raise ValueError("Section: label_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         self._validate_query(label_config["query"])
         self._validate_include_missing_labels_in_train_as(
             label_config.get("include_missing_labels_in_train_as", None)
@@ -482,7 +492,7 @@ class CohortConfigValidator(Validator):
             )
         if 'name' in cohort_config and not string_is_tablesafe(cohort_config['name']):
             raise ValueError("Section: cohort_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logging.info("Validating cohort query")
         try:
@@ -820,6 +830,15 @@ class ScoringConfigValidator(Validator):
                                 Please give a name to your subset. This is used
                                 in the namespacing of subset tables created by
                                 triage.
+                                """
+                            )
+                        )
+                    if not string_is_tablesafe(subset['name']):
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset {subset} name should only contain
+                                lowercase letters, numbers, and underscores
                                 """
                             )
                         )
