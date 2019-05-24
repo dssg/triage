@@ -49,10 +49,10 @@ def subset_labels_and_predictions(
             as the index
         predictions_proba (numpy.array) An array of predictions for the same
             entity_date pairs as the labels and in the same order
-        protected_df (pandas.DataFrame)
+        protected_df (pandas.DataFrame) A dataframe of protected group attributes
 
-    Returns: (pandas.Series, numpy.array) The labels and predictions that refer
-        to entity-date pairs in the subset
+    Returns: (pandas.Series, numpy.array, pandas.DataFrame) The labels, predictions, and protected
+        group attributes that refer to entity-date pairs in the subset
     """
     indexed_predictions = pandas.Series(predictions_proba, index=labels.index)
     if protected_df is None:
