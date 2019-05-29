@@ -14,7 +14,7 @@ theme:
 docs_dir: sources
 repo_name: 'dssg/triage'
 repo_url: http://github.com/dssg/triage
-edit_uri: ''
+edit_uri: edit/master/docs/sources
 site_description: 'Documentation for Triage.'
 
 extra:
@@ -30,8 +30,8 @@ extra:
 markdown_extensions:
   - toc:
       permalink: "#"
-      baselevel: 2
-      toc_depth: 2
+      baselevel: 1
+      toc_depth: 3
       separator: "-"
   - admonition
   - codehilite:

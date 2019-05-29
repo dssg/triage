@@ -1106,6 +1106,13 @@ violations (violation code in 15-29)
 This few plots give us a sense of how the data behaves and will help
 us in detect weird bugs or model-behavior later.
 
+## What’s next?
+
+- Learn more about [triage](triage_intro.md)
+- Learn more about [early warning systems](eis.md)
+- Learn more about [resource prioritization systems](inspections.md)
+
+
 [^1]: If you want to try different columns (or you don't remember
     which columns try `\d raw.inspectios` first
 
