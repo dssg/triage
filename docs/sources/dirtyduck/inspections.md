@@ -1,6 +1,17 @@
 
 # Resource prioritization systems: Chicago food inspections
 
+!!! warning "Before continue, Did you…?"
+    This case study, part of the dirtyduck tutorial,  assumes that you already setup the
+    tutorial’s infrastructure and load the dataset.
+
+    - If you didn’t setup the infrastructure go [here](infrastructure.md),
+
+    - If you didn't load the data, you can do it very [quickly](for_the_impatient.md)
+      or you can follow all the [steps and explanations about the data](data_preparation.md).
+
+
+
 
 ## Problem description
 
@@ -144,8 +155,13 @@ the baseline[^2]. It is also very fast to train ( `DummyClassifier` is
 not computationally expensive, so it will help us to verify that the
 experiment configuration is correct without waiting for a long time).
 
+!!! info "Experiment description file"
+    You could check the meaning about experiment description files
+    (or configuration files) in [*A deeper look into triage*](triage_intro.md).
+
+
 We need to write the experiment config file for that. Let's break it
-down and explain the sections.
+down and explain their sections.
 
 The config file for this first experiment is located in
 [triage/experiments/inspections_baseline.yaml](./triage/experiments/inspections_baseline.yaml).

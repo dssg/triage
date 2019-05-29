@@ -1,15 +1,13 @@
-# An Early Intervention System
+# An Early Intervention System: Chicago food inspections
 
 !!! warning "Before continue, Did you…?"
-    This case studie, part of the dirtyduck tutorial,  assumes that you already setup the
+    This case study, part of the dirtyduck tutorial,  assumes that you already setup the
     tutorial’s infrastructure and load the dataset.
 
     - If you didn’t setup the infrastructure go [here](infrastructure.md),
 
     - If you didn't load the data, you can do it very [quickly](for_the_impatient.md)
       or you can follow all the [steps and explanations about the data](data_preparation.md).
-
-
 
 
 ## Problem description
@@ -149,7 +147,11 @@ cohort_config:
 ## Modeling Using Machine Learning
 
 We need to specify the temporal configuration, this section should
-reflect the *operationalization* of the model,
+reflect the *operationalization* of the model.
+
+Let’s assume that every facility owner needs 6 months to prepare for
+an inspection. So, the model needs to answer the question: *Will my
+restaurant be inspected in the next 6 months?*
 
 ### Temporal configuration
 
@@ -160,13 +162,13 @@ reflect the *operationalization* of the model,
         label_start_time: '2013-01-01'
         label_end_time: '2018-06-01'
 
-        model_update_frequency: '1y'
-        training_label_timespans: ['1y']
-        training_as_of_date_frequencies: '1y'
+        model_update_frequency: '6month'
+        training_label_timespans: ['6month']
+        training_as_of_date_frequencies: '6month'
 
-        test_durations: '1y'
-        test_label_timespans: ['1y']
-        test_as_of_date_frequencies: '1y'
+        test_durations: '6month'
+        test_label_timespans: ['6month']
+        test_as_of_date_frequencies: '6month'
 
         max_training_histories: '5y'
 ```
@@ -188,7 +190,7 @@ triage experiment experiments/eis_01.yaml --show-timechop
 ![img](images/triage/eis_01.png)
 *Figure. Temporal blocks for the Early Warning System. We want to
 predict the most likely facilities to be inspected in the
-following year.*
+following 6 months*
 
 
 ###  Features
@@ -299,7 +301,7 @@ We specify that we want to use all possible feature-group combinations for train
          - 'risks'
          - 'inspection_types'
 
-    feature_group_strategies: ['all', 'leave-one-out', 'leave-one-in']
+    feature_group_strategies: ['all']
 ```
 
 i.e. `all` will train models with all the features groups,
@@ -309,29 +311,54 @@ the features except one.
 
 ###  Algorithm and hyperparameters
 
-We will collapse the baseline (`DummyClassifier`) and the
-    exploratory configuration together:
+We will begin defining some basic models as baselines.
 
 ```yaml
-    grid_config:
-        'sklearn.tree.DecisionTreeClassifier':
-            max_depth: [2,null]
-        'sklearn.ensemble.RandomForestClassifier':
-            max_features: ['sqrt']
-            criterion: ['gini']
-            n_estimators: [500]
-            min_samples_leaf: [1]
-            min_samples_split: [50]
-        'sklearn.dummy.DummyClassifier':
-            strategy: [prior]
+'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
+  rules:
+    - ['inspections_entity_id_1month_total_count > 0']
+    - ['results_entity_id_1month_result_fail_sum > 0']
+    - ['risks_entity_id_1month_risk_high_sum > 0']
+
+'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
+  feature: ['risks_entity_id_all_risk_high_sum', 'inspections_entity_id_all_total_count', 'results_entity_id_all_result_fail_sum']
+  descend: [True]
+
+'sklearn.dummy.DummyClassifier':
+  strategy: ['prior', 'stratified']
+
+'sklearn.tree.DecisionTreeClassifier':
+  criterion: ['gini']
+  max_features: ['sqrt']
+  max_depth: [1,2,5,~]
+  min_samples_split: [2]
+
+'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+  penalty: ['l1','l2']
+  C: [0.000001, 0.0001, 0.01,  1.0]
 ```
 
-`triage` will create **36** *model groups*: **4** algorithms and
-hyperparameters (2 `DecisionTreeClassifier`, 1
-`RandomForestClassifier`, 1 `DummyClassifier`) &times; **9**
-features sets (1 `all`, 4 `leave-one-out`, `4 leave-one-in`). The
-total number of *models* is three times that (we have 3 time
-blocks, so **108** models).
+!!! info "How did I know the name of the features?"
+    `triage` has a very useful utility called `featuretest`
+
+    ```shell
+        triage featuretest experiments/eis_01.yaml 2018-01-01
+    ```
+
+    You can use for testing the definition of your features and also
+    to see if the way that the features are calculated is actually
+    what do you expect.
+
+    Here we are using it just to check the name of the generated features.
+
+
+`triage` will create **20** *model groups*: algorithms and
+hyperparameters (4 `DecisionTreeClassifier`, 8
+`ScaledLogisticRegression`, 2 `DummyClassifier`, 3 `SimpleThresholder`
+and 3 `PercentileRankOneFeature`) &times; **1**
+features sets (1 `all`). The
+total number of *models* is three times that (we have 8 time
+blocks, so **160** models).
 
 ```yaml
     scoring:
@@ -413,7 +440,7 @@ After the experiment finishes, we can create the following table:
         array_agg(model_id order by train_end_time asc) as models,
         array_agg(train_end_time::date order by train_end_time asc) as times,
         array_agg(to_char(stochastic_value, '0.999') order by
-    train_end_time asc) as "precision@10% ("
+    train_end_time asc) as "precision@10% (stochastic)"
     from
         model_metadata.models
         join
@@ -471,6 +498,83 @@ After the experiment finishes, we can create the following table:
              77 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {risks}                                | {199,217,235} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.477"," 0.478"," 0.486"}
              78 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection}                           | {200,218,236} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.847"," 0.877"," 0.898"}
              79 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection}                           | {201,219,237} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.480"," 0.486"," 0.486"}
+
+
+## Let’s explore more: second grid
+
+
+After the *baseline* we will explore a more robust set of
+algorithms. We will use a different experiment config file:
+`eis_02.yaml`.
+
+The only differences between this experiment config file and the
+previous are in the `user_metadata` section:
+
+```yaml
+config_version: 'v7'
+
+model_comment: 'eis: 02'
+random_seed: 23895478
+
+user_metadata:
+  label_definition: 'inspected'
+  experiment_type: 'eis'
+  description: |
+    EIS 02
+  purpose: 'model creation'
+  org: 'DSaPP'
+  team: 'Tutorial'
+  author: 'Your name here'
+  etl_date: '2019-05-07'
+```
+
+and in the `grid_config`:
+
+
+```yaml
+
+grid_config:
+   ## Boosting
+   'sklearn.ensemble.AdaBoostClassifier':
+     n_estimators: [1000, 2000, 5000]
+
+   'sklearn.ensemble.GradientBoostingClassifier':
+     n_estimators: [1000, 2000, 10000]
+     learning_rate : [0.001, 0.01, 0.1, 1.0]
+     subsample: [0.5, 1.0]
+     min_samples_split: [2]
+     max_depth: [1,2,3,5]
+
+   ## Forest
+   'sklearn.tree.DecisionTreeClassifier':
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     min_samples_split: [2, 10, 50]
+
+   'sklearn.ensemble.RandomForestClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     max_features: ['sqrt','log2']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
+
+   'sklearn.ensemble.ExtraTreesClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     max_features: ['sqrt','log2']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
+```
+
+You can run this experiment with:
+
+```sh
+# Remember to run this in bastion  NOT in your laptop shell!
+triage experiment experiments/eis_02.yaml
+```
+
 
 
 ## Audition: So many models, how can I choose the best one?
@@ -850,7 +954,7 @@ predictions_query: |
 triage --tb crosstabs /triage/eis_crosstabs_config.yaml
 ```
 
-When it finish, you could explore the table with the following code:
+When it finishes, you could explore the table with the following code:
 
 ```sql
 with significant_features as (

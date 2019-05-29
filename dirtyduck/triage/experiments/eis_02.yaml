@@ -1,14 +1,14 @@
 config_version: 'v7'
 
-model_comment: 'eis: 01'
+model_comment: 'eis: 02'
 random_seed: 23895478
 
 user_metadata:
   label_definition: 'inspected'
   experiment_type: 'eis'
   description: |
-    EIS 01
-  purpose: 'baseline'
+    EIS 02
+  purpose: 'model creation'
   org: 'DSaPP'
   team: 'Tutorial'
   author: 'Your name here'
@@ -56,7 +56,7 @@ cohort_config:
 temporal_config:
     feature_start_time: '2010-01-04'
     feature_end_time: '2018-06-01'
-    label_start_time: '2013-01-01'
+    label_start_time: '2014-01-01'
     label_end_time: '2018-06-01'
 
     model_update_frequency: '6month'
@@ -170,28 +170,38 @@ feature_group_definition:
 feature_group_strategies: ['all']
 
 grid_config:
-  'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
-    rules:
-      - ['inspections_entity_id_1month_total_count > 0']
-      - ['results_entity_id_1month_result_fail_sum > 0']
-      - ['risks_entity_id_1month_risk_high_sum > 0']
+   ## Boosting
+   'sklearn.ensemble.AdaBoostClassifier':
+     n_estimators: [1000, 2000, 5000]
 
-  'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
-    feature: ['risks_entity_id_all_risk_high_sum', 'inspections_entity_id_all_total_count', 'results_entity_id_all_result_fail_sum']
-    descend: [True]
+   'sklearn.ensemble.GradientBoostingClassifier':
+     n_estimators: [1000, 2000, 10000]
+     learning_rate : [0.001, 0.01, 0.1, 1.0]
+     subsample: [0.5, 1.0]
+     min_samples_split: [2]
+     max_depth: [1,2,3,5]
 
-  'sklearn.dummy.DummyClassifier':
-    strategy: ['prior', 'stratified']
+   ## Forest
+   'sklearn.tree.DecisionTreeClassifier':
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     min_samples_split: [2, 10, 50]
 
-  'sklearn.tree.DecisionTreeClassifier':
-    criterion: ['gini']
-    max_features: ['sqrt']
-    max_depth: [1,2,5,~]
-    min_samples_split: [2]
+   'sklearn.ensemble.RandomForestClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     max_features: ['sqrt','log2']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
 
-  'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
-    penalty: ['l1','l2']
-    C: [0.000001, 0.0001, 0.01,  1.0]
+   'sklearn.ensemble.ExtraTreesClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10, 20]
+     max_features: ['sqrt','log2']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
 
 scoring:
     testing_metric_groups:
