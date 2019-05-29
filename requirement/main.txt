@@ -5,7 +5,7 @@ psycopg2-binary==2.7.7
 python-dateutil==2.8.0
 scipy==1.2.1
 scikit-learn==0.20.3
-matplotlib<2.2 # pyup: ignore
+matplotlib>=3.0.3
 pandas==0.24.2
 boto3==1.9.125
 click==7.0

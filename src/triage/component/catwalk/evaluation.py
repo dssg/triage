@@ -423,16 +423,25 @@ class ModelEvaluator(object):
             as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
             subset_hash=subset_hash,
         ).distinct(eval_obj.metric, eval_obj.parameter).all()
-
         # The list of needed metrics and parameters are all the unique metric/params from the config
         # not present in the unique metric/params from the db
-        needed = bool(
+        evals_needed = bool(
             {(met.metric, met.parameter_string) for met in metric_definitions} -
             {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
         )
         session.close()
-        return needed
+        if evals_needed:
+            logging.debug("Needed evaluations missing")
+            return True
 
+        # now check bias config if there
+        # if no bias config, no aequitas audits needed, so just return False at this point
+        if not self.bias_config:
+            return False
+
+        # if we do have bias config, return True. Too complicated with aequitas' visibility
+        # at present to check whether all the needed records are needed.
+        return True
 
     def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
         """Compute evaluations for a set of predictions and labels
@@ -507,6 +516,8 @@ class ModelEvaluator(object):
             subset (dict) A dictionary containing a query and a
                 name for the subset to evaluate on, if any
         """
+        if protected_df is not None:
+            protected_df = protected_df.align(matrix_store.labels, join="inner", axis=0)[0]
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:

@@ -524,7 +524,7 @@ def test_evaluation_with_sort_ties(db_engine_with_results_schema):
         assert record["standard_deviation"]
 
 
-def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
+def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_schema):
     # TEST SETUP:
 
     # create two models: one that has zero evaluations,
@@ -648,6 +648,53 @@ def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
     session.close()
     session.remove()
 
+
+def test_ModelEvaluator_needs_evaluation_with_bias_audit(db_engine_with_results_schema):
+    # test that if a bias audit config is passed, and there are no matching bias audits
+    # in the database, needs_evaluation returns true
+    # this all assumes that evaluations are populated. those tests are in the 'no_bias_audit' test
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        bias_config={
+            'thresholds': {'top_n': [2]}
+        },
+        db_engine=db_engine_with_results_schema,
+    )
+    model_with_evaluations = ModelFactory()
+
+    eval_time = datetime.datetime(2016, 1, 1)
+    as_of_date_frequency = "3d"
+    for subset_hash in [""]:
+        EvaluationFactory(
+            model_rel=model_with_evaluations,
+            evaluation_start_time=eval_time,
+            evaluation_end_time=eval_time,
+            as_of_date_frequency=as_of_date_frequency,
+            metric="precision@",
+            parameter="3_abs",
+            subset_hash=subset_hash,
+        )
+    session.commit()
+
+    # make a test matrix to pass in
+    metadata_overrides = {
+        'as_of_date_frequency': as_of_date_frequency,
+        'as_of_times': [eval_time],
+    }
+    test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema, metadata_overrides=metadata_overrides
+    )
+    assert model_evaluator.needs_evaluations(
+        matrix_store=test_matrix_store,
+        model_id=model_with_evaluations.model_id,
+        subset_hash="",
+    )
 
 def test_evaluation_with_protected_df(db_engine_with_results_schema):
     # Test that if a protected_df is passed (along with bias config, the only real needed one
