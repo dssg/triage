@@ -515,6 +515,7 @@ class ModelEvaluator(object):
             model_id (int) The database identifier of the model
             subset (dict) A dictionary containing a query and a
                 name for the subset to evaluate on, if any
+            protected_df (pandas.DataFrame) A dataframe with protected group attributes
         """
         if protected_df is not None:
             protected_df = protected_df.align(matrix_store.labels, join="inner", axis=0)[0]
@@ -686,18 +687,20 @@ class ModelEvaluator(object):
         Runs the bias audit and saves the result in the bias table.
 
         Args:
-            db_engine:
-            model_id:
-            protected_df:
-            predictions_proba:
-            labels:
-            tie_breaker:
-            subset_hash:
-            matrix_type:
-            evaluation_start_time:
-            evaluation_end_time:
-            matrix_uuid:
-
+            model_id (int) primary key of the model
+            protected_df (pandas.DataFrame) A dataframe with protected group attributes:
+            predictions_proba (numpy.array) List of prediction probabilities
+            labels (pandas.Series): List of labels
+            tie_breaker: 'best' or 'worst' case tiebreaking rule that the predictions and labels were sorted by
+            subset_hash (str) the hash of the subset, if any, that the
+                evaluation is made on
+            matrix_type (triage.component.catwalk.storage.MatrixType)
+                The type of matrix used
+            evaluation_start_time (pandas._libs.tslibs.timestamps.Timestamp)
+                first as_of_date included in the evaluation period
+            evaluation_end_time (pandas._libs.tslibs.timestamps.Timestamp) last
+                as_of_date included in the evaluation period
+            matrix_uuid: the uuid of the matrix
         Returns:
 
         """
