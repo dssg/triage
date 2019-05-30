@@ -720,7 +720,8 @@ class ModelEvaluator(object):
         g = Group()
         score_thresholds = {}
         score_thresholds['rank_abs'] = self.bias_config['thresholds'].get('top_n', [])
-        score_thresholds['rank_pct'] = self.bias_config['thresholds'].get('percentiles', [])
+        # convert 0-100 percentile to 0-1 that Aequitas expects
+        score_thresholds['rank_pct'] = [value / 100.0 for value in self.bias_config['thresholds'].get('percentiles', [])]
         groups_model, attr_cols = g.get_crosstabs(aequitas_df,
                                                   score_thresholds=score_thresholds,
                                                   model_id=model_id,

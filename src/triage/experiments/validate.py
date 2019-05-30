@@ -883,6 +883,11 @@ class BiasAuditConfigValidator(Validator):
                         )
                     )
                 )
+        percentile_thresholds = bias_audit_config.get('thresholds', {}).get('percentiles', [])
+        if any(threshold < 0 or threshold > 100 for threshold in percentile_thresholds):
+            raise ValueError("Section: bias_audit_config - "
+                             "All percentile thresholds must be between 0 and 100")
+
 
 
 class ExperimentValidator(Validator):
