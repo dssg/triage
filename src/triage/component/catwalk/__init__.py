@@ -5,11 +5,13 @@ from .evaluation import ModelEvaluator
 from .individual_importance import IndividualImportanceCalculator
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
+from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
 from .utils import filename_friendly_hash
 import logging
 from collections import namedtuple
 
 import numpy
+import pandas
 
 TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
 
@@ -23,6 +25,8 @@ class ModelTrainTester(object):
         individual_importance_calculator,
         predictor,
         subsets,
+        protected_groups_generator,
+        cohort_hash=None,
         replace=True
     ):
         self.matrix_storage_engine = matrix_storage_engine
@@ -32,6 +36,8 @@ class ModelTrainTester(object):
         self.predictor = predictor
         self.subsets = subsets
         self.replace = replace
+        self.protected_groups_generator = protected_groups_generator or ProtectedGroupsGeneratorNoOp()
+        self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
         train_test_tasks = []
@@ -58,6 +64,7 @@ class ModelTrainTester(object):
                         }
                     )
         return self.order_and_batch_tasks(train_test_tasks)
+
 
     def order_and_batch_tasks(self, tasks):
         batches = (
@@ -163,6 +170,7 @@ class ModelTrainTester(object):
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
                 predictions_proba = numpy.array(None)
+                protected_df = None
                 if self.replace:
                     logging.info(
                         "Replace flag set; generating new predictions and evaluations for"
@@ -206,12 +214,18 @@ class ModelTrainTester(object):
                                 misc_db_parameters=dict(),
                                 train_matrix_columns=train_store.columns(),
                             )
+                        if protected_df is None:
+                            protected_df = self.protected_groups_generator.as_dataframe(
+                                as_of_dates=store.as_of_dates,
+                                cohort_hash=self.cohort_hash,
+                            )
 
                         self.model_evaluator.evaluate(
                             predictions_proba=predictions_proba,
                             matrix_store=store,
                             model_id=model_id,
                             subset=subset,
+                            protected_df=protected_df
                         )
 
                     else:

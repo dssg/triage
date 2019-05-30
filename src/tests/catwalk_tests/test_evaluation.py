@@ -185,14 +185,15 @@ def test_subset_labels_and_predictions(db_engine_with_results_schema):
             expected_result = 0
         
         populate_subset_data(db_engine_with_results_schema, subset, list(range(num_entities)))
-        subset_labels, subset_predictions = subset_labels_and_predictions(
-                subset_df=query_subset_table(
-                    db_engine_with_results_schema,
-                    fake_matrix_store.as_of_dates,
-                    get_subset_table_name(subset),
-                ),
-                predictions_proba=predictions_proba,
-                labels=fake_matrix_store.labels,
+        subset_labels, subset_predictions, subset_protected_df = subset_labels_and_predictions(
+            subset_df=query_subset_table(
+                db_engine_with_results_schema,
+                fake_matrix_store.as_of_dates,
+                get_subset_table_name(subset),
+            ),
+            predictions_proba=predictions_proba,
+            labels=fake_matrix_store.labels,
+            protected_df=pandas.DataFrame(),
         )
 
         assert len(subset_labels) == expected_result
@@ -313,7 +314,8 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
             trained_model.predict_proba(labels)[:, 1],
             fake_test_matrix_store,
             model_id,
-            subset,
+            subset=subset,
+
         )
 
         records = [
@@ -372,7 +374,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
             trained_model.predict_proba(labels)[:, 1],
             fake_train_matrix_store,
             model_id,
-            subset,
+            subset=subset,
         )
         
         records = [
@@ -522,7 +524,7 @@ def test_evaluation_with_sort_ties(db_engine_with_results_schema):
         assert record["standard_deviation"]
 
 
-def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
+def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_schema):
     # TEST SETUP:
 
     # create two models: one that has zero evaluations,
@@ -645,6 +647,101 @@ def test_ModelEvaluator_needs_evaluation(db_engine_with_results_schema):
         )
     session.close()
     session.remove()
+
+
+def test_ModelEvaluator_needs_evaluation_with_bias_audit(db_engine_with_results_schema):
+    # test that if a bias audit config is passed, and there are no matching bias audits
+    # in the database, needs_evaluation returns true
+    # this all assumes that evaluations are populated. those tests are in the 'no_bias_audit' test
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        bias_config={
+            'thresholds': {'top_n': [2]}
+        },
+        db_engine=db_engine_with_results_schema,
+    )
+    model_with_evaluations = ModelFactory()
+
+    eval_time = datetime.datetime(2016, 1, 1)
+    as_of_date_frequency = "3d"
+    for subset_hash in [""]:
+        EvaluationFactory(
+            model_rel=model_with_evaluations,
+            evaluation_start_time=eval_time,
+            evaluation_end_time=eval_time,
+            as_of_date_frequency=as_of_date_frequency,
+            metric="precision@",
+            parameter="3_abs",
+            subset_hash=subset_hash,
+        )
+    session.commit()
+
+    # make a test matrix to pass in
+    metadata_overrides = {
+        'as_of_date_frequency': as_of_date_frequency,
+        'as_of_times': [eval_time],
+    }
+    test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema, metadata_overrides=metadata_overrides
+    )
+    assert model_evaluator.needs_evaluations(
+        matrix_store=test_matrix_store,
+        model_id=model_with_evaluations.model_id,
+        subset_hash="",
+    )
+
+def test_evaluation_with_protected_df(db_engine_with_results_schema):
+    # Test that if a protected_df is passed (along with bias config, the only real needed one
+    # being threshold info), an Aequitas report is written to the database.
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        bias_config={
+            'thresholds': {'top_n': [2]}
+        },
+        db_engine=db_engine_with_results_schema,
+    )
+    testing_labels = numpy.array([1, 0])
+    testing_prediction_probas = numpy.array([0.56, 0.55])
+
+    fake_test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema, testing_labels
+    )
+
+    trained_model, model_id = fake_trained_model(
+        db_engine_with_results_schema,
+        train_end_time=TRAIN_END_TIME,
+    )
+
+    protected_df = pandas.DataFrame({
+        "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
+        "protectedattribute1": "value1"  
+    })
+
+    model_evaluator.evaluate(
+        testing_prediction_probas, fake_test_matrix_store, model_id, protected_df
+    )
+    for record in db_engine_with_results_schema.execute(
+        """select * from test_results.aequitas
+        where model_id = %s and evaluation_start_time = %s
+        order by 1""",
+        (model_id, fake_test_matrix_store.as_of_dates[0]),
+    ):
+        assert record['model_id'] == model_id
+        assert record['parameter'] == '2_abs'
+        assert record['attribute_name'] == 'protectedattribute1'
+        assert record['attribute_value'] == 'value1'
 
 
 def test_generate_binary_at_x():

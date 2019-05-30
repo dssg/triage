@@ -420,7 +420,8 @@ def sample_config():
         'attribute_columns': ['ethnicity'],
         'knowledge_date_column': 'as_of_date',
         'entity_id_column': 'entity_id',
-        'ref_groups_method': 'min_metric',
+        'ref_groups_method': 'predefined',
+        'ref_groups': {'ethnicity': 'white'},
         'thresholds': {
             'percentiles': [],
             'top_n': [2]

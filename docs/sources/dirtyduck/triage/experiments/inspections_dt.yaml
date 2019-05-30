@@ -1,4 +1,4 @@
-config_version: 'v6'
+config_version: 'v7'
 
 model_comment: 'inspections: DT'
 random_seed: 12345
@@ -200,8 +200,8 @@ bias_audit_config:
     entity_id_column: 'entity_id'
     ref_groups_method: 'min_metric'
     thresholds:
-        percentiles: []
-        top_n: [25]
+        percentiles: [50]
+        top_n: []
 
 scoring:
     testing_metric_groups:

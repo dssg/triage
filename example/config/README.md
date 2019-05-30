@@ -147,6 +147,23 @@ If you want to override this list, you can supply a `model_group_keys` value. Al
 You can also use any pieces of user_metadata that you included in this experiment definition, as they will be present in the matrix metadata. 
 - `model_group_keys`: [`feature_groups`, `label_definition`]
 
+### Bias Audit Config (optional)
+Every evaluation will include a bias audit (using the Aequitas toolkit).
+To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
+
+from_obj parameter: it can be a table name or a query (such as with features generators)
+The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
+
+Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
+
+Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit
+
+Please have a look to Aequitas documentation for further information about the ref_groups_method
+https://dssg.github.io/aequitas/config.html
+By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
+Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
+
+
 ### Grid Configuration
 The classifier/hyperparameter combinations that should be trained
 

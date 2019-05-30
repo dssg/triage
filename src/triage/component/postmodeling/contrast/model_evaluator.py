@@ -1193,6 +1193,6 @@ class ModelEvaluator(object):
             axs[i3].legend()
             axs[i3].set_title("All classes")
             axs[i3].set_xlabel(feature)
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 

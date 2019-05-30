@@ -1,7 +1,11 @@
 import logging
 import textwrap
+
+import pandas
 from sqlalchemy import text
+
 from triage.database_reflection import table_exists
+from triage.component.catwalk.storage import MatrixStore
 
 
 class ProtectedGroupsGeneratorNoOp(object):
@@ -14,6 +18,9 @@ class ProtectedGroupsGeneratorNoOp(object):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
         )
+
+    def as_dataframe(self, *args, **kwargs):
+        return pandas.DataFrame()
 
 
 class ProtectedGroupsGenerator(object):
@@ -121,3 +128,32 @@ class ProtectedGroupsGenerator(object):
         logging.debug("Running protected_groups creation query")
         logging.debug(full_insert_query)
         self.db_engine.execute(full_insert_query)
+
+    def as_dataframe(self, as_of_dates, cohort_hash):
+        """Queries the protected groups table to retrieve the protected attributes for each date
+        Args:
+            db_engine (sqlalchemy.engine) a database engine
+            as_of_dates (list) the as_of_Dates to query
+
+        Returns: (pandas.DataFrame) a dataframe with protected attributes for the given dates
+        """
+        as_of_dates_sql = "[{}]".format(
+            ", ".join("'{}'".format(date.strftime("%Y-%m-%d %H:%M:%S.%f")) for date in as_of_dates)
+        )
+        query_string = f"""
+            with dates as (
+                select unnest(array{as_of_dates_sql}::timestamp[]) as as_of_date
+            )
+            select *
+            from {self.protected_groups_table_name}
+            join dates using(as_of_date)
+            where cohort_hash = '{cohort_hash}'
+        """
+        protected_df = pandas.DataFrame.pg_copy_from(
+            query_string,
+            engine=self.db_engine,
+            parse_dates=["as_of_date"],
+            index_col=MatrixStore.indices,
+        )
+        del protected_df['cohort_hash']
+        return protected_df

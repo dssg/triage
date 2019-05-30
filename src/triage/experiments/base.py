@@ -338,6 +338,7 @@ class ExperimentBase(ABC):
             db_engine=self.db_engine,
             testing_metric_groups=self.config.get("scoring", {}).get("testing_metric_groups", []),
             training_metric_groups=self.config.get("scoring", {}).get("training_metric_groups", []),
+            bias_config=self.config.get("bias_audit_config", {})
         )
 
         self.model_train_tester = ModelTrainTester(
@@ -347,6 +348,8 @@ class ExperimentBase(ABC):
             individual_importance_calculator=self.individual_importance_calculator,
             predictor=self.predictor,
             subsets=self.subsets,
+            protected_groups_generator=self.protected_groups_generator,
+            cohort_hash=self.cohort_hash
         )
 
     def get_for_update(self):

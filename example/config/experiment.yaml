@@ -268,7 +268,13 @@ user_metadata:
 # from_obj parameter: it can be a table name or a query (such as with features generators)
 # The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
 # Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
-# Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit
+#
+# thresholds:
+# Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit.
+# Percentiles *should be between 0 and 100*, much like Triage model scoring config.
+# People familiar with Aequitas may note that this differs from its expected values - Triage will do the conversion for Aequitas.
+#
+# ref groups:
 # Please have a look to Aequitas documentation for further information about the ref_groups_method
 # https://dssg.github.io/aequitas/config.html
 # By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
