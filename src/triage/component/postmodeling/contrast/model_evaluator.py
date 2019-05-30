@@ -117,8 +117,8 @@ class ModelEvaluator(object):
                    as_of_date,
                    score,
                    label_value,
-                   COALESCE(rank_abs, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
-                   COALESCE(rank_pct, percent_rank()
+                   COALESCE(rank_abs_with_ties, RANK() OVER(ORDER BY score DESC)) AS rank_abs,
+                   COALESCE(rank_pct_with_ties, percent_rank()
                    OVER(ORDER BY score DESC)) * 100 as rank_pct,
                    test_label_timespan
             FROM test_results.predictions
@@ -237,7 +237,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels
@@ -253,7 +253,7 @@ class ModelEvaluator(object):
             SELECT model_id,
                    metric,
                    parameter,
-                   value,
+                   stochastic_value as value,
                    num_labeled_examples,
                    num_labeled_above_threshold,
                    num_positive_labels
@@ -1193,6 +1193,6 @@ class ModelEvaluator(object):
             axs[i3].legend()
             axs[i3].set_title("All classes")
             axs[i3].set_xlabel(feature)
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 

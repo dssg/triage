@@ -122,9 +122,7 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     as_of_date = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     score = factory.fuzzy.FuzzyDecimal(0, 1)
     label_value = factory.fuzzy.FuzzyInteger(0, 1)
-    rank_abs = 1
-    rank_pct = 1.0
-    matrix_uuid = factory.SelfAttribute("model_rel.train_matrix_uuid")
+    matrix_rel = factory.SubFactory(MatrixFactory)
     test_label_timespan = "3m"
 
 
@@ -170,11 +168,15 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     as_of_date_frequency = "3d"
     metric = "precision@"
     parameter = "100_abs"
-    value = factory.fuzzy.FuzzyDecimal(0, 1)
     num_labeled_examples = 10
     num_labeled_above_threshold = 8
     num_positive_labels = 5
     sort_seed = 8
+    best_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    worst_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    stochastic_value = factory.fuzzy.FuzzyDecimal(0, 1)
+    num_sort_trials = 5
+    standard_deviation = 0.05
     matrix_rel = factory.SubFactory(MatrixFactory)
     matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
 
