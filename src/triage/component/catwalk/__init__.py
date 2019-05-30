@@ -89,7 +89,8 @@ class ModelTrainTester(object):
             if task['train_kwargs']['class_path'].startswith('triage.component.catwalk.baselines') \
                     or task['train_kwargs']['class_path'] in (
                     'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression',
-                    'sklearn.tree.DecisionTreeClassifier'
+                    'sklearn.tree.DecisionTreeClassifier',
+                    'sklearn.dummy.DummyClassifier'
                     ):
                 # First priority: baselines or simple, effective classifiers
                 batches[0].tasks.append(task)
