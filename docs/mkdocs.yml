@@ -62,6 +62,7 @@ nav:
   - Home: index.md
   - Dirty Duck Tutorial:
     - Welcome!: dirtyduck/index.md
+    - Who is this tutorial for?: dirtyduck/who_is_this_tutorial_for.md
     - Choose your own adventure: dirtyduck/choose_your_own_adventure.md
     - Setup:
       - Quick setup: dirtyduck/for_the_impatient.md

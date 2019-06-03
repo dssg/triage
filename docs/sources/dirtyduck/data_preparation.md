@@ -106,7 +106,7 @@ The transformation "road" that we will take in this tutorial is as follows:
     semantic schema: `events` and `entities`.
 4.  Run `triage`. It will create several schemas (`model_metadata`, `test_results`, `train_results`).
 
-![img](figures/data_road.png)
+![img](images/data_road.png)
 
 <a id="orga5ba5d1"></a>
 

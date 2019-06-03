@@ -30,7 +30,6 @@ model_group_keys:
   - 'org'
   - 'team'
   - 'author'
-  - 'purpose'
   - 'etl_date'
 
 label_config:
@@ -56,7 +55,7 @@ cohort_config:
 temporal_config:
     feature_start_time: '2010-01-04'
     feature_end_time: '2018-06-01'
-    label_start_time: '2013-01-01'
+    label_start_time: '2014-06-01'
     label_end_time: '2018-06-01'
 
     model_update_frequency: '6month'

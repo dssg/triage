@@ -1,4 +1,3 @@
-
 # Resource prioritization systems: Chicago food inspections
 
 !!! warning "Before continue, Did you…?"
@@ -9,8 +8,6 @@
 
     - If you didn't load the data, you can do it very [quickly](for_the_impatient.md)
       or you can follow all the [steps and explanations about the data](data_preparation.md).
-
-
 
 
 ## Problem description
@@ -62,7 +59,7 @@ opens will be subject to an inspection. We will assume that **all**
 the facilities are in our data.
 
 
-## Creating the labels
+## Creating the labels: *What do you want to predict?*
 
 We will define two labels:
 
@@ -78,6 +75,20 @@ violation. The label takes a 1 if the inspection had at least one
 `result` = `'fail'` and a violation between 1 and 29, and a 0
 otherwise.
 
+!!! info "I want to learn more about the data"
+
+    Check the [Data preparation](/data_preparation) section!
+
+!!! warning "Data Changes"
+    On 7/1/2018 the Chicago Department of Public Health’s Food
+    Protection unit changed the definition of violations.
+    The changes don’t affect structurally the dataset (e.g. how the
+    violations are inputted to the database), but the redefinition
+    will change the distribution and interpretation of the violation codes.
+    See
+    [here](https://www.cityofchicago.org/content/dam/city/depts/cdph/FoodProtection/ChicagoFoodCodeMajorChangesFinal2018.pdf).
+
+
 We can extract the severity of the violation using the following code:
 
 ```sql
@@ -92,7 +103,7 @@ select
     (result = 'fail' and
         ('serious' = ANY(array_agg(obj ->> 'severity')) or 'critical' = ANY(array_agg(obj ->> 'severity')))
         ), false
-    ) as failed_major_violation
+    ) as failed_major_violationq
 from
     (
     select
@@ -125,7 +136,7 @@ The *outcome* will be used by `triage` to generate the labels. The
 following image tries to show the meaning of the *outcomes* for the
 *inspection failed* problem definition.
 
-![img](./images/outcomes-inspections.png "The image shows three
+![img](images/outcomes-inspections.png "The image shows three
 facilities and, next to each, a temporal line with 6 days (0-5). Each
 dot represents an inspection. Color is the *outcome* of the
 inspection. Green means the facility passed the inspection, and red
@@ -183,7 +194,7 @@ overwritten or incorrectly used), and if you add the
 different label definitions will belong to different model groups.
 
 ```yaml
-config_version: 'v6'
+config_version: 'v7'
 
 model_comment: 'inspections: baseline'
 random_seed: 23895478
@@ -215,7 +226,6 @@ model_group_keys:
   - 'org'
   - 'team'
   - 'author'
-  - 'purpose'
   - 'etl_date'
 
 ```
@@ -225,16 +235,16 @@ model_group_keys:
 Next comes the **temporal configuration** section. The first four
 parameters are related to the availability of data: How much data you
 have for feature creation? How much data you have for label
-generation? For simplicity we will assume that we can use the full
-`semantic.events` time span for both.
+generation?
 
-```sql
-select min(date), max(date) from semantic.events;
-```
-
-| min        | max        |
-|---------- |---------- |
-| 2010-01-04 | 2018-06-29 |
+!!! warning "Data Changes"
+    On 7/1/2018 the Chicago Department of Public Health’s Food
+    Protection unit changed the definition of violations.
+    The changes don’t affect structurally the dataset (e.g. how the
+    violations are inputted to the database), but the redefinition
+    will change the distribution and interpretation of the violation codes.
+    See
+    [here](https://www.cityofchicago.org/content/dam/city/depts/cdph/FoodProtection/ChicagoFoodCodeMajorChangesFinal2018.pdf).
 
 The next parameters are related to the training intervals:
 
@@ -248,30 +258,31 @@ The remaining elements are related to the **testing** matrices. For **inspection
 -   `test_durations` how far ahead do you schedule inspections?
 -   `test_label_timespan` is equal to `test_durations`
 
-Let's assume that we need to do rounds of inspections every month
-(`test_as_of_date_frequencies = 1month`) and we need to complete that
+Let's assume that we need to do rounds of inspections every 6 months
+(`test_as_of_date_frequencies = 6month`) and we need to complete that
 round in exactly one month (`test_durations = test_label_timespan =
-1month`).
+6month`).
 
 We will assume that the data is more or less stable[^3], at least for
-one year, so `model_update_frequency` = `1 year.`
+one year, so `model_update_frequency` = `6month.`
 
 ```yaml
 temporal_config:
     feature_start_time: '2010-01-04'
     feature_end_time: '2018-06-01'
-    label_start_time: '2015-02-01'
+    label_start_time: '2015-01-01'
     label_end_time: '2018-06-01'
 
-    model_update_frequency: '1y'
-    training_label_timespans: ['1month']
-    training_as_of_date_frequencies: '1month'
+    model_update_frequency: '6month'
+    training_label_timespans: ['6month']
+    training_as_of_date_frequencies: '6month'
 
-    test_durations: '1y'
-    test_label_timespans: ['1month']
-    test_as_of_date_frequencies: '1month'
+    test_durations: '0d'
+    test_label_timespans: ['6month']
+    test_as_of_date_frequencies: '6month'
 
     max_training_histories: '5y'
+
 ```
 
 We can visualize the time splitting using the function `show-timechop`
@@ -319,22 +330,10 @@ we tell `triage` to take that in account:
 ```yaml
 cohort_config:
   query: |
-    with buckets as (
-    select *, ntile(5) over (order by number_of_inspections asc) as bucket
-    from (
-    select entity_id, count(*) as number_of_inspections
-    from semantic.events
-    group by entity_id
-    ) as t
-    )
     select e.entity_id
     from semantic.entities as e
-    inner join
-    buckets as b
-    using (entity_id)
     where
     daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
-    and bucket in (5)
   name: 'active_facilities'
 ```
 
@@ -358,7 +357,7 @@ feature_aggregations:
         type: 'zero_noflag'
 
     aggregates:
-      -
+       -
         quantity:
           total: "*"
         metrics:
@@ -454,11 +453,18 @@ You can execute the experiment as[^8]
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment experiments/inspections_baseline.yaml
+time triage experiment experiments/inspections_baseline.yaml
 ```
 
+!!! tip "Protip"
+
+    We are including the command `time` in order to get the total
+    running time of the experiment. You can remove it, if you like.
+
+
+
 This will print a lot of output, and if everything is correct it will
-create **6** matrices (3 for training, 3 for testing) in
+create **10** matrices (5 for training, 5 for testing) in
 `triage/matrices` and every matrix will be represented by two files,
 one with the metadata of the matrix (a `yaml` file) and one with the
 actual matrix (the `gz` file).
@@ -470,7 +476,7 @@ actual matrix (the `gz` file).
 ls matrices | awk -F . '{print $NF}' | sort | uniq -c
 ```
 
-`Triage` also will store **3** trained models in `triage/trained_models`:
+`Triage` also will store **5** trained models in `triage/trained_models`:
 
 ```sh
 ls trained_models | wc -l
@@ -485,32 +491,36 @@ select
     model_type,
     hyperparameters
 from
-    model_metadata.model_groups;
+    model_metadata.model_groups
+where
+    model_config ->> 'experiment_type' ~ 'inspection'
 ```
 
- model\_group\_id |          model\_type           |     hyperparameters
-----------------|-------------------------------|-------------------------
-              1 | sklearn.dummy.DummyClassifier | {"strategy": "prior"}
+ model\_group\_id |          model\_type           |    hyperparameters
+----------------|-------------------------------|-----------------------
+             21 | sklearn.dummy.DummyClassifier | {"strategy": "prior"}
 
 
-And **3** *models*:
+And **5** *models*:
 
 ```sql
 select
     model_group_id,
     array_agg(model_id) as models,
-    array_agg(train_end_time) as train_end_times
+    array_agg(train_end_time::date) as train_end_times
 from
     model_metadata.models
+where
+    model_comment ~ 'inspection'
 group by
     model_group_id
 order by
     model_group_id;
 ```
 
- model_group_id | models  |                           train_end_times
-----------------|---------|---------------------------------------------------------------------
-              1 | {1,2,3} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
+ model\_group\_id |        models         |                                                 train\_end\_times
+----------------|-----------------------|-----------------------------------------------------------------------------------------------------------------
+             21 | {121,122,123,124,125} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01}
 
 
 From that last query, you should note that the order in which `triage`
@@ -533,16 +543,20 @@ from
     join
     model_metadata.matrices as ma
     on train_matrix_uuid = matrix_uuid
+where
+    mo.model_comment ~ 'inspection'
 order by
     model_group_id,
     train_end_time asc;
 ```
 
- model\_group\_id | model\_id |   train\_end\_time    | model\_hash | train\_matrix_uuid | observations | feature\_lookback\_duration | feature\_start\_time
-----------------|----------|---------------------|------------|-------------------|--------------|---------------------------|---------------------
-              1 |        1 | 2014-06-01 | f0e7a      | 56a70             |         4895 | 5 years                   | 2010-01-04
-              1 |        2 | 2015-06-01 | 8b0f2      | 49bea             |        10013 | 5 years                   | 2010-01-04
-              1 |        3 | 2016-06-01 | b5e13      | 025d3             |        15128 | 5 years                   | 2010-01-04
+ model\_group\_id | model\_id | train\_end\_time | model\_hash | train\_matrix\_uuid | observations | feature\_lookback\_duration | feature\_start\_time
+----------------|----------|----------------|------------|-------------------|--------------|---------------------------|---------------------
+             21 |      121 | 2015-12-01     | 743a6      | 1c266             |         5790 | 5 years                   | 2010-01-04 00:00:00
+             21 |      122 | 2016-06-01     | 5b656      | 755c6             |        11502 | 5 years                   | 2010-01-04 00:00:00
+             21 |      123 | 2016-12-01     | 5c170      | 2aea8             |        17832 | 5 years                   | 2010-01-04 00:00:00
+             21 |      124 | 2017-06-01     | 55c3e      | 3efdc             |        23503 | 5 years                   | 2010-01-04 00:00:00
+             21 |      125 | 2017-12-01     | ac993      | a3762             |        29112 | 5 years                   | 2010-01-04 00:00:00
 
 
 
@@ -568,15 +582,20 @@ from
     test_results.evaluations as ev using (model_id)
     join
     model_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
+where
+    mo.model_comment ~ 'inspection'
 order by
     model_group_id, train_end_time asc;
 ```
 
- model\_id | model\_group\_id |   train\_end\_time    | model\_hash | test\_matrix\_uuid | observations | feature\_lookback\_duration | feature\_start\_time
-----------|----------------|---------------------|------------|------------------|--------------|---------------------------|---------------------
-        1 |              1 | 2014-06-01 | f0e7a      | 66098            |         5689 | 1 year                    | 2010-01-04
-        2 |              1 | 2015-06-01 | 8b0f2      | 91896            |         5708 | 1 year                    | 2010-01-04
-        3 |              1 | 2016-06-01 | b5e13      | 7b236            |         5540 | 1 year                    | 2010-01-04
+ model\_id | model\_group\_id | train\_end\_time | model\_hash | test\_matrix\_uuid | observations | feature\_lookback\_duration | feature\_start\_time
+----------|----------------|----------------|------------|------------------|--------------|---------------------------|--------------------
+      121 |             21 | 2015-12-01     | 743a6      | 4a0ea            |        18719 | 00:00:00                  | 2010-01-04
+      122 |             21 | 2016-06-01     | 5b656      | f908e            |        19117 | 00:00:00                  | 2010-01-04
+      123 |             21 | 2016-12-01     | 5c170      | 00a88            |        19354 | 00:00:00                  | 2010-01-04
+      124 |             21 | 2017-06-01     | 55c3e      | 8f3cf            |        19796 | 00:00:00                  | 2010-01-04
+      125 |             21 | 2017-12-01     | ac993      | 417f0            |        20159 | 00:00:00                  | 2010-01-04
+
 
 All the models were stored in `/triage/trained_models/{model_hash}`
 using the standard serialization of sklearn models. Every model was
@@ -586,7 +605,7 @@ trained with the matrix `train_matrix_uuid` stored in the directory
 What's the performance of this model groups?
 
 ```sql
-\set k 0.15
+\set k 0.10
 
 select distinct
     model_group_id,
@@ -616,16 +635,21 @@ from
     model_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
 where
     ev.metric || ev.parameter = 'precision@15_pct'
+    and
+    mo.model_comment ~ 'inspection'
+order by
+    model_id, train_end_time asc;
 order by
     model_id, train_end_time asc;
 ```
 
  model\_group\_id | model\_id | feature\_start\_time | train\_end\_time | evaluation\_start\_time | evaluation\_end\_time | observations | total labeled examples | total positive labels | labeled examples@k% | predicted positive (PP) | true positive (TP)@k% (best,worst,stochastic) | precision@k% (best,worst,stochastic) | baserate |  k%
-----------------|----------|--------------------|----------------|-----------------------|---------------------|--------------|------------------------|-----------------------|---------------------|-------------------------|-----------------------------------------------|--------------------------------------|----------|------
-              1 |        1 | 2010-01-04         | 2014-06-01     | 2014-06-01            | 2014-06-01          |    5,689     |    5,118               |    1,702              |      282            |      853                | {"     282","       0","      95"}            | {" 1.000"," 0.000"," 0.339"}         |  0.333   | 15.00
-              1 |        2 | 2010-01-04         | 2015-06-01     | 2015-06-01            | 2015-06-01          |    5,708     |    5,115               |    1,855              |      263            |      856                | {"     263","       0","      96"}            | {" 1.000"," 0.000"," 0.366"}         |  0.363   | 15.00
-              1 |        3 | 2010-01-04         | 2016-06-01     | 2016-06-01            | 2016-06-01          |    5,540     |    4,963               |    1,887              |      254            |      831                | {"     254","       0","      96"}            | {" 1.000"," 0.000"," 0.378"}         |  0.380   | 15.00
-
+----------------|----------|--------------------|----------------|-----------------------|---------------------|--------------|------------------------|-----------------------|---------------------|-------------------------|-----------------------------------------------|--------------------------------------|----------|-------
+             21 |      121 | 2010-01-04         | 2015-12-01     | 2015-12-01            | 2015-12-01          |   18,719     |    5,712               |    1,509              |        0            |    2,808                | {"       0","       0","       0"}            | {" 0.000"," 0.000"," 0.000"}         |  0.264   | 15.00
+             21 |      122 | 2010-01-04         | 2016-06-01     | 2016-06-01            | 2016-06-01          |   19,117     |    6,330               |    1,742              |        0            |    2,868                | {"       0","       0","       0"}            | {" 0.000"," 0.000"," 0.000"}         |  0.275   | 15.00
+             21 |      123 | 2010-01-04         | 2016-12-01     | 2016-12-01            | 2016-12-01          |   19,354     |    5,671               |    1,494              |        0            |    2,903                | {"       0","       0","       0"}            | {" 0.000"," 0.000"," 0.000"}         |  0.263   | 15.00
+             21 |      124 | 2010-01-04         | 2017-06-01     | 2017-06-01            | 2017-06-01          |   19,796     |    5,609               |    1,474              |        0            |    2,969                | {"       0","       0","       0"}            | {" 0.000"," 0.000"," 0.000"}         |  0.263   | 15.00
+             21 |      125 | 2010-01-04         | 2017-12-01     | 2017-12-01            | 2017-12-01          |   20,159     |    4,729               |    1,260              |        0            |    3,024                | {"       0","       0","       0"}            | {" 0.000"," 0.000"," 0.000"}         |  0.266   | 15.00
 
 The columns `num_labeled_examples, num_labeled_above_threshold,
 num_positive_labels` represent the number of selected entities on the
@@ -663,11 +687,11 @@ Note how in this model, the stochastic value is close to the
 !!! info "Check this!"
     Note that the *baserate* should be equal to the *precision@100%*, if is not there is something wrong …
 
-
 ### Creating a simple experiment: ML as a Data Mining technique
 
-We will try one of the simplest machine learning algorithms: a
-**Decision Tree Classifier** (*DT*) as a second experiment. The
+We will try two of the simplest machine learning algorithms: a
+**Decision Tree Classifier** (*DT*) and a  **Scaled Logistic
+Regression** (*SLR*) as a second experiment. The
 rationale of this is that the DT is very fast to train (so it will
 help us to verify that the experiment configuration is correct without
 waiting for a long time) and it helps you to understand the structure
@@ -681,15 +705,15 @@ smart enough to use the previous tables and matrices instead of
 generating them from scratch.
 
 ```yaml
-config_version: 'v6'
+config_version: 'v7'
 
-model_comment: 'inspections: DT'
+model_comment: 'inspections: basic ML'
 
 user_metadata:
   label_definition: 'failed'
   experiment_type: 'inspections prioritization'
   description: |
-    Decision Tree Classifier
+    DT and SLR
   purpose: 'data mining'
   org: 'DSaPP'
   team: 'Tutorial'
@@ -821,9 +845,16 @@ size tree.
 
 ```yaml
 grid_config:
-    'sklearn.tree.DecisionTreeClassifier':
-        max_depth: [2,10,~]
-        min_samples_split: [2,5]
+  'sklearn.tree.DecisionTreeClassifier':
+        criterion: ['gini']
+        max_features: ['sqrt']
+        max_depth: [1, 2, 5,~]
+        min_samples_split: [2,10,50]
+
+  'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        penalty: ['l1','l2']
+        C: [0.000001, 0.0001, 0.01,  1.0]
+
 ```
 
 !!! info "About `yaml` and `sklearn`"
@@ -883,7 +914,7 @@ You can execute the experiment like this:
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment experiments/inspections_dt.yaml
+time triage experiment experiments/inspections_dt.yaml
 ```
 
 After the experiment finishes, you will get **6** new `model_groups` (1 per combination in `grid_config`)
@@ -1051,7 +1082,7 @@ back to this problem in the Early Warning Systems.
 Ok, let's add a more complete experiment. First the usual generalities.
 
 ```yaml
-config_version: 'v6'
+config_version: 'v7'
 
 model_comment: 'inspections: advanced'
 
@@ -1084,7 +1115,14 @@ next month.")
 for inspections experiment. The label is a failed inspection in the
 next month.*
 
-We want to use all the features groups (`feature_group_definition`). The training will be made on matrices with `all` the feature groups, then leaving one feature group out at a time, `leave-one-out` (i.e. one model with `inspections` and `results`, another with `inspections` and `risks`, and another with `results` and `risks), and finally leaving one feature group in at a time (i.e. a model with =inspections` only, another with `results` only, and a third with `risks` only).
+We want to use all the features groups
+(`feature_group_definition`). The training will be made on matrices
+with `all` the feature groups, then leaving one feature group out at a
+time, `leave-one-out` (i.e. one model with `inspections` and
+`results`, another with `inspections` and `risks`, and another with
+`results` and `risks), and finally leaving one feature group in at a
+time (i.e. a model with `inspections` only, another with `results`
+only, and a third with `risks` only).
 
 ```yaml
 feature_group_definition:
@@ -1101,11 +1139,21 @@ Finally, we will try some `RandomForestClassifier`:
 
 ```yaml
 grid_config:
-    'sklearn.ensemble.RandomForestClassifier':
-        max_features: ['sqrt']
-        criterion: ['gini']
-        n_estimators: [100, 250]
-        min_samples_split: [2,10]
+   'sklearn.ensemble.RandomForestClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10]
+     max_features: ['sqrt']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
+
+   'sklearn.ensemble.ExtraTreesClassifier':
+     n_estimators: [10000]
+     criterion: ['gini']
+     max_depth: [2, 5, 10]
+     max_features: ['sqrt']
+     min_samples_split: [2, 10, 50]
+     n_jobs: [-1]
 
 scoring:
     testing_metric_groups:
@@ -1125,7 +1173,6 @@ scoring:
           top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
 
 ```
-
 Before running, let's verify the configuration file
 
 ```sh
@@ -1138,13 +1185,13 @@ You can execute the experiment with
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment experiments/inspections_label_failed_01.yaml
+time triage experiment experiments/inspections_label_failed_01.yaml
 ```
 
 This will take a looooong time to run. The reason for that is easy to
-understand: We are computing a *lot* of models: 3 time splits, 4 model
+understand: We are computing a *lot* of models: 6 time splits, 18 model
 groups and 9 features sets (one for `all`, four for `leave_one_in` and
-four for `leave_one_out`), so \(3 \times 4 \times 9 = 108\) extra
+four for `leave_one_out`), so \(6 \times 18 \times 9 = 486\) extra
 models.
 
 Well, now we have a lot of models. How can you pick the best one? You

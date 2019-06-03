@@ -1,13 +1,13 @@
 config_version: 'v7'
 
-model_comment: 'inspections: DT'
+model_comment: 'inspections: basic ML'
 random_seed: 23895478
 
 user_metadata:
   label_definition: 'failed'
   experiment_type: 'inspections prioritization'
   description: |
-    Decision Tree Classifier
+    DT and SLR
   purpose: 'data mining'
   org: 'DSaPP'
   team: 'Tutorial'
@@ -30,22 +30,21 @@ model_group_keys:
   - 'org'
   - 'team'
   - 'author'
-  - 'purpose'
   - 'etl_date'
 
 temporal_config:
     feature_start_time: '2010-01-04'
     feature_end_time: '2018-06-01'
-    label_start_time: '2013-01-01'
+    label_start_time: '2015-01-01'
     label_end_time: '2018-06-01'
 
-    model_update_frequency: '1y'
-    training_label_timespans: ['1y']
-    training_as_of_date_frequencies: '1y'
+    model_update_frequency: '6month'
+    training_label_timespans: ['6month']
+    training_as_of_date_frequencies: '6month'
 
-    test_durations: '1y'
-    test_label_timespans: ['1y']
-    test_as_of_date_frequencies: '1y'
+    test_durations: '0d'
+    test_label_timespans: ['6month']
+    test_as_of_date_frequencies: '6month'
 
     max_training_histories: '5y'
 
@@ -162,9 +161,16 @@ feature_aggregations:
       - 'zip_code'
 
 grid_config:
-    'sklearn.tree.DecisionTreeClassifier':
-        max_depth: [2,10,~]
-        min_samples_split: [2,5]
+  'sklearn.tree.DecisionTreeClassifier':
+        criterion: ['gini']
+        max_features: ['sqrt']
+        max_depth: [1, 2, 5,~]
+        min_samples_split: [2,10,50]
+
+  'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        penalty: ['l1','l2']
+        C: [0.000001, 0.0001, 0.01,  1.0]
+
 
 feature_group_definition:
    prefix:

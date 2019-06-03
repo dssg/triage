@@ -3,7 +3,7 @@
   project_path: '/triage' # Project path defined in triage with matrices and models
   audition_output_path: '/triage/audition/eis/results_model_group_ids.json'
 
-  thresholds: # Thresholds for2 defining positive predictions
+  thresholds: # Thresholds for defining positive predictions
         rank_abs: [50, 100, 250]
         rank_pct: [5, 10, 25]
 
@@ -13,14 +13,14 @@
              extract('year' from m.evaluation_end_time) as as_of_date_year,
              m.metric,
              m.parameter,
-             m.value,
+             m.stochastic_value,
              m.num_labeled_examples,
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
        left join model_metadata.models g
        using(model_id)
-       where g.model_group_id = 81
+       where g.model_group_id = 20
              and metric = 'precision@'
              and parameter = '10_pct'
 

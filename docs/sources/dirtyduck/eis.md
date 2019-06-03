@@ -38,17 +38,16 @@ Knowing the answer to this question enables you (as the restaurant
 owner or manager) to prepare for the inspection.
 
 
-
 ## What are the labels? What are the outcomes?
 
 The trick to note is that on any given day there are two possible
 outcomes: *the facility was inspected* and *the facility wasn't
-inspected*. Our *outcomes* table will be larger than in the inspection
-prioritization example because we need an *outcome* for every *active*
+inspected*. Our *outcomes* table will be larger than in the [resource
+prioritization](inspections.md) example because we need an *outcome* for every *active*
 facility on every date. The following image tries to exemplify this
 reasoning:
 
-![img](./figures/outcomes-eis.png)
+![img](images/outcomes-eis.png)
 *Figure. The image shows three facilities,
 and next to each, a temporal line with 6 days (0-5). Each dot
 represents the event (whether an inspection happened). Yellow means
@@ -57,7 +56,8 @@ the inspection happened (`TRUE` outcome) and blue means it didn't
 in total.*
 
 Fortunately, `triage` will help us to create this table. The *cohort*
-table is the same as the *cohort* table in the inspection case.
+table is the same as the *cohort* table in the [resource prioritization
+case study](inspections.md)
 
 !!! info "Experiment description file"
     You could check the meaning about experiment description files
@@ -100,7 +100,6 @@ model_group_keys:
   - 'org'
   - 'team'
   - 'author'
-  - 'purpose'
   - 'etl_date'
 
 ```
@@ -159,7 +158,7 @@ restaurant be inspected in the next 6 months?*
     temporal_config:
         feature_start_time: '2010-01-04'
         feature_end_time: '2018-06-01'
-        label_start_time: '2013-01-01'
+        label_start_time: '2014-06-01'
         label_end_time: '2018-06-01'
 
         model_update_frequency: '6month'
@@ -357,8 +356,8 @@ hyperparameters (4 `DecisionTreeClassifier`, 8
 `ScaledLogisticRegression`, 2 `DummyClassifier`, 3 `SimpleThresholder`
 and 3 `PercentileRankOneFeature`) &times; **1**
 features sets (1 `all`). The
-total number of *models* is three times that (we have 8 time
-blocks, so **160** models).
+total number of *models* is three times that (we have 6 time
+blocks, so **120** models).
 
 ```yaml
     scoring:
@@ -393,8 +392,13 @@ And then just run it:
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment experiments/eis_01.yaml
+time triage experiment experiments/eis_01.yaml
 ```
+
+!!! tip "Protip"
+
+    We are including the command `time` in order to get the total
+    running time of the experiment. You can remove it, if you like.
 
 This will take a **lot** amount of time (on my computer took 3h
 42m), so, grab your coffee, chat with your coworkers, check your
@@ -434,7 +438,7 @@ After the experiment finishes, we can create the following table:
 
     select
         model_group_id,
-        model_type,
+        regexp_replace(model_type, '^.*\.', '') as model_type,
         hyperparameters,
         feature_groups,
         array_agg(model_id order by train_end_time asc) as models,
@@ -460,44 +464,36 @@ After the experiment finishes, we can create the following table:
         model_group_id;
 ```
 
- model\_group\_id |               model\_type                |                                                  hyperparameters                                                   |             feature\_groups             |    models     |               times                |       precision@10% (
-----------------|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------|----------------------------------------|---------------|------------------------------------|------------------------------
-             44 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspection,inspections,results,risks} | {130,148,166} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.758"," 0.844"," 0.863"}
-             45 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspection,inspections,results,risks} | {131,149,167} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.733"," 0.734"," 0.765"}
-             46 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspection,results,risks}             | {132,150,168} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.758"," 0.845"," 0.861"}
-             47 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspection,results,risks}             | {133,151,169} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.720"," 0.739"," 0.769"}
-             48 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspection,inspections,risks}         | {134,152,170} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.857"," 0.796"," 0.863"}
-             49 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspection,inspections,risks}         | {135,153,171} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.707"," 0.752"," 0.769"}
-             50 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspection,inspections,results}       | {136,154,172} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.755"," 0.773"," 0.825"}
-             51 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspection,inspections,results}       | {137,155,173} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.714"," 0.748"," 0.773"}
-             52 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspections,results,risks}            | {138,156,174} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.707"," 0.845"," 0.858"}
-             53 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspections,results,risks}            | {139,157,175} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.715"," 0.749"," 0.773"}
-             54 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspections}                          | {140,158,176} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.777"," 0.781"," 0.796"}
-             55 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspections}                          | {141,159,177} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.823"," 0.849"," 0.852"}
-             56 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {results}                              | {142,160,178} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.775"," 0.774"," 0.826"}
-             57 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {results}                              | {143,161,179} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.801"," 0.830"," 0.850"}
-             58 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {risks}                                | {144,162,180} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.805"," 0.844"," 0.853"}
-             59 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {risks}                                | {145,163,181} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.738"," 0.750"," 0.798"}
-             60 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": 2}                                                                                                   | {inspection}                           | {146,164,182} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.735"," 0.837"," 0.850"}
-             61 | sklearn.tree.DecisionTreeClassifier     | {"max\_depth": null}                                                                                                | {inspection}                           | {147,165,183} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.738"," 0.744"," 0.778"}
-             62 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection,inspections,results,risks} | {184,202,220} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.903"," 0.905"," 0.913"}
-             63 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection,inspections,results,risks} | {185,203,221} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.477"," 0.481"," 0.489"}
-             64 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection,results,risks}             | {186,204,222} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.899"," 0.912"," 0.907"}
-             65 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection,results,risks}             | {187,205,223} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.471"," 0.481"," 0.485"}
-             66 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection,inspections,risks}         | {188,206,224} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.897"," 0.905"," 0.909"}
-             67 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection,inspections,risks}         | {189,207,225} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.476"," 0.483"," 0.486"}
-             68 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection,inspections,results}       | {190,208,226} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.884"," 0.891"," 0.908"}
-             69 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection,inspections,results}       | {191,209,227} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.477"," 0.483"," 0.488"}
-             70 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspections,results,risks}            | {192,210,228} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.891"," 0.889"," 0.911"}
-             71 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspections,results,risks}            | {193,211,229} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.476"," 0.482"," 0.486"}
-             72 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspections}                          | {194,212,230} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.822"," 0.849"," 0.850"}
-             73 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspections}                          | {195,213,231} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.477"," 0.482"," 0.484"}
-             74 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {results}                              | {196,214,232} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.871"," 0.878"," 0.891"}
-             75 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {results}                              | {197,215,233} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.475"," 0.482"," 0.486"}
-             76 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {risks}                                | {198,216,234} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.864"," 0.857"," 0.909"}
-             77 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {risks}                                | {199,217,235} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.477"," 0.478"," 0.486"}
-             78 | sklearn.ensemble.RandomForestClassifier | {"criterion": "gini", "max\_features": "sqrt", "n\_estimators": 500, "min\_samples\_leaf": 1, "min\_samples\_split": 50} | {inspection}                           | {200,218,236} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.847"," 0.877"," 0.898"}
-             79 | sklearn.dummy.DummyClassifier           | {"strategy": "prior"}                                                                                              | {inspection}                           | {201,219,237} | {2014-06-01,2015-06-01,2016-06-01} | {" 0.480"," 0.486"," 0.486"}
+ model\_group\_id |        model\_type        |                                     hyperparameters                                      |             feature\_groups             |          models           |                                times                                |               precision@10% (stochastic)
+----------------|--------------------------|------------------------------------------------------------------------------------------|----------------------------------------|---------------------------|---------------------------------------------------------------------|---------------------------------------------------------
+              1 | SimpleThresholder        | {"rules": ["inspections\_entity\_id\_1month\_total\_count > 0"]}                              | {inspection,inspections,results,risks} | {1,19,37,55,73,91}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.358"," 0.231"," 0.321"," 0.267"," 0.355"," 0.239"}
+              2 | SimpleThresholder        | {"rules": ["results\_entity\_id\_1month\_result\_fail\_sum > 0"]}                              | {inspection,inspections,results,risks} | {2,20,38,56,74,92}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.316"," 0.316"," 0.323"," 0.344"," 0.330"," 0.312"}
+              3 | SimpleThresholder        | {"rules": ["risks\_entity\_id\_1month\_risk\_high\_sum > 0"]}                                  | {inspection,inspections,results,risks} | {3,21,39,57,75,93}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.364"," 0.248"," 0.355"," 0.286"," 0.371"," 0.257"}
+              4 | PercentileRankOneFeature | {"descend": true, "feature": "risks\_entity\_id\_all\_risk\_high\_sum"}                        | {inspection,inspections,results,risks} | {4,22,40,58,76,94}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.121"," 0.193"," 0.124"," 0.230"," 0.112"," 0.161"}
+              5 | PercentileRankOneFeature | {"descend": true, "feature": "inspections\_entity\_id\_all\_total\_count"}                    | {inspection,inspections,results,risks} | {5,23,41,59,77,95}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.076"," 0.133"," 0.098"," 0.101"," 0.086"," 0.082"}
+              6 | PercentileRankOneFeature | {"descend": true, "feature": "results\_entity\_id\_all\_result\_fail\_sum"}                    | {inspection,inspections,results,risks} | {6,24,42,60,78,96}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.237"," 0.274"," 0.250"," 0.275"," 0.225"," 0.221"}
+              7 | DecisionTreeClassifier   | {"criterion": "gini", "max\_depth": 1, "max\_features": "sqrt", "min\_samples\_split": 2}    | {inspection,inspections,results,risks} | {7,25,43,61,79,97}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.284"," 0.441"," 0.559"," 0.479"," 0.463"," 0.412"}
+              8 | DecisionTreeClassifier   | {"criterion": "gini", "max\_depth": 2, "max\_features": "sqrt", "min\_samples\_split": 2}    | {inspection,inspections,results,risks} | {8,26,44,62,80,98}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.401"," 0.388"," 0.533"," 0.594"," 0.519"," 0.649"}
+              9 | DecisionTreeClassifier   | {"criterion": "gini", "max\_depth": 5, "max\_features": "sqrt", "min\_samples\_split": 2}    | {inspection,inspections,results,risks} | {9,27,45,63,81,99}        | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.594"," 0.876"," 0.764"," 0.843"," 0.669"," 0.890"}
+             10 | DecisionTreeClassifier   | {"criterion": "gini", "max\_depth": null, "max\_features": "sqrt", "min\_samples\_split": 2} | {inspection,inspections,results,risks} | {10,28,46,64,82,100}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.484"," 0.542"," 0.566"," 0.589"," 0.565"," 0.546"}
+             11 | ScaledLogisticRegression | {"C": 0.000001, "penalty": "l1"}                                                         | {inspection,inspections,results,risks} | {11,29,47,65,83,101}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.272"," 0.318"," 0.306"," 0.328"," 0.292"," 0.281"}
+             12 | ScaledLogisticRegression | {"C": 0.000001, "penalty": "l2"}                                                         | {inspection,inspections,results,risks} | {12,30,48,66,84,102}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.382"," 0.187"," 0.375"," 0.261"," 0.419"," 0.233"}
+             13 | ScaledLogisticRegression | {"C": 0.0001, "penalty": "l1"}                                                           | {inspection,inspections,results,risks} | {13,31,49,67,85,103}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.275"," 0.314"," 0.306"," 0.329"," 0.462"," 0.421"}
+             14 | ScaledLogisticRegression | {"C": 0.0001, "penalty": "l2"}                                                           | {inspection,inspections,results,risks} | {14,32,50,68,86,104}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.562"," 0.454"," 0.765"," 0.821"," 0.758"," 0.828"}
+             15 | ScaledLogisticRegression | {"C": 0.01, "penalty": "l1"}                                                             | {inspection,inspections,results,risks} | {15,33,51,69,87,105}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.745"," 0.863"," 0.807"," 0.867"," 0.826"," 0.873"}
+             16 | ScaledLogisticRegression | {"C": 0.01, "penalty": "l2"}                                                             | {inspection,inspections,results,risks} | {16,34,52,70,88,106}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.739"," 0.863"," 0.793"," 0.870"," 0.822"," 0.874"}
+             17 | ScaledLogisticRegression | {"C": 1.0, "penalty": "l1"}                                                              | {inspection,inspections,results,risks} | {17,35,53,71,89,107}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.706"," 0.769"," 0.796"," 0.846"," 0.822"," 0.868"}
+             18 | ScaledLogisticRegression | {"C": 1.0, "penalty": "l2"}                                                              | {inspection,inspections,results,risks} | {18,36,54,72,90,108}      | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.694"," 0.779"," 0.793"," 0.845"," 0.823"," 0.867"}
+             19 | DummyClassifier          | {"strategy": "prior"}                                                                    | {inspection,inspections,results,risks} | {109,111,113,115,117,119} | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.273"," 0.316"," 0.306"," 0.332"," 0.295"," 0.282"}
+             20 | DummyClassifier          | {"strategy": "stratified"}                                                               | {inspection,inspections,results,risks} | {110,112,114,116,118,120} | {2014-12-01,2015-06-01,2015-12-01,2016-06-01,2016-12-01,2017-06-01} | {" 0.272"," 0.314"," 0.301"," 0.343"," 0.292"," 0.287"}
+
+
+!!! tip "Protip"
+
+    You could have a "real time" version of the previous query while
+    you are running the experiment config file with triage. Just
+    execute `\watch n` in the `psql` console and it will be refreshed
+    every $n$ seconds
 
 
 ## Let’s explore more: second grid
@@ -534,46 +530,49 @@ and in the `grid_config`:
 ```yaml
 
 grid_config:
-   ## Boosting
+    ## Boosting
    'sklearn.ensemble.AdaBoostClassifier':
-     n_estimators: [1000, 2000, 5000]
+     n_estimators: [1000, 2000]
 
    'sklearn.ensemble.GradientBoostingClassifier':
-     n_estimators: [1000, 2000, 10000]
-     learning_rate : [0.001, 0.01, 0.1, 1.0]
+     n_estimators: [1000, 2000]
+     learning_rate : [0.01, 1.0]
      subsample: [0.5, 1.0]
      min_samples_split: [2]
-     max_depth: [1,2,3,5]
+     max_depth: [2,5]
 
    ## Forest
    'sklearn.tree.DecisionTreeClassifier':
      criterion: ['gini']
-     max_depth: [2, 5, 10, 20]
+     max_depth: [2, 5, 10]
      min_samples_split: [2, 10, 50]
 
    'sklearn.ensemble.RandomForestClassifier':
      n_estimators: [10000]
      criterion: ['gini']
-     max_depth: [2, 5, 10, 20]
-     max_features: ['sqrt','log2']
+     max_depth: [2, 5, 10]
+     max_features: ['sqrt']
      min_samples_split: [2, 10, 50]
      n_jobs: [-1]
 
    'sklearn.ensemble.ExtraTreesClassifier':
      n_estimators: [10000]
      criterion: ['gini']
-     max_depth: [2, 5, 10, 20]
-     max_features: ['sqrt','log2']
+     max_depth: [2, 5, 10]
+     max_features: ['sqrt']
      min_samples_split: [2, 10, 50]
      n_jobs: [-1]
 ```
+
+This new experiment configuration file will add **37** models groups to our experiment.
 
 You can run this experiment with:
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment experiments/eis_02.yaml
+time triage experiment experiments/eis_02.yaml
 ```
+
 
 
 
@@ -635,7 +634,7 @@ rules:
 And then we run the simulation of the rules againts the experiment as:
 
 ```sh
-triage audition eis_audition_config.yaml --directory audition/eis
+triage audition -c ./audition/eis_audition_config.yaml --directory audition/eis
 ```
 
 `Audition` will create several plots that will help you to sort out
@@ -648,7 +647,7 @@ or just to generate your list).
 `Audition` will generate two plots that are meant to be used together:
 *model performance over time* and *distance from best*.
 
-![img](triage/audition/eis/metric_over_time_precision@10_pct.png)
+![img](images/audition/eis/metric_over_time_precision@10_pct.png)
 *Figure. Model group performance over time. In this case the metric
 show is `precision@10%`. The black dashed line represents the
 (theoretical) system's performance if we select the best performant
@@ -656,7 +655,7 @@ model in a every evaluation date. The colored lines represents
 different model groups. All the model groups that share an algorithm
 will be colored the same.*
 
-![img](triage/audition/eis/distance_from_best_precision@10_pct.png)
+![img](images/audition/eis/distance_from_best_precision@10_pct.png)
 *Figure. Proportion of **all** the **models** in a **model group** that are
 separated from the best model. The distance is measured in percentual
 points, i.e. How much less precision at 10 percent of the population
@@ -674,19 +673,19 @@ difference between the performance of the best model evaluated on the
 "next time" and the performance of the model selected by a particular
 rule.
 
-![img](triage/audition/eis/precision@10_pct_next_time.png)
+![img](images/audition/eis/precision@10_pct_next_time.png)
 *Figure. Given a
 strategy for selecting model groups (in the plot 4 are shown), What
 will be the performace of the model group chosen by that strategy in
 the next evaluation date?*
 
 
-![img](triage/audition/eis/regret_distance_from_best_rules_precision@10_pct.png)
+![img](images/audition/eis/regret_distance_from_best_rules_precision@10_pct.png)
 *Figure. Given a strategy for selecting model groups (in the plot 4
 are shown). What will be the distance (*regret*) to the best
 theoretical model in the following evaluation date.*
 
-![img](triage/audition/eis/regret_over_time_precision@10_pct.png)
+![img](images/audition/eis/regret_over_time_precision@10_pct.png)
 *Figure. Expected regret for the strategies. The less the better.*
 
 It seems that the *worst* strategy (the one with the bigger “regret”)
@@ -702,34 +701,34 @@ in the file `/triage/audition/eis/results_model_group_ids.json`
 
 ```json
 {
-  "best_current_value_precision@_10_pct": [
-    76,
-    70,
-    62,
-    66,
-    64
-  ],
-  "best_average_value_precision@_10_pct": [
-    62,
-    70,
-    64,
-    66,
-    76
-  ],
-  "lowest_metric_variance_precision@_10_pct": [
-    53,
-    59,
-    51,
-    64,
-    67
-  ],
-  "most_frequent_best_dist_precision@_10_pct_0.05": [
-    48,
-    62,
-    64,
-    66,
-    68
-  ]
+    "most_frequent_best_dist_precision@_10_pct_0.05": [
+        15,
+        16,
+        17,
+        9,
+        18
+    ],
+    "lowest_metric_variance_precision@_10_pct": [
+        2,
+        5,
+        19,
+        11,
+        6
+    ],
+    "best_average_value_precision@_10_pct": [
+        15,
+        16,
+        17,
+        18,
+        9
+    ],
+    "best_current_value_precision@_10_pct": [
+        9,
+        16,
+        15,
+        17,
+        18
+    ]
 }
 ```
 
@@ -738,7 +737,7 @@ in the file `/triage/audition/eis/results_model_group_ids.json`
 
 Given that almost all the strategies perform well, we will change the
 parameter `model_group_id` in the [postmodeling's configuration
-file](file:///home/nanounanue/projects/dsapp/dirtyduck/triage/eis_postmodeling_config.yaml)
+file](/triage/eis_postmodeling_config.yaml)
 and we will use the complete set of model groups selected by audition:
 
 ```yaml
@@ -757,14 +756,14 @@ and we will use the complete set of model groups selected by audition:
              extract('year' from m.evaluation_end_time) as as_of_date_year,
              m.metric,
              m.parameter,
-             m.value,
+             m.stochastic_value,
              m.num_labeled_examples,
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
        left join model_metadata.models g
        using(model_id)
-       where g.model_group_id = 81
+       where g.model_group_id = 20
              and metric = 'precision@'
              and parameter = '10_pct'
 
@@ -774,12 +773,18 @@ and we will use the complete set of model groups selected by audition:
   fontsize: 20 # Default fontsize for plots
 ```
 
-Again launch jupyter in `bastion`:
+Launch jupyter in `bastion`:
+
+
+```shell
+jupyter-notebook –-ip=0.0.0.0  --port=56406 --allow-root
+```
+
+And then in your browser location bar type: <http://0.0.0.0:56406>
 
 
 ### Setup
 
-The first lines of code are the same as in the inspection’s section
 
 ```jupyter-python
 %matplotlib inline
@@ -814,7 +819,7 @@ audited_models_class.plot_prec_across_time(param_type='rank_pct',
                                            figsize=params.figsize)
 ```
 
-![img](images/eis_mg_prec_over_time.png "Precision@10% over time from the best performing model groups selected by Audition")
+![img](images/postmodeling/eis_mg_prec_over_time.png "Precision@10% over time from the best performing model groups selected by Audition")
 
 Every model selected by audition has a very similar performance across
 time, and they are ~2.5 times above the baseline in precision@10%. We
@@ -894,9 +899,14 @@ In this tutorial, we will just show some parts of the analysis in the most recen
 
 ## Crosstabs: How are the entities classified?
 
-Model interpretation is a huge topic nowadays, the most obvious path is using the *features importance* from the model. This could be useful, but we could do a lot better.
+Model interpretation is a huge topic nowadays, the most obvious path
+is using the *features importance* from the model. This could be
+useful, but we could do a lot better.
 
-`Triage` uses `crosstabs` as a different approach that complements the list of *features importance*. `crosstabs` will run statistical tests to compare the predicted positive and the predicted false facilities in *each* feature.
+`Triage` uses `crosstabs` as a different approach that complements the
+list of *features importance*. `crosstabs` will run statistical tests
+to compare the predicted positive and the predicted false facilities
+in *each* feature.
 
 ```yaml
 output:

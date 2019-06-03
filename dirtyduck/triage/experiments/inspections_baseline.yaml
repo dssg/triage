@@ -36,16 +36,16 @@ model_group_keys:
 temporal_config:
     feature_start_time: '2010-01-04'
     feature_end_time: '2018-06-01'
-    label_start_time: '2013-01-01'
+    label_start_time: '2015-01-01'
     label_end_time: '2018-06-01'
 
-    model_update_frequency: '1y'
-    training_label_timespans: ['1y']
-    training_as_of_date_frequencies: '1y'
+    model_update_frequency: '6month'
+    training_label_timespans: ['6month']
+    training_as_of_date_frequencies: '6month'
 
-    test_durations: '1y'
-    test_label_timespans: ['1y']
-    test_as_of_date_frequencies: '1y'
+    test_durations: '0d'
+    test_label_timespans: ['6month']
+    test_as_of_date_frequencies: '6month'
 
     max_training_histories: '5y'
 
