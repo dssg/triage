@@ -19,7 +19,8 @@ Triage aims to help solve these problems by:
 
 1. Guiding users (data scientists, analysts, researchers) through these design choices by highlighting operational use questions that are important.
 
-2. Providing interfaces to these different phases of a project, such as an ``Experiment``. Each phase is defined by a configuration (corresponding to a design choice) specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.
+2. Providing interfaces to these different phases of a project, such as an ``Experiment``. Each phase is defined by a configuration (corresponding to a design choice) specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase. 
+
 
 
 Installation
