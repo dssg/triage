@@ -118,7 +118,7 @@ Then, to run tests:
 
     pytest
 
-### Development
+### Development Environment
 
 To quickly bootstrap a development environment, having cloned the
 repository, invoke the executable `develop` script from your system
