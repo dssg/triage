@@ -17,13 +17,14 @@ Triage aims to make these decisions for binary classification problems with a st
 
 `Experiment` (create features and models) -> `Audition` (pick the best models) -> `Postmodeling` (dive into best models)
 
-## Documentation Quick Links
+## Quick Links
 
-- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/docs/) - Start here if you're completely new to Triage and want to go through the tutorial
-- [Triage Documentation Site](https://dssg.github.io/triage/) - Start if here if you've used Triage before and want more reference documentation.
-- Triage is developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu)
-
-## Getting Started
+- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/docs/) - Are you completely new to Triage? Go through the tutorial here.
+- [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation? 
+- [Experiment](#experiment) - Want a refresher about the Experiment and how to use it?
+- [Audition](#audition) - Narrow your massive modeling grid down to a few good models.
+- [Postmodeling](#postmodeling) - Explore your best models more comprehensively.
+- [Development](#development) - Contribute to Triage development.
 
 ## Prerequisites
 
@@ -41,7 +42,7 @@ installed directly using `easy_install` or `pip` (`pip install triage`), or name
 dependency of another package as `triage`.
 
 
-## The Experiment
+## Experiment
 
 > I have a bunch of data and a question I want to answer. How do I answer the question?
 
@@ -99,6 +100,9 @@ This questions, and other ones, are the kind of inquiries that the triage user m
 
 
 ## Development
+
+Triage's primary developer is [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu).
+
 To build this package (without installation), its dependencies may
 alternatively be installed from the terminal using `pip`:
 
