@@ -42,7 +42,7 @@ installed directly using `easy_install` or `pip` (`pip install triage`), or name
 dependency of another package as `triage`.
 
 
-## Experiment
+## 1. Experiment: Create Features and Models
 
 > I have a bunch of data and a question I want to answer. How do I answer the question?
 
@@ -82,7 +82,7 @@ There are a plethora of options available for experiment running, affecting thin
 
 If you're familiar with creating an Experiment but want to see more reference documentation and some deep dives, the [Triage Documentation Site](https://dssg.github.io/triage) has more content.
 
-## Audition
+## 2. Audition: Pick the Best Models
 
 > I just trained a bunch of models. How do I pick the best ones?
 
@@ -90,7 +90,7 @@ Audition is a tool for picking the best trained classifiers from a predictive an
 
 To get started with Audition, check out its [README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
 
-## Postmodeling
+## 3. Postmodeling: Dive Deeper into Selected Models
 
 > What is the distribution of my scores? What is generating a higher FPR in model x compared to model y? What is the single most important feature in my models?`
 
