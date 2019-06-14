@@ -13,7 +13,7 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
 from tests.utils import sample_config, populate_source_data
-from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
 
 from triage.experiments import (
@@ -54,14 +54,9 @@ parametrize_experiment_classes = pytest.mark.parametrize(
     ],
 )
 
-parametrize_matrix_storage_classes = pytest.mark.parametrize(
-    ("matrix_storage_class",), [(HDFMatrixStore,), (CSVMatrixStore,)]
-)
-
 
 @parametrize_experiment_classes
-@parametrize_matrix_storage_classes
-def test_simple_experiment(experiment_class, matrix_storage_class):
+def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
@@ -70,7 +65,6 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
-                matrix_storage_class=matrix_storage_class,
                 cleanup=True,
             ).run()
 

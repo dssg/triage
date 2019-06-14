@@ -321,10 +321,10 @@ You can execute the experiment as<sup><a id="fnr.8" class="footref" href="#fn.8"
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment --matrix-format hdf experiments/inspections_baseline.yaml --profile
+triage experiment experiments/inspections_baseline.yaml --profile
 ```
 
-This will print a lot of output, and if everything is correct it will create **6** matrices (3 for training, 3 for testing) in `triage/matrices` and every matrix will be represented by two files, one with the metadata of the matrix (a `yaml` file) and one with the actual matrix (the `h5` file).
+This will print a lot of output, and if everything is correct it will create **6** matrices (3 for training, 3 for testing) in `triage/matrices` and every matrix will be represented by two files, one with the metadata of the matrix (a `yaml` file) and one with the actual matrix (the `csv.gz` file).
 
 ```sh
 
@@ -686,7 +686,7 @@ You can execute the experiment like this:
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment --matrix-format hdf experiments/inspections_dt.yaml  --profile
+triage experiment experiments/inspections_dt.yaml  --profile
 ```
 
 After the experiment finishes, you will get **6** new `model_groups` (1 per combination in `grid_config`)
@@ -914,7 +914,7 @@ You can execute the experiment with
 
 ```sh
 # Remember to run this in bastion  NOT in your laptop shell!
-triage experiment --matrix-format hdf experiments/inspections_label_failed_01.yaml  --profile
+triage experiment experiments/inspections_label_failed_01.yaml  --profile
 ```
 
 This will take a looooong time to run. The reason for that is easy to understand: We are computing a *lot* of models: 3 time splits, 4 model groups and 9 features sets (one for `all`, four for `leave_one_in` and four for `leave_one_out`), so \(3 \times 4 \times 9 = 108\) extra models.

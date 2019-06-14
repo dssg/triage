@@ -1,15 +1,20 @@
 import functools
-import io
 import itertools
 import logging
 import math
 
 import numpy
+import ohio.ext.pandas
 import pandas
 import statistics
 import typing
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
+
+from aequitas.bias import Bias
+from aequitas.fairness import Fairness
+from aequitas.group import Group
+from aequitas.preprocessing import preprocess_input_df
 
 from . import metrics
 from .utils import (
@@ -27,10 +32,12 @@ RELATIVE_TOLERANCE = 0.01
 SORT_TRIALS = 30
 
 
+
 def subset_labels_and_predictions(
     subset_df,
     labels,
     predictions_proba,
+    protected_df=None,
 ):
     """Reduce the labels and predictions to only those relevant to the current
        subset.
@@ -42,23 +49,26 @@ def subset_labels_and_predictions(
             as the index
         predictions_proba (numpy.array) An array of predictions for the same
             entity_date pairs as the labels and in the same order
+        protected_df (pandas.DataFrame) A dataframe of protected group attributes
 
-    Returns: (pandas.Series, numpy.array) The labels and predictions that refer
-        to entity-date pairs in the subset
+    Returns: (pandas.Series, numpy.array, pandas.DataFrame) The labels, predictions, and protected
+        group attributes that refer to entity-date pairs in the subset
     """
     indexed_predictions = pandas.Series(predictions_proba, index=labels.index)
+    if protected_df is None:
+        protected_df = pandas.DataFrame()
 
     # The subset isn't specific to the cohort, so inner join to the labels/predictions
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
-
+    protected_df_subset = protected_df if protected_df.empty else protected_df.align(subset_df, join="inner")[0]
     logging.debug(
         "%s entities in subset out of %s in matrix.",
         len(labels_subset),
         len(labels),
     )
 
-    return (labels_subset, predictions_subset)
+    return (labels_subset, predictions_subset, protected_df_subset)
 
 
 def query_subset_table(db_engine, as_of_dates, subset_table_name):
@@ -84,27 +94,11 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
-    copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV HEADER"
-    conn = db_engine.raw_connection()
-    try:
-        cur = conn.cursor()
-
-        out = io.StringIO()
-        logging.debug(f"Running query %s to get subset", copy_sql)
-        cur.copy_expert(copy_sql, out)
-
-        cur.close()
-
-    finally:
-        conn.close()
-
-    out.seek(0)
-    df = pandas.read_csv(
-        out, parse_dates=["as_of_date"],
-        index_col=MatrixStore.indices
-    )
-
+    df = pandas.DataFrame.pg_copy_from(query_string, engine=db_engine, parse_dates=["as_of_date"],
+        index_col=MatrixStore.indices)
     return df
+
+
 
 
 def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
@@ -185,6 +179,7 @@ class ModelEvaluator(object):
         training_metric_groups,
         db_engine,
         custom_metrics=None,
+        bias_config=None,
     ):
         """
         Args:
@@ -221,6 +216,7 @@ class ModelEvaluator(object):
         self.testing_metric_groups = testing_metric_groups
         self.training_metric_groups = training_metric_groups
         self.db_engine = db_engine
+        self.bias_config = bias_config
         if custom_metrics:
             self._validate_metrics(custom_metrics)
             self.available_metrics.update(custom_metrics)
@@ -402,7 +398,6 @@ class ModelEvaluator(object):
     def needs_evaluations(self, matrix_store, model_id, subset_hash=""):
         """Returns whether or not all the configured metrics are present in the
         database for the given matrix and model.
-
         Args:
             matrix_store (triage.component.catwalk.storage.MatrixStore)
             model_id (int) A model id
@@ -428,15 +423,25 @@ class ModelEvaluator(object):
             as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
             subset_hash=subset_hash,
         ).distinct(eval_obj.metric, eval_obj.parameter).all()
-
         # The list of needed metrics and parameters are all the unique metric/params from the config
         # not present in the unique metric/params from the db
-        needed = bool(
+        evals_needed = bool(
             {(met.metric, met.parameter_string) for met in metric_definitions} -
             {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
         )
         session.close()
-        return needed
+        if evals_needed:
+            logging.debug("Needed evaluations missing")
+            return True
+
+        # now check bias config if there
+        # if no bias config, no aequitas audits needed, so just return False at this point
+        if not self.bias_config:
+            return False
+
+        # if we do have bias config, return True. Too complicated with aequitas' visibility
+        # at present to check whether all the needed records are needed.
+        return True
 
     def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
         """Compute evaluations for a set of predictions and labels
@@ -500,7 +505,7 @@ class ModelEvaluator(object):
                 evals.append(result)
         return evals
 
-    def evaluate(self, predictions_proba, matrix_store, model_id, subset=None):
+    def evaluate(self, predictions_proba, matrix_store, model_id, protected_df=None, subset=None):
         """Evaluate a model based on predictions, and save the results
 
         Args:
@@ -510,12 +515,15 @@ class ModelEvaluator(object):
             model_id (int) The database identifier of the model
             subset (dict) A dictionary containing a query and a
                 name for the subset to evaluate on, if any
+            protected_df (pandas.DataFrame) A dataframe with protected group attributes
         """
+        if protected_df is not None:
+            protected_df = protected_df.align(matrix_store.labels, join="inner", axis=0)[0]
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:
             logging.info("Subsetting labels and predictions")
-            labels, predictions_proba = subset_labels_and_predictions(
+            labels, predictions_proba, protected_df = subset_labels_and_predictions(
                     subset_df=query_subset_table(
                         self.db_engine,
                         matrix_store.as_of_dates,
@@ -523,12 +531,12 @@ class ModelEvaluator(object):
                     ),
                     predictions_proba=predictions_proba,
                     labels=matrix_store.labels,
+                    protected_df=protected_df
             )
             subset_hash = filename_friendly_hash(subset)
         else:
             labels = matrix_store.labels
             subset_hash = "" 
-        
         labels = numpy.array(labels)
 
         matrix_type = matrix_store.matrix_type
@@ -558,6 +566,7 @@ class ModelEvaluator(object):
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
+
         evals_without_trials = dict()
 
         # 3. figure out which metrics have too far of a distance between best and worst
@@ -577,6 +586,7 @@ class ModelEvaluator(object):
             len(metric_defs_to_trial),
             SORT_TRIALS
         )
+
         random_eval_accumulator = defaultdict(list)
         for _ in range(0, SORT_TRIALS):
             sort_seed = generate_python_random_seed()
@@ -636,6 +646,124 @@ class ModelEvaluator(object):
             evaluations,
             matrix_type.evaluation_obj,
         )
+        if protected_df is not None:
+            self._write_audit_to_db(
+                model_id=model_id,
+                protected_df=protected_df,
+                predictions_proba=predictions_proba_worst,
+                labels=labels_worst,
+                tie_breaker='worst',
+                subset_hash=subset_hash,
+                matrix_type=matrix_type,
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
+                matrix_uuid=matrix_store.uuid)
+            self._write_audit_to_db(
+                model_id=model_id,
+                protected_df=protected_df,
+                predictions_proba=predictions_proba_best,
+                labels=labels_best,
+                tie_breaker='best',
+                subset_hash=subset_hash,
+                matrix_type=matrix_type,
+                evaluation_start_time=evaluation_start_time,
+                evaluation_end_time=evaluation_end_time,
+                matrix_uuid=matrix_store.uuid)
+
+    def _write_audit_to_db(
+        self,
+        model_id,
+        protected_df,
+        predictions_proba,
+        labels,
+        tie_breaker,
+        subset_hash,
+        matrix_type,
+        evaluation_start_time,
+        evaluation_end_time,
+        matrix_uuid
+    ):
+        """
+        Runs the bias audit and saves the result in the bias table.
+
+        Args:
+            model_id (int) primary key of the model
+            protected_df (pandas.DataFrame) A dataframe with protected group attributes:
+            predictions_proba (numpy.array) List of prediction probabilities
+            labels (pandas.Series): List of labels
+            tie_breaker: 'best' or 'worst' case tiebreaking rule that the predictions and labels were sorted by
+            subset_hash (str) the hash of the subset, if any, that the
+                evaluation is made on
+            matrix_type (triage.component.catwalk.storage.MatrixType)
+                The type of matrix used
+            evaluation_start_time (pandas._libs.tslibs.timestamps.Timestamp)
+                first as_of_date included in the evaluation period
+            evaluation_end_time (pandas._libs.tslibs.timestamps.Timestamp) last
+                as_of_date included in the evaluation period
+            matrix_uuid: the uuid of the matrix
+        Returns:
+
+        """
+        if protected_df.empty:
+            return
+
+        # to preprocess aequitas requires the following columns:
+        # score, label value, model_id, protected attributes 
+        # fill out the protected_df, which just has protected attributes at this point
+        protected_df = protected_df.copy()
+        protected_df['model_id'] = model_id
+        protected_df['score'] = predictions_proba
+        protected_df['label_value'] = labels
+        aequitas_df, attr_cols_input = preprocess_input_df(protected_df)
+
+        # create group crosstabs
+        g = Group()
+        score_thresholds = {}
+        score_thresholds['rank_abs'] = self.bias_config['thresholds'].get('top_n', [])
+        # convert 0-100 percentile to 0-1 that Aequitas expects
+        score_thresholds['rank_pct'] = [value / 100.0 for value in self.bias_config['thresholds'].get('percentiles', [])]
+        groups_model, attr_cols = g.get_crosstabs(aequitas_df,
+                                                  score_thresholds=score_thresholds,
+                                                  model_id=model_id,
+                                                  attr_cols=attr_cols_input)
+        # analyze bias from reference groups
+        bias = Bias()
+        ref_groups_method = self.bias_config.get('ref_groups_method', None)
+        if ref_groups_method == 'predefined' and self.bias_config['ref_groups']:
+            bias_df = bias.get_disparity_predefined_groups(groups_model, aequitas_df, self.bias_config['ref_groups'])
+        elif ref_groups_method == 'majority':
+            bias_df = bias.get_disparity_major_group(groups_model, aequitas_df)
+        else:
+            bias_df = bias.get_disparity_min_metric(groups_model, aequitas_df)
+
+        # analyze fairness for each group
+        f = Fairness(tau=0.8) # the default fairness threshold is 0.8
+        group_value_df = f.get_group_value_fairness(bias_df)
+        group_value_df['subset_hash'] = subset_hash
+        group_value_df['tie_breaker'] = tie_breaker
+        group_value_df['evaluation_start_time'] = evaluation_start_time
+        group_value_df['evaluation_end_time'] = evaluation_end_time
+        group_value_df['matrix_uuid'] = matrix_uuid
+        group_value_df = group_value_df.rename(index=str, columns={"score_threshold": "parameter"})
+        if group_value_df.empty:
+            raise ValueError(f"""
+            Bias audit: aequitas_audit() failed.
+            Returned empty dataframe for model_id = {model_id}, and subset_hash = {subset_hash}
+            and matrix_type = {matrix_type}""")
+        with scoped_session(self.db_engine) as session:
+            for index, row in group_value_df.iterrows():
+                session.query(matrix_type.aequitas_obj).filter_by(
+                    model_id=row['model_id'],
+                    evaluation_start_time=row['evaluation_start_time'],
+                    evaluation_end_time=row['evaluation_end_time'],
+                    subset_hash=row['subset_hash'],
+                    parameter=row['parameter'],
+                    tie_breaker=row['tie_breaker'],
+                    matrix_uuid=row['matrix_uuid'],
+                    attribute_name=row['attribute_name'],
+                    attribute_value=row['attribute_value']
+                ).delete()
+            session.bulk_insert_mappings(matrix_type.aequitas_obj, group_value_df.to_dict(orient="records"))
 
     @db_retry
     def _write_to_db(

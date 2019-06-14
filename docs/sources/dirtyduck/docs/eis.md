@@ -304,7 +304,7 @@ We need to specify the temporal configuration too
 
     ```sh
     # Remember to run this in bastion  NOT in your laptop shell!
-    triage experiment --matrix-format hdf experiments/eis_01.yaml --profile
+    triage experiment experiments/eis_01.yaml --profile
     ```
 
     This will take a **lot** amount of time (on my computer took 3h 42m), so, grab your coffee, chat with your coworkers, check your email, or read the [DSSG blog](https://dssg.uchicago.edu/blog). It's taking that long for several reasons:
@@ -696,8 +696,8 @@ predictions_query: |
       entity_id,
       score,
       label_value,
-      coalesce(rank_abs, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
-      coalesce(rank_pct*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
+      coalesce(rank_abs_no_ties, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
+      coalesce(rank_pct_no_ties*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
       from test_results.predictions
       join models_dates_join_query using(model_id, as_of_date)
       where model_id in (select model_id from models_list_query)

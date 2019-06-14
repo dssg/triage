@@ -28,6 +28,7 @@ The tables contained in `test_results` are:
 | List of relations      |                                  |       |                     |
 |---------------------- |-------------------------------- |----- |------------------- |
 | Schema                 | Name                             | Type  | Owner               |
+| test<sub>results</sub> | aequitas                      | table | food<sub>user</sub> |
 | test<sub>results</sub> | evaluations                      | table | food<sub>user</sub> |
 | test<sub>results</sub> | individual<sub>importances</sub> | table | food<sub>user</sub> |
 | test<sub>results</sub> | predictions                      | table | food<sub>user</sub> |
@@ -41,6 +42,7 @@ Lastly, if you have interest in how the model performed in the *training* data s
 | List of relations       |                               |       |                     |
 |----------------------- |----------------------------- |----- |------------------- |
 | Schema                  | Name                          | Type  | Owner               |
+| train<sub>results</sub> | aequitas                   | table | food<sub>user</sub> |
 | train<sub>results</sub> | evaluations                   | table | food<sub>user</sub> |
 | train<sub>results</sub> | feature<sub>importances</sub> | table | food<sub>user</sub> |
 | train<sub>results</sub> | predictions                   | table | food<sub>user</sub> |
@@ -322,6 +324,126 @@ where
 *What does this query tell us?*
 
 We can now see how the different instances (trained on different temporal slices, but with the same model params) of a model group performs over time. Note how we only included the *models* that belong to our *model group* `1`.
+
+
+### `{test_train}_results.aequitas`
+
+Standard evaluation metrics don't tell us the entire story: what are the biases in our models? what is the fairest model?  
+Given the `bias_audit_config` in the experiment config in which we defined what protected attributes we care about (e.g. ethnicity) and the specific thresholds our model is going to be used,
+Triage uses Aequitas to generate a bias report on each model and matrix, similar to standard evaluation metrics.
+The `aequitas` tables will have a row for each combination of:
+- model_id
+- subset_hash
+- tie_breaker (e.g. best, worst)
+- evaluation_start_time
+- evaluation_end_time
+- parameter (e.g. `25_abs`, similar to evaluation metric thresholds)
+- attribute_name (e.g. 'facility_type')
+- attribute_value (e.g. 'kids_facility', 'restaurant')
+
+
+
+For each row Aequitas calculates the following group metrics:
+
+| Metric                        | Formula                                                                           | Description                                                                                                   | 
+|-------------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------| 
+| **Predicted Positive**        | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20PP_g">                                                                           | The number of entities within a group where the decision is positive, i.e.,  <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Cwidehat%7BY%7D%3D1.">                | 
+| **Total Predictive Positive** | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20K%20%3D%20%5Csum_%7BA%3Da_1%7D%5E%7BA%3Da_n%7D%20PP_%7Bg%28a_i%29%7D">                                      | The total number of entities predicted positive across groups defined by <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20A.">                               | 
+| **Predicted Negative**        | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20PN_g">                                                                             | The number of entities within a group which decision is negative, i.e.,  <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20%5Cwidehat%7BY%7D%3D0.">                     | 
+| **Predicted Prevalence**      | <img src="http://latex.codecogs.com/gif.latex?PPrev_g%20%3D%20%5Cfrac%7BPP_g%7D%7B%7Cg%7C%7D%20%3D%20%5Ctext%7BPr%28%7D%5Cwidehat%7BY%7D%3D1%5C%3B%7C%5C%3BA%3Da_i%29">     | The fraction of entities within a group which were predicted as positive.                                     | 
+| **Predicted Positive Rate**   | <img src="http://latex.codecogs.com/gif.latex?PPR_g%20%3D%20%5Cfrac%7BPP_g%7D%7BK%7D%20%3D%20%5Ctext%7BPr%28%7DA%3Da_i%5C%3B%7C%5C%3B%5Cwidehat%7BY%7D%3D1%29">         | The fraction of the entities predicted as positive that belong to a certain group.                            | 
+| **False Positive**            | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20FP_g">                                                                            | The number of entities of the group with <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20%5Cwidehat%7BY%7D%3D1"> and <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20Y%3D0.">                                           | 
+| **False Negative**            | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20FN_g">                                                                            | The number of entities of the group with <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20%5Cwidehat%7BY%7D%3D0"> and <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20Y%3D1.">                                           | 
+| **True Positive**             | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20TP_g">                                                                            | The number of entities of the group with <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20%5Cwidehat%7BY%7D%3D1"> and <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20Y%3D1.">                                          | 
+| **True Negative**             | <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20TN_g">                                                                            | The number of entities of the group with <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20%5Cwidehat%7BY%7D%3D0"> and <img src="http://latex.codecogs.com/gif.latex?%5Cinline%20%5Clarge%20Y%3D0.">                                          | 
+| **False Discovery Rate**      | <img src="http://latex.codecogs.com/gif.latex?FDR_g%20%3D%20%5Cfrac%7BFP_g%7D%7BPP_g%7D%20%3D%20%5Ctext%7BPr%28%7DY%3D0%5C%3B%7C%5C%3B%5Cwidehat%7BY%7D%3D1%2CA%3Da_i%29">  | The fraction of false positives of a group within the predicted positive of the group.                        | 
+| **False Omission Rate**       | <img src="http://latex.codecogs.com/gif.latex?FOR_g%20%3D%20%5Cfrac%7BFN_g%7D%7BPN_g%7D%20%3D%20%5Ctext%7BPr%28%7DY%3D1%5C%3B%7C%5C%3B%5Cwidehat%7BY%7D%3D0%2CA%3Da_i%29">  | The fraction of false negatives of a group within the predicted negative of the group.                        | 
+| **False Positive Rate**       | <img src="http://latex.codecogs.com/gif.latex?FPR_g%20%3D%20%5Cfrac%7BFP_g%7D%7BLN_g%7D%20%3D%20%5Ctext%7BPr%28%7D%5Cwidehat%7BY%7D%3D1%5C%3B%7C%5C%3BY%3D0%2CA%3Da_i%29"> | The fraction of false positives of a group within the labeled negative of the group.                          | 
+| **False Negative Rate**       | <img src="http://latex.codecogs.com/gif.latex?FNR_g%20%3D%20%5Cfrac%7BFN_g%7D%7BLP_g%7D%20%3D%20%5Ctext%7BPr%28%7D%5Cwidehat%7BY%7D%3D0%5C%3B%7C%5C%3BY%3D1%2C%20A%3Da_i%29">  | The fraction of false negatives of a group within the labeled positives of the group.                         | 
+
+
+In the context of public policy and social good we want to avoid providing less benefits to specific groups of entities, if the intervention is assistive, as well as, avoid hurting more
+specific groups, if the intervention is punitive. Therefore we define bias as a disparity measure of group metric values of a given group when compared with a reference group. This
+reference can be selected using different criteria. For instance, one could use the majority group (with larger size) across the groups defined by A, or the group with minimum
+group metric value, or the traditional approach of fixing a historically favored group (e.g ethnicity:caucasian).
+
+
+Each disparity metric <img src="http://latex.codecogs.com/gif.latex?j"> for a given group <img src="http://latex.codecogs.com/gif.latex?a_i"> is calculated as follows:
+<img src="http://latex.codecogs.com/gif.latex?disparity_%7Bj%2C%5C%3Ba_%7Bi%7D%7D%20%3D%20%5Cfrac%7Bmetric_%7Bj%2C%5C%3Ba_%7Bi%7D%7D%7D%7Bmetric_%7Bj%2C%5C%3Ba_%7Breference%5C%3Bgroup%7D%7D%7D">
+
+To read about the bias metrics saved in this table, look at the [Aequitas documentation](https://dssg.github.io/aequitas/output_data.html).
+
+
+| Table "test_results.aequitas" | | | | |
+|---------------------------|-----------------------------|-----------|----------|--------- |
+| Column           |            Type             | Collation | Nullable | Default  |
+| model_id                  | integer                     |           | not null | |
+| subset_hash               | character varying           |           | not null | |
+| tie_breaker               | character varying           |           | not null | |
+| evaluation_start_time     | timestamp without time zone |           | not null | |
+| evaluation_end_time       | timestamp without time zone |           | not null | |
+| matrix_uuid               | text                        |           |          | |
+| parameter                 | character varying           |           | not null | |
+| attribute_name            | character varying           |           | not null | |
+| attribute_value           | character varying           |           | not null | |
+| total_entities            | integer                     |           |          | |
+| group_label_pos           | integer                     |           |          | |
+| group_label_neg           | integer                     |           |          | |
+| group_size                | integer                     |           |          | |
+| group_size_pct            | numeric                     |           |          | |
+| prev                      | numeric                     |           |          | |
+| pp                        | integer                     |           |          | |
+| pn                        | integer                     |           |          | |
+| fp                        | integer                     |           |          | |
+| fn                        | integer                     |           |          | |
+| tn                        | integer                     |           |          | |
+| tp                        | integer                     |           |          | |
+| ppr                       | numeric                     |           |          | |
+| pprev                     | numeric                     |           |          | |
+| tpr                       | numeric                     |           |          | |
+| tnr                       | numeric                     |           |          | |
+| for                       | numeric                     |           |          | |
+| fdr                       | numeric                     |           |          | |
+| fpr                       | numeric                     |           |          | |
+| fnr                       | numeric                     |           |          | |
+| npv                       | numeric                     |           |          | |
+| precision                 | numeric                     |           |          | |
+| ppr_disparity             | numeric                     |           |          | |
+| ppr_ref_group_value       | character varying           |           |          | |
+| pprev_disparity           | numeric                     |           |          | |
+| pprev_ref_group_value     | character varying           |           |          | |
+| precision_disparity       | numeric                     |           |          | |
+| precision_ref_group_value | character varying           |           |          | |
+| fdr_disparity             | numeric                     |           |          | |
+| fdr_ref_group_value       | character varying           |           |          | |
+| for_disparity             | numeric                     |           |          | |
+| for_ref_group_value       | character varying           |           |          | |
+| fpr_disparity             | numeric                     |           |          | |
+| fpr_ref_group_value       | character varying           |           |          | |
+| fnr_disparity             | numeric                     |           |          | |
+| fnr_ref_group_value       | character varying           |           |          | |
+| tpr_disparity             | numeric                     |           |          | |
+| tpr_ref_group_value       | character varying           |           |          | |
+| tnr_disparity             | numeric                     |           |          | |
+| tnr_ref_group_value       | character varying           |           |          | |
+| npv_disparity             | numeric                     |           |          | |
+| npv_ref_group_value       | character varying           |           |          | |
+| Statistical_Parity        | boolean                     |           |          | |
+| Impact_Parity             | boolean                     |           |          | |
+| FDR_Parity                | boolean                     |           |          | |
+| FPR_Parity                | boolean                     |           |          | |
+| FOR_Parity                | boolean                     |           |          | |
+| FNR_Parity                | boolean                     |           |          | |
+| TypeI_Parity              | boolean                     |           |          | |
+| TypeII_Parity             | boolean                     |           |          | |
+| Equalized_Odds            | boolean                     |           |          | |
+| Unsupervised_Fairness     | boolean                     |           |          | |
+| Supervised_Fairness       | boolean                     |           |          | |
+
+
+
+
+
 
 
 ### `{test, train}_results.predictions`
