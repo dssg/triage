@@ -1,4 +1,4 @@
-ipython==7.5.0
+ipython==7.6.0
 jupyter==1.0.0
 
 ## DSaPP stuff
