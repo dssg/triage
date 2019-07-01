@@ -11,4 +11,4 @@ colorama==0.4.1
 ipython==7.6.0
 jupyter==1.0.0
 httpie==1.0.2
-psycopg2-binary==2.8.2
+psycopg2-binary==2.8.3
