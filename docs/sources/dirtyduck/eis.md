@@ -12,15 +12,15 @@
 
 ## Problem description
 
-`Triage` is designed to also build early warning systems (also called
+`Triage` is designed to build, among other things, early warning systems (also called
 early intervention, EIS). While there are several differences between
 modeling early warnings and inspection prioritization, perhaps the
-biggest is that the *entity* is active (i.e. it is doing stuff for
-which an outcome will happen) in EIS but passive (i.e. inspected) in
-**inspection prioritization**. Among other things, this difference
+biggest differences is that the *entity* is active (i.e. it is doing stuff for
+which an outcome will happen) in EIS, but passive (e.g it is inspected) in
+**resource prioritization**. Among other things, this difference
 affects the way the *outcome* is built.
 
-Here's the question we want to answer:
+Saying that, here's the question we want to answer:
 
 !!! quote ""
     Will my restaurant be inspected in the next $Y$ period of time?
@@ -38,7 +38,7 @@ Knowing the answer to this question enables you (as the restaurant
 owner or manager) to prepare for the inspection.
 
 
-## What are the labels? What are the outcomes?
+## What are the outcomes?
 
 The trick to note is that on any given day there are two possible
 outcomes: *the facility was inspected* and *the facility wasn't
@@ -48,15 +48,21 @@ facility on every date. The following image tries to exemplify this
 reasoning:
 
 ![img](images/outcomes-eis.png)
-*Figure. The image shows three facilities,
+*Figure. The image shows three facilities (blue, red and orange),
 and next to each, a temporal line with 6 days (0-5). Each dot
 represents the event (whether an inspection happened). Yellow means
-the inspection happened (`TRUE` outcome) and blue means it didn't
+the inspection happened (`TRUE`outcome) and blue means it didn't
 (`FALSE` outcome). Each facility in the image had two inspections, six
 in total.*
 
-Fortunately, `triage` will help us to create this table. The *cohort*
-table is the same as the *cohort* table in the [resource prioritization
+Fortunately, `triage` will help us to create this table.
+
+## What are the entities of interest? The *cohort*
+We are interested in predict only in *active* facilities (remember, in
+this case study, you *own* a restaurant, What is the point on predict
+if your restaurant is already closed for good?). This is the same
+*cohort* as the *cohort* table in the [resource
+prioritization
 case study](inspections.md)
 
 !!! info "Experiment description file"

@@ -58,14 +58,13 @@ facility in Chicago is in the database, since **every** facility that
 opens will be subject to an inspection. We will assume that **all**
 the facilities are in our data.
 
+## *What do you want to predict?*
 
-## Creating the labels: *What do you want to predict?*
-
-We will define two labels:
+We are interested in two different *outcomes*:
 
 -   **Which facilities are likely to fail an inspection?**
 
-The label takes a 1 if the inspection had at least one `result` = `'fail'` and a 0 otherwise.
+The outcome takes a 1 if the inspection had at least one `result` = `'fail'` and a 0 otherwise.
 
 -   **Which facilities fail an inspection with a major violation?**
 
@@ -103,7 +102,7 @@ select
     (result = 'fail' and
         ('serious' = ANY(array_agg(obj ->> 'severity')) or 'critical' = ANY(array_agg(obj ->> 'severity')))
         ), false
-    ) as failed_major_violationq
+    ) as failed_major_violation
 from
     (
     select
@@ -132,7 +131,8 @@ order by
 | 537439             | 13458               | 2011-06-10 | fail   | {NULL}                        | t      | f                                          |
 | 569377             | 5570                | 2011-06-01 | pass   | {NULL}                        | f      | f                                          |
 
-The *outcome* will be used by `triage` to generate the labels. The
+The *outcome* will be used by `triage` to generate the **labels**
+(once that we define a time span of interest). The
 following image tries to show the meaning of the *outcomes* for the
 *inspection failed* problem definition.
 
@@ -143,7 +143,7 @@ inspection. Green means the facility passed the inspection, and red
 means it failed. Each facility in the image had two inspections, but
 only the facility in the middle passed both.")
 *Figure. The image shows three
-facilities and, next to each, a temporal line with 6 days (0-5). Each
+facilities (blue, red and orange) and, next to each, a temporal line with 6 days (0-5). Each
 dot represents an inspection. Color is the **outcome** of the
 inspection. Green means the facility passed the inspection, and red
 means it failed. Each facility in the image had two inspections, but
@@ -162,9 +162,12 @@ It is time to put these steps together. All the coding is complete
 As a first step, lets do an experiment that defines our
 *baseline*. The rationale of this is that the knowing the *baseline*
 will allow us to verify if our Machine Learning model is better than
-the baseline[^2]. It is also very fast to train ( `DummyClassifier` is
-not computationally expensive, so it will help us to verify that the
-experiment configuration is correct without waiting for a long time).
+the baseline. The baseline in our example will be a *random selection
+of facilities*[^2]. This is implemented as a `DummyClassifier` in
+`scikit-learn`. Another advantage of starting with the baseline, is
+that is very fast to train (`DummyClassifier` is
+not computationally expensive) , so it will help us to verify that the
+experiment configuration is correct without waiting for a long time.
 
 !!! info "Experiment description file"
     You could check the meaning about experiment description files
@@ -178,7 +181,7 @@ The config file for this first experiment is located in
 [triage/experiments/inspections_baseline.yaml](./triage/experiments/inspections_baseline.yaml).
 
 The first lines of the experiment config file specify the config-file
-version (`v6` at the moment of writing this tutorial), a comment
+version (`v7` at the moment of writing this tutorial), a comment
 (`model_comment`, which will end up as a value in the
 `model_metadata.models` table), and a list of user-defined metadata
 (`user_metadata`) that can help to identify the resulting model
@@ -201,6 +204,7 @@ random_seed: 23895478
 
 user_metadata:
     label_definition: 'failed'
+    file_name: 'inspections_baseline.yaml'
     experiment_type: 'inspections prioritization'
     description: |
       Baseline calculation
@@ -229,8 +233,8 @@ model_group_keys:
   - 'etl_date'
 
 ```
-
-(Obviously, change `'Your name here'` for your name)
+!!! note
+    Obviously, change `'Your name here'` for your name (if you like)
 
 Next comes the **temporal configuration** section. The first four
 parameters are related to the availability of data: How much data you
@@ -260,11 +264,11 @@ The remaining elements are related to the **testing** matrices. For **inspection
 
 Let's assume that we need to do rounds of inspections every 6 months
 (`test_as_of_date_frequencies = 6month`) and we need to complete that
-round in exactly one month (`test_durations = test_label_timespan =
+round in exactly in that time (i.e. 6 months) (`test_durations = test_label_timespan =
 6month`).
 
 We will assume that the data is more or less stable[^3], at least for
-one year, so `model_update_frequency` = `6month.`
+now, so `model_update_frequency` = `6month.`
 
 ```yaml
 temporal_config:
@@ -320,11 +324,13 @@ in all the facilities in our cohort[^4]. So, in the train matrices we
 will have only `0` and `1` as possible labels, but in the test
 matrices we will found `0`, `1` and `NULL`.
 
-In the section regarding to *Early Warning Systems* we will learn how
-to incorporate *all* the facilities of the cohort in the train
-matrices.
 
-We just want to include **active** facilities[^5] in our matrices, so
+!!! warning "I want to learn more about this…"
+    In the section regarding to [*Early Warning Systems*](eis.md) we will learn how
+    to incorporate *all* the facilities of the cohort in the train
+    matrices.
+
+We just want to include **active** facilities in our matrices, so
 we tell `triage` to take that in account:
 
 ```yaml
@@ -340,7 +346,7 @@ cohort_config:
 `Triage` will generate the features for us, but we need to tell it
 which features we want in the section `feature_aggregations`. Here,
 each entry describes a `collate.SpacetimeAggregation` object and the
-arguments needed to create it. For this experiment, we will use only
+arguments needed to create it[^5]. For this experiment, we will use only
 one feature (number of inspections). `DummyClassifier` don't use any
 feature to do the "prediction", so we won't expend compute cycles
 doing the feature/matrix creation:
@@ -378,7 +384,7 @@ feature_group_strategies: ['all']
 If we observe the image generated from the `temporal_config` section,
 each particular date is the beginning of the rectangles that describes
 the rows in the matrix. In that date (`as_of_date` in `timechop`
-parlance) we will calculate both features, and we will repeat that for
+parlance) we will calculate the feature, and we will repeat that for
 every other rectangle in that image.
 
 Now, let's discuss how we will specify the models to try (remember
@@ -461,9 +467,30 @@ time triage experiment experiments/inspections_baseline.yaml
     We are including the command `time` in order to get the total
     running time of the experiment. You can remove it, if you like.
 
+!!! warning "Don’t be scared!"
+    This will print a lot of output! It is not an error!
+
+We can query the table `experiments` to see the quantity of work that
+`triage` needs to do
+
+```sql
+select
+    substring(experiment_hash, 1,4) as experiment,
+    config -> 'user_metadata' ->> 'description'  as description,
+    total_features,
+    matrices_needed,
+    models_needed
+from model_metadata.experiments;
+```
+
+  experiment  | description | total_features | matrices_needed | models_needed
+----------------|---------------|----------------|-----------------|-----------------------
+ e912 | "Baseline calculation\n" |  1 |              10 |             5
 
 
-This will print a lot of output, and if everything is correct it will
+
+
+If everything is correct, `triage`  will
 create **10** matrices (5 for training, 5 for testing) in
 `triage/matrices` and every matrix will be represented by two files,
 one with the metadata of the matrix (a `yaml` file) and one with the
@@ -498,7 +525,7 @@ where
 
  model\_group\_id |          model\_type           |    hyperparameters
 ----------------|-------------------------------|-----------------------
-             21 | sklearn.dummy.DummyClassifier | {"strategy": "prior"}
+             1 | sklearn.dummy.DummyClassifier | {"strategy": "prior"}
 
 
 And **5** *models*:
@@ -520,7 +547,7 @@ order by
 
  model\_group\_id |        models         |                                                 train\_end\_times
 ----------------|-----------------------|-----------------------------------------------------------------------------------------------------------------
-             21 | {121,122,123,124,125} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01}
+             1 | {1,2,3,4,5} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01}
 
 
 From that last query, you should note that the order in which `triage`
@@ -552,15 +579,15 @@ order by
 
  model\_group\_id | model\_id | train\_end\_time | model\_hash | train\_matrix\_uuid | observations | feature\_lookback\_duration | feature\_start\_time
 ----------------|----------|----------------|------------|-------------------|--------------|---------------------------|---------------------
-             21 |      121 | 2015-12-01     | 743a6      | 1c266             |         5790 | 5 years                   | 2010-01-04 00:00:00
-             21 |      122 | 2016-06-01     | 5b656      | 755c6             |        11502 | 5 years                   | 2010-01-04 00:00:00
-             21 |      123 | 2016-12-01     | 5c170      | 2aea8             |        17832 | 5 years                   | 2010-01-04 00:00:00
-             21 |      124 | 2017-06-01     | 55c3e      | 3efdc             |        23503 | 5 years                   | 2010-01-04 00:00:00
-             21 |      125 | 2017-12-01     | ac993      | a3762             |        29112 | 5 years                   | 2010-01-04 00:00:00
+             1 |      1 | 2015-12-01     | 743a6      | 1c266             |         5790 | 5 years                   | 2010-01-04 00:00:00
+             1 |      2 | 2016-06-01     | 5b656      | 755c6             |        11502 | 5 years                   | 2010-01-04 00:00:00
+             1 |      3 | 2016-12-01     | 5c170      | 2aea8             |        17832 | 5 years                   | 2010-01-04 00:00:00
+             1 |      4 | 2017-06-01     | 55c3e      | 3efdc             |        23503 | 5 years                   | 2010-01-04 00:00:00
+             1 |      5 | 2017-12-01     | ac993      | a3762             |        29112 | 5 years                   | 2010-01-04 00:00:00
 
 
 
-As expected, we have three models per model group. Each model was
+Each model was
 trained with the matrix indicated in the column
 `train_matrix_uuid`. This `uuid` is the file name of the stored
 matrix. The model itself was stored under the file named with the
@@ -574,8 +601,7 @@ select distinct
     model_group_id, train_end_time::date,
     substring(model_hash,1,5) as model_hash,
     substring(ev.matrix_uuid,1,5) as test_matrix_uuid,
-    ma.num_observations as observations,
-    ma.lookback_duration as feature_lookback_duration,  ma.feature_start_time::date
+    ma.num_observations as observations
 from
     model_metadata.models as mo
     join
@@ -588,13 +614,13 @@ order by
     model_group_id, train_end_time asc;
 ```
 
- model\_id | model\_group\_id | train\_end\_time | model\_hash | test\_matrix\_uuid | observations | feature\_lookback\_duration | feature\_start\_time
-----------|----------------|----------------|------------|------------------|--------------|---------------------------|--------------------
-      121 |             21 | 2015-12-01     | 743a6      | 4a0ea            |        18719 | 00:00:00                  | 2010-01-04
-      122 |             21 | 2016-06-01     | 5b656      | f908e            |        19117 | 00:00:00                  | 2010-01-04
-      123 |             21 | 2016-12-01     | 5c170      | 00a88            |        19354 | 00:00:00                  | 2010-01-04
-      124 |             21 | 2017-06-01     | 55c3e      | 8f3cf            |        19796 | 00:00:00                  | 2010-01-04
-      125 |             21 | 2017-12-01     | ac993      | 417f0            |        20159 | 00:00:00                  | 2010-01-04
+ model\_id | model\_group\_id | train\_end\_time | model\_hash | test\_matrix\_uuid | observations
+----------|----------------|----------------|------------|------------------|--------------
+      1 |             1 | 2015-12-01     | 743a6      | 4a0ea            |        18719
+      2 |             1 | 2016-06-01     | 5b656      | f908e            |        19117
+      3 |             1 | 2016-12-01     | 5c170      | 00a88            |        19354
+      4 |             1 | 2017-06-01     | 55c3e      | 8f3cf            |        19796
+      5 |             1 | 2017-12-01     | ac993      | 417f0            |        20159
 
 
 All the models were stored in `/triage/trained_models/{model_hash}`
@@ -605,7 +631,7 @@ trained with the matrix `train_matrix_uuid` stored in the directory
 What's the performance of this model groups?
 
 ```sql
-\set k 0.10
+\set k 0.10    -- This defines a variable, "k = 0.10"
 
 select distinct
     model_group_id,
@@ -678,7 +704,8 @@ calculate the metric several times ($n=30$) with the labels randomly shuffled
 get the mean metric, plus some confidence intervals.
 
 This problem is not specific of an inspection problem, is more related to
-simple models like a shallow `Decision Tree` or a `Dummy Classifier`.
+simple models like a shallow `Decision Tree` or a `Dummy Classifier`
+when score ties likely will occur.
 
 
 Note how in this model, the stochastic value is close to the
@@ -687,11 +714,11 @@ Note how in this model, the stochastic value is close to the
 !!! info "Check this!"
     Note that the *baserate* should be equal to the *precision@100%*, if is not there is something wrong …
 
-### Creating a simple experiment: ML as a Data Mining technique
+### Creating a simple experiment
 
 We will try two of the simplest machine learning algorithms: a
 **Decision Tree Classifier** (*DT*) and a  **Scaled Logistic
-Regression** (*SLR*) as a second experiment. The
+Regression** (*SLR*)[^12] as a second experiment. The
 rationale of this is that the DT is very fast to train (so it will
 help us to verify that the experiment configuration is correct without
 waiting for a long time) and it helps you to understand the structure
@@ -712,6 +739,7 @@ model_comment: 'inspections: basic ML'
 user_metadata:
   label_definition: 'failed'
   experiment_type: 'inspections prioritization'
+  file_name: 'inspections_dt.yaml'
   description: |
     DT and SLR
   purpose: 'data mining'
@@ -839,9 +867,10 @@ feature_aggregations:
 ```
 
 And as stated, we will train some Decision Trees, in particular we are
-interested in a shallow tree, and in a full grown tree. Both trees
-will show you the structure of your data. We also we train a middle
-size tree.
+interested in some shallow trees, and in a full grown tree. These trees
+will show you the structure of your data. We also will train some Scaled
+Logistic Regression, this will show us how "linear" is the data (or how
+the assumptions of the Logistic Regression holds in this data)
 
 ```yaml
 grid_config:
@@ -917,7 +946,32 @@ You can execute the experiment like this:
 time triage experiment experiments/inspections_dt.yaml
 ```
 
-After the experiment finishes, you will get **6** new `model_groups` (1 per combination in `grid_config`)
+Again, we can run the following `sql` to see which things `triage`
+needs to run:
+
+```sql
+select
+    substring(experiment_hash, 1,4) as experiment,
+    config -> 'user_metadata' ->> 'description'  as description,
+    total_features,
+    matrices_needed,
+    models_needed
+from model_metadata.experiments;
+```
+
+
+ experiment |     description      | total_features | matrices_needed | models_needed
+------------|----------------------|----------------|-----------------|---------------
+ e912       | Baseline calculation|              1 |              10 |             5
+ b535       | DT and SLR          |            201 |              10 |           100
+
+
+
+You can compare our two experiments and there are several differences,
+mainly in the order of magnitude. Like the number of features (1 vs
+201) and models built (5 vs 100).
+
+The After the experiment finishes, you will get **19** new `model_groups` (1 per combination in `grid_config`)
 
 ```sql
 select
@@ -930,17 +984,30 @@ where
     model_group_id not in (1);
 ```
 
- model\_group\_id |             model\_type              |               hyperparameters
+model\_group\_id |             model\_type              |               hyperparameters
 ----------------|-------------------------------------|---------------------------------------------
-              2 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": 2, "min\_samples\_split": 2}
-              3 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": 2, "min\_samples\_split": 5}
-              4 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": 10, "min\_samples\_split": 2}
-              5 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": 10, "min\_samples\_split": 5}
-              6 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": null, "min\_samples\_split": 2}
-              7 | sklearn.tree.DecisionTreeClassifier | {"max\_depth": null, "min\_samples\_split": 5}
+              2 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 1, "max_features": "sqrt", "min_samples_split": 2}
+              3 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 1, "max_features": "sqrt", "min_samples_split": 10}
+              4 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 1, "max_features": "sqrt", "min_samples_split": 50}
+              5 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 2, "max_features": "sqrt", "min_samples_split": 2}
+              6 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 2, "max_features": "sqrt", "min_samples_split": 10}
+              7 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 2, "max_features": "sqrt", "min_samples_split": 50}
+              8 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 5, "max_features": "sqrt", "min_samples_split": 2}
+              9 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 5, "max_features": "sqrt", "min_samples_split": 10}
+             10 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": 5, "max_features": "sqrt", "min_samples_split": 50}
+             11 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": null, "max_features": "sqrt", "min_samples_split": 2}
+             12 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": null, "max_features": "sqrt", "min_samples_split": 10}
+             13 | sklearn.tree.DecisionTreeClassifier                                      | {"criterion": "gini", "max_depth": null, "max_features": "sqrt", "min_samples_split": 50}
+             14 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.000001, "penalty": "l1"}
+             15 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.000001, "penalty": "l2"}
+             16 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.0001, "penalty": "l1"}
+             17 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.0001, "penalty": "l2"}
+             18 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.01, "penalty": "l1"}
+             19 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 0.01, "penalty": "l2"}
+             20 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 1.0, "penalty": "l1"}
+             21 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression | {"C": 1.0, "penalty": "l2"}
 
-
-and **18** models
+and **100** models (as stated before)
 
 ```sql
 select
@@ -959,13 +1026,26 @@ order by
 
  model\_group\_id |  models   |                           train\_end\_times
 ----------------|-----------|---------------------------------------------------------------------
-              2 | {4,10,16} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-              3 | {5,11,17} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-              4 | {6,12,18} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-              5 | {7,13,19} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-              6 | {8,14,20} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-              7 | {9,15,21} | {"2014-06-01 00:00:00","2015-06-01 00:00:00","2016-06-01 00:00:00"}
-
+              2 | {6,26,46,66,86}                           | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              3 | {7,27,47,67,87}                           | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              4 | {8,28,48,68,88}                           | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              5 | {9,29,49,69,89}                           | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              6 | {10,30,50,70,90}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              7 | {11,31,51,71,91}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              8 | {12,32,52,72,92}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+              9 | {13,33,53,73,93}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             10 | {14,34,54,74,94}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             11 | {15,35,55,75,95}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             12 | {16,36,56,76,96}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             13 | {17,37,57,77,97}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             14 | {18,38,58,78,98}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             15 | {19,39,59,79,99}                          | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             16 | {20,40,60,80,100}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             17 | {21,41,61,81,101}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             18 | {22,42,62,82,102}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             19 | {23,43,63,83,103}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             20 | {24,44,64,84,104}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
+             21 | {25,45,65,85,105}                         | {"2015-12-01 00:00:00","2016-06-01 00:00:00","2016-12-01 00:00:00","2017-06-01 00:00:00","2017-12-01 00:00:00"}
 
 
 Let's see the performance over time of the models so far:
@@ -990,20 +1070,35 @@ where
      mg.model_config ->> 'experiment_type' ~ 'inspection'
      and
      ev.metric||ev.parameter = 'precision@15_pct'
-     and model_group_id <= 7
+     and model_group_id between 2 and 21
 group by
     model_group_id
 ```
 
+
  model\_group\_id |  models   |       evaluation\_start\_time        |        evaluation\_end\_time         |          labeled\_examples          |      labeled\_above\_threshold       |       total\_positive\_labels        |        precision@15%
 ----------------|-----------|------------------------------------|------------------------------------|------------------------------------|------------------------------------|------------------------------------|------------------------------
-              1 | {1,2,3}   | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     282","     263","     254"} | {"   1,702","   1,855","   1,887"} | {" 0.339"," 0.366"," 0.378"}
-              2 | {4,10,16} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     663","     691","     661"} | {"   1,702","   1,855","   1,887"} | {" 0.347"," 0.394"," 0.466"}
-              3 | {5,11,17} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     663","     691","     661"} | {"   1,702","   1,855","   1,887"} | {" 0.349"," 0.397"," 0.468"}
-              4 | {6,12,18} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     745","     742","     713"} | {"   1,702","   1,855","   1,887"} | {" 0.409"," 0.407"," 0.470"}
-              5 | {7,13,19} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     746","     726","     700"} | {"   1,702","   1,855","   1,887"} | {" 0.416"," 0.409"," 0.454"}
-              6 | {8,14,20} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     684","     610","     582"} | {"   1,702","   1,855","   1,887"} | {" 0.368"," 0.394"," 0.413"}
-              7 | {9,15,21} | {2014-06-01,2015-06-01,2016-06-01} | {2014-06-01,2015-06-01,2016-06-01} | {"   5,118","   5,115","   4,963"} | {"     706","     642","     629"} | {"   1,702","   1,855","   1,887"} | {" 0.386"," 0.397"," 0.417"}
+              1 | {1,2,3,4,5}       | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"       0","       0","       0","       0","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.000"," 0.000"," 0.000"," 0.000"," 0.000"}
+              2 | {6,26,46,66,86}   | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"       0","     578","     730","     574","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.000"," 0.352"," 0.316"," 0.315"," 0.000"}
+              3 | {7,27,47,67,87}   | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     161","     622","       0","     433","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.283"," 0.203"," 0.000"," 0.282"," 0.000"}
+              4 | {8,28,48,68,88}   | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     161","   1,171","       0","       0","     995"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.285"," 0.348"," 0.000"," 0.000"," 0.306"}
+              5 | {9,29,49,69,89}   | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     726","   1,318","     362","     489","     291"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.306"," 0.360"," 0.213"," 0.294"," 0.241"}
+              6 | {10,30,50,70,90}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     992","     730","       0","     176","     290"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.294"," 0.349"," 0.000"," 0.324"," 0.334"}
+              7 | {11,31,51,71,91}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"   1,023","     325","     329","     176","   1,033"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.323"," 0.400"," 0.347"," 0.323"," 0.315"}
+              8 | {12,32,52,72,92}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"   1,250","   1,013","     737","   1,104","     939"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.331"," 0.280"," 0.327"," 0.335"," 0.365"}
+              9 | {13,33,53,73,93}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     595","     649","     547","   1,000","     841"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.281"," 0.250"," 0.309"," 0.350"," 0.356"}
+             10 | {14,34,54,74,94}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"   1,012","     887","     856","     387","     851"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.345"," 0.339"," 0.342"," 0.248"," 0.327"}
+             11 | {15,35,55,75,95}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"       0","       0","       0","       0","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.000"," 0.000"," 0.000"," 0.000"," 0.000"}
+             12 | {16,36,56,76,96}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"   1,094","   1,033","     878","     880","     842"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.278"," 0.332"," 0.285"," 0.311"," 0.299"}
+             13 | {17,37,57,77,97}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     995","   1,117","     987","     623","     651"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.313"," 0.324"," 0.320"," 0.318"," 0.299"}
+             14 | {18,38,58,78,98}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"       0","       0","       0","       0","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.000"," 0.000"," 0.000"," 0.000"," 0.000"}
+             15 | {19,39,59,79,99}  | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     771","     582","     845","     570","     625"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.246"," 0.227"," 0.243"," 0.244"," 0.232"}
+             16 | {20,40,60,80,100} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"       0","       0","       0","       0","       0"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.000"," 0.000"," 0.000"," 0.000"," 0.000"}
+             17 | {21,41,61,81,101} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     783","     587","     813","     586","     570"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.250"," 0.235"," 0.253"," 0.259"," 0.253"}
+             18 | {22,42,62,82,102} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     551","     649","     588","     552","     444"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.310"," 0.336"," 0.355"," 0.330"," 0.372"}
+             19 | {23,43,63,83,103} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"   1,007","     776","     818","     784","     725"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.343"," 0.409"," 0.373"," 0.366"," 0.421"}
+             20 | {24,44,64,84,104} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     797","     971","     887","     770","     745"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.311"," 0.355"," 0.347"," 0.395"," 0.431"}
+             21 | {25,45,65,85,105} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {2015-12-01,2016-06-01,2016-12-01,2017-06-01,2017-12-01} | {"   5,712","   6,330","   5,671","   5,609","   4,729"} | {"     943","     953","     837","     730","     699"} | {"   1,509","   1,742","   1,494","   1,474","   1,260"} | {" 0.320"," 0.363"," 0.349"," 0.397"," 0.429"}
 
 Which model in production (*model selection*) is something that we
 will review later, with `Audition`, but for now, let's choose the
@@ -1742,10 +1837,8 @@ models in this model group, and check if you can detect any pattern.
 
 [^4]: Think about it: we **can’t** learn the relationship between the *features* and the *label* if we **don't know** the label.
 
-[^5]: In order to reduce the computational time that takes running
-    this tutorial, we sample the facilities. If you want to train in
-    the complete set of **active** ones, please remove the `CTE` part
-    of the query and the `WHERE` clause referring the `bucket`.
+[^5]: Confused? Check [A deeper look at triage](triage_intro.md) for
+    more details.
 
 [^6]: The formulas are, for `precision@k`, is the proportion of
     facilities correctly identified in the top-\(k\) facilities ranked
@@ -1792,3 +1885,6 @@ models in this model group, and check if you can detect any pattern.
     should reconsider what are you doing with your life) you should
     change the ip address (`0.0.0.0`) and use the one from the docker
     virtual machine.
+
+[^12]: For some reason, `sklearn` doesn’t scale the *inputs* to the
+    Logistic Regression, so we (DSaPP) developed a version that does that.
