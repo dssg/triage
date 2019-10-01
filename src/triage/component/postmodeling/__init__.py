@@ -100,7 +100,7 @@ class Model(Base):
     __tablename__ = 'models'
     __table_args__ = ({"schema": "model_metadata"})
 
-    id = Column('model_id', postgresql.INTEGER, primary_key=True)
+    model_id = Column('model_id', postgresql.INTEGER, primary_key=True)
     hash = Column('model_hash', postgresql.TEXT)
     run_time = Column(postgresql.TIMESTAMP)
     batch_run_time = Column(postgresql.TIMESTAMP)
@@ -115,7 +115,7 @@ class Model(Base):
     model_group = relationship("ModelGroup", backref="models")
 
     def to_df(self):
-        model = pd.DataFrame.from_dict({k: v for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
+        model = pd.DataFrame.from_dict({k: [v] for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
         return model.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id'])
 
 
