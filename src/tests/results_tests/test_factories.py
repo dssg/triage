@@ -25,7 +25,7 @@ def test_evaluation_factories_no_subset():
         model = ModelFactory(model_group_rel=model_group)
         for metric, value in [("precision@", 0.4), ("recall@", 0.3)]:
             EvaluationFactory(
-                model_rel=model, metric=metric, parameter="100_abs", value=value
+                model_rel=model, metric=metric, parameter="100_abs", stochastic_value=value
             )
         session.commit()
         results = engine.execute(
@@ -34,7 +34,7 @@ def test_evaluation_factories_no_subset():
                 model_group_id,
                 m.model_id,
                 e.metric,
-                e.value,
+                e.stochastic_value,
                 e.subset_hash
             from
                 test_results.evaluations e
@@ -59,7 +59,7 @@ def test_evaluation_factories_with_subset(db_engine):
     subset = SubsetFactory()
     for metric, value in [("precision@", 0.4), ("recall@", 0.3)]:
         EvaluationFactory(
-            model_rel=model, metric=metric, parameter="100_abs", value=value
+            model_rel=model, metric=metric, parameter="100_abs", stochastic_value=value
         )
     session.commit()
     results = db_engine.execute(
@@ -70,14 +70,14 @@ def test_evaluation_factories_with_subset(db_engine):
             s.subset_hash as s_subset_hash,
             e.subset_hash as e_subset_hash,
             e.metric,
-            e.value
+            e.stochastic_value
         from
             test_results.evaluations e
             join model_metadata.models m using (model_id)
             join model_metadata.subsets s using (subset_hash)
         """
     )
-    for model_group_id, model_id, metric, value in results:
+    for model_group_id, model_id, s_subset_hash, e_subset_hash, metric, value in results:
         # if the evaluations are created with the model group and model,
         # as opposed to an autoprovisioned one,
         # the ids in a fresh DB should be 1

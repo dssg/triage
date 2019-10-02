@@ -1,0 +1,49 @@
+output:
+  schema: 'test_results'
+  table: 'eis_crosstabs'
+
+thresholds:
+    rank_abs: [50]
+    rank_pct: [5]
+
+#(optional): a list of entity_ids to subset on the crosstabs analysis
+entity_id_list: []
+
+models_list_query: "select unnest(ARRAY[226]) :: int as model_id"
+
+as_of_dates_query: "select generate_series('2017-12-01'::date, '2018-09-01'::date, interval '1month')  as as_of_date"
+
+#don't change this query unless strictly necessary. It is just validating pairs of (model_id,as_of_date)
+#it is just a join with distinct (model_id, as_of_date) in a predictions table
+models_dates_join_query: |
+  select model_id,
+  as_of_date
+  from models_list_query as m
+  cross join as_of_dates_query a join (select distinct model_id, as_of_date from test_results.predictions) as p
+  using (model_id, as_of_date)
+
+#features_query must join models_dates_join_query with 1 or more features table using as_of_date
+features_query: |
+  select m.model_id, m.as_of_date, f4.entity_id, f4.results_entity_id_1month_result_fail_avg, f4.results_entity_id_3month_result_fail_avg, f4.results_entity_id_6month_result_fail_avg,
+  f2.inspection_types_zip_code_1month_type_canvass_sum, f3.risks_zip_code_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,
+  f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_zip_code_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,
+  f2.inspection_types_entity_id_all_type_canvass_sum
+  from features.inspection_types_aggregation_imputed as f2
+  inner join features.risks_aggregation_imputed as f3 using (entity_id, as_of_date)
+  inner join features.results_aggregation_imputed as f4 using (entity_id, as_of_date)
+  inner join models_dates_join_query as m using (as_of_date)
+
+#the predictions query must return model_id, as_of_date, entity_id, score, label_value, rank_abs and rank_pct
+#it must join models_dates_join_query using both model_id and as_of_date
+predictions_query: |
+  select model_id,
+      as_of_date,
+      entity_id,
+      score,
+      label_value,
+      coalesce(rank_abs_no_ties, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
+      coalesce(rank_pct_no_ties*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
+      from test_results.predictions
+      join models_dates_join_query using(model_id, as_of_date)
+      where model_id in (select model_id from models_list_query)
+      and as_of_date in (select as_of_date from as_of_dates_query)

@@ -10,9 +10,11 @@ import pytest
 import testing.postgresql
 from triage import create_engine
 import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 
 from tests.utils import sample_config, populate_source_data
-from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore
+from triage.component.results_schema.schema import Experiment
 
 from triage.experiments import (
     MultiCoreExperiment,
@@ -52,14 +54,9 @@ parametrize_experiment_classes = pytest.mark.parametrize(
     ],
 )
 
-parametrize_matrix_storage_classes = pytest.mark.parametrize(
-    ("matrix_storage_class",), [(HDFMatrixStore,), (CSVMatrixStore,)]
-)
-
 
 @parametrize_experiment_classes
-@parametrize_matrix_storage_classes
-def test_simple_experiment(experiment_class, matrix_storage_class):
+def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
@@ -68,7 +65,6 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
-                matrix_storage_class=matrix_storage_class,
                 cleanup=True,
             ).run()
 
@@ -567,3 +563,15 @@ def test_serializable_engine_check_sqlalchemy_fail():
                     db_engine=db_engine,
                     project_path=os.path.join(temp_dir, "inspections"),
                 )
+
+
+def test_experiment_metadata(finished_experiment):
+    session = sessionmaker(bind=finished_experiment.db_engine)()
+    experiment_row = session.query(Experiment).get(finished_experiment.experiment_hash)
+    assert experiment_row.time_splits == 2
+    assert experiment_row.as_of_times == 369
+    assert experiment_row.feature_blocks == 2
+    assert experiment_row.feature_group_combinations == 1
+    assert experiment_row.matrices_needed == experiment_row.time_splits * 2 * experiment_row.feature_group_combinations # x2 for train and test
+    assert experiment_row.grid_size == 4
+    assert experiment_row.models_needed == (experiment_row.matrices_needed/2) * experiment_row.grid_size # /2 because we only need models per train matrix

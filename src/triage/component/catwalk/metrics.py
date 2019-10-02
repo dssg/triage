@@ -19,6 +19,7 @@ Functions defined here are meant to be used in ModelEvaluator.available_metrics
 """
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
+import numpy
 
 
 class Metric(object):
@@ -133,7 +134,7 @@ def false_negatives(_, predictions_binary, labels, parameters):
 @Metric(greater_is_better=False)
 def fpr(_, predictions_binary, labels, parameters):
     fp = false_positives(_, predictions_binary, labels, parameters)
-    return float(fp / labels.count(0))
+    return float(fp / (len(labels) - numpy.count_nonzero(labels)))
 
 
 class UnknownMetricError(ValueError):
