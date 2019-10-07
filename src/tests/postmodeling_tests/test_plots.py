@@ -52,4 +52,4 @@ def test_plot_precision_recall_n(model):
 
 def test_plot_ROC(model):
     with assert_plot_figures_added():
-        plot_ROC(model)
+        plot_roc(model)
