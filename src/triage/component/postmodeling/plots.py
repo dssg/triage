@@ -1,6 +1,9 @@
 # coding: utf-8
 
 import itertools
+from typing import List
+import logging
+logging.basicConfig(level=logging.INFO)
 
 import math
 
@@ -27,6 +30,7 @@ import pydotplus
 
 
 from triage.component.postmodeling import get_predictions, get_model, get_model_group, get_evaluations
+from triage.component.results_schema import ModelGroup, Model
 
 def _store(fig, **kwargs):
     output_type=kwargs.get('output_type', 'show')
@@ -39,12 +43,21 @@ def _store(fig, **kwargs):
         bbox_inches = kwargs.get('bbox_inches', 'tight')
         fig.savefig(f"{filename}.{extension}", transparent=transparent, dpi=dpi, bbox_inches=bbox_inches)
 
-def plot_roc(model, **kwargs):
+
+def plot_roc(model: Model, **kwargs):
     fig, ax = plt.subplots()
 
     predictions = get_predictions(model)
+
+    label_value_counts = predictions.label_value.value_counts(dropna=False)
+    logging.warning(f"Label Value Counts: \n{label_value_counts}")
+    if np.nan in label_value_counts:
+        logging.warning("There are NaNs in label_value. Ignore NaNs when calculating ROC curve.")
+    predictions = predictions.dropna(subset=['label_value'])
+
     labels = predictions.label_value
     scores = predictions.score
+
     fpr, tpr, thresholds = roc_curve(labels, scores)
     roc_auc = auc(fpr, tpr)
 
@@ -62,21 +75,28 @@ def plot_roc(model, **kwargs):
     ax.set_xlabel('False Positive Rate')
     ax.set_ylabel('True Positive Rate')
 
-    ax.set_title(kwargs.get('title', f"(Model {model.id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
+    ax.set_title(kwargs.get('title', f"(Model {model.model_id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
 
     ax.legend(loc="lower right")
 
-    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group.id}"))
+    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group_rel.model_group_id}"))
 
     _store(fig, **kwargs)
 
     return fig, ax
 
 
-def plot_precision_recall_n(model, **kwargs):
+def plot_precision_recall_n(model: Model, **kwargs):
     fig, ax1 = plt.subplots()
 
     predictions = get_predictions(model)
+
+    label_value_counts = predictions.label_value.value_counts(dropna=False)
+    logging.warning(f"Label Value Counts: \n{label_value_counts}")
+    if np.nan in label_value_counts:
+        logging.warning("There are NaNs in label_value. Ignore NaNs when calculating ROC curve.")
+    predictions = predictions.dropna(subset=['label_value'])
+
     labels = predictions.label_value
     scores = predictions.score
 
@@ -96,7 +116,7 @@ def plot_precision_recall_n(model, **kwargs):
     ax1.set_ylim([0,1])
     ax1.set_xlim([0,100])
 
-    ax1.set_title(kwargs.get('title', f"(Model {model.id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
+    ax1.set_title(kwargs.get('title', f"(Model {model.model_id} @ {model.train_end_time.strftime('%Y-%m-%d')})"))
 
     ax2 = ax1.twinx()
     ax2.plot(y_axis, rec_k, rec_color)
@@ -105,19 +125,20 @@ def plot_precision_recall_n(model, **kwargs):
     ax2.tick_params(axis='y', labelcolor=rec_color)
 
 
-    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group.id}"))
+    fig.suptitle(kwargs.get('suptitle', f"Model Group {model.model_group_rel.model_group_id}"))
 
     _store(fig, **kwargs)
 
     return fig, ax1, ax2
 
-def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
+
+def plot_metric_over_time(model_groups: List[ModelGroup], metric: str, parameter: str, **kwargs):
 
     def get_model_group_evaluations(model_group):
         evaluations = pd.concat(get_evaluations(model).query(f"metric == '{metric}@' and parameter == '{parameter}'") for model in model_group)
         evaluations = evaluations.sort_values('evaluation_start_time', ascending=True)
-        evaluations = evaluations[['evaluation_start_time', 'value']]
-        evaluations['type'] = model_group.type.split('.')[-1]
+        evaluations = evaluations[['evaluation_start_time', 'stochastic_value']]
+        evaluations['model_type'] = model_group.model_type.split('.')[-1]
         return evaluations
 
     metric = metric.replace('@','')
@@ -127,8 +148,8 @@ def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
     evaluations = pd.concat(get_model_group_evaluations(model_group) for model_group in model_groups)
 
     for name, mg in evaluations.groupby(by='model_group_id'):
-        type = mg.type.unique()[0]
-        ax.plot_date(x=mg.evaluation_start_time, y=mg.value,  xdate=True, linestyle='-', label=f"Model group {name} ({type})")
+        model_type = mg.model_type.unique()[0]
+        ax.plot_date(x=mg.evaluation_start_time, y=mg.stochastic_value,  xdate=True, linestyle='-', label=f"Model group {name} ({model_type})")
         ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
 
     ax.xaxis.set_major_locator(mdates.YearLocator())
@@ -159,8 +180,6 @@ def plot_metric_over_time(model_groups, metric, parameter, **kwargs):
     _store(fig, **kwargs)
 
     return fig, ax
-
-
 
 
 def get_subsets(l):

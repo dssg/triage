@@ -24,6 +24,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
 
+import pandas as pd
+
 # One declarative_base object for each schema created
 Base = declarative_base()
 
@@ -81,6 +83,13 @@ class ModelGroup(Base):
     hyperparameters = Column(JSONB)
     feature_list = Column(ARRAY(Text))
     model_config = Column(JSONB)
+
+    def get_models(self):
+        models = pd.DataFrame([model.__dict__ for model in self.models])
+        return models.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'id'])
+
+    def __iter__(self):
+        return iter(self.models)
 
 
 class ListPrediction(Base):
@@ -162,7 +171,7 @@ class Model(Base):
     model_size = Column(Float)
     random_seed = Column(Integer)
 
-    model_group_rel = relationship("ModelGroup")
+    model_group_rel = relationship("ModelGroup", backref="models")
     matrix_rel = relationship("Matrix")
 
     def delete(self, session):
@@ -224,7 +233,7 @@ class TestPrediction(Base):
     matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
-    model_rel = relationship("Model")
+    model_rel = relationship("Model", backref="predictions")
     matrix_rel = relationship("Matrix")
 
 
@@ -320,7 +329,7 @@ class TestEvaluation(Base):
     standard_deviation = Column(Numeric)
 
     matrix_rel = relationship("Matrix")
-    model_rel = relationship("Model")
+    model_rel = relationship("Model", backref="evaluations")
 
 
 class TrainEvaluation(Base):

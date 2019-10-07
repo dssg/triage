@@ -14,7 +14,8 @@ from sqlalchemy import Column, ForeignKey
 
 import pandas as pd
 
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
+from triage.component.results_schema.schema import TestEvaluation, TestPrediction, Model, ModelGroup
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,95 +62,20 @@ session = create_session()
 
 Base = declarative_base()
 
-def get_model(model_id):
+def get_model(model_id: int) -> Model:
     return session.query(Model).get(model_id)
 
 
-def get_model_group(model_group_id):
+def get_model_group(model_group_id: int) -> ModelGroup:
     return session.query(ModelGroup).get(model_group_id)
 
 
-def get_predictions(model):
+def get_predictions(model: Model) -> TestPrediction:
     predictions = pd.DataFrame([prediction.__dict__ for prediction in model.predictions])
     return predictions.drop('_sa_instance_state', axis=1).set_index(['as_of_date', 'entity_id'])
 
 
-def get_evaluations(model):
+def get_evaluations(model: Model) -> TestEvaluation:
     evaluations =  pd.DataFrame([evaluation.__dict__ for evaluation in model.evaluations])
     evaluations['model_group_id'] = model.model_group_id
     return evaluations.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id', 'metric', 'parameter'])
-
-
-class ModelGroup(Base):
-    __tablename__ = 'model_groups'
-    __table_args__ = ({"schema": "model_metadata"})
-
-    id = Column('model_group_id', postgresql.INTEGER, primary_key=True)
-    type = Column('model_type', postgresql.TEXT)
-    features = Column('feature_list', postgresql.ARRAY(postgresql.TEXT))
-    config = Column('model_config', postgresql.JSONB)
-
-    def get_models(self):
-        models = pd.DataFrame([model.__dict__ for model in self.models])
-        return models.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'id'])
-
-    def __iter__(self):
-        return iter(self.models)
-
-class Model(Base):
-    __tablename__ = 'models'
-    __table_args__ = ({"schema": "model_metadata"})
-
-    model_id = Column('model_id', postgresql.INTEGER, primary_key=True)
-    hash = Column('model_hash', postgresql.TEXT)
-    run_time = Column(postgresql.TIMESTAMP)
-    batch_run_time = Column(postgresql.TIMESTAMP)
-    comment = Column('model_comment', postgresql.TEXT)
-    experiment = Column('built_by_experiment', postgresql.TEXT)
-    train_matrix = Column('train_matrix_uuid', postgresql.TEXT)
-    train_end_time = Column(postgresql.TIMESTAMP)
-    training_label_timespan = Column(postgresql.INTERVAL)
-    size = Column('model_size', postgresql.FLOAT)
-
-    model_group_id = Column('model_group_id', postgresql.INTEGER, ForeignKey('model_metadata.model_groups.model_group_id'))
-    model_group = relationship("ModelGroup", backref="models")
-
-    def to_df(self):
-        model = pd.DataFrame.from_dict({k: [v] for k,v in self.__dict__.items() if not k in ['predictions', 'evaluations']}, orient='columns')
-        return model.drop('_sa_instance_state', axis=1).set_index(['model_group_id', 'model_id'])
-
-
-class Evaluation(Base):
-    __tablename__ = 'evaluations'
-    __table_args__ = ({"schema": "test_results"})
-
-    evaluation_start_time = Column(postgresql.TIMESTAMP, primary_key=True)
-    evaluation_end_time = Column(postgresql.TIMESTAMP, primary_key=True)
-    metric = Column(postgresql.TEXT, primary_key=True)
-    parameter = Column(postgresql.TEXT, primary_key=True)
-
-    value = Column(postgresql.FLOAT)
-    num_labeled_examples = Column(postgresql.INTEGER)
-    num_labeled_above_threshold = Column(postgresql.INTEGER)
-    num_positive_labels = Column(postgresql.INTEGER)
-    sort_seed =Column(postgresql.INTEGER)
-    matrix = Column('matrix_uuid', postgresql.TEXT)
-
-    model_id = Column('model_id', postgresql.INTEGER, ForeignKey('model_metadata.models.model_id'), primary_key=True)
-    model = relationship("Model", backref="evaluations")
-
-
-class Prediction(Base):
-    __tablename__ = 'predictions'
-    __table_args__ = ({"schema": "test_results"})
-
-    entity_id = Column(postgresql.INTEGER, primary_key=True)
-    as_of_date = Column(postgresql.TIMESTAMP, primary_key=True)
-
-    model_id = Column('model_id', postgresql.INTEGER, ForeignKey('model_metadata.models.model_id'), primary_key=True)
-    model = relationship("Model", backref="predictions")
-
-    score = Column(postgresql.FLOAT)
-    label_value = Column(postgresql.INTEGER)
-    test_label_timespan = Column(postgresql.INTERVAL)
-    matrix = Column('matrix_uuid', postgresql.TEXT)
