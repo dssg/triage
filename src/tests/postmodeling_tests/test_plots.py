@@ -1,4 +1,4 @@
-from triage.component.postmodeling import Model, ModelGroup, get_model, get_model_group, session
+from triage.component.postmodeling import Model, ModelGroup, get_model, get_model_group, create_session
 from triage.component.postmodeling.plots import plot_roc, plot_precision_recall_n, plot_metric_over_time
 from triage.component.postmodeling.crosstabs import run_crosstabs
 from tests.utils import sample_config, populate_source_data, assert_plot_figures_added
@@ -7,13 +7,11 @@ import pandas as pd
 import pytest
 import os
 
-@pytest.fixture(scope="module")
-def model(shared_db_engine, shared_project_storage):
+@pytest.yield_fixture(scope="module")
+def session(shared_db_engine, shared_project_storage):
     """Returns an instantiated ModelEvaluator available at module scope"""
     populate_source_data(shared_db_engine)
     base_config = sample_config()
-    # We need to have an ensemble model to test ModelEvaluator correctly
-    # so we can't use the finished_experiment fixture"""
     base_config['grid_config'] = {
         'sklearn.ensemble.ExtraTreesClassifier': {
             'n_estimators': [10],
@@ -29,27 +27,23 @@ def model(shared_db_engine, shared_project_storage):
         project_path=shared_project_storage.project_path
     ).run()
 
-
     session = create_session(shared_db_engine)
-
-    return get_model(1)
-
-@pytest.fixture(scope="module")
-def model_group(finished_experiment):
-    os.environ["DATABASE_URL"] = finished_experiment.db_engine.url
-
-    return get_model_group(1)
+    yield session
 
 
-def test_plot_metric_over_time(model_group):
+def test_plot_metric_over_time(session):
+    model_group = get_model_group(1, session)
     with assert_plot_figures_added():
-        plot_metric_over_time(model_group, metric='precision', parameter='10_pct')
+        plot_metric_over_time([model_group], metric='precision', parameter='10_pct')
 
 
-def test_plot_precision_recall_n(model):
+def test_plot_precision_recall_n(session):
+    model = get_model(1, session)
     with assert_plot_figures_added():
         plot_precision_recall_n(model)
 
-def test_plot_ROC(model):
+
+def test_plot_ROC(session):
+    model = get_model(1, session)
     with assert_plot_figures_added():
         plot_roc(model)

@@ -58,15 +58,18 @@ def create_session(engine=None):
 
     return Session(bind=engine)
 
-session = create_session()
-
 Base = declarative_base()
 
-def get_model(model_id: int) -> Model:
+
+def get_model(model_id: int, session=None) -> Model:
+    if session is None:
+        session = create_session()
     return session.query(Model).get(model_id)
 
 
-def get_model_group(model_group_id: int) -> ModelGroup:
+def get_model_group(model_group_id: int, session=None) -> ModelGroup:
+    if session is None:
+        session = create_session()
     return session.query(ModelGroup).get(model_group_id)
 
 

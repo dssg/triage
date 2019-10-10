@@ -26,8 +26,6 @@ import sklearn.metrics as metrics
 from sklearn.metrics import precision_recall_curve, roc_curve, auc, precision_score, recall_score
 from sklearn.tree import export_graphviz
 
-import pydotplus
-
 
 from triage.component.postmodeling import get_predictions, get_model, get_model_group, get_evaluations
 from triage.component.results_schema import ModelGroup, Model
