@@ -126,7 +126,8 @@ in the aggregation, pre-imputation. Its output location is generally `{prefix}_a
 A table that looks similar, but with imputed values is created. The cohort table from above is passed into collate as
 the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the
 `from_obj`. Each feature column has an imputation rule, inherited from some level of the feature definition. The
-imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value.
+imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value. 
+In addition, each column that needs imputation has an imputation flag column created, which contains a boolean flagging which rows were imputed or not. Since the values of these columns are redundant for most aggregate functions that look at a given timespan's worth of data (they will be imputed only if zero events in their timespan are seen), only one imputation flag column per timespan is created. An exception to this are some statistical functions that require not one, but two values, like standard deviation and variance. These boolean imputation flags are *not* merged in with the others.
 Its output location is generally `{prefix}_aggregation_imputed`
 
 ### Recap
@@ -310,7 +311,17 @@ The trained model's prediction probabilities (`predict_proba()`) are computed bo
 Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `test_results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
 ### Metrics
-Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.evaluations` table or the `test_results.evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
+Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.evaluations` table or the `test_results.evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through.
+
+Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken in some way (see next paragraph), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
+
+A few different versions of tiebreaking are implemented to deal with the nuances of thresholding, and each result is written to the evaluations table for each metric score, along with some related statistics:
+
+* `worst_value` - Ordering by the label ascending. This has the effect of as many predicted negatives making it above thresholds as possible, thus producing the worst possible score.
+* `best_value` - Ordering by the label descending. This has the effect of as many predicted positives making it above thresholds as possible, thus producing the best possible score.
+* `stochastic_value` - If the `worst_value` and `best_value` are not the same (as defined by the floating point tolerance at catwalk.evaluation.RELATIVE_TOLERANCE), the sorting/thresholding/evaluation will be redone many times, and the mean of all these trials is written to this column. Otherwise, the `worst_value` is written here
+* `num_sort_trials` - If trials are needed to produce the `stochastic_value`, the number of trials taken is written here. Otherwise this will be 0
+* `standard_deviation` - If trials are needed to produce the `stochastic_value`, the standard deviation of these trials is written here. Otherwise this will be 0
 
 Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
 
@@ -318,6 +329,10 @@ Sometimes test matrices may not have labels for every row, so it's worth mention
 * `num_labeled_above_threshold` - The number of rows above the configured threshold for this metric score that have
 labels
 * `num_positive_labels` - The number of positive labels in the test matrix
+
+Triage supports performing a bias audit using the Aequitas library, if a `bias_audit_config` is passed in configuration. This is handled first through creating a 'protected groups'table which retrieves the configured protected group information for each member of the cohort, and the time that this protected group information was first known. This table is named using a hash of the bias audit configuration, so data can be reused across experiments as long as the bias configuration does not change.
+
+A bias audit is performed alongside metric calculation time for each model that is built, on both the train and test matrices, and each subset. This is very similar to the evaluations table schema, in that for each slice of data that has evaluation metrics generated for it, also receives a bias audit. The change is that thresholds are not borrowed from the evaluation configuration, as aequitas audits are computationally expensive and large threshold grids are common in Triage experiments; the bias audit has its evaluation thresholds configured in the `bias_audit_config`. All data from the bias audit is saved to either the `train_results.aequitas` or `test_results.aequitas` tables.
 
 Triage also supports evaluating a model on a subset of the predictions made.
 This is done by passing a subset query in the prediction config. The model

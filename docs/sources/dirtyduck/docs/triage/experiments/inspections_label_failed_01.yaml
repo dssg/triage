@@ -1,0 +1,205 @@
+config_version: 'v6'
+
+model_comment: 'inspections: advanced'
+
+user_metadata:
+  label_definition: 'failed'
+  experiment_type: 'inspections prioritization'
+  description: |
+    Using Ensamble methods
+  purpose: 'trying ensamble algorithms'
+  org: 'DSaPP'
+  team: 'Tutorial'
+  author: 'Your name here'
+  etl_date: '2019-02-21'
+
+model_group_keys:
+  - 'class_path'
+  - 'parameters'
+  - 'feature_names'
+  - 'feature_groups'
+  - 'cohort_name'
+  - 'state'
+  - 'label_name'
+  - 'label_timespan'
+  - 'training_as_of_date_frequency'
+  - 'max_training_history'
+  - 'label_definition'
+  - 'experiment_type'
+  - 'org'
+  - 'team'
+  - 'author'
+  - 'purpose'
+  - 'etl_date'
+
+temporal_config:
+    feature_start_time: '2010-01-04'
+    feature_end_time: '2019-01-01'
+    label_start_time: '2015-02-01'
+    label_end_time: '2019-01-01'
+
+    model_update_frequency: '1y'
+    training_label_timespans: ['1month']
+    training_as_of_date_frequencies: '1month'
+
+    test_durations: '1y'
+    test_label_timespans: ['1month']
+    test_as_of_date_frequencies: '1month'
+
+    max_training_histories: '5y'
+
+label_config:
+  query: |
+    select
+    entity_id,
+    bool_or(result = 'fail')::integer as outcome
+    from semantic.events
+    where '{as_of_date}'::timestamp <= date
+    and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+    group by entity_id
+  name: 'failed_inspections'
+
+
+cohort_config:
+  query: |
+    with buckets as (
+    select *, ntile(5) over (order by number_of_inspections asc) as bucket
+    from (
+    select entity_id, count(*) as number_of_inspections
+    from semantic.events
+    group by entity_id
+    ) as t
+    )
+    select e.entity_id
+    from semantic.entities as e
+    inner join
+    buckets as b
+    using (entity_id)
+    where
+    daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
+    and bucket in (5)
+  name: 'active_facilities'
+
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+
+  -
+    prefix: 'risks'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero'
+      avg:
+        type: 'zero'
+
+    categoricals:
+      -
+        column: 'risk'
+        choices: ['low', 'medium', 'high']
+        metrics:
+          - 'sum'
+          - 'avg'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+      - 'zip_code'
+
+  -
+    prefix: 'results'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      all:
+        type: 'zero'
+
+    categoricals:
+      -
+        column: 'result'
+        choice_query: 'select distinct result from semantic.events'
+        metrics:
+          - 'sum'
+          - 'avg'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+
+  -
+    prefix: 'inspection_types'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero_noflag'
+
+    categoricals:
+      -
+        column: 'type'
+        choice_query: 'select distinct type from semantic.events where type is not null'
+        metrics:
+          - 'sum'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+      - 'zip_code'
+
+feature_group_definition:
+   prefix:
+     - 'inspections'
+     - 'results'
+     - 'risks'
+     - 'inspection_types'
+
+feature_group_strategies: ['all', 'leave-one-in', 'leave-one-out']
+
+grid_config:
+    'sklearn.ensemble.RandomForestClassifier':
+        max_features: ['sqrt']
+        criterion: ['gini']
+        n_estimators: [100, 250]
+        min_samples_split: [2,10]
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+            percentiles: [1.0, 2.0, 3.0, 4.0, 5.0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+            top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
+
+    training_metric_groups:
+      -
+        metrics: [accuracy]
+      -
+        metrics: [precision@, recall@]
+        thresholds:
+          percentiles: [1.0, 2.0, 3.0, 4.0, 5.0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+          top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]

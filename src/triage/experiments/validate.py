@@ -146,6 +146,16 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
                 )
+                if not string_is_tablesafe(aggregation_config['prefix']):
+                    raise ValueError(
+                        dedent(
+                            f"""Section: feature_aggregations -
+                            Feature aggregation prefix should only contain
+                            lowercase letters, numbers, and underscores.
+                            Aggregation config: {aggregation_config}
+                            """
+                        )
+                    )
 
     def _validate_aggregates(self, aggregation_config):
         if (
@@ -453,7 +463,7 @@ class LabelConfigValidator(Validator):
             )
         if 'name' in label_config and not string_is_tablesafe(label_config['name']):
             raise ValueError("Section: label_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         self._validate_query(label_config["query"])
         self._validate_include_missing_labels_in_train_as(
             label_config.get("include_missing_labels_in_train_as", None)
@@ -482,7 +492,7 @@ class CohortConfigValidator(Validator):
             )
         if 'name' in cohort_config and not string_is_tablesafe(cohort_config['name']):
             raise ValueError("Section: cohort_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logging.info("Validating cohort query")
         try:
@@ -741,6 +751,17 @@ class GridConfigValidator(Validator):
                 )
 
 
+class PredictionConfigValidator(Validator):
+    def _run(self, prediction_config):
+        rank_tiebreaker = prediction_config.get("rank_tiebreaker", None)
+        # the tiebreaker is optional, so only try and validate if it's there
+        if rank_tiebreaker and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS:
+            raise ValueError(
+                "Section: prediction - "
+                f"given tiebreaker must be in {catwalk.utils.AVAILABLE_TIEBREAKERS}"
+            )
+
+
 class ScoringConfigValidator(Validator):
     def _run(self, scoring_config):
         if "testing_metric_groups" not in scoring_config:
@@ -812,6 +833,15 @@ class ScoringConfigValidator(Validator):
                                 """
                             )
                         )
+                    if not string_is_tablesafe(subset['name']):
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset {subset} name should only contain
+                                lowercase letters, numbers, and underscores
+                                """
+                            )
+                        )
 
                     # 2. Validate that query conforms to the expectations
                     if "{as_of_date}" not in subset["query"]:
@@ -831,6 +861,52 @@ class ScoringConfigValidator(Validator):
                                 """
                             )
                         )
+
+
+class BiasAuditConfigValidator(Validator):
+    def _run(self, bias_audit_config):
+        if not bias_audit_config:
+            # if empty, that's fine, shortcut out
+            return
+        if 'from_obj_query' in bias_audit_config and 'from_obj_table' in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+            Section: bias_audit_config -
+            Both 'from_obj_query' and 'from_obj_table' specified .
+            Please only specify one."""
+                )
+            )
+        if 'from_obj_query' not in bias_audit_config and 'from_obj_table' not in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+            Section: bias_audit_config -
+            Neither 'from_obj_query' and 'from_obj_table' specified .
+            Please specify one."""
+                )
+            )
+        for key in [
+            "attribute_columns",
+            "knowledge_date_column",
+            "entity_id_column",
+            "ref_groups_method",
+        ]:
+            if key not in bias_audit_config:
+                raise ValueError(
+                    dedent(
+                        """
+                Section: bias_audit_config -
+                '{} required as key: bias_audit_config config: {}""".format(
+                            key, bias_audit_config
+                        )
+                    )
+                )
+        percentile_thresholds = bias_audit_config.get('thresholds', {}).get('percentiles', [])
+        if any(threshold < 0 or threshold > 100 for threshold in percentile_thresholds):
+            raise ValueError("Section: bias_audit_config - "
+                             "All percentile thresholds must be between 0 and 100")
+
 
 
 class ExperimentValidator(Validator):
@@ -864,8 +940,14 @@ class ExperimentValidator(Validator):
         GridConfigValidator(strict=self.strict).run(
             experiment_config.get("grid_config", {})
         )
+        PredictionConfigValidator(self.db_engine, strict=self.strict).run(
+            experiment_config.get("prediction", {})
+        )
         ScoringConfigValidator(strict=self.strict).run(
             experiment_config.get("scoring", {})
+        )
+        BiasAuditConfigValidator(strict=self.strict).run(
+            experiment_config.get("bias_audit_config", {})
         )
 
         # show the success message in the console as well as the logger

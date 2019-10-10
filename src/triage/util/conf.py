@@ -3,6 +3,22 @@ import warnings
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
+def parse_from_obj(config, alias):
+    """
+    Parses a from_obj configuration key. If it's a from_obj_table just returns it.
+    If it's a from_obj_query creates the sub_query with alias
+    Args:
+        config: the yaml dict
+        alias: the name of the alias if there's a from_obj_query
+
+    Returns:
+
+    """
+    from_obj = config.get("from_obj_table", None)
+    if not from_obj:
+        from_obj = config.get("from_obj_query", None)
+        return " ({}) {} ".format(from_obj, alias) if from_obj else None
+    return from_obj
 
 def dt_from_str(dt_str):
     if isinstance(dt_str, datetime):

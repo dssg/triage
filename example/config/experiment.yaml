@@ -5,12 +5,15 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v6'
+config_version: 'v7'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
 # models table for each model created in this experiment
 model_comment: 'test'
+# random_seed will be set in Python at the beginning of the experiment and 
+# affect the generation of all model seeds
+random_seed: 23895478
 
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
@@ -71,6 +74,8 @@ label_config:
     #name: 'inspections'
 
 
+
+
 # FEATURE GENERATION
 # The aggregate features to generate for each train/test split
 #
@@ -118,8 +123,8 @@ feature_aggregations:
         # top-level imputation rules that will apply to all aggregates functions
         # can also specify categoricals_imputation or array_categoricals_imputation
         #
-        # You must specified at least one of the top-level or feature-level imputation
-        # to cover ever feature being defined.
+        # You must specify at least one of the top-level or feature-level imputation
+        # to cover every feature being defined.
         aggregates_imputation:
             # The `all` rule will apply to all aggregation functions, unless over-
             # ridden by a more specific one
@@ -220,19 +225,13 @@ feature_group_strategies: ['all']
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the
 # metadata for every matrix in the experiment. Any keys you include here can
-# be used in the 'model_group_keys' below. For example, if you run experiments
-# that share a temporal configuration but that use different label definitions
-# (say, labeling building inspections with *any* violation as positive or
-# labeling only building inspections with severe health and safety violations
-# as positive), you can use the user metadata keys to indicate that the matrices
-# from these experiments have different labeling criteria. The matrices from the
-# two experiments will have different filenames (and not be overwritten or
-# inappropriately reused), and if you add the label_definition key to the model
-# group keys, models made on different label definition will have different
-# groups. In this way, user metadata can be used to expand Triage beyond its
-# explicitly supported functionality.
+# be used in the 'model_group_keys' below. For example, if you run the entity 
+# matching algorithm before running the experiment, one can include a `matchdatetime` 
+# in the `user_metadata` that signifies which set of `entity_id`s was used 
+# to create a given model/model group. That way, we don't accidentally match 
+# old predictions with new staged data without looking up the new `entity_id`s first.
 user_metadata:
-    label_definition: 'severe_violations'
+    'matchdatetime': '2019-01-01'
 
 # MODEL GROUPING (optional)
 # Model groups are a way of partitioning trained models in a way that makes for easier analysis.
@@ -259,6 +258,141 @@ user_metadata:
 # as they will be present in the matrix metadata.
 #
 # model_group_keys: ['feature_groups', 'label_definition']
+
+
+
+
+# BIAS AUDIT (optional, please comment the bias_audit_config section if not interested in knowing the biases and equity of the models)
+# Every evaluation will include a bias audit (using the Aequitas toolkit).
+# To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
+# from_obj parameter: it can be a table name or a query (such as with features generators)
+# The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
+# Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
+#
+# thresholds:
+# Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit.
+# Percentiles *should be between 0 and 100*, much like Triage model scoring config.
+# People familiar with Aequitas may note that this differs from its expected values - Triage will do the conversion for Aequitas.
+#
+# ref groups:
+# Please have a look to Aequitas documentation for further information about the ref_groups_method
+# https://dssg.github.io/aequitas/config.html
+# By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
+# Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
+bias_audit_config:
+    from_obj_table: 'semantic.demographics'
+    attribute_columns: ['race', 'sex','age']
+    knowledge_date_column: 'event_date'
+    entity_id_column: 'person_id'
+    ref_groups_method: 'predefined'
+    ref_groups:
+        -  'race': 'w'
+        -  'sex': 'm'
+        -  'age': '35-49'
+    thresholds:
+        percentiles: []
+        top_n: [100]
+
+
+# PREDICTION
+# How predictions are computed for train and test matrices
+# 
+# Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score 
+# are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+#
+# 'worst' will break ties with the ascending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be negative labels if possible.
+# 'best' will break ties with the descending label value, so if you take the top 'k' predictions, and there are ties across the 'k' threshold, the predictions above the threshold will be positive labels if possible.
+# 'random' will choose one random ordering to break ties. The result will be affected by
+# current state of Postgres' random number generator. Before ranking, the generator is seeded
+# based on the *model*'s random seed.
+#prediction:
+#   rank_tiebreaker: "worst"
+
+
+# MODEL SCORING
+# How each trained model is scored
+#
+# Each entry in 'testing_metric_groups' needs a list of one of the metrics defined in
+# catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!)
+# Depending on the metric, either thresholds or parameters
+#
+# Parameters specify any hyperparameters needed. For most metrics,
+# which are simply wrappers of sklearn functions, these
+# are passed directly to sklearn.
+#
+# Thresholds are more specific: The list is dichotomized and only the
+# top percentile or top n entities are scored as positive labels
+#
+# subsets, if passed, will add evaluations for subset(s) of the predictions to
+# the subset_evaluations tables, using the same testing and training metric
+# groups as used for overall evaluations but with any thresholds reapplied only
+# to entities in the subset on the relevant as_of_dates. For example, when
+# calculating precision@5_pct for the subset of women, the ModelEvaluator will
+# count as positively labeled the top 5% of women, rather than any women in the
+# top 5% overall. This is useful if, for example, different interventions will
+# be applied to different subsets of entities (e.g., one program will provide
+# subsidies to the top 500 women with children and another program will provide
+# shelter to the top 150 women without children) and you would like to see
+# whether a single model can be used for both applications. Subsets can also be
+# used to see how a model's performance would be affected if the requirements
+# for intervention eligibility became more restricted.
+#
+# Subsets should be a list of dictionaries with the following keys:
+#     - "name": a shorthand name for the subset 
+#     - "query": a query that returns distinct entity_ids belonging to the
+#                subset on a given as_of_date with a placeholder for the
+#                as_of_date being queried
+scoring:
+    testing_metric_groups:
+        -
+            metrics: [precision@, recall@]
+            thresholds:
+                percentiles: [5.0, 10.0]
+                top_n: [5, 10]
+        -
+            metrics: [f1]
+        -
+            metrics: [fbeta@]
+            parameters:
+                -
+                    beta: 0.75
+                -
+                    beta: 1.25
+    training_metric_groups:
+        -
+            metrics: [accuracy]
+    subsets:
+        -
+            name: women
+            query: |
+                select distinct entity_id
+                from demographics
+                where d.gender = 'woman'
+                and demographic_date < '{as_of_date}'::date
+
+
+
+
+
+# INDIVIDUAL IMPORTANCES
+# How feature importances for individuals should be computed
+# There are two variables here:
+# methods: Refer to *how to compute* individual importances.
+#   Each entry in this list should represent a different method.
+#   Available methods are in the catwalk library's:
+#   `catwalk.individual_importance.CALCULATE_STRATEGIES` list
+#   Will default to 'uniform', or just the global importances.
+#
+# n_ranks: The number of top features per individual to compute importances for
+#   Will default to 5
+#
+# This entire section can be left blank,
+# in which case the defaults will be used.
+individual_importance:
+    methods: [] # empty list means don't calculate individual importances
+    # methods: ['uniform']
+    n_ranks: 5
+
 
 # GRID CONFIGURATION
 # The classifier/hyperparameter combinations that should be trained
@@ -297,90 +431,3 @@ grid_config:
     'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
         rules: [['feature_one > 3', 'feature_two <= 5']]
         logical_operator: 'and'
-
-
-# MODEL SCORING
-# How each trained model is scored
-#
-# Each entry in 'testing_metric_groups' needs a list of one of the metrics defined in
-# catwalk.evaluation.ModelEvaluator.available_metrics (contributions welcome!)
-# Depending on the metric, either thresholds or parameters
-#
-# Parameters specify any hyperparameters needed. For most metrics,
-# which are simply wrappers of sklearn functions, these
-# are passed directly to sklearn.
-#
-# Thresholds are more specific: The list is dichotomized and only the
-# top percentile or top n entities are scored as positive labels
-#
-# sort_seed, if passed, will seed the random number generator for each model's
-# metric creation phase. This affects how entities with the same probabilities
-# are sorted
-#
-# subsets, if passed, will add evaluations for subset(s) of the predictions to
-# the subset_evaluations tables, using the same testing and training metric
-# groups as used for overall evaluations but with any thresholds reapplied only
-# to entities in the subset on the relevant as_of_dates. For example, when
-# calculating precision@5_pct for the subset of women, the ModelEvaluator will
-# count as positively labeled the top 5% of women, rather than any women in the
-# top 5% overall. This is useful if, for example, different interventions will
-# be applied to different subsets of entities (e.g., one program will provide
-# subsidies to the top 500 women with children and another program will provide
-# shelter to the top 150 women without children) and you would like to see
-# whether a single model can be used for both applications. Subsets can also be
-# used to see how a model's performance would be affected if the requirements
-# for intervention eligibility became more restricted.
-#
-# Subsets should be a list of dictionaries with the following keys:
-#     - "name": a shorthand name for the subset 
-#     - "query": a query that returns distinct entity_ids belonging to the
-#                subset on a given as_of_date with a placeholder for the
-#                as_of_date being queried
-scoring:
-    sort_seed: 5
-    testing_metric_groups:
-        -
-            metrics: [precision@, recall@]
-            thresholds:
-                percentiles: [5.0, 10.0]
-                top_n: [5, 10]
-        -
-            metrics: [f1]
-        -
-            metrics: [fbeta@]
-            parameters:
-                -
-                    beta: 0.75
-                -
-                    beta: 1.25
-    training_metric_groups:
-        -
-            metrics: [accuracy]
-    subsets:
-        -
-            name: women
-            query: |
-                select distinct entity_id
-                from demographics
-                where d.gender = 'woman'
-                and demographic_date < '{as_of_date}'::date
-
-
-# INDIVIDUAL IMPORTANCES
-# How feature importances for individuals should be computed
-# There are two variables here:
-# methods: Refer to *how to compute* individual importances.
-#   Each entry in this list should represent a different method.
-#   Available methods are in the catwalk library's:
-#   `catwalk.individual_importance.CALCULATE_STRATEGIES` list
-#   Will default to 'uniform', or just the global importances.
-#
-# n_ranks: The number of top features per individual to compute importances for
-#   Will default to 5
-#
-# This entire section can be left blank,
-# in which case the defaults will be used.
-individual_importance:
-    methods: [] # empty list means don't calculate individual importances
-    # methods: ['uniform']
-    n_ranks: 5

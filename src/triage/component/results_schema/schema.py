@@ -272,6 +272,14 @@ class TestPredictionMetadata(Base):
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
 
+    model_id = Column(
+        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
+
 
 class TrainPredictionMetadata(Base):
     __tablename__ = "prediction_metadata"
@@ -284,6 +292,7 @@ class TrainPredictionMetadata(Base):
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
+
 
 class IndividualImportance(Base):
 
@@ -503,7 +512,6 @@ class TrainAequitas(Base):
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
-
 
 
 class ExperimentRunStatus(enum.Enum):
