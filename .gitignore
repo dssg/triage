@@ -6,6 +6,7 @@ dist/
 .cache/
 .coverage*
 .tox/
+docs/site/
 
 /.install.*.bash.inc
 /.python-version

@@ -25,14 +25,14 @@ def test_generate_plot_lines():
 
 
 def test_category_colordict():
-    cmap_name = "Vega10"
+    cmap_name = "tab10"
     categories = ["Cat1", "Cat2", "Cat3", "Cat4"]
     colordict = category_colordict(cmap_name, categories)
     assert len(colordict.keys()) == 4
 
 
 def test_category_colordict_with_highlight():
-    cmap_name = "Vega10"
+    cmap_name = "tab10"
     colordict_with_highlight = category_colordict(
         cmap_name, ["Cat1", "Cat2", "Cat3", "Cat4"], "Cat2"
     )

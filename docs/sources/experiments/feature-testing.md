@@ -8,10 +8,10 @@ To speed up the process of iterating on features, you can run a list of feature 
 ![triage featuretest cli help screen](featuretest-cli.png)
 
 The command-line interface for testing features takes in two arguments:
-	- A feature config file. Refer to [example_feature_config.yaml](https://github.com/dssg/triage/blob/master/example/config/feature.yaml). Essentially this is the content of the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)'s `feature_aggregations` section. It consists of a YAML list, with one or more feature_aggregation rows present.
+	- An experiment config file. Refer to the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)'s `feature_aggregations` section. It consists of a YAML list, with one or more feature_aggregation rows present.
 	- An as-of-date. This should be in the format `2016-01-01`.
 
-Example: `triage experiment featuretest example/config/feature.yaml 2016-01-01`
+Example: `triage experiment featuretest example/config/experiment.yaml 2016-01-01`
 
 All given feature aggregations will be processed for the given date. You will see a bunch of queries pass by in your terminal, populating tables in the `features_test` schema which you can inspect afterwards.
 

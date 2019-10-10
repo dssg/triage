@@ -13,9 +13,9 @@ from sqlalchemy.engine.url import URL
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
-from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
+from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
 from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -157,7 +157,6 @@ class Experiment(Command):
 
     matrix_storage_map = {
         "csv": CSVMatrixStore,
-        "hdf": HDFMatrixStore,
     }
     matrix_storage_default = "csv"
 
@@ -384,29 +383,37 @@ class Crosstabs(Command):
 class Db(Command):
     """Manage experiment database"""
 
-    @cmdmethod
+    @cmdmethod("-r", "--revision", default="head", help="database schema revision to upgrade to (see triage db history)")
     def upgrade(self, args):
         """Upgrade triage results database"""
-        upgrade_db(dburl=self.root.db_url)
+        upgrade_db(revision=args.revision, dburl=self.root.db_url)
 
-    @cmdmethod(
-        "configversion",
-        choices=REVISION_MAPPING.keys(),
-        help="config version of last experiment you ran",
-    )
+    @cmdmethod("-r", "--revision", default="-1", help="database schema revision to downgrade to (see triage db history)")
+    def downgrade(self, args):
+        """Downgrade triage results database"""
+        downgrade_db(revision=args.revision, dburl=self.root.db_url)
+
+    @cmdmethod("revision", help="database schema revision to stamp to (see triage db history)")
     def stamp(self, args):
-        """Instruct the triage results database to mark itself as updated to a
-        known version without doing any upgrading.
+        """Mark triage results database as updated to a known version without doing any upgrading.
 
-        Use this if the database was created without an 'alembic_version' table.
-        Uses the config version of your experiment to infer what database version is suitable.
+        The revision can be anything alembic recognizes, such as a specific revision or 'head' (the most recent revision in the current codebase)
+
+        This is most useful if the database was created without a 'results_schema_versions' table (i.e. old versions of triage that didn't enforce alembic use), but could also be useful after general database mangling.
+
+        If you don't know what the right revision is, here are some database revisions that old experiment configs are associated with:
+            - no config version: 8b3f167d0418
+            - v1 or v2: 72ac5cbdca05
+            - v3: 7d57d1cf3429
+            - v4: 89a8ce240bae
+            - v5: 2446a931de7a
         """
-        revision = REVISION_MAPPING[args.configversion]
-        print(
-            f"Based on config version {args.configversion} "
-            f"we think your results schema is version {revision} and are upgrading to it"
-        )
-        stamp_db(revision, dburl=self.root.db_url)
+        stamp_db(revision=args.revision, dburl=self.root.db_url)
+
+    @cmdmethod
+    def history(self, args):
+        """Show triage results database history"""
+        db_history(dburl=self.root.db_url)
 
 
 def execute():

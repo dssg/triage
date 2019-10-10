@@ -1,0 +1,164 @@
+config_version: 'v6'
+
+model_comment: 'simple_test_skeleton'
+
+user_metadata:
+  label_definition: 'failed_inspection'
+  experiment_type: 'test'
+  org: 'DSaPP'
+  team: 'Tutorial'
+  author: 'Adolfo De Unanue'
+  etl_date: '2019-02-21'
+
+temporal_config:
+    feature_start_time: '2014-01-01'
+    feature_end_time: '2018-01-01'
+    label_start_time: '2014-01-02'
+    label_end_time: '2018-01-01'
+
+    model_update_frequency: '1y'
+
+    max_training_histories: '1y'
+    training_label_timespans: ['1y']
+    training_as_of_date_frequencies: '1month'
+
+    test_durations: '0d'
+    test_label_timespans: ['1y']
+    test_as_of_date_frequencies: '1month'
+
+cohort_config:
+    query: |
+      select entity_id
+      from semantic.entities
+      where
+      license_num in (1596210, 1874347, 1142451)
+      and daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
+    name: 'test_facilities'
+
+label_config:
+  query: |
+    select
+    entity_id,
+    bool_or(result = 'fail')::integer as outcome
+    from semantic.events
+    where '{as_of_date}'::timestamp <= date
+    and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+    group by entity_id
+  name: 'failed_inspections'
+
+grid_config:
+    'sklearn.dummy.DummyClassifier':
+        strategy: [most_frequent]
+
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+
+
+  -
+    prefix: 'risks'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      sum:
+        type: 'zero'
+      avg:
+        type: 'zero'
+
+    categoricals:
+      -
+        column: 'risk'
+        choices: ['low', 'medium', 'high']
+        metrics:
+          - 'sum'
+          - 'avg'
+
+    intervals: ['1month', '3month', '6month', '1y', 'all']
+
+    groups:
+      - 'entity_id'
+      - 'zip_code'
+
+  -
+    prefix: 'results'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    categoricals_imputation:
+      all:
+        type: 'zero'
+
+    categoricals:
+      -
+        column: 'result'
+        choice_query: 'select distinct result from semantic.events'
+        metrics:
+          - 'sum'
+          - 'avg'
+
+    intervals:
+      - '6month'
+
+    groups:
+      - 'entity_id'
+
+feature_group_definition:
+  prefix:
+    - 'results'
+    - 'risks'
+    - 'inspections'
+
+feature_group_strategies: ['all']
+
+model_group_keys:
+  - 'class_path'
+  - 'parameters'
+  - 'feature_names'
+  - 'feature_groups'
+  - 'cohort_name'
+  - 'state'
+  - 'label_name'
+  - 'label_timespan'
+  - 'training_as_of_date_frequency'
+  - 'max_training_history'
+  - 'label_definition'
+  - 'experiment_type'
+  - 'org'
+  - 'team'
+  - 'author'
+  - 'etl_date'
+
+scoring:
+  testing_metric_groups:
+    -
+      metrics: ['precision@', 'recall@']
+      thresholds:
+        percentiles: [1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0]
+        top_n: [1, 5, 10, 25, 50, 100, 150, 300, 500, 1000, 1500]
+  training_metric_groups:
+    -
+      metrics: ['accuracy']
+    -
+      metrics: ['precision@', 'recall@']
+      thresholds:
+        percentiles: [1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0]
+        top_n: [1, 5, 10, 25, 50, 100, 150, 300, 500, 1000, 1500]

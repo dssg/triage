@@ -20,13 +20,16 @@ from triage.component.collate.imputations import (
 def test_impute_flag():
     imp = BaseImputation(column="a", coltype="aggregate")
     assert (
-        imp.imputed_flag_sql() == 'CASE WHEN "a" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "a_imp" '
+        imp.imputed_flag_select_and_alias() == (
+            'CASE WHEN "a" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END',
+            'a_imp'
+        )
     )
 
 
 def test_impute_flag_categorical():
     imp = BaseImputation(column="a", coltype="categorical")
-    assert imp.imputed_flag_sql() is None
+    assert imp.imputed_flag_select_and_alias() == (None, None)
 
 
 def test_mean_imputation():
@@ -77,7 +80,7 @@ def test_impute_zero():
 def test_impute_zero_noflag():
     imp = ImputeZeroNoFlag(column="a", coltype="aggregate")
     assert imp.to_sql() == 'COALESCE("a", 0::SMALLINT) AS "a" '
-    assert imp.imputed_flag_sql() is None
+    assert imp.imputed_flag_select_and_alias() == (None, None)
     assert imp.noflag
 
     imp = ImputeZeroNoFlag(column="a_myval_max", coltype="categorical")

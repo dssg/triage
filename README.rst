@@ -13,9 +13,14 @@ Risk modeling and prediction
 .. image:: https://codeclimate.com/github/dssg/triage.png
    :target: https://codeclimate.com/github/dssg/triage
 
-Predictive analytics projects require the coordination of many different tasks, such as feature generation, classifier training, evaluation, and list generation. These tasks are complicated in their own right, but in addition have to be combined in different ways throughout the course of the project.
+Building systems that use predictive models require answering many design decisions, turning them into modeling choices, and technical tasks. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanantory variables) generation, model/classifier training, evaluation, selection, and list generation are often complicated and hard to choose apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
 
-Triage aims to provide interfaces to these different phases of a project, such as an ``Experiment``. Each phase is defined by configuration specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase.
+Triage aims to help solve these problems by:
+
+1. Guiding users (data scientists, analysts, researchers) through these design choices by highlighting operational use questions that are important.
+
+2. Providing interfaces to these different phases of a project, such as an ``Experiment``. Each phase is defined by a configuration (corresponding to a design choice) specific to the needs of the project, and an arrangement of core data science components that work together to produce the output of that phase. 
+
 
 
 Installation

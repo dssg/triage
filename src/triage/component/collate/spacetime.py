@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import chain
 import sqlalchemy.sql.expression as ex
+from descriptors import cachedproperty
 
 from .sql import make_sql_clause
 from .collate import Aggregation
@@ -85,10 +86,41 @@ class SpacetimeAggregation(Aggregation):
             mindtstr=mindtstr,
         )
 
-    def _get_aggregates_sql(self, interval, date, group):
+    @cachedproperty
+    def colname_aggregate_lookup(self):
+        """A reverse lookup from column name to the source collate.Aggregate
+
+        Will error if the Aggregation contains duplicate column names
         """
-        Helper for getting aggregates sql
+        lookup = {}
+        for group, groupby in self.groups.items():
+            intervals = self.intervals[group]
+            for interval in intervals:
+                date = self.dates[0]
+                for agg in self.aggregates:
+                    for col in self._cols_for_aggregate(agg, group, interval, date):
+                        if col.name in lookup:
+                            raise ValueError("Duplicate feature column name found: ", col.name)
+                        lookup[col.name] = agg
+
+        return lookup
+            
+    def _col_prefix(self, group, interval):
+        """
+        Helper for creating a column prefix for the group
+            group: group clause, for naming columns
+            interval: SQL time interval string, or "all"
+        Returns: string for a common column prefix for columns in that group and interval
+        """
+        return "{prefix}_{group}_{interval}_".format(
+            prefix=self.prefix, interval=interval, group=group
+        )
+
+    def _cols_for_aggregate(self, agg, group, interval, date):
+        """
+        Helper for getting the sql for a particular aggregate
         Args:
+            agg: collate.Aggregate
             interval: SQL time interval string, or "all"
             date: SQL date string
             group: group clause, for naming columns
@@ -100,19 +132,25 @@ class SpacetimeAggregation(Aggregation):
             )
         else:
             when = None
-
-        prefix = "{prefix}_{group}_{interval}_".format(
-            prefix=self.prefix, interval=interval, group=group
+        return agg.get_columns(
+            when,
+            self._col_prefix(group, interval),
+            format_kwargs={"collate_date": date, "collate_interval": interval},
         )
 
+    def _get_aggregates_sql(self, interval, date, group):
+        """
+        Helper for getting aggregates sql
+        Args:
+            interval: SQL time interval string, or "all"
+            date: SQL date string
+            group: group clause, for naming columns
+        Returns: collection of aggregate column SQL strings
+        """
         return chain(
             *[
-                a.get_columns(
-                    when,
-                    prefix,
-                    format_kwargs={"collate_date": date, "collate_interval": interval},
-                )
-                for a in self.aggregates
+                self._cols_for_aggregate(agg, group, interval, date)
+                for agg in self.aggregates
             ]
         )
 
@@ -131,7 +169,7 @@ class SpacetimeAggregation(Aggregation):
             queries[group] = []
             for date in self.dates:
                 columns = [
-                    groupby,
+                    make_sql_clause(groupby, ex.text),
                     ex.literal_column("'%s'::date" % date).label(
                         self.output_date_column
                     ),
@@ -152,7 +190,7 @@ class SpacetimeAggregation(Aggregation):
                         ")) cohorted_from_obj")
                 else:
                     from_obj = self.from_obj
-                query = ex.select(columns=columns, from_obj=from_obj).group_by(
+                query = ex.select(columns=columns, from_obj=make_sql_clause(from_obj, ex.text)).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))
@@ -227,7 +265,7 @@ class SpacetimeAggregation(Aggregation):
         Generates a join table, consisting of an entry for each combination of
         groups and dates in the from_obj
         """
-        groups = list(self.groups.values())
+        groups = [make_sql_clause(group, ex.text) for group in self.groups.values()]
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
@@ -236,7 +274,7 @@ class SpacetimeAggregation(Aggregation):
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=self.from_obj)
+                ex.select(columns, from_obj=make_sql_clause(self.from_obj, ex.text))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )

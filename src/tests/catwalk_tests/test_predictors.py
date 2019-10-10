@@ -3,10 +3,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 import datetime
 from unittest.mock import Mock
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_almost_equal
 import pandas
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
+from triage.component.catwalk.storage import TestMatrixType
+from triage.component.catwalk.db import ensure_db
+from tests.results_tests.factories import (
+    MatrixFactory,
+    ModelFactory,
+    PredictionFactory,
+    init_engine,
+    session as factory_session
+)
 from triage.database_reflection import table_has_data
 
 from triage.component.catwalk.predictors import Predictor
@@ -20,8 +29,6 @@ from tests.utils import (
 import pytest
 
 
-AS_OF_DATE = datetime.date(2016, 12, 21)
-
 with_matrix_types = pytest.mark.parametrize(
     ('matrix_type',),
     [
@@ -29,6 +36,8 @@ with_matrix_types = pytest.mark.parametrize(
         ('test',),
     ],
 )
+
+MODEL_RANDOM_SEED = 123456
 
 
 @contextmanager
@@ -43,7 +52,11 @@ def prepare():
             trained_model = MockTrainedModel()
             model_hash = "abcd"
             project_storage.model_storage_engine().write(trained_model, model_hash)
-            db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
+            db_model = Model(
+                model_hash=model_hash,
+                train_matrix_uuid=train_matrix_uuid,
+                random_seed=MODEL_RANDOM_SEED
+            )
             session.add(db_model)
             session.commit()
             yield project_storage, db_engine, db_model.model_id
@@ -57,19 +70,24 @@ def fixture_predict_setup_args():
         yield predict_setup_args
 
 
-@with_matrix_types
-def test_predictor(matrix_type, predict_setup_args):
+@pytest.fixture(name='predictor', scope='function')
+def predictor(predict_setup_args):
     (project_storage, db_engine, model_id) = predict_setup_args
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    return Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst')
+
+
+@pytest.fixture(name='predict_proba', scope='function')
+def prediction_results(matrix_type, predictor, predict_setup_args):
+    (project_storage, db_engine, model_id) = predict_setup_args
 
     dayone = datetime.datetime(2011, 1, 1)
     daytwo = datetime.datetime(2011, 1, 2)
     source_dict = {
-        "entity_id": [1, 2, 1, 2],
-        "as_of_date": [dayone, dayone, daytwo, daytwo],
-        "feature_one": [3, 4, 5, 6],
-        "feature_two": [5, 6, 7, 8],
-        "label": [7, 8, 8, 7],
+        "entity_id": [1, 2, 3, 1, 2, 3],
+        "as_of_date": [dayone, dayone, dayone, daytwo, daytwo, daytwo],
+        "feature_one": [3] * 6,
+        "feature_two": [5] * 6,
+        "label": [True, False] * 3
     }
 
     matrix = pandas.DataFrame.from_dict(source_dict)
@@ -82,16 +100,21 @@ def test_predictor(matrix_type, predict_setup_args):
         misc_db_parameters=dict(),
         train_matrix_columns=["feature_one", "feature_two"],
     )
+    return predict_proba
 
-    # assert
-    # 1. that the returned predictions are of the desired length
-    assert len(predict_proba) == 4
 
-    # 2. that the predictions table entries are present and
-    # can be linked to the original models
+@with_matrix_types
+def test_predictor(predict_proba):
+    """assert that the returned predictions are of the desired length"""
+    assert len(predict_proba) == 6
+
+
+@with_matrix_types
+def test_predictions_table(predictor, predict_proba, matrix_type):
+    """assert that the predictions table entries are present, linked to the original models"""
     records = [
         row
-        for row in db_engine.execute(
+        for row in predictor.db_engine.execute(
             """select entity_id, as_of_date
         from {}_results.predictions
         join model_metadata.models using (model_id)""".format(
@@ -99,14 +122,293 @@ def test_predictor(matrix_type, predict_setup_args):
             )
         )
     ]
-    assert len(records) == 4
+    assert len(records) == 6
+
+
+def update_ranks_test(
+        predictor,
+        entities_scores_labels,
+        rank_col,
+        expected_result,
+        model_random_seed=12345,
+        need_seed_data=True
+):
+    """Not a test in itself but rather a utility called by many of the ranking tests"""
+    ensure_db(predictor.db_engine)
+    init_engine(predictor.db_engine)
+    model_id = 5
+    matrix_uuid = "4567"
+    matrix_type = "test"
+    as_of_date = datetime.datetime(2012, 1, 1)
+    if need_seed_data:
+        matrix = MatrixFactory(matrix_uuid=matrix_uuid)
+        model = ModelFactory(model_id=model_id, random_seed=model_random_seed)
+        for entity_id, score, label in entities_scores_labels:
+            PredictionFactory(
+                model_rel=model,
+                matrix_rel=matrix,
+                as_of_date=as_of_date,
+                entity_id=entity_id,
+                score=score,
+                label_value=int(label)
+            )
+        factory_session.commit()
+    predictor.update_db_with_ranks(
+        model_id=model_id,
+        matrix_uuid=matrix_uuid,
+        matrix_type=TestMatrixType,
+    )
+    ranks = tuple(
+        row for row in predictor.db_engine.execute(f'''
+select entity_id, {rank_col}::float
+from {matrix_type}_results.predictions
+where as_of_date = %s and model_id = %s and matrix_uuid = %s order by {rank_col} asc''',
+                                                   (as_of_date, model_id, matrix_uuid)
+                                                   )
+    )
+    assert ranks == expected_result
+
+    # Test that the predictions metadata table is populated
+    metadata_records = [row for row in predictor.db_engine.execute(
+        f"""select tiebreaker_ordering, prediction_metadata.random_seed, models.random_seed
+        from {matrix_type}_results.prediction_metadata
+        join model_metadata.models using (model_id)
+        join model_metadata.matrices using (matrix_uuid)
+        """
+    )]
+    assert len(metadata_records) == 1
+    tiebreaker_ordering, random_seed, received_model_random_seed = metadata_records[0]
+    if tiebreaker_ordering == 'random':
+        assert random_seed is model_random_seed
+    else:
+        assert not random_seed
+    assert tiebreaker_ordering == predictor.rank_order
+    assert received_model_random_seed == model_random_seed
+
+
+def test_predictions_abs_ranks_no_ties(project_storage, db_engine):
+    "test the rank_abs column, which should have no ties"
+    update_ranks_test(
+        predictor=Predictor(project_storage.model_storage_engine(), db_engine, 'worst'),
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False), # since 'worst' is picked, this negative label should be first
+            (67, 0.89, True)
+        ),
+        rank_col='rank_abs_no_ties',
+        expected_result=(
+            (23, 1),
+            (34, 2),
+            (56, 3),
+            (45, 4),
+            (67, 5),
+        )
+    )
+
+
+def test_predictions_pct_ranks_no_ties(project_storage, db_engine):
+    "test the percentile rank column, which should be based on the without-ties absolute rank"
+    update_ranks_test(
+        predictor=Predictor(project_storage.model_storage_engine(), db_engine, 'worst'),
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False), # with 'worst' this one should show up first
+            (67, 0.89, True)
+        ),
+        rank_col='rank_pct_no_ties',
+        expected_result=(
+            (67, 0.2),
+            (45, 0.4),
+            (56, 0.6),
+            (34, 0.8),
+            (23, 1.0),
+        )
+    )
+
+
+def test_predictions_pct_ranks_with_ties(project_storage, db_engine):
+    """test the pct_ranks_with_ties column
+    """
+    update_ranks_test(
+        predictor=Predictor(project_storage.model_storage_engine(), db_engine, 'worst'),
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False),
+            (67, 0.89, True)
+        ),
+        rank_col='rank_pct_with_ties',
+        expected_result=(
+            (67, 0.2),
+            (45, 0.4),
+            (56, 0.4),
+            (34, 0.8),
+            (23, 1.0),
+        )
+    )
+
+
+def test_predictions_abs_ranks_with_ties(project_storage, db_engine):
+    """test the abs_ranks_with_ties column, which should rank entities with
+    the same scores at the same rank and then skip those ranks for the next one
+    """
+    update_ranks_test(
+        predictor=Predictor(project_storage.model_storage_engine(), db_engine, 'worst'),
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False),
+            (67, 0.89, True)
+        ),
+        rank_col='rank_abs_with_ties',
+        expected_result=(
+            (23, 1),
+            (34, 2),
+            (45, 3),
+            (56, 3),
+            (67, 5),
+        )
+    )
+
+
+def test_predictions_abs_ranks_no_ties_best_order(project_storage, db_engine):
+    """here the user tells us to give us the best ranking
+    """
+    update_ranks_test(
+        predictor=Predictor(
+            project_storage.model_storage_engine(),
+            db_engine,
+            rank_order='best'
+        ),
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True), # with 'best' this one should show up first
+            (56, 0.92, False),
+            (67, 0.89, True)
+        ),
+        rank_col='rank_abs_no_ties',
+        expected_result=(
+            (23, 1),
+            (34, 2),
+            (45, 3),
+            (56, 4),
+            (67, 5),
+        )
+    )
+
+
+def test_predictions_abs_ranks_no_ties_user_seed(project_storage, db_engine):
+    "testing the 'abs_rank_no_ties' column, respecting a user-supplied seed"
+    predictor = Predictor(
+        project_storage.model_storage_engine(),
+        db_engine,
+        rank_order="random",
+    )
+    expected_result = (
+        (23, 1),
+        (34, 2),
+        (56, 3),
+        (45, 4),
+        (67, 5),
+    )
+    update_ranks_test(
+        predictor=predictor,
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False),
+            (67, 0.89, True)
+        ),
+        rank_col='rank_abs_no_ties',
+        model_random_seed=15,
+        expected_result=expected_result
+    )
+    update_ranks_test(
+        predictor=predictor,
+        entities_scores_labels=(
+            (23, 0.95, True),
+            (34, 0.94, False),
+            (45, 0.92, True),
+            (56, 0.92, False),
+            (67, 0.89, True)
+        ),
+        rank_col='rank_abs_no_ties',
+        expected_result=expected_result,
+        model_random_seed=15,
+        need_seed_data=False
+    )
+
+
+def test_prediction_ranks_multiple_dates(project_storage, db_engine):
+    """make sure that multiple as-of-dates in a single matrix are handled correctly.
+    keep the other variables simple by making no within-date ties that would end up
+    testing the tiebreaker logic, just data for two dates with data that could theoretically
+    confound a bad ranking method:
+    - a different order for entities in both dates
+    - each date has some not in the other
+    """
+    ensure_db(db_engine)
+    init_engine(db_engine)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
+    model_id = 5
+    matrix_uuid = "4567"
+    matrix_type = "test"
+    entities_dates_and_scores = (
+        (23, datetime.datetime(2012, 1, 1), 0.95),
+        (34, datetime.datetime(2012, 1, 1), 0.94),
+        (45, datetime.datetime(2013, 1, 1), 0.92),
+        (23, datetime.datetime(2013, 1, 1), 0.45),
+    )
+    expected_result = (
+        (23, datetime.datetime(2012, 1, 1), 1),
+        (34, datetime.datetime(2012, 1, 1), 2),
+        (45, datetime.datetime(2013, 1, 1), 3),
+        (23, datetime.datetime(2013, 1, 1), 4),
+    )
+    matrix = MatrixFactory(matrix_uuid=matrix_uuid)
+    model = ModelFactory(model_id=model_id)
+    for entity_id, as_of_date, score in entities_dates_and_scores:
+        PredictionFactory(
+            model_rel=model,
+            matrix_rel=matrix,
+            as_of_date=as_of_date,
+            entity_id=entity_id,
+            score=score
+        )
+    factory_session.commit()
+    predictor.update_db_with_ranks(
+        model_id=model_id,
+        matrix_uuid=matrix_uuid,
+        matrix_type=TestMatrixType,
+    )
+    ranks = tuple(
+        row for row in predictor.db_engine.execute(f'''
+select entity_id, as_of_date, rank_abs_no_ties
+from {matrix_type}_results.predictions
+where model_id = %s and matrix_uuid = %s order by rank_abs_no_ties''',
+                                                   (model_id, matrix_uuid)
+                                                   )
+    )
+    assert ranks == expected_result
 
 
 @with_matrix_types
 def test_predictor_save_predictions(matrix_type, predict_setup_args):
+    """Test the save_predictions flag being set to False
+
+    We still want to return predict_proba, but not save data to the DB
+    """
     (project_storage, db_engine, model_id) = predict_setup_args
     # if save_predictions is sent as False, don't save
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine, save_predictions=False)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst', save_predictions=False)
 
     matrix_store = get_matrix_store(project_storage)
     train_matrix_columns = matrix_store.columns()
@@ -129,10 +431,11 @@ def test_predictor_save_predictions(matrix_type, predict_setup_args):
 
 @with_matrix_types
 def test_predictor_needs_predictions(matrix_type, predict_setup_args):
+    """Test that the logic that figures out if predictions are needed for a given model/matrix"""
     (project_storage, db_engine, model_id) = predict_setup_args
     # if not all of the predictions for the given model id and matrix are present in the db,
     # needs_predictions should return true. else, false
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
 
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
     matrix_store = get_matrix_store(project_storage, metadata=metadata)
@@ -151,8 +454,10 @@ def test_predictor_needs_predictions(matrix_type, predict_setup_args):
 
 
 def test_predictor_get_train_columns(predict_setup_args):
+    """Test behavior when train/test matrices are created with different column orders
+    """
     (project_storage, db_engine, model_id) = predict_setup_args
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
     train_store = get_matrix_store(
         project_storage=project_storage,
         matrix=matrix_creator(),
@@ -198,9 +503,10 @@ def test_predictor_get_train_columns(predict_setup_args):
 
 
 def test_predictor_retrieve(predict_setup_args):
+    """Test the predictions retrieved from the database match the output from predict_proba"""
     (project_storage, db_engine, model_id) = predict_setup_args
     predictor = Predictor(
-        project_storage.model_storage_engine(), db_engine, replace=False
+        project_storage.model_storage_engine(), db_engine, 'worst', replace=False
     )
 
     # create prediction set
@@ -257,5 +563,5 @@ def test_predictor_retrieve(predict_setup_args):
         misc_db_parameters=dict(),
         train_matrix_columns=matrix_store.columns()
     )
-    assert_array_equal(new_predict_proba, predict_proba)
+    assert_array_almost_equal(new_predict_proba, predict_proba, decimal=5)
     assert not predictor.load_model.called

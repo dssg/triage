@@ -11,7 +11,7 @@ from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db
-from triage.component.catwalk.storage import ProjectStorage, HDFMatrixStore
+from triage.component.catwalk.storage import ProjectStorage
 from triage.component.results_schema.schema import Matrix
 
 from .utils import (
@@ -705,6 +705,7 @@ class TestBuildMatrix(TestCase):
                     matrix_type="train",
                 )
                 assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+                assert builder.sessionmaker().query(Matrix).get(uuid).feature_dictionary ==self.good_feature_dictionary
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
@@ -719,40 +720,6 @@ class TestBuildMatrix(TestCase):
             )
 
             with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                )
-
-                uuid = filename_friendly_hash(self.good_metadata)
-                builder.build_matrix(
-                    as_of_times=self.good_dates,
-                    label_name="booking",
-                    label_type="binary",
-                    feature_dictionary=self.good_feature_dictionary,
-                    matrix_metadata=self.good_metadata,
-                    matrix_uuid=uuid,
-                    matrix_type="test",
-                )
-
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-
-    def test_hdf_matrix(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
-
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                matrix_storage_engine.matrix_storage_class = HDFMatrixStore
                 builder = MatrixBuilder(
                     db_config=db_config,
                     matrix_storage_engine=matrix_storage_engine,

@@ -77,10 +77,10 @@ class DistanceFromBestTable(object):
                         m.model_group_id,
                         m.model_id,
                         m.train_end_time,
-                        ev.value,
+                        ev.stochastic_value as value,
                         row_number() OVER (
                             PARTITION BY m.train_end_time
-                            ORDER BY ev.value {metric_value_order}, RANDOM()
+                            ORDER BY ev.stochastic_value {metric_value_order}, RANDOM()
                         ) AS rank
                   FROM first_evals ev
                   JOIN model_metadata.{models_table} m USING(model_id)

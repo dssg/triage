@@ -56,12 +56,12 @@ def test_basic_spacetime():
 
         agg = Aggregate(
             "outcome::int",
-            ["sum", "avg"],
+            ["sum", "avg", "stddev"],
             {
                 "coltype": "aggregate",
                 "avg": {"type": "mean"},
                 "sum": {"type": "constant", "value": 3},
-                "max": {"type": "zero"},
+                "stddev": {"type": "constant", "value": 2},
             },
         )
         st = SpacetimeAggregation(
@@ -152,37 +152,44 @@ def test_basic_spacetime():
         assert rows[6]["entity_id"] == 4
         assert rows[6]["as_of_date"] == date(2015, 1, 1)
         assert rows[6]["events_entity_id_1y_outcome::int_sum"] == 3
-        assert rows[6]["events_entity_id_1y_outcome::int_sum_imp"] == 1
+        assert rows[6]["events_entity_id_1y_outcome::int_imp"] == 1
+        assert rows[6]["events_entity_id_1y_outcome::int_stddev"] == 2
+        assert rows[6]["events_entity_id_1y_outcome::int_stddev_imp"] == 1
         assert (
             round(float(rows[6]["events_entity_id_1y_outcome::int_avg"]), 4) == 0.1667
         )
-        assert rows[6]["events_entity_id_1y_outcome::int_avg_imp"] == 1
         assert rows[6]["events_entity_id_2y_outcome::int_sum"] == 3
-        assert rows[6]["events_entity_id_2y_outcome::int_sum_imp"] == 1
+        assert rows[6]["events_entity_id_2y_outcome::int_imp"] == 1
+        assert rows[6]["events_entity_id_2y_outcome::int_stddev"] == 2
+        assert rows[6]["events_entity_id_2y_outcome::int_stddev_imp"] == 1
         assert (
             round(float(rows[6]["events_entity_id_2y_outcome::int_avg"]), 4) == 0.3333
         )
-        assert rows[6]["events_entity_id_2y_outcome::int_avg_imp"] == 1
         assert rows[6]["events_entity_id_all_outcome::int_sum"] == 3
-        assert rows[6]["events_entity_id_all_outcome::int_sum_imp"] == 1
+        assert rows[6]["events_entity_id_all_outcome::int_imp"] == 1
+        assert rows[6]["events_entity_id_all_outcome::int_stddev"] == 2
+        assert rows[6]["events_entity_id_all_outcome::int_stddev_imp"] == 1
         assert (
             round(float(rows[6]["events_entity_id_all_outcome::int_avg"]), 4) == 0.3333
         )
-        assert rows[6]["events_entity_id_all_outcome::int_avg_imp"] == 1
+        assert rows[6]["events_entity_id_all_outcome::int_imp"] == 1
         assert rows[7]["entity_id"] == 4
         assert rows[7]["as_of_date"] == date(2016, 1, 1)
         assert rows[7]["events_entity_id_1y_outcome::int_sum"] == 0
-        assert rows[7]["events_entity_id_1y_outcome::int_sum_imp"] == 0
+        assert rows[7]["events_entity_id_1y_outcome::int_imp"] == 0
         assert rows[7]["events_entity_id_1y_outcome::int_avg"] == 0
-        assert rows[7]["events_entity_id_1y_outcome::int_avg_imp"] == 0
+        assert rows[7]["events_entity_id_1y_outcome::int_stddev"] == 2
+        assert rows[7]["events_entity_id_1y_outcome::int_stddev_imp"] == 1
         assert rows[7]["events_entity_id_2y_outcome::int_sum"] == 0
-        assert rows[7]["events_entity_id_2y_outcome::int_sum_imp"] == 0
+        assert rows[7]["events_entity_id_2y_outcome::int_imp"] == 0
         assert rows[7]["events_entity_id_2y_outcome::int_avg"] == 0
-        assert rows[7]["events_entity_id_2y_outcome::int_avg_imp"] == 0
+        assert rows[7]["events_entity_id_2y_outcome::int_stddev"] == 2
+        assert rows[7]["events_entity_id_2y_outcome::int_stddev_imp"] == 1
         assert rows[7]["events_entity_id_all_outcome::int_sum"] == 0
-        assert rows[7]["events_entity_id_all_outcome::int_sum_imp"] == 0
+        assert rows[7]["events_entity_id_all_outcome::int_imp"] == 0
         assert rows[7]["events_entity_id_all_outcome::int_avg"] == 0
-        assert rows[7]["events_entity_id_all_outcome::int_avg_imp"] == 0
+        assert rows[7]["events_entity_id_all_outcome::int_stddev"] == 2
+        assert rows[7]["events_entity_id_all_outcome::int_stddev_imp"] == 1
         assert len(rows) == 8
 
 

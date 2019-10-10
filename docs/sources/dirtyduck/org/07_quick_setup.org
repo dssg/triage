@@ -1,0 +1,104 @@
+#+TITLE: Resource prioritization
+#+DESCRIPTION:
+#+AUTHOR: Center of Data Science for Public Policy
+#+EMAIL: adolfo@uchicago.edu
+#+STARTUP: showeverything
+#+STARTUP: nohideblocks
+#+STARTUP: indent
+#+STARTUP: align
+#+STARTUP: inlineimages
+#+STARTUP: latexpreview
+#+PROPERTY: header-args:sql :engine postgresql
+#+PROPERTY: header-args:sql+ :dbhost 0.0.0.0
+#+PROPERTY: header-args:sql+ :dbport 5434
+#+PROPERTY: header-args:sql+ :dbuser food_user
+#+PROPERTY: header-args:sql+ :dbpassword some_password
+#+PROPERTY: header-args:sql+ :database food
+#+PROPERTY: header-args:sql+ :results table drawer
+#+PROPERTY: header-args:sql+ :exports both
+#+PROPERTY: header-args:sql+ :eval no-export
+#+PROPERTY: header-args:sql+ :cmdline -q
+#+PROPERTY: header-args:sh  :results verbatim org
+#+PROPERTY: header-args:sh+ :prologue exec 2>&1 :epilogue :
+#+PROPERTY: header-args:jupyter-python :eval never-export
+#+OPTIONS: broken-links:mark
+#+OPTIONS: tasks:todo
+#+OPTIONS: LaTeX:t
+#+EXPORT_FILE_NAME: ../docs/for_the_impatient.md
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* Appendix: For the impatient
+
+If you want to skip all the cleansing and transformation and deep
+directly into =triage= you can
+execute the following /inside bastion/:
+
+#+BEGIN_SRC sh :dir /docker:root@tutorial_bastion:/
+     curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD" > data/inspections.csv
+
+     psql ${DATABASE_URL} -c "\copy raw.inspections FROM '/data/inspections.csv' WITH HEADER CSV"
+
+     psql ${DATABASE_URL} < /sql/create_cleaned_inspections_table.sql
+
+     psql ${DATABASE_URL} < /sql/create_violations_table.sql
+
+     psql ${DATABASE_URL} < /sql/create_semantic_tables.sql
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC org
+COPY 168861
+CREATE SCHEMA
+NOTICE:  table "inspections" does not exist, skipping
+DROP TABLE
+SELECT 168046
+NOTICE:  table "violations" does not exist, skipping
+DROP TABLE
+SELECT 632487
+CREATE SCHEMA
+NOTICE:  table "entities" does not exist, skipping
+DROP TABLE
+SELECT 35360
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+NOTICE:  table "events" does not exist, skipping
+DROP TABLE
+SELECT 145123
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+#+END_SRC
+
+
+If everything works, you should end with two new schemas: =cleaned= and =semantic=.
+
+You could check that (from =psql=) With
+#+BEGIN_SRC sql
+\dn
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+| List of schemas |          |
+|-----------------+----------|
+| Name            | Owner    |
+| cleaned         | food_user |
+| postgis         | food_user |
+| public          | postgres |
+| raw             | food_user |
+| semantic        | food_user |
+:END:
+
+Now you can continue to the introduction to triage section.

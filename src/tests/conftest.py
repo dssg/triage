@@ -1,8 +1,10 @@
+import matplotlib
+matplotlib.use('Agg')
 import pytest
 import testing.postgresql
 import tempfile
 from tests.utils import sample_config, populate_source_data
-from sqlalchemy import create_engine
+from triage import create_engine
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.catwalk.db import ensure_db
 from tests.results_tests.factories import init_engine
@@ -31,14 +33,18 @@ def db_engine_with_results_schema(db_engine):
 
 
 @pytest.fixture(scope="function")
-def project_storage():
+def project_path():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield temp_dir
+
+
+@pytest.fixture(scope="function")
+def project_storage(project_path):
     """Set up a temporary project storage engine on the filesystem
 
     Yields (catwalk.storage.ProjectStorage)
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        project_storage = ProjectStorage(temp_dir)
-        yield project_storage
+    yield ProjectStorage(project_path)
 
 
 @pytest.fixture(scope='module')
@@ -134,8 +140,8 @@ select model_id,
       entity_id,
       score,
       label_value,
-      coalesce(rank_abs, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
-      coalesce(rank_pct*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
+      coalesce(rank_abs_no_ties, row_number() over (partition by (model_id, as_of_date) order by score desc)) as rank_abs,
+      coalesce(rank_pct_no_ties*100, ntile(100) over (partition by (model_id, as_of_date) order by score desc)) as rank_pct
   from test_results.predictions
   JOIN models_dates_join_query USING(model_id, as_of_date)
   where model_id IN (select model_id from models_list_query)
