@@ -22,7 +22,7 @@ sqlparse==0.3.0
 pebble==4.4.0
 seaborn==0.9.0
 adjustText==0.7.3
-graphviz==0.10.1
+graphviz==0.13
 ohio==0.4.0
 requests==2.21.0
 aequitas==0.38.0
