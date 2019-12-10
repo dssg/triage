@@ -121,9 +121,9 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        config['random_seed'] = config.get('random_seed', random.randint(1,1e7))
+        self.config['random_seed'] = self.config.get('random_seed', random.randint(1,1e7))
 
-        random.seed(config['random_seed'])
+        random.seed(self.config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -142,8 +142,8 @@ class ExperimentBase(ABC):
         self.features_ignore_cohort = features_ignore_cohort
 
 
-
-
+        self.config['temporal_config'] = self._fill_timechop_config_missing(self.config, db_engine)
+        self.config['cohort_config'] = self._fill_cohort_config_missing(self.config)
 
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
@@ -822,6 +822,59 @@ class ExperimentBase(ABC):
             logging.info("Profiling stats of this Triage run calculated and written to %s"
                          "in cProfile format.",
                          store)
+
+    def _fill_timechop_config_missing(self, config, db_engine):
+            
+        timechop_config = config['temporal_config']
+        
+        default_config = {'model_update_frequency': '100y',
+                          'training_as_of_date_frequencies': '100y',
+                          'test_as_of_date_frequencies': '100y',
+                          'max_training_histories': '0d',
+                          'test_durations': '0d',
+                          }
+
+            # Checks if label_timespan is present
+        if 'label_timespans' in timechop_config.keys():
+            if any([k in timechop_config.keys() for k in ['training_label_timespans', 'test_labels_timespans']]):
+                raise KeyError("You can't always get what you want")
+            default_config['training_label_timespans'] = default_config['test_label_timespans'] = timechop_config['label_timespans']
+
+            # Checks if some of the date range  limits  is missing, if so repalces with 
+            # min, max accordingy from de from_objs
+        if any([k not in timechop_config.keys() for k in ['feature_start_time', 'feature_end_time', 'label_start_time', 'label_end_time']]):
+            from_query = "(select min({knowledge_date}) as min_date, max({knowledge_date}) as max_date from ({from_obj}) as t)"
+            
+            feature_aggregations = config['feature_aggregations']
+
+            from_queries = [from_query.format(knowledge_date = agg['knowledge_date_column'], from_obj=agg['from_obj']) for agg in freature_aggregations]
+
+            unions = "\n union \n".join(from_queries)
+
+            query = "select min(min_date), max(max_date) from ({unions}) as u".format(unions=unions)
+
+            with db_engine.connect() as conn:
+                rs = conn.execute(query)
+                min_date, max_date = rs.fetch_all()[0]
+
+            default_config['feature_start_date'] = default_config['label_start_date'] = min_date
+            default_config['feature_end_date'] = default_config['label_end_date'] = max_date
+
+            # Replaces missing values
+        default_config.update(timechop_config)
+        
+        return default_config
+            
+
+    def _fill_cohort_config_missing(self, config):
+        label_query = config['label_config']['query']
+        cohort_config = config.get('cohort_config', {})
+        default_config = {'query': f'select distinct entity_id from ({label_query}) as l', 'name': 'all_entities'}
+            
+        default_config.update(cohort_config)
+
+        return default_config
+
 
     @experiment_entrypoint
     def run(self):

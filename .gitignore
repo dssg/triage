@@ -18,3 +18,5 @@ my_db_config.yaml
 database.yaml
 
 dirtyduck/triage/**
+
+*~
