@@ -7,6 +7,7 @@ dist/
 .coverage*
 .tox/
 docs/site/
+**/.hypothesis/
 
 /.install.*.bash.inc
 /.python-version
