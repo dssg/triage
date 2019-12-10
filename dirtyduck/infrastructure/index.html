@@ -1,0 +1,1138 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for Triage.">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.2.0">
+    
+    
+      
+        <title>Infrastructure - Triage Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.750b69bd.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="deep-orange">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#setting-up-the-infrastructure" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Triage Documentation" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">book</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Triage Documentation
+            </span>
+            <span class="md-header-nav__topic">
+              Infrastructure
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Triage Documentation" class="md-nav__button md-logo">
+      
+        <i class="md-icon">book</i>
+      
+    </a>
+    Triage Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    dssg/triage
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Dirty Duck Tutorial
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Dirty Duck Tutorial
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../" title="Welcome!" class="md-nav__link">
+      Welcome!
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../who_is_this_tutorial_for/" title="Who is this tutorial for?" class="md-nav__link">
+      Who is this tutorial for?
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../choose_your_own_adventure/" title="Choose your own adventure" class="md-nav__link">
+      Choose your own adventure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../for_the_impatient/" title="Quick setup" class="md-nav__link">
+      Quick setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+    <a href="./" title="Infrastructure" class="md-nav__link md-nav__link--active">
+      Infrastructure
+    </a>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data_preparation/" title="Data preparation" class="md-nav__link">
+      Data preparation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Case studies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Case studies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../problem_description/" title="Problem description" class="md-nav__link">
+      Problem description
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../eis/" title="Early Warning System" class="md-nav__link">
+      Early Warning System
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inspections/" title="Resource prioritization" class="md-nav__link">
+      Resource prioritization
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Triage
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Triage
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../triage_intro/" title="A deeper look into triage" class="md-nav__link">
+      A deeper look into triage
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Experiment
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Experiment
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
+      Defining an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
+      Testing Feature Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/running/" title="Running an Experiment" class="md-nav__link">
+      Running an Experiment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
+      Upgrading an Experiment
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Upgrading an Experiment
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/upgrade-to-v7/" title="v6 -> v7" class="md-nav__link">
+      v6 -> v7
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/upgrade-to-v6/" title="v5 -> v6" class="md-nav__link">
+      v5 -> v6
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/upgrade-to-v5/" title="v3/v4 -> v5" class="md-nav__link">
+      v3/v4 -> v5
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive" class="md-nav__link">
+      Temporal Validation Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive" class="md-nav__link">
+      Cohort and Label Deep Dive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/prediction-ranking/" title="Prediction Ranking" class="md-nav__link">
+      Prediction Ranking
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/features/" title="Feature Generation Recipe Book" class="md-nav__link">
+      Feature Generation Recipe Book
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/algorithm/" title="Experiment Algorithm" class="md-nav__link">
+      Experiment Algorithm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../experiments/architecture/" title="Experiment Architecture" class="md-nav__link">
+      Experiment Architecture
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../audition/" title="Model selection" class="md-nav__link">
+      Model selection
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
+      Postmodeling
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../ml_governance/" title="Model governance" class="md-nav__link">
+      Model governance
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../aws_batch/" title="Scaling up" class="md-nav__link">
+      Scaling up
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/infrastructure.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="setting-up-the-infrastructure">Setting up the Infrastructure<a class="headerlink" href="#setting-up-the-infrastructure" title="Permanent link">#</a></h1>
+<p>In every data science project you will need several tools to help
+analyze the data in an efficient<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> manner. Examples include a place
+to store the data (e.g. database management system or <strong>DBMS</strong>); a way to
+put your model to work, e.g. a way that allows the model to ingest new
+data and make predictions (an <strong>API</strong>); and a way to examine the
+performance of trained models (e.g. monitor tools).</p>
+<p>This tutorial includes a script for managing the infrastructure<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> in
+a transparent way.</p>
+<p>The infrastructure of this tutorial has <em>three</em> pieces:</p>
+<ul>
+<li>a <code>postgresql</code> database called <code>food_db</code>,</li>
+<li>a container that executes <code>triage</code> experiments (we will use this when trying to scale up),</li>
+<li>a container for interacting with the data called <code>bastion</code>.</li>
+</ul>
+<p><code>bastion</code> includes a <code>postgresql</code> client (so you can interact with the
+database)<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> and a full <code>python</code> environment (so you can code or
+modify the things for the tutorial).</p>
+<p>The only thing you need installed on your laptop is <code>docker</code>.</p>
+<p>From your command line (terminal) run the following command from the repo directory:</p>
+<div class="highlight"><pre><span></span>    ./tutorial.sh
+</pre></div>
+
+<div class="highlight"><pre><span></span>Usage: ./tutorial.sh {up|down|build|rebuild|run|logs|status|clean}
+
+OPTIONS:
+   -h|help             Show this message
+   up                  Starts Food DB
+   down                Stops Food DB
+   build               Builds images (food_db and bastion)
+   rebuild             Builds images (food_db and bastion) ignoring if they already exists
+   -l|logs             Shows container&#39;s logs
+   status              Shows status of the containers
+   -d|clean            Removes containers, images, volumes, netrowrks
+
+INFRASTRUCTURE:
+   Build the DB&#39;s infrastructure:
+        $ ./tutorial.sh up
+
+   Check the status of the containers:
+        $ ./tutorial.sh status
+
+   Stop the tutorial&#39;s DB&#39;s infrastructure:
+        $ ./tutorial.sh down
+
+   Destroy all the resources related to the tutorial:
+        $ ./tutorial.sh clean
+
+   View the infrastructure logs:
+        $ ./tutorial.sh -l
+</pre></div>
+
+<p>Following the instructions on the screen, we can start the infrastructure with:</p>
+<div class="highlight"><pre><span></span>    ./tutorial.sh up
+</pre></div>
+
+<p>You can check that everything is running smoothly with <code>status</code> by
+using the following command:</p>
+<div class="highlight"><pre><span></span>    ./tutorial.sh status
+</pre></div>
+
+<div class="highlight"><pre><span></span>    Name                Command              State           Ports
+   ------------------------------------------------------------------------
+   tutorial_db   docker-entrypoint.sh postgres   Up      0.0.0.0:5434-&gt;5432/tcp
+</pre></div>
+
+<p>To access <code>bastion</code>, where the <code>postgresql</code> client is, submit the command:</p>
+<div class="highlight"><pre><span></span>   ./tutorial.sh bastion
+</pre></div>
+
+<p>Your prompt should change to something like:</p>
+<div class="codehilite"><pre><span></span>root@485373fb3c64:/$
+</pre></div>
+
+
+<p><strong>NOTE</strong>: The number you see will be different (i.e. not <code>485373fb3c64</code>).</p>
+<p>Inside <code>bastion</code>, type the next command to connect to the database</p>
+<div class="highlight"><pre><span></span>   psql <span class="si">${</span><span class="nv">DATABASE_URL</span><span class="si">}</span>
+</pre></div>
+
+<p>The prompt will change again to (or something <em>very</em> similar):</p>
+<div class="codehilite"><pre><span></span>psql (10.7 (Debian 10.7-1.pgdg90+1))
+Type &quot;help&quot; for help.
+
+food=#
+</pre></div>
+
+
+<p>The previous command is using <code>psql</code>, a powerful command line client
+for the Postgresql database. If you want to use this client fully,
+check <a href="https://www.postgresql.org/docs/10/static/app-psql.html">psql's
+documentation</a>.</p>
+<p>The database is now running and is named <code>food</code>. It should contain a
+single table named <code>inspections</code> in the <code>schema</code> <code>raw</code>. Let's check
+the structure of the <code>inspections</code> table. Type the following command:</p>
+<div class="highlight"><pre><span></span>    <span class="err">\</span><span class="n">d</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Collation</th>
+<th>Nullable</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>inspection</td>
+<td>character varying</td>
+<td></td>
+<td>not null</td>
+<td></td>
+</tr>
+<tr>
+<td>dba_name</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>aka_name</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>license_num</td>
+<td>numeric</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>facility_type</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>risk</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>address</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>city</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>state</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>zip</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>date</td>
+<td>date</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>type</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>results</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>violations</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>latitude</td>
+<td>numeric</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>longitude</td>
+<td>numeric</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>location</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>historical_wards</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>zip_codes</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>community_areas</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>census_tracts</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>wards</td>
+<td>character varying</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Column <code>historical_wards</code> contains the wards code from 2003 - 2015</p>
+</div>
+<p>That's it! We will work with thi table of raw inspections data.</p>
+<p>You can disconnect from the database by typing <code>\q</code>. But don't leave
+the database yet! We still need to do a lot of things<sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Reproducible, scalable, flexible, etc.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>And other things through this tutorial, like the execution of the model training, etc.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>If you have a postgresql client installed, you can use <code>psql -h 0.0.0.0 -p 5434 -d food -U food_user</code> rather than the <code>bastion</code> container.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>Welcome to the not-so-sexy part of the (supposedly) <em>sexiest job</em> of the XXI century.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../for_the_impatient/" title="Quick setup" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Quick setup
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../data_preparation/" title="Data preparation" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Data preparation
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/dssg/triage" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://twitter.com/datascifellows" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" class="md-footer-social__link fa fa-linkedin"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.39abc4af.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="../../js/mermaid.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
