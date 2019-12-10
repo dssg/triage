@@ -120,6 +120,9 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
+
+        config['random_seed'] = config.get('random_seed', random.randint(1,1e7))
+
         random.seed(config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
@@ -137,6 +140,12 @@ class ExperimentBase(ABC):
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.features_ignore_cohort = features_ignore_cohort
+
+
+
+
+
+
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
