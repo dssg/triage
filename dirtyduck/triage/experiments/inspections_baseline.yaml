@@ -1,0 +1,120 @@
+config_version: 'v7'
+
+model_comment: 'inspections: baseline'
+random_seed: 23895478
+
+user_metadata:
+    label_definition: 'failed'
+    experiment_type: 'inspections prioritization'
+    description: |
+      Baseline calculation
+    purpose: 'baseline'
+    org: 'DSaPP'
+    team: 'Tutorial'
+    author: 'Your name here'
+    etl_date: '2019-05-07'
+
+model_group_keys:
+  - 'class_path'
+  - 'parameters'
+  - 'feature_names'
+  - 'feature_groups'
+  - 'cohort_name'
+  - 'state'
+  - 'label_name'
+  - 'label_timespan'
+  - 'training_as_of_date_frequency'
+  - 'max_training_history'
+  - 'label_definition'
+  - 'experiment_type'
+  - 'org'
+  - 'team'
+  - 'author'
+  - 'purpose'
+  - 'etl_date'
+
+temporal_config:
+    feature_start_time: '2010-01-04'
+    feature_end_time: '2018-06-01'
+    label_start_time: '2015-01-01'
+    label_end_time: '2018-06-01'
+
+    model_update_frequency: '6month'
+    training_label_timespans: ['6month']
+    training_as_of_date_frequencies: '6month'
+
+    test_durations: '0d'
+    test_label_timespans: ['6month']
+    test_as_of_date_frequencies: '6month'
+
+    max_training_histories: '5y'
+
+label_config:
+  query: |
+    select
+    entity_id,
+    bool_or(result = 'fail')::integer as outcome
+    from semantic.events
+    where '{as_of_date}'::timestamp <= date
+    and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+    group by entity_id
+  name: 'failed_inspections'
+
+cohort_config:
+  query: |
+    select e.entity_id
+    from semantic.entities as e
+    where
+    daterange(start_time, end_time, '[]') @> '{as_of_date}'::date
+  name: 'active_facilities'
+
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['all']
+
+    groups:
+      - 'entity_id'
+
+feature_group_definition:
+   prefix:
+     - 'inspections'
+
+feature_group_strategies: ['all']
+
+grid_config:
+    'sklearn.dummy.DummyClassifier':
+        strategy: [prior]
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@, recall@, 'false negatives@', 'false positives@', 'true positives@', 'true negatives@']
+          thresholds:
+            percentiles: [1.0, 2.0, 3.0, 4.0, 5.0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+            top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
+        -
+          metrics: [roc_auc, accuracy]
+
+    training_metric_groups:
+      -
+        metrics: [roc_auc, accuracy]
+      -
+        metrics: [precision@, recall@]
+        thresholds:
+          percentiles: [1.0, 2.0, 3.0, 4.0, 5.0, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+          top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
