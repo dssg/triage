@@ -1,27 +1,31 @@
 # coding: utf-8
 
-import os
-from os.path import dirname
-import pathlib
+import itertools
 import logging
+import os
+import pathlib
 from contextlib import contextmanager
-from sklearn.externals import joblib
+from os.path import dirname
 from urllib.parse import urlparse
+
+import gzip
+import pandas as pd
+import s3fs
+import wrapt
+import yaml
+from sklearn.externals import joblib
+
 from triage.component.results_schema import (
     TestEvaluation,
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
     TestPredictionMetadata,
-    TrainPredictionMetadata
+    TrainPredictionMetadata,
+    TestAequitas,
+    TrainAequitas
 )
 from triage.util.pandas import downcast_matrix
-
-import pandas as pd
-import s3fs
-import yaml
-from boto3.s3.transfer import TransferConfig
-import gzip
 
 
 class Store(object):
@@ -74,9 +78,6 @@ class Store(object):
         raise NotImplementedError
 
 
-GB = 1024 ** 3
-
-
 class S3Store(Store):
     """Store an object in S3.
 
@@ -93,22 +94,29 @@ class S3Store(Store):
         **config: arguments to be passed to the S3Fs client constructor.
 
     """
-    transfer_multipart_threshold = 5 * GB
+    class S3FileWrapper(wrapt.ObjectProxy):
+
+        # don't allow wrapped object to take wrapper's place
+        # upon __enter__
+        def __enter__(self):
+            return self
+
+        def write(self, data, block_size=(5 * 2 ** 20)):
+            out = 0
+
+            for offset in itertools.count(0, block_size):
+                chunk = data[offset:(offset + block_size)]
+
+                if not chunk:
+                    return out
+
+                out += self.__wrapped__.write(chunk)
 
     def __init__(self, path_head, *path_parts, **config):
         self.path = str(
             pathlib.PurePosixPath(path_head.replace('s3://', ''),
                                   *path_parts)
         )
-
-        default_addl_kwargs = {
-            'Config': TransferConfig(
-                multipart_threshold=self.transfer_multipart_threshold,
-            ),
-        }
-        user_addl_kwargs = config.get('s3_additional_kwargs', {})
-        config['s3_additional_kwargs'] = dict(default_addl_kwargs, **user_addl_kwargs)
-
         self.config = config
 
     @property
@@ -122,7 +130,11 @@ class S3Store(Store):
         self.client.rm(self.path)
 
     def open(self, *args, **kwargs):
-        return self.client.open(self.path, *args, **kwargs)
+        # NOTE: remove S3FileWrapper as soon as s3fs properly
+        # NOTE: chunks out too-large writes
+        # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
+        s3file = self.client.open(self.path, *args, **kwargs)
+        return self.S3FileWrapper(s3file)
 
 
 class FSStore(Store):
@@ -315,7 +327,7 @@ class MatrixStorageEngine(object):
 class MatrixStore(object):
     """Base class for classes that allow access of a matrix and its metadata.
 
-    Subclasses should be scoped to a storage format (e.g. CSV, HDF)
+    Subclasses should be scoped to a storage format (e.g. CSV)
         and implement the _load, save, and head_of_matrix methods for that storage format
 
     Args:
@@ -552,62 +564,6 @@ class MatrixStore(object):
         return state
 
 
-class HDFMatrixStore(MatrixStore):
-    """Store and access matrices using HDF
-
-    Instead of overriding head_of_matrix, which cannot be easily and reliably done
-    using HDFStore without loading the whole matrix into memory,
-    we individually override 'empty' and 'columns'
-    to obviate the need for a performant 'head_of_matrix' operation.
-    """
-
-    suffix = "h5"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if isinstance(self.matrix_base_store, S3Store):
-            raise ValueError("HDFMatrixStore cannot be used with S3")
-
-    def columns(self, include_label=False):
-        """The matrix's column list"""
-        head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=0)
-        columns = head_of_matrix.columns.tolist()
-        if include_label:
-            return columns
-        else:
-            return [col for col in columns if col != self.metadata["label_name"]]
-
-    @property
-    def empty(self):
-        """Whether or not the matrix has at least one row"""
-        if not self.matrix_base_store.exists():
-            return True
-        else:
-            try:
-                head_of_matrix = pd.read_hdf(self.matrix_base_store.path, start=0, stop=1)
-                return head_of_matrix.empty
-            except ValueError:
-                # There is no known way to make the start/stop operations work all the time
-                # , there is often a ValueError when trying to load just the first row
-                # However, if we do get a ValueError that means there is data so it can't be empty
-                return False
-
-    def _load(self):
-        return pd.read_hdf(self.matrix_base_store.path)
-
-    def save(self):
-        hdf = pd.HDFStore(
-            self.matrix_base_store.path,
-            mode="w",
-            complevel=4,
-            complib="zlib",
-        )
-        hdf.put(f"matrix_{self.matrix_uuid}", self.full_matrix_for_saving.apply(pd.to_numeric), data_columns=True)
-        hdf.close()
-        with self.metadata_base_store.open("wb") as fd:
-            yaml.dump(self.metadata, fd, encoding="utf-8")
-
-
 class CSVMatrixStore(MatrixStore):
     """Store and access compressed matrices using CSV"""
 
@@ -640,6 +596,7 @@ class TestMatrixType(object):
     string_name = "test"
     evaluation_obj = TestEvaluation
     prediction_obj = TestPrediction
+    aequitas_obj = TestAequitas
     prediction_metadata_obj = TestPredictionMetadata
     is_test = True
 
@@ -648,5 +605,6 @@ class TrainMatrixType(object):
     string_name = "train"
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction
+    aequitas_obj = TrainAequitas
     prediction_metadata_obj = TrainPredictionMetadata
     is_test = False

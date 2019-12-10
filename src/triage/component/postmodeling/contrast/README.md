@@ -1,18 +1,18 @@
 # Post-modeling Analysis
 
-> ¿What is the distribution of my scores? ¿What is generating a higher FPR in
-> model x compared to model y? ¿What is the single most important feature in my
+> What is the distribution of my predicted scores? What is generating a higher FPR in
+> model x compared to model y? What is the most important predictor in my
 > models?
 
 This questions, and other ones, are the kind of inquiries that the `triage` user
-may have in mind when scrolling trough the models selected by the `Audition`
+may have in mind when exploring  models selected by the `Audition`
 component. Choosing the right model for deployment and exploring its predictions
-and behavior in time is a pivotal task. `postmodeling` will help to answer some
-of this questions by exploring the outcomes of the model, and exploring "deeply"
+and behavior in time is a critical task. `postmodeling` will help to answer some
+of these questions by exploring the outcomes and predictions of the model, and going "deeper"
 into the model behavior across time and features. 
 
-This library lays at the end of the `triage` pipeline and will use the output of
-`Audition` and some of its selection rules as a main input. The
+This library lies at the end of the `triage` pipeline and will use the output of
+`Audition` and some of its selection rules as the input. The
 `postmodeling_tutorial.ipynb` notebook contains a user guide with some questions
 that the component is able to answer about the models, but the methods are
 expandable and allow the user to develop new insights.  
@@ -37,7 +37,7 @@ example of a valid configuration file.
 
 ## Two classes, two units of analysis: `model_id` and `model_group_id`
 
-We can inspect models in two levels. The first, the individual model level
+We can inspect models at two levels. The first, the individual model level
 (identified by the `model_id`) with the `ModelEvaluator` class. The methods in
 this class  will help us to answer questions about different relevant features
 of each model: 

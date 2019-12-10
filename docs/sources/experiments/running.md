@@ -114,36 +114,6 @@ experiment.run()
 
 ```
 
-## Using HDF5 as a matrix storage format
-
-Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.
-
-### CLI
-
-On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
-
-```bash
-triage experiment example/config/experiment.yaml --matrix-format hdf
-```
-
-### Python
-
-In Python, this is configurable using the `matrix_storage_class` keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in `triage.component.catwalk.storage`. If you'd like to write your own storage module, you can use the [existing modules](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py) as a guide.
-
-```python
-from triage.experiments import SingleThreadedExperiment
-from triage.component.catwalk.storage import HDFMatrixStore
-
-experiment = SingleThreadedExperiment(
-    config=experiment_config
-    db_engine=create_engine(...),
-    matrix_storage_class=HDFMatrixStore,
-    project_path='/path/to/directory/to/save/data',
-)
-experiment.run()
-```
-
-Note: The HDF storage option is *not* compatible with S3.
 
 ## Validating an Experiment
 
