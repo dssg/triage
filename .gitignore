@@ -16,3 +16,4 @@ venv/
 my_db_config.yaml
 database.yaml
 docs/sources/index.md
+dirtyduck/triage/**

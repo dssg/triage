@@ -517,7 +517,7 @@ class ModelEvaluator(object):
                 name for the subset to evaluate on, if any
             protected_df (pandas.DataFrame) A dataframe with protected group attributes
         """
-        if protected_df is not None:
+        if (protected_df is not None) and (not protected_df.empty):
             protected_df = protected_df.align(matrix_store.labels, join="inner", axis=0)[0]
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
