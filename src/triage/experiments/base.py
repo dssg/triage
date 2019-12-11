@@ -144,8 +144,12 @@ class ExperimentBase(ABC):
         self.features_ignore_cohort = features_ignore_cohort
 
 
+        ## Defaults to sane values
         self.config['temporal_config'] = self._fill_timechop_config_missing()
+        ## Defaults to all the entities found in the features_aggregation's from_obj
         self.config['cohort_config'] = self._fill_cohort_config_missing()
+        ## Defaults to all the feature_aggregation's prefixes
+        self.config['feature_group_definition'] = self._fill_feature_group_definition()
 
         # if using a model grid preset, fill in the actual grid
         if self.config.get('model_grid_preset'):
@@ -155,6 +159,8 @@ class ExperimentBase(ABC):
             # remove the "model_grid_preset" key now that we've filled out the grid so you could re-run
             # the resulting exepriment config
             self.config.pop('model_grid_preset')
+
+        ###################### RUBICON ######################
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.run_id = initialize_tracking_and_get_run_id(
@@ -876,8 +882,6 @@ class ExperimentBase(ABC):
         # Replaces missing values
         default_config.update(timechop_config)
 
-        print(default_config)
-
         return default_config
 
 
@@ -900,14 +904,24 @@ class ExperimentBase(ABC):
 
         default_config.update(cohort_config)
 
-        print(default_config)
-
         return default_config
 
+    def _fill_feature_group_definition(self):
+        """
+        If feature_group_definition is not presents, this function sets it to all
+        the distinct feature_aggregations' prefixes
+        """
+        feature_group_definition = self.config.get('feature_group_definition', {})
+        if not feature_group_definition:
+            feature_aggregations = self.config['feature_aggregations']
+
+            feature_group_definition['prefix'] = list({agg['prefix'] for agg in feature_aggregations})
+
+        return feature_group_definition
 
     def _fill_model_grid_presets(self, grid_type):
         """Load a preset model grid.
-           
+
            Args:
                 grid_type (string) The type of preset grid to load. May
                     by `quickstart`, `small`, `medium`, `large`, or `texas`
@@ -916,7 +930,7 @@ class ExperimentBase(ABC):
         """
 
         # Load the model grid presets from a yaml file, which should be structured
-        # with grid-types as a top level key and each grid-type building on 
+        # with grid-types as a top level key and each grid-type building on
         presets_file = os.path.join(os.path.dirname(__file__), 'model_grid_presets.yaml')
         with open(presets_file, 'r') as f:
             model_grid_presets = yaml.safe_load(f)
