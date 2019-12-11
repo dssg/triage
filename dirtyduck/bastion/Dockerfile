@@ -5,7 +5,7 @@ RUN  sh -c "echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main
      wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - && \
      apt-get -y update && \
      apt-get -y install less gdal-bin \
-     libpq-dev postgresql-client-10
+     libpq-dev postgresql-client-12
 
 COPY requirements.txt .
 

@@ -1,6 +1,7 @@
 create schema if not exists raw;
 
-create table raw.inspections (
+drop table if exists raw.inspections;
+create table if not exists raw.inspections (
        inspection varchar not null,
        DBA_Name varchar,
        AKA_Name varchar,
@@ -17,12 +18,7 @@ create table raw.inspections (
        violations varchar,
        latitude decimal,
        longitude decimal,
-       location varchar,
-       historical_wards varchar,
-       zip_codes varchar,
-       community_areas varchar,
-       census_tracts varchar,
-       wards varchar
+       location varchar
 );
 
-comment on column raw.inspections.historical_wards is 'Historical wards 2003-2015';
+copy raw.inspections from program 'bzcat /tmp/inspections_2014_2017.csv.bz2' HEADER CSV QUOTE '"';
