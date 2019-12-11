@@ -145,6 +145,14 @@ class ExperimentBase(ABC):
         self.config['temporal_config'] = self._fill_timechop_config_missing(self.config, db_engine)
         self.config['cohort_config'] = self._fill_cohort_config_missing(self.config)
 
+        # if using a model grid preset, fill in the actual grid
+        if self.config.get('model_grid_preset'):
+            if self.config.get('grid_config'):
+                raise KeyError("There can only be one (cannot specify both model_grid_preset and grid_config)")
+            self.config['grid_config'] = self._fill_model_grid_presets(self.config.get('model_grid_preset'))
+            # remove the "model_grid_preset" key now that we've filled out the grid so you could re-run
+            # the resulting exepriment config
+            self.config.pop('model_grid_preset')
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.run_id = initialize_tracking_and_get_run_id(
