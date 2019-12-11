@@ -876,6 +876,46 @@ class ExperimentBase(ABC):
         return default_config
 
 
+    def _fill_model_grid_presets(self, grid_type):
+        """Load a preset model grid.
+           
+           Args:
+                grid_type (string) The type of preset grid to load. May
+                    by `quickstart`, `small`, `medium`, `large`, or `texas`
+
+            Returns: (dict) a triage model grid config
+        """
+
+        # Load the model grid presets from a yaml file, which should be structured
+        # with grid-types as a top level key and each grid-type building on 
+        presets_file = os.path.join(os.path.dirname(__file__), 'model_grid_presets.yaml')
+        with open(presets_file, 'r') as f:
+            model_grid_presets = yaml.safe_load(f)
+
+        # output is a collector for the resulting grid, so initialize it with the parameters
+        # at the level of preset grid we want and find the next-lowest level to incorporate
+        output = model_grid_presets[grid_type]['grid'].copy()
+        prev_type = model_grid_presets[grid_type]['prev']
+
+        # collapse the grid parameters down the levels until we reach one with no lower level
+        while prev_type is not None:
+            prev = model_grid_presets[prev_type]['grid'].copy()
+
+            # look for new model types and hyperparameters to incorporate into the output
+            for model_type in set(output.keys()).union(set(prev.keys())):
+                curr_model = output.get(model_type, {}).copy()
+                # if the model type exists in the lower-level preset, update any associated hyperparameter
+                # values in the output (those only in the higher level grid will pass through unchanged)
+                for hyperparam in prev.get(model_type, {}).keys():
+                    curr_model[hyperparam] = sorted(list(set(curr_model.get(hyperparam, []) + prev[model_type][hyperparam])), key=lambda x: x if x is not None else 0)
+                output[model_type] = curr_model
+
+            # traverse the linked list to one level deeper and repeat
+            prev_type = model_grid_presets[prev_type]['prev']
+
+        return output
+
+
     @experiment_entrypoint
     def run(self):
         try:
