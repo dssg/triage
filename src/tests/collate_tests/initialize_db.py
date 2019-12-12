@@ -34,7 +34,7 @@ def load_data(connection):
             str(DATA_PATH),
         ],
         check=True,
-        stdout=subprocess.PIPE,   ###
+#        stdout=subprocess.PIPE,   ###
         stderr=subprocess.PIPE,   ###
     )
     connection.execute("CREATE INDEX ON food_inspections(license_no, inspection_date)")
