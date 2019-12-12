@@ -1,7 +1,6 @@
-This tutorial will show you how to use `Triage`, a data science
-modeling tool developed at the [Center for Data Science and Public
+This is a guide to `Triage`, a data science workflow tool initially developed at the [Center for Data Science and Public
 Policy](http://dsapp.uchicago.edu) (DSaPP) at the University of
-Chicago.
+Chicago and now being maintained at Carnegie Mellon University.
 
 `Triage` helps build models for two [common applied
 problems](https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/):
