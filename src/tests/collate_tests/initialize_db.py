@@ -18,8 +18,8 @@ def handler(database):
 
 def load_data(connection):
     #######
-    print(connection.engine.url)
-    print(DATA_PATH)
+#    print(connection.engine.url)
+#    print(DATA_PATH)
     #######
     connection.execute("DROP TABLE IF EXISTS food_inspections")
     subprocess.run(
