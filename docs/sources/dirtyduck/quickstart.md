@@ -10,15 +10,14 @@ We also recommend installing triage inside a python virtual environment for your
 
 ### 2. Structure your data
 
-The simplest way to start is to structure data as a series of events connected to your entity of interest (people, orgnazization, business, etc.)
-that take place at a certain time. Each row of the data will be an event. Each event will have some event_id, and an entity_id to link it to the entity it happened to, a date, as well as additional attributes about the event (type for example) and the entity (age, gender, race, etc.). A sample row might look like:
+The simplest way to start is to structure your data as a series of events connected to your entity of interest (people, orgnazization, business, etc.) that take place at a certain time. Each row of the data will be an event. Each event will have some event_id, and an entity_id to link it to the entity it happened to, a date, as well as additional attributes about the event (type for example) and the entity (age, gender, race, etc.). A sample row might look like:
 
 ```
 event_id, entity_id, date, event_attribute (type), entity_attribute (age), entity_attribute (gender), ...
 121, 19334, 1/1/2013, Placement, 12, Male, ...
 ```
 
-Triage needs a field named entity_id (that needs to be of type integer) to refer to the primary *entities* of interest in our project. for us, that is case_id so we then create an entity_id (integer) for each value of case_id to create the events table.
+Triage needs a field named entity_id (that needs to be of type integer) to refer to the primary *entities* of interest in our project. 
 
 ### 3. Set up Triage configuration files
 
@@ -26,12 +25,19 @@ The configuration file sets up the modeling process to mirror the operational sc
 
 Details about each section of the configration file are [here](https://github.com/dssg/triage/tree/master/example/config)
 
-- Here's a [sample configuration file](sample_config.yaml)
-- The configuration file has a lot of sections. Here are the important ones:
+Here's a [sample configuration file](sample_config.yaml)
+
+
+The configuration file has a lot of sections. As a first pass, we will infer a lot of the parameters that are needed in there and use defaults for other. The primary parameters to specify for now are:
+
   1. TIMECHOP config: This sets up temporal parameters for training and testing models. The key things to set up here are your prediction horizon/timespan (how much in to the future is your outcome/label?). For example, if you want to predict placement within one year, you would set training_label_timespans = '12month'. See our [guide to Temporal Validation](https://dssg.github.io/triage/experiments/temporal-validation/)
-  2. COHORT config: This is a SQL query that results in a set of entity_ids that are used as the cohort by the models. For a given point in time, the cohort query defines which entity_ids are valid to be included in training and testing the model .In our case, this could be all the children DCFS knows about that are not currently placed. See our [guide to Cohorts](https://dssg.github.io/triage/experiments/cohort-labels/)
-  3. LABEL config: This is a sql query that results in outcomes for each entity_id in our data. The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan. This is where we would define outcome to be "placed within the next 12 months". See our (guide to Labels)[https://dssg.github.io/triage/experiments/cohort-labels/]
-  4. FEATURE config: This is where we define different aggregate features/attributes/variables to be created and used in our machine learning models. This can be done outside triage, but triage makes it easy to create a lot of these temporal aggregations.
+ 
+ 2. COHORT config: This is a SQL query that results in a set of entity_ids that are used as the cohort by the models. For a given point in time, the cohort query defines which entity_ids are valid to be included in training and testing the model. We will default to using all entities in the data. See our [guide to Cohorts](https://dssg.github.io/triage/experiments/cohort-labels/)
+
+3. LABEL config: This is a sql query that results in outcomes for each entity_id in our data. The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan. This is where we would define outcome to be "placed within the next 12 months". See our (guide to Labels)[https://dssg.github.io/triage/experiments/cohort-labels/]
+
+4. FEATURE config: This is where we define different aggregate features/attributes/variables to be created and used in our machine learning models. This can be done outside triage, but triage makes it easy to create a lot of these temporal aggregations.
+
   5. BIAS AUDIT config:
   6. SCORING config: This is where we define evaluation metrics that we want to computer for each model and test set.
   7. GRID config: Which models and hyperparameters we want to try in this run.
