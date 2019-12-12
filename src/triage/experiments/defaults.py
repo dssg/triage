@@ -98,7 +98,29 @@ def fill_feature_group_definition(config):
 
     return feature_group_definition
 
-def fill_model_grid_presets(grid_type):
+
+def fill_model_grid_presets(config):
+    """Determine if model grid preset is being used and return the appropriate grid if so
+
+       Args:
+            config (dict) a triage experiment configuration
+
+        Returns: (dict) a triage model grid config
+    """
+
+    grid_config = config.get('grid_config')
+    preset_type = config.get('model_grid_preset')
+
+    if preset_type is not None:
+        if grid_config is not None:
+            # if you specified both grid_config and model_grid_preset, you're doing something wrong
+            raise KeyError("There can only be one (cannot specify both model_grid_preset and grid_config)")
+        grid_config = model_grid_preset(preset_type)
+
+    return grid_config
+
+
+def model_grid_preset(grid_type):
     """Load a preset model grid.
 
        Args:
@@ -108,8 +130,6 @@ def fill_model_grid_presets(grid_type):
         Returns: (dict) a triage model grid config
     """
 
-    # Load the model grid presets from a yaml file, which should be structured
-    # with grid-types as a top level key and each grid-type building on
     presets_file = os.path.join(os.path.dirname(__file__), 'model_grid_presets.yaml')
     with open(presets_file, 'r') as f:
         model_grid_presets = yaml.safe_load(f)
@@ -136,3 +156,6 @@ def fill_model_grid_presets(grid_type):
         prev_type = model_grid_presets[prev_type]['prev']
 
     return output
+
+
+

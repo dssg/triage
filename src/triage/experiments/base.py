@@ -69,11 +69,11 @@ from triage.tracking import (
     record_model_building_started,
 )
 
-from triage.defaults import (
-    fill_timechop_config_missing
-    fill_cohort_config_missing
-    fill_feature_group_definition
-    fill_model_grid_presets
+from triage.experiments.defaults import (
+    fill_timechop_config_missing,
+    fill_cohort_config_missing,
+    fill_feature_group_definition,
+    fill_model_grid_presets,
 )
 
 from triage.database_reflection import table_has_data
@@ -166,14 +166,10 @@ class ExperimentBase(ABC):
             ## Defaults to all the feature_aggregation's prefixes
             self.config['feature_group_definition'] = fill_feature_group_definition(self.config)
 
-        # if using a model grid preset, fill in the actual grid
-        if self.config.get('model_grid_preset'):
-            if self.config.get('grid_config'):
-                raise KeyError("There can only be one (cannot specify both model_grid_preset and grid_config)")
-            self.config['grid_config'] = self.fill_model_grid_presets(self.config.get('model_grid_preset'))
-            # remove the "model_grid_preset" key now that we've filled out the grid so you could re-run
-            # the resulting exepriment config
-            self.config.pop('model_grid_preset')
+        grid_config = fill_model_grid_presets(self.config)
+        self.config.pop('model_grid_preset', None)
+        if grid_config is not None:
+            self.config['grid_config'] = grid_config
 
         ###################### RUBICON ######################
 
