@@ -69,6 +69,13 @@ from triage.tracking import (
     record_model_building_started,
 )
 
+from triage.defaults import (
+    fill_timechop_config_missing
+    fill_cohort_config_missing
+    fill_feature_group_definition
+    fill_model_grid_presets
+)
+
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str, parse_from_obj
 from triage.util.db import get_for_update
@@ -153,17 +160,17 @@ class ExperimentBase(ABC):
         # only fill default values for full runs
         if not partial_run:
             ## Defaults to sane values
-            self.config['temporal_config'] = self._fill_timechop_config_missing()
+            self.config['temporal_config'] = fill_timechop_config_missing(self.config, self.db_connection)
             ## Defaults to all the entities found in the features_aggregation's from_obj
-            self.config['cohort_config'] = self._fill_cohort_config_missing()
+            self.config['cohort_config'] = fill_cohort_config_missing(self.config)
             ## Defaults to all the feature_aggregation's prefixes
-            self.config['feature_group_definition'] = self._fill_feature_group_definition()
+            self.config['feature_group_definition'] = fill_feature_group_definition(self.config)
 
         # if using a model grid preset, fill in the actual grid
         if self.config.get('model_grid_preset'):
             if self.config.get('grid_config'):
                 raise KeyError("There can only be one (cannot specify both model_grid_preset and grid_config)")
-            self.config['grid_config'] = self._fill_model_grid_presets(self.config.get('model_grid_preset'))
+            self.config['grid_config'] = self.fill_model_grid_presets(self.config.get('model_grid_preset'))
             # remove the "model_grid_preset" key now that we've filled out the grid so you could re-run
             # the resulting exepriment config
             self.config.pop('model_grid_preset')
@@ -846,126 +853,6 @@ class ExperimentBase(ABC):
             logging.info("Profiling stats of this Triage run calculated and written to %s"
                          "in cProfile format.",
                          store)
-
-    def _fill_timechop_config_missing(self):
-        """
-        Fill with default values the temporal_config params if they are missing
-        """
-        timechop_config = self.config['temporal_config']
-
-        default_config = {'model_update_frequency': '100y',
-                          'training_as_of_date_frequencies': '100y',
-                          'test_as_of_date_frequencies': '100y',
-                          'max_training_histories': '0d',
-                          'test_durations': '0d',
-                          }
-
-        # Checks if label_timespan is present
-        if 'label_timespans' in timechop_config.keys():
-            if any([k in timechop_config.keys() for k in ['training_label_timespans', 'test_labels_timespans']]):
-                raise KeyError("You can't always get what you want")
-            default_config['training_label_timespans'] = default_config['test_label_timespans'] = timechop_config['label_timespans']
-            timechop_config.pop('label_timespans') ## We don't need this value anymore
-
-        # Checks if some of the date range  limits  is missing, if so repalces with
-        # min, max accordingy from de from_objs
-        if any([k not in timechop_config.keys() for k in ['feature_start_time', 'feature_end_time', 'label_start_time', 'label_end_time']]):
-            from_query = "(select min({knowledge_date}) as min_date, max({knowledge_date}) as max_date from (select * from {from_obj}) as t)"
-
-            feature_aggregations = self.config['feature_aggregations']
-
-            from_queries = [from_query.format(knowledge_date = agg['knowledge_date_column'], from_obj=agg['from_obj']) for agg in feature_aggregations]
-
-            unions = "\n union \n".join(from_queries)
-
-            query = "select to_char(min(min_date), 'YYYY-MM-DD'), to_char(max(max_date), 'YYYY-MM-DD') from ({unions}) as u".format(unions=unions)
-
-            with self.db_engine.connect() as conn:
-                rs = conn.execute(query)
-                min_date, max_date = rs.fetchall()[0]
-
-            default_config['feature_start_time'] = default_config['label_start_time'] = min_date
-            default_config['feature_end_time'] = default_config['label_end_time'] = max_date
-
-        # Replaces missing values
-        default_config.update(timechop_config)
-
-        return default_config
-
-
-    def _fill_cohort_config_missing(self):
-        """
-        If none cohort_config section is provided, include all the entities by default
-        """
-        from_query = "(select entity_id, {knowledge_date} as knowledge_date from (select * from {from_obj}) as t)"
-
-        feature_aggregations = self.config['feature_aggregations']
-
-        from_queries = [from_query.format(knowledge_date = agg['knowledge_date_column'], from_obj=agg['from_obj']) for agg in feature_aggregations]
-
-        unions = "\n union \n".join(from_queries)
-
-        query = f"select distinct entity_id from ({unions}) as e" +" where knowledge_date < '{as_of_date}'"
-
-        cohort_config = self.config.get('cohort_config', {})
-        default_config = {'query': query, 'name': 'all_entities'}
-
-        default_config.update(cohort_config)
-
-        return default_config
-
-    def _fill_feature_group_definition(self):
-        """
-        If feature_group_definition is not presents, this function sets it to all
-        the distinct feature_aggregations' prefixes
-        """
-        feature_group_definition = self.config.get('feature_group_definition', {})
-        if not feature_group_definition:
-            feature_aggregations = self.config['feature_aggregations']
-
-            feature_group_definition['prefix'] = list({agg['prefix'] for agg in feature_aggregations})
-
-        return feature_group_definition
-
-    def _fill_model_grid_presets(self, grid_type):
-        """Load a preset model grid.
-
-           Args:
-                grid_type (string) The type of preset grid to load. May
-                    by `quickstart`, `small`, `medium`, `large`, or `texas`
-
-            Returns: (dict) a triage model grid config
-        """
-
-        # Load the model grid presets from a yaml file, which should be structured
-        # with grid-types as a top level key and each grid-type building on
-        presets_file = os.path.join(os.path.dirname(__file__), 'model_grid_presets.yaml')
-        with open(presets_file, 'r') as f:
-            model_grid_presets = yaml.safe_load(f)
-
-        # output is a collector for the resulting grid, so initialize it with the parameters
-        # at the level of preset grid we want and find the next-lowest level to incorporate
-        output = model_grid_presets[grid_type]['grid'].copy()
-        prev_type = model_grid_presets[grid_type]['prev']
-
-        # collapse the grid parameters down the levels until we reach one with no lower level
-        while prev_type is not None:
-            prev = model_grid_presets[prev_type]['grid'].copy()
-
-            # look for new model types and hyperparameters to incorporate into the output
-            for model_type in set(output.keys()).union(set(prev.keys())):
-                curr_model = output.get(model_type, {}).copy()
-                # if the model type exists in the lower-level preset, update any associated hyperparameter
-                # values in the output (those only in the higher level grid will pass through unchanged)
-                for hyperparam in prev.get(model_type, {}).keys():
-                    curr_model[hyperparam] = sorted(list(set(curr_model.get(hyperparam, []) + prev[model_type][hyperparam])), key=lambda x: x if x is not None else 0)
-                output[model_type] = curr_model
-
-            # traverse the linked list to one level deeper and repeat
-            prev_type = model_grid_presets[prev_type]['prev']
-
-        return output
-
 
     @experiment_entrypoint
     def run(self):
