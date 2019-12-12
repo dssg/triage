@@ -26,7 +26,7 @@ def prepare_experiment(config):
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=False,
-                skip_validation=True,
+                partial_run=True,
             )
             yield experiment
 
@@ -34,7 +34,6 @@ def prepare_experiment(config):
 class GetSplits(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
     }
@@ -57,7 +56,6 @@ class GetSplits(TestCase):
 class Cohort(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
         "cohort_config": sample_config()["cohort_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
@@ -83,7 +81,6 @@ class Cohort(TestCase):
 class Labels(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "feature_aggregations": sample_config()["feature_aggregations"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],

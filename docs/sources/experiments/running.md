@@ -200,14 +200,14 @@ Python: `SingleThreadedExperiment(..., save_predictions=False)`
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration), you will need to pass `skip_validation=True` when constructing your experiment object for a partial experiment.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration) and fill in missing values in some sections with defaults, you will need to pass `partial_run=True` when constructing your experiment object for a partial experiment (this will also avoid cleaning up intermediate tables from the run, equivalent to `cleanup=False`).
 
 Running parts of an experiment is only supported through the Python interface.
 
 
 ### Python
 
-1. `experiment.run()` will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with `cleanup=False`, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.
+1. `experiment.run()` will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. You can additionally view the intermediate tables that are built in the database, which are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.
 
 	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
 	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
