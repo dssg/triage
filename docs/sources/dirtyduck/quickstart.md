@@ -1,7 +1,6 @@
 # Quickstart guide to using Triage
 
 
-![workflow](images/quickstart.png "Triage Workflow")
 
 ### 1. Install Triage
 
@@ -10,6 +9,8 @@ Triage can be installed using pip or through python setup.py. It requires Python
 We also recommend installing triage inside a python virtual environment for your project so you don't have any conflicts with other packages installed on the machine. You can use virutalenv or pyenv to do that.
 
 [Instructions for installing Triage](https://github.com/dssg/triage/blob/master/README.rst) 
+
+![workflow](images/quickstart.png "Triage Workflow")
 
 ### 2. Structure your data
 
