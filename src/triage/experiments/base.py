@@ -4,9 +4,7 @@ import cProfile
 import marshal
 import random
 import time
-import os
 import itertools
-import yaml
 
 from descriptors import cachedproperty
 from timeout import timeout

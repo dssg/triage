@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import yaml
 
 def fill_timechop_config_missing(config, db_engine):
     """
