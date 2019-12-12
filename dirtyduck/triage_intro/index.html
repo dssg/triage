@@ -524,8 +524,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#feature-engineering" title="Feature engineering" class="md-nav__link">
-    Feature engineering
+  <a href="#feature-generation" title="Feature generation" class="md-nav__link">
+    Feature generation
   </a>
   
     <nav class="md-nav">
@@ -934,8 +934,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#feature-engineering" title="Feature engineering" class="md-nav__link">
-    Feature engineering
+  <a href="#feature-generation" title="Feature generation" class="md-nav__link">
+    Feature generation
   </a>
   
     <nav class="md-nav">
@@ -1022,15 +1022,47 @@
                 
                 
                 <h1 id="triage">Triage<a class="headerlink" href="#triage" title="Permanent link">#</a></h1>
-<p>Predictive analytics projects require coordinating many tasks, such as feature generation, classifier training, evaluation, and list generation. Each of these tasks is complicated in its own right, but it also needs to be combined with the other tasks throughout the course of the project.</p>
-<p>DSaPP built <code>triage</code> to facilitate the creation of supervised learning models, in particular <em>binary</em> classification models with a strong temporal component in the data.</p>
-<p>The dataset's temporal component mainly affects two modeling steps: <em>feature creation</em> (you need to be careful to avoid <em>leaking</em> information from the future through your <em>features</em>) and hyperparameter selection. <code>triage</code> solves both by splitting the data into temporal blocks and automating temporal cross-validation (TCC) and the feature generation.</p>
-<p><code>triage</code> uses the concept of an <em>experiment</em>. An <em>experiment</em> consists of a series of steps that aim to generate a good model for predicting the <em>label</em> of an entity in the data set. The steps are <em>data time-splitting</em>, <em>label generation</em>, <em>feature generation</em>, <em>matrix creation</em>, <em>model training</em>, <em>predictions</em>, and <em>model evaluation</em>. In each of these steps, <code>triage</code> will handle the temporal nuances of the data.</p>
-<p>Nowadays <code>triage</code> will help you to select the best model (<em>model selection</em>) and it allows you to explore and understand the behavior of your models using <strong>post-modeling</strong> techniques.</p>
-<p>You need to specify (via a configuration file) how you want to split your data temporally, which combination of machine learning algorithms and their hyperparameters you'd like to use, which kinds of features you want to generate, which subsets of those features you want to try in each model, and which metrics you'd like to use to evaluate performance and provide some criteria to select the best model.</p>
-<p>An <strong>experiment run</strong> consists in fitting every combination of algorithm, hyperparameters, and feature subsets to the temporally split data and evaluating their predictive performance on future data splits using the user's metrics.</p>
-<p><code>triage</code> calls a unique combination of algorithm, hyperparameters, and feature subsets a <code>model_group</code> and a model group fit to a specific data matrix a <code>model</code>. Our data typically span multiple time periods, so triage fits multiple models for each model group.</p>
-<p><code>triage</code> is simple to use, but it contains a lot of complex concepts that we will try to clarify in this section. First we will explain <em>how</em> to run <code>triage</code>, and then we will create a toy experiment that helps explain triage's main concepts.</p>
+<p>Predictive analytics projects require coordinating many tasks, such as
+feature generation, classifier training, evaluation, and list
+generation. Each of these tasks is complicated in its own right, but
+it also needs to be combined with the other tasks throughout the
+course of the project.</p>
+<p>DSaPP built <code>triage</code> to facilitate the creation of supervised learning
+models, in particular <em>binary</em> classification models with a strong
+temporal component in the data.</p>
+<p>The dataset's temporal component mainly affects two modeling steps:
+<em>feature creation</em> (you need to be careful to avoid <em>leaking</em>
+information from the future through your <em>features</em>) and
+hyperparameter selection. <code>triage</code> solves both by splitting the data
+into temporal blocks and automating temporal cross-validation (TCC)
+and the feature generation.</p>
+<p><code>triage</code> uses the concept of an <em>experiment</em>. An <em>experiment</em> consists
+of a series of steps that aim to generate a good model for predicting
+the <em>label</em> of an entity in the data set. The steps are <em>data
+time-splitting</em>, <em>label generation</em>, <em>feature generation</em>, <em>matrix
+creation</em>, <em>model training</em>, <em>predictions</em>, and <em>model evaluation</em>. In
+each of these steps, <code>triage</code> will handle the temporal nuances of the
+data.</p>
+<p>Nowadays <code>triage</code> will help you to select the best model (<em>model
+selection</em>) and it allows you to explore and understand the behavior
+of your models using <strong>post-modeling</strong> techniques.</p>
+<p>You need to specify (via a configuration file) how you want to split
+your data temporally, which combination of machine learning algorithms
+and their hyperparameters you'd like to use, which kinds of features
+you want to generate, which subsets of those features you want to try
+in each model, and which metrics you'd like to use to evaluate
+performance and provide some criteria to select the best model.</p>
+<p>An <strong>experiment run</strong> consists in fitting every combination of
+algorithm, hyperparameters, and feature subsets to the temporally
+split data and evaluating their predictive performance on future data
+splits using the user's metrics.</p>
+<p><code>triage</code> calls a unique combination of algorithm, hyperparameters, and
+feature subsets a <code>model_group</code> and a model group fit to a specific
+data matrix a <code>model</code>. Our data typically span multiple time periods,
+so triage fits multiple models for each model group.</p>
+<p><code>triage</code> is simple to use, but it contains a lot of complex concepts
+that we will try to clarify in this section. First we will explain
+<em>how</em> to run <code>triage</code>, and then we will create a toy experiment that  helps explain triage's main concepts.</p>
 <h2 id="triage-interface">Triage interface<a class="headerlink" href="#triage-interface" title="Permanent link">#</a></h2>
 <p>To run a <code>triage</code> experiment, you need the following:</p>
 <ul>
@@ -1351,20 +1383,61 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p>Two of the more important (and potentially confusing) sections are <code>temporal_config</code> and <code>feature_generation</code>. We will explain them in detail in the next sections.</p>
 <p><a id="orgecc6227"></a></p>
 <h2 id="temporal-crossvalidation">Temporal crossvalidation<a class="headerlink" href="#temporal-crossvalidation" title="Permanent link">#</a></h2>
-<p>Cross validation is a common technique to select a model that generalizes well to new data. Standard cross validation randomly splits the training data into subsets, fits models on all but one, and calculates the metric of interest (e.g. precision/recall) on the one left out, rotating through the subsets and leaving each out once. You select the model that performed best across the left-out sets, and then retrain it on the complete training data.</p>
-<p>Unfortunately, standard cross validation is inappropriate for most real-world data science problems. If your data have temporal correlations, standard cross validation lets the model peek into the future, training on some future observations and testing on past observations. To avoid this problem, you should design your training and testing to mimic how your model will be used, making predictions only using the data that would be available at that time (i.e. from the past).</p>
-<p>In temporal crossvalidation, rather than randomly splitting the dataset into training and test splits, temporal cross validation splits the data by time.</p>
-<p><code>triage</code> uses the <code>timechop</code> library for this purpose. <code>Timechop</code> will "chop" the data set in several temporal blocks. These blocks are then used for creating the features and matrices for training and evaluation of the machine learning models.</p>
-<p>Assume we want to select which restaurant (of two in our example dataset) we should inspect next year based on its higher risk of violating some condition. Also assume that the process of picking which facility is repeated every year on January 1st<sup><a id="fnr.5" class="footref" href="#fn.5">5</a></sup></p>
-<p>Following the problem description template given in Section <strong>Description of the problem to solve</strong>, the question that we'll attempt to answer is:</p>
+<p>Cross validation is a common technique to select a model that
+generalizes well to new data. Standard cross validation randomly
+splits the training data into subsets, fits models on all but one, and
+calculates the metric of interest (e.g. precision/recall) on the one
+left out, rotating through the subsets and leaving each out once. You
+select the model that performed best across the left-out sets, and
+then retrain it on the complete training data.</p>
+<p>Unfortunately, standard cross validation is inappropriate for most
+real-world data science problems. If your data have temporal
+correlations, standard cross validation lets the model peek into the
+future, training on some future observations and testing on past
+observations. To avoid this problem, you should design your training
+and testing to mimic how your model will be used, making predictions
+only using the data that would be available at that time (i.e. from
+the past).</p>
+<p>In temporal crossvalidation, rather than randomly splitting the
+dataset into training and test splits, temporal cross validation
+splits the data by time.</p>
+<p><code>triage</code> uses the <code>timechop</code> library for this purpose. <code>Timechop</code> will
+"chop" the data set in several temporal blocks. These blocks are then
+used for creating the features and matrices for training and
+evaluation of the machine learning models.</p>
+<p>Assume we want to select which restaurant (of two in our example
+dataset) we should inspect next year based on its higher risk of
+violating some condition. Also assume that the process of picking
+which facility is repeated every year on January 1st<sup><a id="fnr.5"
+class="footref" href="#fn.5">5</a></sup></p>
+<p>Following the problem description template given in Section
+<strong>Description of the problem to solve</strong>, the question that we'll
+attempt to answer is:</p>
 <blockquote>
 <p>Which facility ( <span><span class="MathJax_Preview">n=1</span><script type="math/tex">n=1</script></span> ) is likely to violate some inspected condition in the following year ( <span><span class="MathJax_Preview">X=1</span><script type="math/tex">X=1</script></span> )?</p>
 </blockquote>
-<p>The traditional approach in machine learning is splitting the data in training and test datasets. Train or fit the algorithm on the training data set to generate a train model and test or evaluate the model on the test data set. We will do the same here, but, with the help of <code>timechop</code> we will take in account the time:</p>
-<p>We will fit models on training set up to 2014-01-01 and see how well those models would have predicted 2015; fit more models on training set up to 2015-01-01 and see how well those models would have predicted 2016; and so on. That way, we choose models that have historically performed best at our task, forecasting. It’s why this approach is sometimes called <em>evaluation on a rolling forecast origin</em> because the origin at which the prediction is made rolls forward in time. <sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup></p>
+<p>The traditional approach in machine learning is splitting the data in
+training and test datasets. Train or fit the algorithm on the training
+data set to generate a train model and test or evaluate the model on
+the test data set. We will do the same here, but, with the help of
+<code>timechop</code> we will take in account the time:</p>
+<p>We will fit models on training set up to 2014-01-01 and see how well
+those models would have predicted 2015; fit more models on training
+set up to 2015-01-01 and see how well those models would have
+predicted 2016; and so on. That way, we choose models that have
+historically performed best at our task, forecasting. It’s why this
+approach is sometimes called <em>evaluation on a rolling forecast origin</em>
+because the origin at which the prediction is made rolls forward in
+time. <sup><a id="fnr.6" class="footref" href="#fn.6">6</a></sup></p>
 <p><img alt="img" src="../images/rolling-origin.png" title="Cartoonish view of temporal splitting for Machine Learning, each point represents an *as of date*, the orange area are the past of that *as of date* and is used for feature generation. The blue area is the label span, it lies in the future of the *as of date*." /></p>
-<p>The data at which the model will do the predictions is denominated as <em>as of date</em> in <code>triage</code> (<em>as of date</em> = January first in our example). The length of the prediction time window (1 year) is called <em>label span</em>. Training and predicting with a new model <em>as of date</em> (every year) is the <em>model update frequency</em>.</p>
-<p>Because it's inefficient to calculate by hand all the <em>as of dates</em> or prediction points, <code>timechop</code> will take care of that for us. To do so, we need to specify some more constraints besides the <em>label span</em> and the <em>model update frequency</em>:</p>
+<p>The data at which the model will do the predictions is denominated as
+<em>as of date</em> in <code>triage</code> (<em>as of date</em> = January first in our
+example). The length of the prediction time window (1 year) is called
+<em>label span</em>. Training and predicting with a new model <em>as of date</em>
+(every year) is the <em>model update frequency</em>.</p>
+<p>Because it's inefficient to calculate by hand all the <em>as of dates</em> or
+prediction points, <code>timechop</code> will take care of that for us. To do so,
+we need to specify some more constraints besides the <em>label span</em>  and the <em>model update frequency</em>:</p>
 <ul>
 <li>What is the date range covered by our data?</li>
 <li>What is the date range in which we have information about labels?</li>
@@ -1372,8 +1445,12 @@ triage experiment experiments/simple_test_skeleton.yaml
 <li>How far in the future you want to predict?</li>
 <li>How much of the past data do you want to use?</li>
 </ul>
-<p>With this information, <code>timechop</code> will calculate as-of train and test dates from the last date in which you have label data, using the label span in both test and train sets, plus the constraints just mentioned.</p>
-<p>In total <code>timechop</code> uses 11 configuration parameters<sup><a id="fnr.7" class="footref" href="#fn.7">7</a></sup>.</p>
+<p>With this information, <code>timechop</code> will calculate as-of train and test
+dates from the last date in which you have label data, using the label
+span in both test and train sets, plus the constraints just
+mentioned.</p>
+<p>In total <code>timechop</code> uses 11 configuration parameters<sup><a id="fnr.7"
+class="footref" href="#fn.7">7</a></sup>.</p>
 <ul>
 <li>
 <p>There are parameters related to the boundaries of the available data set:</p>
@@ -1394,7 +1471,11 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p><strong><code>test_label_timespans</code>:</strong> how much time is covered by test prediction (e.g., outcomes in the next 3 days? 2 months? 1 year?) (test prediction span)</p>
 </li>
 </ul>
-<p>These parameters will be used with the <em>outcomes</em> table to generate the <em>labels</em>. In an <strong>early warning</strong> setting, they will often have the same value. For <strong>inspections prioritization</strong>, this value typically equals <code>test_durations</code> and <code>model_update_frequency</code>.</p>
+<p>These parameters will be used with the <em>outcomes</em> table to
+generate the <em>labels</em>. In an <strong>early warning</strong> setting, they will
+often have the same value. For <strong>inspections prioritization</strong>,
+this value typically equals <code>test_durations</code> and
+<code>model_update_frequency</code>.</p>
 </li>
 <li>
 <p>Parameters related about how much data we want to use, both in the future and in the past relative to the <em>as-of date</em>:</p>
@@ -1404,26 +1485,42 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p><strong>NOTE</strong>: in the typical case of wanting a single prediction set immediately after model training, this should be set to 0 days</p>
 </li>
 </ul>
-<p>For early warning problems, <code>test_durations</code> should equal <code>model_update_frequency</code>. For inspection prioritization, organizational process determines the value: <em>how far out are you scheduling for?</em></p>
+<p>For early warning problems, <code>test_durations</code> should equal
+<code>model_update_frequency</code>. For inspection prioritization,
+organizational process determines the value: <em>how far out are you
+scheduling for?</em></p>
 <p>The equivalent of <code>test_durations</code> for the training matrices is <code>max_training_histories</code>:</p>
 <ul>
-<li><strong><code>max_training_histories</code>:</strong> the maximum amount of history for each entity to train on (early matrices may contain less than this time if it goes past label/feature start times). If patterns have changed significantly, models trained on recent data may outperform models trained on a much lengthier history.</li>
+<li><strong><code>max_training_histories</code>:</strong> the maximum amount of history
+    for each entity to train on (early matrices may contain less
+    than this time if it goes past label/feature start times). If
+    patterns have changed significantly, models trained on recent
+    data may outperform models trained on a much lengthier
+    history.</li>
 </ul>
 </li>
 <li>
 <p>Finally, we should specify how many rows per <code>entity_id</code> in the train and test matrix:</p>
 <ul>
 <li>
-<p><strong><code>training_as_of_date_frequencies</code>:</strong> how much time between rows for a single entity in a training matrix (list time between rows for same entity in train matrix).</p>
+<p><strong><code>training_as_of_date_frequencies</code>:</strong> how much time between
+    rows for a single entity in a training matrix (list time
+    between rows for same entity in train matrix).</p>
 </li>
 <li>
-<p><strong><code>test_as_of_date_frequencies</code>:</strong> how much time between rows for a single entity in a test matrix (time between rows for same entity in test matrix).</p>
+<p><strong><code>test_as_of_date_frequencies</code>:</strong> how much time between rows
+    for a single entity in a test matrix (time between rows for
+    same entity in test matrix).</p>
 </li>
 </ul>
 </li>
 </ul>
-<p>The following images (we will show how to generate them later) shows the time blocks created by several temporal configurations. We will change a parameter at a time so you could see how it affects the resulting blocks.</p>
-<p>If you want to try the modifications (or your own) and generate the temporal blocks images run the following (they'll be generated in &lt;./images/&gt;):</p>
+<p>The following images (we will show how to generate them later) shows
+the time blocks created by several temporal configurations. We will
+change a parameter at a time so you could see how it affects the  resulting blocks.</p>
+<p>If you want to try the modifications (or your own) and generate the
+temporal blocks images run the following (they'll be generated in
+&lt;./images/&gt;):</p>
 <div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion NOT in laptop&#39;s shell!</span>
 triage experiment experiments/simple_test_skeleton.yaml --show-timechop
 </pre></div>
@@ -1431,10 +1528,30 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
 <ul>
 <li>
 <p><code>{feature, label}_{end, start}_time</code></p>
-<p>The image below shows these <code>{feature, label}_start_time</code> are equal, as are the <code>{feature, label}_end_time</code>. These parameters show in the image as dashed vertical black lines. This setup will be our <strong>baseline</strong> example.</p>
-<p>The plot is divided in two horizontal lines ("Block 0" and "Block 1"). Each line is divided by vertical dashed lines &#x2013; the grey lines outline the boundaries of the data for features and data for labels, which in this image coincide. The black dash lines represent the beginning and the end of the test set. In "Block 0" those lines correspond to <code>2017</code> and <code>2018</code>, and in "Block 1" they correspond to <code>2016</code> and <code>2017</code>.</p>
-<p><img alt="img" src="./images/timechop_1.png" title="feature and label start, end time equal" /></p>
-<p>The shaded areas (in this image there is just one per block, but you will see other examples below) represents the span of the <em>as of dates</em>. They start with the oldest <em>as of date</em> and end with the latest. Each line inside that area represents the label span. Those lines begin at the <em>as of date</em>. At each <em>as of date</em>, timechop generates each entity's features (from the past) and labels (from the future). So in the image, we will have two sets of train/test datasets. Each facility will have 13 rows in "Block 0" and 12 rows in "Block 1". The trained models will predict the label using the features calculated for that test set <em>as of date</em>. The single line represents the label's time horizon in testing.</p>
+<p>The image below shows these <code>{feature, label}_start_time</code> are
+equal, as are the <code>{feature, label}_end_time</code>. These parameters
+show in the image as dashed vertical black lines. This setup will
+be our <strong>baseline</strong> example.</p>
+<p>The plot is divided in two horizontal lines ("Block 0" and "Block
+1"). Each line is divided by vertical dashed lines &#x2013; the
+grey lines outline the boundaries of the data for features and
+data for labels, which in this image coincide. The black dash
+lines represent the beginning and the end of the test set. In
+"Block 0" those lines correspond to <code>2017</code> and <code>2018</code>, and in
+"Block 1" they correspond to <code>2016</code> and <code>2017</code>.</p>
+<p><img alt="img" src="../images/timechop_1.png" title="feature and label start, end time equal" /></p>
+<p>The shaded areas (in this image there is just one per block, but
+you will see other examples below) represents the span of the <em>as
+of dates</em>. They start with the oldest <em>as of date</em> and end with
+the latest. Each line inside that area represents the label
+span. Those lines begin at the <em>as of date</em>. At each <em>as of date</em>,
+timechop generates each entity's features (from the past) and
+labels (from the future). So in the image, we will have two sets
+of train/test datasets. Each facility will have 13 rows in "Block
+0" and 12 rows in "Block 1". The trained models will predict the
+label using the features calculated for that test set <em>as of
+date</em>. The single line represents the label's time horizon in
+testing.</p>
 <p>This is the temporal configuration that generated the previous image:</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1453,8 +1570,11 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;1y&#39;</span>
 </pre></div>
 
-<p>In that configuration the date ranges of features and labels are equal, but they can be different (maybe you have more data for features that data for labels) as is shown in the following image and in their configuration parameters.</p>
-<p><img alt="img" src="./images/timechop_2.png" title="feature&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt; different different that label&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt;." /></p>
+<p>In that configuration the date ranges of features and labels are
+equal, but they can be different (maybe you have more data for
+features that data for labels) as is shown in the following image
+and in their configuration parameters.</p>
+<p><img alt="img" src="../images/timechop_2.png" title="feature&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt; different different that label&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt;." /></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2010-01-01&#39;</span>   <span class="c1"># &lt;------- The change happened here!</span>
     <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-01-01&#39;</span>
@@ -1475,7 +1595,10 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
 </li>
 <li>
 <p><code>model_update_frequency</code></p>
-<p>From our <strong>baseline</strong> <code>temporal_config</code> example (<a href="#org5f54d1f">102</a>), we will change how often we want a new model, which generates more time blocks (if there are time-constrained data, obviously).</p>
+<p>From our <strong>baseline</strong> <code>temporal_config</code> example
+(<a href="#org5f54d1f">102</a>), we will change how often we want a new
+model, which generates more time blocks (if there are
+time-constrained data, obviously).</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
     <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-01-01&#39;</span>
@@ -1493,7 +1616,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;1y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_3.png" title="A smaller model&lt;sub&gt;update&lt;/sub&gt;&lt;sub&gt;frequency&lt;/sub&gt; (from 1y to 6month) (The number of blocks grew)" /></p>
+<p><img alt="img" src="../images/timechop_3.png" title="A smaller model&lt;sub&gt;update&lt;/sub&gt;&lt;sub&gt;frequency&lt;/sub&gt; (from 1y to 6month) (The number of blocks grew)" /></p>
 </li>
 <li>
 <p><code>max_training_histories</code></p>
@@ -1515,7 +1638,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>  <span class="c1"># &lt;------- The change happened here!</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_4.png" title="The size of the block is bigger now" /></p>
+<p><img alt="img" src="../images/timechop_4.png" title="The size of the block is bigger now" /></p>
 </li>
 <li>
 <p><code>_as_of_date_frequencies</code> and <code>test_durations</code></p>
@@ -1536,7 +1659,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_5.png" title="Less rows per entity in the training block" /></p>
+<p><img alt="img" src="../images/timechop_5.png" title="Less rows per entity in the training block" /></p>
 <p>Now, change <code>test_as_of_date_frequencies</code>:</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1555,7 +1678,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_6.png" title="We should get more rows per entity in the test matrix, but that didn't happen. Why?" /></p>
+<p><img alt="img" src="../images/timechop_6.png" title="We should get more rows per entity in the test matrix, but that didn't happen. Why?" /></p>
 <p>Nothing changed because the test set doesn't have "space" to allow more spans. The "space" is controlled by <code>test_durations</code>, so let's change it to <code>6month</code>:</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1574,7 +1697,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_7.png" title="The test duration is bigger now, so we got 6 rows (since the &quot;base&quot; frequency is 1 month)" /></p>
+<p><img alt="img" src="../images/timechop_7.png" title="The test duration is bigger now, so we got 6 rows (since the &quot;base&quot; frequency is 1 month)" /></p>
 <p>So, now we will move both parameters: <code>test_durations</code>, <code>test_as_of_date_frequencies</code></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1593,7 +1716,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_8.png" title="With more room in testing, now test&lt;sub&gt;as&lt;/sub&gt;&lt;sub&gt;of&lt;/sub&gt;&lt;sub&gt;date&lt;/sub&gt;&lt;sub&gt;frequencies&lt;/sub&gt; has some effect." /></p>
+<p><img alt="img" src="../images/timechop_8.png" title="With more room in testing, now test&lt;sub&gt;as&lt;/sub&gt;&lt;sub&gt;of&lt;/sub&gt;&lt;sub&gt;date&lt;/sub&gt;&lt;sub&gt;frequencies&lt;/sub&gt; has some effect." /></p>
 </li>
 <li>
 <p><code>_label_timespans</code></p>
@@ -1614,7 +1737,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_9.png" title="The label time horizon in the test dataset now is smaller" /></p>
+<p><img alt="img" src="../images/timechop_9.png" title="The label time horizon in the test dataset now is smaller" /></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
     <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-01-01&#39;</span>
@@ -1632,17 +1755,29 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="./images/timechop_10.png" title="The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity." /></p>
+<p><img alt="img" src="../images/timechop_10.png" title="The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity." /></p>
 <p>That's it! Now you have the power to bend time!<sup><a id="fnr.8" class="footref" href="#fn.8">8</a></sup></p>
 <p>With the time blocks defined, <code>triage</code> will create the <em>labels</em> and then the features for our train and test sets. We will discuss <em>features</em> in the following section.</p>
 </li>
 </ul>
 <p><a id="orga9dbe41"></a></p>
-<h2 id="feature-engineering">Feature engineering<a class="headerlink" href="#feature-engineering" title="Permanent link">#</a></h2>
-<p>We will show how to create features using the <em>experiments config file</em>. <code>triage</code> uses <code>collate</code> for this.<sup><a id="fnr.9" class="footref" href="#fn.9">9</a></sup> The <code>collate</code> library controls the generation of features (including the imputation rules for each feature generated) using the time blocks generated by <code>timechop</code>. <code>Collate</code> helps the modeler create features based on <em>spatio-temporal aggregations</em> into the <em>as of date</em>. <code>Collate</code> generates <code>SQL</code> queries that will create <em>features</em> per each <em>as of date</em>.</p>
-<p>As before, we will try to mimic what <code>triage</code> does behind the scenario. <code>Collate</code> will help you to create features based on the following template:</p>
+<h2 id="feature-generation">Feature generation<a class="headerlink" href="#feature-generation" title="Permanent link">#</a></h2>
+<p>We will show how to create features using the <em>experiments config
+file</em>. <code>triage</code> uses <code>collate</code> for this.<sup><a id="fnr.9"
+class="footref" href="#fn.9">9</a></sup> The <code>collate</code> library
+controls the generation of features (including the imputation rules
+for each feature generated) using the time blocks generated by
+<code>timechop</code>. <code>Collate</code> helps the modeler create features based on
+<em>spatio-temporal aggregations</em> into the <em>as of date</em>. <code>Collate</code>
+generates <code>SQL</code> queries that will create <em>features</em> per each <em>as of
+date</em>.</p>
+<p>As before, we will try to mimic what <code>triage</code> does behind the
+scenario. <code>Collate</code> will help you to create features based on the
+following template:</p>
 <blockquote>
-<p>For a given <em>as of date</em>, how the <em>aggregation function</em> operates into a column taking into account a previous <em>time interval</em> and some <em>attributes</em>.</p>
+<p>For a given <em>as of date</em>, how the <em>aggregation function</em> operates
+into a column taking into account a previous <em>time interval</em> and
+some <em>attributes</em>.</p>
 </blockquote>
 <p>Two possible features could be framed as:</p>
 <div class="highlight"><pre><span></span>As of 2016-01-01, how many inspections
@@ -1897,7 +2032,12 @@ facility had in the previous 6 months?
         <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
 </pre></div>
 
-<p><code>feature_aggregations</code> is a <code>yaml</code> list<sup><a id="fnr.10" class="footref" href="#fn.10">10</a></sup> of <em>feature groups construction specification</em> or just <em>feature group</em>. A <em>feature group</em> is a way of grouping several features that share <code>intervals</code> and <code>groups</code>. <code>triage</code> requires the following configuration parameter for every <em>feature group</em>:</p>
+<p><code>feature_aggregations</code> is a <code>yaml</code> list<sup><a id="fnr.10"
+class="footref" href="#fn.10">10</a></sup> of <em>feature groups
+construction specification</em> or just <em>feature group</em>. A <em>feature group</em>
+is a way of grouping several features that share <code>intervals</code> and
+<code>groups</code>. <code>triage</code> requires the following configuration parameter for
+every <em>feature group</em>:</p>
 <ul>
 <li><strong><code>prefix</code>:</strong> This will be used for name of the <em>feature</em> created</li>
 <li><strong><code>from_obj</code>:</strong> Represents a <code>TABLE</code> object in <code>PostgreSQL</code>. You can pass a <em>table</em> like in the example above (<code>semantic.events</code>) or a <code>SQL</code> query that returns a table. We will see an example of this later. <code>triage</code> will use it like the <code>FROM</code> clause in the <code>SQL</code> query.</li>
@@ -1905,9 +2045,26 @@ facility had in the previous 6 months?
 <li><strong><code>intervals</code>:</strong> A <code>yaml</code> list. <code>triage</code> will create one feature per interval listed.</li>
 <li><strong><code>groups</code>:</strong> A <code>yaml</code> list of the attributes that we will use to aggregate. This will be translated to a <code>SQL</code> <code>GROUP BY</code> by <code>triage</code>.</li>
 </ul>
-<p>The last section to discuss is <code>imputation</code>. Imputation is very important step in the modeling, and you should carefully think about how you will impute the missing values in the feature. After deciding the best way of impute <em>each</em> feature, you should avoid leakage (For example, imagine that you want to impute with the <strong>mean</strong> one feature. You could have leakage if you take all the values of the column, including ones of the future to calculate the imputation). We will return to this later in this tutorial.</p>
-<p><code>Collate</code> is in charge of creating the <code>SQL</code> agregation queries. Another way of thinking about it is that <code>collate</code> encapsulates the <code>FROM</code> part of the query (<code>from_obj</code>) as well as the <code>GROUP BY</code> columns (<code>groups</code>).</p>
-<p><code>triage</code> (<code>collate</code>) supports two types of objects to be aggregated: <code>aggregates</code> and <code>categoricals</code> (more on this one later)<sup><a id="fnr.11" class="footref" href="#fn.11">11</a></sup>. The <code>aggregates</code> subsection represents a <code>yaml</code> list of <em>features</em> to be created. Each element on this represents a column (<code>quantity</code>, in the example, the whole row <code>*</code>) and an alias (<code>total</code>), defines the <code>imputation</code> strategy for <code>NULLs</code>, and the <code>metric</code> refers to the <code>aggregation function</code> to be applied to the <code>quantity</code> (<code>count</code>).</p>
+<p>The last section to discuss is <code>imputation</code>. Imputation is very
+important step in the modeling, and you should carefully think about
+how you will impute the missing values in the feature. After deciding
+the best way of impute <em>each</em> feature, you should avoid leakage (For
+example, imagine that you want to impute with the <strong>mean</strong> one
+feature. You could have leakage if you take all the values of the
+column, including ones of the future to calculate the imputation). We
+will return to this later in this tutorial.</p>
+<p><code>Collate</code> is in charge of creating the <code>SQL</code> agregation
+queries. Another way of thinking about it is that <code>collate</code>
+encapsulates the <code>FROM</code> part of the query (<code>from_obj</code>) as well as the
+<code>GROUP BY</code> columns (<code>groups</code>).</p>
+<p><code>triage</code> (<code>collate</code>) supports two types of objects to be aggregated:
+<code>aggregates</code> and <code>categoricals</code> (more on this one later)<sup><a
+id="fnr.11" class="footref" href="#fn.11">11</a></sup>. The
+<code>aggregates</code> subsection represents a <code>yaml</code> list of <em>features</em> to be
+created. Each element on this represents a column (<code>quantity</code>, in the
+example, the whole row <code>*</code>) and an alias (<code>total</code>), defines the
+<code>imputation</code> strategy for <code>NULLs</code>, and the <code>metric</code> refers to the
+<code>aggregation function</code> to be applied to the <code>quantity</code> (<code>count</code>).</p>
 <p><code>triage</code> will generate the following (or a very similar one), one per each combination of <code>interval</code> &times; <code>groups</code> &times; <code>quantity</code>:</p>
 <div class="highlight"><pre><span></span><span class="k">select</span>
   <span class="n">metric</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span> <span class="k">as</span> <span class="k">alias</span>
@@ -2005,8 +2162,18 @@ facility had in the previous 6 months?
       <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
 </pre></div>
 
-<p>There are several changes. First, the imputation strategy in this new <em>feature group</em> is for every categorical features in that feature group (in that example only one). The next change is the type: instead of <code>aggregates</code>, it's <code>categoricals</code>. <code>categoricals</code> define a <code>yaml</code> list too. Each <code>categorical</code> feature needs to define a <code>column</code> to be aggregated and the query to get all the distinct values.</p>
-<p>With this configuration, <code>triage</code> will generate two tables, one per <em>feature group</em>. The new table will be <code>features.risks_aggregation_imputed</code>. This table will have more columns: <code>intervals</code> (5) &times; <code>groups</code> (1) &times; <code>metric</code> (1) &times; <em>features</em> (1) &times; <em>number of choices returned by the query</em>.</p>
+<p>There are several changes. First, the imputation strategy in this new
+<em>feature group</em> is for every categorical features in that feature
+group (in that example only one). The next change is the type: instead
+of <code>aggregates</code>, it's <code>categoricals</code>. <code>categoricals</code> define a <code>yaml</code>
+list too. Each <code>categorical</code> feature needs to define a <code>column</code> to be
+aggregated and the query to get all the distinct values.</p>
+<p>With this configuration, <code>triage</code> will generate two tables, one per
+<em>feature group</em>. The new table will be
+<code>features.risks_aggregation_imputed</code>. This table will have more
+columns: <code>intervals</code> (5) &times; <code>groups</code> (1) &times; <code>metric</code> (1)
+&times; <em>features</em> (1) &times; <em>number of choices returned by the
+query</em>.</p>
 <p>The query:</p>
 <div class="highlight"><pre><span></span><span class="k">select</span> <span class="k">distinct</span> <span class="n">risk</span> <span class="k">from</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
 </pre></div>
@@ -2032,7 +2199,13 @@ facility had in the previous 6 months?
 </tr>
 </tbody>
 </table>
-<p>returns 4 possible values (including <code>NULL</code>). When dealing with categorical aggregations you need to be careful. Could be the case that in some period of time, in your data, you don't have all the possible values of the categorical variable. This could cause problems down the road. Triage allows you to specify the possible values (<em>choices</em>) of the variable. Instead of using <code>choice_query</code>, you could use <code>choices</code> as follows:</p>
+<p>returns 4 possible values (including <code>NULL</code>). When dealing with
+categorical aggregations you need to be careful. Could be the case
+that in some period of time, in your data, you don't have all the
+possible values of the categorical variable. This could cause problems
+down the road. Triage allows you to specify the possible values
+(<em>choices</em>) of the variable. Instead of using <code>choice_query</code>, you
+could use <code>choices</code> as follows:</p>
 <div class="highlight"><pre><span></span><span class="nt">feature_aggregations</span><span class="p">:</span>
   <span class="p p-Indicator">-</span>
     <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;inspections&#39;</span>
@@ -2128,8 +2301,14 @@ facility had in the previous 6 months?
       <span class="p p-Indicator">-</span> <span class="s">&#39;zip_code&#39;</span>
 </pre></div>
 
-<p>The number of features created in the table <code>features.risks_aggregation_imputed</code> is now 60 (<code>intervals</code> (5) &times; <code>groups</code> (2) &times; <code>metric</code> (2) &times; <em>features</em> (1) &times; <em>number of choices</em> (3).</p>
-<p><code>Triage</code> will add several imputation <em>flag</em> (binary) columns per feature. Those columns convey information about if that particular value was <em>imputed</em> or <em>not</em>. So in the last counting we need to add 20 more columns to a grand total of 80 columns.</p>
+<p>The number of features created in the table
+<code>features.risks_aggregation_imputed</code> is now 60 (<code>intervals</code> (5)
+&times; <code>groups</code> (2) &times; <code>metric</code> (2) &times; <em>features</em> (1)
+&times; <em>number  of choices</em> (3).</p>
+<p><code>Triage</code> will add several imputation <em>flag</em> (binary) columns per
+feature. Those columns convey information about if that particular
+value was <em>imputed</em> or <em>not</em>. So in the last counting we need to add
+20 more columns to a grand total of 80 columns.</p>
 <h3 id="imputation">Imputation<a class="headerlink" href="#imputation" title="Permanent link">#</a></h3>
 <p><code>Triage</code> currently supports the following imputation strategies:</p>
 <ul>
@@ -2143,7 +2322,14 @@ facility had in the previous 6 months?
 <p><strong>zero:</strong> Same that the previous one, but the constant is zero.</p>
 </li>
 <li>
-<p><strong>zero<sub>noflag</sub>:</strong> Sometimes, the absence (i.e. a NULL) doesn't mean that the value is missing, that actually means that the event didn't happen to that entity. For example a <code>NULL</code> in the <code>inspections_entity_id_1month_total_count</code> column in <code>features.inspections_aggreagtion_imputed</code> doesn't mean that the value is missing, it means that <em>zero</em> inspections happen to that facility in the last month. Henceforth, the <em>flag</em> column is not needed.</p>
+<p><strong>zero<sub>noflag</sub>:</strong> Sometimes, the absence (i.e. a NULL)
+    doesn't mean that the value is missing, that actually means that
+    the event didn't happen to that entity. For example a <code>NULL</code> in
+    the <code>inspections_entity_id_1month_total_count</code> column in
+    <code>features.inspections_aggreagtion_imputed</code> doesn't mean that the
+    value is missing, it means that <em>zero</em> inspections happen to that
+    facility in the last month. Henceforth, the <em>flag</em> column is not
+    needed.</p>
 </li>
 </ul>
 <p>Only for aggregates:</p>
@@ -2199,8 +2385,15 @@ facility had in the previous 6 months?
 <blockquote>
 <p>This section is a little technical, you can skip it if you fell like it.</p>
 </blockquote>
-<p>By default, <code>triage</code> will use the biggest column type for the features table (<code>integer</code>, <code>numeric</code>, etc). This could lead to humongous tables, with sizes several hundred of gigabytes. <code>Triage</code> took that decision, because it doesn't know anything about the possible values of your data (e.g. Is it possible to have millions of inspections in one month? or just a few dozens?).</p>
-<p>If you are facing this difficulty, you can force <code>triage</code> to <em>cast</em> the column in the <em>features</em> table. Just add <code>coltype</code> to the <code>aggregate/categorical</code> block:</p>
+<p>By default, <code>triage</code> will use the biggest column type for the features
+table (<code>integer</code>, <code>numeric</code>, etc). This could lead to humongous
+tables, with sizes several hundred of gigabytes. <code>Triage</code> took that
+decision, because it doesn't know anything about the possible values
+of your data (e.g. Is it possible to have millions of inspections in
+one month? or just a few dozens?).</p>
+<p>If you are facing this difficulty, you can force <code>triage</code> to <em>cast</em>
+the column in the <em>features</em> table. Just add <code>coltype</code> to the
+<code>aggregate/categorical</code> block:</p>
 <div class="highlight"><pre><span></span> <span class="nt">aggregates</span><span class="p">:</span>
    <span class="p p-Indicator">-</span>
     <span class="nt">quantity</span><span class="p">:</span>
@@ -2212,26 +2405,50 @@ facility had in the previous 6 months?
 <p><a id="org91afffc"></a></p>
 <h2 id="the-grid">The Grid<a class="headerlink" href="#the-grid" title="Permanent link">#</a></h2>
 <p>Before applying Machine Learning to your dataset you don't know which combination of algorithm and hyperparameters will be the best given a specific matrix.</p>
-<p><code>Triage</code> approaches this problem exploring a algorithm + hyperparameters + feature groups grid. At this time, this exploration is a exhaustive one, i.e. it covers the complete grid, so you would get (number of algorithms) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span> (number of hyperparameters) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span> (number of feature group strategies) models groups. The number of models trained is (number of model groups) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span> (number of time splits).</p>
+<p><code>Triage</code> approaches this problem exploring a algorithm +
+hyperparameters + feature groups grid. At this time, this exploration
+is a exhaustive one, i.e. it covers the complete grid, so you would
+get (number of algorithms) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span> (number of hyperparameters)
+<span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span> (number of feature group strategies) models groups. The
+number of models trained is (number of model groups) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span>
+(number of time splits).</p>
 <p>In our simple experiment the grid is very simple:</p>
 <div class="highlight"><pre><span></span><span class="nt">grid_config</span><span class="p">:</span>
     <span class="s">&#39;sklearn.dummy.DummyClassifier&#39;</span><span class="p p-Indicator">:</span>
         <span class="nt">strategy</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">most_frequent</span><span class="p p-Indicator">]</span>
 </pre></div>
 
-<p>Just one algorithm and one hyperparameter (also we have only one feature group strategy: <code>all</code>), and two time splits. So we will get 2 models, 1 model group.</p>
-<p>Keep in mind that the grid is providing more than way to select a model. You can use the tables generated by the grid (see section <a href="../ml_governance/">Machine Learning Governance</a> ) and <em>analyze</em> and <em>understand</em> your data. In other words, analyzing the results (evaluations, predictions, hyperparameter space, etc.) is like applying <strong>Data mining</strong> concepts to your data using Machine learning. We will return to this when we apply post modeling to our models.</p>
+<p>Just one algorithm and one hyperparameter (also we have only one
+feature group strategy: <code>all</code>), and two time splits. So we will get 2
+models, 1 model group.</p>
+<p>Keep in mind that the grid is providing more than way to select a
+model. You can use the tables generated by the grid (see section
+<a href="../ml_governance/">Machine Learning Governance</a> ) and <em>analyze</em> and
+<em>understand</em> your data. In other words, analyzing the results
+(evaluations, predictions, hyperparameter space, etc.) is like
+applying <strong>Data mining</strong> concepts to your data using Machine
+learning. We will return to this when we apply post modeling to our
+models.</p>
 <h2 id="audition">Audition<a class="headerlink" href="#audition" title="Permanent link">#</a></h2>
-<p><strong>Audition</strong> is a tool for helping you select a subset of trained classifiers from a triage experiment. Often, production-scale experiments will come up with thousands of trained models, and sifting through all of those results can be time-consuming even after calculating the usual basic metrics like precision and recall.</p>
+<p><strong>Audition</strong> is a tool for helping you select a subset of trained
+classifiers from a triage experiment. Often, production-scale
+experiments will come up with thousands of trained models, and sifting
+through all of those results can be time-consuming even after
+calculating the usual basic metrics like precision and recall.</p>
 <p>You will be facing questions as:</p>
 <ul>
 <li>Which metrics matter most?</li>
 <li>Should you prioritize the best metric value over time or treat recent data as most important?</li>
 <li>Is low metric variance important?</li>
 </ul>
-<p>The answers to questions like these may not be obvious. <strong>Audition</strong> introduces a structured, semi-automated way of filtering models based on what you consider important.</p>
+<p>The answers to questions like these may not be obvious. <strong>Audition</strong>
+introduces a structured, semi-automated way of filtering models based
+on what you consider important.</p>
 <h2 id="post-modeling">Post-modeling<a class="headerlink" href="#post-modeling" title="Permanent link">#</a></h2>
-<p>As the name indicates, <strong>postmodeling</strong> occurs <strong>after</strong> you have modeled (potentially) thousands of models (different hyperparameters, different time windows, different algorithms, etc), and using <code>audition</code> you <em>pre</em> selected a small number of models.</p>
+<p>As the name indicates, <strong>postmodeling</strong> occurs <strong>after</strong> you have
+modeled (potentially) thousands of models (different hyperparameters,
+different time windows, different algorithms, etc), and using
+<code>audition</code> you <em>pre</em> selected a small number of models.</p>
 <p>Now, with the <strong>postmodeling</strong> tools you will be able to select your final model for <em>production</em> use.</p>
 <p>Triage's postmodeling capabilities include:</p>
 <ul>
@@ -2243,9 +2460,11 @@ facility had in the previous 6 months?
 <li>Cross-tab analysis</li>
 <li>Bias analysis</li>
 </ul>
-<p>If you want to see <strong>Audition</strong> and <strong>Postmodeling</strong> in action, we will use them after <strong>Inspections</strong> and <strong>EIS modeling</strong>.</p>
+<p>If you want to see <strong>Audition</strong> and <strong>Postmodeling</strong> in action, we
+will use them after <strong>Inspections</strong> and <strong>EIS modeling</strong>.</p>
 <h2 id="final-cleaning">Final cleaning<a class="headerlink" href="#final-cleaning" title="Permanent link">#</a></h2>
-<p>In the next section we will start modeling, so it is a good idea to clean the <code>{test, train}_results</code> schemas and have a fresh start:</p>
+<p>In the next section we will start modeling, so it is a good idea to
+clean the <code>{test, train}_results</code> schemas and have a fresh start:</p>
 <div class="highlight"><pre><span></span><span class="k">select</span> <span class="n">nuke_triage</span><span class="p">();</span>
 </pre></div>
 
