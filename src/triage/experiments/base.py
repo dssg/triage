@@ -114,7 +114,14 @@ class ExperimentBase(ABC):
         profile=False,
         save_predictions=True,
         skip_validation=False,
+        partial_run=False,
     ):
+        # For a partial run, skip validation and avoid cleaning up
+        # we'll also skip filling default config values below
+        if partial_run:
+            cleanup=False
+            skip_validation=True
+
         experiment_kwargs = bind_kwargs(
             self.__class__,
             **{key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
@@ -143,13 +150,14 @@ class ExperimentBase(ABC):
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.features_ignore_cohort = features_ignore_cohort
 
-
-        ## Defaults to sane values
-        self.config['temporal_config'] = self._fill_timechop_config_missing()
-        ## Defaults to all the entities found in the features_aggregation's from_obj
-        self.config['cohort_config'] = self._fill_cohort_config_missing()
-        ## Defaults to all the feature_aggregation's prefixes
-        self.config['feature_group_definition'] = self._fill_feature_group_definition()
+        # only fill default values for full runs
+        if not partial_run:
+            ## Defaults to sane values
+            self.config['temporal_config'] = self._fill_timechop_config_missing()
+            ## Defaults to all the entities found in the features_aggregation's from_obj
+            self.config['cohort_config'] = self._fill_cohort_config_missing()
+            ## Defaults to all the feature_aggregation's prefixes
+            self.config['feature_group_definition'] = self._fill_feature_group_definition()
 
         # if using a model grid preset, fill in the actual grid
         if self.config.get('model_grid_preset'):
