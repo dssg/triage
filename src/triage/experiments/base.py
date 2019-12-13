@@ -158,7 +158,7 @@ class ExperimentBase(ABC):
         # only fill default values for full runs
         if not partial_run:
             ## Defaults to sane values
-            self.config['temporal_config'] = fill_timechop_config_missing(self.config, self.db_connection)
+            self.config['temporal_config'] = fill_timechop_config_missing(self.config, self.db_engine)
             ## Defaults to all the entities found in the features_aggregation's from_obj
             self.config['cohort_config'] = fill_cohort_config_missing(self.config)
             ## Defaults to all the feature_aggregation's prefixes
