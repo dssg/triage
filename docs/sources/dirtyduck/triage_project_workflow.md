@@ -17,7 +17,7 @@ The configuration file has a lot of sections. In the first iteration, we'll set 
 
 1. Define `outcome/label` of interest: This is a SQL query that defines outcome we want to predict and needs to return The query must return two columns: 
 entity_id and outcome, based on a given as_of_date and label_timespan. 
-See our (guide to Labels)[https://dssg.github.io/triage/experiments/cohort-labels/]
+See our [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/)
 2. Define `training_label_
 timespan` ( = '12month' for example for predict one year out)
 3. Specify `features` (at least one is neded to run Triage)
