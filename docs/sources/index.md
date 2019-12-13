@@ -13,9 +13,9 @@ While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an en
 
 ## How to get started with Triage?
 
-### [Go through a quick tutorial with sample data]()
+### [Go through a quick tutorial with sample data](dirtyduck/index.md)
 
-### [Get started with your own project and data]()
+### [Get started with your own project and data](quickstart.md)
 
 
 

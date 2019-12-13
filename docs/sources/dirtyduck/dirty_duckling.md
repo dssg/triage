@@ -257,6 +257,6 @@ are all set to do your own modeling, but if you want to go deeper in
 all the things that `triage` could do for you, continue reading:
 
 
-- [Take a deeper look at triage through this example](problem_description.md)
+### [Take a deeper look at triage through this example](problem_description.md)
 
-- [Get started with your own project and data](../quickstart.md)
+### [Get started with your own project and data](../quickstart.md)
