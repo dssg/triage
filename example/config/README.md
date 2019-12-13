@@ -14,23 +14,27 @@ Also check out the example file `experiment.yaml`.
 
 ### Experiment Metadata
 - `model_comment` (optional): will end up in the model_comment column of the models table for each model created in this experiment.
-- `random_seed`: will be set in Python at the beginning of the experiment and affect the generation of all model seeds.
+- `random_seed` (optional): will be set in Python at the beginning of the experiment and affect the generation of all model seeds. If omitted, a random value will be chosen and recorded in the database to allow for future replication.
 
 ### Time Splitting
 The time window to look at, and how to divide the window into train/test splits
 
 - `temporal_config`:
-    - `feature_start_time`: earliest date included in features
-    - `feature_end_time`: latest date included in features
-    - `label_start_time`: earliest date for which labels are avialable
-    - `label_end_time`: day AFTER last label date (all dates in any model are before this date)
-    - `model_update_frequency`: how frequently to retrain models
-    - `training_as_of_date_frequencies`: time between as of dates for same entity in train matrix
-    - `test_as_of_date_frequencies`: time between as of dates for same entity in test matrix
-    - `max_training_histories`: length of time included in a train matrix
-    - `test_durations`: length of time included in a test matrix (0 days will give a single prediction immediately after training end)
+    - `feature_start_time`: earliest date included in features (default: earliest date in feature_aggregations from_objs)
+    - `feature_end_time`: latest date included in features (default: latest date in feature_aggregations from_objs)
+    - `label_start_time`: earliest date for which labels are avialable (default: earliest date in feature_aggregations from_objs)
+    - `label_end_time`: day AFTER last label date (all dates in any model are before this date) (default: latest date in feature_aggregations from_objs)
+    - `model_update_frequency`: how frequently to retrain models (default: 100y)
+    - `training_as_of_date_frequencies`: time between as of dates for same entity in train matrix (default: 100y)
+    - `test_as_of_date_frequencies`: time between as of dates for same entity in test matrix (default: 100y)
+    - `max_training_histories`: length of time included in a train matrix (default: 0d)
+    - `test_durations`: length of time included in a test matrix (0 days will give a single prediction immediately after training end) (default: 0d)
     - `training_label_timespans`: time period across which outcomes are labeled in train matrices
     - `test_label_timespans`: time period across which outcomes are labeled in test matrices
+
+Note that if your label timespan is the same in both testing and training, you can simply set a single `label_timespans` parameter instead.
+
+Be mindful that this values were selected in order to simplify the beginnings of your project, and are by no means *suggested* values for all projects.
 
 ### Cohort Config
 Cohorts are configured by passing a query with placeholders for the **as_of_date**.
@@ -39,6 +43,7 @@ Cohorts are configured by passing a query with placeholders for the **as_of_date
     - `qurey`: The `query` key should have a query, parameterized with an `'{as_of_date}'`, to select the entity_ids that should be included for a given date. The `{as_of_date}` will be replaced with each `as_of_date` that the experiment needs. The returned `entity_id` must be an integer.
     - `name`: You may enter a `name` for your configuration. This will be included in the metadata for each matrix and used to group models. If you don't pass one, the string `default` will be used.
 
+The cohort config section of your experiment config can optionally be omitted. If you don't specify it, it will default to all the entities in your event's tables  (from_obj in feature_aggregations). The name by default in this case will be 'all_entities'. As with the time splitting defaults, this may be a good starting point, but you will likely want to refine your cohort definition as you iterate on your project.
 
 ### Label Generation
 Labels are configured by passing a query with placeholders for the `as_of_date` and `label_timespan`.
@@ -115,10 +120,10 @@ Available Imputation Rules:
     - `intervals`: The time intervals over which to aggregate features
     - `groups`: A list of different columns to separately group by
 
-### Feature Grouping
+### Feature Grouping (optional)
 define how to group features and generate combinations
 
-- `feature_group_definition`: `feature_group_definition` allows you to create groups/subset of your features by different criteria. One can either specify `tables` or `prefix`. 
+- `feature_group_definition`: `feature_group_definition` allows you to create groups/subset of your features by different criteria. One can either specify `tables` or `prefix` (If omitted, all unique prefixes present in `feature_aggregations` will be used). 
     - `tables`: allows you to send a list of collate feature tables (collate builds these by appending `aggregation_imputed` to the prefix)
     - `prefix`: allows you to specify a list of feature name prefixes. Triage will consider prefixes sharing their initial string as the same (e.g., `bookings` will encompass `bookings_charges` as well as `bookings`). In other words, it's not actually maintaining a list of prefixes and searching for exact matches but trusting that prefixes do not overlap in this way.
 
@@ -164,6 +169,14 @@ By default uses the min_metric, meaning for each bias metric it uses as referenc
 Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
 
 
+### MODEL GRID PRESETS
+Triage now comes with a set of predefined *recommended* grids named: quickstart, small, medium, large
+See the documentation for recommended uses cases for those.
+
+If you set this configuration section you SHOULD NOT include the grid_config section
+
+- `model_grid_presets`: One of 'quickstart', 'small', 'medium', 'large'
+
 ### Grid Configuration
 The classifier/hyperparameter combinations that should be trained
 
@@ -171,6 +184,8 @@ Each top-level key should be a class name, importable from triage. sklearn is av
 
 - `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the [grid_config section](https://github.com/dssg/triage/blob/6cb43f9cca032a980cbc25a9501e9559135fd04d/example/config/experiment.yaml#L276) in `experiment.yaml` as for a detailed example.
 
+NOTE: Triage now include a new parameter named 'model_grid_presets' (see above)
+you can't have both at the same time. The experiment will fail if you forget this.
 
 ### Prediction
 How predictions are computed for train and test matrices? This is used only for *stored* predcitions and only affect postmodeling analysis (not model scoring), so if you are not stroing predictions, this will not affect anything.
