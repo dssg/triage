@@ -10,13 +10,52 @@ difficult to model because their conceptualization and and
 implementation are prone to error, given their multi-dimensional,
 multi-entity, time-series structure.
 
-**NOTE** This tutorial is in sync with the latest version of
-`triage`. At this moment
-[v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
+!!! info Triage version
+    This tutorial is in sync with the latest version of `triage`. At this moment [v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
+
+!!! info "How you can help to improve this tutorial"
+
+    If you want to contribute, please follow the suggestions in the
+    triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
+
+
+## What is in the name?
+
+There is a famous (and delicious) chinese duck restaurant in Chicago,
+we love that place, and as every restaurant in Chicago area, it gets
+inspected, so the naming is an *homage* to them.
+
+
+## Who is this tutorial for?
+
+We created this tutorial with two roles in mind:
+
+- A data scientist/ML practitioner who wants to focus
+in the problem at his/her hands, not in the nitty-gritty detail about
+how to configure and setup a Machine learning pipeline, Model
+governance, Model selection, etc.
+
+- A policy maker with a little of technical background that wants to
+  learn how to pose his/her policy problem as a Machine Learning
+  problem.
+
+
+## How to use this tutorial
+
+First, clone this repository on your laptop
+
+    git clone https://github.com/dssg/triage
+
+Second, in the `triage/docs/sources/dirtyduck/` directory run
+
+    ./tutorial.sh up
+
+This will take several minutes the first time you do it.
+
+After this, you may decide [to do the quickstart tutorial](dirtyduck_quickstart.md).
 
 
 ## Before you start
-
 
 ### What you need for this tutorial
 
@@ -31,23 +70,3 @@ Note that if you are using `GNU/Linux` you should add your user to the
 At the moment only operative systems with \*nix-type command lines are
 supported, such as `GNU/Linux` and `MacOS`. Recent versions of
 `Windows` may also work.
-
-### How to use this tutorial
-
-First, clone this repository on your laptop
-
-    git clone https://github.com/dssg/triage
-
-Second, in the `triage/docs/sources/dirtyduck/` directory run
-
-    ./tutorial.sh up
-
-This will take several minutes the first time you do it.
-
-After this, you need to decide [how do you want to use this tutorial](choose_your_own_adventure.md).
-
-
-!!! info "How you can help to improve this tutorial"
-
-    If you want to contribute, please follow the suggestions in the
-    triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).

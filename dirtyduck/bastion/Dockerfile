@@ -11,4 +11,6 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN echo 'PS1="\[$(tput setaf 3)$(tput bold)[\]dirtyduck@bastion$:\\w]#\[$(tput sgr0) \]"' >> /root/.bashrc
+
 WORKDIR triage

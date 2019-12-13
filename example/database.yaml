@@ -1,0 +1,8 @@
+# Connecting to the database requires a configuration file like this one but
+# named database.yaml
+
+host: address.of.database.server
+user: user_name
+db: database_name
+pass: user_password
+port: connection_port
