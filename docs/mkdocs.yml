@@ -60,8 +60,10 @@ extra_javascript:
 
 nav:
   - Home: index.md
+  - Quickstart guide: quickstart.md
   - Dirty Duck Tutorial:
     - Welcome!: dirtyduck/index.md
+    - Dirty duckling: dirtyduck/dirty_duckling.md
     - Who is this tutorial for?: dirtyduck/who_is_this_tutorial_for.md
     - Choose your own adventure: dirtyduck/choose_your_own_adventure.md
     - Setup:

@@ -10,13 +10,22 @@ difficult to model because their conceptualization and and
 implementation are prone to error, given their multi-dimensional,
 multi-entity, time-series structure.
 
-**NOTE** This tutorial is in sync with the latest version of
-`triage`. At this moment
-[v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
+!!! info Triage version
+    This tutorial is in sync with the latest version of `triage`. At this moment [v4.0.0](https://github.com/dssg/triage/releases/tag/v4.0.0).
 
+!!! info "How you can help to improve this tutorial"
+
+    If you want to contribute, please follow the suggestions in the
+    triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
+
+
+## What is in the name?
+
+There is a famous (and delicious) chinese duck restaurant in Chicago,
+we love that place, and as every restaurant in Chicago area, it gets
+inspected, so this is an *homage* to them.
 
 ## Before you start
-
 
 ### What you need for this tutorial
 
@@ -32,6 +41,9 @@ At the moment only operative systems with \*nix-type command lines are
 supported, such as `GNU/Linux` and `MacOS`. Recent versions of
 `Windows` may also work.
 
+
+
+
 ### How to use this tutorial
 
 First, clone this repository on your laptop
@@ -44,10 +56,4 @@ Second, in the `triage/docs/sources/dirtyduck/` directory run
 
 This will take several minutes the first time you do it.
 
-After this, you need to decide [how do you want to use this tutorial](choose_your_own_adventure.md).
-
-
-!!! info "How you can help to improve this tutorial"
-
-    If you want to contribute, please follow the suggestions in the
-    triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
+After this, you may decide [to do the quickstart tutorial](dirtyduck_quickstart.md).
