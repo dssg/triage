@@ -169,7 +169,7 @@ By default uses the min_metric, meaning for each bias metric it uses as referenc
 Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
 
 
-### MODEL GRID PRESETS
+### Model Grid Presets
 Triage now comes with a set of predefined *recommended* grids named: quickstart, small, medium, large
 See the documentation for recommended uses cases for those.
 
