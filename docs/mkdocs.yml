@@ -60,8 +60,9 @@ extra_javascript:
 
 nav:
   - Home: index.md
-  - Quickstart guide: quickstart.md
-  - Suggested workflow: triage_project_workflow.md
+  - Get started with your own project:
+      - Quickstart guide: quickstart.md
+      - Suggested workflow: triage_project_workflow.md
   - Dirty Duck Tutorial:
     - Welcome!: dirtyduck/index.md
     - Dirty duckling: dirtyduck/dirty_duckling.md
@@ -75,22 +76,23 @@ nav:
       - Infrastructure: dirtyduck/infrastructure.md
       - Data preparation: dirtyduck/data_preparation.md
       - Quick setup: dirtyduck/for_the_impatient.md
-  - Experiment:
-    - Defining an Experiment: experiments/defining.md
-    - Testing Feature Configuration: experiments/feature-testing.md
-    - Experiment Configuration: https://github.com/dssg/triage/blob/master/example/config/README.md
-    - Running an Experiment: experiments/running.md
-    - Upgrading an Experiment:
-        - v6 -> v7: experiments/upgrade-to-v7.md
-        - v5 -> v6: experiments/upgrade-to-v6.md
-        - v3/v4 -> v5: experiments/upgrade-to-v5.md
-    - Temporal Validation Deep Dive: experiments/temporal-validation.md
-    - Cohort and Label Deep Dive: experiments/cohort-labels.md
-    - Prediction Ranking: experiments/prediction-ranking.md
-    - Feature Generation Recipe Book: experiments/features.md
-    - Experiment Algorithm: experiments/algorithm.md
-    - Experiment Architecture: experiments/architecture.md
-  - Model selection: dirtyduck/audition.md
-  - Postmodeling: postmodeling/index.md
-  - Model governance:  dirtyduck/ml_governance.md
-  - Scaling up: dirtyduck/aws_batch.md
+  - Triage documentation:
+      - Experiment:
+          - Defining an Experiment: experiments/defining.md
+          - Testing Feature Configuration: experiments/feature-testing.md
+          - Experiment Configuration: https://github.com/dssg/triage/blob/master/example/config/README.md
+          - Running an Experiment: experiments/running.md
+          - Upgrading an Experiment:
+              - v6 -> v7: experiments/upgrade-to-v7.md
+              - v5 -> v6: experiments/upgrade-to-v6.md
+              - v3/v4 -> v5: experiments/upgrade-to-v5.md
+          - Temporal Validation Deep Dive: experiments/temporal-validation.md
+          - Cohort and Label Deep Dive: experiments/cohort-labels.md
+          - Prediction Ranking: experiments/prediction-ranking.md
+          - Feature Generation Recipe Book: experiments/features.md
+          - Experiment Algorithm: experiments/algorithm.md
+          - Experiment Architecture: experiments/architecture.md
+      - Model selection: dirtyduck/audition.md
+      - Postmodeling: postmodeling/index.md
+      - Model governance:  dirtyduck/ml_governance.md
+      - Scaling up: dirtyduck/aws_batch.md

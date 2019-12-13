@@ -174,16 +174,17 @@ model_grid_preset:  'quickstart'
 scoring:
     testing_metric_groups:
         -
-          metrics: [precision@, recall@, 'false negatives@', 'false positives@', 'true positives@', 'true negatives@']
+          metrics: [precision@]
           thresholds:
-            percentiles: [1, 5, 10, 100]
-            top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
-        -
-          metrics: [roc_auc, accuracy]
+            percentiles: [1]
+
 
     training_metric_groups:
       -
-        metrics: [roc_auc, accuracy]
+          metrics: [precision@]
+          thresholds:
+            percentiles: [1]
+
 ```
 
 This is the *minimum* configuration file, and it still has a lot of
@@ -253,4 +254,9 @@ selection, postmodeling, bias audit, etc.
 `triage` provides tools for doing all of that, but we should stop this
 little experiment. If you successfully arrive to this point, now you
 are all set to do your own modeling, but if you want to go deeper in
-all the things that `triage` could do for you, continue reading.
+all the things that `triage` could do for you, continue reading:
+
+
+- [Take a deeper look at triage through this example](problem_description.md)
+
+- [Get started with your own project and data](../quickstart.md)
