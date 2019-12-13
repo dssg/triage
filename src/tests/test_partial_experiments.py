@@ -26,7 +26,7 @@ def prepare_experiment(config):
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
                 cleanup=False,
-                skip_validation=True,
+                partial_run=True,
             )
             yield experiment
 

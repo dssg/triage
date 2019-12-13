@@ -67,6 +67,13 @@ from triage.tracking import (
     record_model_building_started,
 )
 
+from triage.experiments.defaults import (
+    fill_timechop_config_missing,
+    fill_cohort_config_missing,
+    fill_feature_group_definition,
+    fill_model_grid_presets,
+)
+
 from triage.database_reflection import table_has_data
 from triage.util.conf import dt_from_str, parse_from_obj
 from triage.util.db import get_for_update
@@ -112,7 +119,14 @@ class ExperimentBase(ABC):
         profile=False,
         save_predictions=True,
         skip_validation=False,
+        partial_run=False,
     ):
+        # For a partial run, skip validation and avoid cleaning up
+        # we'll also skip filling default config values below
+        if partial_run:
+            cleanup=False
+            skip_validation=True
+
         experiment_kwargs = bind_kwargs(
             self.__class__,
             **{key: value for (key, value) in locals().items() if key not in {'db_engine', 'config', 'self'}}
@@ -120,7 +134,10 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
-        random.seed(config['random_seed'])
+
+        self.config['random_seed'] = self.config.get('random_seed', random.randint(1,1e7))
+
+        random.seed(self.config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -137,6 +154,23 @@ class ExperimentBase(ABC):
         self.features_schema_name = "features"
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
         self.features_ignore_cohort = features_ignore_cohort
+
+        # only fill default values for full runs
+        if not partial_run:
+            ## Defaults to sane values
+            self.config['temporal_config'] = fill_timechop_config_missing(self.config, self.db_engine)
+            ## Defaults to all the entities found in the features_aggregation's from_obj
+            self.config['cohort_config'] = fill_cohort_config_missing(self.config)
+            ## Defaults to all the feature_aggregation's prefixes
+            self.config['feature_group_definition'] = fill_feature_group_definition(self.config)
+
+        grid_config = fill_model_grid_presets(self.config)
+        self.config.pop('model_grid_preset', None)
+        if grid_config is not None:
+            self.config['grid_config'] = grid_config
+
+        ###################### RUBICON ######################
+
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
