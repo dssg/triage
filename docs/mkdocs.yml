@@ -64,18 +64,16 @@ nav:
   - Dirty Duck Tutorial:
     - Welcome!: dirtyduck/index.md
     - Dirty duckling: dirtyduck/dirty_duckling.md
-    - Who is this tutorial for?: dirtyduck/who_is_this_tutorial_for.md
-    - Choose your own adventure: dirtyduck/choose_your_own_adventure.md
-    - Setup:
-      - Quick setup: dirtyduck/for_the_impatient.md
-      - Infrastructure: dirtyduck/infrastructure.md
-      - Data preparation: dirtyduck/data_preparation.md
     - Case studies:
       - Problem description: dirtyduck/problem_description.md
       - Early Warning System: dirtyduck/eis.md
       - Resource prioritization: dirtyduck/inspections.md
     - Triage:
       - A deeper look into triage: dirtyduck/triage_intro.md
+    - Are you curious about the setup?:
+      - Infrastructure: dirtyduck/infrastructure.md
+      - Data preparation: dirtyduck/data_preparation.md
+      - Quick setup: dirtyduck/for_the_impatient.md
   - Experiment:
     - Defining an Experiment: experiments/defining.md
     - Testing Feature Configuration: experiments/feature-testing.md

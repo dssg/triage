@@ -28,6 +28,8 @@ The prompt in your command line should change to something like
 
     [dirtyduck@bastion$:/triage]
 
+Type `triage`, if no error. You complete this step!
+
 Now you have `triage` installed, with all its power at the point of
 your fingers.
 

@@ -23,7 +23,37 @@ multi-entity, time-series structure.
 
 There is a famous (and delicious) chinese duck restaurant in Chicago,
 we love that place, and as every restaurant in Chicago area, it gets
-inspected, so this is an *homage* to them.
+inspected, so the naming is an *homage* to them.
+
+
+## Who is this tutorial for?
+
+We created this tutorial with two roles in mind:
+
+- A data scientist/ML practitioner who wants to focus
+in the problem at his/her hands, not in the nitty-gritty detail about
+how to configure and setup a Machine learning pipeline, Model
+governance, Model selection, etc.
+
+- A policy maker with a little of technical background that wants to
+  learn how to pose his/her policy problem as a Machine Learning
+  problem.
+
+
+## How to use this tutorial
+
+First, clone this repository on your laptop
+
+    git clone https://github.com/dssg/triage
+
+Second, in the `triage/docs/sources/dirtyduck/` directory run
+
+    ./tutorial.sh up
+
+This will take several minutes the first time you do it.
+
+After this, you may decide [to do the quickstart tutorial](dirtyduck_quickstart.md).
+
 
 ## Before you start
 
@@ -40,20 +70,3 @@ Note that if you are using `GNU/Linux` you should add your user to the
 At the moment only operative systems with \*nix-type command lines are
 supported, such as `GNU/Linux` and `MacOS`. Recent versions of
 `Windows` may also work.
-
-
-
-
-### How to use this tutorial
-
-First, clone this repository on your laptop
-
-    git clone https://github.com/dssg/triage
-
-Second, in the `triage/docs/sources/dirtyduck/` directory run
-
-    ./tutorial.sh up
-
-This will take several minutes the first time you do it.
-
-After this, you may decide [to do the quickstart tutorial](dirtyduck_quickstart.md).
