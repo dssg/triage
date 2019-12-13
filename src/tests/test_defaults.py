@@ -36,7 +36,50 @@ def test_fill_feature_group_definition():
 
 
 def test_fill_timechop_config_missing():
-    pass
+    remove_keys = [
+        'model_update_frequency',
+        'training_as_of_date_frequencies',
+        'test_as_of_date_frequencies',
+        'max_training_histories',
+        'test_durations',
+        'feature_start_time',
+        'feature_end_time',
+        'label_start_time',
+        'label_end_time',
+        'training_label_timespans',
+        'test_label_timespans'
+        ]
+
+    # ensure redundant keys properly raise errors
+    config = sample_config()
+    config['temporal_config']['label_timespans'] = '1y'
+    with pytest.raises(KeyError):
+        timechop_config = fill_timechop_config_missing(config, None)
+
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        ensure_db(db_engine)
+        populate_source_data(db_engine)
+        config = sample_config()
+
+        for key in remove_keys:
+            config['temporal_config'].pop(key)
+        config['temporal_config']['label_timespans'] = '1y'
+
+        timechop_config = fill_timechop_config_missing(config, db_engine)
+
+        assert timechop_config['model_update_frequency'] == '100y'
+        assert timechop_config['training_as_of_date_frequencies'] == '100y'
+        assert timechop_config['test_as_of_date_frequencies'] == '100y'
+        assert timechop_config['max_training_histories'] == '0d'
+        assert timechop_config['test_durations'] == '0d'
+        assert timechop_config['training_label_timespans'] == '1y'
+        assert timechop_config['test_label_timespans'] == '1y'
+        assert 'label_timespans' not in timechop_config.keys()
+        assert timechop_config['feature_start_time'] == '2010-10-01'
+        assert timechop_config['feature_end_time'] == '2013-10-01'
+        assert timechop_config['label_start_time'] == '2010-10-01'
+        assert timechop_config['label_end_time'] == '2013-10-01'
 
 
 def test_model_grid_preset():
