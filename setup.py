@@ -59,7 +59,7 @@ setup(
         'console_scripts': ['triage = triage.cli:execute'],
     },
     extras_require={'rq': RQ_REQUIREMENTS},
-    license=LICENSE_PATH.read_text(),
+    license="MIT License",
     zip_safe=False,
     keywords='triage',
     classifiers=[
