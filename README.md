@@ -30,8 +30,11 @@ To install Triage, you need:
 - Ample space on an available disk, (or for example in Amazon Web Services's S3), to store the needed matrices and models for your experiments
 
 We recommend starting with a new python virtual environment (with Python 3.6 or greater) and pip installing triage there.
-`virtualenv triage-env`
-`pip install triage`
+```bash
+$ virtualenv triage-env
+$ . triage-env/bin/activate
+(triage-env) $ pip install triage
+```
 
 ## Data
 Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example_database.yaml](example_database.yaml)).
