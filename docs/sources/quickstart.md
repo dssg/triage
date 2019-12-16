@@ -27,8 +27,6 @@ $ . triage-env/bin/activate
 (triage-env) $ pip install triage
 ```
 
-[Instructions for installing Triage](https://github.com/dssg/triage/blob/master/README.md)
-
 ![workflow](dirtyduck/images/quickstart.png "Triage Workflow")
 
 ### 2. Structure your data
@@ -60,19 +58,65 @@ often will the predicted list be used for interventions, what are the
 resources available to intervene to define the evaluation metric,
 etc.
 
-Details about each section of the configration file are
-[here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)
+A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simplier configuration file below:
 
-Here's a [sample (simpler) configuration file](https://github.com/dssg/triage/blob/master/example/config/dirty-duckling.yaml)
+```yaml
+config_version: 'v7'
+
+model_comment: 'quickstart_test_run'
+
+temporal_config:
+    label_timespans: ['<< YOUR_VALUE_HERE >>']
+
+label_config:
+  query: |
+    << YOUR_VALUE_HERE >>
+  name: 'quickstart_label'
+
+feature_aggregations:
+  -
+    prefix: 'qstest'
+    from_obj: '<< YOUR_VALUE_HERE >>'
+    knowledge_date_column: '<< YOUR_VALUE_HERE >>'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['all']
+
+    groups:
+      - 'entity_id'
+
+model_grid_preset:  'quickstart'
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [1]
+
+
+    training_metric_groups:
+      -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [1]
+```
+
+Copy that code block into your text editor of choice and save it as something like `quickstart-config.yaml` in your working directory for your project. You'll need to fill out the sections marked `<< YOUR_VALUE_HERE >>` with values appropriate to your project.
 
 The configuration file has a lot of sections. As a first pass, we will
 infer a lot of the parameters that are needed in there and use
 defaults for others. The primary parameters to specify (for now) are:
-
-0. DATABASE CONNECTION: We will need a database credential file that
-   contains the name of the database, server, username, and password
-   to use to connect to it. Here's a [sample database configuration
-   file](https://github.com/dssg/triage/blob/master/example/database.yaml)
 
 1. TIMECHOP config: This sets up temporal parameters for training and
    testing models. The key things to set up here are your prediction
@@ -83,17 +127,39 @@ defaults for others. The primary parameters to specify (for now) are:
    Validation](https://dssg.github.io/triage/experiments/temporal-validation/)
 
 2. LABEL config: This is a `sql` query that defines what the outcome of
-   interest is. The query must return two columns: `entity_id` and
-   `outcome`, based on a given `as_of_date` and `label_timespan`. See our
-   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/)
+   interest is. The query must return two columns: `entity_id` (an integer) and
+   `outcome` (with integer label values of `0` and `1`), based on a given `as_of_date` and `label_timespan` (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
+   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/). For example, if your data was in a table called `semantic.events` containing columns `entity_id`, `event_date`, and `label`, this query could simply be:
+   ```
+   select entity_id, max(label) as outcome
+   from semantic.events
+   where '{as_of_date}'::timestamp <= event_date
+         and event_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+   ```
 
 3. FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
-   learning models. We need at least one feature specified here.
+   learning models. We need at least one feature specified here. For the purposes of the quickstart, let's just take the count of all events before the modeling date. In the template, you can simply fill in `from_obj` with the `schema.table_name` where your data can be found (but this can also be a more complex query in general) and `knowledge_date_column` with that table's date column.
 
 4. MODEL_GRID_PRESET config: Which models and hyperparameters we want to try in
    this run. We can start with `quickstart` that will run a quick
    model grid to test if everything works.
+
+Additionally, we will need a database credential file that contains the name of the database, server, username, and password to use to connect to it:
+
+```yaml
+# Connecting to the database requires a configuration file like this one but
+# named database.yaml
+
+host: address.of.database.server
+user: user_name
+db: database_name
+pass: user_password
+port: connection_port (often 5432)
+```
+
+Copy this into a separate text file, fill in your values and save it as `database.yaml` in the working directory where you'll be running triage. Note, however, that if you have a `DATABASE_URL` environment variable set, triage will use this by default as well.
+
 
 ### 4. Run Triage
 
