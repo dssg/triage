@@ -17,7 +17,7 @@ Triage is designed to:
 ## Quick Links
 
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Are you completely new to Triage? Go through the tutorial here with sample data
-- [QuickStart Guide](https://dssg.github.io/triage/dirtyduck/) - Try Triage out with your own project and data
+- [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation? 
 - [Development](#development) - Contribute to Triage development.
 
