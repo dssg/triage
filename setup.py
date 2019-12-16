@@ -47,6 +47,7 @@ setup(
     version='4.0.0',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
+    long_description_content_type="text/markdown",
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
     url='https://github.com/dssg/triage',
