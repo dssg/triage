@@ -10,8 +10,22 @@ metrics.
 
 We also recommend installing triage inside a python virtual
 environment for your project so you don't have any conflicts with
-other packages installed on the machine. You can use virutalenv or
-pyenv to do that.
+other packages installed on the machine. You can use [virutalenv](https://virtualenv.pypa.io/en/latest/) or
+[pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) to do that.
+
+If you use [pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) (be sure your default python is 3+):
+```bash
+$ pyenv virtualenv triage-env
+$ pyenv activate triage-env
+(triage-env) $ pip install triage
+```
+
+If you use [virtualenv](https://virtualenv.pypa.io/en/latest/) (be sure your default python is 3+):
+```bash
+$ virtualenv triage-env
+$ . triage-env/bin/activate
+(triage-env) $ pip install triage
+```
 
 [Instructions for installing Triage](https://github.com/dssg/triage/blob/master/README.md)
 
