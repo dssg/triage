@@ -1822,6 +1822,12 @@ models in this model group, and check if you can detect any pattern.
     of precision, but your recall will be ~5%.
 
 
+### Where to go from here
+
+Ready to get started with your own data? Check out [the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
+
+Want to work through another example? Take a look at our [early warning system case study](https://dssg.github.io/triage/dirtyduck/eis/)
+
 
 [^1]: If you assume a *uniform* distribution, it will make sense to select facilities at random.
 
