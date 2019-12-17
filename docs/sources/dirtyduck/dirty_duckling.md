@@ -178,14 +178,14 @@ scoring:
         -
           metrics: [precision@]
           thresholds:
-            percentiles: [1]
+            percentiles: [10]
 
 
     training_metric_groups:
       -
           metrics: [precision@]
           thresholds:
-            percentiles: [1]
+            percentiles: [10]
 
 ```
 
@@ -266,26 +266,76 @@ experiments that you've run and the models they created. The `quickstart`
 model grid preset should have built 3 models. Let's check with:
 
 ```sql
-select model_id, model_group_id, model_type 
-FROM model_metadata.models;
+select 
+  model_id, model_group_id, model_type 
+  from 
+      model_metadata.models;
 ```
 
 This should give you a result that looks something like:
 
- model_id | model_group_id | model_type
+model_id | model_group_id | model_type
 ----------|----------------|--------------------------------
 1 | 1 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression
 2 | 2 | sklearn.tree.DecisionTreeClassifier
 3 | 3 | sklearn.dummy.DummyClassifier
 
+If you want to see predictions for individual entities, you can check out
+`test_results.predictions`, for instance:
 
+```sql
+select 
+  model_id, entity_id, as_of_date, score, label_value
+  from
+      test_results.predictions
+  where entity_id = 15596
+  order by model_id;
+```
 
+This will give you something like:
 
-With all that data you could (*should*) do model selection, postmodeling, 
+model_id | entity_id |     as_of_date      |  score  | label_value
+----------|-----------|---------------------|---------|-------------
+1 | 15596 | 2017-09-29 00:00:00 | 0.21884 | 0
+2 | 15596 | 2017-09-29 00:00:00 | 0.22831 | 0
+3 | 15596 | 2017-09-29 00:00:00 | 0.25195 | 0
+
+Finally, `test_results.evaluations` holds some aggregate information on model
+performance. In our config above, we only focused on precision in the top
+ten percent, so let's see how the models are doing based on this:
+
+```sql
+select 
+  model_id, metric, parameter, stochastic_value
+  from
+      test_results.evaluations
+  where metric = 'precision@' 
+        and parameter='10_pct'
+  order by model_id;
+```
+
+model_id |   metric   | parameter |  stochastic_value
+----------|------------|-----------|--------------------
+1 | precision@ | 10_pct     | 0.2865853658536585
+2 | precision@ | 10_pct     |                0.0
+3 | precision@ | 10_pct     |                0.0
+
+Not great! But then again, these were just a couple of overly simple model
+specifications to get things up and running...
+
+Feel free to explore some of the other tables in these schemas (note that
+there's also a `train_results` schema with performance on the training
+set as well as feature importances, where defined). When you're done 
+exploring the database, you can exit the postgres command line interface 
+by typing `\q`
+
+With a real modeling run you could (*should*) do model selection, postmodeling, 
 bias audit, etc. `triage` provides tools for doing all of that, but we 
-should stop this little experiment. If you successfully arrive to this 
-point, now you are all set to do your own modeling, but if you want to go 
-deeper in all the things that `triage` could do for you, continue reading:
+the purpose of this little experiment was just to get things up and running. 
+If you have successfully arrived to this point, you are all set to do your own 
+modeling ([here's a good place to start](../quickstart.md)), but if you want to 
+go deeper in this example and learn about these other `triage` functions,
+[continue reading our in-depth tutorial](problem_description.md).
 
 
 ### 6. What's next?
