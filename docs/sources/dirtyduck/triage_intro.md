@@ -1325,6 +1325,14 @@ rm -r /triage/matrices/*
 rm -r /triage/trained_models/*
 ```
 
+
+## Where to go from here...
+
+If you haven't done so already, our [dirty duck tutorial](https://dssg.github.io/triage/dirtyduck/) is a good way to geet up and running with some sample data.
+
+If you're ready to get started with your own data, check out [the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
+
+
 ## Footnotes
 
 <sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> *Would be my restaurant inspected in the following month?* in the case of an **early warning** case.
