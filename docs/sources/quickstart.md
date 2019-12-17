@@ -192,3 +192,10 @@ We can either look at results directly in the database (`test_results`
 schema) or use `audition` by installing jupyter notebook. [Overview of
 model
 selection](https://dssg.github.io/triage/dirtyduck/docs/audition/)
+
+
+### 6. Iterate and Explore
+
+Now that you have triage running, [continue onto the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
+
+Alternatively, if you'd like more of a guided tour with sample data, check out our [dirty duck tutorial](https://dssg.github.io/triage/dirtyduck/).
