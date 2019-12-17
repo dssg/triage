@@ -63,4 +63,8 @@ def get_feature_importances(model):
 
         feature_importances = _ad_hoc_feature_importances(model)
 
+    # if we just ended up with a scalar (e.g., single feature logit), ensure we return an array
+    if isinstance(feature_importances, np.ndarray) and feature_importances.shape == ():
+        feature_importances = feature_importances.reshape((1,))
+
     return feature_importances
