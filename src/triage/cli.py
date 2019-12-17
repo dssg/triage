@@ -77,13 +77,12 @@ class Triage(RootCommand):
     def db_url(self):
         if self.args.dbfile:
             dbfile = self.args.dbfile
+        elif os.path.isfile(self.DATABASE_FILE_DEFAULT):
+            dbfile = open(self.DATABASE_FILE_DEFAULT)
         else:
             environ_url = os.getenv('DATABASE_URL')
             if environ_url:
                 return environ_url
-
-            if os.path.isfile(self.DATABASE_FILE_DEFAULT):
-                dbfile = open(self.DATABASE_FILE_DEFAULT)
             else:
                 raise EnvironmentError(
                     f"could not determine database connection information from "
