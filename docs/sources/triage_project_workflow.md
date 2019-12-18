@@ -103,7 +103,9 @@ For more detailed guidance on how to think about each of these parameters and se
 
 - All of your train/test splits will be between the `label_start_time` and `label_end_time`, with splits starting from the last date and working backwards. Note that the `label_end_time` should be **1 day AFTER the last label date**.
 
-- The parameters with plural names (e.g., `test_label_timespans`) can be given as lists, in which case, `triage` will run models using all possible combinations of these values. This can get complicated fast, so you're generally best off starting with a single value for each parameter, for instance:
+- If you're using the same label timespan in both training and testing, you can still use the single `label_timespans` parameter (as we did in the QuickStart config). If you need different values, you can separately configure `test_label_timespans` and `training_label_timespans` (but note in this case, you should omit `label_timespans`).
+
+- The parameters with plural names (e.g., `test_durations`) can be given as lists, in which case, `triage` will run models using all possible combinations of these values. This can get complicated fast, so you're generally best off starting with a single value for each parameter, for instance:
 
 ```
 temporal_config:
@@ -112,8 +114,7 @@ temporal_config:
     label_start_time: '2012-01-01'
     label_end_time: '2019-05-01'
     model_update_frequency: '1month'
-    training_label_timespans: ['1y']
-    test_label_timespans: ['1y']
+    label_timespans: ['1y']
     max_training_histories: ['0d']
     training_as_of_date_frequencies: ['1y']
     test_as_of_date_frequencies: ['1y']
@@ -157,13 +158,33 @@ We generally recommend using `audition` interactively with as a `jupyter noteboo
 
 ## Iteration 3: Add more data/features, models and hyperparameters, and evaluation metrics of interest
 
-(you'll probably want to add features do some testing and running as you add features, so in practice this is more like iterations 3--*n*...)
+After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications. 
+
+We've labeled this section `Iteration 3`, but in practice it's probably more like `Iterations 3-n` as you will likely want to do a bit of intermediate testing while adding new features and refine your model grid as you learn more about what does and doesn't seem to work well.
 
 ### Define some additional features
 
-(may involve structuring or collecting more raw data, of course)
+Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible. 
 
-### Expand your model grid
+The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
+
+!!! info "Features in `triage` are temporal aggregations"
+
+    Just as `triage` is built with temporal cross-validation in mind, features in `triage` reflect this inherent temporal nature as well. As such, all feature definitions need to be specified with an associated date reflecting when the information was known (which may or may not be the same as when an event actually happened) and a time frame before the modeling date over which to aggregate.
+
+    This has two consequences which may feel unintuitive at first:
+    - Even static features are handled in this way, so in practice, we tend to specify them as a `max` (or `min`) taken over identical values over all time.
+
+    - Categorical features are also aggregated over time in this way, so in practice these are split into separate features for each value the categorical can take, each of which is expressed as a numerical value (either binary or real-valued, like a mean over time). As a result, these values will not necessarily be mutually exclusive --- that is, a given entity can have non-zero values for more than one feature derived from the same underlying categorical depending on their history of values for that feature.
+
+    - Unfortunately, `triage` has not yet implemented functionality for "first value" or "most recent value" feature aggregates, so you'll need to pre-calculate any features you want with this logic (though we do hope to add this ability).
+
+
+(note imputation required -- if shouldn't have missing, use error; if missing means not present use zero no flag)
+
+### Expand, then refine, your model grid
+
+(call-out box for grid options)
 
 (might start with `small`, but `medium` is a decent starting point for modeling in general. Once you have things well-refined, could consider `larger` if you have sufficient time and computational resources)
 
@@ -190,9 +211,11 @@ triage experiment config.yaml --project-path '/project_directory'
 3. A first look at `postmodeling`
 
 
-## Iteration 4: Explore additional labels/outcomes and calculation evaluation metrics on subsets of entities that may be of special interest
+## Iteration 4: Explore additional labels/outcomes, feature group strategies, and calculation evaluation metrics on subsets of entities that may be of special interest
 
 ### Additional labels
+
+### Feature group strategies
 
 ### Subsets
 
