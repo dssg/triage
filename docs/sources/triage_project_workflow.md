@@ -45,6 +45,8 @@ triage experiment config.yaml --project-path '/project_directory' --validate-onl
 triage experiment config.yaml --project-path '/project_directory'
 ```
 
+Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
+
 ### Check for Results
 
 For this quick check, we're only running a handful of models for a single time window, so `triage`'s tools for model selection and postmodeling analysis won't be instructive, but you can confirm that by checking out the `triage`-created tables in the `model_metadata`, `test_results`, and `train-results` schemas in your database. In particular, you should find records for all your expected models in `model_metadata.models`, predictions from every model for every entity in `test_results.predictions`, and aggregate performance metrics in `test_results.evaluations` for every model.
@@ -139,6 +141,8 @@ triage experiment config.yaml --project-path '/project_directory' --validate-onl
 triage experiment config.yaml --project-path '/project_directory'
 ```
 
+Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
+
 ### Check for Results
 
 #### Check the database
@@ -179,8 +183,33 @@ The experiment configuration file provides a decent amount of flexibility for de
 
     - Unfortunately, `triage` has not yet implemented functionality for "first value" or "most recent value" feature aggregates, so you'll need to pre-calculate any features you want with this logic (though we do hope to add this ability).
 
+Feature definitions are specified in the `feature_aggregations` section of the config file, under which you should provide a list of sets of related features, and each element in this list must contain several keys (see the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for a detailed example of what this looks like in practice):
+- `prefix`: a simple name to identify this set of related features - all of the features defined by this `feature_aggregations` entry will start with this prefix.
+- `from_obj`: this may be a table name or a SQL expression that provides the source data for these features.
+- `knowledge_date_column`: the date column specifying when information in the source data was known (e.g., available to be used for predictive modeling), which may differ from when the event ocurred.
+- `aggregates` and/or `categoricals`: lists used to define the specific features (you must specify at least one, but may include both). See below for more detail on each.
+- `intervals`: The time intervals (as a SQL interval, such a `'5 year'`, `'6 month'`, or `all` for all time) over which to aggregate features.
+    - For instance, if you specified a count of the number of events under `aggregates` and `['5 year', '10 year', 'all']` as `intervals`, `triage` would create features for the number of events related to an entity in the last 5 years, 10 years, and since the `feature_start_time` (that is, three separate features)
+- `groups`: levels at which to aggregate the features, often simply `entity_id`, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.
+- You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
 
-(note imputation required -- if shouldn't have missing, use error; if missing means not present use zero no flag)
+When defining features derived from numerical data, you list them under the `aggregates` key in your feature config, and these should include keys for:
+- `quantity`: A column or SQL expression from the `from_obj` yielding a number that can be aggregated
+- `metrics`: What types of aggregation to do. Namely, these are [postgres aggregation functions](https://www.postgresql.org/docs/9.5/functions-aggregate.html), such as `count`, `avg`, `sum`, `stddev`, `min`, `max`, etc.
+- (optional) `coltype`: can be used to control the type of column used in the generated features table, but generally is not necessary to define.
+- As noted above, imputation rules can be specified at this level as well.
+
+When defining features derived from categorical data, you list them under the `categoricals` key in your feature config, and these should include keys for:
+- `column`: The column containing the categorical information in the `from_obj` (note that this must be a column, not a SQL expression). May be any type of data, but the choice values specified must be compatible for equality comparisson in SQL.
+- `choices` or `choice_query`: Either a hand-coded list of `choices` (that is, categorical values) or a `choice_query` that returns these distinct values from the data.
+    - For categoricals with a very large number of possible unique values, you may want to limit the set of choices to a set of most frequently observed values.
+    - Values in the data but not in this set of choice values will simply yield `0`s for all of these choice-set values.
+- `metrics`: As above, the [postgres aggregation functions](https://www.postgresql.org/docs/9.5/functions-aggregate.html) used to aggregate values across the time intervals for the feature.
+    - If categorical values associated with an entity **do not** change over time, using `max` would give you a simple one-hot encoded categorical.
+    - If they are changing over time, `max` would give you something similar to a one-hot encoding, but note that the values would no longer be mutually-exclusive.
+- As noted above, imputation rules can be specified at this level as well.
+
+Much more detail about defining your features can be found in the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation).
 
 ### Expand, then refine, your model grid
 
@@ -203,6 +232,8 @@ triage experiment config.yaml --project-path '/project_directory' --validate-onl
 ```
 triage experiment config.yaml --project-path '/project_directory'
 ```
+
+Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
 
 ### Check for Results
 
@@ -230,6 +261,8 @@ triage experiment config.yaml --project-path '/project_directory' --validate-onl
 ```
 triage experiment config.yaml --project-path '/project_directory'
 ```
+
+Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
 
 ### Check for Results
 
