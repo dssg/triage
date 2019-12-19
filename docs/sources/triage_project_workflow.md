@@ -213,13 +213,56 @@ Much more detail about defining your features can be found in the [example confi
 
 ### Expand, then refine, your model grid
 
-(call-out box for grid options)
+As you develop more features, you'll want to build out your modeling grid as well. Above, we've used the very sparse `quickstart` grid preset, but `triage` offers additional `model_grid_preset` options of varying size:
+- The `small` model grid includes a reasonably extensive set of logistic regression and decision tree classifiers as well as a single random forest specification. This grid can be a good option as you build and refine your features, but you'll likely want to try something more extensive once you have the rest of your config set.
+- The `medium` model grid is a good starting point for general modeling, including fairly extensive logistic regressions, decision trees, and random forest grids as well as a few ada boost and extra trees specification.
+- The `large` grid adds additional specifications for these modeling types, including some very large (10,000-estimator) random forest and extra trees classifiers, so can take a bit more time and computational resources to run.
 
-(might start with `small`, but `medium` is a decent starting point for modeling in general. Once you have things well-refined, could consider `larger` if you have sufficient time and computational resources)
+These preset grids should really serve as a starting point, and as you learn what seems to be working well in your use-case, you'll likely want to explore other specifications, which you can do by specifying your own `grid_config` in the triage config, which looks like:
 
-### Consider additional evaluation metrics
+```
+grid_config:
+    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        C: [0.00001,0.0001, 0.001, 0.01, 0.1, 10]
+        penalty: ['l2']
 
-(also, add a aequitas config to obtain results about fairness)
+    'sklearn.tree.DecisionTreeClassifier':
+        criterion: ['entropy']
+        max_depth: [null,2,5,10,50,100]
+        min_samples_split: [2, 10, 50]
+        min_samples_leaf: [0.01,0.05,0.10]
+```
+
+Here, each top-level key is the modeling package (this needs to be a classification algorithm with a `scikit-learn`-style interface, but need not come from `scikit-learn` specifically), and the keys listed under it are hyperparameters of the algorithm with a list of values to test. `triage` will run the grid of all possible combinations of these hyperparameter values. Note that you can't specify both a `model_grid_preset` and `grid_config` at the same time.
+
+Check out the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details on specifying your grid.
+
+### Specify evaluation metrics you care about
+
+In the initial iterations, we simply used precision in the top 1% as the evaluation metric for our models, but this is likely not what you care about for you project! Under the `scoring` section of your config file, you should specify the metrics of interest:
+
+```
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@, recall@]
+          thresholds:
+            percentiles: [1,5,10]
+            top_n: [100, 250, 500]
+        -
+          metrics: [accuracy, roc_auc]
+
+
+    training_metric_groups:
+      -
+          metrics: [fpr@]
+          thresholds:
+            top_n: [100, 250, 500]
+```
+
+You can specify any number of evaluation metrics to be calculated for your models on either the training or test sets (the set of available metrics can be found [here](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L161)). For metrics that need to be calculated relative to a specific threshold in the score (e.g. precision), you must specify either `percentiles` or `top_n` (and can optionally provide both) at which to do the calculations.
+
+Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#bias-audit-config-optional) for more details on setting it up.
 
 ### Run `triage`
 
