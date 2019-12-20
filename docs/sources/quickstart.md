@@ -10,10 +10,22 @@ metrics.
 
 We also recommend installing triage inside a python virtual
 environment for your project so you don't have any conflicts with
-other packages installed on the machine. You can use virutalenv or
-pyenv to do that.
+other packages installed on the machine. You can use [virutalenv](https://virtualenv.pypa.io/en/latest/) or
+[pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) to do that.
 
-[Instructions for installing Triage](https://github.com/dssg/triage/blob/master/README.md)
+If you use [pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) (be sure your default python is 3+):
+```bash
+$ pyenv virtualenv triage-env
+$ pyenv activate triage-env
+(triage-env) $ pip install triage
+```
+
+If you use [virtualenv](https://virtualenv.pypa.io/en/latest/) (be sure your default python is 3+):
+```bash
+$ virtualenv triage-env
+$ . triage-env/bin/activate
+(triage-env) $ pip install triage
+```
 
 ![workflow](dirtyduck/images/quickstart.png "Triage Workflow")
 
@@ -46,19 +58,65 @@ often will the predicted list be used for interventions, what are the
 resources available to intervene to define the evaluation metric,
 etc.
 
-Details about each section of the configration file are
-[here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)
+A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simplier configuration file below:
 
-Here's a [sample (simpler) configuration file](https://github.com/dssg/triage/blob/master/example/config/dirty-duckling.yaml)
+```yaml
+config_version: 'v7'
+
+model_comment: 'quickstart_test_run'
+
+temporal_config:
+    label_timespans: ['<< YOUR_VALUE_HERE >>']
+
+label_config:
+  query: |
+    << YOUR_VALUE_HERE >>
+  name: 'quickstart_label'
+
+feature_aggregations:
+  -
+    prefix: 'qstest'
+    from_obj: '<< YOUR_VALUE_HERE >>'
+    knowledge_date_column: '<< YOUR_VALUE_HERE >>'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['all']
+
+    groups:
+      - 'entity_id'
+
+model_grid_preset:  'quickstart'
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [1]
+
+
+    training_metric_groups:
+      -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [1]
+```
+
+Copy that code block into your text editor of choice and save it as something like `quickstart-config.yaml` in your working directory for your project. You'll need to fill out the sections marked `<< YOUR_VALUE_HERE >>` with values appropriate to your project.
 
 The configuration file has a lot of sections. As a first pass, we will
 infer a lot of the parameters that are needed in there and use
 defaults for others. The primary parameters to specify (for now) are:
-
-0. DATABASE CONNECTION: We will need a database credential file that
-   contains the name of the database, server, username, and password
-   to use to connect to it. Here's a [sample database configuration
-   file](https://github.com/dssg/triage/blob/master/example/database.yaml)
 
 1. TIMECHOP config: This sets up temporal parameters for training and
    testing models. The key things to set up here are your prediction
@@ -69,17 +127,39 @@ defaults for others. The primary parameters to specify (for now) are:
    Validation](https://dssg.github.io/triage/experiments/temporal-validation/)
 
 2. LABEL config: This is a `sql` query that defines what the outcome of
-   interest is. The query must return two columns: `entity_id` and
-   `outcome`, based on a given `as_of_date` and `label_timespan`. See our
-   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/)
+   interest is. The query must return two columns: `entity_id` (an integer) and
+   `outcome` (with integer label values of `0` and `1`), based on a given `as_of_date` and `label_timespan` (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
+   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/). For example, if your data was in a table called `semantic.events` containing columns `entity_id`, `event_date`, and `label`, this query could simply be:
+   ```
+   select entity_id, max(label) as outcome
+   from semantic.events
+   where '{as_of_date}'::timestamp <= event_date
+         and event_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+   ```
 
 3. FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
-   learning models. We need at least one feature specified here.
+   learning models. We need at least one feature specified here. For the purposes of the quickstart, let's just take the count of all events before the modeling date. In the template, you can simply fill in `from_obj` with the `schema.table_name` where your data can be found (but this can also be a more complex query in general) and `knowledge_date_column` with that table's date column.
 
 4. MODEL_GRID_PRESET config: Which models and hyperparameters we want to try in
    this run. We can start with `quickstart` that will run a quick
    model grid to test if everything works.
+
+Additionally, we will need a database credential file that contains the name of the database, server, username, and password to use to connect to it:
+
+```yaml
+# Connecting to the database requires a configuration file like this one but
+# named database.yaml
+
+host: address.of.database.server
+user: user_name
+db: database_name
+pass: user_password
+port: connection_port (often 5432)
+```
+
+Copy this into a separate text file, fill in your values and save it as `database.yaml` in the working directory where you'll be running triage. Note, however, that if you have a `DATABASE_URL` environment variable set, triage will use this by default as well.
+
 
 ### 4. Run Triage
 
@@ -96,17 +176,80 @@ triage experiment config.yaml --project-path '/project_directory' --validate-onl
 triage experiment config.yaml --project-path '/project_directory'
 ```
 
-A good overview of running an experiment in triage is [here](https://dssg.github.io/triage/experiments/running/).
+For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).
+
+If you want a bit more detail or documentation, a good overview of running an experiment in triage is [here](https://dssg.github.io/triage/experiments/running/).
 
 
 ### 5. Look at results generated by Triage
 
-Once the feature/cohor/label/matrix building is done and the
+Once the feature/cohort/label/matrix building is done and the
 experiment has moved onto modeling, check out the
-model_metadata.models and test_results.evaluations tables as data
+`model_metadata.models` and `test_results.evaluations` tables as data
 starts to come in.
 
-We can either look at results directly in the database (test_results
-schema) or use audition by installing jupyter notebook. [Overview of
-model
-selection](https://dssg.github.io/triage/dirtyduck/docs/audition/)
+Here are a couple of quick queries to help get you started:
+
+Tables in the `model_metadata` schema have some general information about
+experiments that you've run and the models they created. The `quickstart`
+model grid preset should have built 3 models. You can check that with:
+
+```sql
+select 
+  model_id, model_group_id, model_type 
+  from 
+      model_metadata.models;
+```
+
+This should give you a result that looks something like:
+
+model_id | model_group_id | model_type
+----------|----------------|--------------------------------
+1 | 1 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression
+2 | 2 | sklearn.tree.DecisionTreeClassifier
+3 | 3 | sklearn.dummy.DummyClassifier
+
+If you want to see predictions for individual entities, you can check out
+`test_results.predictions`, for instance:
+
+```sql
+select 
+  model_id, entity_id, as_of_date, score, label_value
+  from
+      test_results.predictions
+  limit 5;
+```
+
+This will give you something like:
+
+model_id | entity_id |     as_of_date      |  score  | label_value
+----------|-----------|---------------------|---------|-------------
+1 | 15596 | 2017-09-29 00:00:00 | 0.21884 | 0
+2 | 15596 | 2017-09-29 00:00:00 | 0.22831 | 0
+3 | 15596 | 2017-09-29 00:00:00 | 0.25195 | 0
+
+Finally, `test_results.evaluations` holds some aggregate information on model
+performance:
+
+```sql
+select 
+  model_id, metric, parameter, stochastic_value
+  from
+      test_results.evaluations
+  order by model_id, metric, parameter;
+```
+
+Feel free to explore some of the other tables in these schemas (note that
+there's also a `train_results` schema with performance on the training
+set as well as feature importances, where defined).
+
+In a more complete modeling run, you could `audition` with jupyter notebooks to help you
+select the best-performing model specifications from a wide variety of options (see the [overview of
+model selection](https://dssg.github.io/triage/dirtyduck/audition/) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
+
+
+### 6. Iterate and Explore
+
+Now that you have triage running, [continue onto the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
+
+Alternatively, if you'd like more of a guided tour with sample data, check out our [dirty duck tutorial](https://dssg.github.io/triage/dirtyduck/).

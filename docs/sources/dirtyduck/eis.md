@@ -1016,3 +1016,10 @@ order by value desc
 | 226                | 2018-09-01                     | 5 pct     | results<sub>entity</sub><sub>id</sub><sub>6month</sub><sub>result</sub><sub>pass</sub><sub>avg</sub>                    | 0.0232523724927717 |
 
 This table represents the ratio between the predicted positives at the top 5% and predicted negatives (the rest). For example, you can see that in PP are eleven times more inspected if they have a failed inspection in the last month, 3.5 times more if they have a failed inspection in the previous 3 months, etc.
+
+
+### Where to go from here
+
+Ready to get started with your own data? Check out [the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
+
+Want to work through another example? Take a look at our [resource prioritization case study](https://dssg.github.io/triage/dirtyduck/inspections/)

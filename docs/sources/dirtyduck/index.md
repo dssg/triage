@@ -46,13 +46,13 @@ First, clone this repository on your laptop
 
     git clone https://github.com/dssg/triage
 
-Second, in the `triage/docs/sources/dirtyduck/` directory run
+Second, in the cloned repository's top-level directory run
 
     ./tutorial.sh up
 
 This will take several minutes the first time you do it.
 
-After this, you may decide [to do the quickstart tutorial](dirtyduck_quickstart.md).
+After this, you may decide [to do the quickstart tutorial](dirty_duckling.md).
 
 
 ## Before you start

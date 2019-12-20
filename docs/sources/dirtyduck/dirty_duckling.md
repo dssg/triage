@@ -13,7 +13,7 @@ We packed this a sample of Chicago Food Inspections data source as
 part of the dirty duck tutorial.  Just run in the folder that contains
 the `triage` local repository:
 
-    ./tutorial .sh up
+    ./tutorial.sh up
 
  from you command line. This will start the database.
 
@@ -39,7 +39,7 @@ As mentioned in the [quickstart
 workflow](../quickstart.md#2-structure-your-data), *at least* you need
 one table that contains *events*, i.e. something that happened to your
 entities of interest somewhere at sometime. So you need *at least*
-three columns in your data: `event_id`, `event_id`, `date` (and
+three columns in your data: `entity_id`, `event_id`, `date` (and
 `location` if you have it would be a nice addition).
 
 In dirtyduck, we provide you with two tables: `semantic.entities` and
@@ -87,8 +87,8 @@ select
    1395916 | 2014-02-03 | 60641    | canvass
 
 Each row in this table is an event with `event_id` and
-`entity_id` (which links  to the entity it happened to) , a `date`,
-(when it happened) as well a location  (the `zip_code` column). The
+`entity_id` (which links to the entity it happened to), a `date`
+(when it happened), as well a location (the `zip_code` column). The
 event will have attributes that describe it in its particularity, in
 this case we are just showing one of those attributes: the type of the
 inspection (`type`)
@@ -115,12 +115,14 @@ Triage needs a field named `entity_id` (that needs to be of type
 integer) to refer to the primary *entities* of interest in our
 project.
 
+When you're done exploring the database, you can exit the postgres command line interface by typing `\q`
+
 ### 3. Set up Dirty duck's triage configuration file
 
 The configuration file sets up the modeling process to mirror the
-operational scenario the models will be used in. This involved
+operational scenario the models will be used in. This involves
 defining the cohort to train/predict on, the outcome we're predicting,
-how  far out we're predicting, how often will the model be updated,
+how far in the future we're predicting, how often will the model be updated,
 how often will the predicted list be used for interventions, what are
 the resources available to intervene to define the evaluation metric,  etc.
 
@@ -176,14 +178,14 @@ scoring:
         -
           metrics: [precision@]
           thresholds:
-            percentiles: [1]
+            percentiles: [10]
 
 
     training_metric_groups:
       -
           metrics: [precision@]
           thresholds:
-            percentiles: [1]
+            percentiles: [10]
 
 ```
 
@@ -208,7 +210,7 @@ in the dirtyduck tutorial, its value inside `bastion` is
 
        postgresql://food_user:some_password@food_db/food
 
-For the quick explanation of the sections check the[quickstart
+For the quick explanation of the sections check the [quickstart
 workflow guide](../quickstart.md#3-set-up-triage-configuration-files). For a
 detailed explanation about each section of the configuration file look
 [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)
@@ -246,16 +248,97 @@ and evaluations (table `test_results.evaluations`).
 
 ### 5. Look at results of your duckling!
 
-You can check to the tables in the schemas `model_metadata` and
-`test_results`. There you will find a lot of information related to
-the performance of your models. With all that data you could (*should*) do model
-selection, postmodeling, bias audit, etc.
+Next, let's quickly check the tables in the schemas `model_metadata` and
+`test_results` to make sure everything worked. There you will find a lot 
+of information related to the performance of your models.
 
-`triage` provides tools for doing all of that, but we should stop this
-little experiment. If you successfully arrive to this point, now you
-are all set to do your own modeling, but if you want to go deeper in
-all the things that `triage` could do for you, continue reading:
+Still connected to the `bastion` docker container, you can connect to the
+database by typing:
 
+    psql $DATABASE_URL
+
+Again, you should see the postgreSQL prompt:
+
+    food=#
+
+Tables in the `model_metadata` schema have some general information about
+experiments that you've run and the models they created. The `quickstart`
+model grid preset should have built 3 models. Let's check with:
+
+```sql
+select 
+  model_id, model_group_id, model_type 
+  from 
+      model_metadata.models;
+```
+
+This should give you a result that looks something like:
+
+model_id | model_group_id | model_type
+----------|----------------|--------------------------------
+1 | 1 | triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression
+2 | 2 | sklearn.tree.DecisionTreeClassifier
+3 | 3 | sklearn.dummy.DummyClassifier
+
+If you want to see predictions for individual entities, you can check out
+`test_results.predictions`, for instance:
+
+```sql
+select 
+  model_id, entity_id, as_of_date, score, label_value
+  from
+      test_results.predictions
+  where entity_id = 15596
+  order by model_id;
+```
+
+This will give you something like:
+
+model_id | entity_id |     as_of_date      |  score  | label_value
+----------|-----------|---------------------|---------|-------------
+1 | 15596 | 2017-09-29 00:00:00 | 0.21884 | 0
+2 | 15596 | 2017-09-29 00:00:00 | 0.22831 | 0
+3 | 15596 | 2017-09-29 00:00:00 | 0.25195 | 0
+
+Finally, `test_results.evaluations` holds some aggregate information on model
+performance. In our config above, we only focused on precision in the top
+ten percent, so let's see how the models are doing based on this:
+
+```sql
+select 
+  model_id, metric, parameter, stochastic_value
+  from
+      test_results.evaluations
+  where metric = 'precision@' 
+        and parameter='10_pct'
+  order by model_id;
+```
+
+model_id |   metric   | parameter |  stochastic_value
+----------|------------|-----------|--------------------
+1 | precision@ | 10_pct     | 0.2865853658536585
+2 | precision@ | 10_pct     |                0.0
+3 | precision@ | 10_pct     |                0.0
+
+Not great! But then again, these were just a couple of overly simple model
+specifications to get things up and running...
+
+Feel free to explore some of the other tables in these schemas (note that
+there's also a `train_results` schema with performance on the training
+set as well as feature importances, where defined). When you're done 
+exploring the database, you can exit the postgres command line interface 
+by typing `\q`
+
+With a real modeling run you could (*should*) do model selection, postmodeling, 
+bias audit, etc. `triage` provides tools for doing all of that, but we 
+the purpose of this little experiment was just to get things up and running. 
+If you have successfully arrived to this point, you are all set to do your own 
+modeling ([here's a good place to start](../quickstart.md)), but if you want to 
+go deeper in this example and learn about these other `triage` functions,
+[continue reading our in-depth tutorial](problem_description.md).
+
+
+### 6. What's next?
 
 ### [Take a deeper look at triage through this example](problem_description.md)
 

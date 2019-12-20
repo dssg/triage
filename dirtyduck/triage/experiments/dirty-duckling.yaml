@@ -43,13 +43,13 @@ model_grid_preset:  'quickstart'
 scoring:
     testing_metric_groups:
         -
-          metrics: [precision@, recall@, 'false negatives@', 'false positives@', 'true positives@', 'true negatives@']
+          metrics: [precision@]
           thresholds:
-            percentiles: [1, 5, 10, 100]
-            top_n: [1, 5, 10, 25, 50, 100, 250, 500, 1000]
-        -
-          metrics: [roc_auc, accuracy]
+            percentiles: [10]
+
 
     training_metric_groups:
       -
-        metrics: [roc_auc, accuracy]
+          metrics: [precision@]
+          thresholds:
+            percentiles: [10]
