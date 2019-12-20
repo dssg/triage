@@ -19,7 +19,7 @@ Triage is designed to:
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Are you completely new to Triage? Go through the tutorial here with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation? 
-- [Development](#development) - Contribute to Triage development.
+- [Development](https://github.com/dssg/triage#development) - Contribute to Triage development.
 
 ## Installation
 
@@ -37,12 +37,12 @@ $ . triage-env/bin/activate
 ```
 
 ## Data
-Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example/database.yaml](/example/database.yaml)).
+Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example/database.yaml](https://github.com/dssg/triage/example/database.yaml)).
 
 
 ## Configure Triage for your project
 
-Triage is configured with a config.yaml file that has parameters defined for each component. You can see some [sample configuration with explanations](/example/config/experiment.yaml) to see what configuration looks like. 
+Triage is configured with a config.yaml file that has parameters defined for each component. You can see some [sample configuration with explanations](https://github.com/dssg/triage/example/config/experiment.yaml) to see what configuration looks like. 
 
 ## Using Triage
 
@@ -112,5 +112,5 @@ example:
 
 ### Contributing
 
-If you'd like to contribute to Triage development, see the [CONTRIBUTING.md](CONTRIBUTING.md) document.
+If you'd like to contribute to Triage development, see the [CONTRIBUTING.md](https://github.com/dssg/triage/CONTRIBUTING.md) document.
 
