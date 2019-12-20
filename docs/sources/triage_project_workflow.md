@@ -282,7 +282,7 @@ triage experiment config.yaml --project-path '/project_directory'
 
 Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
 
-### Check for Results
+### Check for Results and Select Models
 
 #### Check the database
 
@@ -360,6 +360,38 @@ Learn more about feature groups and strategies in the [config README](https://gi
 
 ### Subsets
 
+In some cases, you may be interested in your models' performance on subsets of the full cohort on which it is trained, such as certain demographics or individuals who meet a specific criteria of interest to your program (for instance, a certain level or history of need).
+
+Subsets are defined in the `scoring` section of the configuration file as a list of dictionaries specifying a `name` and `query` that identify the set of entities for each subset of interest using `{as_of_date}` as a placeholder for the modeling date. 
+
+Here's a quick example:
+
+```
+scoring:
+
+    ...
+
+    subsets:
+        -
+            name: women
+            query: |
+                select distinct entity_id
+                from demographics
+                where d.gender = 'woman'
+                and demographic_date < '{as_of_date}'::date
+        -
+            name: youts
+            query: |
+                select distinct entity_id
+                from demographics
+                where extract('year' from age({as_of_date}, d.birth_date)) <= 18
+                and demographic_date < '{as_of_date}'::date
+```
+
+When specify subsets, all of the model evaluation metrics will be calculated for each subset you define here, as well as the cohort overall. In the `test_results.evaluations` table, the `subset_hash` column will identify the subset for the evaluation (`NULL` values indicate evaluations on the entire cohort), and can be joined to `model_metadata.subsets` to obtain the name and definition of the subset.
+
+Note that subsets are only used for the purposes of evaluation, while the model will still be trained and scored on the entire cohort described above.
+
 ### Run `triage`
 
 1. Check triage config
@@ -374,11 +406,26 @@ triage experiment config.yaml --project-path '/project_directory'
 
 Alternatively, you can also import `triage` as a package in your python scrips and run it that way. Learn more about that option [here](https://github.com/dssg/triage#using-triage).
 
-### Check for Results
+### Check for Results and Select Models
+
+As described above, once your modeling run has completed, you can explore the results in the `triage`-generated tables in your database, perform model selection with `audition`, and dig deeper into your results with `postmodeling`:
 
 #### Check the database
 
+Look for results and associated information in:
+- `model_metadata`
+- `train_results`
+- `test_results`
+
 #### Run `audition`
+
+More about using `audition`:
+- [model selection primer](dirtyduck/audition/).
+- [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)
+- [`audition` README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
 
 #### Run `postmodeling`
 
+More about `postmodeling`:
+- [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) 
+- [example `postmodeling` notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)
