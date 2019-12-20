@@ -129,6 +129,10 @@ As you figure out your temporal parameters, you can use the `triage` CLI's `--sh
 triage experiment config.yaml --project-path '/project_directory' --show-timechop
 ```
 
+### Set a `random_seed`
+
+You may want to set an integer-valued `random_seed` for python to use in your configuration file in order to ensure reproducibility of your results across `triage` runs.
+
 ### Run `triage`
 
 1. Check triage config
@@ -321,9 +325,38 @@ Like `audition`, our `postmodeling` tools are currently best used interactively 
 
 ## Iteration 4: Explore additional labels/outcomes, feature group strategies, and calculation evaluation metrics on subsets of entities that may be of special interest
 
+Finally, in `Iteration 4`, you should consider exploring additional labels, `triage`'s tools for understanding feature contributions, and potentially look at evaluating your models on subsets of interest in your cohort.
+
 ### Additional labels
 
+In many projects, how you choose to define your outcome label can have a dramatic impact on which entities your models bring to the top, as well as disparities across protected groups. As such, we generally recommend exploring a number of options for your label definition in the course of a given project. For instance:
+
+- In a project to target health and safety inspections of apartment buildings, you might consider labels that look at the presence of any violation, the presence of at least X violations, violations of a certain type or severity, violations in a certain fraction of units, etc.
+
+- In a recidivism prediction project, you might consider labels that focus on subsequent arrests for any reason or only related to new criminal activity; based on either arrests, bookings, or convictions; or related to certain types or severity of offense.
+
+- In a health care project, you might consider re-hospitalizations over differ time frames, certain types of complications or severity of outcomes or prognoses.
+
+Be sure to change the `name` parameter in your `label_config` with each version to ensure that `triage` recognizes that models built with different labels are distinct.
+
 ### Feature group strategies
+
+If you want to get a better sense for the most important types of features in your models, you can specify a `feature_group_strategies` key in your configuration file, allowing you to run models that include subsets of your features (note that these are taken over your feature groups --- often the different `prefix` values you specified --- not the individual features).
+
+The strategies you can use are: `all`, `leave-one-out`, `leave-one-in`, `all-combinations`. You can specify a list of multiple strategies, for instance:
+
+```
+feature_group_strategies: ['all', 'leave-one-out']
+```
+
+If you had five feature groups, this would run a total of six strategies (one including all your feature groups, and five including all but one of them) for each specification in your model grid.
+
+!!! warning "Before using feature group stragies..."
+    Note that model runs specifying `feature_group_strategies` can become quite time and resource-intensive, especially using the `all-combinations` option. 
+
+    Before making use of this functionality, it's generally smart to narrow your modeling grid considerably to at most a handful of well-performing models and do some back-of-the-envelope calculations of how many variations `triage` will have to run.
+
+Learn more about feature groups and strategies in the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-grouping-optional).
 
 ### Subsets
 
@@ -343,7 +376,9 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 ### Check for Results
 
-1. Check the database
-2. Run `audition`
-3. Run `postmodeling`
+#### Check the database
+
+#### Run `audition`
+
+#### Run `postmodeling`
 
