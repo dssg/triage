@@ -32,6 +32,9 @@ def _ad_hoc_feature_importances(model):
         # NOTE: We need to squeeze this array so it has the correct dimensions
         feature_importances = coef_odds_ratio.squeeze()
 
+    elif isinstance(model, (SVC)) and (model.get_params()["kernel"] == "linear"):
+        feature_importances = model.coef_.squeeze()
+
     return feature_importances
 
 
@@ -50,9 +53,6 @@ def get_feature_importances(model):
     if hasattr(model, "feature_importances_"):
         feature_importances = model.feature_importances_
 
-    elif isinstance(model, (SVC)) and (model.get_params()["kernel"] == "linear"):
-        feature_importances = model.coef_.squeeze()
-
     else:
         warnings.warn(
             "\nThe selected algorithm, doesn't support a standard way"
@@ -62,5 +62,9 @@ def get_feature_importances(model):
         )
 
         feature_importances = _ad_hoc_feature_importances(model)
+
+    # if we just ended up with a scalar (e.g., single feature logit), ensure we return an array
+    if isinstance(feature_importances, np.ndarray) and feature_importances.shape == ():
+        feature_importances = feature_importances.reshape((1,))
 
     return feature_importances
