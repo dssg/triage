@@ -280,9 +280,43 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 ### Check for Results
 
-1. Check the database (including aequitas tables)
-2. Run `audition`
-3. A first look at `postmodeling`
+#### Check the database
+
+As before, the first place to look to check on the results of your modeling run is in the database:
+- Even while the modeling is still running, you can check out `test_results.evaluations` to keep an eye on the progress of the run (join it to `model_metadata.models` using `model_id` if you want to see information about the model specifications).
+- Once the run has finished, you should see many more models in `test_results.evaluations` reflecting the full model grid evaluated on each of the metrics you specified above.
+- Information on feature importances can be found in `train_results.feature_importances` (note the schema is `train_results` since these are calculated based on the training data).
+
+#### Run `audition`
+
+Once you have a more comprehensive model run with a variety of features and modeling grid, `audition` can help you understand the performance of different specifications and further refine your models for future iterations. In a typical project, you'll likely run through the `audition` flow several times as you progressively improve your modeling configuration.
+
+When you finally settle on a configuration you're happy with, `audition` will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using `postmodeling`. 
+
+More about using `audition`:
+- [model selection primer](dirtyduck/audition/).
+- [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)
+- [`audition` README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
+
+#### A first look at `postmodeling`
+
+Now that you've narrowed your grid down to a handful of model specification for a closer look, the `postmodeling` methods provided in `triage` will help you answer three avenues of investigation:
+
+- Dive deeper into what’s going on with each of these models, such as:
+    - score and feature distributions
+    - feature importances
+    - performance characteristics, such as stack ranking, ROC curves, and precision-recall curves
+
+- Debug and improve future models
+    - look for potential leakage of future information into your training set
+    - explore patterns in the model's errors
+    - identify hyperparameter values and features to focus on in subsequent iterations
+
+- Decide how to proceed with deployment
+    - compare lists and important features across models
+    - help decide on either a single "best" model to deploy or a strategy that combines models
+
+Like `audition`, our `postmodeling` tools are currently best used interactively with a `jupyter notebook`. You can read more about these tools in the [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and modify the [example `postmodeling` notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb) for your project.
 
 
 ## Iteration 4: Explore additional labels/outcomes, feature group strategies, and calculation evaluation metrics on subsets of entities that may be of special interest
