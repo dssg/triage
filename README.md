@@ -1,7 +1,7 @@
 Triage
 ======
 
-Data Sciencde Toolkit for Social Good and Public Policy Problems
+Data Science Toolkit for Social Good and Public Policy Problems
 
 [![image](https://travis-ci.com/dssg/triage.svg?branch=master)](https://travis-ci.org/dssg/triage)
 [![image](https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/triage)
