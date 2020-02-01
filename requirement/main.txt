@@ -7,7 +7,7 @@ scipy==1.4.1
 scikit-learn==0.22.1
 matplotlib>=3.0.3
 pandas==1.0.0
-boto3==1.9.139
+boto3==1.11.9
 click==7.0
 inflection==0.3.1
 numpy>=1.12
