@@ -1337,18 +1337,18 @@ graph TD
     PG[Protected Group Generator]
     EV[Model Evaluator]
     end
-    TC --&gt; LG
-    TC --&gt; EDG
-    TC --&gt; FG
-    LG --&gt; MB
-    EDG --&gt; MB
-    FG --&gt; MB
-    MB --&gt; MT
-    MB --&gt; PR
-    MT --&gt; PR
-    EDG --&gt; PG
-    PG --&gt; EV
-    PR --&gt; EV
+    TC &rarr; LG
+    TC &rarr; EDG
+    TC &rarr; FG
+    LG &rarr; MB
+    EDG &rarr; MB
+    FG &rarr; MB
+    MB &rarr; MT
+    MB &rarr; PR
+    MT &rarr; PR
+    EDG &rarr; PG
+    PG &rarr; EV
+    PR &rarr; EV
 </div></p>
 <p>The FeatureGenerator section above hides some details to make the overall graph flow more concise. To support feature grouping, there are more operations that happen between feature table creation and matrix building. The relevant section of the dependency graph is expanded below, along with the output that each pair of components sends between each other within the arrow</p>
 <h3 id="feature-dependency-details">Feature Dependency Details<a class="headerlink" href="#feature-dependency-details" title="Permanent link">#</a></h3>
@@ -1361,14 +1361,14 @@ graph TD
         FGM[Feature Group Mixer]
         PL[Planner]
         MB[Matrix Builder]
-        TC -- as-of-dates --&gt; FG
-        FG -- feature tables --&gt; FDG
-        FDG -- master feature dictionary --&gt; FGC
-        FGC -- feature groups --&gt; FGM
-        FGM -- recombined feature groups --&gt; PL
-        TC -- time splits --&gt; PL
-        FG -- feature tables --&gt; MB
-        PL -- matrix build tasks --&gt; MB
+        TC -- as-of-dates &rarr; FG
+        FG -- feature tables &rarr; FDG
+        FDG -- master feature dictionary &rarr; FGC
+        FGC -- feature groups &rarr; FGM
+        FGM -- recombined feature groups &rarr; PL
+        TC -- time splits &rarr; PL
+        FG -- feature tables &rarr; MB
+        PL -- matrix build tasks &rarr; MB
 </div></p>
 <h2 id="component-list-and-inputoutput">Component List and Input/Output<a class="headerlink" href="#component-list-and-inputoutput" title="Permanent link">#</a></h2>
 <p>These are where the interesting data science work is done.</p>

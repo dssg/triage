@@ -333,6 +333,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#6-iterate-and-explore" title="6. Iterate and Explore" class="md-nav__link">
+    6. Iterate and Explore
+  </a>
+  
+</li>
+      
       
       
       
@@ -896,6 +903,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#6-iterate-and-explore" title="6. Iterate and Explore" class="md-nav__link">
+    6. Iterate and Explore
+  </a>
+  
+</li>
+      
       
       
       
@@ -924,9 +938,18 @@ inside that it needs to store metadata, predictions, and evaluation
 metrics.</p>
 <p>We also recommend installing triage inside a python virtual
 environment for your project so you don't have any conflicts with
-other packages installed on the machine. You can use virutalenv or
-pyenv to do that.</p>
-<p><a href="https://github.com/dssg/triage/blob/master/README.md">Instructions for installing Triage</a></p>
+other packages installed on the machine. You can use <a href="https://virtualenv.pypa.io/en/latest/">virutalenv</a> or
+<a href="https://github.com/pyenv/pyenv-installer/blob/master/README.rst">pyenv</a> to do that.</p>
+<p>If you use <a href="https://github.com/pyenv/pyenv-installer/blob/master/README.rst">pyenv</a> (be sure your default python is 3+):
+<div class="highlight"><pre><span></span>$ pyenv virtualenv triage-env
+$ pyenv activate triage-env
+<span class="o">(</span>triage-env<span class="o">)</span> $ pip install triage
+</pre></div></p>
+<p>If you use <a href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> (be sure your default python is 3+):
+<div class="highlight"><pre><span></span>$ virtualenv triage-env
+$ . triage-env/bin/activate
+<span class="o">(</span>triage-env<span class="o">)</span> $ pip install triage
+</pre></div></p>
 <p><img alt="workflow" src="../dirtyduck/images/quickstart.png" title="Triage Workflow" /></p>
 <h3 id="2-structure-your-data">2. Structure your data<a class="headerlink" href="#2-structure-your-data" title="Permanent link">#</a></h3>
 <p>The simplest way to start is to structure your data as a series of
@@ -951,19 +974,63 @@ how far out we're predicting, how often will the model be updated, how
 often will the predicted list be used for interventions, what are the
 resources available to intervene to define the evaluation metric,
 etc.</p>
-<p>Details about each section of the configration file are
-<a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">here</a></p>
-<p>Here's a <a href="https://github.com/dssg/triage/blob/master/example/config/dirty-duckling.yaml">sample (simpler) configuration file</a></p>
+<p>A lot of details about each section of the configration file can be found <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">here</a>, but for the moment we'll start with the much simplier configuration file below:</p>
+<div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span> <span class="s">&#39;v7&#39;</span>
+
+<span class="nt">model_comment</span><span class="p">:</span> <span class="s">&#39;quickstart_test_run&#39;</span>
+
+<span class="nt">temporal_config</span><span class="p">:</span>
+    <span class="nt">label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;&lt;&lt;</span><span class="nv"> </span><span class="s">YOUR_VALUE_HERE</span><span class="nv"> </span><span class="s">&gt;&gt;&#39;</span><span class="p p-Indicator">]</span>
+
+<span class="nt">label_config</span><span class="p">:</span>
+  <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+    <span class="no">&lt;&lt; YOUR_VALUE_HERE &gt;&gt;</span>
+  <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;quickstart_label&#39;</span>
+
+<span class="nt">feature_aggregations</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span>
+    <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;qstest&#39;</span>
+    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;&lt;&lt;</span><span class="nv"> </span><span class="s">YOUR_VALUE_HERE</span><span class="nv"> </span><span class="s">&gt;&gt;&#39;</span>
+    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;&lt;&lt;</span><span class="nv"> </span><span class="s">YOUR_VALUE_HERE</span><span class="nv"> </span><span class="s">&gt;&gt;&#39;</span>
+
+    <span class="nt">aggregates_imputation</span><span class="p">:</span>
+      <span class="nt">count</span><span class="p">:</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero_noflag&#39;</span>
+
+    <span class="nt">aggregates</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+        <span class="nt">quantity</span><span class="p">:</span>
+          <span class="nt">total</span><span class="p">:</span> <span class="s">&quot;*&quot;</span>
+        <span class="nt">metrics</span><span class="p">:</span>
+          <span class="p p-Indicator">-</span> <span class="s">&#39;count&#39;</span>
+
+    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+
+    <span class="nt">groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+
+<span class="nt">model_grid_preset</span><span class="p">:</span>  <span class="s">&#39;quickstart&#39;</span>
+
+<span class="nt">scoring</span><span class="p">:</span>
+    <span class="nt">testing_metric_groups</span><span class="p">:</span>
+        <span class="p p-Indicator">-</span>
+          <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">]</span>
+          <span class="nt">thresholds</span><span class="p">:</span>
+            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">]</span>
+
+
+    <span class="nt">training_metric_groups</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span>
+          <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">]</span>
+          <span class="nt">thresholds</span><span class="p">:</span>
+            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">]</span>
+</pre></div>
+
+<p>Copy that code block into your text editor of choice and save it as something like <code>quickstart-config.yaml</code> in your working directory for your project. You'll need to fill out the sections marked <code>&lt;&lt; YOUR_VALUE_HERE &gt;&gt;</code> with values appropriate to your project.</p>
 <p>The configuration file has a lot of sections. As a first pass, we will
 infer a lot of the parameters that are needed in there and use
 defaults for others. The primary parameters to specify (for now) are:</p>
 <ol>
-<li>
-<p>DATABASE CONNECTION: We will need a database credential file that
-   contains the name of the database, server, username, and password
-   to use to connect to it. Here's a <a href="https://github.com/dssg/triage/blob/master/example/database.yaml">sample database configuration
-   file</a></p>
-</li>
 <li>
 <p>TIMECHOP config: This sets up temporal parameters for training and
    testing models. The key things to set up here are your prediction
@@ -975,14 +1042,19 @@ defaults for others. The primary parameters to specify (for now) are:</p>
 </li>
 <li>
 <p>LABEL config: This is a <code>sql</code> query that defines what the outcome of
-   interest is. The query must return two columns: <code>entity_id</code> and
-   <code>outcome</code>, based on a given <code>as_of_date</code> and <code>label_timespan</code>. See our
-   <a href="https://dssg.github.io/triage/experiments/cohort-labels/">guide to Labels</a></p>
+   interest is. The query must return two columns: <code>entity_id</code> (an integer) and
+   <code>outcome</code> (with integer label values of <code>0</code> and <code>1</code>), based on a given <code>as_of_date</code> and <code>label_timespan</code> (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
+   <a href="https://dssg.github.io/triage/experiments/cohort-labels/">guide to Labels</a>. For example, if your data was in a table called <code>semantic.events</code> containing columns <code>entity_id</code>, <code>event_date</code>, and <code>label</code>, this query could simply be:
+   <div class="highlight"><pre><span></span>select entity_id, max(label) as outcome
+from semantic.events
+where &#39;{as_of_date}&#39;::timestamp &lt;= event_date
+      and event_date &lt; &#39;{as_of_date}&#39;::timestamp + interval &#39;{label_timespan}&#39;
+</pre></div></p>
 </li>
 <li>
 <p>FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
-   learning models. We need at least one feature specified here.</p>
+   learning models. We need at least one feature specified here. For the purposes of the quickstart, let's just take the count of all events before the modeling date. In the template, you can simply fill in <code>from_obj</code> with the <code>schema.table_name</code> where your data can be found (but this can also be a more complex query in general) and <code>knowledge_date_column</code> with that table's date column.</p>
 </li>
 <li>
 <p>MODEL_GRID_PRESET config: Which models and hyperparameters we want to try in
@@ -990,6 +1062,18 @@ defaults for others. The primary parameters to specify (for now) are:</p>
    model grid to test if everything works.</p>
 </li>
 </ol>
+<p>Additionally, we will need a database credential file that contains the name of the database, server, username, and password to use to connect to it:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Connecting to the database requires a configuration file like this one but</span>
+<span class="c1"># named database.yaml</span>
+
+<span class="nt">host</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">address.of.database.server</span>
+<span class="nt">user</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user_name</span>
+<span class="nt">db</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">database_name</span>
+<span class="nt">pass</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user_password</span>
+<span class="nt">port</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">connection_port (often 5432)</span>
+</pre></div>
+
+<p>Copy this into a separate text file, fill in your values and save it as <code>database.yaml</code> in the working directory where you'll be running triage. Note, however, that if you have a <code>DATABASE_URL</code> environment variable set, triage will use this by default as well.</p>
 <h3 id="4-run-triage">4. Run Triage<a class="headerlink" href="#4-run-triage" title="Permanent link">#</a></h3>
 <p>An overview of different steps that take place when you run Triage is
 <a href="https://dssg.github.io/triage/experiments/algorithm/">here</a></p>
@@ -1005,16 +1089,112 @@ defaults for others. The primary parameters to specify (for now) are:</p>
 </pre></div></p>
 </li>
 </ol>
-<p>A good overview of running an experiment in triage is <a href="https://dssg.github.io/triage/experiments/running/">here</a>.</p>
+<p>For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).</p>
+<p>If you want a bit more detail or documentation, a good overview of running an experiment in triage is <a href="https://dssg.github.io/triage/experiments/running/">here</a>.</p>
 <h3 id="5-look-at-results-generated-by-triage">5. Look at results generated by Triage<a class="headerlink" href="#5-look-at-results-generated-by-triage" title="Permanent link">#</a></h3>
-<p>Once the feature/cohor/label/matrix building is done and the
+<p>Once the feature/cohort/label/matrix building is done and the
 experiment has moved onto modeling, check out the
-model_metadata.models and test_results.evaluations tables as data
+<code>model_metadata.models</code> and <code>test_results.evaluations</code> tables as data
 starts to come in.</p>
-<p>We can either look at results directly in the database (test_results
-schema) or use audition by installing jupyter notebook. <a href="https://dssg.github.io/triage/dirtyduck/docs/audition/">Overview of
-model
-selection</a></p>
+<p>Here are a couple of quick queries to help get you started:</p>
+<p>Tables in the <code>model_metadata</code> schema have some general information about
+experiments that you've run and the models they created. The <code>quickstart</code>
+model grid preset should have built 3 models. You can check that with:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">model_group_id</span><span class="p">,</span> <span class="n">model_type</span> 
+  <span class="k">from</span> 
+      <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span><span class="p">;</span>
+</pre></div>
+
+<p>This should give you a result that looks something like:</p>
+<table>
+<thead>
+<tr>
+<th>model_id</th>
+<th>model_group_id</th>
+<th>model_type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>sklearn.dummy.DummyClassifier</td>
+</tr>
+</tbody>
+</table>
+<p>If you want to see predictions for individual entities, you can check out
+<code>test_results.predictions</code>, for instance:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">as_of_date</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">label_value</span>
+  <span class="k">from</span>
+      <span class="n">test_results</span><span class="p">.</span><span class="n">predictions</span>
+  <span class="k">limit</span> <span class="mi">5</span><span class="p">;</span>
+</pre></div>
+
+<p>This will give you something like:</p>
+<table>
+<thead>
+<tr>
+<th>model_id</th>
+<th>entity_id</th>
+<th>as_of_date</th>
+<th>score</th>
+<th>label_value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.21884</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.22831</td>
+<td>0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.25195</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, <code>test_results.evaluations</code> holds some aggregate information on model
+performance:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="k">parameter</span><span class="p">,</span> <span class="n">stochastic_value</span>
+  <span class="k">from</span>
+      <span class="n">test_results</span><span class="p">.</span><span class="n">evaluations</span>
+  <span class="k">order</span> <span class="k">by</span> <span class="n">model_id</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="k">parameter</span><span class="p">;</span>
+</pre></div>
+
+<p>Feel free to explore some of the other tables in these schemas (note that
+there's also a <code>train_results</code> schema with performance on the training
+set as well as feature importances, where defined).</p>
+<p>In a more complete modeling run, you could <code>audition</code> with jupyter notebooks to help you
+select the best-performing model specifications from a wide variety of options (see the <a href="https://dssg.github.io/triage/dirtyduck/audition/">overview of
+model selection</a> and <a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb">tutorial audition notebook</a>) and <code>postmodeling</code> to delve deeper into understanding these models (see the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md">README</a> and <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb">tutorial postmodeling notebook</a>).</p>
+<h3 id="6-iterate-and-explore">6. Iterate and Explore<a class="headerlink" href="#6-iterate-and-explore" title="Permanent link">#</a></h3>
+<p>Now that you have triage running, <a href="https://dssg.github.io/triage/triage_project_workflow/">continue onto the suggested project workflow</a> for some tips about how to iterate and tune the pipeline for your project.</p>
+<p>Alternatively, if you'd like more of a guided tour with sample data, check out our <a href="https://dssg.github.io/triage/dirtyduck/">dirty duck tutorial</a>.</p>
                 
                   
                 

@@ -512,6 +512,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#where-to-go-from-here" title="Where to go from here" class="md-nav__link">
+    Where to go from here
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1023,6 +1030,13 @@
           <li class="md-nav__item">
   <a href="#going-deeper-with-a-model" title="Going deeper with a model" class="md-nav__link">
     Going deeper with a model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-to-go-from-here" title="Where to go from here" class="md-nav__link">
+    Where to go from here
   </a>
   
 </li>
@@ -2883,9 +2897,9 @@ of entities, since <code>postgresql</code> will sort them at random.</p>
 <p><code>Triage</code> sorted the predictions at <em>random</em> using the
 <code>random_seed</code> from the experiment’s config file. If you want the
 predictions being sorted in a different way add</p>
-<div class="codehilite"><pre><span></span>prediction:
+<div class="codehilite"><pre><span></span><code>prediction:
     randk_tiebreaker: &quot;worst&quot; # or &quot;best&quot; or &quot;random&quot;
-</pre></div>
+</code></pre></div>
 
 
 </div>
@@ -3528,10 +3542,10 @@ but is very helpful since it shows you the <em>consistency</em> of the model
 group: <em>How consistently are the model group in a specific range,
 let's say 20 points, from the best?</em></p>
 <p><img alt="img" src="../images/audition/inspections/distance_from_best_precision@10_pct.png" />
-<em>Figure. Proportion of </em>models<em> in a </em>model group<em> that are separated
+<em>Figure. Proportion of *models</em> in a <em>model group</em> that are separated
 from the best model. The distance is measured in percentual points,
 i.e. How much less precision at 10 percent of the population compared
-to the best model in that date.</em></p>
+to the best model in that date.*</p>
 <p>In the figure, you can see that the ~60% of the <code>DummyClassifier</code>
 models are ~18 percentual points below of the best.</p>
 <h3 id="selecting-the-best-rule-or-strategy-for-choosing-model-groups">Selecting the best rule or strategy for choosing model groups<a class="headerlink" href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups" title="Permanent link">#</a></h3>
@@ -3551,8 +3565,8 @@ that strategy in the next evaluation date?</em></p>
 select the same <strong>model group</strong>.</p>
 <p><img alt="img" src="../images/audition/inspections/regret_distance_from_best_rules_precision@10_pct.png" />
 <em>Figure. Given a strategy for selecting model groups (in the plot 4
-are shown). What will be the distance (</em>regret<em>) to the best
-theoretical model in the following evaluation date?</em></p>
+are shown). What will be the distance (*regret</em>) to the best
+theoretical model in the following evaluation date?*</p>
 <p>Obviously, you don’t know the future, but with the available data, if
 you stick to an a particular strategy, How much you will <em>regret</em>
 about that decision?</p>
@@ -3784,6 +3798,9 @@ the length of the list from 10% to 5%, well you will gain a little
 of precision, but your recall will be ~5%.</p>
 </li>
 </ul>
+<h3 id="where-to-go-from-here">Where to go from here<a class="headerlink" href="#where-to-go-from-here" title="Permanent link">#</a></h3>
+<p>Ready to get started with your own data? Check out <a href="https://dssg.github.io/triage/triage_project_workflow/">the suggested project workflow</a> for some tips about how to iterate and tune the pipeline for your project.</p>
+<p>Want to work through another example? Take a look at our <a href="https://dssg.github.io/triage/dirtyduck/eis/">early warning system case study</a></p>
 <div class="footnote">
 <hr />
 <ol>

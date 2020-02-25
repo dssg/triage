@@ -394,6 +394,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#6-whats-next" title="6. What's next?" class="md-nav__link">
+    6. What's next?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#take-a-deeper-look-at-triage-through-this-example" title="Take a deeper look at triage through this example" class="md-nav__link">
     Take a deeper look at triage through this example
   </a>
@@ -911,6 +918,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#6-whats-next" title="6. What's next?" class="md-nav__link">
+    6. What's next?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#take-a-deeper-look-at-triage-through-this-example" title="Take a deeper look at triage through this example" class="md-nav__link">
     Take a deeper look at triage through this example
   </a>
@@ -953,21 +967,21 @@ data source.</p>
 <p>We packed this a sample of Chicago Food Inspections data source as
 part of the dirty duck tutorial.  Just run in the folder that contains
 the <code>triage</code> local repository:</p>
-<div class="codehilite"><pre><span></span>./tutorial .sh up
-</pre></div>
+<div class="codehilite"><pre><span></span><code>./tutorial.sh up
+</code></pre></div>
 
 
 <p>from you command line. This will start the database.</p>
 <h3 id="1-install-triage-check">1. Install Triage: Check!<a class="headerlink" href="#1-install-triage-check" title="Permanent link">#</a></h3>
 <p>We also containerized <code>triage</code>, so, in this tutorial it is already
 installed for you! Just run</p>
-<div class="codehilite"><pre><span></span>./tutorial.sh bastion
-</pre></div>
+<div class="codehilite"><pre><span></span><code>./tutorial.sh bastion
+</code></pre></div>
 
 
 <p>The prompt in your command line should change to something like</p>
-<div class="codehilite"><pre><span></span>[dirtyduck@bastion$:/triage]
-</pre></div>
+<div class="codehilite"><pre><span></span><code>[dirtyduck@bastion$:/triage]
+</code></pre></div>
 
 
 <p>Type <code>triage</code>, if no error. You completed this step!</p>
@@ -978,7 +992,7 @@ your fingers.</p>
 workflow</a>, <em>at least</em> you need
 one table that contains <em>events</em>, i.e. something that happened to your
 entities of interest somewhere at sometime. So you need <em>at least</em>
-three columns in your data: <code>event_id</code>, <code>event_id</code>, <code>date</code> (and
+three columns in your data: <code>entity_id</code>, <code>event_id</code>, <code>date</code> (and
 <code>location</code> if you have it would be a nice addition).</p>
 <p>In dirtyduck, we provide you with two tables: <code>semantic.entities</code> and
 <code>semantic.events</code>. The latter is the required minimum. We added the
@@ -991,13 +1005,13 @@ data will be an event.</p>
 the database, but, if you are curious you can peek inside it, and
 verify how the <code>events</code> table look like.</p>
 <p>Inside <code>bastion</code> you can connect to the database typing</p>
-<div class="codehilite"><pre><span></span>psql $DATABASE_URL
-</pre></div>
+<div class="codehilite"><pre><span></span><code>psql $DATABASE_URL
+</code></pre></div>
 
 
 <p>This will change the prompt one more time to</p>
-<div class="codehilite"><pre><span></span>food=#
-</pre></div>
+<div class="codehilite"><pre><span></span><code>food=#
+</code></pre></div>
 
 
 <p>Now, type (or copy-paste) the following</p>
@@ -1056,8 +1070,8 @@ verify how the <code>events</code> table look like.</p>
 </tbody>
 </table>
 <p>Each row in this table is an event with <code>event_id</code> and
-<code>entity_id</code> (which links  to the entity it happened to) , a <code>date</code>,
-(when it happened) as well a location  (the <code>zip_code</code> column). The
+<code>entity_id</code> (which links to the entity it happened to), a <code>date</code>
+(when it happened), as well a location (the <code>zip_code</code> column). The
 event will have attributes that describe it in its particularity, in
 this case we are just showing one of those attributes: the type of the
 inspection (<code>type</code>)</p>
@@ -1120,11 +1134,12 @@ inspection (<code>type</code>)</p>
 <p>Triage needs a field named <code>entity_id</code> (that needs to be of type
 integer) to refer to the primary <em>entities</em> of interest in our
 project.</p>
+<p>When you're done exploring the database, you can exit the postgres command line interface by typing <code>\q</code></p>
 <h3 id="3-set-up-dirty-ducks-triage-configuration-file">3. Set up Dirty duck's triage configuration file<a class="headerlink" href="#3-set-up-dirty-ducks-triage-configuration-file" title="Permanent link">#</a></h3>
 <p>The configuration file sets up the modeling process to mirror the
-operational scenario the models will be used in. This involved
+operational scenario the models will be used in. This involves
 defining the cohort to train/predict on, the outcome we're predicting,
-how  far out we're predicting, how often will the model be updated,
+how far in the future we're predicting, how often will the model be updated,
 how often will the predicted list be used for interventions, what are
 the resources available to intervene to define the evaluation metric,  etc.</p>
 <p>Here's the <a href="dirtyduck/experiments/dirty-duckling.yaml">sample configuration
@@ -1176,14 +1191,14 @@ file</a> called <code>dirty-duckling.yaml</code></p>
         <span class="p p-Indicator">-</span>
           <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">]</span>
           <span class="nt">thresholds</span><span class="p">:</span>
-            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">]</span>
+            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">10</span><span class="p p-Indicator">]</span>
 
 
     <span class="nt">training_metric_groups</span><span class="p">:</span>
       <span class="p p-Indicator">-</span>
           <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">]</span>
           <span class="nt">thresholds</span><span class="p">:</span>
-            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">]</span>
+            <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">10</span><span class="p p-Indicator">]</span>
 </pre></div>
 
 <p>This is the <em>minimum</em> configuration file, and it still has a lot of
@@ -1203,11 +1218,11 @@ connection will be created using the database credentials information
 database configuation file</a> or you can setup an
 environment variable named <code>$DATABASE_URL</code>, this is the approach taken
 in the dirtyduck tutorial, its value inside <code>bastion</code> is</p>
-<div class="codehilite"><pre><span></span>   postgresql://food_user:some_password@food_db/food
-</pre></div>
+<div class="codehilite"><pre><span></span><code>   postgresql://food_user:some_password@food_db/food
+</code></pre></div>
 
 
-<p>For the quick explanation of the sections check the<a href="../../quickstart/#3-set-up-triage-configuration-files">quickstart
+<p>For the quick explanation of the sections check the <a href="../../quickstart/#3-set-up-triage-configuration-files">quickstart
 workflow guide</a>. For a
 detailed explanation about each section of the configuration file look
 <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">here</a></p>
@@ -1221,10 +1236,10 @@ configuration files by running:</p>
 <p><div class="highlight"><pre><span></span>triage experiment experiments/dirty-duckling.yaml
 </pre></div>
 That's it! If you see this message in your screen:</p>
-<div class="codehilite"><pre><span></span> INFO:root:Experiment complete
+<div class="codehilite"><pre><span></span><code> INFO:root:Experiment complete
     INFO:root:All models that were supposed to be trained were trained. Awesome!
     INFO:root:All matrices that were supposed to be build were built. Awesome!
-</pre></div>
+</code></pre></div>
 
 
 <p>it would mean that <code>triage</code> actually built (in this order) cohort
@@ -1236,14 +1251,158 @@ labels (table <code>labels_failed_inspections...</code>), features (schema
 (table <code>test_results.predictions</code>)
 and evaluations (table <code>test_results.evaluations</code>).</p>
 <h3 id="5-look-at-results-of-your-duckling">5. Look at results of your duckling!<a class="headerlink" href="#5-look-at-results-of-your-duckling" title="Permanent link">#</a></h3>
-<p>You can check to the tables in the schemas <code>model_metadata</code> and
-<code>test_results</code>. There you will find a lot of information related to
-the performance of your models. With all that data you could (<em>should</em>) do model
-selection, postmodeling, bias audit, etc.</p>
-<p><code>triage</code> provides tools for doing all of that, but we should stop this
-little experiment. If you successfully arrive to this point, now you
-are all set to do your own modeling, but if you want to go deeper in
-all the things that <code>triage</code> could do for you, continue reading:</p>
+<p>Next, let's quickly check the tables in the schemas <code>model_metadata</code> and
+<code>test_results</code> to make sure everything worked. There you will find a lot 
+of information related to the performance of your models.</p>
+<p>Still connected to the <code>bastion</code> docker container, you can connect to the
+database by typing:</p>
+<div class="codehilite"><pre><span></span><code>psql $DATABASE_URL
+</code></pre></div>
+
+
+<p>Again, you should see the postgreSQL prompt:</p>
+<div class="codehilite"><pre><span></span><code>food=#
+</code></pre></div>
+
+
+<p>Tables in the <code>model_metadata</code> schema have some general information about
+experiments that you've run and the models they created. The <code>quickstart</code>
+model grid preset should have built 3 models. Let's check with:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">model_group_id</span><span class="p">,</span> <span class="n">model_type</span> 
+  <span class="k">from</span> 
+      <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span><span class="p">;</span>
+</pre></div>
+
+<p>This should give you a result that looks something like:</p>
+<table>
+<thead>
+<tr>
+<th>model_id</th>
+<th>model_group_id</th>
+<th>model_type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>sklearn.tree.DecisionTreeClassifier</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>sklearn.dummy.DummyClassifier</td>
+</tr>
+</tbody>
+</table>
+<p>If you want to see predictions for individual entities, you can check out
+<code>test_results.predictions</code>, for instance:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">as_of_date</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">label_value</span>
+  <span class="k">from</span>
+      <span class="n">test_results</span><span class="p">.</span><span class="n">predictions</span>
+  <span class="k">where</span> <span class="n">entity_id</span> <span class="o">=</span> <span class="mi">15596</span>
+  <span class="k">order</span> <span class="k">by</span> <span class="n">model_id</span><span class="p">;</span>
+</pre></div>
+
+<p>This will give you something like:</p>
+<table>
+<thead>
+<tr>
+<th>model_id</th>
+<th>entity_id</th>
+<th>as_of_date</th>
+<th>score</th>
+<th>label_value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.21884</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.22831</td>
+<td>0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>15596</td>
+<td>2017-09-29 00:00:00</td>
+<td>0.25195</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, <code>test_results.evaluations</code> holds some aggregate information on model
+performance. In our config above, we only focused on precision in the top
+ten percent, so let's see how the models are doing based on this:</p>
+<div class="highlight"><pre><span></span><span class="k">select</span> 
+  <span class="n">model_id</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="k">parameter</span><span class="p">,</span> <span class="n">stochastic_value</span>
+  <span class="k">from</span>
+      <span class="n">test_results</span><span class="p">.</span><span class="n">evaluations</span>
+  <span class="k">where</span> <span class="n">metric</span> <span class="o">=</span> <span class="s1">&#39;precision@&#39;</span> 
+        <span class="k">and</span> <span class="k">parameter</span><span class="o">=</span><span class="s1">&#39;10_pct&#39;</span>
+  <span class="k">order</span> <span class="k">by</span> <span class="n">model_id</span><span class="p">;</span>
+</pre></div>
+
+<table>
+<thead>
+<tr>
+<th>model_id</th>
+<th>metric</th>
+<th>parameter</th>
+<th>stochastic_value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>precision@</td>
+<td>10_pct</td>
+<td>0.2865853658536585</td>
+</tr>
+<tr>
+<td>2</td>
+<td>precision@</td>
+<td>10_pct</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>precision@</td>
+<td>10_pct</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+<p>Not great! But then again, these were just a couple of overly simple model
+specifications to get things up and running...</p>
+<p>Feel free to explore some of the other tables in these schemas (note that
+there's also a <code>train_results</code> schema with performance on the training
+set as well as feature importances, where defined). When you're done 
+exploring the database, you can exit the postgres command line interface 
+by typing <code>\q</code></p>
+<p>With a real modeling run you could (<em>should</em>) do model selection, postmodeling, 
+bias audit, etc. <code>triage</code> provides tools for doing all of that, but we 
+the purpose of this little experiment was just to get things up and running. 
+If you have successfully arrived to this point, you are all set to do your own 
+modeling (<a href="../../quickstart/">here's a good place to start</a>), but if you want to 
+go deeper in this example and learn about these other <code>triage</code> functions,
+<a href="../problem_description/">continue reading our in-depth tutorial</a>.</p>
+<h3 id="6-whats-next">6. What's next?<a class="headerlink" href="#6-whats-next" title="Permanent link">#</a></h3>
 <h3 id="take-a-deeper-look-at-triage-through-this-example"><a href="../problem_description/">Take a deeper look at triage through this example</a><a class="headerlink" href="#take-a-deeper-look-at-triage-through-this-example" title="Permanent link">#</a></h3>
 <h3 id="get-started-with-your-own-project-and-data"><a href="../../quickstart/">Get started with your own project and data</a><a class="headerlink" href="#get-started-with-your-own-project-and-data" title="Permanent link">#</a></h3>
                 
