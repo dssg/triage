@@ -40,12 +40,17 @@ markdown_extensions:
   - footnotes
   - meta
   - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
   - pymdownx.b64
   - pymdownx.caret
   - pymdownx.critic
   - pymdownx.details
-  - pymdownx.extrarawhtml
   - pymdownx.keys
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
   - pymdownx.highlight
   - pymdownx.snippets
   - pymdownx.superfences
