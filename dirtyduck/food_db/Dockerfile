@@ -5,7 +5,7 @@ RUN apt-get -y update \
     && apt-get -y  install wget \
     && wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - \
     && apt-get -y update \
-    && apt-get -y install postgresql-12-postgis-3 postgis postgresql-12-pgrouting
+    && apt-get -y install postgresql-12-postgis-3 postgis postgresql-12-pgrouting bzip2
 
 ## Chigago Food Inspections
 ## From https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD
