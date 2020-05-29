@@ -366,7 +366,7 @@ class ModelEvaluator(object):
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df_.score,
                  bins=nbins,
-                 normed=True,
+                 density=True,
                  alpha=0.5,
                  color='blue')
         plt.axvline(df_.score.mean(),
@@ -400,13 +400,13 @@ class ModelEvaluator(object):
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df__0.score,
                  bins=nbins,
-                 normed=True,
+                 density=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
         plt.hist(list(df__1.score),
                  bins=nbins,
-                 normed=True,
+                 density=True,
                  alpha=0.5,
                  color='orange',
                  label=label_names[1])
@@ -471,13 +471,13 @@ class ModelEvaluator(object):
         fig, ax = plt.subplots(1, figsize=figsize)
         plt.hist(df__0.score,
                  bins=nbins,
-                 normed=True,
+                 density=True,
                  alpha=0.5,
                  color='skyblue',
                  label=label_names[0])
         plt.hist(df__1.score,
                  bins=nbins,
-                 normed=True,
+                 density=True,
                  alpha=0.5,
                  color='orange',
                  label=label_names[1])
@@ -1152,13 +1152,13 @@ class ModelEvaluator(object):
             f_1 = matrix[matrix.label_value==1][feature]
 
             if len(matrix[feature].unique()) == 2:
-                axs[i1].hist(f_0,bins=20,normed=True,alpha=0.5, 
+                axs[i1].hist(f_0, bins=20,density=True,alpha=0.5, 
                              label=str(yr), color=colors[yr], histtype='step')
-                axs[i2].hist(f_1,bins=20,normed=True,alpha=0.5, 
-                             label=str(yr), color=colors[yr], linestyle="--",histtype='step')
-                axs[i3].hist(f_0,bins=20,normed=True,alpha=0.8,histtype='step',
+                axs[i2].hist(f_1, bins=20,density=True,alpha=0.5, 
+                             label=str(yr), color=colors[yr], linestyle="--", histtype='step')
+                axs[i3].hist(f_0, bins=20,density=True,alpha=0.8,histtype='step',
                              label=str(yr), color=colors[yr])
-                axs[i3].hist(f_1,bins=20,normed=True,alpha=1, linestyle="--",histtype='step',
+                axs[i3].hist(f_1, bins=20,density=True,alpha=1, linestyle="--", histtype='step',
                              label=str(yr), color=colors[yr])
             else:
                 sns.distplot(matrix[matrix.label_value == 0][feature], 
