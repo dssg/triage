@@ -1,5 +1,5 @@
 -r include/build.txt
-bumpversion==0.5.3
+bumpversion==0.6.0
 mkdocs==1.0.4
 pymdown-extensions==6.0
 mkdocs-material==4.2.0
