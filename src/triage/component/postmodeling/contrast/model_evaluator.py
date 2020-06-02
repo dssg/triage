@@ -222,7 +222,7 @@ class ModelEvaluator(object):
 			SELECT
 			model_id,
 			feature_group,
-			avg(feature_importance) as importance_average
+			max(feature_importance) as importance_average
 			FROM raw_importances
 			GROUP BY feature_group, model_id
 			ORDER BY model_id, feature_group
