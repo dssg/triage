@@ -17,7 +17,7 @@ class CrosstabsConfigLoader(object):
             config_to_load = config
         elif config_path:
             with open(config_path, 'r') as stream:
-                config_to_load = yaml.load(stream)
+                config_to_load = yaml.full_load(stream)
         else:
             raise ValueError("Either config_path or config are needed")
         self.__dict__.update(config_to_load)

@@ -26,7 +26,7 @@ def create_pgconn(credentials_yaml):
         - credentials_yaml: .yaml file with db credentials
     '''
     with open(credentials_yaml) as f:
-        configs = yaml.load(f)
+        configs = yaml.full_load(f)
     try:
         conn = create_engine("postgresql://{user}:{password}@{host}:{port}/{dbname}".format(**configs))
     except:
