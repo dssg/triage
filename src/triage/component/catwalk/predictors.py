@@ -249,7 +249,7 @@ class Predictor(object):
             f"""select entity_id, score, as_of_date, label_value
             from {matrix_type.string_name}_results.predictions
             where model_id = {model_id} and matrix_uuid = '{matrix_uuid}'
-            """, engine=self.db_engine)
+            """, connectable=self.db_engine)
 
         sort_seed = None
         if self.rank_order == 'random':
