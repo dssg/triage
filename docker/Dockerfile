@@ -60,7 +60,7 @@ RUN adduser \
 
 USER ${USERNAME}
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)triage:development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
 
 COPY requirements.txt /tmp
 
@@ -79,7 +79,7 @@ RUN pip install git+https://github.com/dssg/triage.git
 RUN apk del build-runtime \
     && rm -rf /var/cache/apk/*
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)triage:master$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)master$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
 ENTRYPOINT [ "triage" ]
 
@@ -112,7 +112,7 @@ RUN apk del build-runtime \
 
 USER ${USERNAME}
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)triage:stable$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)stable$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
 ENTRYPOINT [ "triage" ]
 
