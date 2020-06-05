@@ -13,9 +13,7 @@ services:
       - "5434:5432"
 
   bastion:
-    build:
-      context: ./bastion
-    image: tutorial/bastion
+    image: dsapp/triage:dirtyduck
     container_name: tutorial_bastion
     command: bash
     tty: true
@@ -27,6 +25,6 @@ services:
       - "./triage:/triage"
     ports:
       - "56406-56410:56406-56410"
-
+      
 volumes:
   db-data:

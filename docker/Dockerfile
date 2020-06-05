@@ -33,8 +33,8 @@ ENV PACKAGES="\
     libffi-dev \
     jpeg-dev \ 
     postgresql \
+    ncurses \
     "
-
 
 RUN apk add --virtual build-runtime \
      build-base python-dev openblas-dev lapack-dev freetype-dev pkgconfig gfortran g++ gcc git curl  \
@@ -43,51 +43,73 @@ RUN apk add --virtual build-runtime \
      && rm -r /root/.cache \
         && apk add --no-cache --virtual build-dependencies $PACKAGES
 
-#RUN pip install --no-cache-dir -r requirements.txt \
-#    && apk del build-runtime \
-#    && rm -rf /var/cache/apk/*
-
 RUN mkdir triage
 
 WORKDIR triage
 
 ENV SHELL=/bin/bash
-# Defaults to be overruled by launch script (docker run ... -e USERID=1001 ...)
-ENV USER=triage
+ENV USERNAME=triage
 ENV USERID=1000
 
 RUN adduser \
         --disabled-password \
         --gecos "" \
-        --home "/triage" \
-        --no-create-home \
+        --home "/home/triage" \
         --uid "${USERID}" \
-        "${USER}"         
+        "${USERNAME}"         
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)triage:development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
+
+USER ${USERNAME}
+
+COPY requirements.txt /tmp
+
+RUN pip install -r /tmp/requirements.txt
 
 ENTRYPOINT [ "bash" ]
-
 
 FROM development AS from-master
 
 LABEL triage.version="master"
+
+USER root
 
 RUN pip install git+https://github.com/dssg/triage.git
 
 RUN apk del build-runtime \
     && rm -rf /var/cache/apk/*
 
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)triage:master$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+
 ENTRYPOINT [ "triage" ]
 
+FROM from-master AS dirtyduck
+
+LABEL triage.version="stable"
+
+USER root
+
+RUN pip install ipython jupyter
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)dirtyduck$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
+
+ENTRYPOINT [ "bash" ]
 
 FROM development AS production
 
 LABEL triage.version="stable"
 
+USER root
 
-RUN pip uninstall triage \
+RUN pip uninstall triage ipython jupyter \
     && pip install triage
 
 RUN apk del build-runtime \
     && rm -rf /var/cache/apk/*
 
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)triage:stable$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+
+USER ${USER}
+
 ENTRYPOINT [ "triage" ]
+
