@@ -151,7 +151,7 @@ class ProtectedGroupsGenerator(object):
         """
         protected_df = pandas.DataFrame.pg_copy_from(
             query_string,
-            engine=self.db_engine,
+            connectable=self.db_engine,
             parse_dates=["as_of_date"],
             index_col=MatrixStore.indices,
         )
