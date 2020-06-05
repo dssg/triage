@@ -58,9 +58,9 @@ RUN adduser \
         --uid "${USERID}" \
         "${USERNAME}"         
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)triage:development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
-
 USER ${USERNAME}
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)triage:development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
 
 COPY requirements.txt /tmp
 
@@ -91,7 +91,9 @@ USER root
 
 RUN pip install ipython jupyter
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)dirtyduck$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
+USER ${USERNAME}
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]\u@$(tput setaf 6)$(tput smul)dirtyduck$(tput rmul)$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
 ENTRYPOINT [ "bash" ]
 
@@ -107,9 +109,10 @@ RUN pip uninstall triage ipython jupyter \
 RUN apk del build-runtime \
     && rm -rf /var/cache/apk/*
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)triage:stable$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
-USER ${USER}
+USER ${USERNAME}
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 2)triage:stable$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
 ENTRYPOINT [ "triage" ]
 
