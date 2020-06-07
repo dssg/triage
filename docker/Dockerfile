@@ -85,7 +85,7 @@ ENTRYPOINT [ "triage" ]
 
 FROM from-master AS dirtyduck
 
-LABEL triage.version="stable"
+LABEL triage.version="dirtyduck (from master)"
 
 USER root
 
