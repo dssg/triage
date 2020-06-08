@@ -94,7 +94,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
-    df = pandas.DataFrame.pg_copy_from(query_string, engine=db_engine, parse_dates=["as_of_date"],
+    df = pandas.DataFrame.pg_copy_from(query_string, connectable=db_engine, parse_dates=["as_of_date"],
         index_col=MatrixStore.indices)
     return df
 
