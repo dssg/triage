@@ -126,16 +126,40 @@ defaults for others. The primary parameters to specify (for now) are:
    our [guide to Temporal
    Validation](https://dssg.github.io/triage/experiments/temporal-validation/)
 
-2. LABEL config: This is a `sql` query that defines what the outcome of
-   interest is. The query must return two columns: `entity_id` (an integer) and
-   `outcome` (with integer label values of `0` and `1`), based on a given `as_of_date` and `label_timespan` (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
-   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/). For example, if your data was in a table called `semantic.events` containing columns `entity_id`, `event_date`, and `label`, this query could simply be:
+2. LABEL config: This is a `sql` query that defines the outcome of
+   interest. 
+   
+   The query should return a relation containing the columns
+   - `entity_id`: each `entity_id` affected by an event within the amount of time specified by `label_timespan` after a given `as_of_date`
+   - `outcome`: a binary variable representing the events that happened to each entity, within the period specified by that `as_of_date` and `label_timespan`
+
+   The query is parameterized over `as_of_date`, and `label_timespan`. These parameters are passed to your query as named keywords using the Python's [`str.format()`](https://docs.python.org/3.7/library/stdtypes.html#str.format) method. You can use them in your query by surrounding their keywords with curly braces (as in the example below).
+   
+   See our
+   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/) for a more in-depth discussion of this topic.
+   
+   **Example Query** 
+   
+   Given a source table called `semantic.events`, with the following structure:
+
+   |entity_id|event_date|label|
+   |-|-|-|
+   |135|2014-06-04|1|
+   |246|2013-11-05|0|
+   |135|2013-04-19|0|
+   
+   Assuming an early-warning problem, where a client wants to predict the likelihood that each entity experiences at least one positive event (such as a failed inspection) within some period of time, we could use the following label query:
+
    ```
    select entity_id, max(label) as outcome
    from semantic.events
    where '{as_of_date}'::timestamp <= event_date
          and event_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
    ```
+
+   For each `as_of_date`, this query returns:
+   - all `entity_ids` that experienced at least one event (such as an inspection) within the amount of time specified by `label_timespan`
+   - a binary variable that equals 1 if an entity experienced at least one positive event (failed inspection), or 0 if all events experienced by the entity had negative results.
 
 3. FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
