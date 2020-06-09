@@ -117,6 +117,6 @@ def test_ModelEvaluator_cluster_correlation_features(model_evaluator, shared_pro
         model_evaluator.cluster_correlation_features(shared_project_storage.project_path)
 
 
-def test_ModelEvaluator_plot_feature_group_average_importances(model_evaluator, shared_project_storage):
+def test_ModelEvaluator_plot_feature_group_aggregate_importances(model_evaluator, shared_project_storage):
     with assert_plot_figures_added():
-        model_evaluator.plot_feature_group_average_importances(path=shared_project_storage.project_path)
+        model_evaluator.plot_feature_group_aggregate_importances(path=shared_project_storage.project_path)
