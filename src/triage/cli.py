@@ -91,7 +91,7 @@ class Triage(RootCommand):
                 )
 
         with dbfile:
-            dbconfig = yaml.load(dbfile)
+            dbconfig = yaml.full_load(dbfile)
 
         return URL(
             'postgres',
@@ -127,7 +127,7 @@ class FeatureTest(Command):
     def __call__(self, args):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
-        full_config = yaml.load(args.feature_config_file)
+        full_config = yaml.full_load(args.feature_config_file)
         feature_config = full_config['feature_aggregations']
         cohort_config = full_config.get('cohort_config', None)
         if cohort_config:
@@ -256,7 +256,7 @@ class Experiment(Command):
 
     def _load_config(self):
         config_file = Store.factory(self.args.config)
-        return yaml.load(config_file.load())
+        return yaml.full_load(config_file.load())
 
     @cachedproperty
     def experiment(self):
@@ -346,7 +346,7 @@ class Audition(Command):
         self.root.setup()  # Loading configuration (if exists)
         db_url = self.root.db_url
         dir_plot = self.args.directory
-        config = yaml.load(self.args.config)
+        config = yaml.full_load(self.args.config)
         db_engine = create_engine(db_url)
         return AuditionRunner(config, db_engine, dir_plot)
 
@@ -374,7 +374,7 @@ class Crosstabs(Command):
         db_engine = create_engine(self.root.db_url)
         config_store = Store.factory(args.config)
         with config_store.open() as fd:
-            config = CrosstabsConfigLoader(config=yaml.load(fd))
+            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
         run_crosstabs(db_engine, config)
 
 

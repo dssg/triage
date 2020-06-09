@@ -133,7 +133,7 @@ def model_grid_preset(grid_type):
 
     presets_file = os.path.join(os.path.dirname(__file__), 'model_grid_presets.yaml')
     with open(presets_file, 'r') as f:
-        model_grid_presets = yaml.safe_load(f)
+        model_grid_presets = yaml.full_load(f)
 
     # output is a collector for the resulting grid, so initialize it with the parameters
     # at the level of preset grid we want and find the next-lowest level to incorporate

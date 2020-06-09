@@ -12,7 +12,7 @@ def ensure_db(engine):
 
 def connect(poolclass=QueuePool):
     with open("database.yaml") as fd:
-        config = yaml.load(fd)
+        config = yaml.full_load(fd)
         dburl = URL(
             "postgres",
             host=config["host"],
