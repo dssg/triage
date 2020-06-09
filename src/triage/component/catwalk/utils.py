@@ -252,10 +252,14 @@ def save_db_objects(db_engine, db_objects):
     db_objects = iter(db_objects)
     first_object = next(db_objects)
     type_of_object = type(first_object)
+    columns = [col.name for col in first_object.__table__.columns]
 
     with PipeTextIO(partial(
             _write_csv,
             db_objects=chain((first_object,), db_objects),
             type_of_object=type_of_object
     )) as pipe:
-        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")
+        postgres_copy.copy_from(source=pipe, dest=type_of_object,
+                                engine_or_conn=db_engine,
+                                columns=columns, 
+                                format="csv")

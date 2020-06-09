@@ -28,7 +28,7 @@ def test_filename_friendly_hash():
     }
     output = filename_friendly_hash(data)
     assert isinstance(output, str)
-    assert re.match("^[\w]+$", output) is not None
+    assert re.match(r"^[\w]+$", output) is not None
 
     # make sure ordering keys differently doesn't change the hash
     new_output = filename_friendly_hash(

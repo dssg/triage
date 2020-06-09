@@ -1782,12 +1782,12 @@ models in this model group, and check if you can detect any pattern.
     *Figure. Top 10 feature importances for de model group 11 at 2016-06-01 (i.e. model 125).*
 
     ```jupyter-python
-    models_39['125'].plot_feature_group_average_importances()
+    models_39['125'].plot_feature_group_aggregate_importances()
     ```
 
     ![img](images/postmodeling/inspection_model_group_39_model_125_feature_group_importances.png)
     *Figure. Feature group “importance” (we are basically taking the
-    average of all the feature importances in a feature group) for the
+    max of all the feature importances in a feature group) for the
     model group 39, model 125.*
 
 -   Our *Policy menu*

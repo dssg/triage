@@ -23,7 +23,7 @@ class PostmodelParameters(object):
     def __init__(self, path_params):
 
         with open(path_params) as f:
-            params = yaml.load(f)
+            params = yaml.full_load(f)
 
         # Assign dict elements to Parameters object and flatten 
         # thresholds

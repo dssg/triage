@@ -42,7 +42,7 @@ if not url:
         raise ValueError("No database connection information found")
 
     with open(db_config_file) as fd:
-        config = yaml.load(fd)
+        config = yaml.full_load(fd)
         url = URL(
             "postgres",
             host=config["host"],

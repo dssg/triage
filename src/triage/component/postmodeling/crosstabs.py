@@ -17,7 +17,7 @@ class CrosstabsConfigLoader(object):
             config_to_load = config
         elif config_path:
             with open(config_path, 'r') as stream:
-                config_to_load = yaml.load(stream)
+                config_to_load = yaml.full_load(stream)
         else:
             raise ValueError("Either config_path or config are needed")
         self.__dict__.update(config_to_load)
@@ -41,7 +41,7 @@ hr_lr_ratio = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
 def hr_lr_ttest(hr, lr):
     """ Returns the t-test (T statistic and p value), comparing the features for
     high- and low-risk entities. """
-    res = stats.ttest_ind(hr.as_matrix(), lr.as_matrix(), axis=0, nan_policy='omit',
+    res = stats.ttest_ind(hr.to_numpy(), lr.to_numpy(), axis=0, nan_policy='omit',
                           equal_var=False)
 
     r0 = pd.Series(res[0], index=hr.columns)
