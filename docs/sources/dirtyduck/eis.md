@@ -897,10 +897,10 @@ In this tutorial, we will just show some parts of the analysis in the most recen
     ![img](images/eis_model_group_64_feature_importances.png "Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226).")
 
     ```jupyter-python
-    models_76['234'].plot_feature_group_average_importances()
+    models_76['234'].plot_feature_group_aggregate_importances()
     ```
 
-    ![img](images/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the average of all the feature importances in a feature group) for the model group 64, model 226.")
+    ![img](images/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226.")
 
 
 ## Crosstabs: How are the entities classified?

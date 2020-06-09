@@ -200,7 +200,7 @@ class ModelEvaluator(object):
                                       .mean()\
                                       .reset_index()
             feature_groups = feature_groups.rename(index=str, 
-                                                   columns={"feature_importance":"importance_average"})
+                                                   columns={"feature_importance":"importance_aggregate"})
         else:
             feature_groups = pd.read_sql(
             f'''
@@ -222,7 +222,7 @@ class ModelEvaluator(object):
 			SELECT
 			model_id,
 			feature_group,
-			avg(feature_importance) as importance_average
+			max(feature_importance) as importance_aggregate
 			FROM raw_importances
 			GROUP BY feature_group, model_id
 			ORDER BY model_id, feature_group
@@ -624,13 +624,13 @@ class ModelEvaluator(object):
             {self.model_type}
             ''')
 
-    def plot_feature_group_average_importances(self,
+    def plot_feature_group_aggregate_importances(self,
                                                n_features_plots=30,
                                                figsize=(16, 12),
                                                fontsize=20,
                                                path=None):
         '''
-        Generate a bar chart of the average feature group importances (by absolute value)
+        Generate a bar chart of the aggregate feature group importances (by absolute value)
         Arguments:
                 - save_file (bool): save file to disk as png. Default is False.
                 - path (str): path to the triage's project_path
@@ -642,16 +642,16 @@ class ModelEvaluator(object):
 
         fg_importances = self.feature_group_importances(path=path)
         fg_importances = fg_importances.filter(items=['feature_group', \
-                                               'importance_average'])
+                                               'importance_aggregate'])
         fg_importances = fg_importances.set_index('feature_group')
 
         # Sort by the absolute value of the importance of the feature
-        fg_importances['sort'] = abs(fg_importances['importance_average'])
+        fg_importances['sort'] = abs(fg_importances['importance_aggregate'])
         fg_importances = \
                 fg_importances.sort_values(by='sort', ascending=False).drop('sort', axis=1)
 
         # Show the most important positive feature at the top of the graph
-        importances = fg_importances.sort_values(by='importance_average', ascending=True)
+        importances = fg_importances.sort_values(by='importance_aggregate', ascending=True)
 
         fig, ax = plt.subplots(figsize=figsize)
         ax.tick_params(labelsize=16)
