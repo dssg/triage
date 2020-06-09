@@ -53,13 +53,13 @@ We included a [simple configuration file](file:///home/nanounanue/projects/dsapp
 model_groups:
     query: |
         select distinct(model_group_id)
-        from model_metadata.model_groups
+        from triage_metadata.model_groups
         where model_config ->> 'experiment_type' ~ 'inspection'
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 time_stamps:
     query: |
         select distinct train_end_time
-        from model_metadata.models
+        from triage_metadata.models
         where model_group_id in ({})
         and extract(day from train_end_time) in (1)
         and train_end_time >= '2015-01-01'

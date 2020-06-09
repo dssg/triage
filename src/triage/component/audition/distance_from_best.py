@@ -83,8 +83,8 @@ class DistanceFromBestTable(object):
                             ORDER BY ev.stochastic_value {metric_value_order}, RANDOM()
                         ) AS rank
                   FROM first_evals ev
-                  JOIN model_metadata.{models_table} m USING(model_id)
-                  JOIN model_metadata.model_groups mg USING(model_group_id)
+                  JOIN triage_metadata.{models_table} m USING(model_id)
+                  JOIN triage_metadata.model_groups mg USING(model_group_id)
                   WHERE m.model_group_id IN ({model_group_ids})
                         AND train_end_time in ({train_end_times})
                         AND ev.eval_rn = 1
@@ -278,7 +278,7 @@ class BestDistancePlotter(object):
                     AVG(CASE WHEN dist_from_best_case <= distance THEN 1 ELSE 0 END) AS pct_of_time
             FROM {distance_table} dist
             JOIN x_vals USING(model_group_id)
-            JOIN model_metadata.model_groups mg using (model_group_id)
+            JOIN triage_metadata.model_groups mg using (model_group_id)
             WHERE
                 dist.metric='{metric}'
                 AND dist.parameter='{parameter}'

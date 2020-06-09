@@ -28,7 +28,7 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 
 schemas = (
-    "CREATE SCHEMA IF NOT EXISTS model_metadata;"
+    "CREATE SCHEMA IF NOT EXISTS triage_metadata;"
     " CREATE SCHEMA IF NOT EXISTS test_results;"
     " CREATE SCHEMA IF NOT EXISTS train_results;"
 )
@@ -47,7 +47,7 @@ event.listen(Base.metadata, "before_create", DDL(stmt))
 class Experiment(Base):
 
     __tablename__ = "experiments"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
@@ -64,7 +64,7 @@ class Experiment(Base):
 class Subset(Base):
 
     __tablename__ = "subsets"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     subset_hash = Column(String, primary_key=True)
     config = Column(JSONB)
@@ -74,7 +74,7 @@ class Subset(Base):
 class ModelGroup(Base):
 
     __tablename__ = "model_groups"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     model_group_id = Column(Integer, primary_key=True)
     model_type = Column(Text)
@@ -86,10 +86,10 @@ class ModelGroup(Base):
 class ListPrediction(Base):
 
     __tablename__ = "list_predictions"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -104,11 +104,11 @@ class ListPrediction(Base):
 
 class ExperimentMatrix(Base):
     __tablename__ = "experiment_matrices"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     experiment_hash = Column(
         String,
-        ForeignKey("model_metadata.experiments.experiment_hash"),
+        ForeignKey("triage_metadata.experiments.experiment_hash"),
         primary_key=True
     )
 
@@ -118,7 +118,7 @@ class ExperimentMatrix(Base):
 class Matrix(Base):
 
     __tablename__ = "matrices"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     matrix_id = Column(String)
     matrix_uuid = Column(String, unique=True, index=True, primary_key=True)
@@ -130,7 +130,7 @@ class Matrix(Base):
     feature_start_time = Column(DateTime)
     matrix_metadata = Column(JSONB)
     built_by_experiment = Column(
-        String, ForeignKey("model_metadata.experiments.experiment_hash")
+        String, ForeignKey("triage_metadata.experiments.experiment_hash")
     )
     feature_dictionary = Column(JSONB)
 
@@ -138,11 +138,11 @@ class Matrix(Base):
 class Model(Base):
 
     __tablename__ = "models"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     model_id = Column(Integer, primary_key=True)
     model_group_id = Column(
-        Integer, ForeignKey("model_metadata.model_groups.model_group_id")
+        Integer, ForeignKey("triage_metadata.model_groups.model_group_id")
     )
     model_hash = Column(String, unique=True, index=True)
     run_time = Column(DateTime)
@@ -153,11 +153,11 @@ class Model(Base):
     batch_comment = Column(Text)
     config = Column(JSON)
     built_by_experiment = Column(
-        String, ForeignKey("model_metadata.experiments.experiment_hash")
+        String, ForeignKey("triage_metadata.experiments.experiment_hash")
     )
     train_end_time = Column(DateTime)
     test = Column(Boolean)
-    train_matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    train_matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     training_label_timespan = Column(Interval)
     model_size = Column(Float)
     random_seed = Column(Integer)
@@ -175,11 +175,11 @@ class Model(Base):
 
 class ExperimentModel(Base):
     __tablename__ = "experiment_models"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     experiment_hash = Column(
         String,
-        ForeignKey("model_metadata.experiments.experiment_hash"),
+        ForeignKey("triage_metadata.experiments.experiment_hash"),
         primary_key=True
     )
     model_hash = Column(String, primary_key=True)
@@ -194,7 +194,7 @@ class FeatureImportance(Base):
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     model = relationship(Model)
     feature = Column(String, primary_key=True)
@@ -211,7 +211,7 @@ class TestPrediction(Base):
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -221,7 +221,7 @@ class TestPrediction(Base):
     rank_abs_with_ties = Column(Integer)
     rank_pct_no_ties = Column(Numeric(6, 5))
     rank_pct_with_ties = Column(Numeric(6, 5))
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
@@ -234,7 +234,7 @@ class TrainPrediction(Base):
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -244,7 +244,7 @@ class TrainPrediction(Base):
     rank_abs_with_ties = Column(Integer)
     rank_pct_no_ties = Column(Float)
     rank_pct_with_ties = Column(Float)
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
@@ -256,9 +256,9 @@ class TestPredictionMetadata(Base):
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
@@ -269,9 +269,9 @@ class TrainPredictionMetadata(Base):
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"), primary_key=True)
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
@@ -282,7 +282,7 @@ class IndividualImportance(Base):
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
@@ -300,13 +300,13 @@ class TestEvaluation(Base):
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     num_labeled_examples = Column(Integer)
@@ -329,13 +329,13 @@ class TrainEvaluation(Base):
     __table_args__ = {"schema": "train_results"}
 
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     metric = Column(String, primary_key=True)
     parameter = Column(String, primary_key=True)
     num_labeled_examples = Column(Integer)
@@ -356,13 +356,13 @@ class TestAequitas(Base):
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "test_results"}
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True, index=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True, index=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     tie_breaker = Column(String, primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True, index=True)
     evaluation_end_time = Column(DateTime, primary_key=True, index=True)
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     parameter = Column(String, primary_key=True, index=True)
     attribute_name = Column(String, primary_key=True, index=True)
     attribute_value = Column(String, primary_key=True, index=True)
@@ -428,13 +428,13 @@ class TrainAequitas(Base):
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "train_results"}
     model_id = Column(
-        Integer, ForeignKey("model_metadata.models.model_id"), primary_key=True, index=True
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True, index=True
     )
     subset_hash = Column(String, primary_key=True, default='')
     tie_breaker = Column(String, primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True, index=True)
     evaluation_end_time = Column(DateTime, primary_key=True, index=True)
-    matrix_uuid = Column(Text, ForeignKey("model_metadata.matrices.matrix_uuid"))
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"))
     parameter = Column(String, primary_key=True, index=True)
     attribute_name = Column(String, primary_key=True, index=True)
     attribute_value = Column(String, primary_key=True, index=True)
@@ -506,7 +506,7 @@ class ExperimentRunStatus(enum.Enum):
 class ExperimentRun(Base):
 
     __tablename__ = "experiment_runs"
-    __table_args__ = {"schema": "model_metadata"}
+    __table_args__ = {"schema": "triage_metadata"}
 
     run_id = Column("id", Integer, primary_key=True)
     start_time = Column(DateTime)
@@ -515,7 +515,7 @@ class ExperimentRun(Base):
     triage_version = Column(String)
     experiment_hash = Column(
         String,
-        ForeignKey("model_metadata.experiments.experiment_hash")
+        ForeignKey("triage_metadata.experiments.experiment_hash")
     )
     platform = Column(Text)
     os_user = Column(Text)

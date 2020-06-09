@@ -58,8 +58,8 @@ class ModelEvaluator(object):
                            m.training_label_timespan,
                            m.model_type,
                            mg.model_config
-                        FROM model_metadata.models m
-                        JOIN model_metadata.model_groups mg
+                        FROM triage_metadata.models m
+                        JOIN triage_metadata.model_groups mg
                         USING (model_group_id)
                         WHERE model_group_id = {self.model_group_id}
                         AND model_id = {self.model_id}

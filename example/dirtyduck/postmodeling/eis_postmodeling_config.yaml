@@ -18,7 +18,7 @@
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
-       left join model_metadata.models g
+       left join triage_metadata.models g
        using(model_id)
        where g.model_group_id = 20
              and metric = 'precision@'

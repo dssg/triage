@@ -4,7 +4,7 @@
 model_groups:
     query: |
         SELECT DISTINCT(model_group_id)
-        FROM model_metadata.model_groups
+        FROM triage_metadata.model_groups
 
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 # The timestamps when audition happens for each model group.
@@ -15,7 +15,7 @@ model_groups:
 time_stamps:
     query: |
         SELECT DISTINCT train_end_time
-        FROM model_metadata.models
+        FROM triage_metadata.models
         WHERE model_group_id IN ({})
         AND EXTRACT(DAY FROM train_end_time) IN (1)
         AND train_end_time >= '2012-01-01'

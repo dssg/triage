@@ -302,7 +302,7 @@ def basic_integration_test(
             matrices_records = list(
                 db_engine.execute(
                     """select matrix_uuid, num_observations, matrix_type
-                    from model_metadata.matrices
+                    from triage_metadata.matrices
                     """
                 )
             )

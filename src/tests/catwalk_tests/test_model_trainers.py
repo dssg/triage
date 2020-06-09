@@ -58,7 +58,7 @@ def test_model_trainer(grid_config, default_model_trainer):
 
     records = [
         row
-        for row in db_engine.execute("select model_hash from model_metadata.models")
+        for row in db_engine.execute("select model_hash from triage_metadata.models")
     ]
     assert len(records) == 4
     hashes = [row[0] for row in records]
@@ -67,7 +67,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     records = [
         row
         for row in db_engine.execute(
-            "select distinct model_group_id from model_metadata.models"
+            "select distinct model_group_id from triage_metadata.models"
         )
     ]
     assert len(records) == 4
@@ -76,7 +76,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     records = [
         row
         for row in db_engine.execute(
-            "select distinct random_seed from model_metadata.models"
+            "select distinct random_seed from triage_metadata.models"
         )
     ]
     assert len(records) == 4
@@ -84,7 +84,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     # 3. that the model sizes are saved in the table and all are < 1 kB
     records = [
         row
-        for row in db_engine.execute("select model_size from model_metadata.models")
+        for row in db_engine.execute("select model_size from triage_metadata.models")
     ]
     assert len(records) == 4
     for i in records:
@@ -117,7 +117,7 @@ def test_model_trainer(grid_config, default_model_trainer):
             [
                 row
                 for row in db_engine.execute(
-                    "select model_hash from model_metadata.models"
+                    "select model_hash from triage_metadata.models"
                 )
             ]
         )
@@ -129,7 +129,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     max_batch_run_time = [
         row[0]
         for row in db_engine.execute(
-            "select max(batch_run_time) from model_metadata.models"
+            "select max(batch_run_time) from triage_metadata.models"
         )
     ][0]
     trainer = ModelTrainer(
@@ -151,13 +151,13 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert [
         row["model_id"]
         for row in db_engine.execute(
-            "select model_id from model_metadata.models order by 1 asc"
+            "select model_id from triage_metadata.models order by 1 asc"
         )
     ] == model_ids
     new_max_batch_run_time = [
         row[0]
         for row in db_engine.execute(
-            "select max(batch_run_time) from model_metadata.models"
+            "select max(batch_run_time) from triage_metadata.models"
         )
     ][0]
     assert new_max_batch_run_time > max_batch_run_time
@@ -172,7 +172,7 @@ def test_model_trainer(grid_config, default_model_trainer):
 
     # 8. if the cache is missing but the metadata is still there, reuse the metadata
     set_test_seed()
-    for row in db_engine.execute("select model_hash from model_metadata.models"):
+    for row in db_engine.execute("select model_hash from triage_metadata.models"):
         model_storage_engine.delete(row[0])
     new_model_ids = trainer.train_models(
         grid_config=grid_config,
@@ -228,7 +228,7 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
     records = [
         row[0]
         for row in db_engine_with_results_schema.execute(
-            "select distinct model_group_id from model_metadata.models"
+            "select distinct model_group_id from triage_metadata.models"
         )
     ]
     assert len(records) == 1
@@ -264,7 +264,7 @@ def test_n_jobs_not_new_model(default_model_trainer):
     # since n_jobs is a runtime attribute of the model, it should not make it
     # into the model group
     for row in db_engine.execute(
-        "select hyperparameters from model_metadata.model_groups"
+        "select hyperparameters from triage_metadata.model_groups"
     ):
         assert "n_jobs" not in row[0]
 

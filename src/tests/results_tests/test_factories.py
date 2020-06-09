@@ -38,7 +38,7 @@ def test_evaluation_factories_no_subset():
                 e.subset_hash
             from
                 test_results.evaluations e
-                join model_metadata.models m using (model_id)
+                join triage_metadata.models m using (model_id)
             """
         )
         for model_group_id, model_id, metric, value, subset_hash in results:
@@ -73,8 +73,8 @@ def test_evaluation_factories_with_subset(db_engine):
             e.stochastic_value
         from
             test_results.evaluations e
-            join model_metadata.models m using (model_id)
-            join model_metadata.subsets s using (subset_hash)
+            join triage_metadata.models m using (model_id)
+            join triage_metadata.subsets s using (subset_hash)
         """
     )
     for model_group_id, model_id, s_subset_hash, e_subset_hash, metric, value in results:
@@ -123,7 +123,7 @@ def test_prediction_factories():
             select m.*, p.*
             from
                 test_results.predictions p
-                join model_metadata.models m using (model_id)
+                join triage_metadata.models m using (model_id)
                 join test_results.individual_importances i using (model_id, entity_id, as_of_date)
             """
         )

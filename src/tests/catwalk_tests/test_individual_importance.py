@@ -61,7 +61,7 @@ def test_calculate_and_save():
             for row in db_engine.execute(
                 """select entity_id, as_of_date
             from test_results.individual_importances
-            join model_metadata.models using (model_id)"""
+            join triage_metadata.models using (model_id)"""
             )
         ]
         assert len(records) > 0
@@ -72,7 +72,7 @@ def test_calculate_and_save():
             for row in db_engine.execute(
                 """select entity_id, as_of_date
             from test_results.individual_importances
-            join model_metadata.models using (model_id)"""
+            join triage_metadata.models using (model_id)"""
             )
         ]
         assert len(records) == len(new_records)

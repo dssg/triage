@@ -117,7 +117,7 @@ def test_predictions_table(predictor, predict_proba, matrix_type):
         for row in predictor.db_engine.execute(
             """select entity_id, as_of_date
         from {}_results.predictions
-        join model_metadata.models using (model_id)""".format(
+        join triage_metadata.models using (model_id)""".format(
                 matrix_type, matrix_type
             )
         )
@@ -172,8 +172,8 @@ where as_of_date = %s and model_id = %s and matrix_uuid = %s order by {rank_col}
     metadata_records = [row for row in predictor.db_engine.execute(
         f"""select tiebreaker_ordering, prediction_metadata.random_seed, models.random_seed
         from {matrix_type}_results.prediction_metadata
-        join model_metadata.models using (model_id)
-        join model_metadata.matrices using (matrix_uuid)
+        join triage_metadata.models using (model_id)
+        join triage_metadata.matrices using (matrix_uuid)
         """
     )]
     assert len(metadata_records) == 1
@@ -494,7 +494,7 @@ def test_predictor_get_train_columns(predict_setup_args):
             for row in db_engine.execute(
                 """select entity_id, as_of_date
             from {}_results.predictions
-            join model_metadata.models using (model_id)""".format(
+            join triage_metadata.models using (model_id)""".format(
                     mat_type, mat_type
                 )
             )
