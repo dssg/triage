@@ -6,7 +6,7 @@ Triage is a great tool to make our life easier by semi-automating many different
 optional, only for users who want to use `triage.postmodeling` module after experiment. 
 
 ## Experiment Configuration
-Also check out the example file `experiment.yaml`.
+Also check out the example file [`experiment.yaml`](experiment.yaml).
 
 ### Config Version
 
@@ -19,9 +19,9 @@ Also check out the example file `experiment.yaml`.
 ### Time Splitting
 This section defines a set of parameters used in label generation and temporal cross-validation. 
 
-Dates should be specified using the format `YYYY-MM-DD`. Intervals should be specified using the [Postgres interval input format](https://www.postgresql.org/docs/11/datatype-datetime.html#DATATYPE-INTERVAL-INPUT).
+Dates should be specified as date strings of the format `YYYY-MM-DD`. Intervals should be specified as strings of the [Postgres interval input format](https://www.postgresql.org/docs/11/datatype-datetime.html#DATATYPE-INTERVAL-INPUT).
 
-Some parameters accept lists of arguments. If multiple arguments are specified, Triage will run experiments on each permutation of time splitting arguments available. These parameters **must** be specified as lists, even if specifying a single variable.
+Some parameters accept lists of arguments. If multiple arguments are specified, Triage will run experiments on each available permutation of time splitting arguments. Arguments to parameters that take lists **must** be specified as lists, even if specifying a single variable.
 
 Note that these default values were selected to simplify the beginnings of your project, and are by no means *suggested* values.
 
