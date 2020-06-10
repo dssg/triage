@@ -50,7 +50,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.magiclink
   - pymdownx.mark
-  - pymdownx.smartsymbols
+  - pymdownx.smartsymbols:
+      arrows: false
   - pymdownx.highlight
   - pymdownx.snippets
   - pymdownx.superfences
