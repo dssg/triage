@@ -17,24 +17,31 @@ Also check out the example file `experiment.yaml`.
 - `random_seed` (optional): will be set in Python at the beginning of the experiment and affect the generation of all model seeds. If omitted, a random value will be chosen and recorded in the database to allow for future replication.
 
 ### Time Splitting
-The time window to look at, and how to divide the window into train/test splits
+This section defines a set of parameters used in label generation and temporal cross-validation. 
 
-- `temporal_config`:
-    - `feature_start_time`: earliest date included in features (default: earliest date in feature_aggregations from_objs)
-    - `feature_end_time`: latest date included in features (default: latest date in feature_aggregations from_objs)
-    - `label_start_time`: earliest date for which labels are avialable (default: earliest date in feature_aggregations from_objs)
-    - `label_end_time`: day AFTER last label date (all dates in any model are before this date) (default: latest date in feature_aggregations from_objs)
-    - `model_update_frequency`: how frequently to retrain models (default: 100y)
-    - `training_as_of_date_frequencies`: time between as of dates for same entity in train matrix (default: 100y)
-    - `test_as_of_date_frequencies`: time between as of dates for same entity in test matrix (default: 100y)
-    - `max_training_histories`: length of time included in a train matrix (default: 0d)
-    - `test_durations`: length of time included in a test matrix (0 days will give a single prediction immediately after training end) (default: 0d)
-    - `training_label_timespans`: time period across which outcomes are labeled in train matrices
-    - `test_label_timespans`: time period across which outcomes are labeled in test matrices
+Dates should be specified using the format `YYYY-MM-DD`. Intervals should be specified using the [Postgres interval input format](https://www.postgresql.org/docs/11/datatype-datetime.html#DATATYPE-INTERVAL-INPUT).
 
-Note that if your label timespan is the same in both testing and training, you can simply set a single `label_timespans` parameter instead.
+Some parameters accept lists of arguments. If multiple arguments are specified, Triage will run experiments on each permutation of time splitting arguments available. These parameters **must** be specified as lists, even if specifying a single variable.
 
-Be mindful that this values were selected in order to simplify the beginnings of your project, and are by no means *suggested* values for all projects.
+Note that these default values were selected to simplify the beginnings of your project, and are by no means *suggested* values.
+
+
+| Parameter | Description | Type | Default | Example            | Takes List |
+|-|-|-|-|-|-|
+| feature_start_time | Earliest date included in features | date | Earliest date in feature_aggregations from_objs | '1995-01-01' | No |
+| feature_end_time | Latest date included in features | date | Latest date in feature_aggregations from_objs | '2015-01-01' | No |
+| label_start_time | Earliest date for which labels are available | date | Latest date in feature_aggregations from_objs | '2012-01-01' | No |
+| label_end_time | Day AFTER last label date (all dates in any model are before this date) | date | latest date in feature_aggregations from_objs | '2015-01-01' | No |
+| model_update_frequency | How frequently to retrain models | interval | '100y' | '4 months' | No |
+| training_as_of_date_frequencies | Time between as of dates for the same entity in train matrix | interval | ['100y'] | ['1 week'] | Yes |
+| test_as_of_date_frequencies | Time between as of dates for the same entity in test matrix | interval | ['100y'] | ['1 week'] | Yes |
+| max_training_histories | Length of time included in a train matrix | interval | ['0d'] | ['1 month'] | Yes |
+| test_durations | Length of time included in a test matrix | interval | ['0d'] | ['1 month'] | Yes |
+| training_label_timespans | Amount of time required to determine an entity's label. Affects training sets. See the [Label Deep Dive](https://dssg.github.io/triage/experiments/cohort-labels/#what-are-cohorts-and-labels-in-triage) for more information.  | interval | No default | ['1 month'] | Yes |
+| test_label_timespans | Same as above, affecting test sets. | interval | No default | ['1 month'] | Yes |
+
+
+Note that if your label timespan is the same in both testing and training, you can simply set a single `label_timespans` parameter instead of specifying both `training_label_timespans` and `test_label_timespans`.
 
 ### Cohort Config
 Cohorts are configured by passing a query with placeholders for the **as_of_date**.
