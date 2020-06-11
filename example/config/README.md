@@ -60,7 +60,7 @@ temporal_config:
     test_as_of_date_frequencies: ['1 day']
 
     max_training_histories: ['3 months']
-    test_set_duration: ['3 months']
+    test_durations: ['3 months']
 
     label_timespans: ['2 months']
 ```
