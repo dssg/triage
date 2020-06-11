@@ -1,3 +1,4 @@
+import sys
 import datetime
 import platform
 import getpass
@@ -38,6 +39,9 @@ def infer_git_hash():
 def infer_triage_version():
     return __version__
 
+def infer_python_version():
+    """ Returns python version """
+    return sys.version
 
 def infer_installed_libraries():
     """Attempt to infer the installed libraries by running pip freeze and formatting as a list
@@ -112,6 +116,7 @@ def initialize_tracking_and_get_run_id(
         start_time=datetime.datetime.now(),
         git_hash=infer_git_hash(),
         triage_version=infer_triage_version(),
+        python_version=infer_python_version(),
         experiment_hash=experiment_hash,
         last_updated_time=datetime.datetime.now(),
         current_status=ExperimentRunStatus.started,

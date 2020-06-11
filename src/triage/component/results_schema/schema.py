@@ -513,6 +513,7 @@ class ExperimentRun(Base):
     start_method = Column(String)
     git_hash = Column(String)
     triage_version = Column(String)
+    python_version = Column(String)
     experiment_hash = Column(
         String,
         ForeignKey("triage_metadata.experiments.experiment_hash")
