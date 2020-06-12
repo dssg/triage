@@ -33,6 +33,14 @@ def upgrade():
 
     op.execute("DROP SCHEMA IF EXISTS model_metadata")
 
+    ## We update (replace) the function
+    group_proc_filename = os.path.join(
+        os.path.dirname(__file__), "../../model_group_stored_procedure.sql"
+    )
+    with open(group_proc_filename) as fd:
+        stmt = fd.read()
+        op.execute(stmt)
+
     # ### end Alembic commands ###
 
 

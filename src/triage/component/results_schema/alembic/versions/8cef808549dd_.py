@@ -5,6 +5,8 @@ Revises: b4d7569d31cb
 Create Date: 2020-06-02 21:26:32.528991
 
 """
+import os
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -21,15 +23,6 @@ def upgrade():
     op.add_column('experiment_runs', sa.Column('python_version', sa.String(), nullable=True), schema='model_metadata')
     op.create_index(op.f('ix_model_metadata_models_model_hash'), 'models', ['model_hash'], unique=True, schema='model_metadata')
     op.drop_index('ix_results_models_model_hash', table_name='models', schema='model_metadata')
-
-    ## We update (replace) the function
-    group_proc_filename = os.path.join(
-        os.path.dirname(__file__), "../../model_group_stored_procedure.sql"
-    )
-    with open(group_proc_filename) as fd:
-        stmt = fd.read()
-        op.execute(stmt)
-
     # ### end Alembic commands ###
 
 
