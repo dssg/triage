@@ -84,7 +84,6 @@ nav:
       - Quick setup: dirtyduck/for_the_impatient.md
   - Triage documentation:
       - Experiment:
-          - Defining an Experiment: experiments/defining.md
           - Experiment Configuration: experiments/experiment-config.md
           - Testing Feature Configuration: experiments/feature-testing.md
           - Running an Experiment: experiments/running.md
