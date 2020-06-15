@@ -316,7 +316,7 @@ set as well as feature importances, where defined).
 
 In a more complete modeling run, you could `audition` with jupyter notebooks to help you
 select the best-performing model specifications from a wide variety of options (see the [overview of
-model selection](https://dssg.github.io/triage/dirtyduck/audition/) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
+model selection](https://dssg.github.io/triage/dirtyduck/audition/audition) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
 
 
 ### 6. Iterate and Explore

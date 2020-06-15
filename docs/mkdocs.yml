@@ -85,8 +85,8 @@ nav:
   - Triage documentation:
       - Experiment:
           - Defining an Experiment: experiments/defining.md
+          - Experiment Configuration: experiments/experiment-config.md
           - Testing Feature Configuration: experiments/feature-testing.md
-          - Experiment Configuration: https://github.com/dssg/triage/blob/master/example/config/README.md
           - Running an Experiment: experiments/running.md
           - Upgrading an Experiment:
               - v6 -> v7: experiments/upgrade-to-v7.md
@@ -98,7 +98,11 @@ nav:
           - Feature Generation Recipe Book: experiments/features.md
           - Experiment Algorithm: experiments/algorithm.md
           - Experiment Architecture: experiments/architecture.md
-      - Model selection: dirtyduck/audition.md
-      - Postmodeling: postmodeling/index.md
+      - Model selection: 
+          - Using Audition: audition/audition.md
+          - Audition Configuration: audition/audition-config.md
+      - Postmodeling: 
+          - Using Postmodeling: postmodeling/index.md
+          - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
       - Model governance:  dirtyduck/ml_governance.md
       - Scaling up: dirtyduck/aws_batch.md
