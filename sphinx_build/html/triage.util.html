@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.util package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-util-package">
+<h1>triage.util package<a class="headerlink" href="#triage-util-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.util.conf">
+<span id="triage-util-conf-module"></span><h2>triage.util.conf module<a class="headerlink" href="#module-triage.util.conf" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.util.conf.convert_str_to_relativedelta">
+<code class="sig-prename descclassname">triage.util.conf.</code><code class="sig-name descname">convert_str_to_relativedelta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">delta_string</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.conf.convert_str_to_relativedelta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a string in a postgres interval format (e.g., ‘1 month’),
+convert it to a dateutil.relativedelta.relativedelta.</p>
+<p>Assumptions:
+- The string is in the format ‘value unit’, where</p>
+<blockquote>
+<div><p>value is an int and unit is one of year(s), month(s), day(s),
+week(s), hour(s), minute(s), second(s), microsecond(s), or an
+abbreviation matching y, d, w, h, m, s, or ms (case-insensitive).
+For example: 1 year, 1year, 2 years, 1 y, 2y, 1Y.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>delta_string</strong> (<em>str</em>) – the time interval to convert</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the time interval as a relativedelta</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dateutil.relativedelta.relativedelta</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if the delta_string is not in the expected format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.conf.dt_from_str">
+<code class="sig-prename descclassname">triage.util.conf.</code><code class="sig-name descname">dt_from_str</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dt_str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.conf.dt_from_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.conf.parse_delta_string">
+<code class="sig-prename descclassname">triage.util.conf.</code><code class="sig-name descname">parse_delta_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">delta_string</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.conf.parse_delta_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a string in a postgres interval format (e.g., ‘1 month’),
+parse the units and value from it.</p>
+<p>Assumptions:
+- The string is in the format ‘value unit’, where</p>
+<blockquote>
+<div><p>value is an int and unit is one of year(s), month(s), day(s),
+week(s), hour(s), minute(s), second(s), microsecond(s), or an
+abbreviation matching y, d, w, h, m, s, or ms (case-insensitive).
+For example: 1 year, 1year, 2 years, 1 y, 2y, 1Y.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>delta_string</strong> (<em>str</em>) – the time interval to convert</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>time units, number of units (value)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if the delta_string is not in the expected format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.conf.parse_from_obj">
+<code class="sig-prename descclassname">triage.util.conf.</code><code class="sig-name descname">parse_from_obj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em>, <em class="sig-param"><span class="n">alias</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.conf.parse_from_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a from_obj configuration key. If it’s a from_obj_table just returns it.
+If it’s a from_obj_query creates the sub_query with alias
+:param config: the yaml dict
+:param alias: the name of the alias if there’s a from_obj_query</p>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util.db">
+<span id="triage-util-db-module"></span><h2>triage.util.db module<a class="headerlink" href="#module-triage.util.db" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.util.db.SerializableDbEngine">
+<em class="property">class </em><code class="sig-prename descclassname">triage.util.db.</code><code class="sig-name descname">SerializableDbEngine</code><span class="sig-paren">(</span><em class="sig-param">url</em>, <em class="sig-param">*</em>, <em class="sig-param">creator=&lt;function create_engine&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.db.SerializableDbEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectProxy</span></code></p>
+<p>A sqlalchemy engine that can be serialized across process boundaries.</p>
+<p>Works by saving all kwargs used to create the engine and reconstructs them later.  As a result, the state won’t be saved upon serialization/deserialization.</p>
+<dl class="py attribute">
+<dt id="triage.util.db.SerializableDbEngine.creator">
+<code class="sig-name descname">creator</code><a class="headerlink" href="#triage.util.db.SerializableDbEngine.creator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.util.db.SerializableDbEngine.kwargs">
+<code class="sig-name descname">kwargs</code><a class="headerlink" href="#triage.util.db.SerializableDbEngine.kwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.util.db.SerializableDbEngine.url">
+<code class="sig-name descname">url</code><a class="headerlink" href="#triage.util.db.SerializableDbEngine.url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.util.db.create_engine">
+<code class="sig-prename descclassname">triage.util.db.</code><code class="sig-name descname">create_engine</code><a class="headerlink" href="#triage.util.db.create_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#triage.util.db.SerializableDbEngine" title="triage.util.db.SerializableDbEngine"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.util.db.SerializableDbEngine</span></code></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.db.get_for_update">
+<code class="sig-prename descclassname">triage.util.db.</code><code class="sig-name descname">get_for_update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">orm_class</span></em>, <em class="sig-param"><span class="n">primary_key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.db.get_for_update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.db.scoped_session">
+<code class="sig-prename descclassname">triage.util.db.</code><code class="sig-name descname">scoped_session</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.db.scoped_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a transactional scope around a series of operations.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util.defaults">
+<span id="triage-util-defaults-module"></span><h2>triage.util.defaults module<a class="headerlink" href="#module-triage.util.defaults" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.util.introspection">
+<span id="triage-util-introspection-module"></span><h2>triage.util.introspection module<a class="headerlink" href="#module-triage.util.introspection" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.util.introspection.bind_kwargs">
+<code class="sig-prename descclassname">triage.util.introspection.</code><code class="sig-name descname">bind_kwargs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">kallable</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.introspection.bind_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind keyword arguments to a callable and return as a dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callable</strong> (<em>callable</em>) – any callable</p></li>
+<li><p><strong>**kwargs</strong> – keyword arguments to bind</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (dict)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.util.introspection.classpath">
+<code class="sig-prename descclassname">triage.util.introspection.</code><code class="sig-name descname">classpath</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">klass</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.introspection.classpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full class path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>klass</strong> (<em>class</em>) – A class</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util.pandas">
+<span id="triage-util-pandas-module"></span><h2>triage.util.pandas module<a class="headerlink" href="#module-triage.util.pandas" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.util.pandas.downcast_matrix">
+<code class="sig-prename descclassname">triage.util.pandas.</code><code class="sig-name descname">downcast_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.pandas.downcast_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downcast the numeric values of a matrix.</p>
+<p>This will make the matrix use less memory by turning, for instance,
+int64 columns into int32 columns.</p>
+<p>First converts floats and then integers.</p>
+<p>Operates on the dataframe as passed, without doing anything to the index.
+Callers may pass an index-less dataframe if they wish to re-add the index afterwards
+and save memory on the index storage.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util.random">
+<span id="triage-util-random-module"></span><h2>triage.util.random module<a class="headerlink" href="#module-triage.util.random" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.util.random.generate_python_random_seed">
+<code class="sig-prename descclassname">triage.util.random.</code><code class="sig-name descname">generate_python_random_seed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.random.generate_python_random_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a random integer suitable for seeding the Python random generator</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util.structs">
+<span id="triage-util-structs-module"></span><h2>triage.util.structs module<a class="headerlink" href="#module-triage.util.structs" title="Permalink to this headline">¶</a></h2>
+<p>Classes representing simple but deep data structures that we reuse throughout
+Triage code and want to display more intelligently in log files</p>
+<dl class="py class">
+<dt id="triage.util.structs.AsOfTimeList">
+<em class="property">class </em><code class="sig-prename descclassname">triage.util.structs.</code><code class="sig-name descname">AsOfTimeList</code><span class="sig-paren">(</span><em class="sig-param">iterable=()</em>, <em class="sig-param">/</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.structs.AsOfTimeList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.util.structs.TruncatedRepresentationList" title="triage.util.structs.TruncatedRepresentationList"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.util.structs.TruncatedRepresentationList</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.util.structs.FeatureNameList">
+<em class="property">class </em><code class="sig-prename descclassname">triage.util.structs.</code><code class="sig-name descname">FeatureNameList</code><span class="sig-paren">(</span><em class="sig-param">iterable=()</em>, <em class="sig-param">/</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.structs.FeatureNameList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.util.structs.TruncatedRepresentationList" title="triage.util.structs.TruncatedRepresentationList"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.util.structs.TruncatedRepresentationList</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.util.structs.TruncatedRepresentationList">
+<em class="property">class </em><code class="sig-prename descclassname">triage.util.structs.</code><code class="sig-name descname">TruncatedRepresentationList</code><span class="sig-paren">(</span><em class="sig-param">iterable=()</em>, <em class="sig-param">/</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.util.structs.TruncatedRepresentationList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.util">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.util" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.util.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

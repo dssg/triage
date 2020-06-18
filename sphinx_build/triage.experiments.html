@@ -1,0 +1,1007 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.experiments package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-experiments-package">
+<h1>triage.experiments package<a class="headerlink" href="#triage-experiments-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.experiments.base">
+<span id="triage-experiments-base-module"></span><h2>triage.experiments.base module<a class="headerlink" href="#module-triage.experiments.base" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.base.ExperimentBase">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.base.</code><code class="sig-name descname">ExperimentBase</code><span class="sig-paren">(</span><em class="sig-param">config</em>, <em class="sig-param">db_engine</em>, <em class="sig-param">project_path=None</em>, <em class="sig-param">matrix_storage_class=&lt;class 'triage.component.catwalk.storage.CSVMatrixStore'&gt;</em>, <em class="sig-param">replace=True</em>, <em class="sig-param">cleanup=False</em>, <em class="sig-param">cleanup_timeout=None</em>, <em class="sig-param">materialize_subquery_fromobjs=True</em>, <em class="sig-param">features_ignore_cohort=False</em>, <em class="sig-param">profile=False</em>, <em class="sig-param">save_predictions=True</em>, <em class="sig-param">skip_validation=False</em>, <em class="sig-param">partial_run=False</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>The base class for all Experiments.</p>
+<p>Subclasses must implement the following four methods:
+process_query_tasks
+process_matrix_build_tasks
+process_subset_tasks
+process_train_test_batches</p>
+<p>Look at singlethreaded.py for reference implementation of each.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<a class="reference internal" href="triage.util.html#triage.util.db.SerializableDbEngine" title="triage.util.db.SerializableDbEngine"><em>triage.util.db.SerializableDbEngine</em></a><em> or </em><em>sqlalchemy.engine.Engine</em>) – </p></li>
+<li><p><strong>project_path</strong> (<em>string</em>) – </p></li>
+<li><p><strong>replace</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>cleanup_timeout</strong> (<em>int</em>) – </p></li>
+<li><p><strong>materialize_subquery_fromobjs</strong> (<em>bool</em><em>, </em><em>default True</em>) – tables for feature “from objects” that are subqueries. Can speed up performance
+when building features for many as-of-dates.</p></li>
+<li><p><strong>profile</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.all_as_of_times">
+<code class="sig-name descname">all_as_of_times</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.all_as_of_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.all_label_timespans">
+<em class="property">property </em><code class="sig-name descname">all_label_timespans</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.all_label_timespans" title="Permalink to this definition">¶</a></dt>
+<dd><p>All train and test label timespans</p>
+<p>Returns: (list) label timespans, in string form as they appeared in the experiment config</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.build_matrices">
+<code class="sig-name descname">build_matrices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.build_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.clean_up_matrix_building_tables">
+<code class="sig-name descname">clean_up_matrix_building_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.clean_up_matrix_building_tables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.clean_up_subset_tables">
+<code class="sig-name descname">clean_up_subset_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.clean_up_subset_tables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.cleanup_timeout">
+<code class="sig-name descname">cleanup_timeout</code><em class="property"> = 60</em><a class="headerlink" href="#triage.experiments.base.ExperimentBase.cleanup_timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.cohort_hash">
+<code class="sig-name descname">cohort_hash</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.cohort_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.collate_aggregations">
+<code class="sig-name descname">collate_aggregations</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.collate_aggregations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.feature_aggregation_table_tasks">
+<code class="sig-name descname">feature_aggregation_table_tasks</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.feature_aggregation_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.feature_dicts">
+<code class="sig-name descname">feature_dicts</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.feature_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.feature_imputation_table_tasks">
+<code class="sig-name descname">feature_imputation_table_tasks</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.feature_imputation_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.full_matrix_definitions">
+<code class="sig-name descname">full_matrix_definitions</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.full_matrix_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_cohort">
+<code class="sig-name descname">generate_cohort</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_cohort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_labels">
+<code class="sig-name descname">generate_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate labels based on experiment configuration</p>
+<p>Results are stored in the database, not returned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_matrices">
+<code class="sig-name descname">generate_matrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_preimputation_features">
+<code class="sig-name descname">generate_preimputation_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_preimputation_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_protected_groups">
+<code class="sig-name descname">generate_protected_groups</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_protected_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate protected groups table based on experiment configuration</p>
+<p>Results are stored in the database, not returned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_subset">
+<code class="sig-name descname">generate_subset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_subset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.generate_subsets">
+<code class="sig-name descname">generate_subsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.generate_subsets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.get_for_update">
+<code class="sig-name descname">get_for_update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.get_for_update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.impute_missing_features">
+<code class="sig-name descname">impute_missing_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.impute_missing_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.initialize_components">
+<code class="sig-name descname">initialize_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.initialize_components" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.log_split">
+<code class="sig-name descname">log_split</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">split_num</span></em>, <em class="sig-param"><span class="n">split</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.log_split" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.master_feature_dictionary">
+<code class="sig-name descname">master_feature_dictionary</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.master_feature_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.matrix_build_tasks">
+<code class="sig-name descname">matrix_build_tasks</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.process_matrix_build_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.process_query_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.process_subset_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.process_train_test_batches">
+<em class="property">abstract </em><code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.split_definitions">
+<code class="sig-name descname">split_definitions</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.split_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.base.ExperimentBase.subset_tasks">
+<code class="sig-name descname">subset_tasks</code><a class="headerlink" href="#triage.experiments.base.ExperimentBase.subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.train_and_test_models">
+<code class="sig-name descname">train_and_test_models</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.train_and_test_models" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.base.ExperimentBase.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.base.ExperimentBase.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments.defaults">
+<span id="triage-experiments-defaults-module"></span><h2>triage.experiments.defaults module<a class="headerlink" href="#module-triage.experiments.defaults" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.experiments.defaults.fill_cohort_config_missing">
+<code class="sig-prename descclassname">triage.experiments.defaults.</code><code class="sig-name descname">fill_cohort_config_missing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.defaults.fill_cohort_config_missing" title="Permalink to this definition">¶</a></dt>
+<dd><p>If none cohort_config section is provided, include all the entities by default</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>dict</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (dict) a triage cohort config</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.defaults.fill_feature_group_definition">
+<code class="sig-prename descclassname">triage.experiments.defaults.</code><code class="sig-name descname">fill_feature_group_definition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.defaults.fill_feature_group_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>If feature_group_definition is not presents, this function sets it to all
+the distinct feature_aggregations’ prefixes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>dict</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (dict) a triage feature_group config</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.defaults.fill_model_grid_presets">
+<code class="sig-prename descclassname">triage.experiments.defaults.</code><code class="sig-name descname">fill_model_grid_presets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.defaults.fill_model_grid_presets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if model grid preset is being used and return the appropriate grid if so</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.defaults.fill_timechop_config_missing">
+<code class="sig-prename descclassname">triage.experiments.defaults.</code><code class="sig-name descname">fill_timechop_config_missing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.defaults.fill_timechop_config_missing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill with default values the temporal_config params if they are missing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>psycopg2 connection</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (dict) a triage temporal_config</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.defaults.model_grid_preset">
+<code class="sig-prename descclassname">triage.experiments.defaults.</code><code class="sig-name descname">model_grid_preset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.defaults.model_grid_preset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a preset model grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>grid_type</strong> – by <cite>quickstart</cite>, <cite>small</cite>, <cite>medium</cite>, <cite>large</cite>, or <cite>texas</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments.multicore">
+<span id="triage-experiments-multicore-module"></span><h2>triage.experiments.multicore module<a class="headerlink" href="#module-triage.experiments.multicore" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.multicore.MultiCoreExperiment">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.multicore.</code><code class="sig-name descname">MultiCoreExperiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">n_processes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_db_processes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.base.ExperimentBase" title="triage.experiments.base.ExperimentBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.base.ExperimentBase</span></code></a></p>
+<dl class="py method">
+<dt id="triage.experiments.multicore.MultiCoreExperiment.generated_chunked_parallelized_results">
+<code class="sig-name descname">generated_chunked_parallelized_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">partially_bound_function</span></em>, <em class="sig-param"><span class="n">tasks</span></em>, <em class="sig-param"><span class="n">n_processes</span></em>, <em class="sig-param"><span class="n">chunksize</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment.generated_chunked_parallelized_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.multicore.MultiCoreExperiment.process_matrix_build_tasks">
+<code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.multicore.MultiCoreExperiment.process_query_tasks">
+<code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.multicore.MultiCoreExperiment.process_subset_tasks">
+<code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.multicore.MultiCoreExperiment.process_train_test_batches">
+<code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.MultiCoreExperiment.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.multicore.insert_into_table">
+<code class="sig-prename descclassname">triage.experiments.multicore.</code><code class="sig-name descname">insert_into_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">insert_statements</span></em>, <em class="sig-param"><span class="n">feature_generator</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.insert_into_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.multicore.parallelize">
+<code class="sig-prename descclassname">triage.experiments.multicore.</code><code class="sig-name descname">parallelize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">partially_bound_function</span></em>, <em class="sig-param"><span class="n">tasks</span></em>, <em class="sig-param"><span class="n">n_processes</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.parallelize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.experiments.multicore.run_task_with_splatted_arguments">
+<code class="sig-prename descclassname">triage.experiments.multicore.</code><code class="sig-name descname">run_task_with_splatted_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">task_runner</span></em>, <em class="sig-param"><span class="n">task</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.multicore.run_task_with_splatted_arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments.rq">
+<span id="triage-experiments-rq-module"></span><h2>triage.experiments.rq module<a class="headerlink" href="#module-triage.experiments.rq" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.rq.RQExperiment">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.rq.</code><code class="sig-name descname">RQExperiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">redis_connection</span></em>, <em class="sig-param"><span class="n">sleep_time</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">queue_kwargs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.base.ExperimentBase" title="triage.experiments.base.ExperimentBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.base.ExperimentBase</span></code></a></p>
+<p>An experiment that uses the python-rq library to enqueue tasks and wait for them to finish.</p>
+<p><a class="reference external" href="http://python-rq.org/">http://python-rq.org/</a></p>
+<p>For this experiment to complete, you need some amount of RQ workers running the Triage codebase
+(either on the same machine as the experiment or elsewhere),
+and a Redis instance that both the experiment process and RQ workers can access.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>redis_connection</strong> (<em>redis.connection</em>) – A connection to a Redis instance that
+some rq workers can also access</p></li>
+<li><p><strong>sleep_time</strong> (<em>int</em><em>, </em><em>default 5</em>) – waiting for RQ results</p></li>
+<li><p><strong>queue_kwargs</strong> (<em>dict</em><em>, </em><em>default {}</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.experiments.rq.RQExperiment.process_matrix_build_tasks">
+<code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run matrix build tasks using RQ</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matrix_build_tasks</strong> (<em>dict</em><em>) </em><em>Keys should be matrix uuids</em><em> (</em><em>though not used here</em>) – values should be dictionaries suitable as kwargs for sending
+to self.matrix_builder.build_matrix</p>
+</dd>
+</dl>
+<p>Returns: (list) of job results for each given task</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.rq.RQExperiment.process_query_tasks">
+<code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run queries by table</p>
+<p>Will run preparation (e.g. create table) and finalize (e.g. create index) tasks
+in the main process,
+but delegate inserts to rq Jobs in batches of 25</p>
+<dl>
+<dt>Args: query_tasks (dict) - keys should be table names and values should be dicts.</dt><dd><p>Each inner dict should have up to three keys, each with a list of queries:
+‘prepare’ (setting up the table),
+‘inserts’ (insert commands to populate the table),
+‘finalize’ (finishing table setup after all inserts have run)</p>
+<dl>
+<dt>Example: {</dt><dd><dl>
+<dt>‘table_one’: {</dt><dd><p>‘prepare’: [‘create table table_one (col1 varchar)’],
+‘inserts’: [</p>
+<blockquote>
+<div><p>‘insert into table_one values (‘a’)’,
+‘insert into table_one values (‘b’’)’</p>
+</div></blockquote>
+<p>]
+‘finalize’: [‘create index on table_one (col1)’]</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.rq.RQExperiment.process_subset_tasks">
+<code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run subset tasks using RQ</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>subset_tasks</strong> (<em>list</em>) – for self.subsetter.process_task</p>
+</dd>
+</dl>
+<p>Returns: (list) of job results for each given task</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.rq.RQExperiment.process_train_test_batches">
+<code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run train tasks using RQ</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>train_tasks</strong> (<em>list</em>) – for self.trainer.process_train_task</p>
+</dd>
+</dl>
+<p>Returns: (list) of job results for each given task</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.rq.RQExperiment.wait_for">
+<code class="sig-name descname">wait_for</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jobs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.rq.RQExperiment.wait_for" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for a list of jobs to complete</p>
+<p>Will run until all jobs are either finished or failed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>jobs</strong> (<em>list of rq.Job objects</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (list) of job return values</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments.singlethreaded">
+<span id="triage-experiments-singlethreaded-module"></span><h2>triage.experiments.singlethreaded module<a class="headerlink" href="#module-triage.experiments.singlethreaded" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.singlethreaded.SingleThreadedExperiment">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.singlethreaded.</code><code class="sig-name descname">SingleThreadedExperiment</code><span class="sig-paren">(</span><em class="sig-param">config</em>, <em class="sig-param">db_engine</em>, <em class="sig-param">project_path=None</em>, <em class="sig-param">matrix_storage_class=&lt;class 'triage.component.catwalk.storage.CSVMatrixStore'&gt;</em>, <em class="sig-param">replace=True</em>, <em class="sig-param">cleanup=False</em>, <em class="sig-param">cleanup_timeout=None</em>, <em class="sig-param">materialize_subquery_fromobjs=True</em>, <em class="sig-param">features_ignore_cohort=False</em>, <em class="sig-param">profile=False</em>, <em class="sig-param">save_predictions=True</em>, <em class="sig-param">skip_validation=False</em>, <em class="sig-param">partial_run=False</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.singlethreaded.SingleThreadedExperiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.base.ExperimentBase" title="triage.experiments.base.ExperimentBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.base.ExperimentBase</span></code></a></p>
+<dl class="py method">
+<dt id="triage.experiments.singlethreaded.SingleThreadedExperiment.process_matrix_build_tasks">
+<code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.singlethreaded.SingleThreadedExperiment.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.singlethreaded.SingleThreadedExperiment.process_query_tasks">
+<code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.singlethreaded.SingleThreadedExperiment.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.singlethreaded.SingleThreadedExperiment.process_subset_tasks">
+<code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.singlethreaded.SingleThreadedExperiment.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.singlethreaded.SingleThreadedExperiment.process_train_test_batches">
+<code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.singlethreaded.SingleThreadedExperiment.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments.validate">
+<span id="triage-experiments-validate-module"></span><h2>triage.experiments.validate module<a class="headerlink" href="#module-triage.experiments.validate" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.validate.BiasAuditConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">BiasAuditConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.BiasAuditConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.CohortConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">CohortConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.CohortConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.ExperimentValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">ExperimentValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.ExperimentValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+<dl class="py method">
+<dt id="triage.experiments.validate.ExperimentValidator.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">experiment_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.ExperimentValidator.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.FeatureAggregationsValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">FeatureAggregationsValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.FeatureAggregationsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.FeatureGroupDefinitionValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">FeatureGroupDefinitionValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.FeatureGroupDefinitionValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.FeatureGroupStrategyValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">FeatureGroupStrategyValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.FeatureGroupStrategyValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.GridConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">GridConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.GridConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.LabelConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">LabelConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.LabelConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.ModelGroupKeysValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">ModelGroupKeysValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.ModelGroupKeysValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.PredictionConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">PredictionConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.PredictionConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.ScoringConfigValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">ScoringConfigValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.ScoringConfigValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.TemporalValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">TemporalValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.TemporalValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.UserMetadataValidator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">UserMetadataValidator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.UserMetadataValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.validate.Validator" title="triage.experiments.validate.Validator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.validate.Validator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.validate.Validator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.validate.</code><code class="sig-name descname">Validator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.Validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.experiments.validate.Validator.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.validate.Validator.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.experiments">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.experiments" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.experiments.ExperimentBase">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.</code><code class="sig-name descname">ExperimentBase</code><span class="sig-paren">(</span><em class="sig-param">config</em>, <em class="sig-param">db_engine</em>, <em class="sig-param">project_path=None</em>, <em class="sig-param">matrix_storage_class=&lt;class 'triage.component.catwalk.storage.CSVMatrixStore'&gt;</em>, <em class="sig-param">replace=True</em>, <em class="sig-param">cleanup=False</em>, <em class="sig-param">cleanup_timeout=None</em>, <em class="sig-param">materialize_subquery_fromobjs=True</em>, <em class="sig-param">features_ignore_cohort=False</em>, <em class="sig-param">profile=False</em>, <em class="sig-param">save_predictions=True</em>, <em class="sig-param">skip_validation=False</em>, <em class="sig-param">partial_run=False</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>The base class for all Experiments.</p>
+<p>Subclasses must implement the following four methods:
+process_query_tasks
+process_matrix_build_tasks
+process_subset_tasks
+process_train_test_batches</p>
+<p>Look at singlethreaded.py for reference implementation of each.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<a class="reference internal" href="triage.util.html#triage.util.db.SerializableDbEngine" title="triage.util.db.SerializableDbEngine"><em>triage.util.db.SerializableDbEngine</em></a><em> or </em><em>sqlalchemy.engine.Engine</em>) – </p></li>
+<li><p><strong>project_path</strong> (<em>string</em>) – </p></li>
+<li><p><strong>replace</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>cleanup_timeout</strong> (<em>int</em>) – </p></li>
+<li><p><strong>materialize_subquery_fromobjs</strong> (<em>bool</em><em>, </em><em>default True</em>) – tables for feature “from objects” that are subqueries. Can speed up performance
+when building features for many as-of-dates.</p></li>
+<li><p><strong>profile</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.all_as_of_times">
+<code class="sig-name descname">all_as_of_times</code><a class="headerlink" href="#triage.experiments.ExperimentBase.all_as_of_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.all_label_timespans">
+<em class="property">property </em><code class="sig-name descname">all_label_timespans</code><a class="headerlink" href="#triage.experiments.ExperimentBase.all_label_timespans" title="Permalink to this definition">¶</a></dt>
+<dd><p>All train and test label timespans</p>
+<p>Returns: (list) label timespans, in string form as they appeared in the experiment config</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.build_matrices">
+<code class="sig-name descname">build_matrices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.build_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.clean_up_matrix_building_tables">
+<code class="sig-name descname">clean_up_matrix_building_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.clean_up_matrix_building_tables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.clean_up_subset_tables">
+<code class="sig-name descname">clean_up_subset_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.clean_up_subset_tables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.cleanup_timeout">
+<code class="sig-name descname">cleanup_timeout</code><em class="property"> = 60</em><a class="headerlink" href="#triage.experiments.ExperimentBase.cleanup_timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.cohort_hash">
+<code class="sig-name descname">cohort_hash</code><a class="headerlink" href="#triage.experiments.ExperimentBase.cohort_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.collate_aggregations">
+<code class="sig-name descname">collate_aggregations</code><a class="headerlink" href="#triage.experiments.ExperimentBase.collate_aggregations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.feature_aggregation_table_tasks">
+<code class="sig-name descname">feature_aggregation_table_tasks</code><a class="headerlink" href="#triage.experiments.ExperimentBase.feature_aggregation_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.feature_dicts">
+<code class="sig-name descname">feature_dicts</code><a class="headerlink" href="#triage.experiments.ExperimentBase.feature_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.feature_imputation_table_tasks">
+<code class="sig-name descname">feature_imputation_table_tasks</code><a class="headerlink" href="#triage.experiments.ExperimentBase.feature_imputation_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.full_matrix_definitions">
+<code class="sig-name descname">full_matrix_definitions</code><a class="headerlink" href="#triage.experiments.ExperimentBase.full_matrix_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_cohort">
+<code class="sig-name descname">generate_cohort</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_cohort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_labels">
+<code class="sig-name descname">generate_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate labels based on experiment configuration</p>
+<p>Results are stored in the database, not returned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_matrices">
+<code class="sig-name descname">generate_matrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_preimputation_features">
+<code class="sig-name descname">generate_preimputation_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_preimputation_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_protected_groups">
+<code class="sig-name descname">generate_protected_groups</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_protected_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate protected groups table based on experiment configuration</p>
+<p>Results are stored in the database, not returned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_subset">
+<code class="sig-name descname">generate_subset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_subset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.generate_subsets">
+<code class="sig-name descname">generate_subsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.generate_subsets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.get_for_update">
+<code class="sig-name descname">get_for_update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.get_for_update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.impute_missing_features">
+<code class="sig-name descname">impute_missing_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.impute_missing_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.initialize_components">
+<code class="sig-name descname">initialize_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.initialize_components" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.log_split">
+<code class="sig-name descname">log_split</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">split_num</span></em>, <em class="sig-param"><span class="n">split</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.log_split" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.master_feature_dictionary">
+<code class="sig-name descname">master_feature_dictionary</code><a class="headerlink" href="#triage.experiments.ExperimentBase.master_feature_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.matrix_build_tasks">
+<code class="sig-name descname">matrix_build_tasks</code><a class="headerlink" href="#triage.experiments.ExperimentBase.matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.process_matrix_build_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.process_query_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.process_subset_tasks">
+<em class="property">abstract </em><code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.process_train_test_batches">
+<em class="property">abstract </em><code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.split_definitions">
+<code class="sig-name descname">split_definitions</code><a class="headerlink" href="#triage.experiments.ExperimentBase.split_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.experiments.ExperimentBase.subset_tasks">
+<code class="sig-name descname">subset_tasks</code><a class="headerlink" href="#triage.experiments.ExperimentBase.subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.train_and_test_models">
+<code class="sig-name descname">train_and_test_models</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.train_and_test_models" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.ExperimentBase.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">strict</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.ExperimentBase.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.MultiCoreExperiment">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.</code><code class="sig-name descname">MultiCoreExperiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">n_processes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_db_processes</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.base.ExperimentBase" title="triage.experiments.base.ExperimentBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.base.ExperimentBase</span></code></a></p>
+<dl class="py method">
+<dt id="triage.experiments.MultiCoreExperiment.generated_chunked_parallelized_results">
+<code class="sig-name descname">generated_chunked_parallelized_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">partially_bound_function</span></em>, <em class="sig-param"><span class="n">tasks</span></em>, <em class="sig-param"><span class="n">n_processes</span></em>, <em class="sig-param"><span class="n">chunksize</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment.generated_chunked_parallelized_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.MultiCoreExperiment.process_matrix_build_tasks">
+<code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.MultiCoreExperiment.process_query_tasks">
+<code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.MultiCoreExperiment.process_subset_tasks">
+<code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.MultiCoreExperiment.process_train_test_batches">
+<code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.MultiCoreExperiment.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.experiments.SingleThreadedExperiment">
+<em class="property">class </em><code class="sig-prename descclassname">triage.experiments.</code><code class="sig-name descname">SingleThreadedExperiment</code><span class="sig-paren">(</span><em class="sig-param">config</em>, <em class="sig-param">db_engine</em>, <em class="sig-param">project_path=None</em>, <em class="sig-param">matrix_storage_class=&lt;class 'triage.component.catwalk.storage.CSVMatrixStore'&gt;</em>, <em class="sig-param">replace=True</em>, <em class="sig-param">cleanup=False</em>, <em class="sig-param">cleanup_timeout=None</em>, <em class="sig-param">materialize_subquery_fromobjs=True</em>, <em class="sig-param">features_ignore_cohort=False</em>, <em class="sig-param">profile=False</em>, <em class="sig-param">save_predictions=True</em>, <em class="sig-param">skip_validation=False</em>, <em class="sig-param">partial_run=False</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.SingleThreadedExperiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.experiments.base.ExperimentBase" title="triage.experiments.base.ExperimentBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.experiments.base.ExperimentBase</span></code></a></p>
+<dl class="py method">
+<dt id="triage.experiments.SingleThreadedExperiment.process_matrix_build_tasks">
+<code class="sig-name descname">process_matrix_build_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.SingleThreadedExperiment.process_matrix_build_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.SingleThreadedExperiment.process_query_tasks">
+<code class="sig-name descname">process_query_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.SingleThreadedExperiment.process_query_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.SingleThreadedExperiment.process_subset_tasks">
+<code class="sig-name descname">process_subset_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.SingleThreadedExperiment.process_subset_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.experiments.SingleThreadedExperiment.process_train_test_batches">
+<code class="sig-name descname">process_train_test_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.experiments.SingleThreadedExperiment.process_train_test_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.experiments.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

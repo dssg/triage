@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.catwalk.baselines package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-catwalk-baselines-package">
+<h1>triage.component.catwalk.baselines package<a class="headerlink" href="#triage-component-catwalk-baselines-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.catwalk.baselines.rankers">
+<span id="triage-component-catwalk-baselines-rankers-module"></span><h2>triage.component.catwalk.baselines.rankers module<a class="headerlink" href="#module-triage.component.catwalk.baselines.rankers" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.baselines.rankers.PercentileRankOneFeature">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.baselines.rankers.</code><code class="sig-name descname">PercentileRankOneFeature</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature</span></em>, <em class="sig-param"><span class="n">descend</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.rankers.PercentileRankOneFeature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.rankers.PercentileRankOneFeature.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.rankers.PercentileRankOneFeature.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set feature importances and return self.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.rankers.PercentileRankOneFeature.predict_proba">
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.rankers.PercentileRankOneFeature.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the rank percentile scores and return these.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.baselines.thresholders">
+<span id="triage-component-catwalk-baselines-thresholders-module"></span><h2>triage.component.catwalk.baselines.thresholders module<a class="headerlink" href="#module-triage.component.catwalk.baselines.thresholders" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.baselines.thresholders.</code><code class="sig-name descname">SimpleThresholder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rules</span></em>, <em class="sig-param"><span class="n">logical_operator</span><span class="o">=</span><span class="default_value">'or'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The simple thresholder applies a set of predetermined logical rules to a
+test matrix to classify entities. By default, it will classify entities as 1
+if they satisfy any of the rules. When ‘and’ is set as the logical_operator,
+it will classify entities as 1 only if they pass <em>all</em> of the rules.</p>
+<p>Rules are passed as either strings in the format ‘x1 &gt; 5’ or dictionaries in
+the format {feature_name: ‘x1’, operator: ‘&gt;’, threshold: 5}. The
+feature_name, operator, and threshold keys are required. Eventually, this
+class may be abstracted into a BaseThreshold class and more complicated
+thresholders could be built around new keys in the dictionaries (e.g., by
+specifying scores that could be applied (and possibly summed) to entities
+satisfying rules) or by an alternative dictionary format that specifies
+more complicated structures for applying rules (for example:</p>
+<blockquote>
+<div><dl>
+<dt>{</dt><dd><dl class="simple">
+<dt>or: [</dt><dd><p>{or: [{}, {}]},
+{and: [{}, {}]}</p>
+</dd>
+</dl>
+<p>]</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>where rules and operators that combine them can be nested).</p>
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder.all_feature_names">
+<em class="property">property </em><code class="sig-name descname">all_feature_names</code><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder.all_feature_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set feature importances and return self.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder.lookup_rule_combination_method">
+<code class="sig-name descname">lookup_rule_combination_method</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logical_operator</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder.lookup_rule_combination_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert ‘and’ to ‘all’ and ‘or’ to ‘any’ for interacting with
+pandas DataFrames.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder.predict_proba">
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign 1 for entities that meet the rules and 0 for those that do not.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.baselines.thresholders.SimpleThresholder.rules">
+<em class="property">property </em><code class="sig-name descname">rules</code><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.SimpleThresholder.rules" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.baselines.thresholders.get_operator_method">
+<code class="sig-prename descclassname">triage.component.catwalk.baselines.thresholders.</code><code class="sig-name descname">get_operator_method</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operator_string</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.baselines.thresholders.get_operator_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the user-passed operator into the the name of the apprpriate
+pandas method.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.baselines">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.catwalk.baselines" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.catwalk.baselines.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

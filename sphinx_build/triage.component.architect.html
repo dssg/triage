@@ -1,0 +1,1338 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.architect package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-architect-package">
+<h1>triage.component.architect package<a class="headerlink" href="#triage-component-architect-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.architect.builders">
+<span id="triage-component-architect-builders-module"></span><h2>triage.component.architect.builders module<a class="headerlink" href="#module-triage.component.architect.builders" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.builders.BuilderBase">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.builders.</code><code class="sig-name descname">BuilderBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_config</span></em>, <em class="sig-param"><span class="n">matrix_storage_engine</span></em>, <em class="sig-param"><span class="n">engine</span></em>, <em class="sig-param"><span class="n">experiment_hash</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">include_missing_labels_in_train_as</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">run_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.BuilderBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.builders.BuilderBase.build_all_matrices">
+<code class="sig-name descname">build_all_matrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">build_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.BuilderBase.build_all_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.BuilderBase.make_entity_date_table">
+<code class="sig-name descname">make_entity_date_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_times</span></em>, <em class="sig-param"><span class="n">label_name</span></em>, <em class="sig-param"><span class="n">label_type</span></em>, <em class="sig-param"><span class="n">state</span></em>, <em class="sig-param"><span class="n">matrix_type</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.BuilderBase.make_entity_date_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a table containing the entity_ids and as_of_dates required for
+the current matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_times</strong> (<em>list</em>) – the times to be used for the current matrix</p></li>
+<li><p><strong>label_name</strong> (<em>str</em>) – name of the label to be used</p></li>
+<li><p><strong>label_type</strong> (<em>str</em>) – the type of label to be used</p></li>
+<li><p><strong>state</strong> (<em>str</em>) – the entity state to be used in the matrix</p></li>
+<li><p><strong>matrix_type</strong> (<em>str</em>) – the type (train/test) of matrix</p></li>
+<li><p><strong>matrix_uuid</strong> (<em>str</em>) – a unique id for the matrix</p></li>
+<li><p><strong>label_timespan</strong> (<em>str</em>) – the time timespan that labels in matrix will include</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>table name</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.BuilderBase.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.architect.builders.BuilderBase.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.BuilderBase.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.BuilderBase.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.builders.MatrixBuilder">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.builders.</code><code class="sig-name descname">MatrixBuilder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_config</span></em>, <em class="sig-param"><span class="n">matrix_storage_engine</span></em>, <em class="sig-param"><span class="n">engine</span></em>, <em class="sig-param"><span class="n">experiment_hash</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">include_missing_labels_in_train_as</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">run_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.architect.builders.BuilderBase" title="triage.component.architect.builders.BuilderBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.architect.builders.BuilderBase</span></code></a></p>
+<dl class="py method">
+<dt id="triage.component.architect.builders.MatrixBuilder.build_matrix">
+<code class="sig-name descname">build_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_times</span></em>, <em class="sig-param"><span class="n">label_name</span></em>, <em class="sig-param"><span class="n">label_type</span></em>, <em class="sig-param"><span class="n">feature_dictionary</span></em>, <em class="sig-param"><span class="n">matrix_metadata</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">matrix_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder.build_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a design matrix to disk with the specified paramters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_times</strong> (<em>list</em>) – datetimes to be included in the matrix</p></li>
+<li><p><strong>label_name</strong> (<em>str</em>) – name of the label to be used</p></li>
+<li><p><strong>label_type</strong> (<em>str</em>) – the type of label to be used</p></li>
+<li><p><strong>feature_dictionary</strong> (<em>dict</em>) – a dictionary of feature tables and features
+to be included in the matrix</p></li>
+<li><p><strong>matrix_metadata</strong> (<em>dict</em>) – a dictionary of metadata about the matrix</p></li>
+<li><p><strong>matrix_uuid</strong> (<em>str</em>) – a unique id for the matrix</p></li>
+<li><p><strong>matrix_type</strong> (<em>str</em>) – the type (train/test) of matrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>none</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>none</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.MatrixBuilder.load_features_data">
+<code class="sig-name descname">load_features_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_times</span></em>, <em class="sig-param"><span class="n">feature_dictionary</span></em>, <em class="sig-param"><span class="n">entity_date_table_name</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder.load_features_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loop over tables in features schema, writing the data from each to a
+csv. Return the full list of feature csv names and the list of all
+features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_times</strong> (<em>list</em>) – the times to be included in the matrix</p></li>
+<li><p><strong>feature_dictionary</strong> (<em>dict</em>) – a dictionary of feature tables and features
+to be included in the matrix</p></li>
+<li><p><strong>entity_date_table_name</strong> (<em>str</em>) – the name of the entity date table
+for the matrix</p></li>
+<li><p><strong>matrix_uuid</strong> (<em>str</em>) – a human-readable id for the matrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of csvs containing feature data</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.MatrixBuilder.load_labels_data">
+<code class="sig-name descname">load_labels_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label_name</span></em>, <em class="sig-param"><span class="n">label_type</span></em>, <em class="sig-param"><span class="n">entity_date_table_name</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder.load_labels_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the labels table and write the data to disk in csv format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_times</strong> – the times to be used for the current matrix</p></li>
+<li><p><strong>label_name</strong> (<em>str</em>) – name of the label to be used</p></li>
+<li><p><strong>label_type</strong> (<em>str</em>) – the type of label to be used</p></li>
+<li><p><strong>entity_date_table_name</strong> (<em>str</em>) – the name of the entity date table</p></li>
+<li><p><strong>matrix_uuid</strong> (<em>str</em>) – a unique id for the matrix</p></li>
+<li><p><strong>label_timespan</strong> (<em>str</em>) – the time timespan that labels in matrix will include</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>name of csv containing labels</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.MatrixBuilder.merge_feature_csvs">
+<code class="sig-name descname">merge_feature_csvs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataframes</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder.merge_feature_csvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Horizontally merge a list of feature CSVs
+Assumptions:
+- The first and second columns of each CSV are</p>
+<blockquote>
+<div><p>the entity_id and date</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>That the CSVs have the same list of entity_id/date combinations
+in the same order.</p></li>
+<li><p>The first CSV is expected to be labels, and only have
+entity_id, date, and label.</p></li>
+<li><p>All other CSVs do not have any labels (all non entity_id/date columns
+will be treated as features)</p></li>
+<li><p>The label will be in the <em>last</em> column of the merged CSV</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_filenames</strong> (<em>list</em>) – the filenames of each feature csv</p></li>
+<li><p><strong>out_filename</strong> (<em>str</em>) – the desired filename of the merged csv</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>none</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>none</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if the first two columns in every CSV don’t match</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.builders.MatrixBuilder.query_to_df">
+<code class="sig-name descname">query_to_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_string</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">'HEADER'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.builders.MatrixBuilder.query_to_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a query, write the requested data to csv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query_string</strong> (<em>str</em>) – query to send</p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – name to save the file as</p></li>
+</ul>
+</dd>
+<dt class="field-even">Header</dt>
+<dd class="field-even"><p>text to include in query indicating if a header should be saved
+in output</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>none</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>none</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.database_reflection">
+<span id="triage-component-architect-database-reflection-module"></span><h2>triage.component.architect.database_reflection module<a class="headerlink" href="#module-triage.component.architect.database_reflection" title="Permalink to this headline">¶</a></h2>
+<p>Functions to retrieve basic information about tables in a Postgres database</p>
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.column_type">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">column_type</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.column_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the database type of the given column in the given table</p>
+<p>The table is expected to exist, and contain a column of the given name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (sqlalchemy.types) The DDL type of the column; For instance,</dt><dd><p>sqlalchemy.types.BOOLEAN instead of
+sqlalchemy.types.Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.reflected_table">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">reflected_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.reflected_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a loaded table object for the given table name</p>
+<p>Will attempt to load the metadata about the table from the database
+So this will fail if the table doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (sqlalchemy.Table) A loaded table object</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.split_table">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">split_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.split_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split a fully-qualified table name into schema and table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>table_name</strong> (<em>string</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (tuple) of schema and table name</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.table_exists">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">table_exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.table_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether the table exists</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (boolean) Whether or not the table exists in the database</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.table_has_column">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">table_has_column</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.table_has_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the table contains a column of the given name</p>
+<p>The table is expected to exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (boolean) Whether or not the table contains the column</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.table_has_data">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">table_has_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.table_has_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the table contains any data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (boolean) Whether or not the table has any data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.database_reflection.table_object">
+<code class="sig-prename descclassname">triage.component.architect.database_reflection.</code><code class="sig-name descname">table_object</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.database_reflection.table_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a table object for the given table name</p>
+<p>This does not load data about the table from the engine yet,
+so it is safe to call for a table that doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (sqlalchemy.Table)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.entity_date_table_generators">
+<span id="triage-component-architect-entity-date-table-generators-module"></span><h2>triage.component.architect.entity_date_table_generators module<a class="headerlink" href="#module-triage.component.architect.entity_date_table_generators" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.entity_date_table_generators.</code><code class="sig-name descname">EntityDateTableGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">entity_date_table_name</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Create a table containing state membership on different dates</p>
+<dl>
+<dt>The structure of the output table is:</dt><dd><p>entity_id
+date
+active (boolean): Whether or not the entity is considered ‘active’</p>
+<blockquote>
+<div><p>(i.e., in the cohort or subset) on that date</p>
+</div></blockquote>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>experiment_hash</strong> (<em>string</em>) – </p></li>
+<li><p><strong>query</strong> (<em>string</em>) – The as_of_date should be parameterized with brackets: {as_of_date}</p></li>
+<li><p><strong>replace</strong> (<em>boolean</em>) – <dl class="simple">
+<dt>If false, each as-of-date will query to see if there are existing rows</dt><dd><p>and not run the query if so.</p>
+</dd>
+</dl>
+<p>If true, the existing table will be dropped and recreated.</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGenerator.clean_up">
+<code class="sig-name descname">clean_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGenerator.clean_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGenerator.generate_entity_date_table">
+<code class="sig-name descname">generate_entity_date_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_dates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGenerator.generate_entity_date_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object’s input table
+into a states table for the given as_of_dates</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>as_of_dates</strong> (<em>list of datetime.dates</em>) – state table</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.entity_date_table_generators.</code><code class="sig-name descname">EntityDateTableGeneratorNoOp</code><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGenerator" title="triage.component.architect.entity_date_table_generators.EntityDateTableGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.architect.entity_date_table_generators.EntityDateTableGenerator</span></code></a></p>
+<dl class="py method">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.clean_up">
+<code class="sig-name descname">clean_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.clean_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.entity_date_table_name">
+<em class="property">property </em><code class="sig-name descname">entity_date_table_name</code><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.entity_date_table_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.generate_entity_date_table">
+<code class="sig-name descname">generate_entity_date_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_dates</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.entity_date_table_generators.EntityDateTableGeneratorNoOp.generate_entity_date_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object’s input table
+into a states table for the given as_of_dates</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>as_of_dates</strong> (<em>list of datetime.dates</em>) – state table</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.feature_dictionary_creator">
+<span id="triage-component-architect-feature-dictionary-creator-module"></span><h2>triage.component.architect.feature_dictionary_creator module<a class="headerlink" href="#module-triage.component.architect.feature_dictionary_creator" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.feature_dictionary_creator.FeatureDictionaryCreator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.feature_dictionary_creator.</code><code class="sig-name descname">FeatureDictionaryCreator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_schema_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_dictionary_creator.FeatureDictionaryCreator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.feature_dictionary_creator.FeatureDictionaryCreator.feature_dictionary">
+<code class="sig-name descname">feature_dictionary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_table_names</span></em>, <em class="sig-param"><span class="n">index_column_lookup</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_dictionary_creator.FeatureDictionaryCreator.feature_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary of feature names, where keys are feature tables
+and values are lists of feature names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>feature_dictionary</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.feature_generators">
+<span id="triage-component-architect-feature-generators-module"></span><h2>triage.component.architect.feature_generators module<a class="headerlink" href="#module-triage.component.architect.feature_generators" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.feature_generators.</code><code class="sig-name descname">FeatureGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">features_schema_name</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">feature_start_time</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">materialize_subquery_fromobjs</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">features_ignore_cohort</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.aggregations">
+<code class="sig-name descname">aggregations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.aggregations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates collate.SpacetimeAggregations from the given arguments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_aggregation_config</strong> (<em>list</em>) – date, necessary to instantiate a collate.SpacetimeAggregation</p></li>
+<li><p><strong>feature_dates</strong> (<em>list</em>) – </p></li>
+<li><p><strong>state_table</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) collate.SpacetimeAggregations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.create_all_tables">
+<code class="sig-name descname">create_all_tables</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.create_all_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create all feature tables.</p>
+<p>First builds the aggregation tables, and then performs
+imputation on any null values, (requiring a two-step process to
+determine which columns contain nulls after the initial
+aggregation tables are built).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_aggregation_config</strong> (<em>list</em>) – feature date, necessary to instantiate a
+<cite>collate.SpacetimeAggregation</cite></p></li>
+<li><p><strong>feature_dates</strong> (<em>list</em>) – </p></li>
+<li><p><strong>state_table</strong> (<em>string</em>) – all entity/date pairs</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) table names</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.create_features_before_imputation">
+<code class="sig-name descname">create_features_before_imputation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.create_features_before_imputation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create features before imputation for a set of dates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.generate_all_table_tasks">
+<code class="sig-name descname">generate_all_table_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregations</span></em>, <em class="sig-param"><span class="n">task_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.generate_all_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates SQL commands for creating, populating, and indexing
+feature group tables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregations</strong> (<em>list</em>) – </p></li>
+<li><p><strong>type</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (dict) keys are group table names, values are themselves dicts,</dt><dd><p>each with keys for different stages of table creation (prepare, inserts, finalize)
+and with values being lists of SQL commands</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.index_column_lookup">
+<code class="sig-name descname">index_column_lookup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregations</span></em>, <em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.index_column_lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.preprocess_aggregation">
+<code class="sig-name descname">preprocess_aggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregation</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.preprocess_aggregation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.process_table_task">
+<code class="sig-name descname">process_table_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">task</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.process_table_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.process_table_tasks">
+<code class="sig-name descname">process_table_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.process_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.run_commands">
+<code class="sig-name descname">run_commands</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">command_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.run_commands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_generators.FeatureGenerator.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_generators.FeatureGenerator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a feature aggregation config applied to this object</p>
+<p>The validations range from basic type checks, key presence checks,
+as well as validating the sql in from objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_aggregation_config</strong> (<em>list</em>) – date, necessary to instantiate a collate.SpacetimeAggregation</p>
+</dd>
+</dl>
+<p>Raises: ValueError if any part of the config is found to be invalid</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.feature_group_creator">
+<span id="triage-component-architect-feature-group-creator-module"></span><h2>triage.component.architect.feature_group_creator module<a class="headerlink" href="#module-triage.component.architect.feature_group_creator" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroup">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.feature_group_creator.</code><code class="sig-name descname">FeatureGroup</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroup.names">
+<em class="property">property </em><code class="sig-name descname">names</code><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroup.names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroup.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">E</em>, <span class="optional">]</span><em class="sig-param">**F</em><span class="sig-paren">)</span> &#x2192; None.  Update D from dict/iterable E and F.<a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroup.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]
+If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v
+In either case, this is followed by: for k in F:  D[k] = F[k]</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroupCreator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.feature_group_creator.</code><code class="sig-name descname">FeatureGroupCreator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">definition</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroupCreator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Divides a feature dictionary into groups based on given criteria</p>
+<dl class="py method">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroupCreator.subsets">
+<code class="sig-name descname">subsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_dictionary</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroupCreator.subsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate subsets of a feature dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_dictionary</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>feature dictionary is meant to be keyed on source table. Example</strong> (<em>The</em>) – </p></li>
+<li><p><strong>{</strong> – ‘feature_table_one’: [‘feature_one’, feature_two’],
+‘feature_table_two’: [‘feature_three’, ‘feature_four’],</p></li>
+<li><p><strong>}</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (list) subsets of the feature dictionary, in the same</dt><dd><p>table-based structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroupCreator.subsetters">
+<code class="sig-name descname">subsetters</code><em class="property"> = {'all': &lt;function all_subsetter&gt;, 'prefix': &lt;function prefix_subsetter&gt;, 'tables': &lt;function table_subsetter&gt;}</em><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroupCreator.subsetters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.feature_group_creator.FeatureGroupCreator.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.FeatureGroupCreator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the object’s configuration</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_creator.all_subsetter">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_creator.</code><code class="sig-name descname">all_subsetter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_item</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="n">features</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.all_subsetter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_creator.prefix_subsetter">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_creator.</code><code class="sig-name descname">prefix_subsetter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_item</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="n">features</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.prefix_subsetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return features matching a given prefix</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_creator.table_subsetter">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_creator.</code><code class="sig-name descname">table_subsetter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_item</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="n">features</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_creator.table_subsetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return features matching a given table</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.feature_group_mixer">
+<span id="triage-component-architect-feature-group-mixer-module"></span><h2>triage.component.architect.feature_group_mixer module<a class="headerlink" href="#module-triage.component.architect.feature_group_mixer" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.feature_group_mixer.FeatureGroupMixer">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.feature_group_mixer.</code><code class="sig-name descname">FeatureGroupMixer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">strategies</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.FeatureGroupMixer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generates different combinations of feature groups
+based on a list of strategies</p>
+<dl class="py method">
+<dt id="triage.component.architect.feature_group_mixer.FeatureGroupMixer.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.FeatureGroupMixer.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply all strategies to the list of feature groups</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – each representing a group</p>
+</dd>
+</dl>
+<p>Returns: (list) of feature dictionaries</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.architect.feature_group_mixer.FeatureGroupMixer.strategy_lookup">
+<code class="sig-name descname">strategy_lookup</code><em class="property"> = {'all': &lt;function all_features&gt;, 'all-combinations': &lt;function all_combinations&gt;, 'leave-one-in': &lt;function leave_one_in&gt;, 'leave-one-out': &lt;function leave_one_out&gt;}</em><a class="headerlink" href="#triage.component.architect.feature_group_mixer.FeatureGroupMixer.strategy_lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_mixer.all_combinations">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_mixer.</code><code class="sig-name descname">all_combinations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.all_combinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all combinations of groups, excluding repeated groups</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – </p>
+</dd>
+</dl>
+<p>Returns: A list of feature dicts</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_mixer.all_features">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_mixer.</code><code class="sig-name descname">all_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.all_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a combination of all feature groups</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – </p>
+</dd>
+</dl>
+<p>Returns: A list of feature dicts</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_mixer.leave_one_in">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_mixer.</code><code class="sig-name descname">leave_one_in</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.leave_one_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each group, return a copy of just that group</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – </p>
+</dd>
+</dl>
+<p>Returns: A list of feature dicts</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.feature_group_mixer.leave_one_out">
+<code class="sig-prename descclassname">triage.component.architect.feature_group_mixer.</code><code class="sig-name descname">leave_one_out</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.feature_group_mixer.leave_one_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each group, return a copy of all groups excluding that group</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – </p>
+</dd>
+</dl>
+<p>Returns: A list of feature dicts</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.features">
+<span id="triage-component-architect-features-module"></span><h2>triage.component.architect.features module<a class="headerlink" href="#module-triage.component.architect.features" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.features.FeatureDictionaryCreator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.features.</code><code class="sig-name descname">FeatureDictionaryCreator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_schema_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureDictionaryCreator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureDictionaryCreator.feature_dictionary">
+<code class="sig-name descname">feature_dictionary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_table_names</span></em>, <em class="sig-param"><span class="n">index_column_lookup</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureDictionaryCreator.feature_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary of feature names, where keys are feature tables
+and values are lists of feature names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>feature_dictionary</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.features.FeatureGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.features.</code><code class="sig-name descname">FeatureGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">features_schema_name</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">feature_start_time</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">materialize_subquery_fromobjs</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">features_ignore_cohort</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.aggregations">
+<code class="sig-name descname">aggregations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.aggregations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates collate.SpacetimeAggregations from the given arguments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_aggregation_config</strong> (<em>list</em>) – date, necessary to instantiate a collate.SpacetimeAggregation</p></li>
+<li><p><strong>feature_dates</strong> (<em>list</em>) – </p></li>
+<li><p><strong>state_table</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) collate.SpacetimeAggregations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.create_all_tables">
+<code class="sig-name descname">create_all_tables</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.create_all_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create all feature tables.</p>
+<p>First builds the aggregation tables, and then performs
+imputation on any null values, (requiring a two-step process to
+determine which columns contain nulls after the initial
+aggregation tables are built).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_aggregation_config</strong> (<em>list</em>) – feature date, necessary to instantiate a
+<cite>collate.SpacetimeAggregation</cite></p></li>
+<li><p><strong>feature_dates</strong> (<em>list</em>) – </p></li>
+<li><p><strong>state_table</strong> (<em>string</em>) – all entity/date pairs</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) table names</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.create_features_before_imputation">
+<code class="sig-name descname">create_features_before_imputation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em>, <em class="sig-param"><span class="n">feature_dates</span></em>, <em class="sig-param"><span class="n">state_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.create_features_before_imputation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create features before imputation for a set of dates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.generate_all_table_tasks">
+<code class="sig-name descname">generate_all_table_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregations</span></em>, <em class="sig-param"><span class="n">task_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.generate_all_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates SQL commands for creating, populating, and indexing
+feature group tables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregations</strong> (<em>list</em>) – </p></li>
+<li><p><strong>type</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (dict) keys are group table names, values are themselves dicts,</dt><dd><p>each with keys for different stages of table creation (prepare, inserts, finalize)
+and with values being lists of SQL commands</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.index_column_lookup">
+<code class="sig-name descname">index_column_lookup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregations</span></em>, <em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.index_column_lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.preprocess_aggregation">
+<code class="sig-name descname">preprocess_aggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregation</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.preprocess_aggregation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.process_table_task">
+<code class="sig-name descname">process_table_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">task</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.process_table_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.process_table_tasks">
+<code class="sig-name descname">process_table_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.process_table_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.run_commands">
+<code class="sig-name descname">run_commands</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">command_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.run_commands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGenerator.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_aggregation_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGenerator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a feature aggregation config applied to this object</p>
+<p>The validations range from basic type checks, key presence checks,
+as well as validating the sql in from objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_aggregation_config</strong> (<em>list</em>) – date, necessary to instantiate a collate.SpacetimeAggregation</p>
+</dd>
+</dl>
+<p>Raises: ValueError if any part of the config is found to be invalid</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.features.FeatureGroupCreator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.features.</code><code class="sig-name descname">FeatureGroupCreator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">definition</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGroupCreator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Divides a feature dictionary into groups based on given criteria</p>
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGroupCreator.subsets">
+<code class="sig-name descname">subsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_dictionary</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGroupCreator.subsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate subsets of a feature dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_dictionary</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>feature dictionary is meant to be keyed on source table. Example</strong> (<em>The</em>) – </p></li>
+<li><p><strong>{</strong> – ‘feature_table_one’: [‘feature_one’, feature_two’],
+‘feature_table_two’: [‘feature_three’, ‘feature_four’],</p></li>
+<li><p><strong>}</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (list) subsets of the feature dictionary, in the same</dt><dd><p>table-based structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.architect.features.FeatureGroupCreator.subsetters">
+<code class="sig-name descname">subsetters</code><em class="property"> = {'all': &lt;function all_subsetter&gt;, 'prefix': &lt;function prefix_subsetter&gt;, 'tables': &lt;function table_subsetter&gt;}</em><a class="headerlink" href="#triage.component.architect.features.FeatureGroupCreator.subsetters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGroupCreator.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGroupCreator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the object’s configuration</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.features.FeatureGroupMixer">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.features.</code><code class="sig-name descname">FeatureGroupMixer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">strategies</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGroupMixer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generates different combinations of feature groups
+based on a list of strategies</p>
+<dl class="py method">
+<dt id="triage.component.architect.features.FeatureGroupMixer.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.features.FeatureGroupMixer.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply all strategies to the list of feature groups</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>feature_groups</strong> (<em>list</em>) – each representing a group</p>
+</dd>
+</dl>
+<p>Returns: (list) of feature dictionaries</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.architect.features.FeatureGroupMixer.strategy_lookup">
+<code class="sig-name descname">strategy_lookup</code><em class="property"> = {'all': &lt;function all_features&gt;, 'all-combinations': &lt;function all_combinations&gt;, 'leave-one-in': &lt;function leave_one_in&gt;, 'leave-one-out': &lt;function leave_one_out&gt;}</em><a class="headerlink" href="#triage.component.architect.features.FeatureGroupMixer.strategy_lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.label_generators">
+<span id="triage-component-architect-label-generators-module"></span><h2>triage.component.architect.label_generators module<a class="headerlink" href="#module-triage.component.architect.label_generators" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.label_generators.LabelGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.label_generators.</code><code class="sig-name descname">LabelGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">query</span></em>, <em class="sig-param"><span class="n">label_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGenerator.clean_up">
+<code class="sig-name descname">clean_up</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels_table_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGenerator.clean_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGenerator.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">label_timespan</span></em>, <em class="sig-param"><span class="n">labels_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGenerator.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate labels table using a query</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_date</strong> (<em>str</em>) – as of date</p></li>
+<li><p><strong>label_timespan</strong> (<em>str</em>) – postgresql readable time interval</p></li>
+<li><p><strong>labels_table</strong> (<em>str</em>) – name of labels table</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGenerator.generate_all_labels">
+<code class="sig-name descname">generate_all_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels_table</span></em>, <em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">label_timespans</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGenerator.generate_all_labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.architect.label_generators.LabelGeneratorNoOp">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.label_generators.</code><code class="sig-name descname">LabelGeneratorNoOp</code><a class="headerlink" href="#triage.component.architect.label_generators.LabelGeneratorNoOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGeneratorNoOp.clean_up">
+<code class="sig-name descname">clean_up</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels_table_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGeneratorNoOp.clean_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGeneratorNoOp.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">label_timespan</span></em>, <em class="sig-param"><span class="n">labels_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGeneratorNoOp.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.architect.label_generators.LabelGeneratorNoOp.generate_all_labels">
+<code class="sig-name descname">generate_all_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels_table</span></em>, <em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">label_timespans</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.label_generators.LabelGeneratorNoOp.generate_all_labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.planner">
+<span id="triage-component-architect-planner-module"></span><h2>triage.component.architect.planner module<a class="headerlink" href="#module-triage.component.architect.planner" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.planner.Planner">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.planner.</code><code class="sig-name descname">Planner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_start_time</span></em>, <em class="sig-param"><span class="n">label_names</span></em>, <em class="sig-param"><span class="n">label_types</span></em>, <em class="sig-param"><span class="n">cohort_names</span></em>, <em class="sig-param"><span class="n">user_metadata</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.planner.Planner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.planner.Planner.generate_plans">
+<code class="sig-name descname">generate_plans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_set_definitions</span></em>, <em class="sig-param"><span class="n">feature_dictionaries</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.planner.Planner.generate_plans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create build tasks and update the matrix definitions with UUIDs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_set_definitions</strong> (<em>list</em>) – the temporal information needed to generate each matrix</p></li>
+<li><p><strong>feature_dictionaries</strong> (<em>list</em>) – combinations of features to include in matrices</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>matrix set definitions (updated with matrix uuids) and build tasks</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple (list, dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.utils">
+<span id="triage-component-architect-utils-module"></span><h2>triage.component.architect.utils module<a class="headerlink" href="#module-triage.component.architect.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.architect.utils.MockTrainedModel">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">MockTrainedModel</code><a class="headerlink" href="#triage.component.architect.utils.MockTrainedModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.utils.MockTrainedModel.predict_proba">
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.MockTrainedModel.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.NamedTempFile">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">NamedTempFile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.NamedTempFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.TemporaryDirectory">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">TemporaryDirectory</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.TemporaryDirectory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.assert_index">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">assert_index</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">engine</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="n">column</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.assert_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assert that a table has an index on a given column</p>
+<p>Does not care which position the column is in the index
+Modified from <a class="reference external" href="https://www.gab.lc/articles/index_on_id_with_postgresql">https://www.gab.lc/articles/index_on_id_with_postgresql</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>table</strong> (<em>string</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.convert_string_column_to_date">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">convert_string_column_to_date</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.convert_string_column_to_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.create_binary_outcome_events">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">create_binary_outcome_events</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">events_data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.create_binary_outcome_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.create_dense_state_table">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">create_dense_state_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.create_dense_state_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.create_entity_date_df">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">create_entity_date_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">states</span></em>, <em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">state_one</span></em>, <em class="sig-param"><span class="n">state_two</span></em>, <em class="sig-param"><span class="n">label_name</span></em>, <em class="sig-param"><span class="n">label_type</span></em>, <em class="sig-param"><span class="n">label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.create_entity_date_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function makes a pandas DataFrame that mimics the entity-date table
+for testing against.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.create_features_table">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">create_features_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_number</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="n">engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.create_features_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.fake_labels">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">fake_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.fake_labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.fake_trained_model">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">fake_trained_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_path</span></em>, <em class="sig-param"><span class="n">model_storage_engine</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.fake_trained_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and stores a trivial trained model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_path</strong> (<em>string</em>) – </p></li>
+<li><p><strong>model_storage_engine</strong> (<em>triage.storage.ModelStorageEngine</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(int) model id for database retrieval</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.feature_list">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">feature_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_dictionary</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.feature_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a feature dictionary to a sorted list</p>
+<p>Args: feature_dictionary (dict)</p>
+<p>Returns: sorted list of feature names</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.retry_if_db_error">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">retry_if_db_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exception</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.retry_if_db_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.utils.str_in_sql">
+<code class="sig-prename descclassname">triage.component.architect.utils.</code><code class="sig-name descname">str_in_sql</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">values</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.utils.str_in_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect.validations">
+<span id="triage-component-architect-validations-module"></span><h2>triage.component.architect.validations module<a class="headerlink" href="#module-triage.component.architect.validations" title="Permalink to this headline">¶</a></h2>
+<p>Functions for validating input, mostly around database schema and state</p>
+<dl class="py function">
+<dt id="triage.component.architect.validations.column_should_be_booleanlike">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">column_should_be_booleanlike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.column_should_be_booleanlike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the given column can be casted to a boolean</p>
+<p>Allows BOOLEAN, SMALLINT, and INTEGER, as these are commonly used.
+It does not check that the data in a SMALLINT column all conforms to 0/1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the column is not a recognized boolean-compatible type</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.column_should_be_in_types">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">column_should_be_in_types</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">valid_types</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.column_should_be_in_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the given column is one of the given types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>valid_types</strong> (<em>list</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the column is not one of the given types</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.column_should_be_intlike">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">column_should_be_intlike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.column_should_be_intlike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the given column can act as an integer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the column is not a recognized integer type</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.column_should_be_stringlike">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">column_should_be_stringlike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.column_should_be_stringlike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the given column can act as an string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the column is not a recognized string type</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.column_should_be_timelike">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">column_should_be_timelike</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.column_should_be_timelike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the given column can be used for temporal data</p>
+<p>Many date/time operations are fairly compatible with each other,
+so this routine is fairly permissive. If you want to be more strict,
+call column_should_be_in_types directly</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the column is not a recognized temporal type</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.table_should_exist">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">table_should_exist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.table_should_exist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the table exists in the given database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the table does not exist</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.table_should_have_column">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">table_should_have_column</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.table_should_have_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the table has the given column</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>column</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the table does not contain the column</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.architect.validations.table_should_have_data">
+<code class="sig-prename descclassname">triage.component.architect.validations.</code><code class="sig-name descname">table_should_have_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">table_name</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.validations.table_should_have_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the table has at least one row</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>string</em><em>) </em><em>A table name</em><em> (</em><em>with schema</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises: ValueError if the table does not have at least one row</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.architect">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.architect" title="Permalink to this headline">¶</a></h2>
+<p>Main application</p>
+<dl class="py class">
+<dt id="triage.component.architect.Planner">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.architect.</code><code class="sig-name descname">Planner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_start_time</span></em>, <em class="sig-param"><span class="n">label_names</span></em>, <em class="sig-param"><span class="n">label_types</span></em>, <em class="sig-param"><span class="n">cohort_names</span></em>, <em class="sig-param"><span class="n">user_metadata</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.Planner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.architect.Planner.generate_plans">
+<code class="sig-name descname">generate_plans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_set_definitions</span></em>, <em class="sig-param"><span class="n">feature_dictionaries</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.architect.Planner.generate_plans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create build tasks and update the matrix definitions with UUIDs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_set_definitions</strong> (<em>list</em>) – the temporal information needed to generate each matrix</p></li>
+<li><p><strong>feature_dictionaries</strong> (<em>list</em>) – combinations of features to include in matrices</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>matrix set definitions (updated with matrix uuids) and build tasks</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple (list, dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.architect.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

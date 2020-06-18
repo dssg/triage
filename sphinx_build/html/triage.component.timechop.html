@@ -1,0 +1,443 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.timechop package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-timechop-package">
+<h1>triage.component.timechop package<a class="headerlink" href="#triage-component-timechop-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.timechop.plotting">
+<span id="triage-component-timechop-plotting-module"></span><h2>triage.component.timechop.plotting module<a class="headerlink" href="#module-triage.component.timechop.plotting" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.timechop.plotting.visualize_chops">
+<code class="sig-prename descclassname">triage.component.timechop.plotting.</code><code class="sig-name descname">visualize_chops</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">chopper</span></em>, <em class="sig-param"><span class="n">show_as_of_times</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">show_boundaries</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">save_target</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.plotting.visualize_chops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualize time chops of a given Timechop object using matplotlib</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chopper</strong> (<a class="reference internal" href="#triage.component.timechop.Timechop" title="triage.component.timechop.Timechop"><em>triage.component.timechop.Timechop</em></a>) – </p></li>
+<li><p><strong>show_as_of_times</strong> (<em>bool</em><em>, </em><em>default True</em>) – for as-of-times</p></li>
+<li><p><strong>show_boundaries</strong> (<em>bool</em><em>, </em><em>default True</em>) – and dashed lines around feature/label boundaries</p></li>
+<li><p><strong>save_target</strong> (<em>path</em><em> or </em><em>filehandle</em><em>, </em><em>default None</em>) – the figure to. Defaults to None, which won’t save anything</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.timechop.timechop">
+<span id="triage-component-timechop-timechop-module"></span><h2>triage.component.timechop.timechop module<a class="headerlink" href="#module-triage.component.timechop.timechop" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.timechop.timechop.Timechop">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.timechop.timechop.</code><code class="sig-name descname">Timechop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_start_time</span></em>, <em class="sig-param"><span class="n">feature_end_time</span></em>, <em class="sig-param"><span class="n">label_start_time</span></em>, <em class="sig-param"><span class="n">label_end_time</span></em>, <em class="sig-param"><span class="n">model_update_frequency</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequencies</span></em>, <em class="sig-param"><span class="n">max_training_histories</span></em>, <em class="sig-param"><span class="n">training_label_timespans</span></em>, <em class="sig-param"><span class="n">test_as_of_date_frequencies</span></em>, <em class="sig-param"><span class="n">test_durations</span></em>, <em class="sig-param"><span class="n">test_label_timespans</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.calculate_as_of_times">
+<code class="sig-name descname">calculate_as_of_times</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_start_limit</span></em>, <em class="sig-param"><span class="n">as_of_end_limit</span></em>, <em class="sig-param"><span class="n">data_frequency</span></em>, <em class="sig-param"><span class="n">forward</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.calculate_as_of_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a start and stop time, a frequncy, and a direction, calculate the
+as of times for a matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_start_limit</strong> – the earliest possible as of time for a matrix</p></li>
+<li><p><strong>as_of_end_limit</strong> – the last possible as of time for the matrix</p></li>
+<li><p><strong>data_frequency</strong> – how much time between rows for a single entity</p></li>
+<li><p><strong>forward</strong> – whether to generate times forward from the start time
+(True) or backward from the end time (False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of as of times for the matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.calculate_train_test_split_times">
+<code class="sig-name descname">calculate_train_test_split_times</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em>, <em class="sig-param"><span class="n">test_duration</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.calculate_train_test_split_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the split times between train and test matrices. All
+label spans in train matrices will end at this time, and this will be
+the first as of time in the respective test matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>training_label_timespan</strong> (<em>dateutil.relativedelta.relativedelta</em>) – how much time is included in training
+labels</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>dateutil.relativedelta.relativedelta</em>) – how much time is included in test labels</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – for how long after the end of a training matrix are
+test predictions made</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>all split times for the temporal parameters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if there are no valid split times in the temporal
+config</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.chop_time">
+<code class="sig-name descname">chop_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.chop_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the attributes of the object, define all train/test splits
+for all combinations of the temporal parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a list of dictionaries defining train/test splits</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.define_test_matrices">
+<code class="sig-name descname">define_test_matrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">test_duration</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.define_test_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a train/test split time and a set of testing parameters,
+generate the metadata and as of times for the test matrices in a split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – how far forward from split do test as_of_times go</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>str</em>) – how much time is covered by test labels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of dictionaries defining the test matrices for a split</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.define_train_matrix">
+<code class="sig-name descname">define_train_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">max_training_history</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequency</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.define_train_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a split time and the parameters of a training matrix, generate
+the as of times and metadata for a train matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>training_label_timespan</strong> (<em>str</em>) – how much time is covered by the labels</p></li>
+<li><p><strong>max_training_history</strong> (<em>str</em>) – how far back from split do as_of_times go</p></li>
+<li><p><strong>training_as_of_date_frequency</strong> (<em>str</em>) – how much time between rows for an entity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary containing the temporal parameters and as of times
+for a train matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.timechop.Timechop.generate_matrix_definitions">
+<code class="sig-name descname">generate_matrix_definitions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequency</span></em>, <em class="sig-param"><span class="n">max_training_history</span></em>, <em class="sig-param"><span class="n">test_duration</span></em>, <em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.timechop.Timechop.generate_matrix_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a split time and parameters for train and test matrices,
+generate as of times and metadata for the matrices in the split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>training_as_of_date_frequency</strong> (<em>str</em>) – how much time between rows for an entity
+in a training matrix</p></li>
+<li><p><strong>max_training_history</strong> (<em>str</em>) – how far back from split do train
+as_of_times go</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – how far forward from split do test as_of_times go</p></li>
+<li><p><strong>training_label_timespan</strong> (<em>str</em>) – how much time covered by train labels</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>str</em>) – how much time is covered by test labels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary defining the train and test matrices for a split</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.timechop.utils">
+<span id="triage-component-timechop-utils-module"></span><h2>triage.component.timechop.utils module<a class="headerlink" href="#module-triage.component.timechop.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.timechop.utils.convert_to_list">
+<code class="sig-prename descclassname">triage.component.timechop.utils.</code><code class="sig-name descname">convert_to_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.utils.convert_to_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an object, if it is not a list, convert it to a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>object</em>) – an object to be converted to a list</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>x as a list</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.timechop">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.timechop" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.timechop.Timechop">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.timechop.</code><code class="sig-name descname">Timechop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature_start_time</span></em>, <em class="sig-param"><span class="n">feature_end_time</span></em>, <em class="sig-param"><span class="n">label_start_time</span></em>, <em class="sig-param"><span class="n">label_end_time</span></em>, <em class="sig-param"><span class="n">model_update_frequency</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequencies</span></em>, <em class="sig-param"><span class="n">max_training_histories</span></em>, <em class="sig-param"><span class="n">training_label_timespans</span></em>, <em class="sig-param"><span class="n">test_as_of_date_frequencies</span></em>, <em class="sig-param"><span class="n">test_durations</span></em>, <em class="sig-param"><span class="n">test_label_timespans</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.calculate_as_of_times">
+<code class="sig-name descname">calculate_as_of_times</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_start_limit</span></em>, <em class="sig-param"><span class="n">as_of_end_limit</span></em>, <em class="sig-param"><span class="n">data_frequency</span></em>, <em class="sig-param"><span class="n">forward</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.calculate_as_of_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a start and stop time, a frequncy, and a direction, calculate the
+as of times for a matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>as_of_start_limit</strong> – the earliest possible as of time for a matrix</p></li>
+<li><p><strong>as_of_end_limit</strong> – the last possible as of time for the matrix</p></li>
+<li><p><strong>data_frequency</strong> – how much time between rows for a single entity</p></li>
+<li><p><strong>forward</strong> – whether to generate times forward from the start time
+(True) or backward from the end time (False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of as of times for the matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.calculate_train_test_split_times">
+<code class="sig-name descname">calculate_train_test_split_times</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em>, <em class="sig-param"><span class="n">test_duration</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.calculate_train_test_split_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the split times between train and test matrices. All
+label spans in train matrices will end at this time, and this will be
+the first as of time in the respective test matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>training_label_timespan</strong> (<em>dateutil.relativedelta.relativedelta</em>) – how much time is included in training
+labels</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>dateutil.relativedelta.relativedelta</em>) – how much time is included in test labels</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – for how long after the end of a training matrix are
+test predictions made</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>all split times for the temporal parameters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if there are no valid split times in the temporal
+config</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.chop_time">
+<code class="sig-name descname">chop_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.chop_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the attributes of the object, define all train/test splits
+for all combinations of the temporal parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a list of dictionaries defining train/test splits</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.define_test_matrices">
+<code class="sig-name descname">define_test_matrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">test_duration</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.define_test_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a train/test split time and a set of testing parameters,
+generate the metadata and as of times for the test matrices in a split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – how far forward from split do test as_of_times go</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>str</em>) – how much time is covered by test labels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of dictionaries defining the test matrices for a split</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.define_train_matrix">
+<code class="sig-name descname">define_train_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">max_training_history</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequency</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.define_train_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a split time and the parameters of a training matrix, generate
+the as of times and metadata for a train matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>training_label_timespan</strong> (<em>str</em>) – how much time is covered by the labels</p></li>
+<li><p><strong>max_training_history</strong> (<em>str</em>) – how far back from split do as_of_times go</p></li>
+<li><p><strong>training_as_of_date_frequency</strong> (<em>str</em>) – how much time between rows for an entity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary containing the temporal parameters and as of times
+for a train matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.timechop.Timechop.generate_matrix_definitions">
+<code class="sig-name descname">generate_matrix_definitions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_test_split_time</span></em>, <em class="sig-param"><span class="n">training_as_of_date_frequency</span></em>, <em class="sig-param"><span class="n">max_training_history</span></em>, <em class="sig-param"><span class="n">test_duration</span></em>, <em class="sig-param"><span class="n">training_label_timespan</span></em>, <em class="sig-param"><span class="n">test_label_timespan</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.timechop.Timechop.generate_matrix_definitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a split time and parameters for train and test matrices,
+generate as of times and metadata for the matrices in the split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_test_split_time</strong> (<em>datetime.datetime</em>) – the limit of the last label in the matrix</p></li>
+<li><p><strong>training_as_of_date_frequency</strong> (<em>str</em>) – how much time between rows for an entity
+in a training matrix</p></li>
+<li><p><strong>max_training_history</strong> (<em>str</em>) – how far back from split do train
+as_of_times go</p></li>
+<li><p><strong>test_duration</strong> (<em>str</em>) – how far forward from split do test as_of_times go</p></li>
+<li><p><strong>training_label_timespan</strong> (<em>str</em>) – how much time covered by train labels</p></li>
+<li><p><strong>test_label_timespan</strong> (<em>str</em>) – how much time is covered by test labels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary defining the train and test matrices for a split</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.timechop.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

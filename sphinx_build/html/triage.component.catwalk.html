@@ -1,0 +1,1773 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.catwalk package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-catwalk-package">
+<h1>triage.component.catwalk package<a class="headerlink" href="#triage-component-catwalk-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="triage.component.catwalk.baselines.html">triage.component.catwalk.baselines package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.baselines.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.baselines.html#module-triage.component.catwalk.baselines.rankers">triage.component.catwalk.baselines.rankers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.baselines.html#module-triage.component.catwalk.baselines.thresholders">triage.component.catwalk.baselines.thresholders module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.baselines.html#module-triage.component.catwalk.baselines">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="triage.component.catwalk.estimators.html">triage.component.catwalk.estimators package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.estimators.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.estimators.html#module-triage.component.catwalk.estimators.classifiers">triage.component.catwalk.estimators.classifiers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.estimators.html#module-triage.component.catwalk.estimators.transformers">triage.component.catwalk.estimators.transformers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.estimators.html#module-triage.component.catwalk.estimators">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="triage.component.catwalk.individual_importance.html">triage.component.catwalk.individual_importance package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.individual_importance.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.individual_importance.html#module-triage.component.catwalk.individual_importance.uniform">triage.component.catwalk.individual_importance.uniform module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.catwalk.individual_importance.html#module-triage.component.catwalk.individual_importance">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.catwalk.db">
+<span id="triage-component-catwalk-db-module"></span><h2>triage.component.catwalk.db module<a class="headerlink" href="#module-triage.component.catwalk.db" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.catwalk.db.connect">
+<code class="sig-prename descclassname">triage.component.catwalk.db.</code><code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param">poolclass=&lt;class 'sqlalchemy.pool.impl.QueuePool'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.db.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.db.ensure_db">
+<code class="sig-prename descclassname">triage.component.catwalk.db.</code><code class="sig-name descname">ensure_db</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.db.ensure_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.evaluation">
+<span id="triage-component-catwalk-evaluation-module"></span><h2>triage.component.catwalk.evaluation module<a class="headerlink" href="#module-triage.component.catwalk.evaluation" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">MetricDefinition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">threshold_unit</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">threshold_value</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">parameter_combination</span><span class="p">:</span> <span class="n">dict</span></em>, <em class="sig-param"><span class="n">parameter_string</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A single metric, bound to a particular threshold and parameter combination</p>
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition.metric">
+<em class="property">property </em><code class="sig-name descname">metric</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition.metric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition.parameter_combination">
+<em class="property">property </em><code class="sig-name descname">parameter_combination</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition.parameter_combination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition.parameter_string">
+<em class="property">property </em><code class="sig-name descname">parameter_string</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition.parameter_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition.threshold_unit">
+<em class="property">property </em><code class="sig-name descname">threshold_unit</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition.threshold_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricDefinition.threshold_value">
+<em class="property">property </em><code class="sig-name descname">threshold_value</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricDefinition.threshold_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">MetricEvaluationResult</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">value</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">num_labeled_examples</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">num_labeled_above_threshold</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">num_positive_labels</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>A metric and parameter combination alongside preliminary results.</p>
+<p>The ‘value’ could represent the worst, best, or a random version of tiebreaking.</p>
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.metric">
+<em class="property">property </em><code class="sig-name descname">metric</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.metric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.num_labeled_above_threshold">
+<em class="property">property </em><code class="sig-name descname">num_labeled_above_threshold</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.num_labeled_above_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.num_labeled_examples">
+<em class="property">property </em><code class="sig-name descname">num_labeled_examples</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.num_labeled_examples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.num_positive_labels">
+<em class="property">property </em><code class="sig-name descname">num_positive_labels</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.num_positive_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.parameter">
+<em class="property">property </em><code class="sig-name descname">parameter</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.MetricEvaluationResult.value">
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#triage.component.catwalk.evaluation.MetricEvaluationResult.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">ModelEvaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">testing_metric_groups</span></em>, <em class="sig-param"><span class="n">training_metric_groups</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">custom_metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bias_config</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An object that can score models based on its known metrics</p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator.available_metrics">
+<code class="sig-name descname">available_metrics</code><em class="property"> = {'accuracy': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'average precision score': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'f1': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'false negatives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'false positives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'fbeta&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'fpr&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'precision&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'recall&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'roc_auc': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'true negatives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'true positives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;}</em><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator.available_metrics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator.evaluate">
+<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">predictions_proba</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">protected_df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a model based on predictions, and save the results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions_proba</strong> (<em>numpy.array</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – prediction matrix and metadata</p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>subset</strong> (<em>dict</em>) – name for the subset to evaluate on, if any</p></li>
+<li><p><strong>protected_df</strong> (<em>pandas.DataFrame</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator.metric_definitions_from_matrix_type">
+<code class="sig-name descname">metric_definitions_from_matrix_type</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator.metric_definitions_from_matrix_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the correct metric config groups for the matrix type and flatten them into metric definitions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matrix_type</strong> (<em>catwalk.storage.MatrixType</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(list) MetricDefinition objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator.needs_evaluations">
+<code class="sig-name descname">needs_evaluations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">subset_hash</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator.needs_evaluations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not all the configured metrics are present in the
+database for the given matrix and model.
+:param matrix_store:
+:type matrix_store: triage.component.catwalk.storage.MatrixStore
+:param model_id:
+:type model_id: int
+:param subset_hash:
+:type subset_hash: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(bool) whether or not this matrix and model are missing any evaluations in the db</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.evaluation.ModelEvaluator.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.catwalk.evaluation.ModelEvaluator.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.evaluation.generate_binary_at_x">
+<code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">generate_binary_at_x</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test_predictions</span></em>, <em class="sig-param"><span class="n">x_value</span></em>, <em class="sig-param"><span class="n">unit</span><span class="o">=</span><span class="default_value">'top_n'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.generate_binary_at_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign predicted classes based based on top% or absolute rank of score</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_predictions</strong> (<em>numpy.array</em>) – </p></li>
+<li><p><strong>x_value</strong> (<em>int</em>) – </p></li>
+<li><p><strong>unit</strong> (<em>string</em><em>, </em><em>default 'top_n'</em>) – either percentile or top_n</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (numpy.array) The predicted classes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.evaluation.query_subset_table">
+<code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">query_subset_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">subset_table_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.query_subset_table" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Queries the subset table to find the entities active at the given</dt><dd><p>as_of_dates</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>as_of_dates</strong> (<em>list</em>) – </p></li>
+<li><p><strong>subset_table_name</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) a dataframe indexed by the entity-date pairs</dt><dd><p>active in the subset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.evaluation.subset_labels_and_predictions">
+<code class="sig-prename descclassname">triage.component.catwalk.evaluation.</code><code class="sig-name descname">subset_labels_and_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_df</span></em>, <em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">predictions_proba</span></em>, <em class="sig-param"><span class="n">protected_df</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.evaluation.subset_labels_and_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Reduce the labels and predictions to only those relevant to the current</dt><dd><p>subset.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset_df</strong> (<em>pandas.DataFrame</em>) – and as_of_dates in a subset</p></li>
+<li><p><strong>labels</strong> (<em>pandas.Series</em>) – as the index</p></li>
+<li><p><strong>predictions_proba</strong> (<em>numpy.array</em>) – entity_date pairs as the labels and in the same order</p></li>
+<li><p><strong>protected_df</strong> (<em>pandas.DataFrame</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.Series, numpy.array, pandas.DataFrame) The labels, predictions, and protected</dt><dd><p>group attributes that refer to entity-date pairs in the subset</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.exceptions">
+<span id="triage-component-catwalk-exceptions-module"></span><h2>triage.component.catwalk.exceptions module<a class="headerlink" href="#module-triage.component.catwalk.exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="py exception">
+<dt id="triage.component.catwalk.exceptions.BaselineFeatureNotInMatrix">
+<em class="property">exception </em><code class="sig-prename descclassname">triage.component.catwalk.exceptions.</code><code class="sig-name descname">BaselineFeatureNotInMatrix</code><a class="headerlink" href="#triage.component.catwalk.exceptions.BaselineFeatureNotInMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">KeyError</span></code></p>
+<p>This error is used to allow feature mixing and baseline classes to be
+included in the same experiment.</p>
+<p>Without error handling, the baseline classes would cause the experiment to
+end prematurely when they received a matrix without the required feature
+(if, for example, leave-one-out feature mixing is enabled). Raising this
+error will cause the model to be skipped elegantly.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.feature_importances">
+<span id="triage-component-catwalk-feature-importances-module"></span><h2>triage.component.catwalk.feature_importances module<a class="headerlink" href="#module-triage.component.catwalk.feature_importances" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.catwalk.feature_importances.get_feature_importances">
+<code class="sig-prename descclassname">triage.component.catwalk.feature_importances.</code><code class="sig-name descname">get_feature_importances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.feature_importances.get_feature_importances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature importances (from scikit-learn) of a trained model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model</strong> – Trained model</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Feature importances, or failing that, None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.metrics">
+<span id="triage-component-catwalk-metrics-module"></span><h2>triage.component.catwalk.metrics module<a class="headerlink" href="#module-triage.component.catwalk.metrics" title="Permalink to this headline">¶</a></h2>
+<p>Metric definitions</p>
+<p>Mostly just wrappers around sklearn.metrics functions, these functions
+implement a generalized interface to metric calculations that can be stored
+as a scalar in the database.</p>
+<p>All functions should take four parameters:
+predictions_proba (1d array-like) Prediction probabilities
+predictions_binary (1d array-like) Binarized predictions
+labels (1d array-like) Ground truth target values
+parameters (dict) Any needed hyperparameters in the implementation</p>
+<p>All functions should be wrapped with &#64;Metric to define the optimal direction</p>
+<p>All functions should return: (float) the resulting score</p>
+<p>Functions defined here are meant to be used in ModelEvaluator.available_metrics</p>
+<dl class="py class">
+<dt id="triage.component.catwalk.metrics.Metric">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.metrics.</code><code class="sig-name descname">Metric</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">greater_is_better</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.metrics.Metric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>decorator for metrics: result will be a callable metric with an
+<cite>greater_is_better</cite> parameter defined as either True or False
+depending on whether larger or smaller metric values indicate
+better models.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt id="triage.component.catwalk.metrics.UnknownMetricError">
+<em class="property">exception </em><code class="sig-prename descclassname">triage.component.catwalk.metrics.</code><code class="sig-name descname">UnknownMetricError</code><a class="headerlink" href="#triage.component.catwalk.metrics.UnknownMetricError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+<p>Signifies that a metric name was passed, but no matching computation
+function is available</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.model_grouping">
+<span id="triage-component-catwalk-model-grouping-module"></span><h2>triage.component.catwalk.model_grouping module<a class="headerlink" href="#module-triage.component.catwalk.model_grouping" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.model_grouping.ModelGrouper">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.model_grouping.</code><code class="sig-name descname">ModelGrouper</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_keys</span><span class="o">=</span><span class="default_value">()</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_grouping.ModelGrouper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Assign a model group id to given model input based on default or custom configuration</p>
+<p>This class is a wrapper around the <cite>get_model_group_id</cite> stored procedure,
+which interfaces with the model_groups table provision a stable model group id .
+The role of this class is mainly to provide data conversion, sensible defaults, and
+an abstraction layer over the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_group_keys</strong> (<em>list</em>) – In addition, the non-matrix attributes ‘class_path’ and ‘parameters’, referring to
+classifier training arguments, can be sent.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.model_grouping.ModelGrouper.get_model_group_id">
+<code class="sig-name descname">get_model_group_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">class_path</span></em>, <em class="sig-param"><span class="n">parameters</span></em>, <em class="sig-param"><span class="n">matrix_metadata</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_grouping.ModelGrouper.get_model_group_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns model group id using store procedure ‘get_model_group_id’ which will
+return the same value for models with the same class_path, parameters,
+features, and model_config</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_path</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameters</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>matrix_metadata</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – a results.model_groups table and get_model_group_id stored procedure</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) a database id for the model group id</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.model_trainers">
+<span id="triage-component-catwalk-model-trainers-module"></span><h2>triage.component.catwalk.model_trainers module<a class="headerlink" href="#module-triage.component.catwalk.model_trainers" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.model_trainers.</code><code class="sig-name descname">ModelTrainer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">experiment_hash</span></em>, <em class="sig-param"><span class="n">model_storage_engine</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">model_grouper</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">run_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Trains a series of classifiers using the same training set
+:param project_path: under which to cache model pickles
+:type project_path: string
+:param experiment_hash:
+:type experiment_hash: string
+:param model_storage_engine:
+:type model_storage_engine: catwalk.storage.ModelStorageEngine
+:param db_engine:
+:type db_engine: sqlalchemy.engine
+:param replace:
+:type replace: bool</p>
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.cache_models">
+<code class="sig-name descname">cache_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.cache_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caches each trained model in memory as it is written to storage.</p>
+<p>Must be used as a context manager.
+The cache is cleared when the context manager goes out of scope</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.flattened_grid_config">
+<em class="property">static </em><code class="sig-name descname">flattened_grid_config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.flattened_grid_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.generate_train_tasks">
+<code class="sig-name descname">generate_train_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_config</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">matrix_store</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.generate_train_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train and store configured models, yielding the ids one by one</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_config</strong> (<em>dict</em>) – <p>hyperparameter dicts}
+example: { ‘sklearn.ensemble.RandomForestClassifier’: {</p>
+<blockquote>
+<div><p>’n_estimators’: [1,10,100,1000,10000],
+‘max_depth’: [1,5,10,20,50,100],
+‘max_features’: [‘sqrt’,’log2’],
+‘min_samples_split’: [2,5,10]</p>
+</div></blockquote>
+<p>} }</p>
+</p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) training task definitions, suitable for process_train_task kwargs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.generate_trained_models">
+<code class="sig-name descname">generate_trained_models</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_config</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.generate_trained_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train and store configured models, yielding the ids one by one</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_config</strong> (<em>dict</em>) – <p>hyperparameter dicts}
+example: { ‘sklearn.ensemble.RandomForestClassifier’: {</p>
+<blockquote>
+<div><p>’n_estimators’: [1,10,100,1000,10000],
+‘max_depth’: [1,5,10,20,50,100],
+‘max_features’: [‘sqrt’,’log2’],
+‘min_samples_split’: [2,5,10]</p>
+</div></blockquote>
+<p>} }</p>
+</p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Yields: (int) model ids</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.process_train_task">
+<code class="sig-name descname">process_train_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">class_path</span></em>, <em class="sig-param"><span class="n">parameters</span></em>, <em class="sig-param"><span class="n">model_hash</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">random_seed</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.process_train_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trains and stores a model, or skips it and returns the existing id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>class_path</strong> (<em>string</em>) – a full class path for the classifier</p></li>
+<li><p><strong>parameters</strong> (<em>dict</em>) – all hyperparameters to be passed to the classifier</p></li>
+<li><p><strong>model_hash</strong> (<em>string</em>) – </p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>optional</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) model id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.train_models">
+<code class="sig-name descname">train_models</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_config</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.train_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train and store configured models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_config</strong> (<em>dict</em>) – <p>hyperparameter dicts}
+example: { ‘sklearn.ensemble.RandomForestClassifier’: {</p>
+<blockquote>
+<div><p>’n_estimators’: [1,10,100,1000,10000],
+‘max_depth’: [1,5,10,20,50,100],
+‘max_features’: [‘sqrt’,’log2’],
+‘min_samples_split’: [2,5,10]</p>
+</div></blockquote>
+<p>} }</p>
+</p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(list) of model ids</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.model_trainers.ModelTrainer.unique_parameters">
+<code class="sig-name descname">unique_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parameters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.ModelTrainer.unique_parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.model_trainers.flatten_grid_config">
+<code class="sig-prename descclassname">triage.component.catwalk.model_trainers.</code><code class="sig-name descname">flatten_grid_config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grid_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.model_trainers.flatten_grid_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flattens a model/parameter grid configuration into individually
+trainable model/parameter pairs</p>
+<p>Yields: (tuple) classpath and parameters</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.predictors">
+<span id="triage-component-catwalk-predictors-module"></span><h2>triage.component.catwalk.predictors module<a class="headerlink" href="#module-triage.component.catwalk.predictors" title="Permalink to this headline">¶</a></h2>
+<dl class="py exception">
+<dt id="triage.component.catwalk.predictors.ModelNotFoundError">
+<em class="property">exception </em><code class="sig-prename descclassname">triage.component.catwalk.predictors.</code><code class="sig-name descname">ModelNotFoundError</code><a class="headerlink" href="#triage.component.catwalk.predictors.ModelNotFoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.predictors.Predictor">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.predictors.</code><code class="sig-name descname">Predictor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_storage_engine</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">rank_order</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">save_predictions</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.predictors.Predictor.available_tiebreakers">
+<code class="sig-name descname">available_tiebreakers</code><em class="property"> = {'best', 'random', 'worst'}</em><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.available_tiebreakers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.delete_model">
+<code class="sig-name descname">delete_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.delete_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the cached model associated with a given model id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_id</strong> (<em>int</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.predictors.Predictor.expected_matrix_ts_format">
+<code class="sig-name descname">expected_matrix_ts_format</code><em class="property"> = '%Y-%m-%d %H:%M:%S'</em><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.expected_matrix_ts_format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.load_model">
+<code class="sig-name descname">load_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads the cached model associated with a given model id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_id</strong> (<em>int</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A python object which implements .predict()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.needs_predictions">
+<code class="sig-name descname">needs_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.needs_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not the given matrix and model are lacking any predictions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>triage.component.catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>The way we check is by grabbing all the distinct as-of-dates in the predictions table
+for this model and matrix. If there are more as-of-dates defined in the matrix’s metadata
+than are in the table, we need predictions</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">train_matrix_columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate predictions and store them in the database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – prediction matrix and metadata</p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – attributes and values to add to each
+TrainPrediction or TestPrediction object in the results schema</p></li>
+<li><p><strong>train_matrix_columns</strong> (<em>list</em>) – The order of columns that the model
+was trained on</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(numpy.Array) the generated prediction values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.predictors.Predictor.update_db_with_ranks">
+<code class="sig-name descname">update_db_with_ranks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">matrix_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.predictors.Predictor.update_db_with_ranks" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Update predictions table with rankings, both absolute and percentile.</dt><dd><p>random_seed=postgres_random_seed,</p>
+</dd>
+</dl>
+<p>All entities should have different ranks, so to break ties:
+- abs_rank uses the ‘row_number’ function, so ties are broken by the database ordering</p>
+<blockquote>
+<div><p>session.close()</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>pct_rank uses the output of the abs_rank to compute percentiles
+(as opposed to raw scores), so it inherits the tie-breaking from abs_rank</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>matrix_uuid</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.protected_groups_generators">
+<span id="triage-component-catwalk-protected-groups-generators-module"></span><h2>triage.component.catwalk.protected_groups_generators module<a class="headerlink" href="#module-triage.component.catwalk.protected_groups_generators" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.protected_groups_generators.</code><code class="sig-name descname">ProtectedGroupsGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">attribute_columns</span></em>, <em class="sig-param"><span class="n">entity_id_column</span></em>, <em class="sig-param"><span class="n">knowledge_date_column</span></em>, <em class="sig-param"><span class="n">protected_groups_table_name</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.as_dataframe">
+<code class="sig-name descname">as_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">cohort_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.as_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries the protected groups table to retrieve the protected attributes for each date
+:param db_engine:
+:type db_engine: sqlalchemy.engine
+:param as_of_dates:
+:type as_of_dates: list</p>
+<p>Returns: (pandas.DataFrame) a dataframe with protected attributes for the given dates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">cohort_table_name</span></em>, <em class="sig-param"><span class="n">cohort_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.generate_all_dates">
+<code class="sig-name descname">generate_all_dates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">as_of_dates</span></em>, <em class="sig-param"><span class="n">cohort_table_name</span></em>, <em class="sig-param"><span class="n">cohort_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGenerator.generate_all_dates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.protected_groups_generators.</code><code class="sig-name descname">ProtectedGroupsGeneratorNoOp</code><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.as_dataframe">
+<code class="sig-name descname">as_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.as_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.generate">
+<code class="sig-name descname">generate</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.generate_all_dates">
+<code class="sig-name descname">generate_all_dates</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.protected_groups_generators.ProtectedGroupsGeneratorNoOp.generate_all_dates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.storage">
+<span id="triage-component-catwalk-storage-module"></span><h2>triage.component.catwalk.storage module<a class="headerlink" href="#module-triage.component.catwalk.storage" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.CSVMatrixStore">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">CSVMatrixStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_storage</span></em>, <em class="sig-param"><span class="n">directories</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">matrix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.CSVMatrixStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.catwalk.storage.MatrixStore</span></code></a></p>
+<p>Store and access compressed matrices using CSV</p>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.CSVMatrixStore.head_of_matrix">
+<em class="property">property </em><code class="sig-name descname">head_of_matrix</code><a class="headerlink" href="#triage.component.catwalk.storage.CSVMatrixStore.head_of_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>The first line of the matrix</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.CSVMatrixStore.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.CSVMatrixStore.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.CSVMatrixStore.suffix">
+<code class="sig-name descname">suffix</code><em class="property"> = 'csv.gz'</em><a class="headerlink" href="#triage.component.catwalk.storage.CSVMatrixStore.suffix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.FSStore">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">FSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">pathparts</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.FSStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.catwalk.storage.Store" title="triage.component.catwalk.storage.Store"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.catwalk.storage.Store</span></code></a></p>
+<p>Store an object on the local filesystem.</p>
+<p>Example:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">FSStore('/mnt',</span> <span class="pre">'models',</span> <span class="pre">'model.pkl')</span>
+<span class="pre">return</span> <span class="pre">store.load()</span>
+<span class="pre">`</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*pathparts</strong> – <p>A variable length list of components of the path, to be processed in order.
+All components will be joined using pathlib.Path to create the final path</p>
+<blockquote>
+<div><p>using the correct separator for the operating system. However, if you pass
+components that already contain a separator, those separators won’t be modified</p>
+</div></blockquote>
+</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.FSStore.delete">
+<code class="sig-name descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.FSStore.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.FSStore.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.FSStore.exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.FSStore.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.FSStore.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.MatrixStorageEngine">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">MatrixStorageEngine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_storage</span></em>, <em class="sig-param"><span class="n">matrix_storage_class</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">matrix_directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStorageEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Store matrices in a given project storage</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_storage</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.ProjectStorage" title="triage.component.catwalk.storage.ProjectStorage"><em>triage.component.catwalk.storage.ProjectStorage</em></a>) – A project file storage engine</p></li>
+<li><p><strong>matrix_storage_class</strong> (<em>class</em>) – </p></li>
+<li><p><strong>matrix_directory</strong> (<em>string</em><em>, </em><em>optional</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStorageEngine.get_store">
+<code class="sig-name descname">get_store</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_uuid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStorageEngine.get_store" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a storage object for a given matrix uuid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matrix_uuid</strong> (<em>string</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (MatrixStore) a reference to the matrix and its companion metadata</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.MatrixStore">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">MatrixStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_storage</span></em>, <em class="sig-param"><span class="n">directories</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">matrix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metadata</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for classes that allow access of a matrix and its metadata.</p>
+<dl class="simple">
+<dt>Subclasses should be scoped to a storage format (e.g. CSV)</dt><dd><p>and implement the _load, save, and head_of_matrix methods for that storage format</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_storage</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.ProjectStorage" title="triage.component.catwalk.storage.ProjectStorage"><em>triage.component.catwalk.storage.ProjectStorage</em></a>) – A project file storage engine</p></li>
+<li><p><strong>directories</strong> (<em>list</em>) – A list of subdirectories</p></li>
+<li><p><strong>matrix_uuid</strong> (<em>string</em>) – A unique identifier within the project for a matrix.</p></li>
+<li><p><strong>matrix</strong> (<em>pandas.DataFrame</em><em>, </em><em>optional</em>) – The raw matrix.
+Defaults to None, which means it will be loaded from storage on demand</p></li>
+<li><p><strong>metadata</strong> (<em>dict</em><em>, </em><em>optional</em>) – Defaults to None, which means it will be loaded from storage on demand.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.as_of_dates">
+<em class="property">property </em><code class="sig-name descname">as_of_dates</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.as_of_dates" title="Permalink to this definition">¶</a></dt>
+<dd><p>All as-of-dates in the matrix. Will be converted to datetime.date</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.cache">
+<code class="sig-name descname">cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable caching</p>
+<p>Must be used as a context manager.
+The cache is cleared when the context manager goes out of scope</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.clear_cache">
+<code class="sig-name descname">clear_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.columns">
+<code class="sig-name descname">columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">include_label</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>The matrix’s column list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.design_matrix">
+<em class="property">property </em><code class="sig-name descname">design_matrix</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.design_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>The matrix without the label vector, only the index and features</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.empty">
+<em class="property">property </em><code class="sig-name descname">empty</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not the matrix has at least one row</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.exists">
+<em class="property">property </em><code class="sig-name descname">exists</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not the matrix and metadata exist in storage</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.full_matrix_for_saving">
+<em class="property">property </em><code class="sig-name descname">full_matrix_for_saving</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.full_matrix_for_saving" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.head_of_matrix">
+<em class="property">property </em><code class="sig-name descname">head_of_matrix</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.head_of_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>The first line of the matrix</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.index">
+<em class="property">property </em><code class="sig-name descname">index</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.MatrixStore.indices">
+<code class="sig-name descname">indices</code><em class="property"> = ['entity_id', 'as_of_date']</em><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.indices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.label_column_name">
+<em class="property">property </em><code class="sig-name descname">label_column_name</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.label_column_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.labels">
+<em class="property">property </em><code class="sig-name descname">labels</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.labels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.load_metadata">
+<code class="sig-name descname">load_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.load_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load metadata from storage</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.matrix_label_tuple">
+<em class="property">property </em><code class="sig-name descname">matrix_label_tuple</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.matrix_label_tuple" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.matrix_type">
+<em class="property">property </em><code class="sig-name descname">matrix_type</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.matrix_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The MatrixType (train or test). Returns an object with:
+a string name,
+evaluation ORM class
+prediction ORM class
+a boolean <cite>is_test</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.matrix_with_sorted_columns">
+<code class="sig-name descname">matrix_with_sorted_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.matrix_with_sorted_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the matrix with columns sorted in the given column order</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>columns</strong> (<em>list</em>) – Will error if this list does not contain the same elements as the matrix’s columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.metadata">
+<em class="property">property </em><code class="sig-name descname">metadata</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw metadata. Will load from storage into memory if not already loaded</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.num_entities">
+<em class="property">property </em><code class="sig-name descname">num_entities</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.num_entities" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of entities in the matrix</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.MatrixStore.uuid">
+<em class="property">property </em><code class="sig-name descname">uuid</code><a class="headerlink" href="#triage.component.catwalk.storage.MatrixStore.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>The matrix’s unique id within the project</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">ModelStorageEngine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_storage</span></em>, <em class="sig-param"><span class="n">model_directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Store arbitrary models in a given project storage using joblib</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_storage</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.ProjectStorage" title="triage.component.catwalk.storage.ProjectStorage"><em>triage.component.catwalk.storage.ProjectStorage</em></a>) – A project file storage engine</p></li>
+<li><p><strong>model_directory</strong> (<em>string</em><em>, </em><em>optional</em>) – Defaults to ‘trained_models’</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.cache_models">
+<code class="sig-name descname">cache_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.cache_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caches each model in memory as it is written.</p>
+<p>Must be used as a context manager.
+The cache is cleared when the context manager goes out of scope</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.delete">
+<code class="sig-name descname">delete</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the model identified by this hash from project storage</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_hash</strong> (<em>string</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the model is persisted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_hash</strong> (<em>string</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (bool) Whether or not a model by that identifier exists in project storage</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a model object using joblib</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_hash</strong> (<em>string</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (object) A model object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.reset_cache">
+<code class="sig-name descname">reset_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.reset_cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ModelStorageEngine.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em>, <em class="sig-param"><span class="n">model_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ModelStorageEngine.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persist a model object using joblib. Also performs compression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> (<em>object</em>) – </p></li>
+<li><p><strong>model_hash</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.ProjectStorage">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">ProjectStorage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">project_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ProjectStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Store and access files associated with a project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>project_path</strong> (<em>string</em>) – The base path for all files in the project.
+The scheme prefix of the path will determine the storage medium.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ProjectStorage.get_store">
+<code class="sig-name descname">get_store</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">directories</span></em>, <em class="sig-param"><span class="n">leaf_filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ProjectStorage.get_store" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a storage object for one filename</p>
+<p>Args:
+directories (list): A list of subdirectories
+leaf_filename (string): The filename without any directory information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>triage.component.catwalk.storage.Store object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ProjectStorage.matrix_storage_engine">
+<code class="sig-name descname">matrix_storage_engine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_storage_class</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">matrix_directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ProjectStorage.matrix_storage_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a matrix storage engine bound to this project’s storage</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_storage_class</strong> (<em>class</em>) – </p></li>
+<li><p><strong>matrix_directory</strong> (<em>string</em><em>, </em><em>optional</em>) – If not passed will allow the MatrixStorageEngine to decide</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: triage.component.catwalk.storage.MatrixStorageEngine</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.ProjectStorage.model_storage_engine">
+<code class="sig-name descname">model_storage_engine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.ProjectStorage.model_storage_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a model storage engine bound to this project’s storage</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_directory</strong> (<em>string</em><em>, </em><em>optional</em>) – If not passed will allow the ModelStorageEngine to decide</p>
+</dd>
+</dl>
+<p>Returns: triage.component.catwalk.storage.ModelStorageEngine</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.S3Store">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">S3Store</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_head</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">path_parts</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.S3Store" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.catwalk.storage.Store" title="triage.component.catwalk.storage.Store"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.catwalk.storage.Store</span></code></a></p>
+<p>Store an object in S3.</p>
+<p>Example:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">S3Store('s3://my-bucket',</span> <span class="pre">'models',</span> <span class="pre">'model.pkl')</span>
+<span class="pre">return</span> <span class="pre">store.load()</span>
+<span class="pre">`</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*path_parts</strong> (<em>path_head</em><em>,</em>) – <p>one or more path components,
+(to be joined by PurePosixPath to create the final path).</p>
+</p></li>
+<li><p><strong>**config</strong> – arguments to be passed to the S3Fs client constructor.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.S3Store.S3FileWrapper">
+<em class="property">class </em><code class="sig-name descname">S3FileWrapper</code><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.S3FileWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectProxy</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.S3Store.S3FileWrapper.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">block_size</span><span class="o">=</span><span class="default_value">5242880</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.S3FileWrapper.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.S3Store.client">
+<em class="property">property </em><code class="sig-name descname">client</code><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.S3Store.delete">
+<code class="sig-name descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.S3Store.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.S3Store.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.S3Store.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.Store">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">Store</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">pathparts</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for classes which know how to access a file in a preset medium.</p>
+<p>Used to hold references to persisted objects with knowledge about how they can be accessed.
+without loading them into memory. In this way, they can be easily and quickly serialized
+across processes but centralize the reading/writing code.</p>
+<dl class="simple">
+<dt>Each subclass be scoped to a specific storage medium (e.g. Filesystem, S3)</dt><dd><p>and implement the access methods for that medium.</p>
+</dd>
+<dt>Implements write/load methods for interacting directly using bytestreams,</dt><dd><p>plus an open method that works as an open filehandle.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.Store.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store.exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.Store.factory">
+<em class="property">classmethod </em><code class="sig-name descname">factory</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">pathparts</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store.factory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.Store.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.Store.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.storage.Store.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bytestream</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.storage.Store.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.TestMatrixType">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">TestMatrixType</code><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.aequitas_obj">
+<code class="sig-name descname">aequitas_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.aequitas_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TestAequitas</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.evaluation_obj">
+<code class="sig-name descname">evaluation_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.evaluation_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TestEvaluation</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.is_test">
+<code class="sig-name descname">is_test</code><em class="property"> = True</em><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.is_test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.prediction_metadata_obj">
+<code class="sig-name descname">prediction_metadata_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.prediction_metadata_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TestPredictionMetadata</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.prediction_obj">
+<code class="sig-name descname">prediction_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.prediction_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TestPrediction</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TestMatrixType.string_name">
+<code class="sig-name descname">string_name</code><em class="property"> = 'test'</em><a class="headerlink" href="#triage.component.catwalk.storage.TestMatrixType.string_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.storage.TrainMatrixType">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.storage.</code><code class="sig-name descname">TrainMatrixType</code><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.aequitas_obj">
+<code class="sig-name descname">aequitas_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.aequitas_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TrainAequitas</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.evaluation_obj">
+<code class="sig-name descname">evaluation_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.evaluation_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TrainEvaluation</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.is_test">
+<code class="sig-name descname">is_test</code><em class="property"> = False</em><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.is_test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.prediction_metadata_obj">
+<code class="sig-name descname">prediction_metadata_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.prediction_metadata_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TrainPredictionMetadata</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.prediction_obj">
+<code class="sig-name descname">prediction_obj</code><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.prediction_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.results_schema.schema.TrainPrediction</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.storage.TrainMatrixType.string_name">
+<code class="sig-name descname">string_name</code><em class="property"> = 'train'</em><a class="headerlink" href="#triage.component.catwalk.storage.TrainMatrixType.string_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.subsetters">
+<span id="triage-component-catwalk-subsetters-module"></span><h2>triage.component.catwalk.subsetters module<a class="headerlink" href="#module-triage.component.catwalk.subsetters" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.subsetters.Subsetter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.subsetters.</code><code class="sig-name descname">Subsetter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">replace</span></em>, <em class="sig-param"><span class="n">as_of_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.subsetters.Subsetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.subsetters.Subsetter.generate_tasks">
+<code class="sig-name descname">generate_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_configs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.subsetters.Subsetter.generate_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.subsetters.Subsetter.process_all_tasks">
+<code class="sig-name descname">process_all_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.subsetters.Subsetter.process_all_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.subsetters.Subsetter.process_task">
+<code class="sig-name descname">process_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_config</span></em>, <em class="sig-param"><span class="n">subset_hash</span></em>, <em class="sig-param"><span class="n">subset_table_generator</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.subsetters.Subsetter.process_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.subsetters.Subsetter.save_subset_to_db">
+<code class="sig-name descname">save_subset_to_db</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_hash</span></em>, <em class="sig-param"><span class="n">subset_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.subsetters.Subsetter.save_subset_to_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.utils">
+<span id="triage-component-catwalk-utils-module"></span><h2>triage.component.catwalk.utils module<a class="headerlink" href="#module-triage.component.catwalk.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.utils.Batch">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">Batch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterable</span></em>, <em class="sig-param"><span class="n">limit</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.Batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.utils.Batch.group">
+<code class="sig-name descname">group</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.Batch.group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.associate_matrices_with_experiment">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">associate_matrices_with_experiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.associate_matrices_with_experiment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.associate_models_with_experiment">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">associate_models_with_experiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.associate_models_with_experiment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.filename_friendly_hash">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">filename_friendly_hash</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.filename_friendly_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.get_subset_table_name">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">get_subset_table_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.get_subset_table_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.missing_matrix_uuids">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">missing_matrix_uuids</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.missing_matrix_uuids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare the contents of the experiment_matrices table with that of the
+matrices table to produce a list of matrix_uuids that the experiment wants
+but are not available.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.missing_model_hashes">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">missing_model_hashes</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.missing_model_hashes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare the contents of the experiment_models table with that of the
+models table to produce a list of model hashes the experiment wants
+but are not available.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.retrieve_model_hash_from_id">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">retrieve_model_hash_from_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.retrieve_model_hash_from_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the model hash associated with a given model id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_id</strong> (<em>int</em>) – </p>
+</dd>
+</dl>
+<p>Returns: (str) the stored hash of the model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.retrieve_model_id_from_hash">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">retrieve_model_id_from_hash</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.retrieve_model_id_from_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves a model id from the database that matches the given hash</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>model_hash</strong> (<em>str</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) The model id (if found in DB), None (if not)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.retry_if_db_error">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">retry_if_db_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exception</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.retry_if_db_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.save_db_objects">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">save_db_objects</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.save_db_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves a collection of SQLAlchemy model objects to the database using a COPY command</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>db_objects</strong> (<em>iterable</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.save_experiment_and_get_hash">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">save_experiment_and_get_hash</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.save_experiment_and_get_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.catwalk.utils.sort_predictions_and_labels">
+<code class="sig-prename descclassname">triage.component.catwalk.utils.</code><code class="sig-name descname">sort_predictions_and_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">predictions_proba</span></em>, <em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">tiebreaker</span><span class="o">=</span><span class="default_value">'random'</span></em>, <em class="sig-param"><span class="n">sort_seed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parallel_arrays</span><span class="o">=</span><span class="default_value">()</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.utils.sort_predictions_and_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort predictions and labels with a configured tiebreaking rule</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions_proba</strong> (<em>numpy.array</em>) – </p></li>
+<li><p><strong>labels</strong> (<em>numpy.array</em><em>) </em><em>The numeric labels</em><em> (</em><em>1/0</em><em>, </em><em>not True/False</em>) – </p></li>
+<li><p><strong>tiebreaker</strong> (<em>string</em><em>) </em><em>The tiebreaking method</em><em> (</em><em>'best'</em><em>, </em><em>'worst'</em><em>, </em><em>'random'</em>) – </p></li>
+<li><p><strong>sort_seed</strong> (<em>signed int</em>) – </p></li>
+<li><p><strong>parallel_arrays</strong> (<em>tuple of numpy.array</em>) – as the predictions and labels, that should be sorted alongside them.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(tuple) (predictions_proba, labels), sorted</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.catwalk" title="Permalink to this headline">¶</a></h2>
+<p>Main application</p>
+<dl class="py class">
+<dt id="triage.component.catwalk.IndividualImportanceCalculator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.</code><code class="sig-name descname">IndividualImportanceCalculator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">n_ranks</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">methods</span><span class="o">=</span><span class="default_value">['uniform']</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.IndividualImportanceCalculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Calculates and saves individual importance scores and rankings using different methods</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>n_ranks</strong> (<em>int</em>) – </p></li>
+<li><p><strong>methods</strong> (<em>list</em>) – present in CALCULATE_STRATEGIES that should be called.
+Defaults to [‘uniform’]</p></li>
+<li><p><strong>replace</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.IndividualImportanceCalculator.calculate_and_save">
+<code class="sig-name descname">calculate_and_save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">test_matrix_store</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">as_of_date</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.IndividualImportanceCalculator.calculate_and_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate and save importances for a given model, test matrix, method, and date</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>test_matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>method_name</strong> (<em>string</em>) – Expected to be present in CALCULATE_STRATEGIES</p></li>
+<li><p><strong>as_of_date</strong> (<em>datetime</em><em> or </em><em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.IndividualImportanceCalculator.calculate_and_save_all_methods_and_dates">
+<code class="sig-name descname">calculate_and_save_all_methods_and_dates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">test_matrix_store</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.IndividualImportanceCalculator.calculate_and_save_all_methods_and_dates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate and save individual importances for the given model and test matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>test_matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.IndividualImportanceCalculator.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">importance_records</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">as_of_date</span></em>, <em class="sig-param"><span class="n">method_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.IndividualImportanceCalculator.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves computed individual feature importance records to the database.
+Will delete any records beforehand matching the model_id, as_of_date, and method_name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>importance_records</strong> (<em>list</em>) – Each entry should be a dict with keys ‘entity_id’ ‘feature_name’
+and ‘feature_value’ corresponding to the correct values for the
+model_id, as_of_date, and method</p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>as_of_date</strong> (<em>datetime</em><em> or </em><em>string</em>) – </p></li>
+<li><p><strong>method_name</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.ModelEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.</code><code class="sig-name descname">ModelEvaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">testing_metric_groups</span></em>, <em class="sig-param"><span class="n">training_metric_groups</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">custom_metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bias_config</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An object that can score models based on its known metrics</p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.ModelEvaluator.available_metrics">
+<code class="sig-name descname">available_metrics</code><em class="property"> = {'accuracy': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'average precision score': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'f1': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'false negatives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'false positives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'fbeta&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'fpr&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'precision&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'recall&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'roc_auc': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'true negatives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;, 'true positives&#64;': &lt;triage.component.catwalk.metrics.Metric.__call__.&lt;locals&gt;.DecoratedMetric object&gt;}</em><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator.available_metrics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelEvaluator.evaluate">
+<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">predictions_proba</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">protected_df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">subset</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a model based on predictions, and save the results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions_proba</strong> (<em>numpy.array</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – prediction matrix and metadata</p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>subset</strong> (<em>dict</em>) – name for the subset to evaluate on, if any</p></li>
+<li><p><strong>protected_df</strong> (<em>pandas.DataFrame</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelEvaluator.metric_definitions_from_matrix_type">
+<code class="sig-name descname">metric_definitions_from_matrix_type</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator.metric_definitions_from_matrix_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the correct metric config groups for the matrix type and flatten them into metric definitions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matrix_type</strong> (<em>catwalk.storage.MatrixType</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(list) MetricDefinition objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelEvaluator.needs_evaluations">
+<code class="sig-name descname">needs_evaluations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">subset_hash</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator.needs_evaluations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not all the configured metrics are present in the
+database for the given matrix and model.
+:param matrix_store:
+:type matrix_store: triage.component.catwalk.storage.MatrixStore
+:param model_id:
+:type model_id: int
+:param subset_hash:
+:type subset_hash: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(bool) whether or not this matrix and model are missing any evaluations in the db</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelEvaluator.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.catwalk.ModelEvaluator.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.ModelTrainTester">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.</code><code class="sig-name descname">ModelTrainTester</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matrix_storage_engine</span></em>, <em class="sig-param"><span class="n">model_trainer</span></em>, <em class="sig-param"><span class="n">model_evaluator</span></em>, <em class="sig-param"><span class="n">individual_importance_calculator</span></em>, <em class="sig-param"><span class="n">predictor</span></em>, <em class="sig-param"><span class="n">subsets</span></em>, <em class="sig-param"><span class="n">protected_groups_generator</span></em>, <em class="sig-param"><span class="n">cohort_hash</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelTrainTester" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelTrainTester.generate_task_batches">
+<code class="sig-name descname">generate_task_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">splits</span></em>, <em class="sig-param"><span class="n">grid_config</span></em>, <em class="sig-param"><span class="n">model_comment</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelTrainTester.generate_task_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelTrainTester.order_and_batch_tasks">
+<code class="sig-name descname">order_and_batch_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelTrainTester.order_and_batch_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelTrainTester.process_all_batches">
+<code class="sig-name descname">process_all_batches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">task_batches</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelTrainTester.process_all_batches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.ModelTrainTester.process_task">
+<code class="sig-name descname">process_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test_store</span></em>, <em class="sig-param"><span class="n">train_store</span></em>, <em class="sig-param"><span class="n">train_kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.ModelTrainTester.process_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.Predictor">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.</code><code class="sig-name descname">Predictor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_storage_engine</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">rank_order</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">save_predictions</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.catwalk.Predictor.available_tiebreakers">
+<code class="sig-name descname">available_tiebreakers</code><em class="property"> = {'best', 'random', 'worst'}</em><a class="headerlink" href="#triage.component.catwalk.Predictor.available_tiebreakers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.delete_model">
+<code class="sig-name descname">delete_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor.delete_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the cached model associated with a given model id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_id</strong> (<em>int</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.catwalk.Predictor.expected_matrix_ts_format">
+<code class="sig-name descname">expected_matrix_ts_format</code><em class="property"> = '%Y-%m-%d %H:%M:%S'</em><a class="headerlink" href="#triage.component.catwalk.Predictor.expected_matrix_ts_format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.load_model">
+<code class="sig-name descname">load_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads the cached model associated with a given model id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_id</strong> (<em>int</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A python object which implements .predict()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.needs_predictions">
+<code class="sig-name descname">needs_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor.needs_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not the given matrix and model are lacking any predictions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>triage.component.catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>The way we check is by grabbing all the distinct as-of-dates in the predictions table
+for this model and matrix. If there are more as-of-dates defined in the matrix’s metadata
+than are in the table, we need predictions</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">matrix_store</span></em>, <em class="sig-param"><span class="n">misc_db_parameters</span></em>, <em class="sig-param"><span class="n">train_matrix_columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate predictions and store them in the database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>matrix_store</strong> (<a class="reference internal" href="#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – prediction matrix and metadata</p></li>
+<li><p><strong>misc_db_parameters</strong> (<em>dict</em>) – attributes and values to add to each
+TrainPrediction or TestPrediction object in the results schema</p></li>
+<li><p><strong>train_matrix_columns</strong> (<em>list</em>) – The order of columns that the model
+was trained on</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(numpy.Array) the generated prediction values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.sessionmaker">
+<em class="property">property </em><code class="sig-name descname">sessionmaker</code><a class="headerlink" href="#triage.component.catwalk.Predictor.sessionmaker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Predictor.update_db_with_ranks">
+<code class="sig-name descname">update_db_with_ranks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">matrix_uuid</span></em>, <em class="sig-param"><span class="n">matrix_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Predictor.update_db_with_ranks" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Update predictions table with rankings, both absolute and percentile.</dt><dd><p>random_seed=postgres_random_seed,</p>
+</dd>
+</dl>
+<p>All entities should have different ranks, so to break ties:
+- abs_rank uses the ‘row_number’ function, so ties are broken by the database ordering</p>
+<blockquote>
+<div><p>session.close()</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>pct_rank uses the output of the abs_rank to compute percentiles
+(as opposed to raw scores), so it inherits the tie-breaking from abs_rank</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>matrix_uuid</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.catwalk.Subsetter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.</code><code class="sig-name descname">Subsetter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">replace</span></em>, <em class="sig-param"><span class="n">as_of_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Subsetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.catwalk.Subsetter.generate_tasks">
+<code class="sig-name descname">generate_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_configs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Subsetter.generate_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Subsetter.process_all_tasks">
+<code class="sig-name descname">process_all_tasks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tasks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Subsetter.process_all_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Subsetter.process_task">
+<code class="sig-name descname">process_task</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_config</span></em>, <em class="sig-param"><span class="n">subset_hash</span></em>, <em class="sig-param"><span class="n">subset_table_generator</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Subsetter.process_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.Subsetter.save_subset_to_db">
+<code class="sig-name descname">save_subset_to_db</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subset_hash</span></em>, <em class="sig-param"><span class="n">subset_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.Subsetter.save_subset_to_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.catwalk.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

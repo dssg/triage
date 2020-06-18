@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.postmodeling.contrast.utils package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-postmodeling-contrast-utils-package">
+<h1>triage.component.postmodeling.contrast.utils package<a class="headerlink" href="#triage-component-postmodeling-contrast-utils-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast.utils.aux_funcs">
+<span id="triage-component-postmodeling-contrast-utils-aux-funcs-module"></span><h2>triage.component.postmodeling.contrast.utils.aux_funcs module<a class="headerlink" href="#module-triage.component.postmodeling.contrast.utils.aux_funcs" title="Permalink to this headline">¶</a></h2>
+<p>A4uxiliary functions and helpers:</p>
+<p>This set of functions are helper functions to format data
+(i.e., prediction matrices, etc.) for plotting. This functions
+are called in both Model class and ModelGroup class in
+evaluation.py.</p>
+<dl class="py class">
+<dt id="triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.postmodeling.contrast.utils.aux_funcs.</code><code class="sig-name descname">ModelEvaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_id</span></em>, <em class="sig-param"><span class="n">model_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator.model_group_id">
+<em class="property">property </em><code class="sig-name descname">model_group_id</code><a class="headerlink" href="#triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator.model_group_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator.model_id">
+<em class="property">property </em><code class="sig-name descname">model_id</code><a class="headerlink" href="#triage.component.postmodeling.contrast.utils.aux_funcs.ModelEvaluator.model_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.postmodeling.contrast.utils.aux_funcs.create_pgconn">
+<code class="sig-prename descclassname">triage.component.postmodeling.contrast.utils.aux_funcs.</code><code class="sig-name descname">create_pgconn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials_yaml</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.utils.aux_funcs.create_pgconn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create SQL connection object using a psycopg2 cursor and abiding to new
+dssg/dsapp db user configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>credentials_yaml</strong> (<em>-</em>) – .yaml file with db credentials</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.postmodeling.contrast.utils.aux_funcs.get_models_ids">
+<code class="sig-prename descclassname">triage.component.postmodeling.contrast.utils.aux_funcs.</code><code class="sig-name descname">get_models_ids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">audited_model_group_ids</span></em>, <em class="sig-param"><span class="n">conn</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.utils.aux_funcs.get_models_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>This helper functions will retrieve the model_id’s from a set
+of model_group_ids and will instantiate each model into the
+ModelEvaluator class.</p>
+<dl class="simple">
+<dt>Aguments:</dt><dd><ul class="simple">
+<li><p>audited_model_group_ids: List of model_group_ids
+(ideally from Audition’s output)</p></li>
+<li><p>conn: sql engine</p></li>
+</ul>
+</dd>
+</dl>
+<p>This function will return a list of ModelEvaluator objects</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast.utils">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.postmodeling.contrast.utils" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.postmodeling.contrast.utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

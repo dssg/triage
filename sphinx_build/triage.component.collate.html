@@ -1,0 +1,1060 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.collate package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-collate-package">
+<h1>triage.component.collate package<a class="headerlink" href="#triage-component-collate-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.collate.collate">
+<span id="triage-component-collate-collate-module"></span><h2>triage.component.collate.collate module<a class="headerlink" href="#module-triage.component.collate.collate" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.collate.Aggregate">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">Aggregate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.AggregateExpression" title="triage.component.collate.collate.AggregateExpression"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.AggregateExpression</span></code></a></p>
+<p>An object representing one or more SQL aggregate columns in a groupby</p>
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregate.column_imputation_lookup">
+<code class="sig-name descname">column_imputation_lookup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregate.column_imputation_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prefix</strong> – prefix for column names</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary mapping columns to appropriate imputation rule</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregate.get_columns">
+<code class="sig-name descname">get_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">when</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">format_kwargs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregate.get_columns" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>when</strong> – used in a case statement to filter the rows going into the
+aggregation function</p></li>
+<li><p><strong>prefix</strong> – prefix for column names</p></li>
+<li><p><strong>format_kwargs</strong> – kwargs to pass to format the aggregate quantity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>collection of SQLAlchemy columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.collate.AggregateExpression">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">AggregateExpression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregate1</span></em>, <em class="sig-param"><span class="n">aggregate2</span></em>, <em class="sig-param"><span class="n">operator</span></em>, <em class="sig-param"><span class="n">cast</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">operator_str</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">expression_template</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.AggregateExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.collate.collate.AggregateExpression.alias">
+<code class="sig-name descname">alias</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">expression_template</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.AggregateExpression.alias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the expression template used for naming columns of an AggregateExpression
+Returns: self, for chaining</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.AggregateExpression.column_imputation_lookup">
+<code class="sig-name descname">column_imputation_lookup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.AggregateExpression.column_imputation_lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.AggregateExpression.get_columns">
+<code class="sig-name descname">get_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">when</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">format_kwargs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.AggregateExpression.get_columns" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.collate.Aggregation">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">Aggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregates</span></em>, <em class="sig-param"><span class="n">groups</span></em>, <em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">state_table</span></em>, <em class="sig-param"><span class="n">state_group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.collate.collate.Aggregation.colname_aggregate_lookup">
+<code class="sig-name descname">colname_aggregate_lookup</code><a class="headerlink" href="#triage.component.collate.collate.Aggregation.colname_aggregate_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em>, <em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute all SQL statements to create final aggregation table.
+:param conn: the SQLAlchemy connection on which to execute</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.find_nulls">
+<code class="sig-name descname">find_nulls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.find_nulls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate query to count number of nulls in each column in the aggregation table</p>
+<p>Returns: a SQL SELECT statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_create">
+<code class="sig-name descname">get_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_create" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Generate a single aggregation table creation query by joining</dt><dd><p>together the results of get_creates()</p>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_create_schema">
+<code class="sig-name descname">get_create_schema</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_create_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a create schema statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_creates">
+<code class="sig-name descname">get_creates</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_creates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct create queries for this aggregation
+:param selects: the dictionary of select queries to use</p>
+<blockquote>
+<div><p>if None, use self.get_selects()
+this allows you to customize select queries before creation</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>create pairs where</dt><dd><p>group are the same keys as groups
+create is a CreateTableAs object</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a dictionary of group</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_drop">
+<code class="sig-name descname">get_drop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_drop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a drop table statement for the aggregation table
+Returns: string sql query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_drops">
+<code class="sig-name descname">get_drops</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_drops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate drop queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">drop pairs where</span></dt><dd><p>group are the same keys as groups
+drop is a raw drop table query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_imputation_rules">
+<code class="sig-name descname">get_imputation_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_imputation_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a dictionary to lookup an imputation rule from an associated
+column name.</p>
+<p>Returns: a dictionary of column : imputation_rule pairs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_impute_create">
+<code class="sig-name descname">get_impute_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">impute_cols</span></em>, <em class="sig-param"><span class="n">nonimpute_cols</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_impute_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the CREATE TABLE query for the aggregation table with imputation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>impute_cols</strong> – a list of column names with null values</p></li>
+<li><p><strong>nonimpute_cols</strong> – a list of column names without null values</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_indexes">
+<code class="sig-name descname">get_indexes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_indexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate create index queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">index pairs where</span></dt><dd><p>group are the same keys as groups
+index is a raw create index query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_inserts">
+<code class="sig-name descname">get_inserts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_inserts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct insert queries from this aggregation
+:param selects: the dictionary of select queries to use</p>
+<blockquote>
+<div><p>if None, use self.get_selects()
+this allows you to customize select queries before creation</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>inserts pairs where</dt><dd><p>group are the same keys as groups
+inserts is a list of InsertFromSelect objects</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a dictionary of group</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_join_table">
+<code class="sig-name descname">get_join_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_join_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a query for a join table</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_selects">
+<code class="sig-name descname">get_selects</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_selects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs select queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">queries pairs where</span></dt><dd><p>group are the same keys as groups
+queries is a list of Select queries, one for each date in dates</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.get_table_name">
+<code class="sig-name descname">get_table_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.get_table_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns name for table for the given group</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.collate.Aggregation.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Aggregation.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the Aggregation to ensure that it will perform as expected.
+This is done against an active SQL connection in order to enable
+validation of the SQL itself.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.collate.Categorical">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">Categorical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">choices</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">op_in_name</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Compare" title="triage.component.collate.collate.Compare"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Compare</span></code></a></p>
+<p>A simple shorthand to automatically create many equality comparisons against one column</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.collate.Compare">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">Compare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">op</span></em>, <em class="sig-param"><span class="n">choices</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">include_null</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">maxlen</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">op_in_name</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">quote_choices</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.Compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Aggregate" title="triage.component.collate.collate.Aggregate"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Aggregate</span></code></a></p>
+<p>A simple shorthand to automatically create many comparisons against one column</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.collate.make_list">
+<code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">make_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.make_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.collate.make_tuple">
+<code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">make_tuple</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.make_tuple" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.collate.maybequote">
+<code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">maybequote</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">elt</span></em>, <em class="sig-param"><span class="n">quote_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.maybequote" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quote for passing to SQL if necessary, based upon the python type</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.collate.split_distinct">
+<code class="sig-prename descclassname">triage.component.collate.collate.</code><code class="sig-name descname">split_distinct</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.collate.split_distinct" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.collate.from_obj">
+<span id="triage-component-collate-from-obj-module"></span><h2>triage.component.collate.from_obj module<a class="headerlink" href="#module-triage.component.collate.from_obj" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.from_obj.FromObj">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.from_obj.</code><code class="sig-name descname">FromObj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">knowledge_date_column</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.from_obj.FromObj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.create_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">create_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.create_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.drop_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">drop_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.drop_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.index_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">index_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.index_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.materialized_table">
+<em class="property">property </em><code class="sig-name descname">materialized_table</code><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.materialized_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.maybe_materialize">
+<code class="sig-name descname">maybe_materialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.maybe_materialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.should_materialize">
+<code class="sig-name descname">should_materialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.should_materialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.table">
+<em class="property">property </em><code class="sig-name descname">table</code><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.from_obj.FromObj.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.from_obj.FromObj.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.collate.imputations">
+<span id="triage-component-collate-imputations-module"></span><h2>triage.component.collate.imputations module<a class="headerlink" href="#module-triage.component.collate.imputations" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.imputations.BaseImputation">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">BaseImputation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">partitionby</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">noflag</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.BaseImputation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for various imputation methods</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.BaseImputation.imputed_flag_select_and_alias">
+<code class="sig-name descname">imputed_flag_select_and_alias</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.BaseImputation.imputed_flag_select_and_alias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeBinaryMode">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeBinaryMode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">partitionby</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeBinaryMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for mode imputation for binaries:</p>
+<p>For a binary variable, fill with a 1 if the mean (potentially in some window)
+is greater than 0.5, 0 otherwise. Note that this is not available for categoricals
+as it does not determine the modal category, just whether a binary is over 50%.</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeBinaryMode.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeBinaryMode.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeConstant">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeConstant</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">value</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeConstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for constant value imputation:</p>
+<p>For aggregates, simply fill in the specified value.</p>
+<p>For categoricals, match the value to the column name and fill in the matching
+column with a 1 (as well as the NULL category column)</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeConstant.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeConstant.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeError">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for raising an exception on null:</p>
+<p>If you expect your data to be clean, you can use this class to simply generate
+an error if any null values are found in the data rather than continuing with
+an imputation.</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeError.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeError.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeMean">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeMean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">partitionby</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeMean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for mean imputation:</p>
+<p>For aggregate features, just take the average of the column (optionally within
+a partition, such as an as_of_date), falling back to 0 if the column is entirely
+null within the partition.</p>
+<p>For categorical features, we flag the NULL category column with a 1 and other
+columns with the mean, again falling back to 0 as necessary</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeMean.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeMean.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeNullCategory">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeNullCategory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeNullCategory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for just using the null category for categoricals:</p>
+<p>For a categorical feature, fill the null category with 1, all others with 0
+(essentially the same as ImputeZero for categoricals only)</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeNullCategory.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeNullCategory.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeZero">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeZero</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeZero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for zero filling imputation:</p>
+<p>Fill in the column with a 0, aside from a null category column for categorical
+variables, which is filled with a 1</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeZero.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeZero.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.imputations.ImputeZeroNoFlag">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.imputations.</code><code class="sig-name descname">ImputeZeroNoFlag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">coltype</span></em>, <em class="sig-param"><span class="n">column_base_for_impflag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">null_cat_pattern</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeZeroNoFlag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.imputations.BaseImputation" title="triage.component.collate.imputations.BaseImputation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.imputations.BaseImputation</span></code></a></p>
+<p>Class for zero filling with no imputation flag:</p>
+<p>Fill in missing values with 0 without generating an imputation flag. This option
+should be used only for cases where null values are explicitly known to be zero
+such as absence of an entity from an events table indicating that no such event
+has occurred.</p>
+<dl class="py method">
+<dt id="triage.component.collate.imputations.ImputeZeroNoFlag.to_sql">
+<code class="sig-name descname">to_sql</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.imputations.ImputeZeroNoFlag.to_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.collate.spacetime">
+<span id="triage-component-collate-spacetime-module"></span><h2>triage.component.collate.spacetime module<a class="headerlink" href="#module-triage.component.collate.spacetime" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.spacetime.</code><code class="sig-name descname">SpacetimeAggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregates</span></em>, <em class="sig-param"><span class="n">groups</span></em>, <em class="sig-param"><span class="n">intervals</span></em>, <em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em>, <em class="sig-param"><span class="n">state_group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">date_column</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_date_column</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">input_min_date</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">join_with_cohort_table</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Aggregation" title="triage.component.collate.collate.Aggregation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Aggregation</span></code></a></p>
+<dl class="py attribute">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.colname_aggregate_lookup">
+<code class="sig-name descname">colname_aggregate_lookup</code><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.colname_aggregate_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.find_nulls">
+<code class="sig-name descname">find_nulls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.find_nulls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate query to count number of nulls in each column in the aggregation table</p>
+<p>Returns: a SQL SELECT statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_create">
+<code class="sig-name descname">get_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_create" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Generate a single aggregation table creation query by joining</dt><dd><p>together the results of get_creates()</p>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_imputation_rules">
+<code class="sig-name descname">get_imputation_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_imputation_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a dictionary to lookup an imputation rule from an associated
+column name.</p>
+<p>Returns: a dictionary of column : imputation_rule pairs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_impute_create">
+<code class="sig-name descname">get_impute_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">impute_cols</span></em>, <em class="sig-param"><span class="n">nonimpute_cols</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_impute_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the CREATE TABLE query for the aggregation table with imputation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>impute_cols</strong> – a list of column names with null values</p></li>
+<li><p><strong>nonimpute_cols</strong> – a list of column names without null values</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_indexes">
+<code class="sig-name descname">get_indexes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_indexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate create index queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">index pairs where</span></dt><dd><p>group are the same keys as groups
+index is a raw create index query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_join_table">
+<code class="sig-name descname">get_join_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_join_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a join table, consisting of an entry for each combination of
+groups and dates in the from_obj</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.get_selects">
+<code class="sig-name descname">get_selects</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.get_selects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs select queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">queries pairs where</span></dt><dd><p>group are the same keys as groups
+queries is a list of Select queries, one for each date in dates</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>SpacetimeAggregations ensure that no intervals extend beyond the absolute
+minimum time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.spacetime.SpacetimeAggregation.where">
+<code class="sig-name descname">where</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">date</span></em>, <em class="sig-param"><span class="n">intervals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.spacetime.SpacetimeAggregation.where" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a WHERE clause
+:param date: the end date
+:param intervals: intervals</p>
+<dl class="simple">
+<dt>Returns: a clause for filtering the from_obj to be between the date and</dt><dd><p>the greatest interval</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.collate.sql">
+<span id="triage-component-collate-sql-module"></span><h2>triage.component.collate.sql module<a class="headerlink" href="#module-triage.component.collate.sql" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.sql.CreateTableAs">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.sql.</code><code class="sig-name descname">CreateTableAs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">query</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.sql.CreateTableAs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.sql.base.Executable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.sql.elements.ClauseElement</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.sql.InsertFromSelect">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.sql.</code><code class="sig-name descname">InsertFromSelect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">query</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.sql.InsertFromSelect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.sql.base.Executable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.sql.elements.ClauseElement</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.sql.make_sql_clause">
+<code class="sig-prename descclassname">triage.component.collate.sql.</code><code class="sig-name descname">make_sql_clause</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="n">constructor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.sql.make_sql_clause" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.collate.sql.to_sql_name">
+<code class="sig-prename descclassname">triage.component.collate.sql.</code><code class="sig-name descname">to_sql_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.sql.to_sql_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.collate">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.collate" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.collate.Aggregate">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">Aggregate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantity</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.AggregateExpression" title="triage.component.collate.collate.AggregateExpression"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.AggregateExpression</span></code></a></p>
+<p>An object representing one or more SQL aggregate columns in a groupby</p>
+<dl class="py method">
+<dt id="triage.component.collate.Aggregate.column_imputation_lookup">
+<code class="sig-name descname">column_imputation_lookup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregate.column_imputation_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prefix</strong> – prefix for column names</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary mapping columns to appropriate imputation rule</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregate.get_columns">
+<code class="sig-name descname">get_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">when</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">format_kwargs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregate.get_columns" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>when</strong> – used in a case statement to filter the rows going into the
+aggregation function</p></li>
+<li><p><strong>prefix</strong> – prefix for column names</p></li>
+<li><p><strong>format_kwargs</strong> – kwargs to pass to format the aggregate quantity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>collection of SQLAlchemy columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.Aggregation">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">Aggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregates</span></em>, <em class="sig-param"><span class="n">groups</span></em>, <em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">state_table</span></em>, <em class="sig-param"><span class="n">state_group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="triage.component.collate.Aggregation.colname_aggregate_lookup">
+<code class="sig-name descname">colname_aggregate_lookup</code><a class="headerlink" href="#triage.component.collate.Aggregation.colname_aggregate_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.execute">
+<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em>, <em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute all SQL statements to create final aggregation table.
+:param conn: the SQLAlchemy connection on which to execute</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.find_nulls">
+<code class="sig-name descname">find_nulls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.find_nulls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate query to count number of nulls in each column in the aggregation table</p>
+<p>Returns: a SQL SELECT statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_create">
+<code class="sig-name descname">get_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_create" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Generate a single aggregation table creation query by joining</dt><dd><p>together the results of get_creates()</p>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_create_schema">
+<code class="sig-name descname">get_create_schema</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_create_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a create schema statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_creates">
+<code class="sig-name descname">get_creates</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_creates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct create queries for this aggregation
+:param selects: the dictionary of select queries to use</p>
+<blockquote>
+<div><p>if None, use self.get_selects()
+this allows you to customize select queries before creation</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>create pairs where</dt><dd><p>group are the same keys as groups
+create is a CreateTableAs object</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a dictionary of group</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_drop">
+<code class="sig-name descname">get_drop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_drop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a drop table statement for the aggregation table
+Returns: string sql query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_drops">
+<code class="sig-name descname">get_drops</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_drops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate drop queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">drop pairs where</span></dt><dd><p>group are the same keys as groups
+drop is a raw drop table query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_imputation_rules">
+<code class="sig-name descname">get_imputation_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_imputation_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a dictionary to lookup an imputation rule from an associated
+column name.</p>
+<p>Returns: a dictionary of column : imputation_rule pairs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_impute_create">
+<code class="sig-name descname">get_impute_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">impute_cols</span></em>, <em class="sig-param"><span class="n">nonimpute_cols</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_impute_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the CREATE TABLE query for the aggregation table with imputation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>impute_cols</strong> – a list of column names with null values</p></li>
+<li><p><strong>nonimpute_cols</strong> – a list of column names without null values</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_indexes">
+<code class="sig-name descname">get_indexes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_indexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate create index queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">index pairs where</span></dt><dd><p>group are the same keys as groups
+index is a raw create index query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_inserts">
+<code class="sig-name descname">get_inserts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_inserts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct insert queries from this aggregation
+:param selects: the dictionary of select queries to use</p>
+<blockquote>
+<div><p>if None, use self.get_selects()
+this allows you to customize select queries before creation</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>inserts pairs where</dt><dd><p>group are the same keys as groups
+inserts is a list of InsertFromSelect objects</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a dictionary of group</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_join_table">
+<code class="sig-name descname">get_join_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_join_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a query for a join table</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_selects">
+<code class="sig-name descname">get_selects</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_selects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs select queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">queries pairs where</span></dt><dd><p>group are the same keys as groups
+queries is a list of Select queries, one for each date in dates</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.get_table_name">
+<code class="sig-name descname">get_table_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.get_table_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns name for table for the given group</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.Aggregation.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Aggregation.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the Aggregation to ensure that it will perform as expected.
+This is done against an active SQL connection in order to enable
+validation of the SQL itself.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.Categorical">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">Categorical</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">choices</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">op_in_name</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Compare" title="triage.component.collate.collate.Compare"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Compare</span></code></a></p>
+<p>A simple shorthand to automatically create many equality comparisons against one column</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.Compare">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">Compare</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">op</span></em>, <em class="sig-param"><span class="n">choices</span></em>, <em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">impute_rules</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coltype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">include_null</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">maxlen</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">op_in_name</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">quote_choices</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.Compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Aggregate" title="triage.component.collate.collate.Aggregate"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Aggregate</span></code></a></p>
+<p>A simple shorthand to automatically create many comparisons against one column</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.FromObj">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">FromObj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">knowledge_date_column</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.FromObj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.create_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">create_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.FromObj.create_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.drop_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">drop_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.FromObj.drop_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.index_materialized_table_sql">
+<em class="property">property </em><code class="sig-name descname">index_materialized_table_sql</code><a class="headerlink" href="#triage.component.collate.FromObj.index_materialized_table_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.materialized_table">
+<em class="property">property </em><code class="sig-name descname">materialized_table</code><a class="headerlink" href="#triage.component.collate.FromObj.materialized_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.maybe_materialize">
+<code class="sig-name descname">maybe_materialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.FromObj.maybe_materialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.should_materialize">
+<code class="sig-name descname">should_materialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.FromObj.should_materialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.table">
+<em class="property">property </em><code class="sig-name descname">table</code><a class="headerlink" href="#triage.component.collate.FromObj.table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.FromObj.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.FromObj.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.collate.SpacetimeAggregation">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.collate.</code><code class="sig-name descname">SpacetimeAggregation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregates</span></em>, <em class="sig-param"><span class="n">groups</span></em>, <em class="sig-param"><span class="n">intervals</span></em>, <em class="sig-param"><span class="n">from_obj</span></em>, <em class="sig-param"><span class="n">dates</span></em>, <em class="sig-param"><span class="n">state_table</span></em>, <em class="sig-param"><span class="n">state_group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">date_column</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_date_column</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">input_min_date</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">join_with_cohort_table</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.collate.collate.Aggregation" title="triage.component.collate.collate.Aggregation"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.collate.collate.Aggregation</span></code></a></p>
+<dl class="py attribute">
+<dt id="triage.component.collate.SpacetimeAggregation.colname_aggregate_lookup">
+<code class="sig-name descname">colname_aggregate_lookup</code><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.colname_aggregate_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.find_nulls">
+<code class="sig-name descname">find_nulls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imputed</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.find_nulls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate query to count number of nulls in each column in the aggregation table</p>
+<p>Returns: a SQL SELECT statement</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_create">
+<code class="sig-name descname">get_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">join_table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_create" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Generate a single aggregation table creation query by joining</dt><dd><p>together the results of get_creates()</p>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_imputation_rules">
+<code class="sig-name descname">get_imputation_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_imputation_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a dictionary to lookup an imputation rule from an associated
+column name.</p>
+<p>Returns: a dictionary of column : imputation_rule pairs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_impute_create">
+<code class="sig-name descname">get_impute_create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">impute_cols</span></em>, <em class="sig-param"><span class="n">nonimpute_cols</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_impute_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the CREATE TABLE query for the aggregation table with imputation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>impute_cols</strong> – a list of column names with null values</p></li>
+<li><p><strong>nonimpute_cols</strong> – a list of column names without null values</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: a CREATE TABLE AS query</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_indexes">
+<code class="sig-name descname">get_indexes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_indexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate create index queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">index pairs where</span></dt><dd><p>group are the same keys as groups
+index is a raw create index query for the corresponding table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_join_table">
+<code class="sig-name descname">get_join_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_join_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a join table, consisting of an entry for each combination of
+groups and dates in the from_obj</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.get_selects">
+<code class="sig-name descname">get_selects</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.get_selects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs select queries for this aggregation</p>
+<dl class="simple">
+<dt>Returns: a dictionary of group<span class="classifier">queries pairs where</span></dt><dd><p>group are the same keys as groups
+queries is a list of Select queries, one for each date in dates</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conn</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>SpacetimeAggregations ensure that no intervals extend beyond the absolute
+minimum time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.collate.SpacetimeAggregation.where">
+<code class="sig-name descname">where</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">date</span></em>, <em class="sig-param"><span class="n">intervals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.collate.SpacetimeAggregation.where" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a WHERE clause
+:param date: the end date
+:param intervals: intervals</p>
+<dl class="simple">
+<dt>Returns: a clause for filtering the from_obj to be between the date and</dt><dd><p>the greatest interval</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.collate.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,797 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.postmodeling.contrast package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-postmodeling-contrast-package">
+<h1>triage.component.postmodeling.contrast package<a class="headerlink" href="#triage-component-postmodeling-contrast-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="triage.component.postmodeling.contrast.utils.html">triage.component.postmodeling.contrast.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.postmodeling.contrast.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.postmodeling.contrast.utils.html#module-triage.component.postmodeling.contrast.utils.aux_funcs">triage.component.postmodeling.contrast.utils.aux_funcs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="triage.component.postmodeling.contrast.utils.html#module-triage.component.postmodeling.contrast.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast.model_evaluator">
+<span id="triage-component-postmodeling-contrast-model-evaluator-module"></span><h2>triage.component.postmodeling.contrast.model_evaluator module<a class="headerlink" href="#module-triage.component.postmodeling.contrast.model_evaluator" title="Permalink to this headline">¶</a></h2>
+<p>Model Evaluator</p>
+<p>This module will use the model_id as a modeling unit of analysis to answer
+different type of questions related with the quality and behavior of my
+predictions. The ModelEvaluator (and by extension de ModelGroupEvaluator) are
+part of the triage framework, hence they depend on the results schema
+structure, and the rest of the triage elements.</p>
+<p>ModelEvaluator will use a tuple: (model_group_id, model_id) to run diffent
+functions that will help the triage user to explore the final models, ideally
+selected by the Audition module. To initiate this classes, the user need to
+have a tuple and a SQLAlchemy engine object to call the necesary data from the
+SQL database.</p>
+<dl class="py class">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.postmodeling.contrast.model_evaluator.</code><code class="sig-name descname">ModelEvaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_id</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>ModelExtractor class calls the model metadata from the database
+and hold model_id metadata features on each of the class attibutes.
+This class will contain any information about the model, and will be
+used to make comparisons and calculations across models.</p>
+<p>A pair of (model_group_id, model_id) is needed to instate the class. These
+can be feeded from the get models_ids.</p>
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.as_of_date">
+<em class="property">property </em><code class="sig-name descname">as_of_date</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.as_of_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.cluster_correlation_features">
+<code class="sig-name descname">cluster_correlation_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">feature_group_subset_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cmap_color_fgroups</span><span class="o">=</span><span class="default_value">'Accent'</span></em>, <em class="sig-param"><span class="n">cmap_heatmap</span><span class="o">=</span><span class="default_value">'mako'</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 16</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.cluster_correlation_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot correlation in feature space</p>
+<p>This function simply renders the correlation between features and uses
+hierarchical clustering to identify cluster of features. The idea bhind
+this plot is not only to explore the correlation in the space, but also
+to explore is this correlation is comparable with the feature groups.
+:param - path: Project directory where to find matrices and
+:type - path: string
+:param models. Usually is under ‘triage/outcomes/’:
+:param - feature_group_subset_list: list of feature groups to plot.
+:type - feature_group_subset_list: list
+:param By default, the function uses all the feature groups.:
+:param - cmap_color_fgroups: matplotlib pallete to color the
+:type - cmap_color_fgroups: string
+:param feature groups.:
+:param - cmap_heatmap: seaborn/matplotlib pallete to color the
+:type - cmap_heatmap: string
+:param correlation/clustering matrix:
+:param - figsize: define size of the plot (please use square
+:type - figsize: tuple
+:param dimensions):
+:param - fontsize: define size of plot title and axes.
+:type - fontsize: string</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.cluster_correlation_sparsity">
+<code class="sig-name descname">cluster_correlation_sparsity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">20, 20</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.cluster_correlation_sparsity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot sparcity in feature space</p>
+<p>This function simply renders the correlation between features and uses
+hierarchical clustering to identify cluster of features. The idea bhind
+this plot is not only to explore the correlation in the space, but also
+to explore is this correlation is comparable with the feature groups.
+:param - path: Project directory where to find matrices and
+:type - path: string
+:param models. Usually is under ‘triage/outcomes/’:
+:param - cmap_heatmap: seaborn/matplotlib pallete to color the
+:type - cmap_heatmap: string
+:param correlation/clustering matrix:
+:param - figsize: define size of the plot (please use square
+:type - figsize: tuple
+:param dimensions):
+:param - fontsize: define size of plot title and axes.
+:type - fontsize: string</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.compute_AUC">
+<code class="sig-name descname">compute_AUC</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.compute_AUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to generate ROC and AUC data to plot ROC curve
+Returns (tuple):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>(false positive rate, true positive rate, thresholds, AUC)</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.crosstabs">
+<code class="sig-name descname">crosstabs</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.crosstabs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.crosstabs_ratio_plot">
+<code class="sig-name descname">crosstabs_ratio_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_features</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">12, 16</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.crosstabs_ratio_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot to visualize the top-k features with the highest mean ratio. This
+plot will show the biggest quantitative differences between the labeled/predicted
+groups</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.error_analysis">
+<code class="sig-name descname">error_analysis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">threshold</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.error_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error analysis function for ThresholdIterator objects. This function
+have the same functionality as the _error.modeler method, but its
+implemented for iterators, which can be a case use of this analysis.
+If no iterator object is passed, the function will take the needed
+arguments to run the _error_modeler.
+:param - threshold: a threshold and threshold parameter combination passed
+:param to the PostmodelingParamters. If multiple parameters are passed,:
+:param the function will iterate through them.:
+:param -<a href="#id1"><span class="problematic" id="id2">**</span></a>kwags: other arguments passed to _error_modeler</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.feature_group_importances">
+<code class="sig-name descname">feature_group_importances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.feature_group_importances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.feature_importances">
+<code class="sig-name descname">feature_importances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.feature_importances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.hyperparameters">
+<em class="property">property </em><code class="sig-name descname">hyperparameters</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.metadata">
+<code class="sig-name descname">metadata</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.model_hash">
+<em class="property">property </em><code class="sig-name descname">model_hash</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.model_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.model_type">
+<em class="property">property </em><code class="sig-name descname">model_type</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.model_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_ROC">
+<code class="sig-name descname">plot_ROC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_ROC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot an ROC curve for this model and label it with AUC
+using the sklearn.metrics methods.
+:param - figsize: figure size to pass to matplotlib
+:type - figsize: tuple
+:param - fontsize: fontsize for title. Default is 20.
+:type - fontsize: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_distribution">
+<code class="sig-name descname">plot_feature_distribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">feature_list</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot feature distributions (and compare feature distributions across
+labels)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_group_aggregate_importances">
+<code class="sig-name descname">plot_feature_group_aggregate_importances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_features_plots</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_group_aggregate_importances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a bar chart of the aggregate feature group importances (by absolute value)
+:param - save_file: save file to disk as png. Default is False.
+:type - save_file: bool
+:param - path: path to the triage’s project_path
+:type - path: str
+:param - name_file: specify name file for saved plot.
+:type - name_file: string
+:param - n_features_plots: number of top features to plot
+:type - n_features_plots: int
+:param - figsize: figure size to pass to matplotlib
+:type - figsize: tuple
+:param - fontsize: define custom fontsize for labels and legends.
+:type - fontsize: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_importances">
+<code class="sig-name descname">plot_feature_importances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">n_features_plots</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_importances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a bar chart of the top n feature importances (by absolute value)
+:param - save_file: save file to disk as png. Default is False.
+:type - save_file: bool
+:param - path: path to triage project_dir
+:type - path: str
+:param - name_file: specify name file for saved plot.
+:type - name_file: string
+:param - n_features_plots: number of top features to plot
+:type - n_features_plots: int
+:param - figsize: figure size to pass to matplotlib
+:type - figsize: tuple
+:param - fontsize: define custom fontsize for labels and legends.
+:type - fontsize: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_importances_std_err">
+<code class="sig-name descname">plot_feature_importances_std_err</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">bar</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">n_features_plots</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 21</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_feature_importances_std_err" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a bar chart of the top n features importances showing the
+error bars. This plot is valid for ensemble classifiers (i.e. Random
+Forests or ExtraTrees), where many classifiers are bootstraped in
+estimation. This plot will allow the user to explore the feature
+importance variation inside the ensemble classifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>save_file</strong> (<em>-</em>) – save file to disk as png. Default is False.</p></li>
+<li><p><strong>name_file</strong> (<em>-</em>) – specify name file for saved plot.</p></li>
+<li><p><strong>bar</strong> (<em>-</em>) – Should we plot a barplot or a scatter plot. If</p></li>
+<li><p><strong>it will print a bar plot</strong> (<em>true</em><em>,</em>) – </p></li>
+<li><p><strong>n_features_plots</strong> (<em>-</em>) – number of top features to plot.</p></li>
+<li><p><strong>figsize</strong> (<em>-</em>) – figuresize to pass to matplotlib.</p></li>
+<li><p><strong>fontsize</strong> (<em>-</em>) – define a custom fontsize for labels and legends.</p></li>
+<li><p><strong>*path</strong> (<em>-</em>) – <p>path to retrieve model pickle</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_precision_recall_n">
+<code class="sig-name descname">plot_precision_recall_n</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_precision_recall_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot recall and precision curves against depth into the list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_recall_fpr_n">
+<code class="sig-name descname">plot_recall_fpr_n</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_recall_fpr_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot recall and the false positive rate against depth into the list
+(esentially just a deconstructed ROC curve) along with optimal bounds.
+:param - figsize: define a plot size to pass to matplotlib
+:type - figsize: tuple
+:param - fontsize: define a custom font size to labels and axes
+:type - fontsize: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_distribution">
+<code class="sig-name descname">plot_score_distribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbins</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an histograms with the raw distribution of the predicted
+scores for all entities.</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>Arguments:</dt><dd><ul>
+<li><p>nbins: bins to plot in histogram (default is 10).</p></li>
+<li><p>label_names(tuple): define custom label names for class.</p></li>
+<li><p>figsize (tuple): specify size of plot.</p></li>
+<li><p>fontsize (int): define custom fontsize. 20 is set by default.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_distribution_thresh">
+<code class="sig-name descname">plot_score_distribution_thresh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param_type</span></em>, <em class="sig-param"><span class="n">param</span></em>, <em class="sig-param"><span class="n">nbins</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">label_names</span><span class="o">=</span><span class="default_value">'Label = 0', 'Label = 1'</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_distribution_thresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a histogram showing the label distribution for predicted
+entities using a threshold to classify between good prediction or not.</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>Arguments:</dt><dd><ul>
+<li><p>param_type (str): parameter to use,</p></li>
+<li><p>param (int/float): threshold value to use</p></li>
+<li><p>nbins: bins to plot in histogram (default is 10).</p></li>
+<li><p>label_names(tuple): define custom label names for class.</p></li>
+<li><p>figsize (tuple): specify size of plot.</p></li>
+<li><p>fontsize (int): define custom fontsize. 20 is set by default.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_label_distributions">
+<code class="sig-name descname">plot_score_label_distributions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nbins</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">label_names</span><span class="o">=</span><span class="default_value">'Label = 0', 'Label = 1'</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.plot_score_label_distributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a histogram showing the label distribution for predicted
+entities:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>Arguments:</dt><dd><ul>
+<li><p>label_names(tuple): define custom label names for class.</p></li>
+<li><p>nbins: bins to plot in histogram (default is 10).</p></li>
+<li><p>figsize (tuple): specify size of plot.</p></li>
+<li><p>fontsize (int): define custom fontsize. 20 is set by default.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.pred_matrix_uuid">
+<em class="property">property </em><code class="sig-name descname">pred_matrix_uuid</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.pred_matrix_uuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.predictions">
+<code class="sig-name descname">predictions</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.preds_matrix">
+<code class="sig-name descname">preds_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.preds_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load predictions matrices using the catwalk.storage.ProjectStorage.
+This class allow the user to define a project path that can be either a
+system local path or an s3 path and it will handle itself this
+different infrastructures.</p>
+<p>Once defined, we can pass this object to the MatrixStorageEngine that
+will read this object and return a MatrixSotre object with a set of
+handy methods to handle matrices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> – project path to initiate the ProjectStorage object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.test_metrics">
+<code class="sig-name descname">test_metrics</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.test_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_matrix">
+<code class="sig-name descname">train_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load predictions matrices using the catwalk.storage.ProjectStorage.
+This class allow the user to define a project path that can be either a
+system local path or an s3 path and it will handle itself this
+different infrastructures.</p>
+<p>Once defined, we can pass this object to the MatrixStorageEngine that
+will read this object and return a MatrixSotre object with a set of
+handy methods to handle matrices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> – project path to initiate the ProjectStorage object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_matrix_uuid">
+<em class="property">property </em><code class="sig-name descname">train_matrix_uuid</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_matrix_uuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_metrics">
+<code class="sig-name descname">train_metrics</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_evaluator.ModelEvaluator.train_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast.model_group_evaluator">
+<span id="triage-component-postmodeling-contrast-model-group-evaluator-module"></span><h2>triage.component.postmodeling.contrast.model_group_evaluator module<a class="headerlink" href="#module-triage.component.postmodeling.contrast.model_group_evaluator" title="Permalink to this headline">¶</a></h2>
+<p>Model Evaluator</p>
+<p>This script contain a set of elements to help the postmodeling evaluation
+of audited models by triage.Audition. This will be a continuing list of
+routines that can be scaled up and grow according to the needs of the
+project, or other postmodeling approaches.</p>
+<dl class="py class">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.postmodeling.contrast.model_group_evaluator.</code><code class="sig-name descname">ModelGroupEvaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_id</span></em>, <em class="sig-param"><span class="n">engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>ModelGroup class calls the model group metadata from the database
+and hold metadata features on each of the class attibutes.
+This class will contain any information about the model_group, and
+will be used to make comparisons and calculations across models.</p>
+<p>A model_group_id list is needed to instate the class.</p>
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_groups">
+<code class="sig-name descname">feature_groups</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_importances">
+<code class="sig-name descname">feature_importances</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_importances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_loi_loo">
+<code class="sig-name descname">feature_loi_loo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">baseline</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">baseline_query</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">16, 12</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.feature_loi_loo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot precision across time for the selected model_group_ids, and
+include a leave-one-out, leave-one-in feature analysis to explore the
+leverage/changes of the selected metric across different models.</p>
+<p>This function plots the performance of each model_group_id following an
+user defined performance metric. First, this function check if the
+performance metrics are available to both the models, and the baseline.
+Second, filter the data of interest, and lastly, plot the results as
+timelines (model_id date).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>-model_subset</strong> (<em>list</em>) – A list of model_group_ids, in case you want</p></li>
+<li><p><strong>override the selected models.</strong> (<em>to</em>) – </p></li>
+<li><p><strong>param_type</strong> (<em>-</em>) – A parameter string with a threshold</p></li>
+<li><p><strong>definition</strong> – rank_pct, or rank_abs. These are usually defined in the</p></li>
+<li><p><strong>configuration file.</strong> (<em>postmodeling</em>) – </p></li>
+<li><p><strong>param</strong> (<em>-</em>) – A threshold value compatible with the param_type.</p></li>
+<li><p><strong>value is also defined in the postmodeling configuration file.</strong> (<em>This</em>) – </p></li>
+<li><p><strong>metric</strong> (<em>-</em>) – A string defnining the type of metric use to</p></li>
+<li><p><strong>the model</strong><strong>, </strong><strong>this can be 'precision&#64;'</strong><strong>, or </strong><strong>'recall&#64;'.</strong> (<em>evaluate</em>) – </p></li>
+<li><p><strong>baseline</strong> (<em>-</em>) – should we include a baseline for comparison?</p></li>
+<li><p><strong>baseline_query</strong> (<em>-</em>) – a SQL query that returns the evaluation data from</p></li>
+<li><p><strong>baseline models. This value can also be defined in the</strong> (<em>the</em>) – </p></li>
+<li><p><strong>file.</strong> (<em>configuration</em>) – </p></li>
+<li><p><strong>df</strong> (<em>-</em>) – If True, no plot is rendered, but a pandas DataFrame</p></li>
+<li><p><strong>returned with the data.</strong> (<em>is</em>) – </p></li>
+<li><p><strong>figsize</strong> (<em>-</em>) – tuple with figure size parameters</p></li>
+<li><p><strong>fontsize</strong> (<em>-</em>) – Fontsize for titles</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.hyperparameters">
+<em class="property">property </em><code class="sig-name descname">hyperparameters</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.metadata">
+<code class="sig-name descname">metadata</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.metrics">
+<code class="sig-name descname">metrics</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_config">
+<em class="property">property </em><code class="sig-name descname">model_config</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_hash">
+<em class="property">property </em><code class="sig-name descname">model_hash</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_hash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_id">
+<em class="property">property </em><code class="sig-name descname">model_id</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_type">
+<em class="property">property </em><code class="sig-name descname">model_type</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.model_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_jaccard_features">
+<code class="sig-name descname">plot_jaccard_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">top_n_features</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temporal_comparison</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">30, 10</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_jaccard_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_jaccard_preds">
+<code class="sig-name descname">plot_jaccard_preds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temporal_comparison</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">24, 10</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_jaccard_preds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_prec_across_time">
+<code class="sig-name descname">plot_prec_across_time</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">baseline</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">baseline_query</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">12, 16</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_prec_across_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot precision across time for all model_group_ids, and baseline,
+if available.</p>
+<p>This function plots the performance of each model_group_id following an
+user defined performance metric. First, this function check if the
+performance metrics are available to both the models, and the baseline.
+Second, filter the data of interest, and lastly, plot the results as
+timelines (model_id date).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param_type</strong> (<em>-</em>) – A parameter string with a threshold</p></li>
+<li><p><strong>definition</strong> – rank_pct, or rank_abs. These are usually defined in the</p></li>
+<li><p><strong>configuration file.</strong> (<em>postmodeling</em>) – </p></li>
+<li><p><strong>param</strong> (<em>-</em>) – A threshold value compatible with the param_type.</p></li>
+<li><p><strong>value is also defined in the postmodeling configuration file.</strong> (<em>This</em>) – </p></li>
+<li><p><strong>metric</strong> (<em>-</em>) – A string defnining the type of metric use to</p></li>
+<li><p><strong>the model</strong><strong>, </strong><strong>this can be 'precision&#64;'</strong><strong>, or </strong><strong>'recall&#64;'.</strong> (<em>evaluate</em>) – </p></li>
+<li><p><strong>baseline</strong> (<em>-</em>) – should we include a baseline for comparison?</p></li>
+<li><p><strong>baseline_query</strong> (<em>-</em>) – a SQL query that returns the evaluation data from</p></li>
+<li><p><strong>baseline models. This value can also be defined in the</strong> (<em>the</em>) – </p></li>
+<li><p><strong>file.</strong> (<em>configuration</em>) – </p></li>
+<li><p><strong>df</strong> (<em>-</em>) – If True, no plot is rendered, but a pandas DataFrame</p></li>
+<li><p><strong>returned with the data.</strong> (<em>is</em>) – </p></li>
+<li><p><strong>figsize</strong> (<em>-</em>) – tuple with figure size parameters</p></li>
+<li><p><strong>fontsize</strong> (<em>-</em>) – Fontsize for titles</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_preds_comparison">
+<code class="sig-name descname">plot_preds_comparison</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">28, 16</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_preds_comparison" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot predictor distribution comparison (distribution and rank)</p>
+<p>This function compares the predictions of all models, or a subset passed to
+model_subset. To compare predictions, the function will show the
+relative position of the score distribution of the top-k of one of the
+models into another model.</p>
+<p>Also, to compare how “off” can predictions be, the function will plot
+the rank position of the predictions of one model in to another. The
+plot will show the decile position of one model into the other.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param_type</strong> (<em>-</em>) – (str) parameter type (i.e. ‘rank_abs’, ‘rank_pct’)</p></li>
+<li><p><strong>param</strong> (<em>-</em>) – (int) parameter threshold</p></li>
+<li><p><strong>model_subset</strong> (<em>-</em>) – (list) list of model_ids to compare. Default is</p></li>
+<li><p><strong>and the function will take all the models in self.model_id</strong> (<em>none</em><em>,</em>) – </p></li>
+<li><p><strong>figsize</strong><strong>, </strong><strong>fontsize</strong> (<em>-</em>) – aesthetics for plots.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_ranked_correlation_features">
+<code class="sig-name descname">plot_ranked_correlation_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temporal_comparison</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">12, 16</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_ranked_correlation_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot ranked correlation between model_id’s using the _rank_corr_df
+method. The plot will visualize the selected correlation matrix
+including all the models
+:param - model_subset: subset to only include a subset of model_ids
+:type - model_subset: list
+:param - corr_type: correlation type. Two options are available:</p>
+<blockquote>
+<div><p>features and predictions.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temporal_comarison</strong> (<em>-</em>) – Compare same prediction window models?
+Default is False</p></li>
+<li><p><strong>figzise</strong> (<em>-</em>) – tuple with figure size. Default is (12, 16)</p></li>
+<li><p><strong>fontsize</strong> (<em>-</em>) – Fontsize for plot labels and titles. Default is
+20</p></li>
+<li><p><strong>**kwargs</strong> (<em>-</em>) – <p>other parameters passed to the _rank_corr_df method</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_ranked_correlation_preds">
+<code class="sig-name descname">plot_ranked_correlation_preds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_subset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temporal_comparison</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">24, 10</span></em>, <em class="sig-param"><span class="n">fontsize</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.plot_ranked_correlation_preds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot ranked correlation between model_id’s using the _rank_corr_df
+method. The plot will visualize the selected correlation matrix
+including all the models
+:param - model_subset: subset to only include a subset of model_ids
+:type - model_subset: list
+:param - corr_type: correlation type. Two options are available:</p>
+<blockquote>
+<div><p>features and predictions.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temporal_comparison</strong> (<em>-</em>) – Compare same prediction window models?
+Default is False</p></li>
+<li><p><strong>figzise</strong> (<em>-</em>) – tuple with figure size. Default is (12, 16)</p></li>
+<li><p><strong>fontsize</strong> (<em>-</em>) – Fontsize for plot labels and titles. Default is
+20</p></li>
+<li><p><strong>**kwargs</strong> (<em>-</em>) – <p>other parameters passed to the _rank_corr_df method</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.predictions">
+<code class="sig-name descname">predictions</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.same_time_models">
+<code class="sig-name descname">same_time_models</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.same_time_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-data descriptor decorator implementing a read-only property
+which overrides itself on the instance with an entry in the
+instance’s data dictionary, caching the result of the decorated
+property method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.train_end_time">
+<em class="property">property </em><code class="sig-name descname">train_end_time</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.train_end_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.train_matrix_uuid">
+<em class="property">property </em><code class="sig-name descname">train_matrix_uuid</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.train_matrix_uuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.training_label_timespan">
+<em class="property">property </em><code class="sig-name descname">training_label_timespan</code><a class="headerlink" href="#triage.component.postmodeling.contrast.model_group_evaluator.ModelGroupEvaluator.training_label_timespan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast.parameters">
+<span id="triage-component-postmodeling-contrast-parameters-module"></span><h2>triage.component.postmodeling.contrast.parameters module<a class="headerlink" href="#module-triage.component.postmodeling.contrast.parameters" title="Permalink to this headline">¶</a></h2>
+<p>Postmodeling parameters</p>
+<p>This script contain the parameters Class that will be used across all the
+postmodeling functions within the ModelEvaluator and ModelGroupEvaluator
+classes. This class will be initialized using the ‘postmodeling_parameters.yaml’
+file</p>
+<dl class="py class">
+<dt id="triage.component.postmodeling.contrast.parameters.PostmodelParameters">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.postmodeling.contrast.parameters.</code><code class="sig-name descname">PostmodelParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.postmodeling.contrast.parameters.PostmodelParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>PostmodelParameters reads all parameters from a ‘yaml’ file and store them
+in this object to be used in other functions. Different metrics can be
+passed to this object, by default it will reads from a
+‘postmodeling_parameters.yaml’, but an Audition config file can be passed
+and will parse from it the needed parameters</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.postmodeling.contrast">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.postmodeling.contrast" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.postmodeling.contrast.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

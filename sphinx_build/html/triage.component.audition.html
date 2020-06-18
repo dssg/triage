@@ -1,0 +1,1461 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.audition package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-audition-package">
+<h1>triage.component.audition package<a class="headerlink" href="#triage-component-audition-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.audition.distance_from_best">
+<span id="triage-component-audition-distance-from-best-module"></span><h2>triage.component.audition.distance_from_best module<a class="headerlink" href="#module-triage.component.audition.distance_from_best" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.distance_from_best.BestDistancePlotter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.distance_from_best.</code><code class="sig-name descname">BestDistancePlotter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">distance_from_best_table</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.BestDistancePlotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.BestDistancePlotter.generate_plot_data">
+<code class="sig-name descname">generate_plot_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.BestDistancePlotter.generate_plot_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch data necessary for producing the plot from the distance table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) The relevant models and the percentage of time</dt><dd><p>each was within various thresholds of the best model at that time</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.BestDistancePlotter.plot_all_best_dist">
+<code class="sig-name descname">plot_all_best_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric_filters</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.BestDistancePlotter.plot_all_best_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each metric, plot the percentage of time that a model group is
+within X percentage points of the best-performing model group using that
+metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric_filters</strong> (<em>list</em>) – <p>a dict with the following keys:</p>
+<p>metric (string) – model evaluation metric, such as ‘precision&#64;’
+parameter (string) – model evaluation metric parameter,</p>
+<blockquote>
+<div><p>such as ‘300_abs’</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.BestDistancePlotter.plot_bounds">
+<code class="sig-name descname">plot_bounds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.BestDistancePlotter.plot_bounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.BestDistancePlotter.plot_tick_dist">
+<code class="sig-name descname">plot_tick_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plot_min</span></em>, <em class="sig-param"><span class="n">plot_max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.BestDistancePlotter.plot_tick_dist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.distance_from_best.DistanceFromBestTable">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.distance_from_best.</code><code class="sig-name descname">DistanceFromBestTable</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">models_table</span></em>, <em class="sig-param"><span class="n">distance_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.DistanceFromBestTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.DistanceFromBestTable.as_dataframe">
+<code class="sig-name descname">as_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_ids</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.DistanceFromBestTable.as_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return model-group-id subset of table as dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_group_ids</strong> (<em>list</em>) – </p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) The data from the table corresponding</dt><dd><p>to those model group ids</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.DistanceFromBestTable.create_and_populate">
+<code class="sig-name descname">create_and_populate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">metrics</span></em>, <em class="sig-param"><span class="n">delete</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.DistanceFromBestTable.create_and_populate" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Creates and populates the distance table with the</dt><dd><p>given model groups, times, and metrics</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+<li><p><strong>metrics</strong> (<em>list</em>) – <dl class="simple">
+<dt>row should be a dict with keys:</dt><dd><p>’metric’ (e.g. ‘precision&#64;’)
+‘parameter’ (e.g. ‘100_abs’)</p>
+</dd>
+</dl>
+<p>All models should have the test_results.evaluations table populated
+for all given model group ids, train end times, and metric/param combos</p>
+</p></li>
+<li><p><strong>delete</strong> (<em>boolean</em><em>, </em><em>optional</em>) – distance table if it exists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.DistanceFromBestTable.dataframe_as_of">
+<code class="sig-name descname">dataframe_as_of</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.DistanceFromBestTable.dataframe_as_of" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return model group id/train end time subset of table as dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_date</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) The data from the table corresponding</dt><dd><p>to those model group ids and train end time</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.distance_from_best.DistanceFromBestTable.observed_bounds">
+<em class="property">property </em><code class="sig-name descname">observed_bounds</code><a class="headerlink" href="#triage.component.audition.distance_from_best.DistanceFromBestTable.observed_bounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.distance_from_best.plot_best_dist">
+<code class="sig-prename descclassname">triage.component.audition.distance_from_best.</code><code class="sig-name descname">plot_best_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">df_best_dist</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">plt_format_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.distance_from_best.plot_best_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a plot of the percentage of time that a model group is
+within X percentage points of the best-performing model group using a
+given metric. At each point in time that a set of model groups is
+evaluated, the performance of the best model is calculated and the
+difference in performace for all other models found relative to this.</p>
+<p>An (x,y) point for a given model group on the plot generated by this
+method means that across all of those tets sets, the model
+from that model group performed within X percentage points of the best
+model in y% of the test sets.</p>
+<p>The plot will contain a line for each given model group representing
+the cumulative percent of the time that the group is within Xpp of the
+best group for each value of X between 0 and 100. All groups ultimately
+reach (1,1) on this graph (as every model group must be within 100pp of
+the best model 100% of the time), and a model specification that always
+dominated the others in the experiment would start at (0,1) and remain
+at y=1 across the graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – </p></li>
+<li><p><strong>df_best_dist</strong> (<em>pandas.DataFrame</em>) – </p></li>
+<li><p><strong>-- formatting arguments passed through to plot_cats</strong><strong>(</strong><strong>)</strong> (<em>**plt_format_args</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.metric_directionality">
+<span id="triage-component-audition-metric-directionality-module"></span><h2>triage.component.audition.metric_directionality module<a class="headerlink" href="#module-triage.component.audition.metric_directionality" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.audition.metric_directionality.best_in_series">
+<code class="sig-prename descclassname">triage.component.audition.metric_directionality.</code><code class="sig-name descname">best_in_series</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.metric_directionality.best_in_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>The best value in a series</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – The name of a metric, ie ‘precision&#64;’</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (str) The name of a pandas Series function that will provide</dt><dd><p>the best value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.metric_directionality.greater_is_better">
+<code class="sig-prename descclassname">triage.component.audition.metric_directionality.</code><code class="sig-name descname">greater_is_better</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.metric_directionality.greater_is_better" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not a metric wants higher values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – The name of a metric, ie ‘precision&#64;’</p>
+</dd>
+</dl>
+<p>Returns: (bool) Whether or not greater is better for the metric</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.metric_directionality.idxbest">
+<code class="sig-prename descclassname">triage.component.audition.metric_directionality.</code><code class="sig-name descname">idxbest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.metric_directionality.idxbest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of first occurrence of the best value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – The name of a metric, ie ‘precision&#64;’</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (str) The name of a pandas function that will provide</dt><dd><p>the index of the first occurrence of the best value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.metric_directionality.is_better_operator">
+<code class="sig-prename descclassname">triage.component.audition.metric_directionality.</code><code class="sig-name descname">is_better_operator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.metric_directionality.is_better_operator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator to decide which of two values is better</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – The name of a metric, ie ‘precision&#64;’</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (function) An operator function that will compare two values</dt><dd><p>and return whether or not the first one is better</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.metric_directionality.sql_rank_order">
+<code class="sig-prename descclassname">triage.component.audition.metric_directionality.</code><code class="sig-name descname">sql_rank_order</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.metric_directionality.sql_rank_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>SQL Rank Order for a metric</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – The name of a metric, ie ‘precision&#64;’</p>
+</dd>
+</dl>
+<p>Returns: (str) A SQL ORDER BY clause that will rank the best values first</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.model_group_performance">
+<span id="triage-component-audition-model-group-performance-module"></span><h2>triage.component.audition.model_group_performance module<a class="headerlink" href="#module-triage.component.audition.model_group_performance" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.model_group_performance.ModelGroupPerformancePlotter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.model_group_performance.</code><code class="sig-name descname">ModelGroupPerformancePlotter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">distance_from_best_table</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.model_group_performance.ModelGroupPerformancePlotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.generate_plot_data">
+<code class="sig-name descname">generate_plot_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.generate_plot_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch data necessary for producing the plot from the distance table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (pandas.DataFrame) The relevant models and their performance
+on the given metric over time</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">df_metric</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">directory</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">plt_format_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw the plot representing the given data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – </p></li>
+<li><p><strong>df_metric</strong> (<em>pandas.DataFrame</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+<li><p><strong>-- formatting arguments passed through to plot_cats</strong><strong>(</strong><strong>)</strong> (<em>**plt_format_args</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.plot_all">
+<code class="sig-name descname">plot_all</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric_filters</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.model_group_performance.ModelGroupPerformancePlotter.plot_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each metric, plot the value of that metric over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric_filters</strong> (<em>list</em>) – <p>a dict with the following keys:</p>
+<p>metric (string) – model evaluation metric, such as ‘precision&#64;’
+parameter (string) – model evaluation metric parameter,</p>
+<blockquote>
+<div><p>such as ‘300_abs’</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.plotting">
+<span id="triage-component-audition-plotting-module"></span><h2>triage.component.audition.plotting module<a class="headerlink" href="#module-triage.component.audition.plotting" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.audition.plotting.category_colordict">
+<code class="sig-prename descclassname">triage.component.audition.plotting.</code><code class="sig-name descname">category_colordict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cmap_name</span></em>, <em class="sig-param"><span class="n">categories</span></em>, <em class="sig-param"><span class="n">highlight_grp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.plotting.category_colordict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.plotting.category_styledict">
+<code class="sig-prename descclassname">triage.component.audition.plotting.</code><code class="sig-name descname">category_styledict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">colordict</span></em>, <em class="sig-param"><span class="n">highlight_grp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.plotting.category_styledict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a dictionary mapping categories to styles.</p>
+<p>The only styling implemented at present is converting the highlighted group to a dashed line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>colordict</strong> (<em>dict</em>) – </p></li>
+<li><p><strong>highlight_grp</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (dict) A mapping of categories to matplotlib styles</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.plotting.generate_plot_lines">
+<code class="sig-prename descclassname">triage.component.audition.plotting.</code><code class="sig-name descname">generate_plot_lines</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">colordict</span></em>, <em class="sig-param"><span class="n">label_fcn</span></em>, <em class="sig-param"><span class="n">styledict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.plotting.generate_plot_lines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.plotting.plot_bounds">
+<code class="sig-prename descclassname">triage.component.audition.plotting.</code><code class="sig-name descname">plot_bounds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">observed_min</span></em>, <em class="sig-param"><span class="n">observed_max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.plotting.plot_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the plot bounds for observed data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observed_min</strong> (<em>number</em>) – </p></li>
+<li><p><strong>observed_max</strong> (<em>number</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (number, number) A minimum and maximum x value for the plot</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.plotting.plot_cats">
+<code class="sig-prename descclassname">triage.component.audition.plotting.</code><code class="sig-name descname">plot_cats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">frame</span></em>, <em class="sig-param"><span class="n">x_col</span></em>, <em class="sig-param"><span class="n">y_col</span></em>, <em class="sig-param"><span class="n">cat_col</span><span class="o">=</span><span class="default_value">'model_type'</span></em>, <em class="sig-param"><span class="n">grp_col</span><span class="o">=</span><span class="default_value">'model_group_id'</span></em>, <em class="sig-param"><span class="n">highlight_grp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">x_label</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">y_label</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">cmap_name</span><span class="o">=</span><span class="default_value">'tab10'</span></em>, <em class="sig-param"><span class="n">figsize</span><span class="o">=</span><span class="default_value">[12, 6]</span></em>, <em class="sig-param"><span class="n">x_ticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_ticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x_lim</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_lim</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">legend_loc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">legend_fontsize</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">label_fontsize</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">title_fontsize</span><span class="o">=</span><span class="default_value">16</span></em>, <em class="sig-param"><span class="n">label_fcn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">path_to_save</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.plotting.plot_cats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a line plot with each line colored by a category variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> (<em>DataFrame</em>) – </p></li>
+<li><p><strong>x_col</strong> (<em>string</em>) – </p></li>
+<li><p><strong>y_col</strong> (<em>string</em>) – </p></li>
+<li><p><strong>cat_col</strong> (<em>string</em>) – </p></li>
+<li><p><strong>grp_col</strong> (<em>string</em>) – (x_col, y_col) points for each line</p></li>
+<li><p><strong>highlight_grp</strong> (<em>string</em>) – (like a baseline)</p></li>
+<li><p><strong>title</strong> (<em>string</em>) – </p></li>
+<li><p><strong>x_label</strong> (<em>string</em>) – </p></li>
+<li><p><strong>y_label</strong> (<em>string</em>) – </p></li>
+<li><p><strong>cmap_name</strong> (<em>string</em>) – </p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em>) – </p></li>
+<li><p><strong>x_ticks</strong> (<em>sequence</em>) – </p></li>
+<li><p><strong>y_ticks</strong> (<em>sequence</em>) – </p></li>
+<li><p><strong>x_lim</strong> (<em>tuple</em>) – </p></li>
+<li><p><strong>y_lim</strong> (<em>tuple</em>) – </p></li>
+<li><p><strong>legend_loc</strong> (<em>string</em>) – </p></li>
+<li><p><strong>legend_fontsize</strong> (<em>int</em>) – </p></li>
+<li><p><strong>label_fontsize</strong> (<em>int</em>) – </p></li>
+<li><p><strong>title_fontsize</strong> (<em>int</em>) – </p></li>
+<li><p><strong>label_fcn</strong> (<em>method</em>) – names, accepting values of cat_col</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.pre_audition">
+<span id="triage-component-audition-pre-audition-module"></span><h2>triage.component.audition.pre_audition module<a class="headerlink" href="#module-triage.component.audition.pre_audition" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.pre_audition.PreAudition">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.pre_audition.</code><code class="sig-name descname">PreAudition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.pre_audition.PreAudition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.pre_audition.PreAudition.get_model_groups">
+<code class="sig-name descname">get_model_groups</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.pre_audition.PreAudition.get_model_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>A funciton to pull model groups based on customized query in order
+to preparre for Auditioner.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>query</strong> – (string) SQL query for model groups</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.pre_audition.PreAudition.get_model_groups_from_experiment">
+<code class="sig-name descname">get_model_groups_from_experiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">experiment_hash</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.pre_audition.PreAudition.get_model_groups_from_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to pull model groups based on experiment_hash in order
+to prepare for Auditioner.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>experiment_hash</strong> – (string) Experiment hash</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.pre_audition.PreAudition.get_model_groups_from_label">
+<code class="sig-name descname">get_model_groups_from_label</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.pre_audition.PreAudition.get_model_groups_from_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>A funciton to pull model groups based on label definition in order
+to prepare for Auditioner.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>labed_def</strong> – (string) Label definition in triage schema</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.pre_audition.PreAudition.get_train_end_times">
+<code class="sig-name descname">get_train_end_times</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">after</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">query</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.pre_audition.PreAudition.get_train_end_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to get a list of train_end_times after certain time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>after</strong> – (string) YYYY-MM-DD time format</p></li>
+<li><p><strong>query</strong> – (string) SQL query for train_end_times</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.regrets">
+<span id="triage-component-audition-regrets-module"></span><h2>triage.component.audition.regrets module<a class="headerlink" href="#module-triage.component.audition.regrets" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.regrets.SelectionRulePicker">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.regrets.</code><code class="sig-name descname">SelectionRulePicker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">distance_from_best_table</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePicker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePicker.model_group_from_rule">
+<code class="sig-name descname">model_group_from_rule</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rule</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePicker.model_group_from_rule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick a model group that best selects the given selection rule</p>
+<p>In here, we create a subset of the distance from best table dataframe,
+with all data after the given train end time removed, both rows representing
+later time periods but also columns that have access to later data. Calculating and
+passing this allows the selection rules to be written without specific code
+to exclude the future</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rule</strong> (<em>function</em>) – given a dataframe of model group performances plus other
+arguments</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – </p></li>
+<li><p><strong>train_end_time</strong> (<em>timestamp</em>) – the regret analysis</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) The model group id chosen by the input selection rule</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePicker.results_for_rule">
+<code class="sig-name descname">results_for_rule</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rule</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePicker.results_for_rule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Calculate the regrets, or distance between the chosen model and</dt><dd><p>the maximum value next test time</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rule</strong> (<em>function</em>) – given a dataframe of model group performances plus other
+arguments</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list</em>) – the regret analysis</p></li>
+<li><p><strong>train_end_times</strong> (<em>list</em>) – the regret analysis</p></li>
+<li><p><strong>regret_metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>regret_parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt>Returns: (list) for each train end time, a dictionary representing the</dt><dd><p>model group chosen by the selection rule and its performance</p>
+<p>Should have all keys from the DistanceFromBestTable, most
+importantly
+‘distance_from_best_case_next_time’
+‘distance_from_best_case’,
+‘raw_value’,
+‘raw_value_next_time’</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.regrets.</code><code class="sig-name descname">SelectionRulePlotter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection_rule_picker</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Plot selection rules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>selection_rule_picker</strong> (<a class="reference internal" href="#triage.component.audition.regrets.SelectionRulePicker" title="triage.component.audition.regrets.SelectionRulePicker"><em>SelectionRulePicker</em></a>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter.create_plot_dataframe">
+<code class="sig-name descname">create_plot_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rules</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter.create_plot_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dataframe suitable for plotting selection rule regrets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rules</strong> (<em>list of .selection_rules.BoundSelectionRule</em>) – Selection rule/parameter combinations to plot</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list of integers</em>) – in calculating the data</p></li>
+<li><p><strong>train_end_times</strong> (<em>list of timestamps</em>) – calculating the data</p></li>
+<li><p><strong>regret_metric</strong> (<em>string</em><em>) </em><em>The metric</em><em> (</em><em>i.e. precision&#64;</em>) – regrets against</p></li>
+<li><p><strong>regret_parameter</strong> (<em>string</em><em>) </em><em>The metric parameter</em><em> (</em><em>i.e. 100_abs</em>) – calculate regrets against</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) A dataframe with columns ‘regret’,</dt><dd><p>‘pct_of_time’, and ‘selection_rule’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter.plot_all_selection_rules">
+<code class="sig-name descname">plot_all_selection_rules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rules</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter.plot_all_selection_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the regrets of all given selection rules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rules</strong> (<em>list of .selection_rules.BoundSelectionRule</em>) – Selection rule/parameter combinations to plot</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list of integers</em>) – in calculating the data</p></li>
+<li><p><strong>train_end_times</strong> (<em>list of timestamps</em>) – calculating the data</p></li>
+<li><p><strong>regret_metric</strong> (<em>string</em><em>) </em><em>The metric</em><em> (</em><em>i.e. precision&#64;</em>) – regrets against</p></li>
+<li><p><strong>regret_parameter</strong> (<em>string</em><em>) </em><em>The metric parameter</em><em> (</em><em>i.e. 100_abs</em>) – calculate regrets against</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter.plot_bounds">
+<code class="sig-name descname">plot_bounds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter.plot_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the plot bounds for a given metric and parameter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (number, number) A minimum and maximum x value for the plot</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter.regret_threshold_dist">
+<code class="sig-name descname">regret_threshold_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plot_min</span></em>, <em class="sig-param"><span class="n">plot_max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter.regret_threshold_dist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.regrets.SelectionRulePlotter.regret_thresholds">
+<code class="sig-name descname">regret_thresholds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.regrets.SelectionRulePlotter.regret_thresholds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.rules_maker">
+<span id="triage-component-audition-rules-maker-module"></span><h2>triage.component.audition.rules_maker module<a class="headerlink" href="#module-triage.component.audition.rules_maker" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.rules_maker.BaseRules">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.rules_maker.</code><code class="sig-name descname">BaseRules</code><a class="headerlink" href="#triage.component.audition.rules_maker.BaseRules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.BaseRules.create">
+<code class="sig-name descname">create</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.BaseRules.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.rules_maker.RandomGroupRuleMaker">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.rules_maker.</code><code class="sig-name descname">RandomGroupRuleMaker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.RandomGroupRuleMaker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.audition.rules_maker.BaseRules" title="triage.component.audition.rules_maker.BaseRules"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.audition.rules_maker.BaseRules</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.rules_maker.</code><code class="sig-name descname">SimpleRuleMaker</code><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.audition.rules_maker.BaseRules" title="triage.component.audition.rules_maker.BaseRules"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.audition.rules_maker.BaseRules</span></code></a></p>
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_average_value">
+<code class="sig-name descname">add_rule_best_average_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_average_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_avg_recency_weight">
+<code class="sig-name descname">add_rule_best_avg_recency_weight</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">curr_weight</span><span class="o">=</span><span class="default_value">[1.5, 2.0, 5.0]</span></em>, <em class="sig-param"><span class="n">decay_type</span><span class="o">=</span><span class="default_value">['linear']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_avg_recency_weight" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_avg_var_penalized">
+<code class="sig-name descname">add_rule_best_avg_var_penalized</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stdev_penalty</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_avg_var_penalized" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_current_value">
+<code class="sig-name descname">add_rule_best_current_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_best_current_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_lowest_metric_variance">
+<code class="sig-name descname">add_rule_lowest_metric_variance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_lowest_metric_variance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_most_frequent_best_dist">
+<code class="sig-name descname">add_rule_most_frequent_best_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">dist_from_best_case</span><span class="o">=</span><span class="default_value">[0.01, 0.05, 0.1, 0.15]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.SimpleRuleMaker.add_rule_most_frequent_best_dist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.rules_maker.TwoMetricsRuleMaker">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.rules_maker.</code><code class="sig-name descname">TwoMetricsRuleMaker</code><a class="headerlink" href="#triage.component.audition.rules_maker.TwoMetricsRuleMaker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triage.component.audition.rules_maker.BaseRules" title="triage.component.audition.rules_maker.BaseRules"><code class="xref py py-class docutils literal notranslate"><span class="pre">triage.component.audition.rules_maker.BaseRules</span></code></a></p>
+<dl class="py method">
+<dt id="triage.component.audition.rules_maker.TwoMetricsRuleMaker.add_rule_best_average_two_metrics">
+<code class="sig-name descname">add_rule_best_average_two_metrics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric1</span><span class="o">=</span><span class="default_value">'precision&#64;'</span></em>, <em class="sig-param"><span class="n">parameter1</span><span class="o">=</span><span class="default_value">'100_abs'</span></em>, <em class="sig-param"><span class="n">metric2</span><span class="o">=</span><span class="default_value">'recall&#64;'</span></em>, <em class="sig-param"><span class="n">parameter2</span><span class="o">=</span><span class="default_value">'300_abs'</span></em>, <em class="sig-param"><span class="n">metric1_weight</span><span class="o">=</span><span class="default_value">[0.5]</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.TwoMetricsRuleMaker.add_rule_best_average_two_metrics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.rules_maker.create_selection_grid">
+<code class="sig-prename descclassname">triage.component.audition.rules_maker.</code><code class="sig-name descname">create_selection_grid</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.rules_maker.create_selection_grid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.selection_rule_grid">
+<span id="triage-component-audition-selection-rule-grid-module"></span><h2>triage.component.audition.selection_rule_grid module<a class="headerlink" href="#module-triage.component.audition.selection_rule_grid" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.audition.selection_rule_grid.make_selection_rule_grid">
+<code class="sig-prename descclassname">triage.component.audition.selection_rule_grid.</code><code class="sig-name descname">make_selection_rule_grid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rule_groups</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_grid.make_selection_rule_grid" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>Convert a compact selection rule group representation to a</dt><dd><p>list of bound selection rules</p>
+</dd>
+<dt>Args: rule_groups (list), example:</dt><dd><dl>
+<dt>[{</dt><dd><dl>
+<dt>‘shared_parameters’: [</dt><dd><blockquote>
+<div><p>{‘metric’: ‘precision&#64;’, ‘parameter’: ‘100_abs’},
+{‘metric’: ‘recall&#64;’, ‘parameter’: ‘100_abs’},</p>
+</div></blockquote>
+<p>],
+‘selection_rules’: [</p>
+<blockquote>
+<div><p>{‘name’: ‘most_frequent_best_dist’, ‘dist_from_best_case’: [0.1, 0.2, 0.3]},
+{‘name’: ‘best_current_value’}</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+</dd>
+<dt>}, {</dt><dd><dl class="simple">
+<dt>‘shared_parameters’: [</dt><dd><p>{‘metric1’: ‘precision&#64;’, ‘parameter1’: ‘100_abs’},</p>
+</dd>
+</dl>
+<p>],
+‘selection_rules’: [</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>‘name’: ‘best_average_two_metrics’,
+‘metric2’: [‘recall&#64;’],
+‘parameter2’: [‘100_abs’],
+‘metric1_weight’: [0.4, 0.5, 0.6]</p>
+</dd>
+</dl>
+<p>},</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+<p>}]</p>
+</dd>
+</dl>
+<p>Returns: (list of audition.selection_rules.BoundSelectionRule)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.selection_rule_performance">
+<span id="triage-component-audition-selection-rule-performance-module"></span><h2>triage.component.audition.selection_rule_performance module<a class="headerlink" href="#module-triage.component.audition.selection_rule_performance" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.selection_rule_performance.</code><code class="sig-name descname">SelectionRulePerformancePlotter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">selection_rule_picker</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Plot regrets over time</p>
+<p>Generates a simple line chart with audition.BoundSelectionRule objects as
+lines, time periods to be analyzed as the x-axis, and the regret of that
+selection rule as the y-axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>selection_rule_picker</strong> (<em>audition.SelectionRulePicker</em>) – simulate the effects of picking a selection rule</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.generate_plot_data">
+<code class="sig-name descname">generate_plot_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rules</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.generate_plot_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dataframe suitable for plotting regrets over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rules</strong> (<em>list of .selection_rules.BoundSelectionRule</em>) – Selection rule/parameter combinations to plot</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list of integers</em>) – in calculating the data</p></li>
+<li><p><strong>train_end_times</strong> (<em>list of timestamps</em>) – calculating the data</p></li>
+<li><p><strong>regret_metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>regret_parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: (pandas.DataFrame) A dataframe with columns ‘regret’,</dt><dd><p>‘train_end_time’, and ‘selection_rule’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bound_selection_rules</span></em>, <em class="sig-param"><span class="n">regret_metric</span></em>, <em class="sig-param"><span class="n">regret_parameter</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">plot_type</span><span class="o">=</span><span class="default_value">'regret'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a selection rule performance plot for one metric</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bound_selection_rules</strong> (<em>list of .selection_rules.BoundSelectionRule</em>) – Selection rule/parameter combinations to plot</p></li>
+<li><p><strong>regret_metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>regret_parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>model_group_ids</strong> (<em>list of integers</em>) – in calculating the data</p></li>
+<li><p><strong>train_end_times</strong> (<em>list of timestamps</em>) – calculating the data</p></li>
+<li><p><strong>plot_type</strong> (<em>string</em><em>) </em><em>The plot type to show</em><em> (</em><em>either 'regret'</em><em> or </em><em>'metric'</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.raw_next_time_plot_from_dataframe">
+<code class="sig-name descname">raw_next_time_plot_from_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">plt_format_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.raw_next_time_plot_from_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a ‘raw-value-next-time’ plot from a given dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – over time given selection rules.
+Should have columns ‘raw_value_next_time’, ‘train_end_time’, ‘selection_rule’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.regret_plot_from_dataframe">
+<code class="sig-name descname">regret_plot_from_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">plt_format_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rule_performance.SelectionRulePerformancePlotter.regret_plot_from_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a regret-over-time plot from a given dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – Should have columns ‘regret’, ‘train_end_time’, ‘selection_rule’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.selection_rules">
+<span id="triage-component-audition-selection-rules-module"></span><h2>triage.component.audition.selection_rules module<a class="headerlink" href="#module-triage.component.audition.selection_rules" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.selection_rules.BoundSelectionRule">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">BoundSelectionRule</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em>, <em class="sig-param"><span class="n">function_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">descriptive_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">function</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.BoundSelectionRule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A selection rule bound with a set of arguments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>dict</em>) – to call the function when a dataframe and train_end_time is added</p></li>
+<li><p><strong>function_name</strong> (<em>string</em><em>, </em><em>optional</em>) – </p></li>
+<li><p><strong>descriptive_name</strong> (<em>string</em><em>, </em><em>optional</em>) – If none is given it will be automatically constructed</p></li>
+<li><p><strong>function</strong> (<em>function</em><em>, </em><em>optional</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.audition.selection_rules.BoundSelectionRule.descriptive_name">
+<em class="property">property </em><code class="sig-name descname">descriptive_name</code><a class="headerlink" href="#triage.component.audition.selection_rules.BoundSelectionRule.descriptive_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.selection_rules.BoundSelectionRule.function">
+<em class="property">property </em><code class="sig-name descname">function</code><a class="headerlink" href="#triage.component.audition.selection_rules.BoundSelectionRule.function" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.selection_rules.BoundSelectionRule.pick">
+<code class="sig-name descname">pick</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataframe</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.BoundSelectionRule.pick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the selection rule for a given time on a dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pandas.DataFrame</em>) – </p></li>
+<li><p><strong>train_end_time</strong> (<em>timestamp</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) a model group id</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.best_average_two_metrics">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">best_average_two_metrics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric1</span></em>, <em class="sig-param"><span class="n">parameter1</span></em>, <em class="sig-param"><span class="n">metric2</span></em>, <em class="sig-param"><span class="n">parameter2</span></em>, <em class="sig-param"><span class="n">metric1_weight</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.best_average_two_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model with the highest average combined value to date
+of two metrics weighted together using <cite>metric1_weight</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric1_weight</strong> (<em>float</em>) – </p></li>
+<li><p><strong>metric1</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter1</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>metric2</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter2</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.best_average_value">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">best_average_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.best_average_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model with the highest average metric value so far</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+dist_from_best_case</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.best_avg_recency_weight">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">best_avg_recency_weight</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">curr_weight</span></em>, <em class="sig-param"><span class="n">decay_type</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.best_avg_recency_weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model with the highest average metric value so far, penalized
+for relative variance as:</p>
+<blockquote>
+<div><p>avg_value - (stdev_penalty) * (stdev - min_stdev)</p>
+</div></blockquote>
+<p>where min_stdev is the minimum standard deviation of the metric across all
+model groups</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>decay_type</strong> (<em>string</em>) – how the weights fall off between the current and first point</p></li>
+<li><p><strong>curr_weight</strong> (<em>float</em>) – relative to the first point (e.g., a value of 5.0 would mean the
+current data is weighted 5 times as much as the first one)</p></li>
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.best_avg_var_penalized">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">best_avg_var_penalized</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">stdev_penalty</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.best_avg_var_penalized" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Pick the model with the highest</dt><dd><p>average metric value so far, placing less weight in older
+results. You need to specify two parameters: the shape of how the
+weight affects points (decay_type, linear or exponential) and the relative
+weight of the most recent point (curr_weight).</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stdev_penalty</strong> (<em>float</em>) – </p></li>
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.best_current_value">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">best_current_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.best_current_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model group with the best current metric value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+dist_from_best_case</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest current raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.lowest_metric_variance">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">lowest_metric_variance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.lowest_metric_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model with the lowest metric variance so far</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.most_frequent_best_dist">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">most_frequent_best_dist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">metric</span></em>, <em class="sig-param"><span class="n">parameter</span></em>, <em class="sig-param"><span class="n">dist_from_best_case</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.most_frequent_best_dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick the model that is most frequently within <cite>dist_from_best_case</cite> from the
+best-performing model group across test sets so far</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dist_from_best_case</strong> (<em>float</em>) – </p></li>
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – such as ‘300_abs’</p></li>
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest mean raw metric value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.selection_rules.random_model_group">
+<code class="sig-prename descclassname">triage.component.audition.selection_rules.</code><code class="sig-name descname">random_model_group</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">train_end_time</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.selection_rules.random_model_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick a random model group (as a baseline)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_end_time</strong> (<em>Timestamp</em>) – </p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – model_group_id,
+model_id,
+train_end_time,
+metric,
+parameter,
+raw_value,
+below_best</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (int) the model group id to select, with highest current raw metric value</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.thresholding">
+<span id="triage-component-audition-thresholding-module"></span><h2>triage.component.audition.thresholding module<a class="headerlink" href="#module-triage.component.audition.thresholding" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.thresholding.</code><code class="sig-name descname">ModelGroupThresholder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">distance_from_best_table</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">initial_model_group_ids</span></em>, <em class="sig-param"><span class="n">initial_metric_filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder.model_group_ids">
+<em class="property">property </em><code class="sig-name descname">model_group_ids</code><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder.model_group_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder.model_groups_close_to_best_case">
+<code class="sig-name descname">model_groups_close_to_best_case</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder.model_groups_close_to_best_case" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return the model groups in the dataframe that are close enough to</dt><dd><p>the best value according to current metric filter configuration</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas.DataFrame</em>) – A set of rows in the format given by
+audition.DistanceFromBestTable.as_dataframe</p>
+</dd>
+</dl>
+<p>Returns: (set) The model group ids close to the best value for each metric</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder.model_groups_passing_rules">
+<code class="sig-name descname">model_groups_passing_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder.model_groups_passing_rules" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return the model groups passing both the close-to-best and</dt><dd><p>above-min checks based on the current filters.</p>
+</dd>
+</dl>
+<p>Works by ensuring that a model group passes the close-to-best check
+for at least one train end time, and that is passes the above-min
+check for <em>all</em> train end times. Model groups must pass both
+of these checks.</p>
+<p>Returns: (set) The passing model group ids</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder.model_groups_past_threshold">
+<code class="sig-name descname">model_groups_past_threshold</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder.model_groups_past_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return the model groups in the dataframe that are above the</dt><dd><p>currently-configured minimum value</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas.DataFrame</em>) – A set of rows in the format given by
+audition.DistanceFromBestTable.as_dataframe</p>
+</dd>
+</dl>
+<p>Returns: (set) The model group ids above the minimum value for each metric</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.thresholding.ModelGroupThresholder.update_filters">
+<code class="sig-name descname">update_filters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_metric_filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.ModelGroupThresholder.update_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the saved metric filters.</p>
+<dl>
+<dt>Args: new_metric_filters (list) A list of metrics to filter model</dt><dd><p>groups on, and how to filter them. Each entry should be a dict
+with the keys:</p>
+<blockquote>
+<div><p>metric (string) – model evaluation metric, such as ‘precision&#64;’
+parameter (string) – model evaluation metric parameter,</p>
+<blockquote>
+<div><p>such as ‘300_abs’</p>
+</div></blockquote>
+<dl class="simple">
+<dt>max_below_best (float) The maximum value that the given metric</dt><dd><p>can be below the best for a given train end time</p>
+</dd>
+</dl>
+<p>min_value (float) The minimum value that the given metric can be</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.thresholding.model_groups_filter">
+<code class="sig-prename descclassname">triage.component.audition.thresholding.</code><code class="sig-name descname">model_groups_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">initial_model_group_ids</span></em>, <em class="sig-param"><span class="n">models_table</span></em>, <em class="sig-param"><span class="n">db_engine</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.thresholding.model_groups_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter the models which related train end times don’t contain the user-input
+train_end_times</p>
+<p>Before creating the distance table, we want to make sure the model_group_ids
+and train_end_times are reasonable:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>the input train_end_times should exisit in the database</p></li>
+<li><p>every model group should have the same train_end_times</p></li>
+</ol>
+</div></blockquote>
+<p>to prevent incomparable model groups from being populated to the distance table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_end_times</strong> (<em>list</em>) – the iteration</p></li>
+<li><p><strong>initial_model_group_ids</strong> (<em>list</em>) – narrow down</p></li>
+<li><p><strong>models_table</strong> (<em>string</em>) – </p></li>
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – schema of a completed modeling run</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition.utils">
+<span id="triage-component-audition-utils-module"></span><h2>triage.component.audition.utils module<a class="headerlink" href="#module-triage.component.audition.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.audition.utils.make_list">
+<code class="sig-prename descclassname">triage.component.audition.utils.</code><code class="sig-name descname">make_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.utils.make_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="triage.component.audition.utils.str_in_sql">
+<code class="sig-prename descclassname">triage.component.audition.utils.</code><code class="sig-name descname">str_in_sql</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">values</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.utils.str_in_sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.audition">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.audition" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.audition.AuditionRunner">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.</code><code class="sig-name descname">AuditionRunner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_dict</span></em>, <em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.AuditionRunner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.AuditionRunner.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.AuditionRunner.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.AuditionRunner.validate">
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.AuditionRunner.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="triage.component.audition.Auditioner">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.audition.</code><code class="sig-name descname">Auditioner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">model_group_ids</span></em>, <em class="sig-param"><span class="n">train_end_times</span></em>, <em class="sig-param"><span class="n">initial_metric_filters</span></em>, <em class="sig-param"><span class="n">models_table</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">distance_table</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">directory</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.average_regret_for_rules">
+<em class="property">property </em><code class="sig-name descname">average_regret_for_rules</code><a class="headerlink" href="#triage.component.audition.Auditioner.average_regret_for_rules" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.metrics">
+<em class="property">property </em><code class="sig-name descname">metrics</code><a class="headerlink" href="#triage.component.audition.Auditioner.metrics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.plot_model_groups">
+<code class="sig-name descname">plot_model_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.plot_model_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display model group plots, one of the below for each configured metric.</p>
+<p>1. A cumulative plot showing the effect of different worse-than-best
+thresholds for the given metric across the thresholded model groups.</p>
+<p>2. A performance-over-time plot showing the value for the given
+metric over time for each thresholded model group</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.plot_selection_rules">
+<code class="sig-name descname">plot_selection_rules</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.plot_selection_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data about the configured selection rules. The three plots outlined below
+are plotted for each metric.</p>
+<p>We base a lot of this on the concept of the ‘regret’.
+The regret refers to the difference in performance between a model group
+and the best model group for the next testing window if a selection rule is followed.</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>A distance-next-time plot, showing the fraction of models worse then a succession of</dt><dd><p>regret thresholds for each selection rule</p>
+</dd>
+</dl>
+</li>
+<li><p>A regret-over-time plot for each selection rule</p></li>
+<li><p>A metric-over-time plot for each selection rule</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.register_selection_rule_grid">
+<code class="sig-name descname">register_selection_rule_grid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rule_grid</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.register_selection_rule_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a grid of selection rules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rule_grid</strong> (<em>list</em>) – </p></li>
+<li><p><strong>entry in the list is considered a group</strong><strong>, </strong><strong>and is expected to be a dict</strong> (<em>Each</em>) – <p>with two keys: ‘shared_parameters’, and ‘selection_rules’.</p>
+<dl>
+<dt>’shared_parameters’: A list of dicts, each with a set of parameters that are taken</dt><dd><p>by all selection rules in this group.</p>
+<p>For each of these shared parameter sets, the grid will create selection rules
+combining the set with all possible selection rule/parameter combinations.</p>
+<dl class="simple">
+<dt>This can be used to quickly combine, say, a variety of rules that</dt><dd><p>all are concerned with precision at top 100 entities.</p>
+</dd>
+</dl>
+</dd>
+<dt>’selection_rules’: A list of dicts, each with:</dt><dd><p>A ‘name’ attribute that matches a selection rule in audition.selection_rules
+Parameters and values taken by that selection rule. Values in list form are
+all added to the grid.
+If the selection rule has no parameters, or the parameters are all covered
+by the shared parameters in this group, none are needed here.</p>
+</dd>
+</dl>
+<p>Each selection rule in the group must have all of its required parameters
+covered by the shared parameters in its group and the parameters given to it.</p>
+<p>Refer to audition.selection_rules.SELECTION_RULES for available selection rules
+and their needed parameters.
+The exceptions are the first two arguments to each selection rule,
+‘df’ and ‘train_end_time’.
+These are contextual and thus provided internally by Audition.</p>
+</p></li>
+<li><p><strong>Example</strong> – <dl>
+<dt>[{</dt><dd><dl>
+<dt>‘shared_parameters’: [</dt><dd><blockquote>
+<div><p>{‘metric’: ‘precision&#64;’, ‘parameter’: ‘100_abs’},
+{‘metric’: ‘recall&#64;’, ‘parameter’: ‘100_abs’},</p>
+</div></blockquote>
+<p>],
+‘selection_rules’: [</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{‘name’: ‘most_frequent_best_dist’,</dt><dd><p>’dist_from_best_case’: [0.1, 0.2, 0.3]},</p>
+</dd>
+</dl>
+<p>{‘name’: ‘best_current_value’}</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>}]</p>
+</p></li>
+<li><p><strong>plot</strong> (<em>boolean</em><em>, </em><em>defaults to True</em>) – rules at this time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.save_result_model_group_ids">
+<code class="sig-name descname">save_result_model_group_ids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span><span class="o">=</span><span class="default_value">'results_model_group_ids.json'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.save_result_model_group_ids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.selection_rule_model_group_ids">
+<em class="property">property </em><code class="sig-name descname">selection_rule_model_group_ids</code><a class="headerlink" href="#triage.component.audition.Auditioner.selection_rule_model_group_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the current winners for each selection rule and the most recent date</p>
+<dl class="simple">
+<dt>Returns: (dict) keys are selection rule descriptive names, values are the model group id</dt><dd><p>chosen by them</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.set_one_metric_filter">
+<code class="sig-name descname">set_one_metric_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">'precision&#64;'</span></em>, <em class="sig-param"><span class="n">parameter</span><span class="o">=</span><span class="default_value">'100_abs'</span></em>, <em class="sig-param"><span class="n">max_from_best</span><span class="o">=</span><span class="default_value">0.05</span></em>, <em class="sig-param"><span class="n">threshold_value</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.set_one_metric_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set one thresholding metric filter
+If one wnats to update multiple filters, one should use <cite>update_metric_filters()</cite> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>string</em>) – </p></li>
+<li><p><strong>parameter</strong> (<em>string</em>) – </p></li>
+<li><p><strong>max_from_best</strong> (<em>string</em>) – for a given train end time</p></li>
+<li><p><strong>threshold_value</strong> (<em>string</em>) – </p></li>
+<li><p><strong>plot</strong> (<em>boolean</em><em>, </em><em>default True</em>) – and thresholding details at this time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.thresholded_model_group_ids">
+<em class="property">property </em><code class="sig-name descname">thresholded_model_group_ids</code><a class="headerlink" href="#triage.component.audition.Auditioner.thresholded_model_group_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>The model group thresholder will have a varying list of model group ids
+depending on its current thresholding rules, this is a reference to whatever
+that current list is.</p>
+<p>Returns: (list) of model group ids</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.audition.Auditioner.update_metric_filters">
+<code class="sig-name descname">update_metric_filters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_filters</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.audition.Auditioner.update_metric_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the thresholding metric filters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_filters</strong> (<em>list</em>) – <p>groups on, and how to filter them. This is an identical format to
+the list given to ‘initial_metric_filters’ in the constructor.
+Each entry should be a dict with the keys:</p>
+<blockquote>
+<div><p>metric (string) – model evaluation metric, such as ‘precision&#64;’
+parameter (string) – model evaluation metric parameter,</p>
+<blockquote>
+<div><p>such as ‘300_abs’</p>
+</div></blockquote>
+<dl class="simple">
+<dt>max_below_best (float) The maximum value that the given metric</dt><dd><p>can be below the best for a given train end time</p>
+</dd>
+</dl>
+<p>threshold_value (float) The threshold value that the given metric can be</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>plot</strong> (<em>boolean</em><em>, </em><em>default True</em>) – and thresholding details at this time.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.audition.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

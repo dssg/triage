@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>triage.component.catwalk.individual_importance package &#8212; triage  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="triage-component-catwalk-individual-importance-package">
+<h1>triage.component.catwalk.individual_importance package<a class="headerlink" href="#triage-component-catwalk-individual-importance-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triage.component.catwalk.individual_importance.uniform">
+<span id="triage-component-catwalk-individual-importance-uniform-module"></span><h2>triage.component.catwalk.individual_importance.uniform module<a class="headerlink" href="#module-triage.component.catwalk.individual_importance.uniform" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="triage.component.catwalk.individual_importance.uniform.uniform_distribution">
+<code class="sig-prename descclassname">triage.component.catwalk.individual_importance.uniform.</code><code class="sig-name descname">uniform_distribution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">as_of_date</span></em>, <em class="sig-param"><span class="n">test_matrix_store</span></em>, <em class="sig-param"><span class="n">n_ranks</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.individual_importance.uniform.uniform_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates individual feature importances based on the global feature importances</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>as_of_date</strong> (<em>datetime.date</em>) – </p></li>
+<li><p><strong>test_matrix_store</strong> (<a class="reference internal" href="triage.component.catwalk.html#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>n_ranks</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: (list) dicts with entity_id, feature_value, feature_name, score</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triage.component.catwalk.individual_importance">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triage.component.catwalk.individual_importance" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="triage.component.catwalk.individual_importance.IndividualImportanceCalculator">
+<em class="property">class </em><code class="sig-prename descclassname">triage.component.catwalk.individual_importance.</code><code class="sig-name descname">IndividualImportanceCalculator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db_engine</span></em>, <em class="sig-param"><span class="n">n_ranks</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">methods</span><span class="o">=</span><span class="default_value">['uniform']</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.individual_importance.IndividualImportanceCalculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Calculates and saves individual importance scores and rankings using different methods</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_engine</strong> (<em>sqlalchemy.engine</em>) – </p></li>
+<li><p><strong>n_ranks</strong> (<em>int</em>) – </p></li>
+<li><p><strong>methods</strong> (<em>list</em>) – present in CALCULATE_STRATEGIES that should be called.
+Defaults to [‘uniform’]</p></li>
+<li><p><strong>replace</strong> (<em>bool</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="triage.component.catwalk.individual_importance.IndividualImportanceCalculator.calculate_and_save">
+<code class="sig-name descname">calculate_and_save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">test_matrix_store</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">as_of_date</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.individual_importance.IndividualImportanceCalculator.calculate_and_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate and save importances for a given model, test matrix, method, and date</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>test_matrix_store</strong> (<a class="reference internal" href="triage.component.catwalk.html#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+<li><p><strong>method_name</strong> (<em>string</em>) – Expected to be present in CALCULATE_STRATEGIES</p></li>
+<li><p><strong>as_of_date</strong> (<em>datetime</em><em> or </em><em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.individual_importance.IndividualImportanceCalculator.calculate_and_save_all_methods_and_dates">
+<code class="sig-name descname">calculate_and_save_all_methods_and_dates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">test_matrix_store</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.individual_importance.IndividualImportanceCalculator.calculate_and_save_all_methods_and_dates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate and save individual importances for the given model and test matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>test_matrix_store</strong> (<a class="reference internal" href="triage.component.catwalk.html#triage.component.catwalk.storage.MatrixStore" title="triage.component.catwalk.storage.MatrixStore"><em>catwalk.storage.MatrixStore</em></a>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="triage.component.catwalk.individual_importance.IndividualImportanceCalculator.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">importance_records</span></em>, <em class="sig-param"><span class="n">model_id</span></em>, <em class="sig-param"><span class="n">as_of_date</span></em>, <em class="sig-param"><span class="n">method_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#triage.component.catwalk.individual_importance.IndividualImportanceCalculator.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves computed individual feature importance records to the database.
+Will delete any records beforehand matching the model_id, as_of_date, and method_name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>importance_records</strong> (<em>list</em>) – Each entry should be a dict with keys ‘entity_id’ ‘feature_name’
+and ‘feature_value’ corresponding to the correct values for the
+model_id, as_of_date, and method</p></li>
+<li><p><strong>model_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>as_of_date</strong> (<em>datetime</em><em> or </em><em>string</em>) – </p></li>
+<li><p><strong>method_name</strong> (<em>string</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">triage</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, aaron.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/triage.component.catwalk.individual_importance.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
