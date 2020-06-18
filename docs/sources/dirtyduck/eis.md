@@ -188,7 +188,7 @@ triage experiment experiments/eis_01.yaml --show-timechop
 !!! info "What? … Bastion?"
     `bastion` is the docker container that contains all the setup
     required to run this tutorial, if this is the first time that
-    you see this word, you should stop and revisit [setup infrastructure](insfrastructure.md).
+    you see this word, you should stop and revisit [setup infrastructure](infrastructure.md).
 
 
 
@@ -838,7 +838,7 @@ audited_models_class.plot_prec_across_time(param_type='rank_pct',
                                            figsize=params.figsize)
 ```
 
-![img](images/eis_mg_recall_over_time.png "Recall@10% over time from the best performing model groups selected by Audition")
+![img](images/postmodeling/eis_mg_recall_over_time.png "Recall@10% over time from the best performing model groups selected by Audition")
 
 That behavior is similar for the recall@10%, except for the model group **69**
 
@@ -848,7 +848,7 @@ audited_models_class.plot_jaccard_preds(param_type='rank_pct',
                                         temporal_comparison=True)
 ```
 
-![img](images/eis_jaccard_on_lists_over_time.png "How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists.")
+![img](images/postmodeling/eis_jaccard_on_lists_over_time.png "How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists.")
 
 There are a high jaccard similarity between some model groups across
 time. This could be an indicator that they are so similar that you can
@@ -894,13 +894,13 @@ In this tutorial, we will just show some parts of the analysis in the most recen
                                               figsize=params.figsize)
     ```
 
-    ![img](images/eis_model_group_64_feature_importances.png "Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226).")
+    ![img](images/postmodeling/eis_model_group_64_feature_importances.png "Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226).")
 
     ```jupyter-python
     models_76['234'].plot_feature_group_aggregate_importances()
     ```
 
-    ![img](images/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226.")
+    ![img](images/postmodeling/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226.")
 
 
 ## Crosstabs: How are the entities classified?
