@@ -98,6 +98,7 @@ nav:
           - Experiment Algorithm: experiments/algorithm.md
           - Experiment Architecture: experiments/architecture.md
       - Model selection: 
+          - Intro to Audition: audition/audition_intro.md
           - Using Audition: audition/audition.md
           - Audition Configuration: audition/audition-config.md
       - Postmodeling: 
