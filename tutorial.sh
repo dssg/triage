@@ -2,7 +2,7 @@
 
 set -e -u
 
-DIRTYDUCK_HOME="docker"
+DIRTYDUCK_HOME="dirtyduck"
 
 function help_menu () {
 cat << EOF
