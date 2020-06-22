@@ -1,3 +1,2 @@
-aws_batch/*
-aws_env.example
-deploy.sh
+food_db/*
+docker_compose.yml
