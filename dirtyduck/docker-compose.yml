@@ -6,7 +6,12 @@ services:
       context: ./food_db
     image: dirtyduck/db
     container_name: dirtyduck_db
-    env_file: .env
+    environment:
+      - POSTGRES_HOST=0.0.0.0
+      - POSTGRES_USER=food_user
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=some_password
+      - POSTGRES_DB=food
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -19,7 +24,12 @@ services:
     container_name: dirtyduck_bastion
     tty: true
     environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@food_db/${POSTGRES_DB}"
+      - POSTGRES_HOST=dirtyduck_db
+      - POSTGRES_USER=food_user
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=some_password
+      - POSTGRES_DB=food
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dirtyduck_db/${POSTGRES_DB}
     volumes:
       - "../example/dirtyduck:/triage"
 

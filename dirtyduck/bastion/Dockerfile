@@ -6,6 +6,8 @@ USER root
 
 RUN pip install ipython jupyter
 
+RUN apt-get -y update && apt-get -y install postgresql-client
+
 USER triage
 
 ENTRYPOINT [ "bash" ]
