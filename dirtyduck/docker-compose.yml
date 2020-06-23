@@ -24,12 +24,7 @@ services:
     container_name: dirtyduck_bastion
     tty: true
     environment:
-      - POSTGRES_HOST=dirtyduck_db
-      - POSTGRES_USER=food_user
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=some_password
-      - POSTGRES_DB=food
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dirtyduck_db/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://food_user:some_password@dirtyduck_db/food
     volumes:
       - "../example/dirtyduck:/triage"
 
