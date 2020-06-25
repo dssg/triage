@@ -35,7 +35,7 @@ class Predictor(object):
         Args:
             model_storage_engine (catwalk.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
-            rank_order 
+            rank_order
 
         """
         self.model_storage_engine = model_storage_engine
@@ -187,10 +187,10 @@ class Predictor(object):
         session.merge(orm_obj)
         session.commit()
         session.close()
-        
+
     def _needs_ranks(self, model_id, matrix_uuid, matrix_type):
         if self.replace:
-            logging.debug("replace flag set, will compute and store ranks regardless")
+            logging.debug("Replace flag set, will compute and store ranks regardless")
             return True
         with scoped_session(self.db_engine) as session:
             # if the metadata is different (e.g. they changed the rank order)
@@ -327,7 +327,7 @@ class Predictor(object):
 
         if not self.replace:
             logging.info(
-                "replace flag not set for model id %s, matrix %s, looking for old predictions",
+                "Replace flag not set for model id %s, matrix %s, looking for old predictions",
                 model_id,
                 matrix_store.uuid,
             )
@@ -392,5 +392,5 @@ class Predictor(object):
                 matrix_type=matrix_type,
                 random_seed=None,
             )
-        
+
         return predictions_proba[:, 1]
