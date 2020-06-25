@@ -1,4 +1,4 @@
-/* Indentation. */
+/* Indents and adds a border to lower headings. */
 div.doc-contents:not(.first) {
   padding-left: 25px;
   border-left: 4px solid rgba(230, 230, 230);

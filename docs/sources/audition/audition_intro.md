@@ -33,7 +33,7 @@ Here, Auditioner drops all models group that meet at least one of these conditio
 #### Selection rules
 Registering selection rules in an Auditioner object allows you to pare down your model groups even more.
 
-Start by adding rules to a [`RuleMaker` object](rulemakers.md):
+Start by adding rules to a [`RuleMaker` object](selection_rules.md/#RuleMakers):
 
 ```python
 from triage.component.audition.rules_maker import SimpleRuleMaker, create_selection_grid
