@@ -64,6 +64,20 @@ extra_javascript:
     - "js/mermaid.min.js"
     - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
 
+extra_css:
+    - "triage_docs.css"
+
+plugins: 
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: false
+      watch:
+        - src/triage
+
+
 nav:
   - Home: index.md
   - Get started with your own project:
@@ -101,6 +115,7 @@ nav:
           - Intro to Audition: audition/audition_intro.md
           - Using Audition: audition/audition.md
           - Audition Configuration: audition/audition-config.md
+          - Selection Rules: audition/selection_rules.md
       - Postmodeling: 
           - Using Postmodeling: postmodeling/index.md
           - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
