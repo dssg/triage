@@ -6,7 +6,7 @@ LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
 
 
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev
+        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql
 
 
 RUN mkdir triage
@@ -37,6 +37,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirement/ requirement/
 RUN pip install -r requirement/main.txt
+RUN pip install -r requirement/test.txt
 
 COPY src/ src/
 COPY setup.py .
