@@ -700,8 +700,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -714,18 +714,6 @@
   <li class="md-nav__item">
     <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -749,13 +737,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -884,9 +872,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -897,9 +904,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1613,7 +1673,7 @@ data for labels, which in this image coincide. The black dash
 lines represent the beginning and the end of the test set. In
 "Block 0" those lines correspond to <code>2017</code> and <code>2018</code>, and in
 "Block 1" they correspond to <code>2016</code> and <code>2017</code>.</p>
-<p><img alt="img" src="../images/timechop_1.png" title="feature and label start, end time equal" /></p>
+<p><img alt="img" src="../images/timechop/timechop_1.png" title="feature and label start, end time equal" /></p>
 <p>The shaded areas (in this image there is just one per block, but
 you will see other examples below) represents the span of the <em>as
 of dates</em>. They start with the oldest <em>as of date</em> and end with
@@ -1648,7 +1708,7 @@ testing.</p>
 equal, but they can be different (maybe you have more data for
 features that data for labels) as is shown in the following image
 and in their configuration parameters.</p>
-<p><img alt="img" src="../images/timechop_2.png" title="feature&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt; different different that label&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt;." /></p>
+<p><img alt="img" src="../images/timechop/timechop_2.png" title="feature&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt; different different that label&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt;." /></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2010-01-01&#39;</span>   <span class="c1"># &lt;------- The change happened here!</span>
     <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-01-01&#39;</span>
@@ -1690,7 +1750,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;1y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_3.png" title="A smaller model&lt;sub&gt;update&lt;/sub&gt;&lt;sub&gt;frequency&lt;/sub&gt; (from 1y to 6month) (The number of blocks grew)" /></p>
+<p><img alt="img" src="../images/timechop/timechop_3.png" title="A smaller model&lt;sub&gt;update&lt;/sub&gt;&lt;sub&gt;frequency&lt;/sub&gt; (from 1y to 6month) (The number of blocks grew)" /></p>
 </li>
 <li>
 <p><code>max_training_histories</code></p>
@@ -1712,7 +1772,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>  <span class="c1"># &lt;------- The change happened here!</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_4.png" title="The size of the block is bigger now" /></p>
+<p><img alt="img" src="../images/timechop/timechop_4.png" title="The size of the block is bigger now" /></p>
 </li>
 <li>
 <p><code>_as_of_date_frequencies</code> and <code>test_durations</code></p>
@@ -1733,7 +1793,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_5.png" title="Less rows per entity in the training block" /></p>
+<p><img alt="img" src="../images/timechop/timechop_5.png" title="Less rows per entity in the training block" /></p>
 <p>Now, change <code>test_as_of_date_frequencies</code>:</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1752,7 +1812,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_6.png" title="We should get more rows per entity in the test matrix, but that didn't happen. Why?" /></p>
+<p><img alt="img" src="../images/timechop/timechop_6.png" title="We should get more rows per entity in the test matrix, but that didn't happen. Why?" /></p>
 <p>Nothing changed because the test set doesn't have "space" to allow more spans. The "space" is controlled by <code>test_durations</code>, so let's change it to <code>6month</code>:</p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1771,7 +1831,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_7.png" title="The test duration is bigger now, so we got 6 rows (since the &quot;base&quot; frequency is 1 month)" /></p>
+<p><img alt="img" src="../images/timechop/timechop_7.png" title="The test duration is bigger now, so we got 6 rows (since the &quot;base&quot; frequency is 1 month)" /></p>
 <p>So, now we will move both parameters: <code>test_durations</code>, <code>test_as_of_date_frequencies</code></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
@@ -1790,7 +1850,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_8.png" title="With more room in testing, now test&lt;sub&gt;as&lt;/sub&gt;&lt;sub&gt;of&lt;/sub&gt;&lt;sub&gt;date&lt;/sub&gt;&lt;sub&gt;frequencies&lt;/sub&gt; has some effect." /></p>
+<p><img alt="img" src="../images/timechop/timechop_8.png" title="With more room in testing, now test&lt;sub&gt;as&lt;/sub&gt;&lt;sub&gt;of&lt;/sub&gt;&lt;sub&gt;date&lt;/sub&gt;&lt;sub&gt;frequencies&lt;/sub&gt; has some effect." /></p>
 </li>
 <li>
 <p><code>_label_timespans</code></p>
@@ -1811,7 +1871,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_9.png" title="The label time horizon in the test dataset now is smaller" /></p>
+<p><img alt="img" src="../images/timechop/timechop_9.png" title="The label time horizon in the test dataset now is smaller" /></p>
 <div class="highlight"><pre><span></span><span class="nt">temporal_config</span><span class="p">:</span>
     <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2014-01-01&#39;</span>
     <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-01-01&#39;</span>
@@ -1829,7 +1889,7 @@ time-constrained data, obviously).</p>
     <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;10y&#39;</span>
 </pre></div>
 
-<p><img alt="img" src="../images/timechop_10.png" title="The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity." /></p>
+<p><img alt="img" src="../images/timechop/timechop_10.png" title="The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity." /></p>
 <p>That's it! Now you have the power to bend time!<sup><a id="fnr.8" class="footref" href="#fn.8">8</a></sup></p>
 <p>With the time blocks defined, <code>triage</code> will create the <em>labels</em> and then the features for our train and test sets. We will discuss <em>features</em> in the following section.</p>
 </li>

@@ -719,8 +719,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -733,18 +733,6 @@
   <li class="md-nav__item">
     <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -768,13 +756,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -903,9 +891,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -916,9 +923,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1299,7 +1359,7 @@ triage experiment experiments/eis_01.yaml --show-timechop
 <p class="admonition-title">What? … Bastion?</p>
 <p><code>bastion</code> is the docker container that contains all the setup
 required to run this tutorial, if this is the first time that
-you see this word, you should stop and revisit <a href="insfrastructure.md">setup infrastructure</a>.</p>
+you see this word, you should stop and revisit <a href="../infrastructure/">setup infrastructure</a>.</p>
 </div>
 <p><img alt="img" src="../images/triage/eis_01.png" />
 <em>Figure. Temporal blocks for the Early Warning System. We want to
@@ -1882,14 +1942,14 @@ or just to generate your list).</p>
 <h3 id="filtering-model-groups">Filtering model groups<a class="headerlink" href="#filtering-model-groups" title="Permanent link">#</a></h3>
 <p><code>Audition</code> will generate two plots that are meant to be used together:
 <em>model performance over time</em> and <em>distance from best</em>.</p>
-<p><img alt="img" src="images/audition/eis/metric_over_time_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/metric_over_time_precision@10_pct.png" />
 <em>Figure. Model group performance over time. In this case the metric
 show is <code>precision@10%</code>. The black dashed line represents the
 (theoretical) system's performance if we select the best performant
 model in a every evaluation date. The colored lines represents
 different model groups. All the model groups that share an algorithm
 will be colored the same.</em></p>
-<p><img alt="img" src="images/audition/eis/distance_from_best_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/distance_from_best_precision@10_pct.png" />
 <em>Figure. Proportion of <strong>all</strong> the <strong>models</strong> in a <strong>model group</strong> that are
 separated from the best model. The distance is measured in percentual
 points, i.e. How much less precision at 10 percent of the population
@@ -1902,16 +1962,16 @@ rule.</p>
 difference between the performance of the best model evaluated on the
 "next time" and the performance of the model selected by a particular
 rule.</p>
-<p><img alt="img" src="images/audition/eis/precision@10_pct_next_time.png" />
+<p><img alt="img" src="../images/audition/eis/precision@10_pct_next_time.png" />
 <em>Figure. Given a
 strategy for selecting model groups (in the plot 4 are shown), What
 will be the performace of the model group chosen by that strategy in
 the next evaluation date?</em></p>
-<p><img alt="img" src="images/audition/eis/regret_distance_from_best_rules_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/regret_distance_from_best_rules_precision@10_pct.png" />
 <em>Figure. Given a strategy for selecting model groups (in the plot 4
 are shown). What will be the distance (*regret</em>) to the best
 theoretical model in the following evaluation date.*</p>
-<p><img alt="img" src="images/audition/eis/regret_over_time_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/regret_over_time_precision@10_pct.png" />
 <em>Figure. Expected regret for the strategies. The less the better.</em></p>
 <p>It seems that the <em>worst</em> strategy (the one with the bigger “regret”)
 for selecting a <em>model_group</em> is
@@ -2025,7 +2085,7 @@ audited_models_class = ModelGroupEvaluator(tuple(params.model_group_id), engine)
                                            figsize=params.figsize)
 </pre></div>
 
-<p><img alt="img" src="images/postmodeling/eis_mg_prec_over_time.png" title="Precision@10% over time from the best performing model groups selected by Audition" /></p>
+<p><img alt="img" src="../images/postmodeling/eis_mg_prec_over_time.png" title="Precision@10% over time from the best performing model groups selected by Audition" /></p>
 <p>Every model selected by audition has a very similar performance across
 time, and they are ~2.5 times above the baseline in precision@10%. We
 could also check the recall of the model groups.</p>
@@ -2035,14 +2095,14 @@ could also check the recall of the model groups.</p>
                                            figsize=params.figsize)
 </pre></div>
 
-<p><img alt="img" src="images/eis_mg_recall_over_time.png" title="Recall@10% over time from the best performing model groups selected by Audition" /></p>
+<p><img alt="img" src="../images/postmodeling/eis_mg_recall_over_time.png" title="Recall@10% over time from the best performing model groups selected by Audition" /></p>
 <p>That behavior is similar for the recall@10%, except for the model group <strong>69</strong></p>
 <div class="highlight"><pre><span></span>audited_models_class.plot_jaccard_preds(param_type=&#39;rank_pct&#39;,
                                         param=10,
                                         temporal_comparison=True)
 </pre></div>
 
-<p><img alt="img" src="images/eis_jaccard_on_lists_over_time.png" title="How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists." /></p>
+<p><img alt="img" src="../images/postmodeling/eis_jaccard_on_lists_over_time.png" title="How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists." /></p>
 <p>There are a high jaccard similarity between some model groups across
 time. This could be an indicator that they are so similar that you can
 choose any and it won’t matter.</p>
@@ -2093,11 +2153,11 @@ choose any and it won’t matter.</p>
                                           figsize=params.figsize)
 </pre></div>
 
-<p><img alt="img" src="images/eis_model_group_64_feature_importances.png" title="Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226)." /></p>
-<div class="highlight"><pre><span></span>models_76[&#39;234&#39;].plot_feature_group_average_importances()
+<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_importances.png" title="Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226)." /></p>
+<div class="highlight"><pre><span></span>models_76[&#39;234&#39;].plot_feature_group_aggregate_importances()
 </pre></div>
 
-<p><img alt="img" src="images/eis_model_group_64_feature_group_importances.png" title="Feature group “importance” (we are basically taking the average of all the feature importances in a feature group) for the model group 64, model 226." /></p>
+<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_group_importances.png" title="Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226." /></p>
 </li>
 </ul>
 <h2 id="crosstabs-how-are-the-entities-classified">Crosstabs: How are the entities classified?<a class="headerlink" href="#crosstabs-how-are-the-entities-classified" title="Permanent link">#</a></h2>

@@ -759,8 +759,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -773,18 +773,6 @@
   <li class="md-nav__item">
     <a href="../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -808,13 +796,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -943,9 +931,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../dirtyduck/audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -956,9 +963,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1218,7 +1278,7 @@
                 <h1 id="using-triage-for-a-project-workflow-tips">Using <code>triage</code> for a Project: Workflow Tips<a class="headerlink" href="#using-triage-for-a-project-workflow-tips" title="Permanent link">#</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Getting Started...</p>
-<p>The setup and first iteration here closely follow the <a href="../quickstart/">QuickStart Guide</a>, so that may be a good place to start if you're new to <code>triage</code>. </p>
+<p>The setup and first iteration here closely follow the <a href="../quickstart/">QuickStart Guide</a>, so that may be a good place to start if you're new to <code>triage</code>.</p>
 <p>If you've already completed the QuickStart and have a working environment, you may want to jump ahead to <a href="#iteration-2-refine-the-cohort-and-temporal-setup">Iteration 2</a></p>
 </div>
 <h2 id="step-1-get-your-data-set-up">Step 1: Get your data set up<a class="headerlink" href="#step-1-get-your-data-set-up" title="Permanent link">#</a></h2>
@@ -1286,7 +1346,7 @@ Labels</a>.</li>
 <h3 id="configure-your-temporal-settings">Configure your temporal settings<a class="headerlink" href="#configure-your-temporal-settings" title="Permanent link">#</a></h3>
 <p>In most real-world machine learning applications, you're interested in training on past data and predicting forward into the future. <code>triage</code> is built with this common use-case in mind, relying on temporal cross-validation to evaluate your models' performance in a manner that best reflects how it will be used in practice.</p>
 <p>There is a lot of nuance to the temporal configuration and it can take a bit of effort to get right. If you're new to <code>triage</code> (or want a refresher), we highly reccomend you check out <a href="../dirtyduck/triage_intro/#temporal-crossvalidation">the temporal crossvalidation deep dive</a>.</p>
-<p>In previous iteration, we used a highly simplified temporal config, with just one parameter: <code>label_timespans</code>, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed <code>temporal_config</code>. Here's what that might look like: </p>
+<p>In previous iteration, we used a highly simplified temporal config, with just one parameter: <code>label_timespans</code>, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed <code>temporal_config</code>. Here's what that might look like:</p>
 <div class="highlight"><pre><span></span>temporal_config:
     feature_start_time: &#39;1995-01-01&#39; # earliest date included in features
     feature_end_time: &#39;2015-01-01&#39;   # latest date included in features
@@ -1364,11 +1424,11 @@ Labels</a>.</li>
 <p>Now that we have models trained across several time periods, we can use <code>audition</code> to take a look at each <code>model_group</code>'s performance over time. While the <code>quickstart</code> models are quite simple and there isn't much meaningful model selection to do at this point, we can start to explore how model selection works in <code>triage</code>. A good place to begin is with the <a href="dirtyduck/audition/">model selection primer</a>.</p>
 <p>We generally recommend using <code>audition</code> interactively with as a <code>jupyter notebook</code>. If you don't already have <code>jupyter</code> installed, you can learn more about it <a href="https://jupyter.org/index.html">here</a>. Once you have a notebook server running, you can modify the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb"><code>audition</code> tutorial notebook</a> to take a look at the data from your current experiment. The <a href="https://github.com/dssg/triage/tree/master/src/triage/component/audition"><code>audition README</code></a> is also a good resource for options available with the tool.</p>
 <h2 id="iteration-3-add-more-datafeatures-models-and-hyperparameters-and-evaluation-metrics-of-interest">Iteration 3: Add more data/features, models and hyperparameters, and evaluation metrics of interest<a class="headerlink" href="#iteration-3-add-more-datafeatures-models-and-hyperparameters-and-evaluation-metrics-of-interest" title="Permanent link">#</a></h2>
-<p>After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications. </p>
+<p>After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications.</p>
 <p>We've labeled this section <code>Iteration 3</code>, but in practice it's probably more like <code>Iterations 3-n</code> as you will likely want to do a bit of intermediate testing while adding new features and refine your model grid as you learn more about what does and doesn't seem to work well.</p>
 <h3 id="define-some-additional-features">Define some additional features<a class="headerlink" href="#define-some-additional-features" title="Permanent link">#</a></h3>
-<p>Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible. </p>
-<p>The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the <a href="https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation">config README</a> and <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> for more details.</p>
+<p>Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible.</p>
+<p>The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the <a href="dssg.github.io/triage/experiments/experiment-config#feature-generation">config README</a> and <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> for more details.</p>
 <div class="admonition info">
 <p class="admonition-title">Features in <code>triage</code> are temporal aggregations</p>
 <p>Just as <code>triage</code> is built with temporal cross-validation in mind, features in <code>triage</code> reflect this inherent temporal nature as well. As such, all feature definitions need to be specified with an associated date reflecting when the information was known (which may or may not be the same as when an event actually happened) and a time frame before the modeling date over which to aggregate.</p>
@@ -1383,15 +1443,24 @@ Labels</a>.</li>
 </li>
 </ul>
 </div>
-<p>Feature definitions are specified in the <code>feature_aggregations</code> section of the config file, under which you should provide a list of sets of related features, and each element in this list must contain several keys (see the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> for a detailed example of what this looks like in practice):
-- <code>prefix</code>: a simple name to identify this set of related features - all of the features defined by this <code>feature_aggregations</code> entry will start with this prefix.
-- <code>from_obj</code>: this may be a table name or a SQL expression that provides the source data for these features.
-- <code>knowledge_date_column</code>: the date column specifying when information in the source data was known (e.g., available to be used for predictive modeling), which may differ from when the event ocurred.
-- <code>aggregates</code> and/or <code>categoricals</code>: lists used to define the specific features (you must specify at least one, but may include both). See below for more detail on each.
-- <code>intervals</code>: The time intervals (as a SQL interval, such a <code>'5 year'</code>, <code>'6 month'</code>, or <code>all</code> for all time) over which to aggregate features.
-    - For instance, if you specified a count of the number of events under <code>aggregates</code> and <code>['5 year', '10 year', 'all']</code> as <code>intervals</code>, <code>triage</code> would create features for the number of events related to an entity in the last 5 years, 10 years, and since the <code>feature_start_time</code> (that is, three separate features)
-- <code>groups</code>: levels at which to aggregate the features, often simply <code>entity_id</code>, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.
-- You also need to provide rules for how to handle missing data, which can be provided either overall under <code>feature_aggregations</code> to apply to all features or on a feature-by-feature basis. It's worth reading through the <a href="https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation">Feature Generation README</a> to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.</p>
+<p>Feature definitions are specified in the <code>feature_aggregations</code>
+section of the config file, under which you should provide a list of
+sets of related features, and each element in this list must contain
+several keys (see the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config
+file</a>
+for a detailed example of what this looks like in practice):</p>
+<ul>
+<li><code>prefix</code>: a simple name to identify this set of related features - all of the features defined by this <code>feature_aggregations</code> entry will start with this prefix.</li>
+<li><code>from_obj</code>: this may be a table name or a SQL expression that provides the source data for these features.</li>
+<li><code>knowledge_date_column</code>: the date column specifying when information in the source data was known (e.g., available to be used for predictive modeling), which may differ from when the event ocurred.</li>
+<li><code>aggregates</code> and/or <code>categoricals</code>: lists used to define the specific features (you must specify at least one, but may include both). See below for more detail on each.</li>
+<li><code>intervals</code>: The time intervals (as a SQL interval, such a <code>'5 year'</code>, <code>'6 month'</code>, or <code>all</code> for all time) over which to aggregate features.<ul>
+<li>For instance, if you specified a count of the number of events under <code>aggregates</code> and <code>['5 year', '10 year', 'all']</code> as <code>intervals</code>, <code>triage</code> would create features for the number of events related to an entity in the last 5 years, 10 years, and since the <code>feature_start_time</code> (that is, three separate features)</li>
+</ul>
+</li>
+<li><code>groups</code>: levels at which to aggregate the features, often simply <code>entity_id</code>, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.</li>
+<li>You also need to provide rules for how to handle missing data, which can be provided either overall under <code>feature_aggregations</code> to apply to all features or on a feature-by-feature basis. It's worth reading through the <a href="dssg.github.io/triage/experiments/experiment-config#feature-generation">Feature Generation README</a> to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.</li>
+</ul>
 <p>When defining features derived from numerical data, you list them under the <code>aggregates</code> key in your feature config, and these should include keys for:
 - <code>quantity</code>: A column or SQL expression from the <code>from_obj</code> yielding a number that can be aggregated
 - <code>metrics</code>: What types of aggregation to do. Namely, these are <a href="https://www.postgresql.org/docs/9.5/functions-aggregate.html">postgres aggregation functions</a>, such as <code>count</code>, <code>avg</code>, <code>sum</code>, <code>stddev</code>, <code>min</code>, <code>max</code>, etc.
@@ -1406,7 +1475,7 @@ Labels</a>.</li>
     - If categorical values associated with an entity <strong>do not</strong> change over time, using <code>max</code> would give you a simple one-hot encoded categorical.
     - If they are changing over time, <code>max</code> would give you something similar to a one-hot encoding, but note that the values would no longer be mutually-exclusive.
 - As noted above, imputation rules can be specified at this level as well.</p>
-<p>Much more detail about defining your features can be found in the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> and associated <a href="https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation">README</a>.</p>
+<p>Much more detail about defining your features can be found in the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> and associated <a href="dssg.github.io/triage/experiments/experiment-config#feature-generation">README</a>.</p>
 <h3 id="expand-then-refine-your-model-grid">Expand, then refine, your model grid<a class="headerlink" href="#expand-then-refine-your-model-grid" title="Permanent link">#</a></h3>
 <p>As you develop more features, you'll want to build out your modeling grid as well. Above, we've used the very sparse <code>quickstart</code> grid preset, but <code>triage</code> offers additional <code>model_grid_preset</code> options of varying size:
 - The <code>small</code> model grid includes a reasonably extensive set of logistic regression and decision tree classifiers as well as a single random forest specification. This grid can be a good option as you build and refine your features, but you'll likely want to try something more extensive once you have the rest of your config set.
@@ -1448,7 +1517,7 @@ Labels</a>.</li>
 </pre></div>
 
 <p>You can specify any number of evaluation metrics to be calculated for your models on either the training or test sets (the set of available metrics can be found <a href="https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L161">here</a>). For metrics that need to be calculated relative to a specific threshold in the score (e.g. precision), you must specify either <code>percentiles</code> or <code>top_n</code> (and can optionally provide both) at which to do the calculations.</p>
-<p>Additionally, you can have <code>triage</code> pre-calculate statistics about bias and disparities in your modeling results by specifying a <code>bias_audit_config</code> section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> and associated <a href="https://github.com/dssg/triage/blob/master/example/config/README.md#bias-audit-config-optional">README</a> for more details on setting it up.</p>
+<p>Additionally, you can have <code>triage</code> pre-calculate statistics about bias and disparities in your modeling results by specifying a <code>bias_audit_config</code> section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">example config file</a> and associated <a href="dssg.github.io/triage/experiments/experiment-config#bias-audit-config-optional">README</a> for more details on setting it up.</p>
 <h3 id="run-triage_2">Run <code>triage</code><a class="headerlink" href="#run-triage_2" title="Permanent link">#</a></h3>
 <ol>
 <li>
@@ -1471,7 +1540,7 @@ Labels</a>.</li>
 - Information on feature importances can be found in <code>train_results.feature_importances</code> (note the schema is <code>train_results</code> since these are calculated based on the training data).</p>
 <h4>Run <code>audition</code></h4>
 <p>Once you have a more comprehensive model run with a variety of features and modeling grid, <code>audition</code> can help you understand the performance of different specifications and further refine your models for future iterations. In a typical project, you'll likely run through the <code>audition</code> flow several times as you progressively improve your modeling configuration.</p>
-<p>When you finally settle on a configuration you're happy with, <code>audition</code> will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using <code>postmodeling</code>. </p>
+<p>When you finally settle on a configuration you're happy with, <code>audition</code> will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using <code>postmodeling</code>.</p>
 <p>More about using <code>audition</code>:
 - <a href="dirtyduck/audition/">model selection primer</a>.
 - <a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb"><code>audition</code> tutorial notebook</a>
@@ -1529,13 +1598,13 @@ Labels</a>.</li>
 <p>If you had five feature groups, this would run a total of six strategies (one including all your feature groups, and five including all but one of them) for each specification in your model grid.</p>
 <div class="admonition warning">
 <p class="admonition-title">Before using feature group stragies...</p>
-<p>Note that model runs specifying <code>feature_group_strategies</code> can become quite time and resource-intensive, especially using the <code>all-combinations</code> option. </p>
+<p>Note that model runs specifying <code>feature_group_strategies</code> can become quite time and resource-intensive, especially using the <code>all-combinations</code> option.</p>
 <p>Before making use of this functionality, it's generally smart to narrow your modeling grid considerably to at most a handful of well-performing models and do some back-of-the-envelope calculations of how many variations <code>triage</code> will have to run.</p>
 </div>
-<p>Learn more about feature groups and strategies in the <a href="https://github.com/dssg/triage/blob/master/example/config/README.md#feature-grouping-optional">config README</a>.</p>
+<p>Learn more about feature groups and strategies in the <a href="dssg.github.io/triage/experiments/experiment-config#feature-grouping-optional">config README</a>.</p>
 <h3 id="subsets">Subsets<a class="headerlink" href="#subsets" title="Permanent link">#</a></h3>
 <p>In some cases, you may be interested in your models' performance on subsets of the full cohort on which it is trained, such as certain demographics or individuals who meet a specific criteria of interest to your program (for instance, a certain level or history of need).</p>
-<p>Subsets are defined in the <code>scoring</code> section of the configuration file as a list of dictionaries specifying a <code>name</code> and <code>query</code> that identify the set of entities for each subset of interest using <code>{as_of_date}</code> as a placeholder for the modeling date. </p>
+<p>Subsets are defined in the <code>scoring</code> section of the configuration file as a list of dictionaries specifying a <code>name</code> and <code>query</code> that identify the set of entities for each subset of interest using <code>{as_of_date}</code> as a placeholder for the modeling date.</p>
 <p>Here's a quick example:</p>
 <div class="highlight"><pre><span></span>scoring:
 
@@ -1577,19 +1646,25 @@ Labels</a>.</li>
 <h3 id="check-for-results-and-select-models_1">Check for Results and Select Models<a class="headerlink" href="#check-for-results-and-select-models_1" title="Permanent link">#</a></h3>
 <p>As described above, once your modeling run has completed, you can explore the results in the <code>triage</code>-generated tables in your database, perform model selection with <code>audition</code>, and dig deeper into your results with <code>postmodeling</code>:</p>
 <h4>Check the database</h4>
-<p>Look for results and associated information in:
-- <code>model_metadata</code>
-- <code>train_results</code>
-- <code>test_results</code></p>
+<p>Look for results and associated information in:</p>
+<ul>
+<li><code>model_metadata</code></li>
+<li><code>train_results</code></li>
+<li><code>test_results</code></li>
+</ul>
 <h4>Run <code>audition</code></h4>
-<p>More about using <code>audition</code>:
-- <a href="dirtyduck/audition/">model selection primer</a>.
-- <a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb"><code>audition</code> tutorial notebook</a>
-- <a href="https://github.com/dssg/triage/tree/master/src/triage/component/audition"><code>audition</code> README</a></p>
+<p>More about using <code>audition</code>:</p>
+<ul>
+<li><a href="dirtyduck/audition/">model selection primer</a>.</li>
+<li><a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb"><code>audition</code> tutorial notebook</a></li>
+<li><a href="https://github.com/dssg/triage/tree/master/src/triage/component/audition"><code>audition</code> README</a></li>
+</ul>
 <h4>Run <code>postmodeling</code></h4>
-<p>More about <code>postmodeling</code>:
-- <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md"><code>postmodeling</code> README</a> 
-- <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb">example <code>postmodeling</code> notebook</a></p>
+<p>More about <code>postmodeling</code>:</p>
+<ul>
+<li><a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md"><code>postmodeling</code> README</a></li>
+<li><a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb">example <code>postmodeling</code> notebook</a></li>
+</ul>
                 
                   
                 

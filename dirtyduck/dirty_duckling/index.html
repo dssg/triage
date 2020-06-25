@@ -630,8 +630,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -644,18 +644,6 @@
   <li class="md-nav__item">
     <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -679,13 +667,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -814,9 +802,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -827,9 +834,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1142,7 +1202,7 @@ defining the cohort to train/predict on, the outcome we're predicting,
 how far in the future we're predicting, how often will the model be updated,
 how often will the predicted list be used for interventions, what are
 the resources available to intervene to define the evaluation metric,  etc.</p>
-<p>Here's the <a href="dirtyduck/experiments/dirty-duckling.yaml">sample configuration
+<p>Here's the <a href="https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/dirty-duckling.yaml">sample configuration
 file</a> called <code>dirty-duckling.yaml</code></p>
 <div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span> <span class="s">&#39;v7&#39;</span>
 
@@ -1214,7 +1274,7 @@ to see which values are being used and act accordingly.</p>
 <p><code>triage</code> uses/needs a <em>data connection</em> in order to work. The
 connection will be created using the database credentials information
 (name of the database, server, username, and password).</p>
-<p>You could use a database configuration file <a href="database.yaml">here's an example
+<p>You could use a database configuration file <a href="https://github.com/dssg/triage/blob/master/example/config/database.yaml">here's an example
 database configuation file</a> or you can setup an
 environment variable named <code>$DATABASE_URL</code>, this is the approach taken
 in the dirtyduck tutorial, its value inside <code>bastion</code> is</p>

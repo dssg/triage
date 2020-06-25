@@ -685,8 +685,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -699,18 +699,6 @@
   <li class="md-nav__item">
     <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -734,13 +722,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -869,9 +857,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -882,9 +889,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1288,7 +1348,7 @@ experiment configuration is correct without waiting for a long time.</p>
 <p>We need to write the experiment config file for that. Let's break it
 down and explain their sections.</p>
 <p>The config file for this first experiment is located in
-<a href="./triage/experiments/inspections_baseline.yaml">triage/experiments/inspections_baseline.yaml</a>.</p>
+<a href="https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/inspections_baseline.yaml">inspections_baseline.yaml</a>.</p>
 <p>The first lines of the experiment config file specify the config-file
 version (<code>v7</code> at the moment of writing this tutorial), a comment
 (<code>model_comment</code>, which will end up as a value in the
@@ -3761,12 +3821,12 @@ models in this model group, and check if you can detect any pattern.</p>
 
 <p><img alt="img" src="../images/postmodeling/inspection_model_group_39_model_125_feature_importances.png" />
 <em>Figure. Top 10 feature importances for de model group 11 at 2016-06-01 (i.e. model 125).</em></p>
-<div class="highlight"><pre><span></span>models_39[&#39;125&#39;].plot_feature_group_average_importances()
+<div class="highlight"><pre><span></span>models_39[&#39;125&#39;].plot_feature_group_aggregate_importances()
 </pre></div>
 
 <p><img alt="img" src="../images/postmodeling/inspection_model_group_39_model_125_feature_group_importances.png" />
 <em>Figure. Feature group “importance” (we are basically taking the
-average of all the feature importances in a feature group) for the
+max of all the feature importances in a feature group) for the
 model group 39, model 125.</em></p>
 </li>
 <li>

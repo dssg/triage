@@ -616,8 +616,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../experiments/defining/" title="Defining an Experiment" class="md-nav__link">
-      Defining an Experiment
+    <a href="../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+      Experiment Configuration
     </a>
   </li>
 
@@ -630,18 +630,6 @@
   <li class="md-nav__item">
     <a href="../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
       Testing Feature Configuration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="https://github.com/dssg/triage/blob/master/example/config/README.md" title="Experiment Configuration" class="md-nav__link">
-      Experiment Configuration
     </a>
   </li>
 
@@ -665,13 +653,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-5" type="checkbox" id="nav-4-1-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
     
-    <label class="md-nav__link" for="nav-4-1-5">
+    <label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-5">
+      <label class="md-nav__title" for="nav-4-1-4">
         Upgrading an Experiment
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -800,9 +788,28 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../dirtyduck/audition/" title="Model selection" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
       Model selection
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Model selection
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../audition/audition/" title="Using Audition" class="md-nav__link">
+      Using Audition
     </a>
   </li>
 
@@ -813,9 +820,62 @@
 
 
   <li class="md-nav__item">
-    <a href="../postmodeling/" title="Postmodeling" class="md-nav__link">
-      Postmodeling
+    <a href="../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
+      Audition Configuration
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Postmodeling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Postmodeling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+      Using Postmodeling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
+      Postmodeling & Crosstabs Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1041,16 +1101,55 @@ defaults for others. The primary parameters to specify (for now) are:</p>
    Validation</a></p>
 </li>
 <li>
-<p>LABEL config: This is a <code>sql</code> query that defines what the outcome of
-   interest is. The query must return two columns: <code>entity_id</code> (an integer) and
-   <code>outcome</code> (with integer label values of <code>0</code> and <code>1</code>), based on a given <code>as_of_date</code> and <code>label_timespan</code> (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
-   <a href="https://dssg.github.io/triage/experiments/cohort-labels/">guide to Labels</a>. For example, if your data was in a table called <code>semantic.events</code> containing columns <code>entity_id</code>, <code>event_date</code>, and <code>label</code>, this query could simply be:
-   <div class="highlight"><pre><span></span>select entity_id, max(label) as outcome
+<p>LABEL config: This is a <code>sql</code> query that defines the outcome of
+   interest. </p>
+</li>
+</ol>
+<p>The query should return a relation containing the columns
+   - <code>entity_id</code>: each <code>entity_id</code> affected by an event within the amount of time specified by <code>label_timespan</code> after a given <code>as_of_date</code>
+   - <code>outcome</code>: a binary variable representing the events that happened to each entity, within the period specified by that <code>as_of_date</code> and <code>label_timespan</code></p>
+<p>The query is parameterized over <code>as_of_date</code>, and <code>label_timespan</code>. These parameters are passed to your query as named keywords using the Python's <a href="https://docs.python.org/3.7/library/stdtypes.html#str.format"><code>str.format()</code></a> method. You can use them in your query by surrounding their keywords with curly braces (as in the example below).</p>
+<p>See our
+   <a href="https://dssg.github.io/triage/experiments/cohort-labels/">guide to Labels</a> for a more in-depth discussion of this topic.</p>
+<p><strong>Example Query</strong> </p>
+<p>Given a source table called <code>semantic.events</code>, with the following structure:</p>
+<table>
+<thead>
+<tr>
+<th>entity_id</th>
+<th>event_date</th>
+<th>label</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>135</td>
+<td>2014-06-04</td>
+<td>1</td>
+</tr>
+<tr>
+<td>246</td>
+<td>2013-11-05</td>
+<td>0</td>
+</tr>
+<tr>
+<td>135</td>
+<td>2013-04-19</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Assuming an early-warning problem, where a client wants to predict the likelihood that each entity experiences at least one positive event (such as a failed inspection) within some period of time, we could use the following label query:</p>
+<div class="highlight"><pre><span></span>select entity_id, max(label) as outcome
 from semantic.events
 where &#39;{as_of_date}&#39;::timestamp &lt;= event_date
       and event_date &lt; &#39;{as_of_date}&#39;::timestamp + interval &#39;{label_timespan}&#39;
-</pre></div></p>
-</li>
+</pre></div>
+
+<p>For each <code>as_of_date</code>, this query returns:
+   - all <code>entity_ids</code> that experienced at least one event (such as an inspection) within the amount of time specified by <code>label_timespan</code>
+   - a binary variable that equals 1 if an entity experienced at least one positive event (failed inspection), or 0 if all events experienced by the entity had negative results.</p>
+<ol>
 <li>
 <p>FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
@@ -1077,6 +1176,9 @@ where &#39;{as_of_date}&#39;::timestamp &lt;= event_date
 <h3 id="4-run-triage">4. Run Triage<a class="headerlink" href="#4-run-triage" title="Permanent link">#</a></h3>
 <p>An overview of different steps that take place when you run Triage is
 <a href="https://dssg.github.io/triage/experiments/algorithm/">here</a></p>
+<p>For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).</p>
+<p>If you want a bit more detail or documentation, a good overview of running an experiment in triage is <a href="https://dssg.github.io/triage/experiments/running/">here</a></p>
+<h4>Using Triage CLI:</h4>
 <ol>
 <li>
 <p>Validate the configuration files by running:
@@ -1084,13 +1186,58 @@ where &#39;{as_of_date}&#39;::timestamp &lt;= event_date
 </pre></div></p>
 </li>
 <li>
-<p>Run triage
+<p>Run Triage
 <div class="highlight"><pre><span></span>triage experiment config.yaml --project-path &#39;/project_directory&#39;
 </pre></div></p>
 </li>
 </ol>
-<p>For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).</p>
-<p>If you want a bit more detail or documentation, a good overview of running an experiment in triage is <a href="https://dssg.github.io/triage/experiments/running/">here</a>.</p>
+<h4>Using the Triage python interface:</h4>
+<ol>
+<li>
+<p>Import packages and load config files:
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.engine.url</span> <span class="kn">import</span> <span class="n">URL</span>
+<span class="kn">from</span> <span class="nn">triage.util.db</span> <span class="kn">import</span> <span class="n">create_engine</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;config.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fin</span><span class="p">:</span>
+    <span class="n">experiment_config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fin</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;database.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fin</span><span class="p">:</span>
+    <span class="n">db_config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fin</span><span class="p">)</span>
+</pre></div></p>
+</li>
+<li>
+<p>Create a database engine and Triage experiment 
+<div class="highlight"><pre><span></span><span class="c1"># create postgres database url</span>
+<span class="n">db_url</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span>
+            <span class="s1">&#39;postgres&#39;</span><span class="p">,</span>
+            <span class="n">host</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span>
+            <span class="n">username</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span>
+            <span class="n">database</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s1">&#39;db&#39;</span><span class="p">],</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s1">&#39;pass&#39;</span><span class="p">],</span>
+            <span class="n">port</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">&#39;/path/to/directory/to/save/data&#39;</span>
+<span class="p">)</span>
+</pre></div></p>
+</li>
+<li>
+<p>Validate your config</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="n">experiment</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+</pre></div>
+
+<ol>
+<li>Run Triage
+<div class="highlight"><pre><span></span><span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div></li>
+</ol>
 <h3 id="5-look-at-results-generated-by-triage">5. Look at results generated by Triage<a class="headerlink" href="#5-look-at-results-generated-by-triage" title="Permanent link">#</a></h3>
 <p>Once the feature/cohort/label/matrix building is done and the
 experiment has moved onto modeling, check out the
@@ -1190,7 +1337,7 @@ performance:</p>
 there's also a <code>train_results</code> schema with performance on the training
 set as well as feature importances, where defined).</p>
 <p>In a more complete modeling run, you could <code>audition</code> with jupyter notebooks to help you
-select the best-performing model specifications from a wide variety of options (see the <a href="https://dssg.github.io/triage/dirtyduck/audition/">overview of
+select the best-performing model specifications from a wide variety of options (see the <a href="https://dssg.github.io/triage/dirtyduck/audition/audition">overview of
 model selection</a> and <a href="https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb">tutorial audition notebook</a>) and <code>postmodeling</code> to delve deeper into understanding these models (see the <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md">README</a> and <a href="https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb">tutorial postmodeling notebook</a>).</p>
 <h3 id="6-iterate-and-explore">6. Iterate and Explore<a class="headerlink" href="#6-iterate-and-explore" title="Permanent link">#</a></h3>
 <p>Now that you have triage running, <a href="https://dssg.github.io/triage/triage_project_workflow/">continue onto the suggested project workflow</a> for some tips about how to iterate and tune the pipeline for your project.</p>
