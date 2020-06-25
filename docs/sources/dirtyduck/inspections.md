@@ -178,7 +178,7 @@ We need to write the experiment config file for that. Let's break it
 down and explain their sections.
 
 The config file for this first experiment is located in
-[triage/experiments/inspections_baseline.yaml](./triage/experiments/inspections_baseline.yaml).
+[inspections_baseline.yaml](https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/inspections_baseline.yaml).
 
 The first lines of the experiment config file specify the config-file
 version (`v7` at the moment of writing this tutorial), a comment

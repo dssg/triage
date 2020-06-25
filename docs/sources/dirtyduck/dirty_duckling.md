@@ -127,7 +127,7 @@ how often will the predicted list be used for interventions, what are
 the resources available to intervene to define the evaluation metric,  etc.
 
 Here's the [sample configuration
-file](dirtyduck/experiments/dirty-duckling.yaml) called `dirty-duckling.yaml`
+file](https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/dirty-duckling.yaml) called `dirty-duckling.yaml`
 
 
 ```yaml
@@ -204,7 +204,7 @@ connection will be created using the database credentials information
 (name of the database, server, username, and password).
 
 You could use a database configuration file [here's an example
-database configuation file](database.yaml) or you can setup an
+database configuation file](https://github.com/dssg/triage/blob/master/example/config/database.yaml) or you can setup an
 environment variable named `$DATABASE_URL`, this is the approach taken
 in the dirtyduck tutorial, its value inside `bastion` is
 

@@ -174,7 +174,7 @@ We've labeled this section `Iteration 3`, but in practice it's probably more lik
 
 Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible. 
 
-The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
+The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
 
 !!! info "Features in `triage` are temporal aggregations"
 
@@ -195,7 +195,7 @@ Feature definitions are specified in the `feature_aggregations` section of the c
 - `intervals`: The time intervals (as a SQL interval, such a `'5 year'`, `'6 month'`, or `all` for all time) over which to aggregate features.
     - For instance, if you specified a count of the number of events under `aggregates` and `['5 year', '10 year', 'all']` as `intervals`, `triage` would create features for the number of events related to an entity in the last 5 years, 10 years, and since the `feature_start_time` (that is, three separate features)
 - `groups`: levels at which to aggregate the features, often simply `entity_id`, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.
-- You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
+- You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](dssg.github.io/triage/experiments/experiment-config#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
 
 When defining features derived from numerical data, you list them under the `aggregates` key in your feature config, and these should include keys for:
 - `quantity`: A column or SQL expression from the `from_obj` yielding a number that can be aggregated
@@ -213,7 +213,7 @@ When defining features derived from categorical data, you list them under the `c
     - If they are changing over time, `max` would give you something similar to a one-hot encoding, but note that the values would no longer be mutually-exclusive.
 - As noted above, imputation rules can be specified at this level as well.
 
-Much more detail about defining your features can be found in the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation).
+Much more detail about defining your features can be found in the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](dssg.github.io/triage/experiments/experiment-config#feature-generation).
 
 ### Expand, then refine, your model grid
 
@@ -266,7 +266,7 @@ scoring:
 
 You can specify any number of evaluation metrics to be calculated for your models on either the training or test sets (the set of available metrics can be found [here](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L161)). For metrics that need to be calculated relative to a specific threshold in the score (e.g. precision), you must specify either `percentiles` or `top_n` (and can optionally provide both) at which to do the calculations.
 
-Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#bias-audit-config-optional) for more details on setting it up.
+Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](dssg.github.io/triage/experiments/experiment-config#bias-audit-config-optional) for more details on setting it up.
 
 ### Run `triage`
 
@@ -356,7 +356,7 @@ If you had five feature groups, this would run a total of six strategies (one in
 
     Before making use of this functionality, it's generally smart to narrow your modeling grid considerably to at most a handful of well-performing models and do some back-of-the-envelope calculations of how many variations `triage` will have to run.
 
-Learn more about feature groups and strategies in the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-grouping-optional).
+Learn more about feature groups and strategies in the [config README](dssg.github.io/triage/experiments/experiment-config#feature-grouping-optional).
 
 ### Subsets
 
