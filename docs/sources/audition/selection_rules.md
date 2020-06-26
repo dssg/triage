@@ -1,6 +1,12 @@
 ## Selection Rules
 
-Triage supports 8 model selection rules. Each is represented internally by one of the following functions.
+The Triage uses *selection rules* to compare the performance of trained model groups over time, and select a model group for future predictions. A selection rule tries to predict the best-performing model group in some train/test period, based on the historical performance of each model group on some metric.
+
+For example, a simple selection rule might predict that the best-performing model group during one train/test period will perform best in the following period.
+
+A selection rule can be evaluated by calculating its *regret*, or the difference between the performance of its selected model group and the best-performing model group in some period.
+
+Triage supports 8 model selection rules. Each is represented internally by one of the following functions:
 
 ::: triage.component.audition.selection_rules
     rendering:
