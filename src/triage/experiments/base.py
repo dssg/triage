@@ -387,6 +387,7 @@ class ExperimentBase(ABC):
             replace=self.replace
         )
 
+
     def get_for_update(self):
         return get_for_update(self.db_engine, results_schema.Experiment, self.experiment_hash)
 
