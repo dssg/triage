@@ -19,3 +19,5 @@ database.yaml
 dirtyduck/triage/**
 
 *~
+**/trained_models/**
+**/matrices
