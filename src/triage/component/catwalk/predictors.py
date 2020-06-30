@@ -327,7 +327,7 @@ class Predictor(object):
 
         if not self.replace:
             logging.info(
-                "replace flag not set for model id %s, matrix %s, looking for old predictions",
+                "Replace flag not set for model id %s, matrix %s, looking for old predictions",
                 model_id,
                 matrix_store.uuid,
             )

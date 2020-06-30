@@ -424,7 +424,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     "Block 0" those lines correspond to `2017` and `2018`, and in
     "Block 1" they correspond to `2016` and `2017`.
 
-    ![img](./images/timechop_1.png "feature and label start, end time equal")
+    ![img](./images/timechop/timechop_1.png "feature and label start, end time equal")
 
     The shaded areas (in this image there is just one per block, but
     you will see other examples below) represents the span of the *as
@@ -464,7 +464,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
     features that data for labels) as is shown in the following image
     and in their configuration parameters.
 
-    ![img](./images/timechop_2.png "feature<sub>start</sub><sub>time</sub> different different that label<sub>start</sub><sub>time</sub>.")
+    ![img](./images/timechop/timechop_2.png "feature<sub>start</sub><sub>time</sub> different different that label<sub>start</sub><sub>time</sub>.")
 
     ```yaml
     temporal_config:
@@ -509,7 +509,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '1y'
     ```
 
-    ![img](./images/timechop_3.png "A smaller model<sub>update</sub><sub>frequency</sub> (from 1y to 6month) (The number of blocks grew)")
+    ![img](./images/timechop/timechop_3.png "A smaller model<sub>update</sub><sub>frequency</sub> (from 1y to 6month) (The number of blocks grew)")
 
 -   `max_training_histories`
 
@@ -533,7 +533,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'  # <------- The change happened here!
     ```
 
-    ![img](./images/timechop_4.png "The size of the block is bigger now")
+    ![img](./images/timechop/timechop_4.png "The size of the block is bigger now")
 
 -   `_as_of_date_frequencies` and `test_durations`
 
@@ -555,7 +555,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_5.png "Less rows per entity in the training block")
+    ![img](./images/timechop/timechop_5.png "Less rows per entity in the training block")
 
     Now, change `test_as_of_date_frequencies`:
 
@@ -577,7 +577,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_6.png "We should get more rows per entity in the test matrix, but that didn't happen. Why?")
+    ![img](./images/timechop/timechop_6.png "We should get more rows per entity in the test matrix, but that didn't happen. Why?")
 
     Nothing changed because the test set doesn't have "space" to allow more spans. The "space" is controlled by `test_durations`, so let's change it to `6month`:
 
@@ -599,7 +599,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_7.png "The test duration is bigger now, so we got 6 rows (since the "base" frequency is 1 month)")
+    ![img](./images/timechop/timechop_7.png "The test duration is bigger now, so we got 6 rows (since the "base" frequency is 1 month)")
 
     So, now we will move both parameters: `test_durations`, `test_as_of_date_frequencies`
 
@@ -621,7 +621,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_8.png "With more room in testing, now test<sub>as</sub><sub>of</sub><sub>date</sub><sub>frequencies</sub> has some effect.")
+    ![img](./images/timechop/timechop_8.png "With more room in testing, now test<sub>as</sub><sub>of</sub><sub>date</sub><sub>frequencies</sub> has some effect.")
 
 -   `_label_timespans`
 
@@ -643,7 +643,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_9.png "The label time horizon in the test dataset now is smaller")
+    ![img](./images/timechop/timechop_9.png "The label time horizon in the test dataset now is smaller")
 
     ```yaml
     temporal_config:
@@ -663,7 +663,7 @@ triage experiment experiments/simple_test_skeleton.yaml --show-timechop
         max_training_histories: '10y'
     ```
 
-    ![img](./images/timechop_10.png "The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity.")
+    ![img](./images/timechop/timechop_10.png "The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity.")
 
     That's it! Now you have the power to bend time!<sup><a id="fnr.8" class="footref" href="#fn.8">8</a></sup>
 
