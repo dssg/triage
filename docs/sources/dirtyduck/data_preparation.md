@@ -104,7 +104,7 @@ The transformation "road" that we will take in this tutorial is as follows:
 2.  Apply some simple transformations and store the resulting data in the `cleaned` schema.
 3.  Organize the data into two *unnormalized*[^3] tables in the
     semantic schema: `events` and `entities`.
-4.  Run `triage`. It will create several schemas (`model_metadata`, `test_results`, `train_results`).
+4.  Run `triage`. It will create several schemas (`triage_metadata`, `test_results`, `train_results`).
 
 ![img](images/data_road.png)
 

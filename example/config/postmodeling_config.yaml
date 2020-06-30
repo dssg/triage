@@ -22,7 +22,7 @@
              m.num_labeled_above_threshold,
              m.num_positive_labels
        FROM test_results.evaluations m
-       LEFT JOIN model_metadata.models g
+       LEFT JOIN triage_metadata.models g
        USING(model_id)
        WHERE g.model_group_id IN (1, 2, 3)
              AND metric = 'precision@'

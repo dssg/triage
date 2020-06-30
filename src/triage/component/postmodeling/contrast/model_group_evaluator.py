@@ -51,8 +51,8 @@ class ModelGroupEvaluator(object):
                    m.training_label_timespan,
                    m.model_type,
                    mg.model_config
-                FROM model_metadata.models m
-                JOIN model_metadata.model_groups mg
+                FROM triage_metadata.models m
+                JOIN triage_metadata.model_groups mg
                 USING (model_group_id)
                 WHERE model_group_id IN {self.model_group_id}
             ''')
@@ -119,7 +119,7 @@ class ModelGroupEvaluator(object):
                    m.model_id ORDER BY m.score DESC)) * 100 AS rank_pct,
                    m.test_label_timespan
             FROM test_results.predictions m
-            LEFT JOIN model_metadata.models g
+            LEFT JOIN triage_metadata.models g
             USING (model_id)
             WHERE model_id IN {tuple(self.model_id)}
             AND label_value IS NOT NULL
@@ -141,7 +141,7 @@ class ModelGroupEvaluator(object):
                   m.feature_importance,
                   m.rank_abs
            FROM train_results.feature_importances m
-           LEFT JOIN model_metadata.models g
+           LEFT JOIN triage_metadata.models g
            USING (model_id)
            WHERE m.model_id IN {tuple(self.model_id)}
            ''', con=self.engine)
@@ -161,7 +161,7 @@ class ModelGroupEvaluator(object):
                    m.num_labeled_above_threshold,
                    m.num_positive_labels
             FROM test_results.evaluations m
-            LEFT JOIN model_metadata.models g
+            LEFT JOIN triage_metadata.models g
             USING (model_id)
             WHERE m.model_id IN {tuple(self.model_id)}
             ''', con=self.engine)
@@ -176,7 +176,7 @@ class ModelGroupEvaluator(object):
             SELECT
             model_group_id,
             model_config->>'feature_groups' as features
-            FROM model_metadata.model_groups
+            FROM triage_metadata.model_groups
             WHERE model_group_id IN {self.model_group_id}
             ),
             feature_groups_unnest AS(
@@ -224,7 +224,7 @@ class ModelGroupEvaluator(object):
                       SELECT
                       train_end_time,
                       array_agg(model_id) AS model_id_array
-                      FROM model_metadata.models
+                      FROM triage_metadata.models
                       WHERE model_group_id IN {self.model_group_id}
                       GROUP BY train_end_time
                       ''', con=self.engine)

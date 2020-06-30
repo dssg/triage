@@ -256,12 +256,12 @@ experiment.run()
 
 Once the feature/cohort/label/matrix building is done and the
 experiment has moved onto modeling, check out the
-`model_metadata.models` and `test_results.evaluations` tables as data
+`triage_metadata.models` and `test_results.evaluations` tables as data
 starts to come in.
 
 Here are a couple of quick queries to help get you started:
 
-Tables in the `model_metadata` schema have some general information about
+Tables in the `triage_metadata` schema have some general information about
 experiments that you've run and the models they created. The `quickstart`
 model grid preset should have built 3 models. You can check that with:
 
@@ -269,7 +269,7 @@ model grid preset should have built 3 models. You can check that with:
 select 
   model_id, model_group_id, model_type 
   from 
-      model_metadata.models;
+      triage_metadata.models;
 ```
 
 This should give you a result that looks something like:

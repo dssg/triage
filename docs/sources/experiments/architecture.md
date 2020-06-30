@@ -220,7 +220,7 @@ Takes matrix build tasks from the [Planner](#planner) and builds them if they do
 **Output**
 
 - The built matrix saved in the [MatrixStorageEngine](#matrix-storage)
-- A row describing the matrix saved in the database's `model_metadata.matrices` table.
+- A row describing the matrix saved in the database's `triage_metadata.matrices` table.
 
 ### ModelTrainTester
 
@@ -247,7 +247,7 @@ Assigns a `model group` to each model based on its metadata.
 
 **Output**
 
-- a model group id corresponding to a row in the `model_metadata.model_groups` table, either a matching one that already existed in the table or one that it autoprovisioned.
+- a model group id corresponding to a row in the `triage_metadata.model_groups` table, either a matching one that already existed in the table or one that it autoprovisioned.
 
 
 ### ModelTrainer
@@ -262,7 +262,7 @@ Trains a model, stores it, and saves its metadata (including model group informa
 - an importable classifier path and a set of hyperparameters
 
 **Output**
-- a row in the database's `model_metadata.model_groups` table, the `model_metadata.models` table, and rows in `train_results.feature_importances` for each feature.
+- a row in the database's `triage_metadata.model_groups` table, the `triage_metadata.models` table, and rows in `train_results.feature_importances` for each feature.
 - the trained model persisted in the [ModelStorageEngine](#model-storage)
 
 ### Predictor

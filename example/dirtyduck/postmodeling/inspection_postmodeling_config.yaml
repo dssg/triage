@@ -23,7 +23,7 @@ baseline_query: | # SQL query for defining a baseline for comparison in plots. I
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations as m
-       left join model_metadata.models as g
+       left join triage_metadata.models as g
        using(model_id)
        where g.model_group_id = 1
              and metric = 'precision@'

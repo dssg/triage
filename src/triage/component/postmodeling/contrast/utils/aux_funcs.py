@@ -52,7 +52,7 @@ def get_models_ids(audited_model_group_ids, conn):
     query = conn.execute(text("""
     SELECT model_group_id,
            model_id
-    FROM model_metadata.models
+    FROM triage_metadata.models
     WHERE model_group_id = ANY(:ids);
     """), ids=audited_model_group_ids)
 

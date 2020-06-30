@@ -241,14 +241,14 @@ it would mean that `triage` actually built (in this order) cohort
 (table `cohort_all_entities...`),
 labels (table `labels_failed_inspections...`), features (schema
 `features`), matrices (table `model_metdata.matrices` and folder
-`matrices`), models (tables `model_metadata.models` and
-`model_metadata.model_groups`; folder `trained_models`), predictions
+`matrices`), models (tables `triage_metadata.models` and
+`triage_metadata.model_groups`; folder `trained_models`), predictions
 (table `test_results.predictions`)
 and evaluations (table `test_results.evaluations`).
 
 ### 5. Look at results of your duckling!
 
-Next, let's quickly check the tables in the schemas `model_metadata` and
+Next, let's quickly check the tables in the schemas `triage_metadata` and
 `test_results` to make sure everything worked. There you will find a lot 
 of information related to the performance of your models.
 
@@ -261,7 +261,7 @@ Again, you should see the postgreSQL prompt:
 
     food=#
 
-Tables in the `model_metadata` schema have some general information about
+Tables in the `triage_metadata` schema have some general information about
 experiments that you've run and the models they created. The `quickstart`
 model grid preset should have built 3 models. Let's check with:
 
@@ -269,7 +269,7 @@ model grid preset should have built 3 models. Let's check with:
 select 
   model_id, model_group_id, model_type 
   from 
-      model_metadata.models;
+      triage_metadata.models;
 ```
 
 This should give you a result that looks something like:
