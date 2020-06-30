@@ -1,7 +1,7 @@
 # Using `triage` for a Project: Workflow Tips
 
 !!! warning "Getting Started..."
-    The setup and first iteration here closely follow the [QuickStart Guide](quickstart.md), so that may be a good place to start if you're new to `triage`. 
+    The setup and first iteration here closely follow the [QuickStart Guide](quickstart.md), so that may be a good place to start if you're new to `triage`.
 
     If you've already completed the QuickStart and have a working environment, you may want to jump ahead to [Iteration 2](#iteration-2-refine-the-cohort-and-temporal-setup)
 
@@ -82,7 +82,7 @@ In most real-world machine learning applications, you're interested in training 
 
 There is a lot of nuance to the temporal configuration and it can take a bit of effort to get right. If you're new to `triage` (or want a refresher), we highly reccomend you check out [the temporal crossvalidation deep dive](dirtyduck/triage_intro.md#temporal-crossvalidation).
 
-In previous iteration, we used a highly simplified temporal config, with just one parameter: `label_timespans`, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed `temporal_config`. Here's what that might look like: 
+In previous iteration, we used a highly simplified temporal config, with just one parameter: `label_timespans`, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed `temporal_config`. Here's what that might look like:
 
 ```
 temporal_config:
@@ -166,13 +166,13 @@ We generally recommend using `audition` interactively with as a `jupyter noteboo
 
 ## Iteration 3: Add more data/features, models and hyperparameters, and evaluation metrics of interest
 
-After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications. 
+After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications.
 
 We've labeled this section `Iteration 3`, but in practice it's probably more like `Iterations 3-n` as you will likely want to do a bit of intermediate testing while adding new features and refine your model grid as you learn more about what does and doesn't seem to work well.
 
 ### Define some additional features
 
-Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible. 
+Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible.
 
 The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
 
@@ -187,7 +187,13 @@ The experiment configuration file provides a decent amount of flexibility for de
 
     - Unfortunately, `triage` has not yet implemented functionality for "first value" or "most recent value" feature aggregates, so you'll need to pre-calculate any features you want with this logic (though we do hope to add this ability).
 
-Feature definitions are specified in the `feature_aggregations` section of the config file, under which you should provide a list of sets of related features, and each element in this list must contain several keys (see the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for a detailed example of what this looks like in practice):
+Feature definitions are specified in the `feature_aggregations`
+section of the config file, under which you should provide a list of
+sets of related features, and each element in this list must contain
+several keys (see the [example config
+file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)
+for a detailed example of what this looks like in practice):
+
 - `prefix`: a simple name to identify this set of related features - all of the features defined by this `feature_aggregations` entry will start with this prefix.
 - `from_obj`: this may be a table name or a SQL expression that provides the source data for these features.
 - `knowledge_date_column`: the date column specifying when information in the source data was known (e.g., available to be used for predictive modeling), which may differ from when the event ocurred.
@@ -295,7 +301,7 @@ As before, the first place to look to check on the results of your modeling run 
 
 Once you have a more comprehensive model run with a variety of features and modeling grid, `audition` can help you understand the performance of different specifications and further refine your models for future iterations. In a typical project, you'll likely run through the `audition` flow several times as you progressively improve your modeling configuration.
 
-When you finally settle on a configuration you're happy with, `audition` will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using `postmodeling`. 
+When you finally settle on a configuration you're happy with, `audition` will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using `postmodeling`.
 
 More about using `audition`:
 - [model selection primer](dirtyduck/audition/).
@@ -352,7 +358,7 @@ feature_group_strategies: ['all', 'leave-one-out']
 If you had five feature groups, this would run a total of six strategies (one including all your feature groups, and five including all but one of them) for each specification in your model grid.
 
 !!! warning "Before using feature group stragies..."
-    Note that model runs specifying `feature_group_strategies` can become quite time and resource-intensive, especially using the `all-combinations` option. 
+    Note that model runs specifying `feature_group_strategies` can become quite time and resource-intensive, especially using the `all-combinations` option.
 
     Before making use of this functionality, it's generally smart to narrow your modeling grid considerably to at most a handful of well-performing models and do some back-of-the-envelope calculations of how many variations `triage` will have to run.
 
@@ -362,7 +368,7 @@ Learn more about feature groups and strategies in the [config README](dssg.githu
 
 In some cases, you may be interested in your models' performance on subsets of the full cohort on which it is trained, such as certain demographics or individuals who meet a specific criteria of interest to your program (for instance, a certain level or history of need).
 
-Subsets are defined in the `scoring` section of the configuration file as a list of dictionaries specifying a `name` and `query` that identify the set of entities for each subset of interest using `{as_of_date}` as a placeholder for the modeling date. 
+Subsets are defined in the `scoring` section of the configuration file as a list of dictionaries specifying a `name` and `query` that identify the set of entities for each subset of interest using `{as_of_date}` as a placeholder for the modeling date.
 
 Here's a quick example:
 
@@ -420,6 +426,7 @@ Look for results and associated information in:
 #### Run `audition`
 
 More about using `audition`:
+
 - [model selection primer](dirtyduck/audition/).
 - [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)
 - [`audition` README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
@@ -427,5 +434,6 @@ More about using `audition`:
 #### Run `postmodeling`
 
 More about `postmodeling`:
-- [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) 
+
+- [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md)
 - [example `postmodeling` notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)

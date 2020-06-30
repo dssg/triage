@@ -383,7 +383,8 @@ class ExperimentBase(ABC):
             predictor=self.predictor,
             subsets=self.subsets,
             protected_groups_generator=self.protected_groups_generator,
-            cohort_hash=self.cohort_hash
+            cohort_hash=self.cohort_hash,
+            replace=self.replace
         )
 
     def get_for_update(self):
