@@ -34,6 +34,7 @@ from triage.component.catwalk import (
     ModelEvaluator,
     Predictor,
     IndividualImportanceCalculator,
+    IndividualImportanceCalculatorNoOp,
     ModelGrouper,
     ModelTrainTester,
     Subsetter
@@ -361,12 +362,21 @@ class ExperimentBase(ABC):
             rank_order=self.config.get("prediction", {}).get("rank_tiebreaker", "worst"),
         )
 
-        self.individual_importance_calculator = IndividualImportanceCalculator(
-            db_engine=self.db_engine,
-            n_ranks=self.config.get("individual_importance", {}).get("n_ranks", 5),
-            methods=self.config.get("individual_importance", {}).get("methods", ["uniform"]),
-            replace=self.replace,
-        )
+
+        if "individual_importance" in self.config:
+            self.individual_importance_calculator = IndividualImportanceCalculator(
+                db_engine=self.db_engine,
+                n_ranks=self.config.get("individual_importance", {}).get("n_ranks", 5),
+                methods=self.config.get("individual_importance", {}).get("methods", ["uniform"]),
+                replace=self.replace,
+            )
+        else:
+            self.individual_importance_calculator = IndividualImportanceCalculatorNoOp():
+            logging.warning(
+                "individual_importance  missing or unrecognized."
+                "you will not be able to do analysis on individual feature importances."
+            )
+
 
         self.evaluator = ModelEvaluator(
             db_engine=self.db_engine,
