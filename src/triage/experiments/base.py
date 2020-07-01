@@ -371,7 +371,7 @@ class ExperimentBase(ABC):
                 replace=self.replace,
             )
         else:
-            self.individual_importance_calculator = IndividualImportanceCalculatorNoOp():
+            self.individual_importance_calculator = IndividualImportanceCalculatorNoOp()
             logging.warning(
                 "individual_importance  missing or unrecognized."
                 "you will not be able to do analysis on individual feature importances."
