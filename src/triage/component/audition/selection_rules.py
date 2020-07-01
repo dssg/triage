@@ -492,7 +492,7 @@ class BoundSelectionRule(object):
 
         Constructed using the function name and arguments.
         """
-        argspec = inspect.getargspec(self.function)
+        argspec = inspect.getfullargspec(self.function)
         args = [arg for arg in argspec.args if arg not in ["df", "train_end_time", "n"]]
         return "_".join([self.function_name] + [str(self.args[key]) for key in args])
 
