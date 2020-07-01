@@ -58,7 +58,8 @@ class CutOff(BaseEstimator, TransformerMixin):
 
         if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
             warnings.warn(
-                "You got data that are out of the range: {}".format(feature_range)
+                "You got data that are out of the range: {}".format(
+                    feature_range)
             )
 
         X[X > feature_range[1]] = feature_range[1]

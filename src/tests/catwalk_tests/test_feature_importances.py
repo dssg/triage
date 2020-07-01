@@ -23,16 +23,16 @@ def trained_models():
         X, y, test_size=0.3, random_state=12345
     )
 
-    rf = RandomForestClassifier()
+    rf = RandomForestClassifier(n_estimators=100)
     rf.fit(X_train, y_train)
 
-    lr = LogisticRegression()
+    lr = LogisticRegression(solver='liblinear')
     lr.fit(X_train, y_train)
 
-    svc_w_linear_kernel = SVC(kernel="linear")
+    svc_w_linear_kernel = SVC(kernel="linear", gamma='auto')
     svc_w_linear_kernel.fit(X_train, y_train)
 
-    svc_wo_linear_kernel = SVC()
+    svc_wo_linear_kernel = SVC(gamma='auto')
     svc_wo_linear_kernel.fit(X_train, y_train)
 
     dummy = DummyClassifier()
@@ -75,7 +75,8 @@ def test_correct_feature_importances_for_rf(trained_models):
 
 
 def test_correct_feature_importances_for_svc_w_linear_kernel(trained_models):
-    feature_importances = get_feature_importances(trained_models["SVC_w_linear_kernel"])
+    feature_importances = get_feature_importances(
+        trained_models["SVC_w_linear_kernel"])
     assert feature_importances.shape == (30,)
 
 

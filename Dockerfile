@@ -45,6 +45,7 @@ COPY setup.py .
 RUN pip install .
 
 RUN chown -R triage:triage .
+RUN chown -R triage:triage /opt/venv
 
 USER ${USERNAME}
 
