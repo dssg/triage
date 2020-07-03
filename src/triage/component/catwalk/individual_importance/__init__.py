@@ -9,6 +9,25 @@ from .uniform import uniform_distribution
 CALCULATE_STRATEGIES = {"uniform": uniform_distribution}
 
 
+class IndividualImportanceCalculatorNoOp:
+    def calculate_and_save_all_methods_and_dates(self, model_id, test_matrix_store):
+        logging.warning(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+    def calculate_and_save(self, model_id, test_matrix_store, method, as_of_date):
+        logging.warning(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+
+    def save(self, importance_records, model_id, as_of_date, method_name):
+        logging.warning(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+
+
 class IndividualImportanceCalculator(object):
     """Calculates and saves individual importance scores and rankings using different methods
 
