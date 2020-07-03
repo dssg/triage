@@ -45,8 +45,10 @@ class CutOff(BaseEstimator, TransformerMixin):
         self.feature_range = feature_range
         self.copy = copy
 
+
     def fit(self, X, y=None):
         return self
+
 
     def transform(self, X):
         feature_range = self.feature_range
@@ -58,8 +60,8 @@ class CutOff(BaseEstimator, TransformerMixin):
 
         if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
             warnings.warn(
-                "You got data that are out of the range: {}".format(
-                    feature_range)
+                f"You got data that are out of the range: {feature_range}. "
+                "It will cutoff to fit in that range."
             )
 
         X[X > feature_range[1]] = feature_range[1]

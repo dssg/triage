@@ -69,7 +69,7 @@ def test_dsapp_lr(data):
 
     minmax_scaler = preprocessing.MinMaxScaler()
     dsapp_cutoff = CutOff()
-    lr = linear_model.LogisticRegression()
+    lr = linear_model.LogisticRegression(solver='lbfgs')
 
     pipeline = Pipeline(
         [("minmax_scaler", minmax_scaler), ("dsapp_cutoff", dsapp_cutoff), ("lr", lr)]
