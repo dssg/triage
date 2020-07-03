@@ -22,7 +22,7 @@ from sklearn.metrics import confusion_matrix
 import numpy
 
 
-class Metric(object):
+class Metric:
     """decorator for metrics: result will be a callable metric with an
     `greater_is_better` parameter defined as either True or False
     depending on whether larger or smaller metric values indicate
@@ -35,7 +35,7 @@ class Metric(object):
         self.greater_is_better = greater_is_better
 
     def __call__(self, function, *params, **kwparams):
-        class DecoratedMetric(object):
+        class DecoratedMetric:
             def __init__(self, greater_is_better, function):
                 self.greater_is_better = greater_is_better
                 self.function = function

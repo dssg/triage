@@ -4,7 +4,7 @@ from scipy import stats
 import yaml
 
 
-class CrosstabsConfigLoader(object):
+class CrosstabsConfigLoader:
     def __init__(self, config_path=None, config=None):
         self.output = {}
         self.models_list_query = None

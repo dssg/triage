@@ -29,7 +29,7 @@ from sklearn import tree
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
 
 
-class ModelEvaluator(object):
+class ModelEvaluator:
     '''
     ModelExtractor class calls the model metadata from the database
     and hold model_id metadata features on each of the class attibutes.

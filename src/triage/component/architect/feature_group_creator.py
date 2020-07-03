@@ -40,7 +40,7 @@ def all_subsetter(config_item, table, features):
     return features
 
 
-class FeatureGroupCreator(object):
+class FeatureGroupCreator:
     """Divides a feature dictionary into groups based on given criteria"""
 
     subsetters = {

@@ -14,7 +14,7 @@ from triage.util.conf import convert_str_to_relativedelta
 from triage.validation_primitives import string_is_tablesafe
 
 
-class Validator(object):
+class Validator:
     def __init__(self, db_engine=None, strict=True):
         self.db_engine = db_engine
         self.strict = strict

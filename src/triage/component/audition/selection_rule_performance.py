@@ -3,7 +3,7 @@ import os
 from .plotting import plot_cats
 
 
-class SelectionRulePerformancePlotter(object):
+class SelectionRulePerformancePlotter:
     """Plot regrets over time
 
     Generates a simple line chart with audition.BoundSelectionRule objects as

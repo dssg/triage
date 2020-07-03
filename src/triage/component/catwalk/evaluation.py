@@ -149,7 +149,7 @@ class MetricEvaluationResult(typing.NamedTuple):
     num_positive_labels: int
 
 
-class ModelEvaluator(object):
+class ModelEvaluator:
     """An object that can score models based on its known metrics"""
 
     """Available metric calculation functions

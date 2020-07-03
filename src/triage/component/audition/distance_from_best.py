@@ -8,7 +8,7 @@ from .metric_directionality import sql_rank_order
 from .plotting import plot_cats, plot_bounds
 
 
-class DistanceFromBestTable(object):
+class DistanceFromBestTable:
     def __init__(self, db_engine, models_table, distance_table):
         """A database table that stores the distance from models and the
         best model for that train end time for a variety of chosen metrics
@@ -207,7 +207,7 @@ class DistanceFromBestTable(object):
         return base_df[base_df["train_end_time"] == train_end_time]
 
 
-class BestDistancePlotter(object):
+class BestDistancePlotter:
     def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the effect of different below-best maximum
         thresholds across the dataset.

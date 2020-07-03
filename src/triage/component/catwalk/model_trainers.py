@@ -41,7 +41,7 @@ def flatten_grid_config(grid_config):
             yield class_path, parameters
 
 
-class ModelTrainer(object):
+class ModelTrainer:
     """Trains a series of classifiers using the same training set
     Args:
         project_path (string) path to project folder,

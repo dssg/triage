@@ -30,7 +30,7 @@ from . import utils
 # }
 
 
-class Timechop(object):
+class Timechop:
     def __init__(
         self,
         feature_start_time,

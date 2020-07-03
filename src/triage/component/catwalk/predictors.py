@@ -17,7 +17,7 @@ class ModelNotFoundError(ValueError):
     pass
 
 
-class Predictor(object):
+class Predictor:
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
     available_tiebreakers = AVAILABLE_TIEBREAKERS
 

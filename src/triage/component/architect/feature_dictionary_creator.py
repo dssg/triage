@@ -3,7 +3,7 @@ from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
 
 
-class FeatureDictionaryCreator(object):
+class FeatureDictionaryCreator:
     def __init__(self, features_schema_name, db_engine):
         self.features_schema_name = features_schema_name
         self.db_engine = db_engine

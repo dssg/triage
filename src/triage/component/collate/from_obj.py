@@ -7,7 +7,7 @@ from triage.validation_primitives import (
 import sqlparse
 
 
-class FromObj(object):
+class FromObj:
     def __init__(self, from_obj, name, knowledge_date_column):
         self.from_obj = from_obj
         self.name = name

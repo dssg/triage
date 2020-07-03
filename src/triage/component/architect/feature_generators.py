@@ -16,7 +16,7 @@ from triage.component.collate import (
 )
 
 
-class FeatureGenerator(object):
+class FeatureGenerator:
     def __init__(
         self,
         db_engine,

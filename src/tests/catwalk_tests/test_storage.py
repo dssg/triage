@@ -24,7 +24,7 @@ from triage.component.catwalk.storage import (
 from tests.utils import CallSpy
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, val):
         self.val = val

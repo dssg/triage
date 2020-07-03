@@ -12,7 +12,7 @@ import yaml
 import json
 import warnings
 
-class PostmodelParameters(object):
+class PostmodelParameters:
     '''
     PostmodelParameters reads all parameters from a 'yaml' file and store them
     in this object to be used in other functions. Different metrics can be

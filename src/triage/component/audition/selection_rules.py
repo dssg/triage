@@ -447,7 +447,7 @@ SELECTION_RULES = {
 }
 
 
-class BoundSelectionRule(object):
+class BoundSelectionRule:
     """A selection rule bound with a set of arguments
 
     Args:

@@ -20,7 +20,7 @@ from scipy.stats import spearmanr
 # Get indivual model information/metadata from Audition output
 
 
-class ModelGroupEvaluator(object):
+class ModelGroupEvaluator:
     '''
     ModelGroup class calls the model group metadata from the database
     and hold metadata features on each of the class attibutes.
