@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class PreAudition(object):
+class PreAudition:
     def __init__(self, db_engine):
         """Prepare the model_groups and train_end_times for Auditioner to use
 

@@ -16,7 +16,7 @@ import pandas
 TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
 
 
-class ModelTrainTester(object):
+class ModelTrainTester:
     def __init__(
         self,
         matrix_storage_engine,

@@ -11,7 +11,7 @@ from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
 
 
-class BuilderBase(object):
+class BuilderBase:
     def __init__(
         self,
         db_config,

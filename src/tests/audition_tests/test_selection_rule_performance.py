@@ -15,7 +15,7 @@ from .utils import create_sample_distance_table
 TRAIN_END_TIMES = ["2014-01-01", "2015-01-01"]
 
 
-class MockSelectionRulePicker(object):
+class MockSelectionRulePicker:
     def results_for_rule(*args, **kwargs):
         return [
             {

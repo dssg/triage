@@ -67,7 +67,7 @@ def all_features(feature_groups):
     return [feature_dict]
 
 
-class FeatureGroupMixer(object):
+class FeatureGroupMixer:
     """Generates different combinations of feature groups
     based on a list of strategies"""
 

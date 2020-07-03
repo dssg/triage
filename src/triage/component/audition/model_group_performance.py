@@ -7,7 +7,7 @@ from .plotting import plot_cats
 from .utils import str_in_sql
 
 
-class ModelGroupPerformancePlotter(object):
+class ModelGroupPerformancePlotter:
     def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the performance of a model group over time
 

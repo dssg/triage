@@ -28,7 +28,7 @@ class IndividualImportanceCalculatorNoOp:
 
 
 
-class IndividualImportanceCalculator(object):
+class IndividualImportanceCalculator:
     """Calculates and saves individual importance scores and rankings using different methods
 
     Args:

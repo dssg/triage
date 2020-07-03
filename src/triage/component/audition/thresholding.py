@@ -91,7 +91,7 @@ def model_groups_filter(
     return model_group_ids
 
 
-class ModelGroupThresholder(object):
+class ModelGroupThresholder:
     def __init__(
         self,
         distance_from_best_table,
