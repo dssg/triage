@@ -23,7 +23,7 @@ def _ad_hoc_feature_importances(model):
     """
     feature_importances = None
 
-    if (isinstance(model, (sklearn.linear_model.logistic.LogisticRegression)) or 
+    if (isinstance(model, (sklearn.linear_model.LogisticRegression)) or
         isinstance(model, (ScaledLogisticRegression))):
         coef_odds_ratio = np.exp(model.coef_)
         # intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
