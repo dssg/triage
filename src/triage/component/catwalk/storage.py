@@ -13,7 +13,7 @@ import pandas as pd
 import s3fs
 import wrapt
 import yaml
-from sklearn.externals import joblib
+import joblib
 
 from triage.component.results_schema import (
     TestEvaluation,
