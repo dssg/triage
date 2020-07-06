@@ -113,7 +113,6 @@ nav:
           - Experiment Architecture: experiments/architecture.md
       - Model selection: 
           - Intro to Audition: audition/audition_intro.md
-          - Using Audition: audition/audition.md
           - Model Selection Concepts: audition/model_selection.md
           - API Reference: ../api/audition/
       - Postmodeling: 
