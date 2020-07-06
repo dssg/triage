@@ -123,5 +123,6 @@ nav:
       - Scaling up: dirtyduck/aws_batch.md
       - API Reference:
           - Audition: 
+              - Auditioner: api/audition/auditioner.md
               - Audition Configuration: api/audition/audition-config.md
 
