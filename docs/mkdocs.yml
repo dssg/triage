@@ -114,7 +114,6 @@ nav:
       - Model selection: 
           - Intro to Audition: audition/audition_intro.md
           - Using Audition: audition/audition.md
-          - Selection Rules: audition/selection_rules.md
           - API Reference: ../api/audition/
       - Postmodeling: 
           - Using Postmodeling: postmodeling/index.md
@@ -125,4 +124,6 @@ nav:
           - Audition: 
               - Auditioner: api/audition/auditioner.md
               - Audition Configuration: api/audition/audition-config.md
+              - Selection Rules: api/audition/selection_rules.md
+              - Database Dependencies: api/audition/database-dependencies.md
 
