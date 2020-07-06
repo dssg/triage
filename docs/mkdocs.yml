@@ -114,10 +114,14 @@ nav:
       - Model selection: 
           - Intro to Audition: audition/audition_intro.md
           - Using Audition: audition/audition.md
-          - Audition Configuration: audition/audition-config.md
           - Selection Rules: audition/selection_rules.md
+          - API Reference: ../api/audition/
       - Postmodeling: 
           - Using Postmodeling: postmodeling/index.md
           - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
       - Model governance:  dirtyduck/ml_governance.md
       - Scaling up: dirtyduck/aws_batch.md
+      - API Reference:
+          - Audition: 
+              - Audition Configuration: api/audition/audition-config.md
+
