@@ -7,7 +7,7 @@ from triage.component.architect.entity_date_table_generators import EntityDateTa
 from triage.component.catwalk.utils import (filename_friendly_hash, get_subset_table_name)
 from triage.component.results_schema import Subset
 
-class Subsetter(object):
+class Subsetter:
     def __init__(
         self,
         db_engine,

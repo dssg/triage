@@ -2,11 +2,7 @@
 
 set -e -u
 
-PROJECT="triage-dirtyduck"
-PROJECT_HOME="$( cd "$( dirname "$0" )" && pwd )"
-INFRASTRUCTURE_HOME="${PROJECT_HOME}/dirtyduck"
-
-cd "$INFRASTRUCTURE_HOME"
+DIRTYDUCK_HOME="dirtyduck"
 
 function help_menu () {
 cat << EOF
@@ -23,50 +19,54 @@ OPTIONS:
    -d|clean            Removes containers, images, volumes, netrowrks
 
 INFRASTRUCTURE:
-   Build the DB's infrastructure:
+   Build the Dirtyduck's DB:
         $ ./tutorial.sh up
 
    Check the status of the containers:
         $ ./tutorial.sh status
 
-   Stop the tutorial's DB's infrastructure:
+   Stop the dirtyduck's infrastructure:
         $ ./tutorial.sh down
 
    Destroy all the resources related to the tutorial:
         $ ./tutorial.sh clean
 
-   View the infrastructure logs:
+   View dirtyduck's logs:
         $ ./tutorial.sh -l
 
 EOF
 }
 
 function start_infrastructure () {
-    docker-compose up -d food_db
+    docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  up -d food_db
 }
 
 function stop_infrastructure () {
-	docker-compose  stop
+	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  stop
+}
+
+function build_triage () {
+     docker build -t dsapp/triage:master -f Dockerfile .
 }
 
 function build_images () {
-	docker-compose  build "${@}"
+	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml build "${@}"
 }
 
 function destroy () {
-	docker-compose  down --rmi all --remove-orphans --volumes
+	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  down --rmi all --remove-orphans --volumes
 }
 
 function infrastructure_logs () {
-    docker-compose logs -f -t
+    docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml logs -f -t
 }
 
 function status () {
-	docker-compose ps
+	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml ps
 }
 
 function bastion () {
-    docker-compose run --service-ports  --rm --name tutorial_bastion bastion
+    docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml run --service-ports  --rm --name dirtyduck_bastion bastion
 }
 
 function all () {
@@ -91,6 +91,7 @@ case "$1" in
 		shift
         ;;
     build)
+        build_triage
         build_images
 		shift
         ;;
@@ -114,7 +115,7 @@ case "$1" in
         bastion
 	        shift
 	;;
-    -h|--help)
+    -h|help)
         help_menu
                 shift
         ;;

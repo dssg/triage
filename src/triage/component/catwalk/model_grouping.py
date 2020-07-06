@@ -12,7 +12,7 @@ DEFAULT_KEYS = [
 ]
 
 
-class ModelGrouper(object):
+class ModelGrouper:
     """Assign a model group id to given model input based on default or custom configuration
 
     This class is a wrapper around the `get_model_group_id` stored procedure,

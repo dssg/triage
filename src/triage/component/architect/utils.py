@@ -129,7 +129,7 @@ def fake_labels(length):
     return numpy.array([random.choice([True, False]) for i in range(0, length)])
 
 
-class MockTrainedModel(object):
+class MockTrainedModel:
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 

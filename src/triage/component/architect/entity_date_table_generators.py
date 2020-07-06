@@ -7,7 +7,7 @@ from triage.database_reflection import table_row_count, table_exists
 DEFAULT_ACTIVE_STATE = "active"
 
 
-class EntityDateTableGenerator(object):
+class EntityDateTableGenerator:
     """Create a table containing state membership on different dates
 
     The structure of the output table is:

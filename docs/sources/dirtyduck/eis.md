@@ -429,7 +429,7 @@ After the experiment finishes, we can create the following table:
         model_group_id,
         split_part(unnest(feature_list), '_', 1) as feature_groups
     from
-        model_metadata.model_groups
+        triage_metadata.model_groups
     ),
 
     features_arrays as (
@@ -452,7 +452,7 @@ After the experiment finishes, we can create the following table:
         array_agg(to_char(stochastic_value, '0.999') order by
     train_end_time asc) as "precision@10% (stochastic)"
     from
-        model_metadata.models
+        triage_metadata.models
         join
         features_arrays using(model_group_id)
         join
@@ -593,13 +593,13 @@ compared to the inspection’s one:
 model_groups:
     query: |
         select distinct(model_group_id)
-        from model_metadata.model_groups
+        from triage_metadata.model_groups
         where model_config ->> 'experiment_type' ~ 'eis'
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 time_stamps:
     query: |
         select distinct train_end_time
-        from model_metadata.models
+        from triage_metadata.models
         where model_group_id in ({})
         and extract(day from train_end_time) in (1)
         and train_end_time >= '2014-01-01'
@@ -767,7 +767,7 @@ and we will use the complete set of model groups selected by audition:
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
-       left join model_metadata.models g
+       left join triage_metadata.models g
        using(model_id)
        where g.model_group_id = 20
              and metric = 'precision@'
@@ -866,9 +866,9 @@ select
     mg.hyperparameters,
     array_agg(model_id order by train_end_time) as models
 from
-    model_metadata.model_groups as mg
+    triage_metadata.model_groups as mg
     inner join
-    model_metadata.models
+    triage_metadata.models
     using (model_group_id)
 where model_group_id = 76
 group by 1,2,3

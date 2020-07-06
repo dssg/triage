@@ -6,7 +6,7 @@ from triage.database_reflection import table_exists
 DEFAULT_LABEL_NAME = "outcome"
 
 
-class LabelGeneratorNoOp(object):
+class LabelGeneratorNoOp:
     def generate_all_labels(self, labels_table, as_of_dates, label_timespans):
         logging.warning(
             "No label configuration is available, so no labels will be created"
@@ -21,7 +21,7 @@ class LabelGeneratorNoOp(object):
         pass
 
 
-class LabelGenerator(object):
+class LabelGenerator:
     def __init__(self, db_engine, query, label_name=None, replace=True):
         self.db_engine = db_engine
         self.replace = replace

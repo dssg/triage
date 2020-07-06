@@ -2,7 +2,7 @@
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
 from .evaluation import ModelEvaluator
-from .individual_importance import IndividualImportanceCalculator
+from .individual_importance import IndividualImportanceCalculator, IndividualImportanceCalculatorNoOp
 from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
 from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
@@ -16,7 +16,7 @@ import pandas
 TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
 
 
-class ModelTrainTester(object):
+class ModelTrainTester:
     def __init__(
         self,
         matrix_storage_engine,
@@ -84,7 +84,7 @@ class ModelTrainTester(object):
                 description="All classifiers not found in one of the other batches (e.g. gradient boosting)."
             ),
         )
-         
+
         for task in tasks:
             if task['train_kwargs']['class_path'].startswith('triage.component.catwalk.baselines') \
                     or task['train_kwargs']['class_path'] in (

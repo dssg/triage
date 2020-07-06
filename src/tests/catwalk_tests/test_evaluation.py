@@ -90,7 +90,8 @@ def populate_subset_data(db_engine, subset, entity_ids, as_of_date=TRAIN_END_TIM
             from unfiltered_row
             {query_where_clause}
             """
-        db_engine.execute(text(insert_query).execution_options(autocommit=True))
+        db_engine.execute(
+            text(insert_query).execution_options(autocommit=True))
 
 
 def test_all_same_labels(db_engine_with_results_schema):
@@ -108,7 +109,7 @@ def test_all_same_labels(db_engine_with_results_schema):
         # negative labels, so we should get one NULL value
         # for this config
         training_metric_groups = [{"metrics": ["accuracy", "roc_auc"]}]
-        
+
         # Acquire fake data and objects to be used in the tests
         model_evaluator = ModelEvaluator(
             {},
@@ -129,12 +130,12 @@ def test_all_same_labels(db_engine_with_results_schema):
             ).set_index(["entity_id", "as_of_date"]).label_value,
             init_as_of_dates=[TRAIN_END_TIME],
         )
-        
-            
+
         model_evaluator.evaluate(
-            trained_model.predict_proba(labels)[:, 1], fake_matrix_store, model_id
+            trained_model.predict_proba(
+                labels)[:, 1], fake_matrix_store, model_id
         )
-        
+
         for metric, best, worst, stochastic in db_engine_with_results_schema.execute(
             f"""select metric, best_value, worst_value, stochastic_value
             from train_results.evaluations
@@ -183,8 +184,9 @@ def test_subset_labels_and_predictions(db_engine_with_results_schema):
             expected_result = 2
         elif subset["name"] == "empty":
             expected_result = 0
-        
-        populate_subset_data(db_engine_with_results_schema, subset, list(range(num_entities)))
+
+        populate_subset_data(db_engine_with_results_schema,
+                             subset, list(range(num_entities)))
         subset_labels, subset_predictions, subset_protected_df = subset_labels_and_predictions(
             subset_df=query_subset_table(
                 db_engine_with_results_schema,
@@ -226,7 +228,8 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 "average precision score",
             ]
         },
-        {"metrics": ["fbeta@"], "parameters": [{"beta": 0.75}, {"beta": 1.25}]},
+        {"metrics": ["fbeta@"],
+            "parameters": [{"beta": 0.75}, {"beta": 1.25}]},
     ]
 
     training_metric_groups = [{"metrics": ["accuracy", "roc_auc"]}]
@@ -284,7 +287,8 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
 
     # Evaluate the training metrics and test
     model_evaluator.evaluate(
-        trained_model.predict_proba(labels)[:, 1], fake_train_matrix_store, model_id
+        trained_model.predict_proba(
+            labels)[:, 1], fake_train_matrix_store, model_id
     )
     records = [
         row[0]
@@ -304,7 +308,8 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
         if subset is None:
             where_hash = ""
         else:
-            populate_subset_data(db_engine_with_results_schema, subset, list(range(num_entities)))
+            populate_subset_data(db_engine_with_results_schema,
+                                 subset, list(range(num_entities)))
             SubsetFactory(subset_hash=filename_friendly_hash(subset))
             session.commit()
             where_hash = f"and subset_hash = '{filename_friendly_hash(subset)}'"
@@ -376,7 +381,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
             model_id,
             subset=subset,
         )
-        
+
         records = [
             row[0]
             for row in db_engine_with_results_schema.execute(
@@ -479,7 +484,8 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
         assert record["worst_value"] == 0.625
         assert record["best_value"] == 0.625
         assert record["stochastic_value"] == 0.625
-        assert record["num_sort_trials"] == 0 # best/worst are same, should shortcut trials
+        # best/worst are same, should shortcut trials
+        assert record["num_sort_trials"] == 0
         assert record["standard_deviation"] == 0
 
 
@@ -566,7 +572,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = ""
         else:
             subset_hash = filename_friendly_hash(subset)
-        
+
         assert ModelEvaluator(
             testing_metric_groups=[{
                 "metrics": ["precision@", "recall@"],
@@ -608,7 +614,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = ""
         else:
             subset_hash = filename_friendly_hash(subset)
-        
+
         assert ModelEvaluator(
             testing_metric_groups=[{
                 "metrics": ["precision@"],
@@ -629,7 +635,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = ""
         else:
             subset_hash = filename_friendly_hash(subset)
-        
+
         assert ModelEvaluator(
             testing_metric_groups=[{
                 "metrics": ["precision@"],
@@ -696,6 +702,7 @@ def test_ModelEvaluator_needs_evaluation_with_bias_audit(db_engine_with_results_
         subset_hash="",
     )
 
+
 def test_evaluation_with_protected_df(db_engine_with_results_schema):
     # Test that if a protected_df is passed (along with bias config, the only real needed one
     # being threshold info), an Aequitas report is written to the database.
@@ -726,7 +733,7 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
 
     protected_df = pandas.DataFrame({
         "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
-        "protectedattribute1": "value1"  
+        "protectedattribute1": "value1"
     })
 
     model_evaluator.evaluate(
@@ -745,7 +752,8 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
 
 
 def test_generate_binary_at_x():
-    input_array = numpy.array([0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
+    input_array = numpy.array(
+        [0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
 
     # bug can arise when the same value spans both sides of threshold
     assert_array_equal(

@@ -41,7 +41,7 @@ def infer_triage_version():
 
 def infer_python_version():
     """ Returns python version """
-    return sys.version
+    return sys.version.replace("\r", "").replace("\n", "")
 
 def infer_installed_libraries():
     """Attempt to infer the installed libraries by running pip freeze and formatting as a list

@@ -6,7 +6,7 @@ from triage.component.catwalk.utils import filename_friendly_hash
 from . import utils, entity_date_table_generators
 
 
-class Planner(object):
+class Planner:
     def __init__(
         self,
         feature_start_time,

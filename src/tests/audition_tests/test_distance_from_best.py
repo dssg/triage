@@ -203,7 +203,7 @@ def test_BestDistancePlotter_plot():
 
 
 def test_BestDistancePlotter_plot_bounds():
-    class FakeDistanceTable(object):
+    class FakeDistanceTable:
         @property
         def observed_bounds(self):
             return {

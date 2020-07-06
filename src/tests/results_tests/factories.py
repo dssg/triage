@@ -191,7 +191,7 @@ class ExperimentRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     start_method = "run"
     git_hash = "abcd"
-    triage_version = "4.0.1"
+    triage_version = "4.1.0"
     python_version = '3.6.2 (default, May 28 2020, 13:23:43) \n[GCC 9.3.0]'
     platform = "Linux!!!"
     os_user = "dsapp"

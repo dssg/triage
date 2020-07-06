@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class PreAudition(object):
+class PreAudition:
     def __init__(self, db_engine):
         """Prepare the model_groups and train_end_times for Auditioner to use
 
@@ -22,7 +22,7 @@ class PreAudition(object):
         """
         query = """
             SELECT DISTINCT(model_group_id)
-            FROM model_metadata.model_groups
+            FROM triage_metadata.model_groups
             WHERE model_config->>'label_definition' = %(label_definition)s
             """
 
@@ -41,8 +41,8 @@ class PreAudition(object):
         """
         query = """
             SELECT DISTINCT(model_group_id)
-            FROM model_metadata.models
-            JOIN model_metadata.experiment_models using (model_hash)
+            FROM triage_metadata.models
+            JOIN triage_metadata.experiment_models using (model_hash)
             WHERE experiment_hash = %(experiment_hash)s
             """
 
@@ -73,7 +73,7 @@ class PreAudition(object):
         if query is None:
             query = """
             SELECT DISTINCT train_end_time
-            FROM model_metadata.models
+            FROM triage_metadata.models
             WHERE model_group_id IN ({})
                 AND train_end_time >= %(after)s
             ORDER BY train_end_time

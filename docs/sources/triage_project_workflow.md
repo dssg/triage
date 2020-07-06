@@ -49,7 +49,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 ### Check for Results
 
-For this quick check, we're only running a handful of models for a single time window, so `triage`'s tools for model selection and postmodeling analysis won't be instructive, but you can confirm that by checking out the `triage`-created tables in the `model_metadata`, `test_results`, and `train-results` schemas in your database. In particular, you should find records for all your expected models in `model_metadata.models`, predictions from every model for every entity in `test_results.predictions`, and aggregate performance metrics in `test_results.evaluations` for every model.
+For this quick check, we're only running a handful of models for a single time window, so `triage`'s tools for model selection and postmodeling analysis won't be instructive, but you can confirm that by checking out the `triage`-created tables in the `triage_metadata`, `test_results`, and `train-results` schemas in your database. In particular, you should find records for all your expected models in `triage_metadata.models`, predictions from every model for every entity in `test_results.predictions`, and aggregate performance metrics in `test_results.evaluations` for every model.
 
 If that all looks good, it's time to get started with customizing your modeling configuration to your project...
 
@@ -153,7 +153,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 As above, you should check the `triage`-created tables in your database to ensure the run with your new config has trained and tested all of the expected models. A couple of things to look out for:
 
-- In `triage`, a specification of a model algorithm, related hyperparameters, and set of features is referred to as a `model_group` while an instantiation of these parameters on particular set of data at a specific point in time is referred to as a `model`. As such, with the `quickstart` preset model grid, you should still have the same 3 records in `model_metadata.model_groups` while you should have several new records in `model_metadata.models` with different `train_end_time`s implied by your temporal config.
+- In `triage`, a specification of a model algorithm, related hyperparameters, and set of features is referred to as a `model_group` while an instantiation of these parameters on particular set of data at a specific point in time is referred to as a `model`. As such, with the `quickstart` preset model grid, you should still have the same 3 records in `triage_metadata.model_groups` while you should have several new records in `triage_metadata.models` with different `train_end_time`s implied by your temporal config.
 
 - Likewise, in `test_results.predictions` and `test_results.evaluations`, you will find an `as_of_date` column. In many cases, you will likely have a single `as_of_date` per model that lines up with the model's `train_end_time`, but in some situations, you may want to evaluate at several `as_of_dates` for each model. [See the temporal crossvalidation deep dive](dirtyduck/triage_intro.md#temporal-crossvalidation) for more details.
 
@@ -293,7 +293,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 #### Check the database
 
 As before, the first place to look to check on the results of your modeling run is in the database:
-- Even while the modeling is still running, you can check out `test_results.evaluations` to keep an eye on the progress of the run (join it to `model_metadata.models` using `model_id` if you want to see information about the model specifications).
+- Even while the modeling is still running, you can check out `test_results.evaluations` to keep an eye on the progress of the run (join it to `triage_metadata.models` using `model_id` if you want to see information about the model specifications).
 - Once the run has finished, you should see many more models in `test_results.evaluations` reflecting the full model grid evaluated on each of the metrics you specified above.
 - Information on feature importances can be found in `train_results.feature_importances` (note the schema is `train_results` since these are calculated based on the training data).
 
@@ -394,7 +394,7 @@ scoring:
                 and demographic_date < '{as_of_date}'::date
 ```
 
-When specify subsets, all of the model evaluation metrics will be calculated for each subset you define here, as well as the cohort overall. In the `test_results.evaluations` table, the `subset_hash` column will identify the subset for the evaluation (`NULL` values indicate evaluations on the entire cohort), and can be joined to `model_metadata.subsets` to obtain the name and definition of the subset.
+When specify subsets, all of the model evaluation metrics will be calculated for each subset you define here, as well as the cohort overall. In the `test_results.evaluations` table, the `subset_hash` column will identify the subset for the evaluation (`NULL` values indicate evaluations on the entire cohort), and can be joined to `triage_metadata.subsets` to obtain the name and definition of the subset.
 
 Note that subsets are only used for the purposes of evaluation, while the model will still be trained and scored on the entire cohort described above.
 
@@ -419,8 +419,7 @@ As described above, once your modeling run has completed, you can explore the re
 #### Check the database
 
 Look for results and associated information in:
-
-- `model_metadata`
+- `triage_metadata`
 - `train_results`
 - `test_results`
 

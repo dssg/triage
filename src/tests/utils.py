@@ -32,7 +32,7 @@ def fake_labels(length):
     return numpy.array([random.choice([True, False]) for i in range(0, length)])
 
 
-class MockTrainedModel(object):
+class MockTrainedModel:
     def predict_proba(self, dataset):
         return numpy.random.rand(len(dataset), len(dataset))
 
@@ -78,7 +78,7 @@ class MockMatrixStore(MatrixStore):
         self.matrix_label_tuple = matrix, labels
         self.metadata = base_metadata
         self.label_count = label_count
-        self.init_labels = pandas.Series(init_labels)
+        self.init_labels = pandas.Series(init_labels, dtype='float64')
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
 
@@ -197,7 +197,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     matrix_store.clear_cache()
     if write_to_db:
         if (
-            session.query(Matrix).filter(Matrix.matrix_uuid == matrix_store.uuid).count()
+            session.query(Matrix).filter(
+                Matrix.matrix_uuid == matrix_store.uuid).count()
             == 0
         ):
             MatrixFactory(matrix_uuid=matrix_store.uuid)
@@ -254,7 +255,6 @@ def populate_source_data(db_engine):
 
     zip_code_events = [("60120", "2012-10-01", 1), ("60123", "2012-10-01", 10)]
 
-
     events = [
         (1, 1, "2011-01-01"),
         (1, 1, "2011-06-01"),
@@ -296,9 +296,11 @@ def populate_source_data(db_engine):
         )"""
     )
 
-    db_engine.execute("create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+    db_engine.execute(
+        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
     for demographic_row in zip_code_demographics:
-        db_engine.execute("insert into zip_code_demographics values (%s, %s, %s)", demographic_row)
+        db_engine.execute(
+            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row)
 
     for entity_zip_code in entity_zip_codes:
         db_engine.execute(
@@ -318,7 +320,8 @@ def populate_source_data(db_engine):
         )
 
     for complaint in complaints:
-        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
+        db_engine.execute(
+            "insert into cat_complaints values (%s, %s, %s)", complaint)
 
     db_engine.execute(
         """create table events (
@@ -472,6 +475,7 @@ class CallSpy:
         assert (('arg0',), {'param0': 0}) in spy.calls
 
     """
+
     def __init__(self, signature):
         self.calls = []
         self.signature = signature
@@ -516,7 +520,8 @@ class CallSpy:
         if not callable(self.target_object):
             # 1. ensure target_object set before patching
             # 2. check that it's sane (needn't be done here but reasonable)
-            raise TypeError(f"signature target not callable {self.target_object!r}")
+            raise TypeError(
+                f"signature target not callable {self.target_object!r}")
 
         self.patch.start()
 

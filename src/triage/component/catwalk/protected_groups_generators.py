@@ -8,7 +8,7 @@ from triage.database_reflection import table_exists
 from triage.component.catwalk.storage import MatrixStore
 
 
-class ProtectedGroupsGeneratorNoOp(object):
+class ProtectedGroupsGeneratorNoOp:
     def generate_all_dates(self, *args, **kwargs):
         logging.warning(
             "No bias audit configuration is available, so protected groups will not be created"
@@ -23,7 +23,7 @@ class ProtectedGroupsGeneratorNoOp(object):
         return pandas.DataFrame()
 
 
-class ProtectedGroupsGenerator(object):
+class ProtectedGroupsGenerator:
     def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name, replace=True):
         self.db_engine = db_engine
         self.replace = replace

@@ -7,7 +7,7 @@ from .plotting import plot_cats
 from .utils import str_in_sql
 
 
-class ModelGroupPerformancePlotter(object):
+class ModelGroupPerformancePlotter:
     def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the performance of a model group over time
 
@@ -77,7 +77,7 @@ class ModelGroupPerformancePlotter(object):
                     raw_value,
                     mg.model_type as model_type
                 from {dist_table} as dist
-                join model_metadata.model_groups mg using (model_group_id)
+                join triage_metadata.model_groups mg using (model_group_id)
                 where model_group_id in ({model_group_ids})
                 union
                 select

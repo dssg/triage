@@ -13,7 +13,7 @@ import pandas as pd
 import s3fs
 import wrapt
 import yaml
-from sklearn.externals import joblib
+import joblib
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -28,7 +28,7 @@ from triage.component.results_schema import (
 from triage.util.pandas import downcast_matrix
 
 
-class Store(object):
+class Store:
     """Base class for classes which know how to access a file in a preset medium.
 
     Used to hold references to persisted objects with knowledge about how they can be accessed.
@@ -167,7 +167,7 @@ class FSStore(Store):
         return open(self.path, *args, **kwargs)
 
 
-class ProjectStorage(object):
+class ProjectStorage:
     """Store and access files associated with a project.
 
     Args:
@@ -213,7 +213,7 @@ class ProjectStorage(object):
         return ModelStorageEngine(self, model_directory)
 
 
-class ModelStorageEngine(object):
+class ModelStorageEngine:
     """Store arbitrary models in a given project storage using joblib
 
     Args:
@@ -249,7 +249,7 @@ class ModelStorageEngine(object):
         """Persist a model object using joblib. Also performs compression
 
         Args:
-            obj (object) A picklable model object
+            obj  (object) A picklable model object
             model_hash (string) An identifier, unique within this project, for the model
         """
         if self.should_cache:
@@ -294,7 +294,7 @@ class ModelStorageEngine(object):
         return self.project_storage.get_store(self.directories, model_hash)
 
 
-class MatrixStorageEngine(object):
+class MatrixStorageEngine:
     """Store matrices in a given project storage
 
     Args:
@@ -324,7 +324,7 @@ class MatrixStorageEngine(object):
         )
 
 
-class MatrixStore(object):
+class MatrixStore:
     """Base class for classes that allow access of a matrix and its metadata.
 
     Subclasses should be scoped to a storage format (e.g. CSV)
@@ -592,7 +592,7 @@ class CSVMatrixStore(MatrixStore):
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
-class TestMatrixType(object):
+class TestMatrixType:
     string_name = "test"
     evaluation_obj = TestEvaluation
     prediction_obj = TestPrediction
@@ -601,7 +601,7 @@ class TestMatrixType(object):
     is_test = True
 
 
-class TrainMatrixType(object):
+class TrainMatrixType:
     string_name = "train"
     evaluation_obj = TrainEvaluation
     prediction_obj = TrainPrediction

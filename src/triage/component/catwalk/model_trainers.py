@@ -41,12 +41,12 @@ def flatten_grid_config(grid_config):
             yield class_path, parameters
 
 
-class ModelTrainer(object):
+class ModelTrainer:
     """Trains a series of classifiers using the same training set
     Args:
         project_path (string) path to project folder,
             under which to cache model pickles
-        experiment_hash (string) foreign key to the model_metadata.experiments table
+        experiment_hash (string) foreign key to the triage_metadata.experiments table
         model_storage_engine (catwalk.storage.ModelStorageEngine)
         db_engine (sqlalchemy.engine)
         replace (bool) whether or not to replace existing versions of models

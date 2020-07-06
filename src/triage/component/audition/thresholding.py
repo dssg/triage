@@ -70,7 +70,7 @@ def model_groups_filter(
             SELECT
                 model_group_id,
                 array_agg(distinct train_end_time::date::text) as train_end_time_list
-            FROM model_metadata.{models_table}
+            FROM triage_metadata.{models_table}
             WHERE model_group_id in {tuple(initial_model_group_ids)}
             GROUP BY model_group_id
         ) as t
@@ -91,7 +91,7 @@ def model_groups_filter(
     return model_group_ids
 
 
-class ModelGroupThresholder(object):
+class ModelGroupThresholder:
     def __init__(
         self,
         distance_from_best_table,

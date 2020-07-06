@@ -6,7 +6,7 @@ import pandas
 from .plotting import plot_cats, plot_bounds
 
 
-class SelectionRulePicker(object):
+class SelectionRulePicker:
     def __init__(self, distance_from_best_table):
         """Runs simulations of different model group selection rules
 
@@ -102,7 +102,7 @@ class SelectionRulePicker(object):
         return bound_selection_rule.pick(localized_df, train_end_time)
 
 
-class SelectionRulePlotter(object):
+class SelectionRulePlotter:
     """Plot selection rules
 
     Args:

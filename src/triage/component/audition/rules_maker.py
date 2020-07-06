@@ -1,4 +1,4 @@
-class BaseRules(object):
+class BaseRules:
     def __init__(self):
         self._metric = None
         self._parameter = None

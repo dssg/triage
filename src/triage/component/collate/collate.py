@@ -51,7 +51,7 @@ def split_distinct(quantity):
         return "", (q,)
 
 
-class AggregateExpression(object):
+class AggregateExpression:
     def __init__(
         self,
         aggregate1,
@@ -437,7 +437,7 @@ class Categorical(Compare):
         )
 
 
-class Aggregation(object):
+class Aggregation:
     def __init__(
         self,
         aggregates,

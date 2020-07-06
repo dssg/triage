@@ -12,7 +12,7 @@ from .selection_rule_grid import make_selection_rule_grid
 from .pre_audition import PreAudition
 
 
-class Auditioner(object):
+class Auditioner:
     def __init__(
         self,
         db_engine,
@@ -361,7 +361,7 @@ class Auditioner(object):
             self.plot_selection_rules()
 
 
-class AuditionRunner(object):
+class AuditionRunner:
     def __init__(self, config_dict, db_engine, directory=None):
         self.dir = directory
         self.config = config_dict
