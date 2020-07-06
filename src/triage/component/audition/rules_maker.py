@@ -152,7 +152,7 @@ class TwoMetricsRuleMaker(BaseRules):
     evaluate a model group's performance in terms of two metrics. It currently
      supports one rule:
 
-     - best_average_two_metrics
+     - [best_average_two_metrics][triage.component.audition.selection_rules.best_average_two_metrics]
 
     """
 

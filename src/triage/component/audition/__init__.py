@@ -47,28 +47,35 @@ class Auditioner(object):
             and its format is detailed in that method's docstring
 
         Args:
-            db_engine (sqlalchemy.engine) A database engine with access to a
+            db_engine (sqlalchemy.engine): A database engine with access to a
                 results schema of a completed modeling run
-            model_group_ids (list) A large list of model groups to audition. No effort should
+            model_group_ids (list): A large list of model groups to audition. No effort should
                 be needed to pick 'good' model groups, but they should all be groups that could
                 be used if they are found to perform well. They should also each have evaluations
                 for any train end times you wish to include in analysis
-            train_end_times (list) A list of train end times that all of the given model groups
+            train_end_times (list): A list of train end times that all of the given model groups
                 contain evaluations for and that you want to be deemed important in the analysis
-            initial_metric_filters (list) A list of metrics to filter model
+            initial_metric_filters (list): A list of metrics to filter model
                 groups on, and how to filter them. Each entry should be a dict
-                with the keys:
+                of the format:
 
-                    metric (string) -- model evaluation metric, such as 'precision@'
-                    parameter (string) -- model evaluation metric parameter,
+                    {
+                        'metric': 'string',
+                        'parameter': 'string',
+                        'max_below_best': .5,
+                        'threshold_value': .5
+                     }
+                    
+                    metric (string): model evaluation metric, such as 'precision@'
+                    parameter (string): model evaluation metric parameter,
                         such as '300_abs'
-                    max_below_best (float) The maximum value that the given metric
+                    max_below_best (float): The maximum value that the given metric
                         can be below the best for a given train end time
-                    threshold_value (float) The minimum value that the given metric can be
-            models_table (string, optional) The name of the results schema
+                    threshold_value (float): The minimum value that the given metric can be
+            models_table (string, optional): The name of the results schema
                 models table that you want to use. Will default to 'models',
                 which is also the default in triage.
-            distance_table (string, optional) The name of the 'best distance' table to use.
+            distance_table (string, optional): The name of the 'best distance' table to use.
                 Will default to 'best_distance', but this can be sent if you want to avoid
                 clobbering the results from a prior analysis.
         """
@@ -130,7 +137,7 @@ class Auditioner(object):
         depending on its current thresholding rules, this is a reference to whatever
         that current list is.
 
-        Returns: (list) of model group ids
+        Returns (list): list of model group ids
         """
         return self.model_group_thresholder.model_group_ids
 
@@ -150,7 +157,7 @@ class Auditioner(object):
     def selection_rule_model_group_ids(self):
         """Calculate the current winners for each selection rule and the most recent date
 
-        Returns: (dict) keys are selection rule descriptive names, values are the model group id
+        Returns (dict): keys are selection rule descriptive names, values are the model group id
             chosen by them
         """
         logging.info("Calculating selection rule picks for all rules")
@@ -216,12 +223,12 @@ class Auditioner(object):
         If one wnats to update multiple filters, one should use `update_metric_filters()` instead.
 
         Args:
-            metric (string) model evaluation metric such as 'precision@'
-            parameter (string) model evaluation parameter such as '100_abs'
-            max_from_best (string) The maximum value that the given metric can be below the best
+            metric (string): model evaluation metric such as 'precision@'
+            parameter (string): model evaluation parameter such as '100_abs'
+            max_from_best (string): The maximum value that the given metric can be below the best
                 for a given train end time
-            threshold_value (string) The thresold value that the given metric can be
-            plot (boolean, default True) Whether or not to also plot model group performance
+            threshold_value (string): The thresold value that the given metric can be
+            plot (boolean, default True): Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
         new_filters = [
@@ -238,7 +245,7 @@ class Auditioner(object):
         """Update the thresholding metric filters
 
         Args:
-            new_filters (list) A list of metrics to filter model
+            new_filters (list): A list of metrics to filter model
                 groups on, and how to filter them. This is an identical format to
                 the list given to 'initial_metric_filters' in the constructor.
                 Each entry should be a dict with the keys:
@@ -249,7 +256,7 @@ class Auditioner(object):
                     max_below_best (float) The maximum value that the given metric
                         can be below the best for a given train end time
                     threshold_value (float) The threshold value that the given metric can be
-            plot (boolean, default True) Whether or not to also plot model group performance
+            plot (boolean, default True): Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
         logging.info("Updating metric filters with new config %s", new_filters)
@@ -305,7 +312,7 @@ class Auditioner(object):
         """Register a grid of selection rules
 
         Args:
-            rule_grid (list) Groups of selection rules that share parameters
+            rule_grid (list): Groups of selection rules that share parameters
 
             Each entry in the list is considered a group, and is expected to be a dict
                 with two keys: 'shared_parameters', and 'selection_rules'.

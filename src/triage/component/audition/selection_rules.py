@@ -19,7 +19,7 @@ def random_model_group(df, train_end_time, n=1):
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest current raw metric value
     """
     return df["model_group_id"].drop_duplicates().sample(frac=1).tolist()[:n]
@@ -32,7 +32,7 @@ def _mg_best_avg_by(df, value_col, metric, n=1):
         df (pandas.DataFrame)
         value_col (str): The column which contains the value to be averaged
         metric (str): the name of the column
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     """
     if n == 1:
         return [
@@ -74,7 +74,7 @@ def best_current_value(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 dist_from_best_case
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest current raw metric value
     """
     curr_df = df.loc[
@@ -115,7 +115,7 @@ def best_average_value(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 dist_from_best_case
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
     met_df = df.loc[(df["metric"] == metric) & (df["parameter"] == parameter)]
@@ -138,7 +138,7 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -193,7 +193,7 @@ def most_frequent_best_dist(
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -248,7 +248,7 @@ def best_average_two_metrics(
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -314,7 +314,7 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -389,7 +389,7 @@ def best_avg_recency_weight(
                 parameter,
                 raw_value,
                 below_best
-        n (int): numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
