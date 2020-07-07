@@ -12,11 +12,10 @@ This article introduces the model selection process at a conceptual level, motiv
 
 !!! info "Unfinished Article"
 
-    This article is missing content. It could would benefit from discussion on:
-    
-    - Selection rules
-    
-    - Regret & selection rule evaluation
+    This article is missing some content. It could would benefit from:
+
+    - Discussion on regret & selection rule evaluation
+    - Links to postmodeling & bias
 
 ## An example model selection problem
 
@@ -33,3 +32,15 @@ Now that we've trained our model groups on historical data, we need to select a 
 -   To balance consistency and performance, we choose a model that reliably performs well (blue circles), even if it’s not always the best.
 
 In this imaginary example, the “selection process” was easy. Model 1 was the clear best option. Of course, in real life we are likely to have to choose between more than three models groups - Triage makes it easy to train grids of dozens or hundreds of models.
+
+### Selection Rules
+The goal of audition is to narrow a very large number of model groups to a small number of best candidates, ideally making use of the full time series of information. There are several ways one could consider doing so, using over-time averages of the metrics of interest, weighted averages to balance between metrics, the distance from best metrics, and balancing metric average values and stability.
+
+Audition formalizes this idea through by introducing the concept of "selection rules". A selection rule is a function that:
+- Takes data about the performance of a set of model groups, up to some point in time
+- Ranks those models based on some criteria
+- Returns `n` highest-ranked models
+
+An ideal selection rule will always return the model group that performs best in the subsequent time period. Thus, a selection rule is evaluated by its `regret`: the difference in performance between its chosen model and the best-performing model in some time period.
+
+You can use the [`Auditioner`](../api/audition/auditioner/#Auditioner) class to register, evaluate, and update selection rules. Audition will run simulations of different model group selection rules allowing you to assess which rule(s) is the best for your needs. 
