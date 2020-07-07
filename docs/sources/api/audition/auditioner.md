@@ -5,4 +5,6 @@ Other methods allow users to define more complex selection rules, list selected 
 ::: triage.component.audition.__init__
     rendering:
         show_root_toc_entry: False
-        group_by_category: False
+        group_by_category: True
+        show_category_heading: True
+        show_if_no_docstring: True

@@ -132,17 +132,26 @@ class Auditioner:
         ]
 
     @property
-    def thresholded_model_group_ids(self):
+    def thresholded_model_group_ids(self) -> list:
         """The model group thresholder will have a varying list of model group ids
         depending on its current thresholding rules, this is a reference to whatever
         that current list is.
 
-        Returns (list): list of model group ids
+        Returns:
+            list of model group ids allowed by the current metric threshold rules
         """
         return self.model_group_thresholder.model_group_ids
 
     @property
-    def average_regret_for_rules(self):
+    def average_regret_for_rules(self) -> dict:
+        """
+        Returns the average regret for each selection rule, over the specified list of train/test periods.
+
+        Returns:
+            A dict with a key-value pair for each selection rule and the average regret for that rule. Structure: 
+            
+                {'descriptive rule_name': .5}
+        """
         result = dict()
         for k in self.results_for_rule.keys():
             result[k] = (
@@ -154,12 +163,19 @@ class Auditioner:
         return result
 
     @property
-    def selection_rule_model_group_ids(self):
-        """Calculate the current winners for each selection rule and the most recent date
-
-        Returns (dict): keys are selection rule descriptive names, values are the model group id
-            chosen by them
+    def selection_rule_model_group_ids(self) -> dict:
         """
+        Calculate the current winners for each selection rule and the most recent date
+
+        Returns:
+            A dict with a key-value pair for each selection rule and the list of n
+            model_group_ids that it selected. Structure: 
+            
+                {'descriptive rule_name':[1,2,3]}
+        """
+                
+
+
         logging.info("Calculating selection rule picks for all rules")
         model_group_ids = dict()
         thresholded_ids = self.thresholded_model_group_ids
@@ -249,7 +265,7 @@ class Auditioner:
                 groups on, and how to filter them. This is an identical format to
                 the list given to 'initial_metric_filters' in the constructor.
                 Each entry should be a dict with the keys:
-
+initial_metric_filters
                     metric (string) -- model evaluation metric, such as 'precision@'
                     parameter (string) -- model evaluation metric parameter,
                         such as '300_abs'
@@ -312,49 +328,52 @@ class Auditioner:
         """Register a grid of selection rules
 
         Args:
-            rule_grid (list): Groups of selection rules that share parameters
-
-            Each entry in the list is considered a group, and is expected to be a dict
-                with two keys: 'shared_parameters', and 'selection_rules'.
-
-                'shared_parameters': A list of dicts, each with a set of parameters that are taken
-                    by all selection rules in this group.
-
-                    For each of these shared parameter sets, the grid will create selection rules
-                    combining the set with all possible selection rule/parameter combinations.
-
-                    This can be used to quickly combine, say, a variety of rules that
-                        all are concerned with precision at top 100 entities.
-
-                'selection_rules': A list of dicts, each with:
-                    A 'name' attribute that matches a selection rule in audition.selection_rules
-                    Parameters and values taken by that selection rule. Values in list form are
-                    all added to the grid.
-                    If the selection rule has no parameters, or the parameters are all covered
-                    by the shared parameters in this group, none are needed here.
-
-                Each selection rule in the group must have all of its required parameters
-                covered by the shared parameters in its group and the parameters given to it.
-
-                Refer to audition.selection_rules.SELECTION_RULES for available selection rules
-                and their needed parameters.
-                The exceptions are the first two arguments to each selection rule,
-                'df' and 'train_end_time'.
-                These are contextual and thus provided internally by Audition.
-
-            Example: [{
-                    'shared_parameters': [
-                            {'metric': 'precision@', 'parameter': '100_abs'},
-                            {'metric': 'recall@', 'parameter': '100_abs'},
-                        ],
-                        'selection_rules': [
-                            {'name': 'most_frequent_best_dist',
-                             'dist_from_best_case': [0.1, 0.2, 0.3]},
-                            {'name': 'best_current_value'}
-                        ]
-                }]
-            plot (boolean, defaults to True) Whether or not to plot the selection
+            rule_grid (list): Groups of selection rules that share parameters. See documentation below for schema.
+            plot: (boolean, defaults to True) Whether or not to plot the selection
                 rules at this time.
+
+        `rules_grid` is a list of dicts. Each dict, which defines a group, has two required keys:
+        `shared_parameters` and `selection_rules`.
+
+        `shared_parameters`: A list of dicts, each with a set of parameters that are taken
+        by all selection rules in this group.
+
+        For each of these shared parameter sets, the grid will create selection rules
+        combining the set with all possible selection rule/parameter combinations.
+
+        This can be used to quickly combine, say, a variety of rules that
+        all are concerned with precision at top 100 entities.
+
+        `selection_rules`: A list of dicts, each with:
+
+        - A 'name' attribute that matches a selection rule in audition.selection_rules
+        - Parameters and values taken by that selection rule. Values in list form are
+        all added to the grid. If the selection rule has no parameters, or the parameters are all covered
+        by the shared parameters in this group, none are needed here.
+
+        Each selection rule in the group must have all of its required parameters
+        covered by the shared parameters in its group and the parameters given to it.
+
+        Refer to [Selection Rules](../selection_rules/#selection-rules) for available selection rules
+        and their parameters.
+        The exceptions are the first two arguments to each selection rule,
+        'df' and 'train_end_time'.
+        These are contextual and thus provided internally by Audition.
+
+        Example:
+        ```
+        [{
+            'shared_parameters': [
+                    {'metric': 'precision@', 'parameter': '100_abs'},
+                    {'metric': 'recall@', 'parameter': '100_abs'},
+                ],
+                'selection_rules': [
+                    {'name': 'most_frequent_best_dist',
+                        'dist_from_best_case': [0.1, 0.2, 0.3]},
+                    {'name': 'best_current_value'}
+                ]
+        }]
+        ```
         """
         self.selection_rules = make_selection_rule_grid(rule_grid)
         if plot:
