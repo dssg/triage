@@ -116,9 +116,9 @@ def upgrade_if_clean(dburl):
         current_revision = conn.execute(
             'select version_num from results_schema_versions limit 1'
         ).scalar()
-        logger.info("Database's results schema version is %s", current_revision)
+        logger.debug("Database's triage_metadata schema version is %s", current_revision)
         triage_head = script_.get_current_head()
-        logger.info("Code's results schema version is %s", triage_head)
+        logger.debug("Code's triage_metadata schema version is %s", triage_head)
         database_is_ahead = not any(
             migration.revision == current_revision
             for migration in script_.walk_revisions()

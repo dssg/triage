@@ -82,8 +82,8 @@ def infer_log_location():
     """
     root_logger_handlers = [
         handler
-        for handler in logger.getLoggerClass().root.handlers
-        if isinstance(handler, logger.FileHandler)
+        for handler in logging.getLoggerClass().root.handlers
+        if isinstance(handler, logging.FileHandler)
     ]
     if root_logger_handlers:
         log_location = root_logger_handlers[0].baseFilename
