@@ -71,6 +71,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
+    data_files=[('config', ['config/logging.yaml'])],
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST
 )
