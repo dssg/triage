@@ -1,6 +1,6 @@
 import inspect
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from numpy import exp, log, average
 

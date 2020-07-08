@@ -1,6 +1,6 @@
 from itertools import product
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from .selection_rules import BoundSelectionRule
 from .utils import make_list

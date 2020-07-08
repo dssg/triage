@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.component.architect.database_reflection import table_has_data
 from triage.database_reflection import table_row_count, table_exists

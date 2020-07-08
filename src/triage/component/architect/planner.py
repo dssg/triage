@@ -1,8 +1,8 @@
 import copy
 import itertools
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.component.catwalk.utils import filename_friendly_hash
 from . import utils, entity_date_table_generators

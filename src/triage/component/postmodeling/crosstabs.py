@@ -1,6 +1,6 @@
 import pandas as pd
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from scipy import stats
 import yaml

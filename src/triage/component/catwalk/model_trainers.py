@@ -2,8 +2,8 @@ import copy
 import datetime
 import importlib
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 import random
 import sys

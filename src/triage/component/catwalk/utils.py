@@ -4,8 +4,8 @@ import hashlib
 import numpy as np
 import json
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 import random
 from itertools import chain

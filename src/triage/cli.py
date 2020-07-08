@@ -24,8 +24,9 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-import logging
-logger = logging.getLogger(__name__)
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 
 def natural_number(value):
@@ -144,10 +145,8 @@ class FeatureTest(Command):
             feature_dates=[args.as_of_date],
             state_table="features_test.test_cohort"
         )
-        logger.info(
-            "Features created for feature_config %s and date %s",
-            feature_config,
-            args.as_of_date,
+        logger.success(
+            f"Features created for feature_config {feature_config} and date {args.as_of_date}"
         )
 
 
@@ -289,7 +288,14 @@ class Experiment(Command):
 
     def __call__(self, args):
         if args.validate_only:
-            self.experiment.validate()
+            try:
+                logger.info(f"Validating experiment [config file: {self.args.config}]")
+                self.experiment.validate()
+                logger.success(f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!")
+            except Exception:
+                logger.exception(f"Validation failed!")
+                logger.error(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
+
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
@@ -302,7 +308,16 @@ class Experiment(Command):
                 visualize_chops(self.experiment.chopper, save_target=fd)
 
         else:
-            self.experiment.run()
+            try:
+                logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
+                logger.info(f"Configuration file:  [config file: {self.args.config}]")
+                logger.info(f"Results will be stored in DB: {self.root.db_url}")
+                logger.info(f"Storing artifacts in {self.args.project_path}")
+                self.experiment.run()
+                logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
+            except Exception:
+                logger.exception(f"Run failed!")
+                logger.critical(f"Experiment [config file: {self.args.config}] run failed!")
 
 
 @Triage.register

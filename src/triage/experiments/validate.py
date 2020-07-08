@@ -1,7 +1,7 @@
 import importlib
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from itertools import permutations
 from datetime import datetime

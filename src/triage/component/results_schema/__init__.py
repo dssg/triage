@@ -1,7 +1,7 @@
 import os.path
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from alembic.config import Config
 from alembic import script

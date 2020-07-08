@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from .metric_directionality import is_better_operator
 import pandas as pd

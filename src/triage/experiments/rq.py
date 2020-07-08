@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 import time
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase

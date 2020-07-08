@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.validation_primitives import (
     table_should_exist,

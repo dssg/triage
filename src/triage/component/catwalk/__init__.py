@@ -8,8 +8,8 @@ from .subsetters import Subsetter
 from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
 from .utils import filename_friendly_hash
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from collections import namedtuple
 

@@ -2,8 +2,8 @@ from functools import partial
 import pandas as pd
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 def downcast_matrix(df):
     """Downcast the numeric values of a matrix.
