@@ -25,7 +25,7 @@ from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_c
 from triage.util.db import create_engine
 
 import logging
-logger = logger.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def natural_number(value):
