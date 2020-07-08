@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 import random
 import pytest
 
@@ -97,7 +97,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert len([x for x in model_pickles if x is not None]) == 4
 
     # 5. that their results can have predictions made on it
-    test_matrix = pandas.DataFrame.from_dict(
+    test_matrix = pd.DataFrame.from_dict(
         {"entity_id": [3, 4], "feature_one": [4, 4], "feature_two": [6, 5]}
     ).set_index("entity_id")
 

@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 import itertools
 from triage.component.architect.feature_group_creator import FeatureGroup
 
@@ -94,11 +96,11 @@ class FeatureGroupMixer:
         """
         final_results = []
         for strategy in self.strategies:
-            logging.info(
+            logger.debug(
                 "Mixing feature groups %s using strategy %s", feature_groups, strategy
             )
             results = self.strategy_lookup[strategy](feature_groups)
-            logging.info("Mixing found new feature groups %s", results)
+            logger.debug("Mixing found new feature groups %s", results)
             final_results += results
 
         return final_results

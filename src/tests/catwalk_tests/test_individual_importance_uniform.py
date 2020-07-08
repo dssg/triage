@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 
 from triage.component.catwalk.individual_importance.uniform import uniform_distribution
 from tests.utils import rig_engines, get_matrix_store, matrix_metadata_creator
@@ -23,7 +23,7 @@ def test_uniform_distribution():
         metadata = matrix_metadata_creator()
         test_store = get_matrix_store(
             project_storage,
-            pandas.DataFrame.from_dict(data_dict),
+            pd.DataFrame.from_dict(data_dict),
             metadata,
         )
         results = uniform_distribution(

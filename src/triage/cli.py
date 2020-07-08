@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import argparse
 import importlib.util
-import logging
 import os
 import yaml
+
+
 from datetime import datetime
 
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
-
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
@@ -24,7 +24,8 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-logging.basicConfig(level=logging.INFO)
+import logging
+logger = logger.getLogger(__name__)
 
 
 def natural_number(value):
@@ -67,11 +68,11 @@ class Triage(RootCommand):
             return
 
         setup_path = self.args.setup or self.SETUP_FILE_DEFAULT
-        logging.info("Loading setup module at %s", setup_path)
+        logger.info("Loading setup module at %s", setup_path)
         spec = importlib.util.spec_from_file_location("triage_config", setup_path)
         triage_config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(triage_config)
-        logging.info(f"Setup module loaded")
+        logger.info(f"Setup module loaded")
 
     @cachedproperty
     def db_url(self):
@@ -143,7 +144,7 @@ class FeatureTest(Command):
             feature_dates=[args.as_of_date],
             state_table="features_test.test_cohort"
         )
-        logging.info(
+        logger.info(
             "Features created for feature_config %s and date %s",
             feature_config,
             args.as_of_date,

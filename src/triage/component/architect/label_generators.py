@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 import textwrap
 from triage.database_reflection import table_exists
 
@@ -8,12 +10,12 @@ DEFAULT_LABEL_NAME = "outcome"
 
 class LabelGeneratorNoOp:
     def generate_all_labels(self, labels_table, as_of_dates, label_timespans):
-        logging.warning(
+        logger.warning(
             "No label configuration is available, so no labels will be created"
         )
 
     def generate(self, start_date, label_timespan, labels_table):
-        logging.warning(
+        logger.warning(
             "No label configuration is available, so no labels will be created"
         )
 
@@ -47,12 +49,12 @@ class LabelGenerator:
                 )
             )
         else:
-            logging.info("Not dropping and recreating table because "
+            logger.debug("Not dropping and recreating table because "
                          "replace flag was set to False and table was found to exist")
 
     def generate_all_labels(self, labels_table, as_of_dates, label_timespans):
         self._create_labels_table(labels_table)
-        logging.info(
+        logger.debug(
             "Creating labels for %s as of dates and %s label timespans",
             len(as_of_dates),
             len(label_timespans),
@@ -60,7 +62,7 @@ class LabelGenerator:
         for as_of_date in as_of_dates:
             for label_timespan in label_timespans:
                 if not self.replace:
-                    logging.info(
+                    logger.debug(
                         "Looking for existing labels for as of date %s and label timespan %s",
                         as_of_date,
                         label_timespan,
@@ -79,10 +81,10 @@ class LabelGenerator:
                         )
                     ))
                     if len(any_existing_labels) == 1:
-                        logging.info("Since nonzero existing labels found, skipping")
+                        logger.debug("Since nonzero existing labels found, skipping")
                         continue
 
-                logging.info(
+                logger.debug(
                     "Generating labels for as of date %s and label timespan %s",
                     as_of_date,
                     label_timespan,
@@ -99,9 +101,9 @@ class LabelGenerator:
             )
         ][0]
         if nrows == 0:
-            logging.warning("Done creating labels, but no rows in labels table!")
+            logger.warning("Done creating labels, but no rows in labels table!")
         else:
-            logging.info("Done creating labels table %s: rows: %s", labels_table, nrows)
+            logger.debug("Done creating labels table %s: rows: %s", labels_table, nrows)
 
     def generate(self, start_date, label_timespan, labels_table):
         """Generate labels table using a query
@@ -142,8 +144,8 @@ class LabelGenerator:
             label_name=self.label_name,
         )
 
-        logging.debug("Running label creation query")
-        logging.debug(full_insert_query)
+        logger.debug("Running label creation query")
+        logger.debug(full_insert_query)
         self.db_engine.execute(full_insert_query)
 
     def clean_up(self, labels_table_name):

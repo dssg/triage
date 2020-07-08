@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
 
@@ -35,7 +37,7 @@ class FeatureDictionaryCreator:
                 )
             ]
             feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
-        logging.info("Feature dictionary built: %s", feature_dictionary)
+        logger.debug("Feature dictionary built: %s", feature_dictionary)
         return feature_dictionary
 
     def _build_feature_names_query(self, table_name, index_columns):
@@ -60,7 +62,7 @@ class FeatureDictionaryCreator:
             schema=self.features_schema_name,
             index_columns=str_in_sql(index_columns),
         )
-        logging.info(
+        logger.debug(
             "Extracting all possible feature names for table %s with query %s",
             table_name,
             feature_names_query,

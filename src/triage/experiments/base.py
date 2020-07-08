@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 from abc import ABC, abstractmethod
 import cProfile
 import marshal
@@ -183,13 +185,13 @@ class ExperimentBase(ABC):
 
         self.cleanup = cleanup
         if self.cleanup:
-            logging.info(
+            logger.info(
                 "cleanup is set to True, so intermediate tables (labels and cohort) "
                 "will be removed after matrix creation and subset tables will be "
                 "removed after model training and testing"
             )
         else:
-            logging.info(
+            logger.info(
                 "cleanup is set to False, so intermediate tables (labels, cohort, and subsets) "
                 "will not be removed"
             )
@@ -197,13 +199,13 @@ class ExperimentBase(ABC):
             self.cleanup_timeout if cleanup_timeout is None else cleanup_timeout
         )
         self.profile = profile
-        logging.info("Generate profiling stats? (profile option): %s", self.profile)
+        logger.info("Generate profiling stats? (profile option): %s", self.profile)
 
     def _check_config_version(self, config):
         if "config_version" in config:
             config_version = config["config_version"]
         else:
-            logging.warning(
+            logger.warning(
                 "config_version key not found in experiment config. "
                 "Assuming v1, which may not be correct"
             )
@@ -240,7 +242,7 @@ class ExperimentBase(ABC):
                 replace=self.replace
             )
         else:
-            logging.warning(
+            logger.warning(
                 "cohort_config missing or unrecognized. Without a cohort, "
                 "you will not be able to make matrices, perform feature imputation, "
                 "or save time by only computing features for that cohort."
@@ -266,7 +268,7 @@ class ExperimentBase(ABC):
         else:
             self.labels_table_name = "labels_{}".format(self.experiment_hash)
             self.label_generator = LabelGeneratorNoOp()
-            logging.warning(
+            logger.warning(
                 "label_config missing or unrecognized. Without labels, "
                 "you will not be able to make matrices."
             )
@@ -286,7 +288,7 @@ class ExperimentBase(ABC):
             )
         else:
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
-            logging.warning(
+            logger.warning(
                 "bias_audit_config missing or unrecognized. Without protected groups, "
                 "you will not audit your models for bias and fairness."
             )
@@ -372,7 +374,7 @@ class ExperimentBase(ABC):
             )
         else:
             self.individual_importance_calculator = IndividualImportanceCalculatorNoOp()
-            logging.warning(
+            logger.warning(
                 "individual_importance  missing or unrecognized."
                 "you will not be able to do analysis on individual feature importances."
             )
@@ -432,9 +434,9 @@ class ExperimentBase(ABC):
 
         """
         split_definitions = self.chopper.chop_time()
-        logging.info("Computed and stored split definitions: %s", split_definitions)
-        logging.info("\n----TIME SPLIT SUMMARY----\n")
-        logging.info("Number of time splits: {}".format(len(split_definitions)))
+        logger.info("Computed and stored split definitions: %s", split_definitions)
+        logger.info("\n----TIME SPLIT SUMMARY----\n")
+        logger.info("Number of time splits: {}".format(len(split_definitions)))
         for split_index, split in enumerate(split_definitions):
             train_times = split["train_matrix"]["as_of_times"]
             test_times = [
@@ -442,7 +444,7 @@ class ExperimentBase(ABC):
                 for test_matrix in split["test_matrices"]
                 for as_of_time in test_matrix["as_of_times"]
             ]
-            logging.info(
+            logger.info(
                 """Split index {}:
             Training as_of_time_range: {} to {} ({} total)
             Testing as_of_time range: {} to {} ({} total)\n\n""".format(
@@ -472,27 +474,27 @@ class ExperimentBase(ABC):
         all_as_of_times = []
         for split in self.split_definitions:
             all_as_of_times.extend(split["train_matrix"]["as_of_times"])
-            logging.debug(
+            logger.debug(
                 "Adding as_of_times from train matrix: %s",
                 split["train_matrix"]["as_of_times"],
             )
             for test_matrix in split["test_matrices"]:
-                logging.debug(
+                logger.debug(
                     "Adding as_of_times from test matrix: %s",
                     test_matrix["as_of_times"],
                 )
                 all_as_of_times.extend(test_matrix["as_of_times"])
 
-        logging.info(
+        logger.info(
             "Computed %s total as_of_times for label and feature generation",
             len(all_as_of_times),
         )
         distinct_as_of_times = list(set(all_as_of_times))
-        logging.info(
+        logger.info(
             "Computed %s distinct as_of_times for label and feature generation",
             len(distinct_as_of_times),
         )
-        logging.info(
+        logger.info(
             "You can view all as_of_times by inspecting `.all_as_of_times` on this Experiment"
         )
         with self.get_for_update() as experiment:
@@ -506,9 +508,9 @@ class ExperimentBase(ABC):
         Returns: (list) of ``collate.Aggregation`` objects
 
         """
-        logging.info("Creating collate aggregations")
+        logger.info("Creating collate aggregations")
         if "feature_aggregations" not in self.config:
-            logging.warning("No feature_aggregation config is available")
+            logger.warning("No feature_aggregation config is available")
             return []
         aggregations = self.feature_generator.aggregations(
             feature_aggregation_config=self.config["feature_aggregations"],
@@ -530,7 +532,7 @@ class ExperimentBase(ABC):
             being lists of SQL commands
 
         """
-        logging.info(
+        logger.info(
             "Calculating feature tasks for %s as_of_times", len(self.all_as_of_times)
         )
         return self.feature_generator.generate_all_table_tasks(
@@ -548,7 +550,7 @@ class ExperimentBase(ABC):
             being lists of SQL commands
 
         """
-        logging.info(
+        logger.info(
             "Calculating feature tasks for %s as_of_times", len(self.all_as_of_times)
         )
         return self.feature_generator.generate_all_table_tasks(
@@ -570,7 +572,7 @@ class ExperimentBase(ABC):
                 self.collate_aggregations
             ),
         )
-        logging.info("Computed master feature dictionary: %s", result)
+        logger.info("Computed master feature dictionary: %s", result)
         with self.get_for_update() as experiment:
             experiment.total_features = sum(1 for _feature in itertools.chain.from_iterable(result.values()))
         return result
@@ -604,10 +606,10 @@ class ExperimentBase(ABC):
 
         """
         if not table_has_data(self.cohort_table_name, self.db_engine):
-            logging.warning("cohort table is not populated, cannot build any matrices")
+            logger.warning("cohort table is not populated, cannot build any matrices")
             return {}
         if not table_has_data(self.labels_table_name, self.db_engine):
-            logging.warning("labels table is not populated, cannot build any matrices")
+            logger.warning("labels table is not populated, cannot build any matrices")
             return {}
         (updated_split_definitions, matrix_build_tasks) = self.planner.generate_plans(
             self.split_definitions, self.feature_dicts
@@ -678,7 +680,7 @@ class ExperimentBase(ABC):
         )
 
     def log_split(self, split_num, split):
-        logging.info(
+        logger.info(
             "Starting train/test for %s out of %s: train range: %s to %s",
             split_num + 1,
             len(self.full_matrix_definitions),
@@ -705,7 +707,7 @@ class ExperimentBase(ABC):
     @experiment_entrypoint
     def generate_preimputation_features(self):
         self.process_query_tasks(self.feature_aggregation_table_tasks)
-        logging.info(
+        logger.info(
             "Finished running preimputation feature queries. The final results are in tables: %s",
             ",".join(agg.get_table_name() for agg in self.collate_aggregations),
         )
@@ -713,7 +715,7 @@ class ExperimentBase(ABC):
     @experiment_entrypoint
     def impute_missing_features(self):
         self.process_query_tasks(self.feature_imputation_table_tasks)
-        logging.info(
+        logger.info(
             "Finished running postimputation feature queries. The final results are in tables: %s",
             ",".join(
                 agg.get_table_name(imputed=True) for agg in self.collate_aggregations
@@ -733,28 +735,28 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def generate_matrices(self):
-        logging.info("Creating cohort")
+        logger.info("Creating cohort")
         self.generate_cohort()
-        logging.info("Creating labels")
+        logger.info("Creating labels")
         self.generate_labels()
-        logging.info("Creating feature aggregation tables")
+        logger.info("Creating feature aggregation tables")
         self.generate_preimputation_features()
-        logging.info("Creating feature imputation tables")
+        logger.info("Creating feature imputation tables")
         self.impute_missing_features()
-        logging.info("Building all matrices")
+        logger.info("Building all matrices")
         self.build_matrices()
 
     @experiment_entrypoint
     def generate_subsets(self):
         if self.subsets:
-            logging.info("Beginning subset generation")
+            logger.info("Beginning subset generation")
             self.process_subset_tasks(self.subset_tasks)
         else:
-            logging.info("No subsets found. Proceeding to training and testing models")
+            logger.info("No subsets found. Proceeding to training and testing models")
 
     def _all_train_test_batches(self):
         if "grid_config" not in self.config:
-            logging.warning(
+            logger.warning(
                 "No grid_config was passed in the experiment config. No models will be trained"
             )
             return
@@ -768,18 +770,18 @@ class ExperimentBase(ABC):
     @experiment_entrypoint
     def train_and_test_models(self):
         self.generate_subsets()
-        logging.info("Creating protected groups table")
+        logger.info("Creating protected groups table")
         self.generate_protected_groups()
         batches = self._all_train_test_batches()
         if not batches:
-            logging.warning("No train/test tasks found, so no training to do")
+            logger.warning("No train/test tasks found, so no training to do")
             return
 
         with self.get_for_update() as experiment:
             experiment.grid_size = sum(
                 1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
 
-        logging.info("%s train/test batches found. Beginning training.", len(batches))
+        logger.info("%s train/test batches found. Beginning training.", len(batches))
         model_hashes = set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks)
         associate_models_with_experiment(
             self.experiment_hash,
@@ -798,7 +800,7 @@ class ExperimentBase(ABC):
         if not self.skip_validation:
             self.validate()
 
-        logging.info("Generating matrices")
+        logger.info("Generating matrices")
         try:
             self.generate_matrices()
             self.train_and_test_models()
@@ -806,13 +808,13 @@ class ExperimentBase(ABC):
             if self.cleanup:
                 self.clean_up_matrix_building_tables()
                 self.clean_up_subset_tables()
-            logging.info("Experiment complete")
+            logger.info("Experiment complete")
             self._log_end_of_run_report()
 
     def _log_end_of_run_report(self):
         missing_models = missing_model_hashes(self.experiment_hash, self.db_engine)
         if len(missing_models) > 0:
-            logging.info("Found %s missing model hashes."
+            logger.info("Found %s missing model hashes."
                          "This means that they were supposed to either be trained or reused"
                          "by this experiment but are not present in the models table."
                          "Inspect the logs for any training errors. Full list: %s",
@@ -820,11 +822,11 @@ class ExperimentBase(ABC):
                          missing_models
                          )
         else:
-            logging.info("All models that were supposed to be trained were trained. Awesome!")
+            logger.info("All models that were supposed to be trained were trained. Awesome!")
 
         missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
         if len(missing_matrices) > 0:
-            logging.info("Found %s missing matrix uuids."
+            logger.info("Found %s missing matrix uuids."
                          "This means that they were supposed to either be build or reused"
                          "by this experiment but are not present in the matrices table."
                          "Inspect the logs for any matrix building errors. Full list: %s",
@@ -832,16 +834,16 @@ class ExperimentBase(ABC):
                          missing_matrices
                          )
         else:
-            logging.info("All matrices that were supposed to be build were built. Awesome!")
+            logger.info("All matrices that were supposed to be build were built. Awesome!")
 
     def clean_up_matrix_building_tables(self):
-        logging.info("Cleaning up cohort and labels tables")
+        logger.info("Cleaning up cohort and labels tables")
         with timeout(self.cleanup_timeout):
             self.cohort_table_generator.clean_up()
             self.label_generator.clean_up(self.labels_table_name)
 
     def clean_up_subset_tables(self):
-        logging.info("Cleaning up cohort and labels tables")
+        logger.info("Cleaning up cohort and labels tables")
         with timeout(self.cleanup_timeout):
             for subset_task in self.subset_tasks:
                 subset_task["subset_table_generator"].clean_up()
@@ -856,7 +858,7 @@ class ExperimentBase(ABC):
         with store.open('wb') as fd:
             cp.create_stats()
             marshal.dump(cp.stats, fd)
-            logging.info("Profiling stats of this Triage run calculated and written to %s"
+            logger.info("Profiling stats of this Triage run calculated and written to %s"
                          "in cProfile format.",
                          store)
 
@@ -868,7 +870,7 @@ class ExperimentBase(ABC):
             else:
                 self._run()
         except Exception:
-            logging.exception("Run interrupted by uncaught exception")
+            logger.exception("Run interrupted by uncaught exception")
             raise
 
     __call__ = run

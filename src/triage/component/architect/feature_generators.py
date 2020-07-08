@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 from collections import OrderedDict
 
 import sqlalchemy
@@ -79,7 +81,7 @@ class FeatureGenerator:
     def _validate_categoricals(self, categoricals):
         for categorical in categoricals:
             if "choice_query" in categorical:
-                logging.info("Validating choice query")
+                logger.debug("Validating choice query")
 
                 try:
                     with self.db_engine.begin() as conn:
@@ -92,7 +94,7 @@ class FeatureGenerator:
                     )
 
     def _validate_from_obj(self, from_obj):
-        logging.info("Validating from_obj")
+        logger.debug("Validating from_obj")
         try:
             with self.db_engine.begin() as conn:
                 conn.execute("explain select * from {}".format(from_obj))
@@ -104,7 +106,7 @@ class FeatureGenerator:
             )
 
     def _validate_time_intervals(self, intervals):
-        logging.info("Validating time intervals")
+        logger.debug("Validating time intervals")
         for interval in intervals:
             if interval != "all":
                 convert_str_to_relativedelta(interval)
@@ -182,7 +184,7 @@ class FeatureGenerator:
                     self._validate_imputation_rule(agg_type, impute_rule)
 
     def _validate_aggregation(self, aggregation_config):
-        logging.info("Validating aggregation config %s", aggregation_config)
+        logger.debug("Validating aggregation config %s", aggregation_config)
         self._validate_keys(aggregation_config)
         self._validate_aggregates(aggregation_config)
         self._validate_categoricals(aggregation_config.get("categoricals", []))
@@ -213,7 +215,7 @@ class FeatureGenerator:
                     row[0] for row in conn.execute(choice_query)
                 ]
 
-            logging.info(
+            logger.debug(
                 "Computed list of categoricals: %s for choice query: %s",
                 self.categorical_cache[choice_query],
                 choice_query,
@@ -222,13 +224,13 @@ class FeatureGenerator:
         return self.categorical_cache[choice_query]
 
     def _build_choices(self, categorical):
-        logging.info(
+        logger.debug(
             "Building categorical choices for column %s, metrics %s",
             categorical["column"],
             categorical["metrics"],
         )
         if "choices" in categorical:
-            logging.info("Found list of configured choices: %s", categorical["choices"])
+            logger.debug("Found list of configured choices: %s", categorical["choices"])
             return categorical["choices"]
         else:
             return self._compute_choices(categorical["choice_query"])
@@ -276,7 +278,7 @@ class FeatureGenerator:
         ]
 
     def _aggregation(self, aggregation_config, feature_dates, state_table):
-        logging.info(
+        logger.debug(
             "Building collate.SpacetimeAggregation for config %s and %s as_of_dates",
             aggregation_config,
             len(feature_dates),
@@ -298,15 +300,15 @@ class FeatureGenerator:
             )
             for aggregate in aggregation_config.get("aggregates", [])
         ]
-        logging.info("Found %s quantity aggregates", len(aggregates))
+        logger.debug("Found %s quantity aggregates", len(aggregates))
         categoricals = self._build_categoricals(
             aggregation_config.get("categoricals", []), catimp
         )
-        logging.info("Found %s categorical aggregates", len(categoricals))
+        logger.debug("Found %s categorical aggregates", len(categoricals))
         array_categoricals = self._build_array_categoricals(
             aggregation_config.get("array_categoricals", []), arrcatimp
         )
-        logging.info("Found %s array categorical aggregates", len(array_categoricals))
+        logger.debug("Found %s array categorical aggregates", len(array_categoricals))
         return SpacetimeAggregation(
             aggregates + categoricals + array_categoricals,
             from_obj=aggregation_config["from_obj"],
@@ -372,25 +374,25 @@ class FeatureGenerator:
             and with values being lists of SQL commands
         """
 
-        logging.debug("---------------------")
+        logger.debug("---------------------")
 
         # pick the method to use for generating tasks depending on whether we're
         # building the aggregations or imputations
         if task_type == "aggregation":
             task_generator = self._generate_agg_table_tasks_for
-            logging.debug("---------FEATURE GENERATION------------")
+            logger.debug("---------FEATURE GENERATION------------")
         elif task_type == "imputation":
             task_generator = self._generate_imp_table_tasks_for
-            logging.debug("---------FEATURE IMPUTATION------------")
+            logger.debug("---------FEATURE IMPUTATION------------")
         else:
             raise ValueError("Table task type must be aggregation or imputation")
 
-        logging.debug("---------------------")
+        logger.debug("---------------------")
 
         table_tasks = OrderedDict()
         for aggregation in aggregations:
             table_tasks.update(task_generator(aggregation))
-        logging.info("Created %s tables", len(table_tasks.keys()))
+        logger.debug("Created %s tables", len(table_tasks.keys()))
         return table_tasks
 
     def create_features_before_imputation(
@@ -403,47 +405,47 @@ class FeatureGenerator:
             ),
             task_type="aggregation",
         )
-        logging.info("Generated a total of %s table tasks", len(all_tasks))
+        logger.debug("Generated a total of %s table tasks", len(all_tasks))
         for task_num, task in enumerate(all_tasks.values(), 1):
             prepares = task.get("prepare", [])
             inserts = task.get("inserts", [])
             finalize = task.get("finalize", [])
-            logging.info("------------------")
-            logging.info("TASK %s ", task_num)
-            logging.info(
+            logger.debug("------------------")
+            logger.debug("TASK %s ", task_num)
+            logger.debug(
                 "%s prepare queries, %s insert queries, %s finalize queries",
                 len(prepares),
                 len(inserts),
                 len(finalize),
             )
-            logging.info("------------------")
-            logging.info("")
-            logging.info("------------------")
-            logging.info("PREPARATION QUERIES")
-            logging.info("------------------")
+            logger.debug("------------------")
+            logger.debug("")
+            logger.debug("------------------")
+            logger.debug("PREPARATION QUERIES")
+            logger.debug("------------------")
             for query_num, query in enumerate(prepares, 1):
-                logging.info("")
-                logging.info(
+                logger.debug("")
+                logger.debug(
                     "prepare query %s: %s",
                     query_num,
                     sqlparse.format(str(query), reindent=True),
                 )
-            logging.info("------------------")
-            logging.info("INSERT QUERIES")
-            logging.info("------------------")
+            logger.debug("------------------")
+            logger.debug("INSERT QUERIES")
+            logger.debug("------------------")
             for query_num, query in enumerate(inserts, 1):
-                logging.info("")
-                logging.info(
+                logger.debug("")
+                logger.debug(
                     "insert query %s: %s",
                     query_num,
                     sqlparse.format(str(query), reindent=True),
                 )
-            logging.info("------------------")
-            logging.info("FINALIZE QUERIES")
-            logging.info("------------------")
+            logger.debug("------------------")
+            logger.debug("FINALIZE QUERIES")
+            logger.debug("------------------")
             for query_num, query in enumerate(finalize, 1):
-                logging.info("")
-                logging.info(
+                logger.debug("")
+                logger.debug(
                     "finalize query %s: %s",
                     query_num,
                     sqlparse.format(str(query), reindent=True),
@@ -507,7 +509,7 @@ class FeatureGenerator:
 
     def process_table_tasks(self, table_tasks):
         for table_name, task in table_tasks.items():
-            logging.info("Running feature table queries for %s", table_name)
+            logger.debug("Running feature table queries for %s", table_name)
             self.process_table_task(task)
         return table_tasks.keys()
 
@@ -518,8 +520,8 @@ class FeatureGenerator:
                     for select in selectlist:
                         query = "explain " + str(select)
                         results = list(conn.execute(query))
-                        logging.debug(str(select))
-                        logging.debug(results)
+                        logger.debug(str(select))
+                        logger.debug(results)
 
     def _clean_table_name(self, table_name):
         # remove the schema and quotes from the name
@@ -541,7 +543,7 @@ class FeatureGenerator:
     def run_commands(self, command_list):
         with self.db_engine.begin() as conn:
             for command in command_list:
-                logging.debug("Executing feature generation query: %s", command)
+                logger.debug("Executing feature generation query: %s", command)
                 conn.execute(command)
 
     def _aggregation_index_query(self, aggregation, imputed=False):
@@ -579,15 +581,15 @@ class FeatureGenerator:
                 f"where {self.features_schema_name}.{imputed_table}.entity_id is null limit 1"
             )
             if self.db_engine.execute(check_query).scalar():
-                logging.warning(
+                logger.warning(
                     "Imputed feature table %s did not contain rows from the "
                     "entire cohort, need to rebuild features", imputed_table)
                 return True
         else:
-            logging.warning("Imputed feature table %s did not exist, "
+            logger.warning("Imputed feature table %s did not exist, "
                             "need to build features", imputed_table)
             return True
-        logging.warning("Imputed feature table %s looks good, "
+        logger.warning("Imputed feature table %s looks good, "
                         "skipping feature building!", imputed_table)
         return False
 
@@ -619,11 +621,11 @@ class FeatureGenerator:
                     "inserts": inserts[group],
                     "finalize": [indexes[group]],
                 }
-                logging.info("Created table tasks for %s", group_table)
+                logger.debug("Created table tasks for %s", group_table)
             else:
-                logging.info("Skipping feature table creation for %s", group_table)
+                logger.debug("Skipping feature table creation for %s", group_table)
                 table_tasks[group_table] = {}
-        logging.info("Created table tasks for aggregation")
+        logger.debug("Created table tasks for aggregation")
         if self.replace or self._needs_features(aggregation):
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {
                 "prepare": [aggregation.get_drop(), aggregation.get_create()],
@@ -659,12 +661,12 @@ class FeatureGenerator:
         imp_tbl_name = self._clean_table_name(aggregation.get_table_name(imputed=True))
 
         if not self.replace and not self._needs_features(aggregation):
-            logging.warning("Skipping imputation table creation for %s", imp_tbl_name)
+            logger.warning("Skipping imputation table creation for %s", imp_tbl_name)
             table_tasks[imp_tbl_name] = {}
             return table_tasks
 
         if not aggregation.state_table:
-            logging.warning(
+            logger.warning(
                 "No state table defined in aggregation, cannot create imputation table for %s",
                 imp_tbl_name,
             )
@@ -672,7 +674,7 @@ class FeatureGenerator:
             return table_tasks
 
         if not table_exists(aggregation.state_table, self.db_engine):
-            logging.warning(
+            logger.warning(
                 "State table %s does not exist, cannot create imputation table for %s",
                 aggregation.state_table,
                 imp_tbl_name,
@@ -700,7 +702,7 @@ class FeatureGenerator:
             "inserts": [],
             "finalize": [self._aggregation_index_query(aggregation, imputed=True)],
         }
-        logging.info("Created table tasks for imputation: %s", imp_tbl_name)
+        logger.debug("Created table tasks for imputation: %s", imp_tbl_name)
 
         # do some cleanup:
         # drop the group-level and aggregation tables, just leaving the
@@ -710,6 +712,6 @@ class FeatureGenerator:
             table_tasks[imp_tbl_name]["finalize"] += list(drops.values()) + [
                 aggregation.get_drop()
             ]
-            logging.info("Added drop table cleanup tasks: %s", imp_tbl_name)
+            logger.debug("Added drop table cleanup tasks: %s", imp_tbl_name)
 
         return table_tasks

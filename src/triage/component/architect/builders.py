@@ -1,7 +1,10 @@
 import io
 import json
+
 import logging
-import pandas
+logger = logging.getLogger(__name__)
+
+import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
 
@@ -47,14 +50,14 @@ class BuilderBase:
                 )
 
     def build_all_matrices(self, build_tasks):
-        logging.info("Building %s matrices", len(build_tasks.keys()))
+        logger.debug("Building %s matrices", len(build_tasks.keys()))
 
         for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items()):
-            logging.info(
+            logger.debug(
                 f"Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})"
             )
             self.build_matrix(**task_arguments)
-            logging.debug(f"Matrix {matrix_uuid} built")
+            logger.debug(f"Matrix {matrix_uuid} built")
 
     def _outer_join_query(
         self,
@@ -159,7 +162,7 @@ class BuilderBase:
             table_name=table_name,
             index_query=indices_query,
         )
-        logging.debug(
+        logger.debug(
             "Creating matrix-specific entity-date table for matrix " "%s with query %s",
             matrix_uuid,
             query,
@@ -245,11 +248,11 @@ class MatrixBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        logging.info("popped matrix %s build off the queue", matrix_uuid)
+        logger.debug("popped matrix %s build off the queue", matrix_uuid)
         if not table_has_data(
             self.db_config["cohort_table_name"], self.db_engine
         ):
-            logging.warning("cohort table is not populated, cannot build matrix")
+            logger.warning("cohort table is not populated, cannot build matrix")
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
@@ -260,25 +263,25 @@ class MatrixBuilder(BuilderBase):
             ),
             self.db_engine,
         ):
-            logging.warning("labels table is not populated, cannot build matrix")
+            logger.warning("labels table is not populated, cannot build matrix")
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
-            logging.info("Skipping %s because matrix already exists", matrix_uuid)
+            logger.debug("Skipping %s because matrix already exists", matrix_uuid)
             if self.run_id:
                 skipped_matrix(self.run_id, self.db_engine)
             return
 
-        logging.info(
+        logger.debug(
             "Creating matrix %s > %s",
             matrix_metadata["matrix_id"],
             matrix_store.matrix_base_store.path,
         )
         # make the entity time table and query the labels and features tables
-        logging.info("Making entity date table for matrix %s", matrix_uuid)
+        logger.debug("Making entity date table for matrix %s", matrix_uuid)
         try:
             entity_date_table_name = self.make_entity_date_table(
                 as_of_times,
@@ -290,22 +293,22 @@ class MatrixBuilder(BuilderBase):
                 matrix_metadata["label_timespan"],
             )
         except ValueError as e:
-            logging.warning(
+            logger.warning(
                 "Not able to build entity-date table due to: %s - will not build matrix",
                 exc_info=True,
             )
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
-        logging.info(
+        logger.debug(
             "Extracting feature group data from database into file " "for matrix %s",
             matrix_uuid,
         )
         dataframes = self.load_features_data(
             as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
         )
-        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
-        logging.info(
+        logger.debug(f"Feature data extracted for matrix {matrix_uuid}")
+        logger.debug(
             "Extracting label data from database into file for " "matrix %s",
             matrix_uuid,
         )
@@ -318,18 +321,18 @@ class MatrixBuilder(BuilderBase):
         )
         dataframes.insert(0, labels_df)
 
-        logging.info(f"Label data extracted for matrix {matrix_uuid}")
+        logger.debug(f"Label data extracted for matrix {matrix_uuid}")
         # stitch together the csvs
-        logging.info("Merging feature files for matrix %s", matrix_uuid)
+        logger.debug("Merging feature files for matrix %s", matrix_uuid)
         output = self.merge_feature_csvs(dataframes, matrix_uuid)
-        logging.info(f"Features data merged for matrix {matrix_uuid}")
+        logger.debug(f"Features data merged for matrix {matrix_uuid}")
 
         matrix_store.metadata = matrix_metadata
         # store the matrix
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
-        logging.info("Matrix %s saved", matrix_uuid)
+        logger.debug("Matrix %s saved", matrix_uuid)
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
         if matrix_type == "train":
@@ -440,7 +443,7 @@ class MatrixBuilder(BuilderBase):
         # iterate! for each table, make query, write csv, save feature & file names
         feature_dfs = []
         for feature_table_name, feature_names in feature_dictionary.items():
-            logging.info("Retrieving feature data from %s", feature_table_name)
+            logger.debug("Retrieving feature data from %s", feature_table_name)
             features_query = self._outer_join_query(
                 right_table_name="{schema}.{table}".format(
                     schema=self.db_config["features_schema_name"],
@@ -474,7 +477,7 @@ class MatrixBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        logging.debug("Copying to CSV query %s", query_string)
+        logger.debug("Copying to CSV query %s", query_string)
         copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
             query=query_string, head=header
         )
@@ -483,7 +486,7 @@ class MatrixBuilder(BuilderBase):
         out = io.StringIO()
         cur.copy_expert(copy_sql, out)
         out.seek(0)
-        df = pandas.read_csv(out, parse_dates=["as_of_date"])
+        df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         return downcast_matrix(df)
 

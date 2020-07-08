@@ -1,7 +1,10 @@
 # coding: utf-8
 
 import itertools
+
 import logging
+logger = logging.getLogger(__name__)
+
 import os
 import pathlib
 from contextlib import contextmanager
@@ -253,7 +256,7 @@ class ModelStorageEngine:
             model_hash (string) An identifier, unique within this project, for the model
         """
         if self.should_cache:
-            logging.info("Caching model %s", model_hash)
+            logger.debug(f"Caching model {model_hash}")
             self.cache[model_hash] = obj
         with self._get_store(model_hash).open("wb") as fd:
             joblib.dump(obj, fd, compress=True)
@@ -267,7 +270,7 @@ class ModelStorageEngine:
         Returns: (object) A model object
         """
         if self.should_cache and model_hash in self.cache:
-            logging.info("Returning model %s from cache", model_hash)
+            logger.debug(f"Returning model {model_hash} from cache")
             return self.cache[model_hash]
         with self._get_store(model_hash).open("rb") as fd:
             return joblib.load(fd)
@@ -514,7 +517,7 @@ class MatrixStore:
         desired_columnset = set(columns)
         if columnset == desired_columnset:
             if self.columns() != columns:
-                logging.warning("Column orders not the same, re-ordering")
+                logger.warning("Column orders not the same, re-ordering")
             return self.design_matrix[columns]
         else:
             if columnset.issuperset(desired_columnset):
@@ -576,8 +579,8 @@ class CSVMatrixStore(MatrixStore):
                 head_of_matrix = pd.read_csv(fd, compression="gzip", nrows=1)
                 head_of_matrix.set_index(self.indices, inplace=True)
         except FileNotFoundError as fnfe:
-            logging.exception(f"Matrix isn't there: {fnfe}")
-            logging.exception("Returning Empty data frame")
+            logger.warning(f"Matrix isn't there: {fnfe}")
+            logger.warning("Returning Empty data frame")
             head_of_matrix = pd.DataFrame()
 
         return head_of_matrix

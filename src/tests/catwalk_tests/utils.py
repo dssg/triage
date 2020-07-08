@@ -4,8 +4,8 @@ import tempfile
 from contextlib import contextmanager
 import pytest
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import yaml
 
 from triage.component.catwalk.storage import (
@@ -15,7 +15,7 @@ from triage.util.structs import FeatureNameList
 
 
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def sample_metadata():
 
 @pytest.fixture
 def sample_df():
-    return pandas.DataFrame.from_dict(
+    return pd.DataFrame.from_dict(
         {
             "entity_id": [1, 2],
             "feature_one": [3, 4],

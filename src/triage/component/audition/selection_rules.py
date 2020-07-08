@@ -1,5 +1,6 @@
 import inspect
 import logging
+logger = logging.getLogger(__name__)
 
 from numpy import exp, log, average
 
@@ -151,7 +152,7 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
     if met_df.isnull().sum() == met_df.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info(
+        logger.debug(
             "Null metric variances for %s %s at %s; picking at random",
             metric,
             parameter,
@@ -331,7 +332,7 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
     if met_df_grp["raw_stdev"].isnull().sum() == met_df_grp.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info(
+        logger.debug(
             "Null metric variances for %s %s at %s; just using mean",
             metric,
             parameter,

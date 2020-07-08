@@ -1,7 +1,7 @@
 import copy
 from datetime import date
 
-import pandas
+import pandas as pd
 import pytest
 import sqlalchemy
 from sqlalchemy import text as t
@@ -195,7 +195,7 @@ def test_feature_generation(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by entity_id, as_of_date".format(
                 features_schema_name,
                 output_table,
@@ -307,7 +307,7 @@ def test_feature_generation_feature_start_time(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name,
                 output_table,
@@ -393,7 +393,7 @@ def test_dynamic_categoricals(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name, output_table
             ),
@@ -511,7 +511,7 @@ def test_array_categoricals(db_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name, output_table
             ),

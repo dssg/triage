@@ -11,9 +11,9 @@ import datetime
 import re
 
 import factory
-import numpy
+import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_equal
-import pandas
+import pandas as pd
 from sqlalchemy.sql.expression import text
 from triage.component.catwalk.utils import filename_friendly_hash, get_subset_table_name
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
@@ -121,7 +121,7 @@ def test_all_same_labels(db_engine_with_results_schema):
             matrix_uuid=str(labels),
             label_count=num_entities,
             db_engine=db_engine_with_results_schema,
-            init_labels=pandas.DataFrame(
+            init_labels=pd.DataFrame(
                 {
                     "label_value": labels,
                     "entity_id": list(range(num_entities)),
@@ -160,14 +160,14 @@ def test_all_same_labels(db_engine_with_results_schema):
 def test_subset_labels_and_predictions(db_engine_with_results_schema):
     num_entities = 5
     labels = [0, 1, 0, 1, 0]
-    predictions_proba = numpy.array([0.6, 0.4, 0.55, 0.70, 0.3])
+    predictions_proba = np.array([0.6, 0.4, 0.55, 0.70, 0.3])
 
     fake_matrix_store = MockMatrixStore(
         matrix_type="test",
         matrix_uuid="abcde",
         label_count=num_entities,
         db_engine=db_engine_with_results_schema,
-        init_labels=pandas.DataFrame(
+        init_labels=pd.DataFrame(
             {
                 "label_value": labels,
                 "entity_id": list(range(num_entities)),
@@ -195,7 +195,7 @@ def test_subset_labels_and_predictions(db_engine_with_results_schema):
             ),
             predictions_proba=predictions_proba,
             labels=fake_matrix_store.labels,
-            protected_df=pandas.DataFrame(),
+            protected_df=pd.DataFrame(),
         )
 
         assert len(subset_labels) == expected_result
@@ -249,7 +249,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
         matrix_uuid="efgh",
         label_count=num_entities,
         db_engine=db_engine_with_results_schema,
-        init_labels=pandas.DataFrame(
+        init_labels=pd.DataFrame(
             {
                 "label_value": labels,
                 "entity_id": list(range(num_entities)),
@@ -263,7 +263,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
         matrix_uuid="1234",
         label_count=num_entities,
         db_engine=db_engine_with_results_schema,
-        init_labels=pandas.DataFrame(
+        init_labels=pd.DataFrame(
             {
                 "label_value": labels,
                 "entity_id": list(range(num_entities)),
@@ -428,13 +428,13 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
         db_engine_with_results_schema,
     )
 
-    testing_labels = numpy.array([1, 0, numpy.nan, 1, 0])
-    testing_prediction_probas = numpy.array([0.56, 0.4, 0.55, 0.5, 0.3])
+    testing_labels = np.array([1, 0, np.nan, 1, 0])
+    testing_prediction_probas = np.array([0.56, 0.4, 0.55, 0.5, 0.3])
 
-    training_labels = numpy.array(
+    training_labels = np.array(
         [0, 0, 1, 1, 1, 0, 1, 1]
     )
-    training_prediction_probas = numpy.array(
+    training_prediction_probas = np.array(
         [0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6]
     )
 
@@ -500,8 +500,8 @@ def test_evaluation_with_sort_ties(db_engine_with_results_schema):
         training_metric_groups=[],
         db_engine=db_engine_with_results_schema,
     )
-    testing_labels = numpy.array([1, 0, 1, 0, 0])
-    testing_prediction_probas = numpy.array([0.56, 0.55, 0.5, 0.5, 0.3])
+    testing_labels = np.array([1, 0, 1, 0, 0])
+    testing_prediction_probas = np.array([0.56, 0.55, 0.5, 0.5, 0.3])
 
     fake_test_matrix_store = MockMatrixStore(
         "test", "1234", 5, db_engine_with_results_schema, testing_labels
@@ -719,8 +719,8 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         },
         db_engine=db_engine_with_results_schema,
     )
-    testing_labels = numpy.array([1, 0])
-    testing_prediction_probas = numpy.array([0.56, 0.55])
+    testing_labels = np.array([1, 0])
+    testing_prediction_probas = np.array([0.56, 0.55])
 
     fake_test_matrix_store = MockMatrixStore(
         "test", "1234", 5, db_engine_with_results_schema, testing_labels
@@ -731,7 +731,7 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         train_end_time=TRAIN_END_TIME,
     )
 
-    protected_df = pandas.DataFrame({
+    protected_df = pd.DataFrame({
         "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
         "protectedattribute1": "value1"
     })
@@ -752,21 +752,21 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
 
 
 def test_generate_binary_at_x():
-    input_array = numpy.array(
+    input_array = np.array(
         [0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
 
     # bug can arise when the same value spans both sides of threshold
     assert_array_equal(
         generate_binary_at_x(input_array, 50, "percentile"),
-        numpy.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+        np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
     )
 
     assert_array_equal(
         generate_binary_at_x(input_array, 2),
-        numpy.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+        np.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
     )
 
     assert_array_equal(
-        generate_binary_at_x(numpy.array([]), 2),
-        numpy.array([])
+        generate_binary_at_x(np.array([]), 2),
+        np.array([])
     )

@@ -1,13 +1,17 @@
 import copy
 import datetime
 import importlib
+
 import logging
+logger = logging.getLogger(__name__)
+
 import random
 import sys
 from contextlib import contextmanager
 
 import numpy as np
-import pandas
+import pandas as pd
+
 from sklearn.model_selection import ParameterGrid
 from sqlalchemy.orm import sessionmaker
 
@@ -96,7 +100,7 @@ class ModelTrainer:
             "training_metadata": matrix_metadata,
             "random_seed": random_seed,
         }
-        logging.info("Creating model hash from unique data %s", unique)
+        logger.debug(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
 
     def _train(self, matrix_store, class_path, parameters):
@@ -125,7 +129,7 @@ class ModelTrainer:
 
         Args:
             model_id (int) The database id for the model
-            feature_importances (numpy.ndarray, maybe). Calculated feature importances
+            feature_importances (np.ndarray, maybe). Calculated feature importances
                 for the model
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
@@ -135,7 +139,7 @@ class ModelTrainer:
         )
         db_objects = []
         if isinstance(feature_importances, np.ndarray):
-            temp_df = pandas.DataFrame({"feature_importance": feature_importances})
+            temp_df = pd.DataFrame({"feature_importance": feature_importances})
             features_index = temp_df.index.tolist()
             rankings_abs = temp_df["feature_importance"].rank(
                 method="dense", ascending=False
@@ -204,9 +208,8 @@ class ModelTrainer:
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
         if model_id and not self.replace:
-            logging.info(
-                "Metadata for model_id %s found in database. Reusing model metadata.",
-                model_id,
+            logger.info(
+                f"Metadata for model {model_id} found in database. Reusing model metadata."
             )
             return model_id
         else:
@@ -221,8 +224,8 @@ class ModelTrainer:
             )
             session = self.sessionmaker()
             if model_id:
-                logging.info(
-                    "Found model id %s, updating non-unique attributes", model_id
+                logger.info(
+                    f"Found model {model_id}, updating non-unique attributes"
                 )
                 model.model_id = model_id
                 session.merge(model)
@@ -231,14 +234,14 @@ class ModelTrainer:
                 session.add(model)
                 session.commit()
                 model_id = model.model_id
-                logging.info("Added new model id %s", model_id)
+                logger.info(f"Added new model {model_id}")
             session.close()
 
-        logging.info("Saving feature importances for model_id %s", model_id)
+        logger.debug(f"Saving feature importances for model_id {model_id}")
         self._save_feature_importances(
             model_id, get_feature_importances(trained_model), feature_names
         )
-        logging.info("Done saving feature importances for model_id %s", model_id)
+        logger.debug(f"Done saving feature importances for model_id {model_id}")
         return model_id
 
     def _train_and_store_model(
@@ -258,7 +261,7 @@ class ModelTrainer:
         random.seed(random_seed)
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
-        logging.info("Training and storing model for matrix uuid %s", matrix_store.uuid)
+        logger.info(f"Training and storing model for matrix uuid {matrix_store.uuid}")
         trained_model = self._train(matrix_store, class_path, parameters)
 
         unique_parameters = self.unique_parameters(parameters)
@@ -266,14 +269,14 @@ class ModelTrainer:
         model_group_id = self.model_grouper.get_model_group_id(
             class_path, unique_parameters, matrix_store.metadata, self.db_engine
         )
-        logging.info(
-            "Trained model: hash %s, model group id %s ", model_hash, model_group_id
+        logger.info(
+            f"Trained model: hash {model_hash}, model group {model_group_id} "
         )
         # Writing the model to storage, then getting its size in kilobytes.
         self.model_storage_engine.write(trained_model, model_hash)
         model_size = sys.getsizeof(trained_model) / (1024.0)
 
-        logging.info("Cached model: %s", model_hash)
+        logger.debug(f"Cached model: {model_hash}")
         model_id = self._write_model_to_db(
             class_path,
             unique_parameters,
@@ -284,7 +287,7 @@ class ModelTrainer:
             model_size,
             misc_db_parameters,
         )
-        logging.info("Wrote model to db: hash %s, got id %s", model_hash, model_id)
+        logger.debug(f"Wrote model to db: hash {model_hash}, got id {model_id}")
         return model_id
 
     @contextmanager
@@ -363,7 +366,7 @@ class ModelTrainer:
                 and self.model_storage_engine.exists(model_hash)
                 and saved_model_id
             ):
-                logging.info("Skipping %s/%s", class_path, parameters)
+                logger.debug(f"Skipping {class_path}/{parameters}")
                 if self.run_id:
                     skipped_model(self.run_id, self.db_engine)
                 return saved_model_id
@@ -375,7 +378,7 @@ class ModelTrainer:
             elif not saved_model_id:
                 reason = "model metadata not found"
 
-            logging.info(
+            logger.info(
                 f"Training {class_path} with parameters {parameters}"
                 f"(reason to train: {reason})"
             )
@@ -384,7 +387,7 @@ class ModelTrainer:
                     matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed
                 )
             except BaselineFeatureNotInMatrix:
-                logging.warning(
+                logger.warning(
                     "Tried to train baseline model without required feature in matrix. Skipping."
                 )
                 if self.run_id:
@@ -394,14 +397,7 @@ class ModelTrainer:
                 built_model(self.run_id, self.db_engine)
             return model_id
         except Exception as exc:
-            logging.warning("Model training for matrix %s, estimator %s/%s, model hash %s",
-                            "failed due to %s",
-                            matrix_store.uuid,
-                            class_path,
-                            parameters,
-                            model_hash,
-                            exc
-                            )
+            logger.warning(f"Model training for matrix {matrix_store.uuid}, estimator {class_path}/{parameters}, model hash {model_hash} failed due to {exc}")
             errored_model(self.run_id, self.db_engine)
 
     @staticmethod
@@ -442,19 +438,16 @@ class ModelTrainer:
                 parameters,
                 random_seed
             )
-            logging.info(
+            logger.info(
                 f"Computed model hash for {class_path} "
                 f"with parameters {parameters}: {model_hash}"
             )
 
             if any(task["model_hash"] == model_hash for task in tasks):
-                logging.info(
-                    "Skipping model_hash %s because another"
-                    "equivalent one found in this batch."
-                    "Classpath: %s -- Hyperparameters: %s",
-                    model_hash,
-                    class_path,
-                    parameters,
+                logger.info(
+                    f"Skipping model_hash {model_hash} because another"
+                    f"equivalent one found in this batch."
+                    f"Classpath: {class_path} -- Hyperparameters: {parameters}",
                 )
                 continue
             tasks.append(
@@ -467,5 +460,5 @@ class ModelTrainer:
                     "random_seed": random_seed
                 }
             )
-        logging.info("Found %s unique model training tasks", len(tasks))
+        logger.debug("Found {len(tasks)} unique model training tasks")
         return tasks

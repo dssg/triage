@@ -1,5 +1,8 @@
 import importlib
+
 import logging
+logger = logging.getLogger(__name__)
+
 from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
@@ -26,7 +29,7 @@ class Validator:
             if self.strict:
                 raise ValueError(e)
             else:
-                logging.warning(
+                logger.warning(
                     "Validation error hit, not running in strict mode so continuing on: %s",
                     str(e),
                 )
@@ -200,7 +203,7 @@ class FeatureAggregationsValidator(Validator):
                     )
                 )
             if "choice_query" in categorical:
-                logging.info("Validating choice query")
+                logger.debug("Validating choice query")
                 choice_query = categorical["choice_query"]
                 try:
                     conn.execute("explain {}".format(choice_query))
@@ -219,7 +222,7 @@ class FeatureAggregationsValidator(Validator):
 
     def _validate_from_obj(self, from_obj):
         conn = self.db_engine.connect()
-        logging.info("Validating from_obj")
+        logger.debug("Validating from_obj")
         try:
             conn.execute("explain select * from {}".format(from_obj))
         except Exception as e:
@@ -236,7 +239,7 @@ class FeatureAggregationsValidator(Validator):
             )
 
     def _validate_time_intervals(self, intervals):
-        logging.info("Validating time intervals")
+        logger.debug("Validating time intervals")
         for interval in intervals:
             if interval != "all":
                 # this function, used elsewhere to break up time intervals,
@@ -334,19 +337,19 @@ class FeatureAggregationsValidator(Validator):
         agg_types = ["aggregates", "categoricals", "array_categoricals"]
 
         for agg_type in agg_types:
-            logging.info('Checking imputation rules for aggregation type %s', agg_type)
+            logger.debug('Validating imputation rules for aggregation type %s', agg_type)
             # base_imp are the top-level rules, `such as aggregates_imputation`
             base_imp = aggregation_config.get(agg_type + "_imputation", {})
 
             # loop through the individual aggregates
             for agg in aggregation_config.get(agg_type, []):
-                logging.info('Checking imputation rules for aggregation %s', agg)
+                logger.debug('Validating imputation rules for aggregation %s', agg)
                 # combine any aggregate-level imputation rules with top-level ones
                 imp_dict = dict(base_imp, **agg.get("imputation", {}))
 
                 # imputation rules are metric-specific, so check each metric's rule
                 for metric in agg["metrics"]:
-                    logging.info('Checking imputation rules for metric: %s', metric)
+                    logger.debug('Validating imputation rules for metric: %s', metric)
                     # metric rules may be defined by the metric name (e.g., 'max')
                     # or with the 'all' catch-all, with named metrics taking
                     # precedence. If we fall back to {}, the rule validator will
@@ -355,7 +358,7 @@ class FeatureAggregationsValidator(Validator):
                     self._validate_imputation_rule(agg_type, impute_rule)
 
     def _validate_aggregation(self, aggregation_config):
-        logging.info("Validating aggregation config %s", aggregation_config)
+        logger.debug("Validating aggregation config %s", aggregation_config)
         self._validate_keys(aggregation_config)
         self._validate_aggregates(aggregation_config)
         self._validate_categoricals(aggregation_config.get("categoricals", []))
@@ -412,7 +415,7 @@ class LabelConfigValidator(Validator):
             "{label_timespan}", "6month"
         )
         conn = self.db_engine.connect()
-        logging.info("Validating label query via EXPLAIN")
+        logger.debug("Validating label query via SQL EXPLAIN")
         try:
             conn.execute("explain {}".format(bound_query))
         except Exception as e:
@@ -494,7 +497,7 @@ class CohortConfigValidator(Validator):
             raise ValueError("Section: cohort_config - "
                              "name should only contain lowercase letters, numbers, and underscores")
         dated_query = query.replace("{as_of_date}", "2016-01-01")
-        logging.info("Validating cohort query")
+        logger.debug("Validating cohort query via SQL EXPLAIN")
         try:
             self.db_engine.execute(f"explain {dated_query}")
         except Exception as e:
@@ -714,7 +717,7 @@ class GridConfigValidator(Validator):
             )
         for classpath, parameter_config in grid_config.items():
             if classpath == "sklearn.linear_model.LogisticRegression":
-                logging.warning(
+                logger.warning(
                     "sklearn.linear_model.LogisticRegression found in grid. "
                     "This is unscaled and not well-suited for Triage experiments. "
                     "Use triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression "
@@ -765,13 +768,13 @@ class PredictionConfigValidator(Validator):
 class ScoringConfigValidator(Validator):
     def _run(self, scoring_config):
         if "testing_metric_groups" not in scoring_config:
-            logging.warning(
+            logger.warning(
                 "Section: scoring - No testing_metric_groups configured. "
                 + "Your experiment may run, but you will not have any "
                 + "evaluation metrics computed"
             )
         if "training_metric_groups" not in scoring_config:
-            logging.warning(
+            logger.warning(
                 "Section: scoring - No training_metric_groups configured. "
                 + "If training set evaluation metrics are desired, they must be added"
             )
@@ -816,7 +819,7 @@ class ScoringConfigValidator(Validator):
                                 f"""Section: subsets -
                                 The subset {subset} does not have a query key.
                                 To run evaluations on a subset, you must
-                                include a query that returns a list of distinct 
+                                include a query that returns a list of distinct
                                 entity_ids and has a placeholder for an
                                 as_of_date
                                 """
@@ -950,12 +953,12 @@ class ExperimentValidator(Validator):
             experiment_config.get("bias_audit_config", {})
         )
 
-        # show the success message in the console as well as the logger
+        # show the success message in the console as well as the logging
         # as we don't really know how they have configured logging
         if self.strict:
             success_message = "Experiment validation ran to completion with no errors"
         else:
             success_message = "Experiment validation complete. "
             "All configuration problems have been displayed as warnings"
-        logging.info(success_message)
+        logger.info(success_message)
         print(success_message)

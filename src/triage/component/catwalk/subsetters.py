@@ -1,6 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
 
-import pandas
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
@@ -19,7 +19,7 @@ class Subsetter:
         self.as_of_times = as_of_times
 
     def generate_tasks(self, subset_configs):
-        logging.info("Generating subset table creation tasks")
+        logger.debug("Generating subset table creation tasks")
         subset_tasks = []
         for subset_config in subset_configs:
             if subset_config:
@@ -44,10 +44,8 @@ class Subsetter:
             self.process_task(**task)
 
     def process_task(self, subset_config, subset_hash, subset_table_generator):
-        logging.info(
-            "Beginning subset creation for %s-%s",
-            subset_config["name"],
-            subset_hash
+        logger.debug(
+            f"Beginning subset creation for {subset_config['name']}-{subset_hash}"
         )
         subset_table_generator.generate_entity_date_table(
             as_of_dates=self.as_of_times

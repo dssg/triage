@@ -1,4 +1,5 @@
 import logging
+logger = logging.getLogger(__name__)
 
 from triage.component.architect.database_reflection import table_has_data
 from triage.database_reflection import table_row_count, table_exists
@@ -40,7 +41,7 @@ class EntityDateTableGenerator:
             as_of_dates (list of datetime.dates) Dates to include in the
                 state table
         """
-        logging.debug(
+        logger.debug(
             "Generating entity_date table %s using as_of_dates: %s",
             self.entity_date_table_name,
             as_of_dates,
@@ -49,16 +50,16 @@ class EntityDateTableGenerator:
         self.db_engine.execute(
             "create index on {} (entity_id, as_of_date)".format(self.entity_date_table_name)
         )
-        logging.info(
+        logger.debug(
             "Indices created on entity_id and as_of_date for entity_date table %s",
             self.entity_date_table_name,
         )
         if not table_has_data(self.entity_date_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
 
-        logging.info("Entity-date table generated at %s", self.entity_date_table_name)
-        logging.info("Generating stats on %s", self.entity_date_table_name)
-        logging.info(
+        logger.debug("Entity-date table generated at %s", self.entity_date_table_name)
+        logger.debug("Generating stats on %s", self.entity_date_table_name)
+        logger.debug(
             "Row count of %s: %s",
             self.entity_date_table_name,
             table_row_count(self.entity_date_table_name, self.db_engine),
@@ -75,9 +76,9 @@ class EntityDateTableGenerator:
                 )
                 """
             )
-            logging.info("Created entity_date table %s", self.entity_date_table_name)
+            logger.debug("Created entity_date table %s", self.entity_date_table_name)
         else:
-            logging.info(
+            logger.debug(
                 "Not dropping and recreating entity_date %s table because "
                 "replace flag was set to False and table was found to exist",
                 self.entity_date_table_name,
@@ -91,10 +92,10 @@ class EntityDateTableGenerator:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
         self._maybe_create_entity_date_table()
-        logging.info("Inserting rows into entity_date table %s", self.entity_date_table_name)
+        logger.debug("Inserting rows into entity_date table %s", self.entity_date_table_name)
         for as_of_date in as_of_dates:
             formatted_date = f"{as_of_date.isoformat()}"
-            logging.info("Looking for existing entity_date rows for as of date %s", as_of_date)
+            logger.debug("Looking for existing entity_date rows for as of date %s", as_of_date)
             any_existing = list(self.db_engine.execute(
                 f"""select 1 from {self.entity_date_table_name}
                 where as_of_date = '{formatted_date}'
@@ -102,7 +103,7 @@ class EntityDateTableGenerator:
                 """
             ))
             if len(any_existing) == 1:
-                logging.info("Since >0 entity_date rows found for date %s, skipping", as_of_date)
+                logger.debug("Since >0 entity_date rows found for date %s, skipping", as_of_date)
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
@@ -110,7 +111,7 @@ class EntityDateTableGenerator:
                 from ({dated_query}) q
                 group by 1, 2, 3
             """
-            logging.info("Running entity_date query for date: %s, %s", as_of_date, full_query)
+            logger.debug("Running entity_date query for date: %s, %s", as_of_date, full_query)
             self.db_engine.execute(full_query)
 
     def _empty_table_message(self, as_of_dates):
@@ -135,13 +136,13 @@ class EntityDateTableGeneratorNoOp(EntityDateTableGenerator):
         pass
 
     def generate_entity_date_table(self, as_of_dates):
-        logging.warning(
+        logger.warning(
             "No cohort configuration is available, so no cohort will be created"
         )
         return
 
     def clean_up(self):
-        logging.warning("No cohort table exists, so nothing to tear down")
+        logger.warning("No cohort table exists, so nothing to tear down")
         return
 
     @property

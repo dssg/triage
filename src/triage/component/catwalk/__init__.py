@@ -7,11 +7,13 @@ from .model_grouping import ModelGrouper
 from .subsetters import Subsetter
 from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
 from .utils import filename_friendly_hash
+
 import logging
+logger = logging.getLogger(__name__)
+
 from collections import namedtuple
 
-import numpy
-import pandas
+import numpy as np
 
 TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
 
@@ -41,7 +43,7 @@ class ModelTrainTester:
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
         train_test_tasks = []
-        logging.info("Generating train/test tasks for %s splits", len(splits))
+        logger.debug("Generating train/test tasks for %s splits", len(splits))
         for split in splits:
             train_store = self.matrix_storage_engine.get_store(split["train_uuid"])
             train_tasks = self.model_trainer.generate_train_tasks(
@@ -100,9 +102,9 @@ class ModelTrainTester:
             else:
                 # Last priority: Everything else. Maybe these are slow/non-parallelizable
                 batches[2].tasks.append(task)
-        logging.info("Split train/test tasks into three task batches. - each batch has models from all splits")
+        logger.debug("Split train/test tasks into three task batches. - each batch has models from all splits")
         for batch_num, batch in enumerate(batches, 1):
-            logging.info("Batch %s: %s (%s tasks total)", batch_num, batch.description, len(batch.tasks))
+            logger.debug("Batch %s: %s (%s tasks total)", batch_num, batch.description, len(batch.tasks))
         return batches
 
 
@@ -113,7 +115,7 @@ class ModelTrainTester:
                 self.process_task(**task)
 
     def process_task(self, test_store, train_store, train_kwargs):
-        logging.info("Beginning train task %s", train_kwargs)
+        logger.debug("Beginning train task %s", train_kwargs)
 
         # If the matrices and train labels are OK, train and test the model!
         with self.model_trainer.cache_models(), test_store.cache(), train_store.cache():
@@ -123,7 +125,7 @@ class ModelTrainTester:
             # If the train or test design matrix empty, or if the train store only
             # has one label value, skip training the model.
             if train_store.empty:
-                logging.warning(
+                logger.warning(
                     """Train matrix for split %s was empty,
                 no point in training this model. Skipping
                 """,
@@ -131,7 +133,7 @@ class ModelTrainTester:
                 )
                 return
             if len(train_store.labels.unique()) == 1:
-                logging.warning(
+                logger.warning(
                     """Train Matrix for split %s had only one
                 unique value, no point in training this model. Skipping
                 """,
@@ -139,7 +141,7 @@ class ModelTrainTester:
                 )
                 return
             if test_store.empty:
-                logging.warning(
+                logger.warning(
                     """Test matrix for uuid %s
                 was empty, no point in generating predictions. Not processing train/test task.
                 """,
@@ -149,12 +151,12 @@ class ModelTrainTester:
 
             model_id = self.model_trainer.process_train_task(**train_kwargs)
             if not model_id:
-                logging.warning("No model id returned from ModelTrainer.process_train_task, "
+                logger.warning("No model id returned from ModelTrainer.process_train_task, "
                                 "training unsuccessful. Not attempting to test")
                 return
-            logging.info("Trained task %s and got model id %s", train_kwargs, model_id)
+            logger.debug("Trained task %s and got model id %s", train_kwargs, model_id)
             as_of_dates = test_store.as_of_dates
-            logging.info(
+            logger.debug(
                 "Testing and scoring model id %s with test matrix %s. "
                 "as_of_times min: %s max: %s num: %s",
                 model_id,
@@ -170,10 +172,10 @@ class ModelTrainTester:
 
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                predictions_proba = numpy.array(None)
+                predictions_proba = np.array(None)
                 protected_df = None
                 if self.replace:
-                    logging.info(
+                    logger.debug(
                         "Replace flag set; generating new predictions and evaluations for"
                         "matrix %s-%s, and model %s",
                         store.uuid,
@@ -192,7 +194,7 @@ class ModelTrainTester:
                     if self.replace or self.model_evaluator.needs_evaluations(
                         store, model_id, filename_friendly_hash(subset)
                     ):
-                        logging.info(
+                        logger.debug(
                             "Evaluating matrix %s-%s, subset %s, and model %s",
                             store.uuid,
                             store.matrix_type,
@@ -201,7 +203,7 @@ class ModelTrainTester:
                         )
 
                         if not predictions_proba.any():
-                            logging.info(
+                            logger.debug(
                                 "Generating new predictions for"
                                 "matrix %s-%s, and model %s to make evaluation",
                                 store.uuid,
@@ -230,7 +232,7 @@ class ModelTrainTester:
                         )
 
                     else:
-                        logging.info(
+                        logger.debug(
                             "The evaluations needed for matrix %s-%s, subset %s, and "
                             "model %s are all present"
                             "in db from a previous run (or none needed at all), so skipping!",

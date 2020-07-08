@@ -6,6 +6,7 @@ import os
 import requests
 import subprocess
 import logging
+logger = logging.getLogger(__name__)
 from functools import wraps
 from triage.util.db import scoped_session, get_for_update
 from triage.util.introspection import classpath
@@ -31,7 +32,7 @@ def infer_git_hash():
     try:
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
     except Exception as exc:
-        logging.info("Unable to infer git hash, error: %s", exc)
+        logger.warning("Unable to infer git hash, error: %s", exc)
         git_hash = None
     return git_hash
 
@@ -51,7 +52,7 @@ def infer_installed_libraries():
     if pip_freeze is not None:
         installed_libraries = pip_freeze.freeze()
     else:
-        logging.info("Unable to pip freeze, cannot list installed libraries")
+        logger.warning("Unable to pip freeze, cannot list installed libraries")
         installed_libraries = []
     return installed_libraries
 
@@ -67,7 +68,7 @@ def infer_ec2_instance_type():
             timeout=0.01
         ).text
     except requests.exceptions.RequestException:
-        logging.info(
+        logger.info(
             "Unable to retrieve metadata about ec2 instance, will not set ec2 instance type"
         )
         ec2_instance_type = None
@@ -81,13 +82,13 @@ def infer_log_location():
     """
     root_logger_handlers = [
         handler
-        for handler in logging.getLoggerClass().root.handlers
-        if isinstance(handler, logging.FileHandler)
+        for handler in logger.getLoggerClass().root.handlers
+        if isinstance(handler, logger.FileHandler)
     ]
     if root_logger_handlers:
         log_location = root_logger_handlers[0].baseFilename
     else:
-        logging.info("No FileHandler found in root logger, cannot record logging filename")
+        logger.warning("No FileHandler found in root logger, cannot record logging filename")
         log_location = None
     return log_location
 

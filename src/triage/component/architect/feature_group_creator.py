@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 from triage.util.structs import FeatureNameList
 
 
@@ -90,19 +92,19 @@ class FeatureGroupCreator:
         Returns: (list) subsets of the feature dictionary, in the same
             table-based structure
         """
-        logging.info(
+        logger.debug(
             "Creating feature groups. config: %s, Master feature dictionary: %s",
             self.definition,
             feature_dictionary,
         )
         subsets = []
         for name, config in sorted(self.definition.items()):
-            logging.info("Parsing config grouping method %s, items %s", name, config)
+            logger.debug("Parsing config grouping method %s, items %s", name, config)
             for config_item in config:
                 subset = FeatureGroup(name="{}: {}".format(name, config_item))
-                logging.info("Finding columns that might belong in %s", subset)
+                logger.debug("Finding columns that might belong in %s", subset)
                 for table, features in feature_dictionary.items():
-                    logging.info(
+                    logger.debug(
                         "Searching features in table %s that match group %s",
                         table,
                         subset
@@ -110,7 +112,7 @@ class FeatureGroupCreator:
                     matching_features = self.subsetters[name](
                         config_item, table, features
                     )
-                    logging.info(
+                    logger.debug(
                         "Found %s matching features in table %s that match group %s",
                         len(matching_features),
                         table,
@@ -125,5 +127,5 @@ class FeatureGroupCreator:
                 f"Problem! The feature group definition {self.definition} did not find any matches",
                 f"in feature dictionary {feature_dictionary}"
             )
-        logging.info("Found %s total feature subsets", len(subsets))
+        logger.debug("Found %s total feature subsets", len(subsets))
         return subsets
