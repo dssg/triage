@@ -46,15 +46,15 @@ function stop_infrastructure () {
 }
 
 function build_triage () {
-     docker build -t dsapp/triage:master -f Dockerfile .
+     docker build -t dsapp/triage:development -f Dockerfile .
 }
 
 function build_images () {
-	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml build "${@}"
+     docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml build "${@}"
 }
 
 function destroy () {
-	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  down --rmi all --remove-orphans --volumes
+     docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  down --rmi all --remove-orphans --volumes
 }
 
 function infrastructure_logs () {

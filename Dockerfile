@@ -6,16 +6,23 @@ LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
 
 
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql
+        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql git
 
+RUN apt-get update -y && \
+        apt-get install -y --no-install-recommends gnupg2 wget && \
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+        echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | tee  /etc/apt/sources.list.d/pgdg.list && \
+        apt-get update -y && \
+        apt-get install -y --no-install-recommends postgresql-client-12
 
-RUN mkdir triage
+RUN mkdir -p triage
 
 WORKDIR triage
 
 ENV SHELL=/bin/bash
 ENV USERNAME=triage
 ENV USERID=1000
+ENV TRIAGE_IMAGE=development
 
 RUN adduser \
         --disabled-password \
@@ -25,29 +32,31 @@ RUN adduser \
         "${USERNAME}"
 
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)development$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)${TRIAGE_IMAGE}$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
 
+RUN mkdir -p /opt/venv
+RUN chown -R triage:triage /opt/venv
+RUN chown -R triage:triage .
 
-COPY README.md .
-COPY LICENSE .
-
+USER ${USERNAME}
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirement/ requirement/
-RUN pip install -r requirement/main.txt
-RUN pip install -r requirement/test.txt
+COPY --chown=triage:triage requirement/ requirement/
+RUN pip install --no-cache-dir -r requirement/main.txt
+RUN pip install --no-cache-dir -r requirement/test.txt
+RUN pip install --no-cache-dir ipython jupyter
 
-COPY src/ src/
-COPY setup.py .
+COPY --chown=triage:triage README.md .
+COPY --chown=triage:triage LICENSE .
+COPY --chown=triage:triage src/ src/
+COPY --chown=triage:triage config/ config/
+COPY --chown=triage:triage setup.py .
 
-RUN pip install .
 
-RUN chown -R triage:triage .
-RUN chown -R triage:triage /opt/venv
+RUN pip install -e .
 
-USER ${USERNAME}
 
 ENTRYPOINT [ "bash" ]
 
@@ -59,6 +68,13 @@ COPY --from=development /opt/venv /opt/venv
 
 # Make sure we use the virtualenv:
 ENV PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update && \
+        apt-get install -y --no-install-recommends git
+
+RUN pip uninstall triage
+
+RUN pip install --no-cache-dir git+https://github.com/dssg/triage@master
 
 RUN mkdir triage
 
@@ -76,6 +92,43 @@ RUN adduser \
         "${USERNAME}"
 
 RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)master$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+
+RUN chown -R triage:triage .
+
+USER ${USERNAME}
+
+ENTRYPOINT [ "triage" ]
+
+
+FROM python:3.7-slim AS production
+
+LABEL triage.version="production"
+
+COPY --from=development /opt/venv /opt/venv
+
+# Make sure we use the virtualenv:
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip uninstall triage
+
+RUN pip install --no-cache-dir triage
+
+RUN mkdir triage
+
+WORKDIR triage
+
+ENV SHELL=/bin/bash
+ENV USERNAME=triage
+ENV USERID=1000
+
+RUN adduser \
+        --disabled-password \
+        --gecos "" \
+        --home "/home/triage" \
+        --uid "${USERID}" \
+        "${USERNAME}"
+
+RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)production$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
 RUN chown -R triage:triage .
 
