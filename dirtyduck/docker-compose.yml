@@ -28,7 +28,7 @@ services:
     environment:
       - TRIAGE_IMAGE=dirtyduck
       - DATABASE_URL=postgresql://food_user:some_password@dirtyduck_db/food
-      - TRIAGE_OUTPUT=/triage/output
+      - TRIAGE_OUTPUT=/triage-output
     volumes:
       - "../example/dirtyduck:/dirtyduck"
       - "../../triage:/triage"
