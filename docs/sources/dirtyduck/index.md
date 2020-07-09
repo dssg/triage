@@ -11,7 +11,7 @@ implementation are prone to error, given their multi-dimensional,
 multi-entity, time-series structure.
 
 !!! info Triage version
-    This tutorial is in sync with the latest version of `triage`. At this moment [v4.1.0](https://github.com/dssg/triage/releases/tag/v4.1.0).
+    This tutorial is in sync with the latest version of `triage`. At this moment [v4.1.1](https://github.com/dssg/triage/releases/tag/v4.1.1).
 
 !!! info "How you can help to improve this tutorial"
 
