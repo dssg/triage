@@ -875,41 +875,35 @@ class BiasAuditConfigValidator(Validator):
             raise ValueError(
                 dedent(
                     """
-            Section: bias_audit_config -
-            Both 'from_obj_query' and 'from_obj_table' specified .
-            Please only specify one."""
+                    Section: bias_audit_config -
+                    Both 'from_obj_query' and 'from_obj_table' specified .
+                    Please only specify one."""
                 )
             )
         if 'from_obj_query' not in bias_audit_config and 'from_obj_table' not in bias_audit_config:
             raise ValueError(
                 dedent(
                     """
-            Section: bias_audit_config -
-            Neither 'from_obj_query' and 'from_obj_table' specified .
-            Please specify one."""
+                    Section: bias_audit_config -
+                    Neither 'from_obj_query' and 'from_obj_table' specified .
+                    Please specify one."""
                 )
             )
         for key in [
-            "attribute_columns",
-            "knowledge_date_column",
-            "entity_id_column",
-            "ref_groups_method",
+                "attribute_columns",
+                "knowledge_date_column",
+                "entity_id_column",
+                "ref_groups_method",
         ]:
             if key not in bias_audit_config:
                 raise ValueError(
                     dedent(
-                        """
-                Section: bias_audit_config -
-                '{} required as key: bias_audit_config config: {}""".format(
-                            key, bias_audit_config
-                        )
+                        f"""Section: bias_audit_config - '{key} required as key: bias_audit_config config: {bias_audit_config}"""
                     )
                 )
         percentile_thresholds = bias_audit_config.get('thresholds', {}).get('percentiles', [])
         if any(threshold < 0 or threshold > 100 for threshold in percentile_thresholds):
-            raise ValueError("Section: bias_audit_config - "
-                             "All percentile thresholds must be between 0 and 100")
-
+            raise ValueError("Section: bias_audit_config - All percentile thresholds must be between 0 and 100")
 
 
 class ExperimentValidator(Validator):
@@ -953,12 +947,9 @@ class ExperimentValidator(Validator):
             experiment_config.get("bias_audit_config", {})
         )
 
-        # show the success message in the console as well as the logging
-        # as we don't really know how they have configured logging
         if self.strict:
             success_message = "Experiment validation ran to completion with no errors"
         else:
             success_message = "Experiment validation complete. "
             "All configuration problems have been displayed as warnings"
         logger.info(success_message)
-        print(success_message)

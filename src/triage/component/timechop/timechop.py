@@ -369,10 +369,8 @@ class Timechop:
             "train_matrix": train_matrix_definition,
             "test_matrices": test_matrix_definitions,
         }
-        logger.info(
-            "Matrix definitions for train/test split %s: %s",
-            train_test_split_time,
-            matrix_set_definition
+        logger.debug(
+            f"Matrix definitions for train/test split {train_test_split_time}: {matrix_set_definition}",
         )
 
         return matrix_set_definition

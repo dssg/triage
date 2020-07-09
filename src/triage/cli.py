@@ -24,7 +24,6 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
@@ -276,6 +275,10 @@ class Experiment(Command):
             "save_predictions": self.args.save_predictions,
             "skip_validation": not self.args.validate
         }
+        logger.info(f"Setting up the experiment")
+        logger.info(f"Configuration file: {self.args.config}")
+        logger.info(f"Results will be stored in DB: {self.root.db_url}")
+        logger.info(f"Artifacts will be saved in {self.args.project_path}")
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(
                 n_db_processes=self.args.n_db_processes,
@@ -310,9 +313,6 @@ class Experiment(Command):
         else:
             try:
                 logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
-                logger.info(f"Configuration file:  [config file: {self.args.config}]")
-                logger.info(f"Results will be stored in DB: {self.root.db_url}")
-                logger.info(f"Storing artifacts in {self.args.project_path}")
                 self.experiment.run()
                 logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
             except Exception:
