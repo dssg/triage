@@ -12,12 +12,12 @@ from triage.component.catwalk.storage import MatrixStore
 
 class ProtectedGroupsGeneratorNoOp:
     def generate_all_dates(self, *args, **kwargs):
-        logger.info(
+        logger.notice(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
     def generate(self, *args, **kwargs):
-        logger.info(
+        logger.notice(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
@@ -36,6 +36,7 @@ class ProtectedGroupsGenerator:
         self.knowledge_date_column = knowledge_date_column
 
     def generate_all_dates(self, as_of_dates, cohort_table_name, cohort_hash):
+        logger.info("Creating protected groups table")
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
             self.db_engine.execute(
@@ -94,8 +95,9 @@ class ProtectedGroupsGenerator:
         if nrows == 0:
             logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
         else:
-            logger.info(f"Done creating protected_groups table { self.protected_groups_table_name}: rows: {nrows}")
-
+            logger.success(f"Protected groups stored in the table "
+                           f"{self.protected_groups_table_name} successfully")
+            logger.debug(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         full_insert_query = text(textwrap.dedent(
