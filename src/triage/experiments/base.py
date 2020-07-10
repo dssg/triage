@@ -39,7 +39,8 @@ from triage.component.catwalk import (
     IndividualImportanceCalculatorNoOp,
     ModelGrouper,
     ModelTrainTester,
-    Subsetter
+    Subsetter,
+    SubsetterNoOp
 )
 from triage.component.catwalk.protected_groups_generators import (
     ProtectedGroupsGenerator,
@@ -138,8 +139,13 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        self.config['random_seed'] = self.config.get('random_seed', random.randint(1,1e7))
+        if not self.config.get('random_seed', None):
+            logger.notice("Random seed not specified. A random seed will be provided"
+                          "This could have interesting side effects, "
+                          "e.g. new models are trained everytime that you run the experiment")
 
+        self.config['random_seed'] = self.config.get('random_seed', random.randint(1,1e7))
+        logger.verbose(f"Using random seed [{self.config['random_seed']}] for running the experiment")
         random.seed(self.config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
@@ -148,15 +154,44 @@ class ExperimentBase(ABC):
             self.project_storage, matrix_storage_class
         )
         self.project_path = project_path
+        logger.verbose(f"Matrices and trained models will be saved in {self.project_path}")
         self.replace = replace
+        if self.replace:
+            logger.notice(f"Replace flag is set to true. Matrices, models, "
+                          "evaluations and predictions (if exist) will be replaced")
+
         self.save_predictions = save_predictions
+        if not self.save_predictions:
+            logger.notice(f"Save predictions flag is set to false. "
+                          "Predictions won't be stored in the predictions "
+                          "table. This will decrease both the running time "
+                          "of an experiment and also decrease the space needed in the db")
+
         self.skip_validation = skip_validation
+        if self.skip_validation:
+           logger.notice(f"Skip validation flag is set to true. "
+                         "The experiment config file specified won't be validated. "
+                         "This will reduce (a little) the running time of the experiment, "
+                         "but has some potential risks, e.g. the experiment could fail"
+                         "after some time due some misconfiguration. Proceed with care.")
+
         self.db_engine = db_engine
         results_schema.upgrade_if_clean(dburl=self.db_engine.url)
 
         self.features_schema_name = "features"
+
         self.materialize_subquery_fromobjs = materialize_subquery_fromobjs
+        if not self.materialize_subquery_fromobjs:
+            logger.notice("Materialize from_objs is set to false. "
+                          "The from_objs will be calculated on the fly every time.")
+
         self.features_ignore_cohort = features_ignore_cohort
+        if self.features_ignore_cohort:
+            logger.notice("Features will be calculated for all the entities "
+                          "(i.e. ignoring cohort) this setting will have the effect "
+                          "that more db space will be used, but potentially could save "
+                          "time is you are running different similar experiments with "
+                          "different cohorts.")
 
         # only fill default values for full runs
         if not partial_run:
@@ -175,31 +210,32 @@ class ExperimentBase(ABC):
         ###################### RUBICON ######################
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
+        logger.debug(f"Experiment hash [{self.experiment_hash}] assigned")
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
             experiment_class_path=classpath(self.__class__),
             experiment_kwargs=experiment_kwargs,
             db_engine=self.db_engine
         )
+        logger.debug(f"Experiment run id [{self.run_id}] assigned")
+
         self.initialize_components()
 
         self.cleanup = cleanup
         if self.cleanup:
             logger.notice(
-                "cleanup is set to True, so intermediate tables (labels and cohort) "
+                "Cleanup is set to true, so intermediate tables (labels and cohort) "
                 "will be removed after matrix creation and subset tables will be "
                 "removed after model training and testing"
             )
-        else:
-            logger.notice(
-                "cleanup is set to False, so intermediate tables (labels, cohort, and subsets) "
-                "will not be removed"
-            )
+
         self.cleanup_timeout = (
             self.cleanup_timeout if cleanup_timeout is None else cleanup_timeout
         )
+
         self.profile = profile
-        logger.spam("Generate profiling stats? (profile option): {self.profile}")
+        if self.profile:
+            logger.spam("Profiling will be stored using cProfile")
 
     def _check_config_version(self, config):
         if "config_version" in config:
@@ -288,8 +324,8 @@ class ExperimentBase(ABC):
         else:
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logger.notice(
-                "bias_audit_config missing or unrecognized. Without protected groups, "
-                "you will not audit your models for bias and fairness."
+                "bias_audit_config missing in the configuration file or unrecognized. "
+                "Without protected groups, you will not audit your models for bias and fairness."
             )
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
@@ -340,11 +376,15 @@ class ExperimentBase(ABC):
             run_id=self.run_id,
         )
 
-        self.subsetter = Subsetter(
-            db_engine=self.db_engine,
-            replace=self.replace,
-            as_of_times=self.all_as_of_times
-        )
+        if self.config.get("scoring", {}).get("subsets", []):
+            self.subsetter = Subsetter(
+                db_engine=self.db_engine,
+                replace=self.replace,
+                as_of_times=self.all_as_of_times
+            )
+        else:
+            self.subsetter = SubsetterNoOp()
+            logger.notice("scoring/subsets missing in the configuration file or unrecognized. No subsets will be generated")
 
         self.trainer = ModelTrainer(
             experiment_hash=self.experiment_hash,
@@ -374,7 +414,7 @@ class ExperimentBase(ABC):
         else:
             self.individual_importance_calculator = IndividualImportanceCalculatorNoOp()
             logger.notice(
-                "individual_importance missing or unrecognized."
+                "individual_importance missing in the configuration file or unrecognized ."
                 "you will not be able to do analysis on individual feature importances."
             )
 
@@ -641,15 +681,21 @@ class ExperimentBase(ABC):
 
         Results are stored in the database, not returned
         """
+        logger.info("Creating labels")
         self.label_generator.generate_all_labels(
             self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
+        logger.success(f"Labels stored in the table {self.labels_table_name} successfully ")
+
 
     @experiment_entrypoint
     def generate_cohort(self):
+        logger.info("Creating cohort")
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
+        logger.success("Cohort stored in the table {self.cohort_table_name} successfully")
+
 
     @experiment_entrypoint
     def generate_protected_groups(self):
@@ -661,10 +707,6 @@ class ExperimentBase(ABC):
             self.all_as_of_times, self.cohort_table_name, self.cohort_hash
         )
 
-    def generate_subset(self, subset_hash):
-        self.subsets["subset_hash"].subset_table_generator.generate_entity_date_table(
-            as_of_dates=self.all_as_of_times
-        )
 
     def log_split(self, split_num, split):
         logger.info(
@@ -693,20 +735,22 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def generate_preimputation_features(self):
+        logger.info("Creating feature aggregation tables")
         self.process_query_tasks(self.feature_aggregation_table_tasks)
-        logger.info(
-            "Finished running preimputation feature queries. The final results are in tables: %s",
-            ",".join(agg.get_table_name() for agg in self.collate_aggregations),
+        logger.success(
+            f"Features (before imputation) were stored in the tables "
+            f"{','.join(agg.get_table_name() for agg in self.collate_aggregations)} "
+            f"successfully"
         )
 
     @experiment_entrypoint
     def impute_missing_features(self):
+        logger.info("Imputing missing values in features")
         self.process_query_tasks(self.feature_imputation_table_tasks)
-        logger.info(
-            "Finished running postimputation feature queries. The final results are in tables: %s",
-            ",".join(
-                agg.get_table_name(imputed=True) for agg in self.collate_aggregations
-            ),
+        logger.success(
+            f"Imputed features were stored in the tables "
+            f"{','.join(agg.get_table_name(imputed=True) for agg in self.collate_aggregations)} "
+            f"successfully"
         )
 
     def build_matrices(self):
@@ -715,35 +759,27 @@ class ExperimentBase(ABC):
             self.matrix_build_tasks.keys(),
             self.db_engine
         )
+        logger.info("Building matrices")
+        logger.verbose(f"It is necessary to build {len(self.matrix_build_tasks.keys())} matrices")
         with self.get_for_update() as experiment:
             experiment.matrices_needed = len(self.matrix_build_tasks.keys())
         record_matrix_building_started(self.run_id, self.db_engine)
         self.process_matrix_build_tasks(self.matrix_build_tasks)
+        logger.success(f"Matrices were stored in {self.project_path}/matrices successfully")
+
 
     @experiment_entrypoint
     def generate_matrices(self):
-        logger.info("Creating cohort")
         self.generate_cohort()
-        logger.success("Cohort created")
-        logger.info("Creating labels")
         self.generate_labels()
-        logger.success("Labels created")
-        logger.info("Creating feature aggregation tables")
         self.generate_preimputation_features()
-        logger.success("Feature aggregation tables created")
-        logger.info("Creating feature imputation tables")
         self.impute_missing_features()
-        logger.success("Feature imputation tables created")
-        logger.info("Building matrices")
         self.build_matrices()
-        logger.success("Matrices created")
 
     @experiment_entrypoint
     def generate_subsets(self):
         if self.subsets:
-            logger.info("Beginning subset generation")
             self.process_subset_tasks(self.subset_tasks)
-            logger.success("Subset generation completed")
         else:
             logger.notice("No subsets found. Proceeding to training and testing models")
 
@@ -762,10 +798,6 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def train_and_test_models(self):
-        self.generate_subsets()
-        logger.info("Creating protected groups table")
-        self.generate_protected_groups()
-        logger.success("Creating protected groups table: completed")
         batches = self._all_train_test_batches()
         if not batches:
             logger.notice("No train/test tasks found, so no training to do")
@@ -774,6 +806,7 @@ class ExperimentBase(ABC):
         with self.get_for_update() as experiment:
             experiment.grid_size = sum(
                 1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
+            logger.info("{experiment.grid_size} models will be trained, tested and evaluated")
 
         logger.info(f"Training, testing and evaluating models")
         logger.verbose(f"{len(batches)} train/test batches found.")
@@ -798,6 +831,8 @@ class ExperimentBase(ABC):
 
         try:
             self.generate_matrices()
+            self.generate_subsets()
+            self.generate_protected_groups()
             self.train_and_test_models()
         finally:
             if self.cleanup:
@@ -851,7 +886,7 @@ class ExperimentBase(ABC):
         with store.open('wb') as fd:
             cp.create_stats()
             marshal.dump(cp.stats, fd)
-            logger.debug(f"Profiling stats of this Triage run calculated and written to {store}"
+            logger.spam(f"Profiling stats of this Triage run calculated and written to {store}"
                          f"in cProfile format.")
 
     @experiment_entrypoint
