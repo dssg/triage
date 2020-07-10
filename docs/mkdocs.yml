@@ -31,7 +31,6 @@ markdown_extensions:
   - toc:
       permalink: "#"
       baselevel: 1
-      toc_depth: 3
       separator: "-"
   - admonition
   - codehilite:
@@ -63,6 +62,20 @@ markdown_extensions:
 extra_javascript:
     - "js/mermaid.min.js"
     - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
+
+extra_css:
+    - "triage_docs.css"
+
+plugins: 
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: false
+      watch:
+        - src/triage
+
 
 nav:
   - Home: index.md
@@ -98,10 +111,18 @@ nav:
           - Experiment Algorithm: experiments/algorithm.md
           - Experiment Architecture: experiments/architecture.md
       - Model selection: 
-          - Using Audition: audition/audition.md
-          - Audition Configuration: audition/audition-config.md
+          - Intro to Audition: audition/audition_intro.md
+          - Model Selection Concepts: audition/model_selection.md
+          - API Reference: ../api/audition/
       - Postmodeling: 
           - Using Postmodeling: postmodeling/index.md
           - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
       - Model governance:  dirtyduck/ml_governance.md
       - Scaling up: dirtyduck/aws_batch.md
+      - API Reference:
+          - Audition: 
+              - Auditioner: api/audition/auditioner.md
+              - Audition Configuration: api/audition/audition-config.md
+              - Selection Rules: api/audition/selection_rules.md
+              - Database Dependencies: api/audition/database-dependencies.md
+
