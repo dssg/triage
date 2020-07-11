@@ -52,6 +52,7 @@ class EntityDateTableGenerator:
         logger.spam(f"Generating stats on {self.entity_date_table_name}")
         logger.spam(f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}")
 
+
     def _maybe_create_entity_date_table(self):
         if self.replace or not table_exists(self.entity_date_table_name, self.db_engine):
             logger.spam(f"Creating entity_date table {self.entity_date_table_name}")
