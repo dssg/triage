@@ -5,7 +5,7 @@ import yaml
 
 
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from triage.component.results_schema import Base
 from triage.component.timechop import Timechop

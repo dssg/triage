@@ -349,7 +349,7 @@ class MatrixBuilder(BuilderBase):
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             feature_dictionary=feature_dictionary,
-            matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
+            matrix_metadata=matrix_metadata,
             built_by_experiment=self.experiment_hash
         )
         session = self.sessionmaker()
