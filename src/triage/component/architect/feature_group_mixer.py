@@ -96,11 +96,9 @@ class FeatureGroupMixer:
         """
         final_results = []
         for strategy in self.strategies:
-            logger.debug(
-                "Mixing feature groups %s using strategy %s", feature_groups, strategy
-            )
+            logger.debug(f"Mixing feature groups using strategy {strategy}")
             results = self.strategy_lookup[strategy](feature_groups)
-            logger.debug("Mixing found new feature groups %s", results)
+            logger.spam("Mixing found new feature groups combinations [{results}]")
             final_results += results
 
         return final_results

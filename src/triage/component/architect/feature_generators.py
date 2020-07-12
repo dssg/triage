@@ -17,7 +17,6 @@ from triage.component.collate import (
     FromObj
 )
 
-
 class FeatureGenerator:
     def __init__(
         self,
@@ -276,7 +275,7 @@ class FeatureGenerator:
 
     def _aggregation(self, aggregation_config, feature_dates, state_table):
         logger.debug(
-            "Building collate.SpacetimeAggregation for config {aggregation_config} and {len(feature_dates)} as_of_dates",
+            f"Building collate.SpacetimeAggregation for config {aggregation_config} and {len(feature_dates)} as_of_dates",
         )
 
         # read top-level imputation rules from the aggregation config; we'll allow
@@ -378,12 +377,11 @@ class FeatureGenerator:
             task_generator = self._generate_imp_table_tasks_for
             logger.verbose("Starting Feature imputation")
         else:
-            raise ValueError("Table task type must be aggregation or imputation")
+            raise ValueError(f"Table task type must be aggregation or imputation, was: {table_task}")
 
         table_tasks = OrderedDict()
         for aggregation in aggregations:
             table_tasks.update(task_generator(aggregation))
-        logger.verbose(f"Created {len(table_tasks.keys())} tables")
         return table_tasks
 
     def create_features_before_imputation(
@@ -478,7 +476,6 @@ class FeatureGenerator:
 
     def process_table_tasks(self, table_tasks):
         for table_name, task in table_tasks.items():
-            logger.verbose(f"Running feature table queries for {table_name}")
             self.process_table_task(task)
         return table_tasks.keys()
 
@@ -512,7 +509,7 @@ class FeatureGenerator:
     def run_commands(self, command_list):
         with self.db_engine.begin() as conn:
             for command in command_list:
-                logger.debug(f"Executing feature generation query: {command}")
+                logger.spam(f"Executing feature generation query: {command}")
                 conn.execute(command)
 
     def _aggregation_index_query(self, aggregation, imputed=False):
@@ -579,28 +576,32 @@ class FeatureGenerator:
         indexes = aggregation.get_indexes()
         inserts = aggregation.get_inserts()
         table_tasks = OrderedDict()
+
+        needs_features = self._needs_features(aggregation)
+
         for group in aggregation.groups:
             group_table = self._clean_table_name(
                 aggregation.get_table_name(group=group)
             )
-            if self.replace or self._needs_features(aggregation):
+            if self.replace or needs_features:
                 table_tasks[group_table] = {
                     "prepare": [drops[group], creates[group]],
                     "inserts": inserts[group],
                     "finalize": [indexes[group]],
                 }
-                logger.debug(f"Created table tasks for {group_table}")
+                logger.debug(f"Created task for table {group_table}")
             else:
-                logger.debug(f"Skipping feature table creation for {group_table}")
+                logger.debug(f"Skipping feature creation for table {group_table}")
                 table_tasks[group_table] = {}
-        logger.debug("Created table tasks for aggregation")
-        if self.replace or self._needs_features(aggregation):
+        if self.replace or needs_features:
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {
                 "prepare": [aggregation.get_drop(), aggregation.get_create()],
                 "inserts": [],
                 "finalize": [self._aggregation_index_query(aggregation)],
             }
+            logger.debug(f"Created tasks for aggregation {self._clean_table_name(aggregation.get_table_name())}" )
         else:
+            logger.debug(f"Skipping feature creation for table {self._clean_table_name(aggregation.get_table_name())}")
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {}
 
         return table_tasks
