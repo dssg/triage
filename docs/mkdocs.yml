@@ -73,8 +73,10 @@ plugins:
         python:
           rendering:
             show_source: false
+            show_root_full_path: true
+            show_root_heading: true
       watch:
-        - src/triage
+        - ../src/triage
 
 
 nav:
@@ -125,4 +127,7 @@ nav:
               - Audition Configuration: api/audition/audition-config.md
               - Selection Rules: api/audition/selection_rules.md
               - Database Dependencies: api/audition/database-dependencies.md
+          - Timechop:
+              - Timechop: api/timechop/timechop.md
+              - Plotting: api/timechop/plotting.md
 
