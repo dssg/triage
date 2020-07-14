@@ -13,12 +13,12 @@ def visualize_chops(chopper, show_as_of_times=True, show_boundaries=True, save_t
     """Visualize time chops of a given Timechop object using matplotlib
 
     Args:
-        chopper (triage.component.timechop.Timechop) A fully-configured Timechop object
-        show_as_of_times (bool, default True) Whether or not to draw horizontal lines
+        chopper (triage.component.timechop.Timechop): A fully-configured Timechop object
+        show_as_of_times (bool): Whether or not to draw horizontal lines
             for as-of-times
-        show_boundaries (bool, default True) Whether or not to show a rectangle around matrices
+        show_boundaries (bool): Whether or not to show a rectangle around matrices
             and dashed lines around feature/label boundaries
-        save_target (path or filehandle, default None) A save target for matplotlib to save
+        save_target (str or file-like object): A save target for matplotlib to save
             the figure to. Defaults to None, which won't save anything
     """
     chops = chopper.chop_time()
