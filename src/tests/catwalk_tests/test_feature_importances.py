@@ -35,7 +35,7 @@ def trained_models():
     svc_wo_linear_kernel = SVC(gamma='auto')
     svc_wo_linear_kernel.fit(X_train, y_train)
 
-    dummy = DummyClassifier()
+    dummy = DummyClassifier(strategy='stratified')
     dummy.fit(X_train, y_train)
 
     return {
