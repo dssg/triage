@@ -48,28 +48,35 @@ class Auditioner:
             and its format is detailed in that method's docstring
 
         Args:
-            db_engine (sqlalchemy.engine) A database engine with access to a
+            db_engine (sqlalchemy.engine): A database engine with access to a
                 results schema of a completed modeling run
-            model_group_ids (list) A large list of model groups to audition. No effort should
+            model_group_ids (list): A large list of model groups to audition. No effort should
                 be needed to pick 'good' model groups, but they should all be groups that could
                 be used if they are found to perform well. They should also each have evaluations
                 for any train end times you wish to include in analysis
-            train_end_times (list) A list of train end times that all of the given model groups
+            train_end_times (list): A list of train end times that all of the given model groups
                 contain evaluations for and that you want to be deemed important in the analysis
-            initial_metric_filters (list) A list of metrics to filter model
+            initial_metric_filters (list): A list of metrics to filter model
                 groups on, and how to filter them. Each entry should be a dict
-                with the keys:
+                of the format:
 
-                    metric (string) -- model evaluation metric, such as 'precision@'
-                    parameter (string) -- model evaluation metric parameter,
+                    {
+                        'metric': 'string',
+                        'parameter': 'string',
+                        'max_below_best': .5,
+                        'threshold_value': .5
+                     }
+
+                    metric (string): model evaluation metric, such as 'precision@'
+                    parameter (string): model evaluation metric parameter,
                         such as '300_abs'
-                    max_below_best (float) The maximum value that the given metric
+                    max_below_best (float): The maximum value that the given metric
                         can be below the best for a given train end time
-                    threshold_value (float) The minimum value that the given metric can be
-            models_table (string, optional) The name of the results schema
+                    threshold_value (float): The minimum value that the given metric can be
+            models_table (string, optional): The name of the results schema
                 models table that you want to use. Will default to 'models',
                 which is also the default in triage.
-            distance_table (string, optional) The name of the 'best distance' table to use.
+            distance_table (string, optional): The name of the 'best distance' table to use.
                 Will default to 'best_distance', but this can be sent if you want to avoid
                 clobbering the results from a prior analysis.
         """
@@ -126,17 +133,26 @@ class Auditioner:
         ]
 
     @property
-    def thresholded_model_group_ids(self):
+    def thresholded_model_group_ids(self) -> list:
         """The model group thresholder will have a varying list of model group ids
         depending on its current thresholding rules, this is a reference to whatever
         that current list is.
 
-        Returns: (list) of model group ids
+        Returns:
+            list of model group ids allowed by the current metric threshold rules
         """
         return self.model_group_thresholder.model_group_ids
 
     @property
-    def average_regret_for_rules(self):
+    def average_regret_for_rules(self) -> dict:
+        """
+        Returns the average regret for each selection rule, over the specified list of train/test periods.
+
+        Returns:
+            A dict with a key-value pair for each selection rule and the average regret for that rule. Structure:
+
+                {'descriptive rule_name': .5}
+        """
         result = dict()
         for k in self.results_for_rule.keys():
             result[k] = (
@@ -148,11 +164,15 @@ class Auditioner:
         return result
 
     @property
-    def selection_rule_model_group_ids(self):
-        """Calculate the current winners for each selection rule and the most recent date
+    def selection_rule_model_group_ids(self) -> dict:
+        """
+        Calculate the current winners for each selection rule and the most recent date
 
-        Returns: (dict) keys are selection rule descriptive names, values are the model group id
-            chosen by them
+        Returns:
+            A dict with a key-value pair for each selection rule and the list of n
+            model_group_ids that it selected. Structure:
+
+                {'descriptive rule_name':[1,2,3]}
         """
         logger.debug("Calculating selection rule picks for all rules")
         model_group_ids = dict()
@@ -217,12 +237,12 @@ class Auditioner:
         If one wnats to update multiple filters, one should use `update_metric_filters()` instead.
 
         Args:
-            metric (string) model evaluation metric such as 'precision@'
-            parameter (string) model evaluation parameter such as '100_abs'
-            max_from_best (string) The maximum value that the given metric can be below the best
+            metric (string): model evaluation metric such as 'precision@'
+            parameter (string): model evaluation parameter such as '100_abs'
+            max_from_best (string): The maximum value that the given metric can be below the best
                 for a given train end time
-            threshold_value (string) The thresold value that the given metric can be
-            plot (boolean, default True) Whether or not to also plot model group performance
+            threshold_value (string): The thresold value that the given metric can be
+            plot (boolean, default True): Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
         new_filters = [
@@ -239,18 +259,18 @@ class Auditioner:
         """Update the thresholding metric filters
 
         Args:
-            new_filters (list) A list of metrics to filter model
+            new_filters (list): A list of metrics to filter model
                 groups on, and how to filter them. This is an identical format to
                 the list given to 'initial_metric_filters' in the constructor.
                 Each entry should be a dict with the keys:
-
+initial_metric_filters
                     metric (string) -- model evaluation metric, such as 'precision@'
                     parameter (string) -- model evaluation metric parameter,
                         such as '300_abs'
                     max_below_best (float) The maximum value that the given metric
                         can be below the best for a given train end time
                     threshold_value (float) The threshold value that the given metric can be
-            plot (boolean, default True) Whether or not to also plot model group performance
+            plot (boolean, default True): Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
         logger.debug("Updating metric filters with new config %s", new_filters)
@@ -306,49 +326,52 @@ class Auditioner:
         """Register a grid of selection rules
 
         Args:
-            rule_grid (list) Groups of selection rules that share parameters
-
-            Each entry in the list is considered a group, and is expected to be a dict
-                with two keys: 'shared_parameters', and 'selection_rules'.
-
-                'shared_parameters': A list of dicts, each with a set of parameters that are taken
-                    by all selection rules in this group.
-
-                    For each of these shared parameter sets, the grid will create selection rules
-                    combining the set with all possible selection rule/parameter combinations.
-
-                    This can be used to quickly combine, say, a variety of rules that
-                        all are concerned with precision at top 100 entities.
-
-                'selection_rules': A list of dicts, each with:
-                    A 'name' attribute that matches a selection rule in audition.selection_rules
-                    Parameters and values taken by that selection rule. Values in list form are
-                    all added to the grid.
-                    If the selection rule has no parameters, or the parameters are all covered
-                    by the shared parameters in this group, none are needed here.
-
-                Each selection rule in the group must have all of its required parameters
-                covered by the shared parameters in its group and the parameters given to it.
-
-                Refer to audition.selection_rules.SELECTION_RULES for available selection rules
-                and their needed parameters.
-                The exceptions are the first two arguments to each selection rule,
-                'df' and 'train_end_time'.
-                These are contextual and thus provided internally by Audition.
-
-            Example: [{
-                    'shared_parameters': [
-                            {'metric': 'precision@', 'parameter': '100_abs'},
-                            {'metric': 'recall@', 'parameter': '100_abs'},
-                        ],
-                        'selection_rules': [
-                            {'name': 'most_frequent_best_dist',
-                             'dist_from_best_case': [0.1, 0.2, 0.3]},
-                            {'name': 'best_current_value'}
-                        ]
-                }]
-            plot (boolean, defaults to True) Whether or not to plot the selection
+            rule_grid (list): Groups of selection rules that share parameters. See documentation below for schema.
+            plot: (boolean, defaults to True) Whether or not to plot the selection
                 rules at this time.
+
+        `rules_grid` is a list of dicts. Each dict, which defines a group, has two required keys:
+        `shared_parameters` and `selection_rules`.
+
+        `shared_parameters`: A list of dicts, each with a set of parameters that are taken
+        by all selection rules in this group.
+
+        For each of these shared parameter sets, the grid will create selection rules
+        combining the set with all possible selection rule/parameter combinations.
+
+        This can be used to quickly combine, say, a variety of rules that
+        all are concerned with precision at top 100 entities.
+
+        `selection_rules`: A list of dicts, each with:
+
+        - A 'name' attribute that matches a selection rule in audition.selection_rules
+        - Parameters and values taken by that selection rule. Values in list form are
+        all added to the grid. If the selection rule has no parameters, or the parameters are all covered
+        by the shared parameters in this group, none are needed here.
+
+        Each selection rule in the group must have all of its required parameters
+        covered by the shared parameters in its group and the parameters given to it.
+
+        Refer to [Selection Rules](../selection_rules/#selection-rules) for available selection rules
+        and their parameters.
+        The exceptions are the first two arguments to each selection rule,
+        'df' and 'train_end_time'.
+        These are contextual and thus provided internally by Audition.
+
+        Example:
+        ```
+        [{
+            'shared_parameters': [
+                    {'metric': 'precision@', 'parameter': '100_abs'},
+                    {'metric': 'recall@', 'parameter': '100_abs'},
+                ],
+                'selection_rules': [
+                    {'name': 'most_frequent_best_dist',
+                        'dist_from_best_case': [0.1, 0.2, 0.3]},
+                    {'name': 'best_current_value'}
+                ]
+        }]
+        ```
         """
         self.selection_rules = make_selection_rule_grid(rule_grid)
         if plot:

@@ -47,57 +47,80 @@ class Timechop:
         test_durations,
         test_label_timespans,
     ):
+
+        '''
+        Date strings should follow the format `YYYY-MM-DD`. Date intervals 
+        should be strings of the Postgres interval input format.
+
+        This class is often used within the Triage experiment pipeline, and 
+        initialized using parameters from a Triage [experiment config](../../../experiments/experiment-config/#time-splitting)
+
+        Arguments:
+            feature_start_time (str): Earliest date included in any feature
+            feature_end_time (str): Day after last feature date (all data 
+                included in features are before this date)
+            label_start_time (str): Earliest date for which labels are available
+            label_end_time (str): Day AFTER last label date (all dates in any 
+                model are before this date)
+            model_update_frequency (str): how frequently to retrain models
+            training_as_of_date_frequencies (str): time between rows for same 
+                entity in train matrix
+            max_training_histories (str): Interval specifying how much history 
+                for each entity to train on
+            training_label_timespans (str): how much time is included in a label
+                in the train matrix
+            test_as_of_date_frequencies (str): time between rows for same entity 
+                in test matrix
+            test_durations (str): How long into the future to make predictions 
+                for each entity. Controls the length of time included in a test
+                matrix
+            test_label_timespans (str): How much time is included in a label 
+                in the test matrix. 
+        '''
         self.feature_start_time = dt_from_str(
             feature_start_time
-        )  # earliest time included in any feature
+        ) 
         self.feature_end_time = dt_from_str(
             feature_end_time
-        )  # all data included in features are < this time
+        ) 
         if self.feature_start_time > self.feature_end_time:
             raise ValueError("Feature start time after feature end time.")
 
         self.label_start_time = dt_from_str(
             label_start_time
-        )  # earliest time included in any label
+        ) 
         self.label_end_time = dt_from_str(
             label_end_time
-        )  # all data in any label are < this time
+        ) 
         if self.label_start_time > self.label_end_time:
             raise ValueError("Label start time after label end time.")
 
-        # how frequently to retrain models
         self.model_update_frequency = convert_str_to_relativedelta(
             model_update_frequency
         )
 
-        # time between rows for same entity in train matrix
         self.training_as_of_date_frequencies = utils.convert_to_list(
             training_as_of_date_frequencies
         )
 
-        # time between rows for same entity in test matrix
         self.test_as_of_date_frequencies = utils.convert_to_list(
             test_as_of_date_frequencies
         )
 
-        # how much history for each entity to train on
         self.max_training_histories = utils.convert_to_list(max_training_histories)
 
-        # how long into the future to make predictions for each entity
         self.test_durations = utils.convert_to_list(test_durations)
 
-        # how much time is included in a label in the train matrix
         self.training_label_timespans = utils.convert_to_list(training_label_timespans)
 
-        # how much time is included in a label in the test matrix
         self.test_label_timespans = utils.convert_to_list(test_label_timespans)
 
     def chop_time(self):
         """ Given the attributes of the object, define all train/test splits
         for all combinations of the temporal parameters.
 
-        :return: a list of dictionaries defining train/test splits
-        :rtype: list
+        return: 
+            list: a list of dictionaries defining train/test splits
         """
         matrix_set_definitions = []
         # in our example, we just have one value for each of these: 6month, 6month, and 3month
@@ -162,22 +185,20 @@ class Timechop:
         label spans in train matrices will end at this time, and this will be
         the first as of time in the respective test matrix.
 
-        :param training_label_timespan: how much time is included in training
-                                         labels
-        :type training_label_timespan: dateutil.relativedelta.relativedelta
-        :param test_label_timespan: how much time is included in test labels
-        :type test_label_timespan: dateutil.relativedelta.relativedelta
-        :param test_duration: for how long after the end of a training matrix are
-                          test predictions made
-        :type test_duration: str
+        Arguments:
+            training_label_timespan (dateutil.relativedelta.relativedelta): how much
+                time is included in training labels
+            test_label_timespan (dateutil.relativedelta.relativedelta): how much time is included in test labels
+            test_duration (str): for how long after the end of a training matrix are
+                test predictions made
 
-        :return: all split times for the temporal parameters
-        :rtype: list
-
-        :raises: ValueError if there are no valid split times in the temporal
-                 config
+        Returns:
+            list: all split times for the temporal parameters
+        Raises:
+            ValueError: if there are no valid split times in the temporal
+            config
         """
-
+       
         # we always want to be sure we're using the most recent data, so for the splits,
         # we start from the very end of time for which we have labels and walk backwards,
         # ensuring we leave enough of a buffer for the test_label_timespan to get a full
@@ -236,14 +257,17 @@ class Timechop:
         """ Given a start and stop time, a frequncy, and a direction, calculate the
         as of times for a matrix.
 
-        :param as_of_start_limit: the earliest possible as of time for a matrix
-        :param as_of_end_limit: the last possible as of time for the matrix
-        :param data_frequency: how much time between rows for a single entity
-        :param forward: whether to generate times forward from the start time
-                        (True) or backward from the end time (False)
+        Arguments:
+            as_of_start_limit (datetime.datetime): the earliest possible as of time for a matrix
+            as_of_end_limit (datetime.datetime): the last possible as of time for the matrix
+            data_frequency (str): The time interval that should pass between rows
+                of a single entity. Of the format `'date unit'`. For example, 
+                `'1 month'`.
+            forward (boolean): whether to generate times forward from the start time
+                            (True) or backward from the end time (False)
 
-        :return: list of as of times for the matrix
-        :rtype: list
+        return:
+            list: list of as of times for the matrix
         """
         logger.spam(f"Calculating as_of_times from {as_of_start_limit} to {as_of_end_limit} using example frequency {data_frequency}")
 
@@ -282,7 +306,7 @@ class Timechop:
 
         return as_of_times
 
-    def generate_matrix_definitions(
+    def generate_matrix_definitions(    
         self,
         train_test_split_time,
         training_as_of_date_frequency,
@@ -293,24 +317,19 @@ class Timechop:
     ):
         """ Given a split time and parameters for train and test matrices,
         generate as of times and metadata for the matrices in the split.
+        
+        Arguments:
+            train_test_split_time (datetime.datetime): the limit of the last label in the matrix
+            training_as_of_date_frequency (str): how much time between rows for an entity
+                                            in a training matrix
+            max_training_history (str): how far back from split do train
+                                        as_of_times go
+            test_duration (str): how far forward from split do test as_of_times go
+            training_label_timespan (str): how much time covered by train labels
+            test_label_timespan (str): how much time is covered by test labels
 
-        :param train_test_split_time: the limit of the last label in the matrix
-        :type train_test_split_time: datetime.datetime
-        :param training_as_of_date_frequency: how much time between rows for an entity
-                                        in a training matrix
-        :type training_as_of_date_frequency: str
-        :param max_training_history: how far back from split do train
-                                    as_of_times go
-        :type max_training_history: str
-        :param test_duration: how far forward from split do test as_of_times go
-        :type test_duration: str
-        :param training_label_timespan: how much time covered by train labels
-        :type training_label_timespan: str
-        :param test_label_timespan: how much time is covered by test labels
-        :type test_label_timespan: str
-
-        :return: dictionary defining the train and test matrices for a split
-        :rtype: dict
+        returns: 
+            dict: dictionary defining the train and test matrices for a split
         """
 
         # continuing our example, let's consider the case when this is called for the last
@@ -366,18 +385,15 @@ class Timechop:
         """ Given a split time and the parameters of a training matrix, generate
         the as of times and metadata for a train matrix.
 
-        :param train_test_split_time: the limit of the last label in the matrix
-        :type train_test_split_time: datetime.datetime
-        :param training_label_timespan: how much time is covered by the labels
-        :type training_label_timespan: str
-        :param max_training_history: how far back from split do as_of_times go
-        :type max_training_history: str
-        :param training_as_of_date_frequency: how much time between rows for an entity
-        :type training_as_of_date_frequency: str
+        Arguments:
+            train_test_split_time (datetime.datetime): the limit of the last label in the matrix
+            training_label_timespan (str): how much time is covered by the labels
+            max_training_history (str): how far back from split do as_of_times go
+            training_as_of_date_frequency (str): how much time between rows for an entity
 
-        :return: dictionary containing the temporal parameters and as of times
-                 for a train matrix
-        :rtype: dict
+        return:
+            dict: dictionary containing the temporal parameters and as of times
+                  for a train matrix
         """
         logger.debug(f"Generating train matrix definitions for trin/test split {train_test_split_time}")
         # for our example, this will be called with:
@@ -446,15 +462,13 @@ class Timechop:
         """ Given a train/test split time and a set of testing parameters,
         generate the metadata and as of times for the test matrices in a split.
 
-        :param train_test_split_time: the limit of the last label in the matrix
-        :type train_test_split_time: datetime.datetime
-        :param test_duration: how far forward from split do test as_of_times go
-        :type test_duration: str
-        :param test_label_timespan: how much time is covered by test labels
-        :type test_label_timespan: str
+        Arguments:
+            train_test_split_time (datetime.datetime): the limit of the last label in the matrix
+            test_duration (str): how far forward from split do test as_of_times go
+            test_label_timespan (str): how much time is covered by test labels
 
-        :return: list of dictionaries defining the test matrices for a split
-        :rtype: list
+        return: 
+            list: list of dictionaries defining the test matrices for a split
         """
 
         # for our example, this will be called with:

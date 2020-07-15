@@ -44,10 +44,18 @@ def _bound_rules_from(shared_param_set, selection_rule):
 
 def make_selection_rule_grid(rule_groups):
     """Convert a compact selection rule group representation to a
-        list of bound selection rules
+        list of bound selection rules.
 
-    Args: rule_groups (list), example:
-        [{
+    Arguments:
+        rule_groups (list): List of dicts used to specify selection rule grid. 
+        
+    Most users will want to use [rulemaker objects](#rulemakers)
+    to generate their `rule_group` specifications.
+    
+    An example rule_groups specification:
+
+    ```
+    [{
             'shared_parameters': [
                     {'metric': 'precision@', 'parameter': '100_abs'},
                     {'metric': 'recall@', 'parameter': '100_abs'},
@@ -69,9 +77,11 @@ def make_selection_rule_grid(rule_groups):
                 },
             ]
         }]
+    ```
+    Returns:
+        list: list of audition.selection_rules.BoundSelectionRule objects"""
 
-    Returns: (list of audition.selection_rules.BoundSelectionRule)
-    """
+
     rules = []
     logger.debug("Expanding selection rule groups into full grid")
     for rule_group in rule_groups:
