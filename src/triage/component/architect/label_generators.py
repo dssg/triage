@@ -77,6 +77,10 @@ class LabelGenerator:
                     labels_table=labels_table,
                 )
 
+        self.db_engine.execute(
+            f"create index on {labels_table} (entity_id, as_of_date)"
+        )
+        logger.spam("Added index to labels table")
 
         nrows = table_row_count(labels_table, self.db_engine)
 
