@@ -176,43 +176,27 @@ class ModelTrainTester:
                 predictions_proba = np.array(None)
                 protected_df = None
 
-                if self.replace:
-                    logger.debug(
-                        f"Replace flag set; generating new predictions and evaluations for"
-                        f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id}",
-                    )
-
-                    predictions_proba = self.predictor.predict(
-                        model_id,
-                        store,
-                        misc_db_parameters=dict(),
-                        train_matrix_columns=train_store.columns(),
-                    )
-
-                logger.debug(f"=====================Subsets: {self.subsets}")
-
                 for subset in self.subsets:
-                    needs_evaluation = self.model_evaluator.needs_evaluations(store, model_id, filename_friendly_hash(subset))
-
-                    if self.replace or needs_evaluation:
-                        logger.debug(f"=================Subset: {subset}")
+                    if self.replace or self.model_evaluator.needs_evaluations(store, model_id, filename_friendly_hash(subset)):
 
                         logger.debug(
                             f"Evaluating {store.matrix_type.string_name} matrix {store.uuid}, subset {filename_friendly_hash(subset)}, and model {model_id}"
                         )
 
-                        if not predictions_proba.any():
-                            logger.debug(
-                                f"Generating new predictions for"
-                                f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
-                            )
 
-                            predictions_proba = self.predictor.predict(
-                                model_id,
-                                store,
-                                misc_db_parameters=dict(),
-                                train_matrix_columns=train_store.columns(),
-                            )
+                        logger.debug(
+                            f"Generating new predictions for "
+                            f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
+                        )
+
+                        predictions_proba = self.predictor.predict(
+                            model_id,
+                            store,
+                            misc_db_parameters=dict(),
+                            train_matrix_columns=train_store.columns(),
+                        )
+
+
                         if protected_df is None:
                             protected_df = self.protected_groups_generator.as_dataframe(
                                 as_of_dates=store.as_of_dates,
