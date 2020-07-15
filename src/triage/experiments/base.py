@@ -27,7 +27,7 @@ from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.architect.entity_date_table_generators import (
     EntityDateTableGenerator,
-    EntityDateTableGeneratorNoOp,
+    CohortTableGeneratorNoOp,
 )
 from triage.component.timechop import Timechop
 from triage.component import results_schema
@@ -140,7 +140,7 @@ class ExperimentBase(ABC):
         self.config = config
 
         if not self.config.get('random_seed', None):
-            logger.notice("Random seed not specified. A random seed will be provided"
+            logger.notice("Random seed not specified. A random seed will be provided. "
                           "This could have interesting side effects, "
                           "e.g. new models are trained everytime that you run the experiment")
 
@@ -284,7 +284,7 @@ class ExperimentBase(ABC):
             )
             self.features_ignore_cohort = True
             self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
-            self.cohort_table_generator = EntityDateTableGeneratorNoOp()
+            self.cohort_table_generator = CohortTableGeneratorNoOp()
 
         self.subsets = [None] + self.config.get("scoring", {}).get("subsets", [])
 
@@ -342,7 +342,7 @@ class ExperimentBase(ABC):
         )
 
         self.feature_group_creator = FeatureGroupCreator(
-            self.config.get("feature_group_definition", {"all": [True]})
+            self.config.get("feature_group_definition")
         )
 
         self.feature_group_mixer = FeatureGroupMixer(
@@ -384,7 +384,7 @@ class ExperimentBase(ABC):
             )
         else:
             self.subsetter = SubsetterNoOp()
-            logger.notice("scoring/subsets missing in the configuration file or unrecognized. No subsets will be generated")
+            logger.notice("scoring.subsets missing in the configuration file or unrecognized. No subsets will be generated")
 
         self.trainer = ModelTrainer(
             experiment_hash=self.experiment_hash,
@@ -473,9 +473,10 @@ class ExperimentBase(ABC):
 
         """
         split_definitions = self.chopper.chop_time()
-        logger.debug(f"Computed and stored split definitions: {split_definitions}")
-        logger.debug("\n----TIME SPLIT SUMMARY----\n")
-        logger.debug("Number of time splits: {len(split_definitions)}")
+        logger.verbose(f"Computed and stored temporal split definitions")
+        logger.debug(f"Temporal split definitions: {split_definitions}")
+        logger.spam("\n----TIME SPLIT SUMMARY----\n")
+        logger.spam("Number of time splits: {len(split_definitions)}")
         for split_index, split in enumerate(split_definitions):
             train_times = split["train_matrix"]["as_of_times"]
             test_times = [
@@ -483,7 +484,7 @@ class ExperimentBase(ABC):
                 for test_matrix in split["test_matrices"]
                 for as_of_time in test_matrix["as_of_times"]
             ]
-            logger.debug(
+            logger.spam(
                 f"""Split index {split_index}:"""
                 f"""Training as_of_time_range: {min(train_times)} to {max(train_times)} ({len(train_times)} total)"""
                 f"""Testing as_of_time range: {min(test_times)} to {max(test_times)} ({len(test_times)} total)\n\n"""
@@ -502,19 +503,20 @@ class ExperimentBase(ABC):
         Returns: (list) of datetimes
 
         """
+        logger.spam("Calculating all the as_of_times")
         all_as_of_times = []
         for split in self.split_definitions:
             all_as_of_times.extend(split["train_matrix"]["as_of_times"])
-            logger.debug(
+            logger.spam(
                 f'Adding as_of_times from train matrix: {split["train_matrix"]["as_of_times"]}'
             )
             for test_matrix in split["test_matrices"]:
-                logger.debug(
+                logger.spam(
                     f'Adding as_of_times from test matrix: {test_matrix["as_of_times"]}',
                 )
                 all_as_of_times.extend(test_matrix["as_of_times"])
 
-        logger.debug(
+        logger.spam(
             f"Computed {len(all_as_of_times)} total as_of_times for label and feature generation",
         )
         distinct_as_of_times = list(set(all_as_of_times))
@@ -559,7 +561,7 @@ class ExperimentBase(ABC):
             being lists of SQL commands
 
         """
-        logger.verbose(
+        logger.spam(
             f"Calculating feature aggregation tasks for {len(self.all_as_of_times)} as_of_times"
         )
         return self.feature_generator.generate_all_table_tasks(
@@ -577,7 +579,7 @@ class ExperimentBase(ABC):
             being lists of SQL commands
 
         """
-        logger.verbose(
+        logger.spam(
             f"Calculating feature imputation tasks for {len(self.all_as_of_times)} as_of_times"
         )
         return self.feature_generator.generate_all_table_tasks(
@@ -681,20 +683,19 @@ class ExperimentBase(ABC):
 
         Results are stored in the database, not returned
         """
-        logger.info("Creating labels")
+        logger.info("Setting up labels")
         self.label_generator.generate_all_labels(
             self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
-        logger.success(f"Labels stored in the table {self.labels_table_name} successfully ")
-
+        logger.success(f"Labels setted up in the table {self.labels_table_name} successfully ")
 
     @experiment_entrypoint
     def generate_cohort(self):
-        logger.info("Creating cohort")
+        logger.info("Setting up cohort")
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
-        logger.success("Cohort stored in the table {self.cohort_table_name} successfully")
+        logger.success("Cohort setted up in the table {self.cohort_table_name} successfully")
 
 
     @experiment_entrypoint
@@ -735,7 +736,7 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def generate_preimputation_features(self):
-        logger.info("Creating feature aggregation tables")
+        logger.info("Creating features tables (before imputation) ")
         self.process_query_tasks(self.feature_aggregation_table_tasks)
         logger.success(
             f"Features (before imputation) were stored in the tables "
@@ -770,6 +771,7 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def generate_matrices(self):
+        self.all_as_of_times # Forcing the calculation of all the as of times, so the logging makes more sense
         self.generate_cohort()
         self.generate_labels()
         self.generate_preimputation_features()
@@ -778,12 +780,10 @@ class ExperimentBase(ABC):
 
     @experiment_entrypoint
     def generate_subsets(self):
-        if self.subsets:
-            self.process_subset_tasks(self.subset_tasks)
-        else:
-            logger.notice("No subsets found. Proceeding to training and testing models")
+        self.process_subset_tasks(self.subset_tasks)
 
     def _all_train_test_batches(self):
+        """ A batch is a model_group to be train, test and evaluated """
         if "grid_config" not in self.config:
             logger.warning(
                 "No grid_config was passed in the experiment config. No models will be trained"
@@ -806,10 +806,10 @@ class ExperimentBase(ABC):
         with self.get_for_update() as experiment:
             experiment.grid_size = sum(
                 1 for _param in self.trainer.flattened_grid_config(self.config.get('grid_config')))
-            logger.info("{experiment.grid_size} models will be trained, tested and evaluated")
+            logger.info(f"{experiment.grid_size} models groups will be trained, tested and evaluated")
 
         logger.info(f"Training, testing and evaluating models")
-        logger.verbose(f"{len(batches)} train/test batches found.")
+        logger.verbose(f"{len(batches)} train/test tasks found.")
         model_hashes = set(task['train_kwargs']['model_hash'] for batch in batches for task in batch.tasks)
         associate_models_with_experiment(
             self.experiment_hash,
@@ -820,7 +820,7 @@ class ExperimentBase(ABC):
             experiment.models_needed = len(model_hashes)
         record_model_building_started(self.run_id, self.db_engine)
         self.process_train_test_batches(batches)
-        logger.info("Training, testing and evaluatiog models completed")
+        logger.success("Training, testing and evaluatiog models completed")
 
     def validate(self, strict=True):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)

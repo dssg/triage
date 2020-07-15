@@ -63,7 +63,7 @@ def subset_labels_and_predictions(
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
     protected_df_subset = protected_df if protected_df.empty else protected_df.align(subset_df, join="inner")[0]
-    logger.debug(
+    logger.spam(
         f"{len(labels_subset)} entities in subset out of {len(labels)} in matrix.",
     )
 
@@ -96,8 +96,6 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
     df = pd.DataFrame.pg_copy_from(query_string, connectable=db_engine, parse_dates=["as_of_date"],
         index_col=MatrixStore.indices)
     return df
-
-
 
 
 def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
@@ -151,12 +149,11 @@ class MetricEvaluationResult(typing.NamedTuple):
 class ModelEvaluator:
     """An object that can score models based on its known metrics"""
 
-    """Available metric calculation functions
+    # Available metric calculation functions
 
-    Each value is expected to be a function that takes in the following params
-    (predictions_proba, predictions_binary, labels, parameters)
-    and return a numeric score
-    """
+    # Each value is expected to be a function that takes in the following params
+    # (predictions_proba, predictions_binary, labels, parameters)
+    # and return a numeric score
     available_metrics = {
         "precision@": metrics.precision,
         "recall@": metrics.recall,
@@ -228,13 +225,13 @@ class ModelEvaluator:
         for name, met in custom_metrics.items():
             if not hasattr(met, "greater_is_better"):
                 raise ValueError(
-                    "Custom metric {} missing greater_is_better "
-                    "attribute".format(name)
+                    f"Custom metric {name} missing greater_is_better "
+                    f"attribute"
                 )
             elif met.greater_is_better not in (True, False):
                 raise ValueError(
-                    "For custom metric {} greater_is_better must be "
-                    "boolean True or False".format(name)
+                    "For custom metric {name} greater_is_better must be "
+                    "boolean True or False"
                 )
 
     def _build_parameter_string(
@@ -343,7 +340,7 @@ class ModelEvaluator:
         )
         metrics = []
         if "thresholds" not in group:
-            logger.debug(
+            logger.notice(
                 "Not a thresholded group, generating evaluation based on all predictions"
             )
             metrics = metrics + generate_metrics(
@@ -430,7 +427,7 @@ class ModelEvaluator:
         )
         session.close()
         if evals_needed:
-            logger.debug("Needed evaluations missing")
+            logger.notice(f"Needed evaluations for model {model_id} on matrix {matrix_store.uuid} are missing")
             return True
 
         # now check bias config if there
@@ -469,7 +466,7 @@ class ModelEvaluator:
                 # using threshold configuration, convert probabilities to predicted classes
                 if len(predictions_proba) == 0:
                     logger.warning(
-                        f"{metric_def.metris} not defined for parameter {metric_def.parameter_combination} because no entities "
+                        f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because no entities "
                         "are in the subset for this matrix. Inserting NULL for value."
                     )
                     value = None
@@ -517,7 +514,7 @@ class ModelEvaluator:
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:
-            logger.info("Subsetting labels and predictions")
+            logger.verbose(f"Subsetting labels and predictions of model {model_id} on matrix {matrix_store.uuid}")
             labels, predictions_proba, protected_df = subset_labels_and_predictions(
                     subset_df=query_subset_table(
                         self.db_engine,
@@ -530,14 +527,17 @@ class ModelEvaluator:
             )
             subset_hash = filename_friendly_hash(subset)
         else:
+            logger.debug(f"Using all the predictions of model {model_id} on matrix {matrix_store.uuid} for evaluation (i.e. no subset)")
             labels = matrix_store.labels
             subset_hash = ""
+
         labels = np.array(labels)
 
         matrix_type = matrix_store.matrix_type
         metric_defs = self.metric_definitions_from_matrix_type(matrix_type)
 
-        logger.debug(f"Found {len(metric_defs)} metric definitions total")
+        logger.spam(f"Found {len(metric_defs)} metric definitions total")
+
         # 1. get worst sorting
         predictions_proba_worst, labels_worst = sort_predictions_and_labels(
             predictions_proba=predictions_proba,
@@ -549,6 +549,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_worst, labels_worst, metric_defs)
         }
+        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative labels first')
 
         # 2. get best sorting
         predictions_proba_best, labels_best = sort_predictions_and_labels(
@@ -561,6 +562,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
+        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first')
 
         evals_without_trials = dict()
 
@@ -576,8 +578,8 @@ class ModelEvaluator:
                 metric_defs_to_trial.append(metric_def)
 
         # 4. get average of n random trials
-        logger.info(
-            f"{len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
+        logger.debug(
+            f"For the model {model_id} {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
         )
 
         random_eval_accumulator = defaultdict(list)

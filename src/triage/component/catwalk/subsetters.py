@@ -10,8 +10,8 @@ from triage.component.results_schema import Subset
 
 class SubsetterNoOp:
     def generate_tasks(self, subset_configs):
-        logger.notice(
-            "No subsets configuration is available, so subsets will not be created"
+        logger.debug(
+            "No subsets configuration is available, so subsets tasks will not be created"
         )
 
         return []
@@ -23,7 +23,7 @@ class SubsetterNoOp:
 
     def process_task(self, subset_config, subset_hash, subset_table_generator):
         logger.notice(
-            "No subsets configuration is available, so subsets will not be created"
+            "No subsets configuration is available, so subset task  will not be created"
         )
 
     def save_subset_to_db(self, subset_hash, subset_config):

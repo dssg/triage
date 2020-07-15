@@ -62,7 +62,7 @@ class Predictor:
         """
 
         model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
-        logger.debug(f"Checking for model_hash {model_hash} in store")
+        logger.spam(f"Checking for model_hash {model_hash} in store")
         if self.model_storage_engine.exists(model_hash):
             return self.model_storage_engine.load(model_hash)
 
@@ -342,22 +342,22 @@ class Predictor:
                 session.close()
 
         model = self.load_model(model_id)
-        logger.debug(f"Loaded model {model_id}")
+        logger.spam(f"Loaded model {model_id}")
         if not model:
             raise ModelNotFoundError(f"Model # {model_id} not found")
 
-        # Labels are popped from matrix (IE, they are removed and returned)
+        # Labels are popped from matrix (i.e. they are removed and returned)
         labels = matrix_store.labels
 
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
         logger.debug(
-            f"Generated predictions for model {model_id}, matrix {matrix_store.uuid}"
+            f"Generated predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}"
         )
         if self.save_predictions:
-            logger.info(
-                f"Writing predictions for model {model_id}, matrix {matrix_store.uuid} to database"
+            logger.spam(
+                f"Writing predictions for model {model_id} on {matrix_store.matrix_type.string_name}  matrix {matrix_store.uuid} to database"
             )
             self._write_predictions_to_db(
                 model_id,
@@ -367,13 +367,14 @@ class Predictor:
                 misc_db_parameters,
                 matrix_type.prediction_obj,
             )
-            logger.info(
-                f"Wrote predictions for model {model_id}, matrix {matrix_store.uuid} to database"
+            logger.debug(
+                f"Wrote predictions for model {model_id} on  {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid} to database"
             )
         else:
-            logger.info(
-                f"Skipping prediction database sync for model {model_id}, matrix {matrix_store.uuid} because save_predictions was marked False"
+            logger.notice(
+                f"Predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}  weren't written to the db because, because you asked not to do so"
             )
+            logger.spam(f"Status of the save_predictions flag: {save_predictions}")
             self._write_metadata_to_db(
                 model_id=model_id,
                 matrix_uuid=matrix_store.uuid,

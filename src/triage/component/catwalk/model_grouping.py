@@ -140,14 +140,14 @@ class ModelGrouper:
                     ),
                 )
             )
-            logger.debug("Getting model group from query {query}")
+            logger.spam(f"Getting model group from query {query}")
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()
             model_group_id = model_group_id[0]
 
         else:
-            logger.debug("Could not found stored procedure public.model_group_id")
+            logger.warning("Could not found stored procedure public.model_group_id")
             model_group_id = None
         db_conn.close()
 

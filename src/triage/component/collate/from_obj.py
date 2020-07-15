@@ -58,34 +58,33 @@ class FromObj:
         # of the original table, whereas for a subquery there is no 'real name' besides the alias
         if not isinstance(from_obj, sqlparse.sql.Identifier):
             logger.warning(
-                "Expected %s to parse as an Identifier. It did not. "
-                "As a result, falling back to *not* materializing raw from object %s",
-                from_obj,
-                self.from_obj
+                f"Expected {from_obj} to parse as an Identifier. It did not. "
+                f"As a result, falling back to *not* materializing raw from object {self.from_obj}"
             )
             return False
         return from_obj.has_alias() and from_obj.get_alias() == from_obj.get_real_name()
 
     def maybe_materialize(self, db_engine):
         if self.should_materialize():
-            logger.debug(f"from_obj {self.name} looks like a subquery, so creating table")
+            logger.spam(f"from_obj in {self.name} looks like a subquery, so creating table")
             db_engine.execute(self.drop_materialized_table_sql)
             db_engine.execute(self.create_materialized_table_sql)
-            logger.debug(f"Created table to hold from_obj. New table: {self.materialized_table}")
+            logger.spam(f"Created table to hold from_obj. New table: {self.materialized_table}")
             self.validate(db_engine)
             db_engine.execute(self.index_materialized_table_sql)
-            logger.debug(f"Indexed from_obj table: {self.materialized_table}")
+            logger.spam(f"Indexed from_obj table: {self.materialized_table}")
+            logger.debug(f"Materialized table {self.materialized_table}")
         else:
-            logger.debug("from_obj did not look like a subquery, so did not materialize")
+            logger.debug(f"from_obj in {self.name} did not look like a subquery, so did not materialize")
 
     def validate(self, db_engine):
-        logger.debug(f"Validating from_obj {self.materialized_table}")
+        logger.spam(f"Validating from_obj {self.materialized_table}")
         table_should_exist(self.materialized_table, db_engine)
-        logger.debug(f"Table {self.materialized_table} successfully found")
+        logger.spam(f"Table {self.materialized_table} successfully found")
         table_should_have_column(self.materialized_table, 'entity_id', db_engine)
-        logger.debug(f"Successfully found entity_id column in {self.materialized_table}")
+        logger.spam(f"Successfully found entity_id column in {self.materialized_table}")
         table_should_have_column(self.materialized_table, self.knowledge_date_column, db_engine)
         column_should_be_timelike(self.materialized_table, self.knowledge_date_column, db_engine)
-        logger.debug(
+        logger.spam(
             f"Successfully found configured knowledge date column in {self.materialized_table}"
         )

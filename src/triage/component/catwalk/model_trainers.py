@@ -100,7 +100,7 @@ class ModelTrainer:
             "training_metadata": matrix_metadata,
             "random_seed": random_seed,
         }
-        logger.debug(f"Creating model hash from unique data {unique}")
+        logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
 
     def _train(self, matrix_store, class_path, parameters):
@@ -208,7 +208,7 @@ class ModelTrainer:
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
         if model_id and not self.replace:
-            logger.info(
+            logger.notice(
                 f"Metadata for model {model_id} found in database. Reusing model metadata."
             )
             return model_id
@@ -224,7 +224,7 @@ class ModelTrainer:
             )
             session = self.sessionmaker()
             if model_id:
-                logger.info(
+                logger.notice(
                     f"Found model {model_id}, updating non-unique attributes"
                 )
                 model.model_id = model_id
@@ -234,14 +234,14 @@ class ModelTrainer:
                 session.add(model)
                 session.commit()
                 model_id = model.model_id
-                logger.info(f"Added new model {model_id}")
+                logger.notice(f"Model {model_id}, not found from previous runs. Adding the new model")
             session.close()
 
-        logger.debug(f"Saving feature importances for model_id {model_id}")
+        logger.spam(f"Saving feature importances for model_id {model_id}")
         self._save_feature_importances(
             model_id, get_feature_importances(trained_model), feature_names
         )
-        logger.debug(f"Done saving feature importances for model_id {model_id}")
+        logger.debug(f"Saved feature importances for model_id {model_id}")
         return model_id
 
     def _train_and_store_model(
@@ -261,7 +261,7 @@ class ModelTrainer:
         random.seed(random_seed)
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
-        logger.info(f"Training and storing model for matrix uuid {matrix_store.uuid}")
+        logger.debug(f"Training and storing model for matrix uuid {matrix_store.uuid}")
         trained_model = self._train(matrix_store, class_path, parameters)
 
         unique_parameters = self.unique_parameters(parameters)
@@ -269,14 +269,14 @@ class ModelTrainer:
         model_group_id = self.model_grouper.get_model_group_id(
             class_path, unique_parameters, matrix_store.metadata, self.db_engine
         )
-        logger.info(
+        logger.debug(
             f"Trained model: hash {model_hash}, model group {model_group_id} "
         )
-        # Writing the model to storage, then getting its size in kilobytes.
+        # Writing th model to storage, then getting its size in kilobytes.
         self.model_storage_engine.write(trained_model, model_hash)
         model_size = sys.getsizeof(trained_model) / (1024.0)
 
-        logger.debug(f"Cached model: {model_hash}")
+        logger.spam(f"Cached model: {model_hash}")
         model_id = self._write_model_to_db(
             class_path,
             unique_parameters,
@@ -378,7 +378,7 @@ class ModelTrainer:
             elif not saved_model_id:
                 reason = "model metadata not found"
 
-            logger.info(
+            logger.debug(
                 f"Training {class_path} with parameters {parameters}"
                 f"(reason to train: {reason})"
             )
@@ -438,18 +438,20 @@ class ModelTrainer:
                 parameters,
                 random_seed
             )
-            logger.info(
+            logger.spam(
                 f"Computed model hash for {class_path} "
                 f"with parameters {parameters}: {model_hash}"
             )
 
             if any(task["model_hash"] == model_hash for task in tasks):
                 logger.info(
-                    f"Skipping model_hash {model_hash} because another"
+                    f"Skipping "
+                    f"Classpath: {class_path}({parameters}) "
+                    f"[{model_hash}] because another "
                     f"equivalent one found in this batch."
-                    f"Classpath: {class_path} -- Hyperparameters: {parameters}",
                 )
                 continue
+
             tasks.append(
                 {
                     "matrix_store": matrix_store,
@@ -460,5 +462,6 @@ class ModelTrainer:
                     "random_seed": random_seed
                 }
             )
-        logger.debug("Found {len(tasks)} unique model training tasks")
+            logger.debug(f"Task added for model {class_path}({parameters}) [{model_hash}]")
+        logger.debug(f"Found {len(tasks)} unique model training tasks")
         return tasks

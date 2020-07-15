@@ -77,7 +77,7 @@ def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine)
         session.merge(ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid))
     session.commit()
     session.close()
-    logger.debug("Associated matrices with experiment in database")
+    logger.spam("Associated matrices with experiment in database")
 
 
 @db_retry
@@ -87,7 +87,7 @@ def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
         session.merge(ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash))
     session.commit()
     session.close()
-    logger.debug("Associated models with experiment in database")
+    logger.spam("Associated models with experiment in database")
 
 
 @db_retry
@@ -170,7 +170,7 @@ def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', 
         (tuple) (predictions_proba, labels), sorted
     """
     if len(labels) == 0:
-        logger.debug("No labels present, skipping sorting.")
+        logger.notice("No labels present, skipping predictions sorting .")
         if parallel_arrays:
             return (predictions_proba, labels, parallel_arrays)
         else:

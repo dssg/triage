@@ -1,4 +1,5 @@
-# coding: utf-8
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 import os
 import yaml
@@ -29,7 +30,7 @@ def fill_timechop_config_missing(config, db_engine):
         default_config['training_label_timespans'] = default_config['test_label_timespans'] = timechop_config['label_timespans']
         timechop_config.pop('label_timespans') ## We don't need this value anymore
 
-    # Checks if some of the date range  limits  is missing, if so repalces with
+    # Checks if some of the date range  limits  is missing, if so replaces with
     # min, max accordingy from de from_objs
     if any([k not in timechop_config.keys() for k in ['feature_start_time', 'feature_end_time', 'label_start_time', 'label_end_time']]):
         from_query = "(select min({knowledge_date}) as min_date, max({knowledge_date}) as max_date from (select * from {from_obj}) as t)"
@@ -80,6 +81,7 @@ def fill_cohort_config_missing(config):
     default_config.update(cohort_config)
 
     return default_config
+
 
 def fill_feature_group_definition(config):
     """
@@ -157,6 +159,3 @@ def model_grid_preset(grid_type):
         prev_type = model_grid_presets[prev_type]['prev']
 
     return output
-
-
-

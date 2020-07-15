@@ -12,18 +12,18 @@ CALCULATE_STRATEGIES = {"uniform": uniform_distribution}
 
 class IndividualImportanceCalculatorNoOp:
     def calculate_and_save_all_methods_and_dates(self, model_id, test_matrix_store):
-        logger.warning(
+        logger.notice(
             "No individual feature importance configuration is available, so no individual feature importance will be created"
         )
 
     def calculate_and_save(self, model_id, test_matrix_store, method, as_of_date):
-        logger.warning(
+        logger.notice(
             "No individual feature importance configuration is available, so no individual feature importance will be created"
         )
 
 
     def save(self, importance_records, model_id, as_of_date, method_name):
-        logger.warning(
+        logger.notice(
             "No individual feature importance configuration is available, so no individual feature importance will be created"
         )
 
