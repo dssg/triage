@@ -58,7 +58,6 @@ class SerializableDbEngine(wrapt.ObjectProxy):
         return cls(url, creator=creator, **kwargs)
 
 
-#create_engine = SerializableDbEngine
 create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps)
 
 @contextmanager
