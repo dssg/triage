@@ -47,8 +47,8 @@ class CutOff(BaseEstimator, TransformerMixin):
 
         if np.any(X > feature_range[1]) or np.any(X < feature_range[0]):
             logger.notice(
-                f"You got data that are out of the range: {feature_range}. "
-                f"It will cutoff to fit in that range."
+                f"You got feature values that are out of the range: {feature_range}. "
+                f"The feature values will cutoff to fit in the range {feature_range}."
             )
 
         X[X > feature_range[1]] = feature_range[1]
