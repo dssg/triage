@@ -36,36 +36,36 @@ class ProtectedGroupsGenerator:
         self.knowledge_date_column = knowledge_date_column
 
     def generate_all_dates(self, as_of_dates, cohort_table_name, cohort_hash):
-        logger.info("Creating protected groups table")
+        logger.spam("Creating protected groups table")
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
             self.db_engine.execute(
-                """
-                create table if not exists {} (
+                f"""
+                create table if not exists {self.protected_groups_table_name} (
                 entity_id int,
                 as_of_date date,
-                {},
+                {', '.join([str(col) + " varchar" for col in self.attribute_columns])},
                 cohort_hash text
-            )""".format(
-                    self.protected_groups_table_name,
-                    ", ".join([str(col) + " varchar(60)" for col in self.attribute_columns])
-                )
+                )"""
             )
+            logger.debug(f"Protected groups table {self.protected_groups_table_name} created")
             table_is_new = True
         else:
-            logger.info("Not dropping and recreating protected groups table because "
-                         "replace flag was set to False and table was found to exist")
+            logger.debug(f"Protected groups table {self.protected_groups_table_name} exist")
+
         if self.replace:
             self.db_engine.execute(
-                f"delete from {self.protected_groups_table_name} where cohort_hash = {cohort_hash}"
+                f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
             )
+            logger.debug(f"Removed from {self.protected_groups_table_name} all rows from cohort {cohort_hash}")
 
-        logger.debug(
+        logger.spam(
             f"Creating protected_groups for {len(as_of_dates)} as of dates",
         )
+
         for as_of_date in as_of_dates:
             if not self.replace:
-                logger.debug(
+                logger.spam(
                     "Looking for existing protected_groups for as of date {as_of_date}"
                 )
                 any_existing_rows = list(self.db_engine.execute(
@@ -97,7 +97,7 @@ class ProtectedGroupsGenerator:
         else:
             logger.success(f"Protected groups stored in the table "
                            f"{self.protected_groups_table_name} successfully")
-            logger.debug(f"Protected groups table has {nrows} rows")
+            logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         full_insert_query = text(textwrap.dedent(
@@ -126,7 +126,7 @@ class ProtectedGroupsGenerator:
             entity_id_column=self.entity_id_column
         ))
         logger.debug("Running protected_groups creation query")
-        logger.debug(full_insert_query)
+        logger.spam(full_insert_query)
         self.db_engine.execute(full_insert_query)
 
     def as_dataframe(self, as_of_dates, cohort_hash):
