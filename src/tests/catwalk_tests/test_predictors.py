@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 import datetime
 from unittest.mock import Mock
-from np.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal
 import pandas as pd
 
 from triage.component.results_schema import TestPrediction, Matrix, Model

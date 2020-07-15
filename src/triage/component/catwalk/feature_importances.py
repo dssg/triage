@@ -56,7 +56,7 @@ def get_feature_importances(model):
         feature_importances = model.feature_importances_
 
     else:
-        logging.warning(
+        logger.warning(
             "The selected algorithm, doesn't support a standard way "
             "of calculate the importance of each feature used. "
             "Falling back to ad-hoc methods "

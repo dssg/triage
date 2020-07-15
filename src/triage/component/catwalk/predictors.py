@@ -374,7 +374,7 @@ class Predictor:
             logger.notice(
                 f"Predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}  weren't written to the db because, because you asked not to do so"
             )
-            logger.spam(f"Status of the save_predictions flag: {save_predictions}")
+            logger.spam(f"Status of the save_predictions flag: {self.save_predictions}")
             self._write_metadata_to_db(
                 model_id=model_id,
                 matrix_uuid=matrix_store.uuid,
