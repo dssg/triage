@@ -54,7 +54,7 @@ class BuilderBase:
 
         for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items(), start=1):
             logger.info(
-                f"Building matrix {matrix_uuid} [({i}/{len(build_tasks.keys())})]"
+                f"Building matrix {matrix_uuid} [{i}/{len(build_tasks.keys())}]"
             )
             self.build_matrix(**task_arguments)
             logger.success(f"Matrix {matrix_uuid} built")
