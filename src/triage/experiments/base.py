@@ -342,7 +342,7 @@ class ExperimentBase(ABC):
         )
 
         self.feature_group_creator = FeatureGroupCreator(
-            self.config.get("feature_group_definition")
+            self.config.get("feature_group_definition", {"all": [True]})
         )
 
         self.feature_group_mixer = FeatureGroupMixer(
@@ -601,7 +601,7 @@ class ExperimentBase(ABC):
                 self.collate_aggregations
             ),
         )
-        logger.debug("Computed master feature dictionary: %s", result)
+        logger.debug(f"Computed master feature dictionary: {result}")
         with self.get_for_update() as experiment:
             experiment.total_features = sum(1 for _feature in itertools.chain.from_iterable(result.values()))
         return result

@@ -37,13 +37,17 @@ def prefix_subsetter(config_item, table, features):
     "Return features matching a given prefix"
     return [feature for feature in features if feature.startswith(config_item)]
 
+def all_subsetter(config_item, table, features):
+    return features
+
 
 class FeatureGroupCreator:
     """Divides a feature dictionary into groups based on given criteria"""
 
     subsetters = {
         "tables": table_subsetter,
-        "prefix": prefix_subsetter
+        "prefix": prefix_subsetter,
+        "all": all_subsetter
     }
 
     def __init__(self, definition):
@@ -64,7 +68,7 @@ class FeatureGroupCreator:
 
         for subsetter_name, value in self.definition.items():
             if subsetter_name not in self.subsetters:
-                raise ValueError("Unknown subsetter %s received", subsetter_name)
+                raise ValueError(f"Unknown subsetter {subsetter_name} received")
             if not hasattr(value, "__iter__") or isinstance(value, (str, bytes)):
                 raise ValueError(
                     "Each value in FeatureGroupCreator must be "
