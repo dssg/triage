@@ -3,7 +3,8 @@ quickstart:
     grid:
         'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
             C: [1]
-            penalty: ['l2']
+            solver: ['saga']
+            penalty: ['l1']
 
         'sklearn.tree.DecisionTreeClassifier':
             criterion: ['gini']
@@ -19,7 +20,7 @@ small:
     grid:
         'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
             C: [0.00001,0.0001, 0.001, 0.01, 0.1, 10]
-            penalty: ['l2']
+            penalty: ['~', 'l2']
 
         'sklearn.tree.DecisionTreeClassifier':
             criterion: ['entropy']
