@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 import time
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
@@ -61,17 +62,17 @@ class RQExperiment(ExperimentBase):
             num_pending = sum(
                 1 for job in jobs if not job.is_finished and not job.is_failed
             )
-            logging.info(
+            logger.info(
                 "Report: jobs %s done, %s failed, %s pending",
                 num_done,
                 num_failed,
                 num_pending,
             )
             if num_pending == 0:
-                logging.info("All jobs completed or failed, returning")
+                logger.info("All jobs completed or failed, returning")
                 return [job.result for job in jobs]
             else:
-                logging.info("Sleeping for %s seconds", self.sleep_time)
+                logger.info("Sleeping for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
 
     def process_query_tasks(self, query_tasks):
@@ -99,7 +100,7 @@ class RQExperiment(ExperimentBase):
             }
         """
         for table_name, tasks in query_tasks.items():
-            logging.info("Processing features for %s", table_name)
+            logger.info("Processing features for %s", table_name)
             self.feature_generator.run_commands(tasks.get("prepare", []))
 
             insert_batches = [
@@ -118,7 +119,7 @@ class RQExperiment(ExperimentBase):
             self.wait_for(jobs)
 
             self.feature_generator.run_commands(tasks.get("finalize", []))
-            logging.info("%s completed", table_name)
+            logger.info("%s completed", table_name)
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ

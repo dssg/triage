@@ -1,5 +1,7 @@
 import pandas as pd
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from scipy import stats
 import yaml
 
@@ -125,7 +127,7 @@ def populate_crosstabs_table(
     null_cols = [c for c in null_cols if c not in model_cols]
 
     if len(null_cols) > 0:
-        logging.warning("Dropping the all-null columns: %s" % str(null_cols))
+        logger.warning("Dropping the all-null columns: %s" % str(null_cols))
         df = df.drop(null_cols, 1)
 
     # if the dataframe isn't dummified, do it

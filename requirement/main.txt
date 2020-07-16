@@ -19,7 +19,8 @@ pebble==4.5.3
 adjustText==0.7.3
 graphviz==0.14
 requests==2.24.0
-
+coloredlogs==14.0
+verboselogs==1.7
 scipy==1.5.0
 scikit-learn==0.23.1
 matplotlib==3.2.2

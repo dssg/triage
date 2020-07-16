@@ -1,7 +1,12 @@
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import re
-import warnings
+
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+
+
 
 def parse_from_obj(config, alias):
     """
@@ -92,9 +97,8 @@ def convert_str_to_relativedelta(delta_string):
         pass
     else:
         if unit_type == "minutes":
-            warnings.warn(
-                'Time delta units "{}" converted to minutes.'.format(units),
-                RuntimeWarning,
+            logger.warning(
+                f'Time delta units "{units}" converted to minutes.'
             )
         return relativedelta(**{unit_type: value})
 

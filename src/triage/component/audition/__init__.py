@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 import json
 import os
@@ -65,7 +66,7 @@ class Auditioner:
                         'max_below_best': .5,
                         'threshold_value': .5
                      }
-                    
+
                     metric (string): model evaluation metric, such as 'precision@'
                     parameter (string): model evaluation metric parameter,
                         such as '300_abs'
@@ -148,8 +149,8 @@ class Auditioner:
         Returns the average regret for each selection rule, over the specified list of train/test periods.
 
         Returns:
-            A dict with a key-value pair for each selection rule and the average regret for that rule. Structure: 
-            
+            A dict with a key-value pair for each selection rule and the average regret for that rule. Structure:
+
                 {'descriptive rule_name': .5}
         """
         result = dict()
@@ -169,18 +170,15 @@ class Auditioner:
 
         Returns:
             A dict with a key-value pair for each selection rule and the list of n
-            model_group_ids that it selected. Structure: 
-            
+            model_group_ids that it selected. Structure:
+
                 {'descriptive rule_name':[1,2,3]}
         """
-                
-
-
-        logging.info("Calculating selection rule picks for all rules")
+        logger.debug("Calculating selection rule picks for all rules")
         model_group_ids = dict()
         thresholded_ids = self.thresholded_model_group_ids
         for selection_rule in self.selection_rules:
-            logging.info("Calculating selection rule picks for %s", selection_rule)
+            logger.debug("Calculating selection rule picks for %s", selection_rule)
             model_group_ids[
                 selection_rule.descriptive_name
             ] = self.selection_rule_picker.model_group_from_rule(
@@ -190,7 +188,7 @@ class Auditioner:
                 # time period and use those as candidate model groups
                 train_end_time=self.train_end_times[-1],
             )
-            logging.info(
+            logger.debug(
                 "For rule %s, model group %s was picked",
                 selection_rule,
                 model_group_ids[selection_rule.descriptive_name],
@@ -210,10 +208,10 @@ class Auditioner:
         2. A performance-over-time plot showing the value for the given
         metric over time for each thresholded model group
         """
-        logging.info("Showing best distance plots for all metrics")
+        logger.debug("Showing best distance plots for all metrics")
         thresholded_model_group_ids = self.thresholded_model_group_ids
         if len(thresholded_model_group_ids) == 0:
-            logging.warning(
+            logger.warning(
                 "Zero model group ids found that passed configured thresholds. "
                 "Nothing to plot"
             )
@@ -221,7 +219,7 @@ class Auditioner:
         self.best_distance_plotter.plot_all_best_dist(
             self.metrics, thresholded_model_group_ids, self.train_end_times
         )
-        logging.info("Showing model group performance plots for all metrics")
+        logger.debug("Showing model group performance plots for all metrics")
         self.model_group_performance_plotter.plot_all(
             metric_filters=self.metric_filters,
             model_group_ids=thresholded_model_group_ids,
@@ -275,10 +273,10 @@ initial_metric_filters
             plot (boolean, default True): Whether or not to also plot model group performance
                 and thresholding details at this time.
         """
-        logging.info("Updating metric filters with new config %s", new_filters)
+        logger.debug("Updating metric filters with new config %s", new_filters)
         self.model_group_thresholder.update_filters(new_filters)
         if plot:
-            logging.info("After config update, plotting model groups")
+            logger.debug("After config update, plotting model groups")
             self.plot_model_groups()
 
     def plot_selection_rules(self):
@@ -415,10 +413,10 @@ class AuditionRunner:
         aud.register_selection_rule_grid(rule_grid=self.config["rules"], plot=True)
         aud.save_result_model_group_ids()
 
-        logging.info(f"Audition ran! Results are stored in {self.dir}.")
+        logger.debug(f"Audition ran! Results are stored in {self.dir}.")
 
     def validate(self):
         try:
-            logging.info("Validate!")
+            logger.debug("Validate!")
         except Exception as err:
             raise err

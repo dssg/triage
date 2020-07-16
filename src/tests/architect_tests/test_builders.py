@@ -4,7 +4,7 @@ from unittest import TestCase
 import pandas as pd
 import testing.postgresql
 from mock import Mock
-from sqlalchemy import create_engine
+from triage import create_engine
 from contextlib import contextmanager
 
 from triage.component.catwalk.utils import filename_friendly_hash

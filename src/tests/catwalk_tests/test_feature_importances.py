@@ -35,7 +35,7 @@ def trained_models():
     svc_wo_linear_kernel = SVC(gamma='auto')
     svc_wo_linear_kernel.fit(X_train, y_train)
 
-    dummy = DummyClassifier()
+    dummy = DummyClassifier(strategy='stratified')
     dummy.fit(X_train, y_train)
 
     return {
@@ -45,22 +45,6 @@ def trained_models():
         "Dummy": dummy,
         "SVC_wo_linear_kernel": svc_wo_linear_kernel,
     }
-
-
-def test_throwing_warning_if_lr(trained_models):
-    with pytest.warns(UserWarning):
-        get_feature_importances(trained_models["LR"])
-
-
-def test_throwing_warning_if_dummyclassifier(trained_models):
-    with pytest.warns(UserWarning):
-        get_feature_importances(trained_models["Dummy"])
-
-
-def test_throwing_warning_if_SVC_wo_linear_kernel(trained_models):
-    with pytest.warns(UserWarning):
-        get_feature_importances(trained_models["SVC_wo_linear_kernel"])
-
 
 def test_correct_feature_importances_for_lr(trained_models):
     feature_importances = get_feature_importances(trained_models["LR"])

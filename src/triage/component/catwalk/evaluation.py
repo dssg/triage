@@ -1,11 +1,12 @@
 import functools
 import itertools
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 import math
 
-import numpy
+import numpy as np
 import ohio.ext.pandas
-import pandas
+import pandas as pd
 import statistics
 import typing
 from collections import defaultdict
@@ -47,25 +48,23 @@ def subset_labels_and_predictions(
             and as_of_dates in a subset
         labels (pandas.Series) A series of labels with entity_id and as_of_date
             as the index
-        predictions_proba (numpy.array) An array of predictions for the same
+        predictions_proba (np.array) An array of predictions for the same
             entity_date pairs as the labels and in the same order
         protected_df (pandas.DataFrame) A dataframe of protected group attributes
 
-    Returns: (pandas.Series, numpy.array, pandas.DataFrame) The labels, predictions, and protected
+    Returns: (pandas.Series, np.array, pandas.DataFrame) The labels, predictions, and protected
         group attributes that refer to entity-date pairs in the subset
     """
-    indexed_predictions = pandas.Series(predictions_proba, index=labels.index)
+    indexed_predictions = pd.Series(predictions_proba, index=labels.index)
     if protected_df is None:
-        protected_df = pandas.DataFrame()
+        protected_df = pd.DataFrame()
 
     # The subset isn't specific to the cohort, so inner join to the labels/predictions
     labels_subset = labels.align(subset_df, join="inner")[0]
     predictions_subset = indexed_predictions.align(subset_df, join="inner")[0].values
     protected_df_subset = protected_df if protected_df.empty else protected_df.align(subset_df, join="inner")[0]
-    logging.debug(
-        "%s entities in subset out of %s in matrix.",
-        len(labels_subset),
-        len(labels),
+    logger.spam(
+        f"{len(labels_subset)} entities in subset out of {len(labels)} in matrix.",
     )
 
     return (labels_subset, predictions_subset, protected_df_subset)
@@ -94,35 +93,33 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
-    df = pandas.DataFrame.pg_copy_from(query_string, connectable=db_engine, parse_dates=["as_of_date"],
+    df = pd.DataFrame.pg_copy_from(query_string, connectable=db_engine, parse_dates=["as_of_date"],
         index_col=MatrixStore.indices)
     return df
-
-
 
 
 def generate_binary_at_x(test_predictions, x_value, unit="top_n"):
     """Assign predicted classes based based on top% or absolute rank of score
 
     Args:
-        test_predictions (numpy.array) A predictions, sorted by risk score descending
+        test_predictions (np.array) A predictions, sorted by risk score descending
         x_value (int) The percentile or absolute value desired
         unit (string, default 'top_n') The thresholding method desired,
             either percentile or top_n
 
-    Returns: (numpy.array) The predicted classes
+    Returns: (np.array) The predicted classes
     """
     len_predictions = len(test_predictions)
     if len_predictions == 0:
-        return numpy.array([])
+        return np.array([])
     if unit == "percentile":
         cutoff_index = int(len_predictions * (x_value / 100.00))
     else:
         cutoff_index = int(x_value)
     num_ones = cutoff_index if cutoff_index <= len_predictions else len_predictions
     num_zeroes = len_predictions - cutoff_index if cutoff_index <= len_predictions else 0
-    test_predictions_binary = numpy.concatenate(
-        (numpy.ones(num_ones, numpy.int8), numpy.zeros(num_zeroes, numpy.int8))
+    test_predictions_binary = np.concatenate(
+        (np.ones(num_ones, np.int8), np.zeros(num_zeroes, np.int8))
     )
     return test_predictions_binary
 
@@ -152,12 +149,11 @@ class MetricEvaluationResult(typing.NamedTuple):
 class ModelEvaluator:
     """An object that can score models based on its known metrics"""
 
-    """Available metric calculation functions
+    # Available metric calculation functions
 
-    Each value is expected to be a function that takes in the following params
-    (predictions_proba, predictions_binary, labels, parameters)
-    and return a numeric score
-    """
+    # Each value is expected to be a function that takes in the following params
+    # (predictions_proba, predictions_binary, labels, parameters)
+    # and return a numeric score
     available_metrics = {
         "precision@": metrics.precision,
         "recall@": metrics.recall,
@@ -229,13 +225,13 @@ class ModelEvaluator:
         for name, met in custom_metrics.items():
             if not hasattr(met, "greater_is_better"):
                 raise ValueError(
-                    "Custom metric {} missing greater_is_better "
-                    "attribute".format(name)
+                    f"Custom metric {name} missing greater_is_better "
+                    f"attribute"
                 )
             elif met.greater_is_better not in (True, False):
                 raise ValueError(
-                    "For custom metric {} greater_is_better must be "
-                    "boolean True or False".format(name)
+                    "For custom metric {name} greater_is_better must be "
+                    "boolean True or False"
                 )
 
     def _build_parameter_string(
@@ -266,7 +262,7 @@ class ModelEvaluator:
         )
         return parameter_string
 
-    def _filter_nan_labels(self, predicted_classes: numpy.array, labels: numpy.array):
+    def _filter_nan_labels(self, predicted_classes: np.array, labels: np.array):
         """Filter missing labels and their corresponding predictions
 
         Args:
@@ -275,7 +271,7 @@ class ModelEvaluator:
 
         Returns: (tuple) Copies of the input lists, with NaN labels removed
         """
-        nan_mask = numpy.isfinite(labels)
+        nan_mask = np.isfinite(labels)
         return (predicted_classes[nan_mask], labels[nan_mask])
 
     def _flatten_metric_threshold(
@@ -335,7 +331,7 @@ class ModelEvaluator:
                 Should contain the key 'metrics', and optionally 'parameters' or 'thresholds'
         Returns: (list) MetricDefinition objects
         """
-        logging.debug("Creating evaluations for metric group %s", group)
+        logger.debug(f"Creating evaluations for metric group {group}")
         parameters = group.get("parameters", [{}])
         generate_metrics = functools.partial(
             self._flatten_metric_threshold,
@@ -344,7 +340,7 @@ class ModelEvaluator:
         )
         metrics = []
         if "thresholds" not in group:
-            logging.debug(
+            logger.notice(
                 "Not a thresholded group, generating evaluation based on all predictions"
             )
             metrics = metrics + generate_metrics(
@@ -354,13 +350,13 @@ class ModelEvaluator:
             )
 
         for pct_thresh in group.get("thresholds", {}).get("percentiles", []):
-            logging.debug("Processing percent threshold %s", pct_thresh)
+            logger.debug(f"Processing percent threshold {pct_thresh}")
             metrics = metrics + generate_metrics(
                 threshold_unit="percentile", threshold_value=pct_thresh
             )
 
         for abs_thresh in group.get("thresholds", {}).get("top_n", []):
-            logging.debug("Processing absolute threshold %s", abs_thresh)
+            logger.debug(f"Processing absolute threshold {abs_thresh}")
             metrics = metrics + generate_metrics(
                 threshold_unit="top_n", threshold_value=abs_thresh
             )
@@ -431,7 +427,7 @@ class ModelEvaluator:
         )
         session.close()
         if evals_needed:
-            logging.debug("Needed evaluations missing")
+            logger.notice(f"Needed evaluations for model {model_id} on matrix {matrix_store.uuid} are missing")
             return True
 
         # now check bias config if there
@@ -447,8 +443,8 @@ class ModelEvaluator:
         """Compute evaluations for a set of predictions and labels
 
         Args:
-            predictions_proba (numpy.array) predictions, sorted by score descending
-            labels (numpy.array) labels, sorted however the caller wishes to break ties
+            predictions_proba (np.array) predictions, sorted by score descending
+            labels (np.array) labels, sorted however the caller wishes to break ties
             metric_definitions (list of MetricDefinition objects) metrics to compute
 
         Returns: (list of MetricEvaluationResult objects) One result for each metric definition
@@ -464,16 +460,14 @@ class ModelEvaluator:
                 predicted_classes, labels
             )
             num_labeled_examples = len(present_labels)
-            num_labeled_above_threshold = numpy.count_nonzero(predicted_classes_with_labels)
-            num_positive_labels = numpy.count_nonzero(present_labels)
+            num_labeled_above_threshold = np.count_nonzero(predicted_classes_with_labels)
+            num_positive_labels = np.count_nonzero(present_labels)
             for metric_def in metrics_for_threshold:
                 # using threshold configuration, convert probabilities to predicted classes
                 if len(predictions_proba) == 0:
-                    logging.warning(
-                        f"%s not defined for parameter %s because no entities "
-                        "are in the subset for this matrix. Inserting NULL for value.",
-                        metric_def.metric,
-                        metric_def.parameter_combination,
+                    logger.warning(
+                        f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because no entities "
+                        "are in the subset for this matrix. Inserting NULL for value."
                     )
                     value = None
                 else:
@@ -484,13 +478,11 @@ class ModelEvaluator:
                             present_labels,
                             metric_def.parameter_combination,
                         )
-                    
+
                     except ValueError:
-                        logging.warning(
-                            f"%s not defined for parameter %s because all labels "
-                            "are the same. Inserting NULL for value.",
-                            metric_def.metric,
-                            metric_def.parameter_combination,
+                        logger.warning(
+                            f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because all labels "
+                            "are the same. Inserting NULL for value."
                         )
                         value = None
 
@@ -509,7 +501,7 @@ class ModelEvaluator:
         """Evaluate a model based on predictions, and save the results
 
         Args:
-            predictions_proba (numpy.array) List of prediction probabilities
+            predictions_proba (np.array) List of prediction probabilities
             matrix_store (catwalk.storage.MatrixStore) a wrapper for the
                 prediction matrix and metadata
             model_id (int) The database identifier of the model
@@ -522,7 +514,7 @@ class ModelEvaluator:
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:
-            logging.info("Subsetting labels and predictions")
+            logger.verbose(f"Subsetting labels and predictions of model {model_id} on matrix {matrix_store.uuid}")
             labels, predictions_proba, protected_df = subset_labels_and_predictions(
                     subset_df=query_subset_table(
                         self.db_engine,
@@ -535,14 +527,17 @@ class ModelEvaluator:
             )
             subset_hash = filename_friendly_hash(subset)
         else:
+            logger.debug(f"Using all the predictions of model {model_id} on matrix {matrix_store.uuid} for evaluation (i.e. no subset)")
             labels = matrix_store.labels
-            subset_hash = "" 
-        labels = numpy.array(labels)
+            subset_hash = ""
+
+        labels = np.array(labels)
 
         matrix_type = matrix_store.matrix_type
         metric_defs = self.metric_definitions_from_matrix_type(matrix_type)
 
-        logging.info("Found %s metric definitions total", len(metric_defs))
+        logger.spam(f"Found {len(metric_defs)} metric definitions total")
+
         # 1. get worst sorting
         predictions_proba_worst, labels_worst = sort_predictions_and_labels(
             predictions_proba=predictions_proba,
@@ -554,6 +549,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_worst, labels_worst, metric_defs)
         }
+        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative labels first')
 
         # 2. get best sorting
         predictions_proba_best, labels_best = sort_predictions_and_labels(
@@ -566,6 +562,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
+        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first')
 
         evals_without_trials = dict()
 
@@ -581,10 +578,8 @@ class ModelEvaluator:
                 metric_defs_to_trial.append(metric_def)
 
         # 4. get average of n random trials
-        logging.info(
-            "%s metric definitions need %s random trials each as best/worst evals were different",
-            len(metric_defs_to_trial),
-            SORT_TRIALS
+        logger.debug(
+            f"For the model {model_id} {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
         )
 
         random_eval_accumulator = defaultdict(list)
@@ -689,7 +684,7 @@ class ModelEvaluator:
         Args:
             model_id (int) primary key of the model
             protected_df (pandas.DataFrame) A dataframe with protected group attributes:
-            predictions_proba (numpy.array) List of prediction probabilities
+            predictions_proba (np.array) List of prediction probabilities
             labels (pandas.Series): List of labels
             tie_breaker: 'best' or 'worst' case tiebreaking rule that the predictions and labels were sorted by
             subset_hash (str) the hash of the subset, if any, that the
@@ -708,7 +703,7 @@ class ModelEvaluator:
             return
 
         # to preprocess aequitas requires the following columns:
-        # score, label value, model_id, protected attributes 
+        # score, label value, model_id, protected attributes
         # fill out the protected_df, which just has protected attributes at this point
         protected_df = protected_df.copy()
         protected_df['model_id'] = model_id

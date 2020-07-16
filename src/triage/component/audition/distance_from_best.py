@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import os
 import numpy as np
 import pandas as pd
@@ -59,7 +61,7 @@ class DistanceFromBestTable:
                 All models should have the test_results.evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
         """
-        logging.info("Polulating data to distance table")
+        logger.debug("Populating data to distance table")
         for metric in metrics:
             self.db_engine.execute(
                 """
@@ -310,7 +312,7 @@ class BestDistancePlotter:
 
         """
         for metric_filter in metric_filters:
-            logging.info(
+            logger.debug(
                 "Building best distance plot for %s and %s",
                 metric_filter,
                 train_end_times,

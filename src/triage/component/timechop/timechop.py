@@ -1,5 +1,7 @@
 import itertools
-import logging
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.structs import AsOfTimeList
@@ -136,11 +138,9 @@ class Timechop:
             # will be every Oct. 1 from 2012 to 2016 (see comments in the method for details
             # on the calculation):
             # train_test_split_times = [2012-10-01, 2013-10-01, 2014-10-01, 2015-10-01, 2016-10-01]
-            logging.info(
-                "Calculating train/test split times for training prediction span {}, "
-                "test prediction span {}, test span {}".format(
-                    training_label_timespan, test_label_timespan, test_duration
-                )
+            logger.spam(
+                f"Calculating train/test split times for training prediction span {training_label_timespan}, "
+                f"test prediction span {test_label_timespan}, test span {test_duration}"
             )
             train_test_split_times = self.calculate_train_test_split_times(
                 training_label_timespan=convert_str_to_relativedelta(
@@ -149,7 +149,7 @@ class Timechop:
                 test_label_timespan=convert_str_to_relativedelta(test_label_timespan),
                 test_duration=test_duration,
             )
-            logging.info("Train/test split times: {}".format(train_test_split_times))
+            logger.spam(f"Train/test split times: {train_test_split_times}")
 
             # handle each training_as_of_date_frequency and max_training_history separately
             # to create matrices for each train_test_split_time.
@@ -160,18 +160,12 @@ class Timechop:
             ) in itertools.product(
                 self.training_as_of_date_frequencies, self.max_training_histories
             ):
-                logging.info(
-                    "Generating matrix definitions for training_as_of_date_frequency {}, "
-                    "max_training_history {}".format(
-                        training_as_of_date_frequency, max_training_history
-                    )
+                logger.spam(
+                    f"Generating matrix definitions for training_as_of_date_frequency {training_as_of_date_frequency}, "
+                    f"max_training_history {max_training_history}"
                 )
                 for train_test_split_time in train_test_split_times:
-                    logging.info(
-                        "Generating matrix definitions for split {}".format(
-                            train_test_split_time
-                        )
-                    )
+                    logger.spam(f"Generating matrix definitions for split {train_test_split_time}")
                     matrix_set_definitions.append(
                         self.generate_matrix_definitions(
                             train_test_split_time=train_test_split_time,
@@ -219,18 +213,14 @@ class Timechop:
             raise ValueError(
                 "Final test label date cannot be after end of feature time."
             )
-        logging.info("Final label as of date: {}".format(last_test_label_time))
+        logger.spam("Final label as of date: {last_test_label_time}")
 
         # all split times have to allow at least one training label before them
         # e.g., earliest_possible_split_time = max(1995-01-01, 2012-01-01) + 6month = 2012-01-01
         earliest_possible_split_time = training_label_timespan + max(
             self.feature_start_time, self.label_start_time
         )
-        logging.info(
-            "Earliest possible train/test split time: {}".format(
-                earliest_possible_split_time
-            )
-        )
+        logger.spam(f"Earliest possible train/test split time: {earliest_possible_split_time}")
 
         # last split is the first as of time in the final test matrix
         # that is, starting from the label_end_time, we've walked back by the test_label_timespan
@@ -240,7 +230,7 @@ class Timechop:
         # e.g., last_split_time = 2017-01-01 - 3month = 2016-10-01
         test_delta = convert_str_to_relativedelta(test_duration)
         last_split_time = last_test_label_time - test_delta
-        logging.info("Final split time: {}".format(last_split_time))
+        logger.spam(f"Final split time: {last_split_time}")
         if last_split_time < earliest_possible_split_time:
             raise ValueError("No valid train/test split times in temporal config.")
 
@@ -279,12 +269,7 @@ class Timechop:
         return:
             list: list of as of times for the matrix
         """
-        logging.info(
-            "Calculating as_of_times from %s to %s using example frequency %s",
-            as_of_start_limit,
-            as_of_end_limit,
-            data_frequency,
-        )
+        logger.spam(f"Calculating as_of_times from {as_of_start_limit} to {as_of_end_limit} using example frequency {data_frequency}")
 
         as_of_times = []
 
@@ -386,11 +371,7 @@ class Timechop:
             "train_matrix": train_matrix_definition,
             "test_matrices": test_matrix_definitions,
         }
-        logging.info(
-            "Matrix definitions for train/test split %s: %s",
-            train_test_split_time,
-            matrix_set_definition
-        )
+        logger.spam(f"Matrix definitions for train/test split {train_test_split_time}: {matrix_set_definition}")
 
         return matrix_set_definition
 
@@ -414,7 +395,7 @@ class Timechop:
             dict: dictionary containing the temporal parameters and as of times
                   for a train matrix
         """
-
+        logger.debug(f"Generating train matrix definitions for trin/test split {train_test_split_time}")
         # for our example, this will be called with:
         #   train_test_split_time = 2016-10-01
         #   training_label_timespan = 6month
@@ -445,10 +426,7 @@ class Timechop:
         )
         if earliest_possible_train_as_of_time < experiment_as_of_time_limit:
             earliest_possible_train_as_of_time = experiment_as_of_time_limit
-        logging.info(
-            "earliest possible train as of time: %s",
-            earliest_possible_train_as_of_time
-        )
+        logger.spam(f"Earliest possible train as of time: {earliest_possible_train_as_of_time}")
 
         # with the last as of time and the earliest possible time known,
         # calculate all the as of times for the matrix, stepping backwards
@@ -463,7 +441,7 @@ class Timechop:
             as_of_end_limit=last_train_as_of_time,
             data_frequency=convert_str_to_relativedelta(training_as_of_date_frequency),
         )
-        logging.info("train as of times: %s", train_as_of_times)
+        logger.spam(f"Train as of times: {train_as_of_times}")
 
         # create a dict of the matrix metadata
         matrix_definition = {
@@ -505,22 +483,16 @@ class Timechop:
         #
         # for the example, as_of_time_limit = 2016-10-01 + 3month = 2017-01-01
         # (note as well that this will be treated as an _exclusive_ limit)
-        logging.info(
-            "Generating test matrix definitions for train/test split %s",
-            train_test_split_time
-        )
+        logger.debug(f"Generating test matrix definitions for train/test split {train_test_split_time}")
         test_definitions = []
         test_delta = convert_str_to_relativedelta(test_duration)
         as_of_time_limit = train_test_split_time + test_delta
-        logging.info("All test as of times before %s", as_of_time_limit)
+        logger.spam("All test as of times before %s", as_of_time_limit)
 
         # calculate the as_of_times associated with each test data frequency
         # for our example, we just have one, 1month
         for test_as_of_date_frequency in self.test_as_of_date_frequencies:
-            logging.info(
-                "Generating test matrix definitions for test data frequency %s",
-                test_as_of_date_frequency
-            )
+            logger.spam("Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
 
             # for test as_of_times we step _forwards_ from the train_test_split_time
             # to ensure that we always have a prediction set made immediately after
@@ -539,7 +511,7 @@ class Timechop:
                 data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
                 forward=True,
             )
-            logging.info("test as of times: %s", test_as_of_times)
+            logger.spam("test as of times: {test_as_of_times}")
             test_definition = {
                 "first_as_of_time": train_test_split_time,
                 "last_as_of_time": max(test_as_of_times),

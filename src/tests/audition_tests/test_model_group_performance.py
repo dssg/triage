@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-import numpy
+import numpy as np
 import testing.postgresql
 from sqlalchemy import create_engine
 
@@ -28,7 +28,7 @@ def test_ModelGroupPerformancePlotter_generate_plot_data():
             "myStableClassifier",
         ]
         for value in df[df["model_group_id"] == 1]["raw_value"].values:
-            assert numpy.isclose(value, 0.5)
+            assert np.isclose(value, 0.5)
 
 
 def test_ModelGroupPerformancePlotter_plot_all():

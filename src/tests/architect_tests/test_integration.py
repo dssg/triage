@@ -5,7 +5,7 @@ import yaml
 
 
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from triage.component.results_schema import Base
 from triage.component.timechop import Timechop
@@ -346,12 +346,12 @@ def basic_integration_test(
 def test_integration_simple():
     basic_integration_test(
         cohort_names=["mycohort"],
-        feature_group_create_rules={"all": [True]},
+        feature_group_create_rules={"prefix": ["cat", "dog"]}, # Will be set by defaults.py
         feature_group_mix_rules=["all"],
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
         expected_matrix_multiplier=1,
-        expected_group_lists=[["all: True"]],
+        expected_group_lists=[["prefix: cat", "prefix: dog"]],
     )
 
 

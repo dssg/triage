@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import argparse
 import importlib.util
-import logging
 import os
 import yaml
+
+
 from datetime import datetime
 
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
-
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
@@ -24,7 +24,8 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-logging.basicConfig(level=logging.INFO)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 
 def natural_number(value):
@@ -67,11 +68,11 @@ class Triage(RootCommand):
             return
 
         setup_path = self.args.setup or self.SETUP_FILE_DEFAULT
-        logging.info("Loading setup module at %s", setup_path)
+        logger.info("Loading setup module at %s", setup_path)
         spec = importlib.util.spec_from_file_location("triage_config", setup_path)
         triage_config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(triage_config)
-        logging.info(f"Setup module loaded")
+        logger.info(f"Setup module loaded")
 
     @cachedproperty
     def db_url(self):
@@ -143,10 +144,8 @@ class FeatureTest(Command):
             feature_dates=[args.as_of_date],
             state_table="features_test.test_cohort"
         )
-        logging.info(
-            "Features created for feature_config %s and date %s",
-            feature_config,
-            args.as_of_date,
+        logger.success(
+            f"Features created for feature_config {feature_config} and date {args.as_of_date}"
         )
 
 
@@ -276,6 +275,10 @@ class Experiment(Command):
             "save_predictions": self.args.save_predictions,
             "skip_validation": not self.args.validate
         }
+        logger.info(f"Setting up the experiment")
+        logger.info(f"Configuration file: {self.args.config}")
+        logger.info(f"Results will be stored in DB: {self.root.db_url}")
+        logger.info(f"Artifacts will be saved in {self.args.project_path}")
         if self.args.n_db_processes > 1 or self.args.n_processes > 1:
             experiment = MultiCoreExperiment(
                 n_db_processes=self.args.n_db_processes,
@@ -288,7 +291,14 @@ class Experiment(Command):
 
     def __call__(self, args):
         if args.validate_only:
-            self.experiment.validate()
+            try:
+                logger.info(f"Validating experiment [config file: {self.args.config}]")
+                self.experiment.validate()
+                logger.success(f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!")
+            except Exception:
+                logger.exception(f"Validation failed!")
+                logger.error(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
+
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
@@ -301,7 +311,13 @@ class Experiment(Command):
                 visualize_chops(self.experiment.chopper, save_target=fd)
 
         else:
-            self.experiment.run()
+            try:
+                logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
+                self.experiment.run()
+                logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
+            except Exception:
+                logger.exception(f"Run failed!")
+                logger.critical(f"Experiment [config file: {self.args.config}] run failed!")
 
 
 @Triage.register

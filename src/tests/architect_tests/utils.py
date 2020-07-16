@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pandas as pd
 import yaml
-import numpy
+import numpy as np
 
 
 def convert_string_column_to_date(column):
@@ -139,7 +139,7 @@ def TemporaryDirectory():
 
 
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 def assert_index(engine, table, column):

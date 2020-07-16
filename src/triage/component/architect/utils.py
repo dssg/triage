@@ -10,7 +10,7 @@ import tempfile
 import sqlalchemy
 
 import pandas as pd
-import numpy
+import numpy as np
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
@@ -126,12 +126,12 @@ def TemporaryDirectory():
 
 
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 class MockTrainedModel:
     def predict_proba(self, dataset):
-        return numpy.random.rand(len(dataset), len(dataset))
+        return np.random.rand(len(dataset), len(dataset))
 
 
 def fake_trained_model(project_path, model_storage_engine, db_engine):

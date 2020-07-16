@@ -1,6 +1,8 @@
 import os.path
 
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from alembic.config import Config
 from alembic import script
 from alembic import command
@@ -106,7 +108,7 @@ def upgrade_if_clean(dburl):
     engine = create_engine(dburl)
     script_ = script.ScriptDirectory.from_config(alembic_cfg)
     if not table_exists('results_schema_versions', engine):
-        logging.info("No results_schema_versions table exists, which means that this installation "
+        logger.info("No results_schema_versions table exists, which means that this installation "
                      "is fresh. Upgrading db.")
         upgrade_db(dburl=dburl)
         return
@@ -114,9 +116,9 @@ def upgrade_if_clean(dburl):
         current_revision = conn.execute(
             'select version_num from results_schema_versions limit 1'
         ).scalar()
-        logging.info("Database's results schema version is %s", current_revision)
+        logger.debug("Database's triage_metadata schema version is %s", current_revision)
         triage_head = script_.get_current_head()
-        logging.info("Code's results schema version is %s", triage_head)
+        logger.debug("Code's triage_metadata schema version is %s", triage_head)
         database_is_ahead = not any(
             migration.revision == current_revision
             for migration in script_.walk_revisions()

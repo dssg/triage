@@ -4,7 +4,7 @@ from sqlalchemy.orm.session import make_transient
 import datetime
 from unittest.mock import Mock
 from numpy.testing import assert_array_almost_equal
-import pandas
+import pandas as pd
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
 from triage.component.catwalk.storage import TestMatrixType
@@ -90,7 +90,7 @@ def prediction_results(matrix_type, predictor, predict_setup_args):
         "label": [True, False] * 3
     }
 
-    matrix = pandas.DataFrame.from_dict(source_dict)
+    matrix = pd.DataFrame.from_dict(source_dict)
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
     matrix_store = get_matrix_store(project_storage, matrix, metadata)
 

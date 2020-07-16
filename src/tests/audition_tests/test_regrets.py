@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-import numpy
+import numpy as np
 import testing.postgresql
 from sqlalchemy import create_engine
 
@@ -105,14 +105,14 @@ def test_SelectionPlotter_create_plot_dataframe():
 
         # both selection rules have a regret lower than 70
         for value in plot_df[plot_df["regret"] == 0.70]["pct_of_time"].values:
-            assert numpy.isclose(value, 1.0)
+            assert np.isclose(value, 1.0)
 
         # best avg precision rule should be within 0.14 1/3 of the time
         for value in plot_df[
             (plot_df["regret"] == 0.14)
             & (plot_df["selection_rule"] == "best_avg_precision")
         ]["pct_of_time"].values:
-            assert numpy.isclose(value, 1.0 / 3)
+            assert np.isclose(value, 1.0 / 3)
 
 
 def test_SelectionPlotter_plot():

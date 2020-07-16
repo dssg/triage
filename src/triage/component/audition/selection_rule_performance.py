@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 import os
 from .plotting import plot_cats
 
@@ -104,7 +104,7 @@ class SelectionRulePerformancePlotter:
                         "model_group_id": result["model_group_id"],
                     }
                 )
-        return pandas.DataFrame.from_records(accumulator)
+        return pd.DataFrame.from_records(accumulator)
 
     def regret_plot_from_dataframe(self, metric, parameter, df, **plt_format_args):
         """Generate a regret-over-time plot from a given dataframe

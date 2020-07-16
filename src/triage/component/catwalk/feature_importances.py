@@ -1,4 +1,6 @@
-import warnings
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 
 import numpy as np
 import sklearn.linear_model
@@ -54,11 +56,11 @@ def get_feature_importances(model):
         feature_importances = model.feature_importances_
 
     else:
-        warnings.warn(
-            "\nThe selected algorithm, doesn't support a standard way"
-            "\nof calculate the importance of each feature used."
-            "\nFalling back to ad-hoc methods"
-            "\n(e.g. in LogisticRegression we will return Odd Ratios instead coefficients)"
+        logger.warning(
+            "The selected algorithm, doesn't support a standard way "
+            "of calculate the importance of each feature used. "
+            "Falling back to ad-hoc methods "
+            "(e.g. in LogisticRegression we will return Odd Ratios instead coefficients)"
         )
 
         feature_importances = _ad_hoc_feature_importances(model)

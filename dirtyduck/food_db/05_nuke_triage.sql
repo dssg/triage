@@ -27,7 +27,7 @@ select into query
         format('drop table %I cascade;', tablename), E'\n'
         )
 from   pg_tables
-where  tablename ~ 'cohort_|labels_';
+where  tablename ~ 'cohort_|labels_|ranks_';
 
 
 

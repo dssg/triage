@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 
 from triage.component.audition.selection_rules import (
     best_current_value,
@@ -12,7 +12,7 @@ from triage.component.audition.selection_rules import (
 
 
 def test_best_current_value_greater_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "4", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6"],
@@ -55,7 +55,7 @@ def test_best_current_value_greater_is_better():
 
 
 def test_best_current_value_lesser_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2"],
             "model_id": ["1", "2", "3", "4", "5"],
@@ -89,7 +89,7 @@ def test_best_current_value_lesser_is_better():
 
 
 def test_best_average_value_greater_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "1", "2", "1", "2"],
             "model_id": ["1", "2", "3", "4", "5", "6"],
@@ -129,7 +129,7 @@ def test_best_average_value_greater_is_better():
 
 
 def test_best_average_value_lesser_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2", "3", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -178,7 +178,7 @@ def test_best_average_value_lesser_is_better():
 
 
 def test_most_frequent_best_dist():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2", "3", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -229,7 +229,7 @@ def test_most_frequent_best_dist():
 
 
 def test_best_average_two_metrics_greater_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "1", "2", "2", "1", "1", "2", "2"],
             "model_id": ["1", "1", "2", "2", "3", "3", "4", "4"],
@@ -280,7 +280,7 @@ def test_best_average_two_metrics_greater_is_better():
 
 
 def test_best_average_two_metrics_lesser_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "1", "2", "2", "1", "1", "2", "2"],
             "model_id": ["1", "1", "2", "2", "3", "3", "4", "4"],
@@ -351,7 +351,7 @@ def test_best_average_two_metrics_lesser_is_better():
 
 
 def test_lowest_metric_variance():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2", "3", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -401,7 +401,7 @@ def test_lowest_metric_variance():
 
 
 def test_best_avg_var_penalized_greater_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "1", "2", "1", "2"],
             "model_id": ["1", "2", "3", "4", "5", "6"],
@@ -446,7 +446,7 @@ def test_best_avg_var_penalized_greater_is_better():
 
 
 def test_best_avg_var_penalized_lesser_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "1", "2", "1", "2"],
             "model_id": ["1", "2", "3", "4", "5", "6"],
@@ -491,7 +491,7 @@ def test_best_avg_var_penalized_lesser_is_better():
 
 
 def test_best_avg_recency_weight_greater_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2", "3", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -532,7 +532,7 @@ def test_best_avg_recency_weight_greater_is_better():
             "dist_from_best_case": [0.0, 0.4, 0.2, 0.0, 0.0, 0.0, 0.5, 0.0, 0.2],
         }
     )
-    df["train_end_time"] = pandas.to_datetime(df["train_end_time"])
+    df["train_end_time"] = pd.to_datetime(df["train_end_time"])
     assert best_avg_recency_weight(
         df, "2013-01-01", "precision@", "100_abs", 1.00, "linear"
     ) == ["1"]
@@ -551,7 +551,7 @@ def test_best_avg_recency_weight_greater_is_better():
 
 
 def test_best_avg_recency_weight_lesser_is_better():
-    df = pandas.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         {
             "model_group_id": ["1", "2", "3", "1", "2", "3", "1", "2", "3"],
             "model_id": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -592,7 +592,7 @@ def test_best_avg_recency_weight_lesser_is_better():
             "dist_from_best_case": [70, 0, 50, 0, 0, 0, 0, 60, 30],
         }
     )
-    df["train_end_time"] = pandas.to_datetime(df["train_end_time"])
+    df["train_end_time"] = pd.to_datetime(df["train_end_time"])
 
     assert best_avg_recency_weight(
         df, "2013-01-01", "false positives@", "100_abs", 1.00, "linear"

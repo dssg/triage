@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import factory
-import numpy
+import numpy as np
 import testing.postgresql
 from sqlalchemy import create_engine
 
@@ -173,14 +173,14 @@ def test_BestDistancePlotter():
         # all of the model groups are within .34 of the best, so pick
         # a number higher than that and all should qualify
         for value in df_dist[df_dist["distance"] == 0.35]["pct_of_time"].values:
-            assert numpy.isclose(value, 1.0)
+            assert np.isclose(value, 1.0)
 
         # model group 1 (stable) should be within 0.11 1/2 of the time
         # if we included 2016 in the train_end_times, this would be 1/3!
         for value in df_dist[
             (df_dist["distance"] == 0.11) & (df_dist["model_group_id"] == 1)
         ]["pct_of_time"].values:
-            assert numpy.isclose(value, 0.5)
+            assert np.isclose(value, 0.5)
 
 
 def test_BestDistancePlotter_plot():

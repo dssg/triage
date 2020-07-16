@@ -7,8 +7,8 @@ from contextlib import contextmanager
 from unittest import mock
 
 import matplotlib
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import testing.postgresql
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
@@ -29,12 +29,12 @@ from matplotlib import pyplot as plt  # noqa
 
 
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 class MockTrainedModel:
     def predict_proba(self, dataset):
-        return numpy.random.rand(len(dataset), len(dataset))
+        return np.random.rand(len(dataset), len(dataset))
 
 
 class MockMatrixStore(MatrixStore):
@@ -63,10 +63,10 @@ class MockMatrixStore(MatrixStore):
         metadata_overrides = metadata_overrides or {}
         base_metadata.update(metadata_overrides)
         if matrix is None:
-            matrix = pandas.DataFrame.from_dict(
+            matrix = pd.DataFrame.from_dict(
                 {
                     "entity_id": [1, 2],
-                    "as_of_date": [pandas.Timestamp(2014, 10, 1), pandas.Timestamp(2014, 7, 1)],
+                    "as_of_date": [pd.Timestamp(2014, 10, 1), pd.Timestamp(2014, 7, 1)],
                     "feature_one": [3, 4],
                     "feature_two": [5, 6],
                     "label": [7, 8],
@@ -78,7 +78,7 @@ class MockMatrixStore(MatrixStore):
         self.matrix_label_tuple = matrix, labels
         self.metadata = base_metadata
         self.label_count = label_count
-        self.init_labels = pandas.Series(init_labels, dtype='float64')
+        self.init_labels = pd.Series(init_labels, dtype='float64')
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
 
@@ -163,12 +163,12 @@ def matrix_creator():
 
     source_dict = {
         "entity_id": [1, 2],
-        "as_of_date": [pandas.Timestamp(2016, 1, 1), pandas.Timestamp(2016, 1, 1)],
+        "as_of_date": [pd.Timestamp(2016, 1, 1), pd.Timestamp(2016, 1, 1)],
         "feature_one": [3, 4],
         "feature_two": [5, 6],
         "label": [0, 1],
     }
-    return pandas.DataFrame.from_dict(source_dict)
+    return pd.DataFrame.from_dict(source_dict)
 
 
 def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=True):
@@ -185,7 +185,7 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
-    matrix["as_of_date"] = matrix["as_of_date"].apply(pandas.Timestamp)
+    matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = (project_storage.matrix_storage_engine()
                     .get_store(filename_friendly_hash(metadata)))

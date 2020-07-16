@@ -1,5 +1,6 @@
 from itertools import product
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from .selection_rules import BoundSelectionRule
 from .utils import make_list
@@ -82,21 +83,21 @@ def make_selection_rule_grid(rule_groups):
 
 
     rules = []
-    logging.info("Expanding selection rule groups into full grid")
+    logger.debug("Expanding selection rule groups into full grid")
     for rule_group in rule_groups:
-        logging.info("Expanding rule group %s", rule_group)
+        logger.debug("Expanding rule group %s", rule_group)
         for shared_param_set, selection_rule in product(
             rule_group["shared_parameters"], rule_group["selection_rules"]
         ):
-            logging.info(
+            logger.debug(
                 "Expanding shared param set %s and selection rules %s",
                 shared_param_set,
                 selection_rule,
             )
             new_rules = _bound_rules_from(shared_param_set, selection_rule)
-            logging.info("Found %s new rules", len(new_rules))
+            logger.debug("Found %s new rules", len(new_rules))
             rules += new_rules
-    logging.info(
+    logger.debug(
         "Found %s total selection rules. Full list: %s",
         len(rules),
         [rule.descriptive_name for rule in rules],

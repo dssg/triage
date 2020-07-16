@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 import operator
 
 from triage.component.catwalk.evaluation import ModelEvaluator
@@ -14,7 +15,7 @@ def greater_is_better(metric):
     if metric in ModelEvaluator.available_metrics:
         return ModelEvaluator.available_metrics[metric].greater_is_better
     else:
-        logging.warning(
+        logger.warning(
             "Metric %s not found in available metrics, assuming greater is better",
             metric,
         )
