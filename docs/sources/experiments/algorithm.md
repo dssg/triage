@@ -209,7 +209,7 @@ and test matrix.
 
 ### Associating Matrices with Experiment
 
-After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the `model_metadata.experiment_matrices` table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.
+After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the `triage_metadata.experiment_matrices` table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.
 
 #### Retrieving Data and Saving Completed Matrix
 
@@ -259,11 +259,11 @@ Experiment constructor, in the subdirectory `matrices`.
 
 ## 4. Running Models
 
-The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.
+The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'triage_metadata', 'train_results', and 'test_results'.
 
 ### Associating Models with Experiment
 
-Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the `model_metadata.experiment_models` table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.
+Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the `triage_metadata.experiment_models` table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.
 
 ### Train
 
@@ -273,7 +273,7 @@ and hyperparameter combinations contained herein, and calls `.fit()` with that t
 adheres to the scikit-learn `.fit/.transform` interface and is available in the Python environment will work here,
 whether it is a standard scikit-learn classifier, a third-party library like XGBoost, or a custom-built one in the
 calling repository (for instance, one that implements the problem domain's baseline heuristic algorithm for
-comparison).  Metadata about the trained classifier is written to the `model_metadata.models` Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).
+comparison).  Metadata about the trained classifier is written to the `triage_metadata.models` Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).
 
 #### Model Groups
 
@@ -284,13 +284,13 @@ data about the classifier (module, hyperparameters), temporal intervals used to 
 timespan, training history, as-of-date frequency), and metadata describing the data in the train matrix (features and
 feature groups, label name, cohort name). The user can override this set of `model_group_keys` in the experiment
 definition, with all of the default information plus other matrix metadata at their disposal (See end of 'Retrieving
-Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `model_metadata.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `model_metadata.models` table.
+Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `triage_metadata.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `triage_metadata.models` table.
 
 #### Model Hash
 Each trained model is assigned a hash, for the purpose of uniquely defining and caching the model. This hash is based
 on the training matrix metadata, classifier path, hyperparameters (except those which concern execution and do not
 affect results of the classifier, such as `n_jobs`), and the given project path for the Experiment. This hash can be
-found in each row of the `model_metadata.models` table. It is enforced as a unique key in the table.
+found in each row of the `triage_metadata.models` table. It is enforced as a unique key in the table.
 
 #### Global Feature Importance
 The training phase also writes global feature importances to the database, in the `train_results.feature_importances` table.
@@ -339,9 +339,9 @@ This is done by passing a subset query in the prediction config. The model
 evaluator will then subset the predictions on valid entity-date pairs for the
 given model and will calculate metrics for the subset, re-applying thresholds
 as necessary to the predictions in the subset. Subset definitions are stored in
-the `model_metadata.subsets` table, and the evaluations are stored in the
+the `triage_metadata.subsets` table, and the evaluations are stored in the
 `evaluations` tables. A hash of the subset configuration identifies subset
 evaluations and links the `subsets` table.
 
 ### Recap
-At this point, the 'model_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.
+At this point, the 'triage_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.

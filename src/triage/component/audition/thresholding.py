@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from .metric_directionality import is_better_operator
 import pandas as pd
@@ -62,15 +63,15 @@ def model_groups_filter(
             for end_time in train_end_times
         )
     )
-    logging.info("Checking if all model groups have the same train end times")
-    logging.info(f"Found {len(initial_model_group_ids)} total model groups")
+    logger.debug("Checking if all model groups have the same train end times")
+    logger.debug(f"Found {len(initial_model_group_ids)} total model groups")
     query = f"""
         SELECT model_group_id
         FROM (
             SELECT
                 model_group_id,
                 array_agg(distinct train_end_time::date::text) as train_end_time_list
-            FROM model_metadata.{models_table}
+            FROM triage_metadata.{models_table}
             WHERE model_group_id in {tuple(initial_model_group_ids)}
             GROUP BY model_group_id
         ) as t
@@ -82,16 +83,16 @@ def model_groups_filter(
         raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
 
     dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
-    logging.info(
+    logger.debug(
         f"Dropped {dropped_model_groups} model groups which don't match the train end times"
     )
-    logging.info(f"Found {len(model_group_ids)} total model groups past the checker")
+    logger.debug(f"Found {len(model_group_ids)} total model groups past the checker")
 
 
     return model_group_ids
 
 
-class ModelGroupThresholder(object):
+class ModelGroupThresholder:
     def __init__(
         self,
         distance_from_best_table,
@@ -178,24 +179,20 @@ class ModelGroupThresholder(object):
                 train_end_time=train_end_time,
             )
             close_to_best = self.model_groups_close_to_best_case(df_as_of)
-            logging.info(
-                "Found %s model groups close to best for %s",
-                len(close_to_best),
-                train_end_time,
-            )
+            logger.debug(
+                f"Found {len(close_to_best)} model groups close to best for {train_end_time}",
+                            )
             close_to_best_model_groups |= close_to_best
 
             past_threshold = self.model_groups_past_threshold(df_as_of)
-            logging.info(
-                "Found %s model groups above min for %s",
-                len(past_threshold),
-                train_end_time,
+            logger.debug(
+                f"Found {len(past_threshold)} model groups above min for {train_end_time}",
             )
             past_threshold_model_groups &= past_threshold
 
         total_model_groups = close_to_best_model_groups & past_threshold_model_groups
-        logging.info(
-            "Found %s total model groups past threshold", len(total_model_groups)
+        logger.debug(
+            "Found {len(total_model_groups)} total model groups past threshold"
         )
         return total_model_groups
 

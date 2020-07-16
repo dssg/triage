@@ -1,0 +1,35 @@
+# Postmodeling Configuration File
+
+project_path: '/triage' # Project path defined in triage with matrices and models
+
+model_group_id:
+    - 39
+    - 9
+    - 29
+    - 30
+
+thresholds: # Thresholds for defining positive predictions
+  rank_abs: [50, 100, 250]
+  rank_pct: [5, 10, 25]
+
+baseline_query: | # SQL query for defining a baseline for comparison in plots. It needs a metric and parameter
+      select g.model_group_id,
+             m.model_id,
+             extract('year' from m.evaluation_end_time) as as_of_date_year,
+             m.metric,
+             m.parameter,
+             m.stochastic_value,
+             m.num_labeled_examples,
+             m.num_labeled_above_threshold,
+             m.num_positive_labels
+       from test_results.evaluations as m
+       left join triage_metadata.models as g
+       using(model_id)
+       where g.model_group_id = 1
+             and metric = 'precision@'
+             and parameter = '15_pct'
+
+max_depth_error_tree: 5 # For error trees, how depth the decision trees should go?
+n_features_plots: 10 # Number of features for importances
+figsize: [12, 12] # Default size for plots
+fontsize: 20 # Default fontsize for plots

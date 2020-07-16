@@ -1,12 +1,12 @@
 import copy
 import os
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 
 from .plotting import plot_cats, plot_bounds
 
 
-class SelectionRulePicker(object):
+class SelectionRulePicker:
     def __init__(self, distance_from_best_table):
         """Runs simulations of different model group selection rules
 
@@ -102,7 +102,7 @@ class SelectionRulePicker(object):
         return bound_selection_rule.pick(localized_df, train_end_time)
 
 
-class SelectionRulePlotter(object):
+class SelectionRulePlotter:
     """Plot selection rules
 
     Args:
@@ -135,7 +135,7 @@ class SelectionRulePlotter(object):
     def regret_thresholds(self, regret_metric, regret_parameter):
         plot_min, plot_max = self.plot_bounds(regret_metric, regret_parameter)
         regret_threshold_dist = self.regret_threshold_dist(plot_min, plot_max)
-        return numpy.arange(plot_min, plot_max, regret_threshold_dist)
+        return np.arange(plot_min, plot_max, regret_threshold_dist)
 
     def create_plot_dataframe(
         self,
@@ -181,11 +181,11 @@ class SelectionRulePlotter(object):
                 accumulator.append(
                     {
                         "regret": regret_threshold,
-                        "pct_of_time": numpy.mean(distro),
+                        "pct_of_time": np.mean(distro),
                         "selection_rule": selection_rule.descriptive_name,
                     }
                 )
-        return pandas.DataFrame.from_records(accumulator)
+        return pd.DataFrame.from_records(accumulator)
 
     def plot_all_selection_rules(
         self,

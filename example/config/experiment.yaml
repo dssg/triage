@@ -456,6 +456,7 @@ grid_config:
     # and then use the same scaling for the test data
     'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
         penalty: ['l1', 'l2']
+        solver: 'lbfgs'
         C: [0.01, 1]
     # catwalk's PercentileRankOneFeature baseline will score each entity as
     # as its percentile on the named feature. This is useful for comparing

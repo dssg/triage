@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import itertools
 from triage.component.architect.feature_group_creator import FeatureGroup
 
@@ -67,7 +69,7 @@ def all_features(feature_groups):
     return [feature_dict]
 
 
-class FeatureGroupMixer(object):
+class FeatureGroupMixer:
     """Generates different combinations of feature groups
     based on a list of strategies"""
 
@@ -94,11 +96,9 @@ class FeatureGroupMixer(object):
         """
         final_results = []
         for strategy in self.strategies:
-            logging.info(
-                "Mixing feature groups %s using strategy %s", feature_groups, strategy
-            )
+            logger.debug(f"Mixing feature groups using strategy {strategy}")
             results = self.strategy_lookup[strategy](feature_groups)
-            logging.info("Mixing found new feature groups %s", results)
+            logger.spam("Mixing found new feature groups combinations [{results}]")
             final_results += results
 
         return final_results

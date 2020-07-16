@@ -7,8 +7,8 @@ create or replace function nuke_triage()
 
     begin
 
-    execute 'drop schema if exists model_metadata cascade';
-    raise notice 'model_metadata deleted';
+    execute 'drop schema if exists triage_metadata cascade';
+    raise notice 'triage_metadata deleted';
     execute 'drop schema if exists features cascade';
     raise notice 'features deleted';
     execute 'drop schema if exists train_results cascade';
@@ -27,7 +27,7 @@ select into query
         format('drop table %I cascade;', tablename), E'\n'
         )
 from   pg_tables
-where  tablename ~ 'cohort_|labels_';
+where  tablename ~ 'cohort_|labels_|ranks_';
 
 
 

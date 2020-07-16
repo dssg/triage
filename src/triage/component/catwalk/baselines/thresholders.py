@@ -28,7 +28,7 @@ def get_operator_method(operator_string):
     return operator_method
 
 
-class SimpleThresholder(object):
+class SimpleThresholder:
     """ The simple thresholder applies a set of predetermined logical rules to a
     test matrix to classify entities. By default, it will classify entities as 1
     if they satisfy any of the rules. When 'and' is set as the logical_operator,

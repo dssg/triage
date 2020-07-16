@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from triage.util.structs import FeatureNameList
 
 
@@ -35,18 +37,17 @@ def prefix_subsetter(config_item, table, features):
     "Return features matching a given prefix"
     return [feature for feature in features if feature.startswith(config_item)]
 
-
 def all_subsetter(config_item, table, features):
     return features
 
 
-class FeatureGroupCreator(object):
+class FeatureGroupCreator:
     """Divides a feature dictionary into groups based on given criteria"""
 
     subsetters = {
         "tables": table_subsetter,
         "prefix": prefix_subsetter,
-        "all": all_subsetter,
+        "all": all_subsetter
     }
 
     def __init__(self, definition):
@@ -67,7 +68,7 @@ class FeatureGroupCreator(object):
 
         for subsetter_name, value in self.definition.items():
             if subsetter_name not in self.subsetters:
-                raise ValueError("Unknown subsetter %s received", subsetter_name)
+                raise ValueError(f"Unknown subsetter {subsetter_name} received")
             if not hasattr(value, "__iter__") or isinstance(value, (str, bytes)):
                 raise ValueError(
                     "Each value in FeatureGroupCreator must be "
@@ -90,40 +91,34 @@ class FeatureGroupCreator(object):
         Returns: (list) subsets of the feature dictionary, in the same
             table-based structure
         """
-        logging.info(
-            "Creating feature groups. config: %s, Master feature dictionary: %s",
-            self.definition,
-            feature_dictionary,
+        logger.spam(
+            f"Creating feature groups, using: {self.definition}, Master feature dictionary: {feature_dictionary}",
         )
         subsets = []
         for name, config in sorted(self.definition.items()):
-            logging.info("Parsing config grouping method %s, items %s", name, config)
+            logger.spam(f"Parsing config grouping method {name}, items {config}")
             for config_item in config:
-                subset = FeatureGroup(name="{}: {}".format(name, config_item))
-                logging.info("Finding columns that might belong in %s", subset)
+                subset = FeatureGroup(name=f"{name}: {config_item}")
+                logger.spam(f"Finding columns that might belong in [{name}: {config_item}]")
                 for table, features in feature_dictionary.items():
-                    logging.info(
-                        "Searching features in table %s that match group %s",
-                        table,
-                        subset
+                    logger.spam(
+                        f"Searching features in table {table} that match group {subset}"
                     )
                     matching_features = self.subsetters[name](
                         config_item, table, features
                     )
-                    logging.info(
-                        "Found %s matching features in table %s that match group %s",
-                        len(matching_features),
-                        table,
-                        subset,
+                    logger.debug(
+                        f"Found {len(matching_features)} matching features in table {table} that match group [{name}: {config_item}]",
                     )
                     if len(matching_features) > 0:
                         subset[table] = FeatureNameList(matching_features)
 
                 subsets.append(subset)
+
         if not any(subset for subset in subsets if any(subset)):
             raise ValueError(
                 f"Problem! The feature group definition {self.definition} did not find any matches",
                 f"in feature dictionary {feature_dictionary}"
             )
-        logging.info("Found %s total feature subsets", len(subsets))
+        logger.verbose(f"Found {len(subsets)} total feature subsets")
         return subsets

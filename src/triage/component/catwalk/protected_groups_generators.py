@@ -1,29 +1,31 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import textwrap
 
-import pandas
+import pandas as pd
 from sqlalchemy import text
 
 from triage.database_reflection import table_exists
 from triage.component.catwalk.storage import MatrixStore
 
 
-class ProtectedGroupsGeneratorNoOp(object):
+class ProtectedGroupsGeneratorNoOp:
     def generate_all_dates(self, *args, **kwargs):
-        logging.warning(
+        logger.notice(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
     def generate(self, *args, **kwargs):
-        logging.warning(
+        logger.notice(
             "No bias audit configuration is available, so protected groups will not be created"
         )
 
     def as_dataframe(self, *args, **kwargs):
-        return pandas.DataFrame()
+        return pd.DataFrame()
 
 
-class ProtectedGroupsGenerator(object):
+class ProtectedGroupsGenerator:
     def __init__(self, db_engine, from_obj, attribute_columns, entity_id_column, knowledge_date_column, protected_groups_table_name, replace=True):
         self.db_engine = db_engine
         self.replace = replace
@@ -34,39 +36,37 @@ class ProtectedGroupsGenerator(object):
         self.knowledge_date_column = knowledge_date_column
 
     def generate_all_dates(self, as_of_dates, cohort_table_name, cohort_hash):
+        logger.spam("Creating protected groups table")
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
             self.db_engine.execute(
-                """
-                create table if not exists {} (
+                f"""
+                create table if not exists {self.protected_groups_table_name} (
                 entity_id int,
                 as_of_date date,
-                {},
+                {', '.join([str(col) + " varchar" for col in self.attribute_columns])},
                 cohort_hash text
-            )""".format(
-                    self.protected_groups_table_name,
-                    ", ".join([str(col) + " varchar(60)" for col in self.attribute_columns])
-                )
+                )"""
             )
+            logger.debug(f"Protected groups table {self.protected_groups_table_name} created")
             table_is_new = True
         else:
-            logging.info("Not dropping and recreating protected groups table because "
-                         "replace flag was set to False and table was found to exist")
+            logger.debug(f"Protected groups table {self.protected_groups_table_name} exist")
+
         if self.replace:
             self.db_engine.execute(
-                f'delete from {self.protected_groups_table_name} where cohort_hash = %s',
-                cohort_hash
+                f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
             )
+            logger.debug(f"Removed from {self.protected_groups_table_name} all rows from cohort {cohort_hash}")
 
-        logging.info(
-            "Creating protected_groups for %s as of dates",
-            len(as_of_dates)
+        logger.spam(
+            f"Creating protected_groups for {len(as_of_dates)} as of dates",
         )
+
         for as_of_date in as_of_dates:
             if not self.replace:
-                logging.info(
-                    "Looking for existing protected_groups for as of date %s",
-                    as_of_date
+                logger.spam(
+                    "Looking for existing protected_groups for as of date {as_of_date}"
                 )
                 any_existing_rows = list(self.db_engine.execute(
                     f"""select 1 from {self.protected_groups_table_name}
@@ -76,12 +76,11 @@ class ProtectedGroupsGenerator(object):
                     """
                 ))
                 if len(any_existing_rows) == 1:
-                    logging.info("Since nonzero existing protected_groups found, skipping")
+                    logger.debug("Since nonzero existing protected_groups found, skipping")
                     continue
 
-            logging.info(
-                "Generating protected groups for as of date %s ",
-                as_of_date
+            logger.debug(
+                "Generating protected groups for as of date {as_of_date} "
             )
             self.generate(
                 start_date=as_of_date,
@@ -94,27 +93,28 @@ class ProtectedGroupsGenerator(object):
             "select count(*) from {}".format(self.protected_groups_table_name)
         ).scalar()
         if nrows == 0:
-            logging.warning("Done creating protected_groups, but no rows in protected_groups table!")
+            logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
         else:
-            logging.info("Done creating protected_groups table %s: rows: %s", self.protected_groups_table_name, nrows)
-
+            logger.success(f"Protected groups stored in the table "
+                           f"{self.protected_groups_table_name} successfully")
+            logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         full_insert_query = text(textwrap.dedent(
-            '''
+            """
             insert into {protected_groups_table}
             select distinct on (cohort.entity_id, cohort.as_of_date)
                 cohort.entity_id,
                 '{as_of_date}'::date as as_of_date,
                 {attribute_columns},
                 \'{cohort_hash}\' as cohort_hash
-            from {cohort_table_name} cohort 
-            left join (select * from {from_obj}) from_obj  on 
+            from {cohort_table_name} cohort
+            left join (select * from {from_obj}) from_obj  on
                 cohort.entity_id = from_obj.{entity_id_column} and
                 cohort.as_of_date > from_obj.{knowledge_date_column}
             where cohort.as_of_date = '{as_of_date}'::date
             order by cohort.entity_id, cohort.as_of_date, {knowledge_date_column} desc
-        '''
+        """
         ).format(
             protected_groups_table=self.protected_groups_table_name,
             as_of_date=start_date,
@@ -125,8 +125,8 @@ class ProtectedGroupsGenerator(object):
             knowledge_date_column=self.knowledge_date_column,
             entity_id_column=self.entity_id_column
         ))
-        logging.debug("Running protected_groups creation query")
-        logging.debug(full_insert_query)
+        logger.debug("Running protected_groups creation query")
+        logger.spam(full_insert_query)
         self.db_engine.execute(full_insert_query)
 
     def as_dataframe(self, as_of_dates, cohort_hash):
@@ -135,7 +135,7 @@ class ProtectedGroupsGenerator(object):
             db_engine (sqlalchemy.engine) a database engine
             as_of_dates (list) the as_of_Dates to query
 
-        Returns: (pandas.DataFrame) a dataframe with protected attributes for the given dates
+        Returns: (pd.DataFrame) a dataframe with protected attributes for the given dates
         """
         as_of_dates_sql = "[{}]".format(
             ", ".join("'{}'".format(date.strftime("%Y-%m-%d %H:%M:%S.%f")) for date in as_of_dates)
@@ -149,9 +149,9 @@ class ProtectedGroupsGenerator(object):
             join dates using(as_of_date)
             where cohort_hash = '{cohort_hash}'
         """
-        protected_df = pandas.DataFrame.pg_copy_from(
+        protected_df = pd.DataFrame.pg_copy_from(
             query_string,
-            engine=self.db_engine,
+            connectable=self.db_engine,
             parse_dates=["as_of_date"],
             index_col=MatrixStore.indices,
         )

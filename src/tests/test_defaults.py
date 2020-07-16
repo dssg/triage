@@ -84,11 +84,11 @@ def test_fill_timechop_config_missing():
 
 def test_model_grid_preset():
     test_cases = {
-        'quickstart': {'total_items': 7, 'model_types': 3},
-        'small': {'total_items': 34, 'model_types': 4},
-        'medium': {'total_items': 63, 'model_types': 6},
-        'large': {'total_items': 82, 'model_types': 6},
-        'texas': {'total_items': 114, 'model_types': 9},
+        'quickstart': {'total_items': 8, 'model_types': 3},
+        'small': {'total_items': 36, 'model_types': 4},
+        'medium': {'total_items': 65, 'model_types': 6},
+        'large': {'total_items': 84, 'model_types': 6},
+        'texas': {'total_items': 116, 'model_types': 9},
     }
 
     for grid_type, exp_results in test_cases.items():

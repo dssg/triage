@@ -178,12 +178,12 @@ We need to write the experiment config file for that. Let's break it
 down and explain their sections.
 
 The config file for this first experiment is located in
-[triage/experiments/inspections_baseline.yaml](./triage/experiments/inspections_baseline.yaml).
+[inspections_baseline.yaml](https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/inspections_baseline.yaml).
 
 The first lines of the experiment config file specify the config-file
 version (`v7` at the moment of writing this tutorial), a comment
 (`model_comment`, which will end up as a value in the
-`model_metadata.models` table), and a list of user-defined metadata
+`triage_metadata.models` table), and a list of user-defined metadata
 (`user_metadata`) that can help to identify the resulting model
 groups. For this example, if you run experiments that share a temporal
 configuration but that use different label definitions (say, labeling
@@ -480,7 +480,7 @@ select
     total_features,
     matrices_needed,
     models_needed
-from model_metadata.experiments;
+from triage_metadata.experiments;
 ```
 
   experiment  | description | total_features | matrices_needed | models_needed
@@ -518,7 +518,7 @@ select
     model_type,
     hyperparameters
 from
-    model_metadata.model_groups
+    triage_metadata.model_groups
 where
     model_config ->> 'experiment_type' ~ 'inspection'
 ```
@@ -536,7 +536,7 @@ select
     array_agg(model_id) as models,
     array_agg(train_end_time::date) as train_end_times
 from
-    model_metadata.models
+    triage_metadata.models
 where
     model_comment ~ 'inspection'
 group by
@@ -566,9 +566,9 @@ select
     ma.num_observations as observations,
     ma.lookback_duration as feature_lookback_duration,  ma.feature_start_time
 from
-    model_metadata.models as mo
+    triage_metadata.models as mo
     join
-    model_metadata.matrices as ma
+    triage_metadata.matrices as ma
     on train_matrix_uuid = matrix_uuid
 where
     mo.model_comment ~ 'inspection'
@@ -603,11 +603,11 @@ select distinct
     substring(ev.matrix_uuid,1,5) as test_matrix_uuid,
     ma.num_observations as observations
 from
-    model_metadata.models as mo
+    triage_metadata.models as mo
     join
     test_results.evaluations as ev using (model_id)
     join
-    model_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
+    triage_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
 where
     mo.model_comment ~ 'inspection'
 order by
@@ -654,11 +654,11 @@ select distinct
     to_char(ev.num_positive_labels*1.0 / ev.num_labeled_examples, '0.999') as baserate,
     :k * 100 as "k%"
 from
-    model_metadata.models as mo
+    triage_metadata.models as mo
     join
     test_results.evaluations as ev using (model_id)
     join
-    model_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
+    triage_metadata.matrices as ma on ev.matrix_uuid = ma.matrix_uuid
 where
     ev.metric || ev.parameter = 'precision@15_pct'
     and
@@ -956,7 +956,7 @@ select
     total_features,
     matrices_needed,
     models_needed
-from model_metadata.experiments;
+from triage_metadata.experiments;
 ```
 
 
@@ -979,7 +979,7 @@ select
     model_type,
     hyperparameters
 from
-    model_metadata.model_groups
+    triage_metadata.model_groups
 where
     model_group_id not in (1);
 ```
@@ -1015,7 +1015,7 @@ select
     array_agg(model_id) as models,
     array_agg(train_end_time) as train_end_times
 from
-    model_metadata.models
+    triage_metadata.models
 where
     model_group_id not in (1)
 group by
@@ -1061,9 +1061,9 @@ select
     array_agg(to_char(ev.num_positive_labels, '999,999') order by ev.evaluation_start_time asc) as total_positive_labels,
     array_agg(to_char(ev.stochastic_value, '0.999') order by ev.evaluation_start_time asc) as "precision@15%"
 from
-    model_metadata.models as mo
+    triage_metadata.models as mo
     inner join
-    model_metadata.model_groups as mg using(model_group_id)
+    triage_metadata.model_groups as mg using(model_group_id)
     inner join
     test_results.evaluations  as ev using(model_id)
 where
@@ -1298,7 +1298,7 @@ select
     model_group_id,
     split_part(unnest(feature_list), '_', 1) as feature_groups
 from
-    model_metadata.model_groups
+    triage_metadata.model_groups
 ),
 
 features_arrays as (
@@ -1319,7 +1319,7 @@ select
      array_agg(to_char(stochastic_value, '0.999') order by train_end_time asc) filter (where metric = 'precision@') as "precision@15%",
     array_agg(to_char(stochastic_value, '0.999') order by train_end_time asc) filter (where metric = 'recall@') as "recall@15%"
 from
-    model_metadata.models
+    triage_metadata.models
     join
     features_arrays using(model_group_id)
     join
@@ -1424,13 +1424,13 @@ with some rules:
 model_groups:
     query: |
         select distinct(model_group_id)
-        from model_metadata.model_groups
+        from triage_metadata.model_groups
         where model_config ->> 'experiment_type' ~ 'inspection'
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 time_stamps:
     query: |
         select distinct train_end_time
-        from model_metadata.models
+        from triage_metadata.models
         where model_group_id in ({})
         and extract(day from train_end_time) in (1)
         and train_end_time >= '2014-01-01'
@@ -1629,7 +1629,7 @@ baseline_query: | # SQL query for defining a baseline for comparison in plots. I
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
-       left join model_metadata.models g
+       left join triage_metadata.models g
        using(model_id)
        where g.model_group_id = 1
              and metric = 'precision@'
@@ -1748,9 +1748,9 @@ select
     mg.hyperparameters,
     array_agg(model_id order by train_end_time) as models
 from
-    model_metadata.model_groups as mg
+    triage_metadata.model_groups as mg
     inner join
-    model_metadata.models
+    triage_metadata.models
     using (model_group_id)
 where model_group_id = 39
 group by 1,2,3
@@ -1782,12 +1782,12 @@ models in this model group, and check if you can detect any pattern.
     *Figure. Top 10 feature importances for de model group 11 at 2016-06-01 (i.e. model 125).*
 
     ```jupyter-python
-    models_39['125'].plot_feature_group_average_importances()
+    models_39['125'].plot_feature_group_aggregate_importances()
     ```
 
     ![img](images/postmodeling/inspection_model_group_39_model_125_feature_group_importances.png)
     *Figure. Feature group “importance” (we are basically taking the
-    average of all the feature importances in a feature group) for the
+    max of all the feature importances in a feature group) for the
     model group 39, model 125.*
 
 -   Our *Policy menu*

@@ -44,7 +44,7 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='4.0.1',
+    version='4.1.0',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     long_description_content_type="text/markdown",
@@ -71,6 +71,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
+    data_files=[('config', ['config/logging.yaml'])],
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST
 )

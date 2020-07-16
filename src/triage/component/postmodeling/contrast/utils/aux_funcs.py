@@ -26,7 +26,7 @@ def create_pgconn(credentials_yaml):
         - credentials_yaml: .yaml file with db credentials
     '''
     with open(credentials_yaml) as f:
-        configs = yaml.load(f)
+        configs = yaml.full_load(f)
     try:
         conn = create_engine("postgresql://{user}:{password}@{host}:{port}/{dbname}".format(**configs))
     except:
@@ -52,7 +52,7 @@ def get_models_ids(audited_model_group_ids, conn):
     query = conn.execute(text("""
     SELECT model_group_id,
            model_id
-    FROM model_metadata.models
+    FROM triage_metadata.models
     WHERE model_group_id = ANY(:ids);
     """), ids=audited_model_group_ids)
 

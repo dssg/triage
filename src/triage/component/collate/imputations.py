@@ -1,4 +1,4 @@
-class BaseImputation(object):
+class BaseImputation:
     """Base class for various imputation methods
     """
 

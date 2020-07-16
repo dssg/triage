@@ -170,7 +170,7 @@ from triage import create_engine
 import yaml
 
 with open('<your_experiment_config.yaml>') as fd:
-    experiment_config = yaml.load(fd)
+    experiment_config = yaml.full_load(fd)
 experiment = SingleThreadedExperiment(
     experiment_config=experiment_config,
     db_engine=create_engine(...),
@@ -313,7 +313,7 @@ from triage import create_engine
 import yaml
 
 with open('<your_experiment_config.yaml>') as fd:
-    experiment_config = yaml.load(fd)
+    experiment_config = yaml.full_load(fd)
 experiment = SingleThreadedExperiment(
     experiment_config=experiment_config,
     db_engine=create_engine(...),
@@ -468,7 +468,7 @@ from triage import create_engine
 import yaml
 
 with open('<your_experiment_config.yaml>') as fd:
-    experiment_config = yaml.load(fd)
+    experiment_config = yaml.full_load(fd)
 experiment = SingleThreadedExperiment(
     experiment_config=experiment_config,
     db_engine=create_engine(...),

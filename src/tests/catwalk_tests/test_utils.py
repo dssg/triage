@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 import testing.postgresql
 import datetime
 import re
-import numpy
+import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
 
@@ -28,7 +28,7 @@ def test_filename_friendly_hash():
     }
     output = filename_friendly_hash(data)
     assert isinstance(output, str)
-    assert re.match("^[\w]+$", output) is not None
+    assert re.match(r"^[\w]+$", output) is not None
 
     # make sure ordering keys differently doesn't change the hash
     new_output = filename_friendly_hash(
@@ -113,23 +113,23 @@ def test_missing_matrix_uuids():
 
 
 def test_sort_predictions_and_labels():
-    predictions = numpy.array([0.5, 0.4, 0.6, 0.5])
+    predictions = np.array([0.5, 0.4, 0.6, 0.5])
 
-    labels = numpy.array([0, 0, 1, 1])
+    labels = np.array([0, 0, 1, 1])
 
     # best sort
     sorted_predictions, sorted_labels = sort_predictions_and_labels(
         predictions, labels, tiebreaker='best'
     )
-    assert_array_equal(sorted_predictions, numpy.array([0.6, 0.5, 0.5, 0.4]))
-    assert_array_equal(sorted_labels, numpy.array([1, 1, 0, 0]))
+    assert_array_equal(sorted_predictions, np.array([0.6, 0.5, 0.5, 0.4]))
+    assert_array_equal(sorted_labels, np.array([1, 1, 0, 0]))
 
     # worst wort
     sorted_predictions, sorted_labels = sort_predictions_and_labels(
         predictions, labels, tiebreaker='worst'
     )
-    assert_array_equal(sorted_predictions, numpy.array([0.6, 0.5, 0.5, 0.4]))
-    assert_array_equal(sorted_labels, numpy.array([1, 0, 1, 0]))
+    assert_array_equal(sorted_predictions, np.array([0.6, 0.5, 0.5, 0.4]))
+    assert_array_equal(sorted_labels, np.array([1, 0, 1, 0]))
 
     # random tiebreaker needs a seed
     with pytest.raises(ValueError):
@@ -142,8 +142,8 @@ def test_sort_predictions_and_labels():
         tiebreaker='random',
         sort_seed=1234
     )
-    assert_array_equal(sorted_predictions, numpy.array([0.6, 0.5, 0.5, 0.4]))
-    assert_array_equal(sorted_labels, numpy.array([1, 1, 0, 0]))
+    assert_array_equal(sorted_predictions, np.array([0.6, 0.5, 0.5, 0.4]))
+    assert_array_equal(sorted_labels, np.array([1, 1, 0, 0]))
 
     sorted_predictions, sorted_labels = sort_predictions_and_labels(
         predictions,
@@ -151,5 +151,5 @@ def test_sort_predictions_and_labels():
         tiebreaker='random',
         sort_seed=24376234
     )
-    assert_array_equal(sorted_predictions, numpy.array([0.6, 0.5, 0.5, 0.4]))
-    assert_array_equal(sorted_labels, numpy.array([1, 0, 1, 0]))
+    assert_array_equal(sorted_predictions, np.array([0.6, 0.5, 0.5, 0.4]))
+    assert_array_equal(sorted_labels, np.array([1, 0, 1, 0]))

@@ -1,0 +1,45 @@
+# CHOOSE MODEL GROUPS
+model_groups:
+    query: |
+        select distinct(model_group_id)
+        from triage_metadata.model_groups
+        where model_config ->> 'experiment_type' ~ 'eis'
+# CHOOSE TIMESTAMPS/TRAIN END TIMES
+time_stamps:
+    query: |
+        select distinct train_end_time
+        from triage_metadata.models
+        where model_group_id in ({})
+        and extract(day from train_end_time) in (1)
+        and train_end_time >= '2014-01-01'
+# FILTER
+filter:
+    metric: 'precision@' # metric of interest
+    parameter: '10_pct' # parameter of interest
+    max_from_best: 1.0 # The maximum value that the given metric can be worse than the best model for a given train end time.
+    threshold_value: 0.0 # The worst absolute value that the given metric should be.
+    distance_table: 'eis_distance_table' # name of the distance table
+    models_table: 'models' # name of the models table
+
+# RULES
+rules:
+    -
+        shared_parameters:
+            -
+                metric: 'precision@'
+                parameter: '10_pct'
+
+        selection_rules:
+            -
+                name: 'best_current_value' # Pick the model group with the best current metric value
+                n: 5
+            -
+                name: 'best_average_value' # Pick the model with the highest average metric value
+                n: 5
+            -
+                name: 'lowest_metric_variance' # Pick the model with the lowest metric variance
+                n: 5
+            -
+                name: 'most_frequent_best_dist' # Pick the model that is most frequently within `dist_from_best_case`
+                dist_from_best_case: [0.05]
+                n: 5

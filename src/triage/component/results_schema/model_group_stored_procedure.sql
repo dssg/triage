@@ -1,7 +1,7 @@
 /*
 Function for using the model group table. This function requires a table like
 -----------
-CREATE TABLE model_metadata.model_groups
+CREATE TABLE triage_metadata.model_groups
 (
   model_group_id    SERIAL PRIMARY KEY,
   model_type        TEXT,
@@ -27,7 +27,7 @@ BEGIN
   -- Check if the model_group_id exists, if not insert the model parameters and return the new value
   SELECT *
   INTO model_group_return_id
-  FROM model_metadata.model_groups
+  FROM triage_metadata.model_groups
   WHERE
     model_type = in_model_type
     AND hyperparameters = in_hyperparameters
@@ -35,7 +35,7 @@ BEGIN
     AND model_config = in_model_config ;
   IF NOT FOUND
   THEN
-    INSERT INTO model_metadata.model_groups (model_group_id, model_type, hyperparameters, feature_list, model_config)
+    INSERT INTO triage_metadata.model_groups (model_group_id, model_type, hyperparameters, feature_list, model_config)
     VALUES (DEFAULT, in_model_type, in_hyperparameters, ARRAY(Select unnest(in_feature_list) ORDER BY 1), in_model_config)
     RETURNING model_group_id
       INTO model_group_return_id;

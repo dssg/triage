@@ -1,5 +1,0 @@
-ipython==7.5.0
-jupyter==1.0.0
-
-## DSaPP stuff
-git+https://github.com/dssg/triage.git

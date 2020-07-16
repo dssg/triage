@@ -31,7 +31,6 @@ markdown_extensions:
   - toc:
       permalink: "#"
       baselevel: 1
-      toc_depth: 3
       separator: "-"
   - admonition
   - codehilite:
@@ -50,7 +49,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.magiclink
   - pymdownx.mark
-  - pymdownx.smartsymbols
+  - pymdownx.smartsymbols:
+      arrows: false
   - pymdownx.highlight
   - pymdownx.snippets
   - pymdownx.superfences
@@ -62,6 +62,22 @@ markdown_extensions:
 extra_javascript:
     - "js/mermaid.min.js"
     - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
+
+extra_css:
+    - "triage_docs.css"
+
+plugins: 
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: false
+            show_root_full_path: true
+            show_root_heading: true
+      watch:
+        - ../src/triage
+
 
 nav:
   - Home: index.md
@@ -83,9 +99,8 @@ nav:
       - Quick setup: dirtyduck/for_the_impatient.md
   - Triage documentation:
       - Experiment:
-          - Defining an Experiment: experiments/defining.md
+          - Experiment Configuration: experiments/experiment-config.md
           - Testing Feature Configuration: experiments/feature-testing.md
-          - Experiment Configuration: https://github.com/dssg/triage/blob/master/example/config/README.md
           - Running an Experiment: experiments/running.md
           - Upgrading an Experiment:
               - v6 -> v7: experiments/upgrade-to-v7.md
@@ -97,7 +112,22 @@ nav:
           - Feature Generation Recipe Book: experiments/features.md
           - Experiment Algorithm: experiments/algorithm.md
           - Experiment Architecture: experiments/architecture.md
-      - Model selection: dirtyduck/audition.md
-      - Postmodeling: postmodeling/index.md
+      - Model selection: 
+          - Intro to Audition: audition/audition_intro.md
+          - Model Selection Concepts: audition/model_selection.md
+          - API Reference: ../api/audition/
+      - Postmodeling: 
+          - Using Postmodeling: postmodeling/index.md
+          - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
       - Model governance:  dirtyduck/ml_governance.md
       - Scaling up: dirtyduck/aws_batch.md
+      - API Reference:
+          - Audition: 
+              - Auditioner: api/audition/auditioner.md
+              - Audition Configuration: api/audition/audition-config.md
+              - Selection Rules: api/audition/selection_rules.md
+              - Database Dependencies: api/audition/database-dependencies.md
+          - Timechop:
+              - Timechop: api/timechop/timechop.md
+              - Plotting: api/timechop/plotting.md
+

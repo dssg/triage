@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from triage.validation_primitives import (
     table_should_exist,
     table_should_have_column,
@@ -7,7 +9,7 @@ from triage.validation_primitives import (
 import sqlparse
 
 
-class FromObj(object):
+class FromObj:
     def __init__(self, from_obj, name, knowledge_date_column):
         self.from_obj = from_obj
         self.name = name
@@ -55,36 +57,34 @@ class FromObj(object):
         # The second check covers this. The 'real name' in these cases is the name
         # of the original table, whereas for a subquery there is no 'real name' besides the alias
         if not isinstance(from_obj, sqlparse.sql.Identifier):
-            logging.warning(
-                "Expected %s to parse as an Identifier. It did not. "
-                "As a result, falling back to *not* materializing raw from object %s",
-                from_obj,
-                self.from_obj
+            logger.warning(
+                f"Expected {from_obj} to parse as an Identifier. It did not. "
+                f"As a result, falling back to *not* materializing raw from object {self.from_obj}"
             )
             return False
         return from_obj.has_alias() and from_obj.get_alias() == from_obj.get_real_name()
 
     def maybe_materialize(self, db_engine):
         if self.should_materialize():
-            logging.info("from_obj %s looks like a subquery, so creating table", self.name)
+            logger.spam(f"from_obj in {self.name} looks like a subquery, so creating table")
             db_engine.execute(self.drop_materialized_table_sql)
             db_engine.execute(self.create_materialized_table_sql)
-            logging.info("Created table to hold from_obj. New table: %s", self.materialized_table)
+            logger.spam(f"Created table to hold from_obj. New table: {self.materialized_table}")
             self.validate(db_engine)
             db_engine.execute(self.index_materialized_table_sql)
-            logging.info("Indexed from_obj table: %s", self.materialized_table)
+            logger.spam(f"Indexed from_obj table: {self.materialized_table}")
+            logger.debug(f"Materialized table {self.materialized_table}")
         else:
-            logging.info("from_obj did not look like a subquery, so did not materialize")
+            logger.debug(f"from_obj in {self.name} did not look like a subquery, so did not materialize")
 
     def validate(self, db_engine):
-        logging.info('Validating from_obj %s', self.materialized_table)
+        logger.spam(f"Validating from_obj {self.materialized_table}")
         table_should_exist(self.materialized_table, db_engine)
-        logging.info('Table %s successfully found', self.materialized_table)
+        logger.spam(f"Table {self.materialized_table} successfully found")
         table_should_have_column(self.materialized_table, 'entity_id', db_engine)
-        logging.info('Successfully found entity_id column in %s', self.materialized_table)
+        logger.spam(f"Successfully found entity_id column in {self.materialized_table}")
         table_should_have_column(self.materialized_table, self.knowledge_date_column, db_engine)
         column_should_be_timelike(self.materialized_table, self.knowledge_date_column, db_engine)
-        logging.info(
-            'Successfully found configured knowledge date column in %s',
-            self.materialized_table
+        logger.spam(
+            f"Successfully found configured knowledge date column in {self.materialized_table}"
         )

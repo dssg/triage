@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from numbers import Number
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
@@ -51,7 +52,7 @@ def split_distinct(quantity):
         return "", (q,)
 
 
-class AggregateExpression(object):
+class AggregateExpression:
     def __init__(
         self,
         aggregate1,
@@ -437,7 +438,7 @@ class Categorical(Compare):
         )
 
 
-class Aggregation(object):
+class Aggregation:
     def __init__(
         self,
         aggregates,
@@ -495,7 +496,7 @@ class Aggregation(object):
                         raise ValueError("Duplicate feature column name found: ", col.name)
                     lookup[col.name] = agg
         return lookup
-            
+
     def _col_prefix(self, group):
         """
         Helper for creating a column prefix for the group
@@ -719,7 +720,7 @@ class Aggregation(object):
             if col in impute_cols:
 
                 # we don't want to add redundant imputation flags. for a given source
-                # column and time interval, all of the functions will have identical 
+                # column and time interval, all of the functions will have identical
                 # sets of rows that needed imputation
                 # to reliably merge these, we lookup the original aggregate that produced
                 # the function, and see its available functions. we expect exactly one of
@@ -733,7 +734,7 @@ class Aggregation(object):
                     else:
                         impflag_basecol = col.rstrip('_' + used_function)
                 else:
-                    logging.warning("Imputation flag merging is not implemented for "
+                    logger.warning("Imputation flag merging is not implemented for "
                                     "AggregateExpression objects that don't define an aggregate "
                                     "function (e.g. composites)")
                     impflag_basecol = col

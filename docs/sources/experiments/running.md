@@ -7,7 +7,7 @@ To use a Triage experiment, you first need:
 - Python 3.5
 - A PostgreSQL database with your source data (events, geographical data, etc) loaded.
 - Ample space on an available disk (or S3) to store the needed matrices and models for your experiment
-- An experiment definition (see [Defining an Experiment](defining.md))
+- An experiment definition (see [Experiment configuration](experiment-config.md))
 
 
 
@@ -53,7 +53,7 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
-Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the `model_metadata.models` and `test_results.evaluations` tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.
+Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the `triage_metadata.models` and `test_results.evaluations` tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.
 
 ## Multicore example
 
@@ -233,15 +233,15 @@ Running parts of an experiment is only supported through the Python interface.
 
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
-* model_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
-* model_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
-* model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
-* model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
-* model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
-* model_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
-* model_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
-* model_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
-* model_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
+* triage_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
+* triage_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
+* triage_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
+* triage_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
+* triage_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
+* triage_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
+* triage_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
+* triage_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
+* triage_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
 * train_results.feature_importances - The sklearn feature importances results for each trained model
 * train_results.predictions - Prediction probabilities for train matrix entities generated against trained models
 * train_results.prediction_metadata - Metadata about the prediction stage for a model and train matrix, such as tiebreaking configuration
@@ -259,8 +259,8 @@ Here's an example query, which returns the top 10 model groups by precision at t
     	model_groups.model_type,
     	model_groups.hyperparameters,
     	max(test_evaluations.value) as max_precision
-    from model_metadata.model_groups
-    	join model_metadata.models using (model_group_id)
+    from triage_metadata.model_groups
+    	join triage_metadata.models using (model_group_id)
     	join test_results.evaluations using (model_id)
     where
     	metric = 'precision@'

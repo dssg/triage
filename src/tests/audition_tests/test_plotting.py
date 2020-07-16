@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-import pandas
+import pandas as pd
 from matplotlib import lines as mlines
 
 from triage.component.audition.plotting import (
@@ -54,7 +54,7 @@ def test_category_styledict():
 
 
 def test_plot_cats():
-    test_df = pandas.DataFrame.from_dict(
+    test_df = pd.DataFrame.from_dict(
         {
             "cats": ["tuxedo", "maine coon", "lion!"],
             "groups": ["i", "dont", "know"],

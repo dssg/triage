@@ -12,7 +12,7 @@
 -   You want to know about `triage`
     -   [A deeper look into triage](triage_intro.md)
     -   [Model governance](ml_governance.md)
-    -   [Model selection](audition.md)
+    -   [Model selection](../audition/audition_intro.md)
 -   You want to learn about case studies
     -   [Quick setup](for_the_impatient.md)
     -   [Resource prioritization](inspections.md) and/or [Early warning systems](eis.md)

@@ -188,7 +188,7 @@ triage experiment experiments/eis_01.yaml --show-timechop
 !!! info "What? … Bastion?"
     `bastion` is the docker container that contains all the setup
     required to run this tutorial, if this is the first time that
-    you see this word, you should stop and revisit [setup infrastructure](insfrastructure.md).
+    you see this word, you should stop and revisit [setup infrastructure](infrastructure.md).
 
 
 
@@ -429,7 +429,7 @@ After the experiment finishes, we can create the following table:
         model_group_id,
         split_part(unnest(feature_list), '_', 1) as feature_groups
     from
-        model_metadata.model_groups
+        triage_metadata.model_groups
     ),
 
     features_arrays as (
@@ -452,7 +452,7 @@ After the experiment finishes, we can create the following table:
         array_agg(to_char(stochastic_value, '0.999') order by
     train_end_time asc) as "precision@10% (stochastic)"
     from
-        model_metadata.models
+        triage_metadata.models
         join
         features_arrays using(model_group_id)
         join
@@ -593,13 +593,13 @@ compared to the inspection’s one:
 model_groups:
     query: |
         select distinct(model_group_id)
-        from model_metadata.model_groups
+        from triage_metadata.model_groups
         where model_config ->> 'experiment_type' ~ 'eis'
 # CHOOSE TIMESTAMPS/TRAIN END TIMES
 time_stamps:
     query: |
         select distinct train_end_time
-        from model_metadata.models
+        from triage_metadata.models
         where model_group_id in ({})
         and extract(day from train_end_time) in (1)
         and train_end_time >= '2014-01-01'
@@ -767,7 +767,7 @@ and we will use the complete set of model groups selected by audition:
              m.num_labeled_above_threshold,
              m.num_positive_labels
        from test_results.evaluations m
-       left join model_metadata.models g
+       left join triage_metadata.models g
        using(model_id)
        where g.model_group_id = 20
              and metric = 'precision@'
@@ -838,7 +838,7 @@ audited_models_class.plot_prec_across_time(param_type='rank_pct',
                                            figsize=params.figsize)
 ```
 
-![img](images/eis_mg_recall_over_time.png "Recall@10% over time from the best performing model groups selected by Audition")
+![img](images/postmodeling/eis_mg_recall_over_time.png "Recall@10% over time from the best performing model groups selected by Audition")
 
 That behavior is similar for the recall@10%, except for the model group **69**
 
@@ -848,7 +848,7 @@ audited_models_class.plot_jaccard_preds(param_type='rank_pct',
                                         temporal_comparison=True)
 ```
 
-![img](images/eis_jaccard_on_lists_over_time.png "How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists.")
+![img](images/postmodeling/eis_jaccard_on_lists_over_time.png "How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists.")
 
 There are a high jaccard similarity between some model groups across
 time. This could be an indicator that they are so similar that you can
@@ -866,9 +866,9 @@ select
     mg.hyperparameters,
     array_agg(model_id order by train_end_time) as models
 from
-    model_metadata.model_groups as mg
+    triage_metadata.model_groups as mg
     inner join
-    model_metadata.models
+    triage_metadata.models
     using (model_group_id)
 where model_group_id = 76
 group by 1,2,3
@@ -894,13 +894,13 @@ In this tutorial, we will just show some parts of the analysis in the most recen
                                               figsize=params.figsize)
     ```
 
-    ![img](images/eis_model_group_64_feature_importances.png "Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226).")
+    ![img](images/postmodeling/eis_model_group_64_feature_importances.png "Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226).")
 
     ```jupyter-python
-    models_76['234'].plot_feature_group_average_importances()
+    models_76['234'].plot_feature_group_aggregate_importances()
     ```
 
-    ![img](images/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the average of all the feature importances in a feature group) for the model group 64, model 226.")
+    ![img](images/postmodeling/eis_model_group_64_feature_group_importances.png "Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226.")
 
 
 ## Crosstabs: How are the entities classified?

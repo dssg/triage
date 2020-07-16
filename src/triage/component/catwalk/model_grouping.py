@@ -1,5 +1,6 @@
 import json
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 DEFAULT_KEYS = [
     "label_timespan",
@@ -12,7 +13,7 @@ DEFAULT_KEYS = [
 ]
 
 
-class ModelGrouper(object):
+class ModelGrouper:
     """Assign a model group id to given model input based on default or custom configuration
 
     This class is a wrapper around the `get_model_group_id` stored procedure,
@@ -139,16 +140,15 @@ class ModelGrouper(object):
                     ),
                 )
             )
-            logging.info("Getting model group from query %s", query)
+            logger.spam(f"Getting model group from query {query}")
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()
             model_group_id = model_group_id[0]
 
         else:
-            logging.info("Could not found stored procedure public.model_group_id")
+            logger.warning("Could not found stored procedure public.model_group_id")
             model_group_id = None
         db_conn.close()
 
-        logging.debug("Model_group_id = {}".format(model_group_id))
         return model_group_id

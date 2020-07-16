@@ -3,7 +3,7 @@ import numpy as np
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
-class PercentileRankOneFeature(object):
+class PercentileRankOneFeature:
     def __init__(self, feature, descend=False):
         self.feature = feature  # which feature to rank on
         self.descend = (

@@ -1,5 +1,6 @@
 import inspect
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from numpy import exp, log, average
 
@@ -10,8 +11,8 @@ def random_model_group(df, train_end_time, n=1):
     """Pick a random model group (as a baseline)
 
     Arguments:
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -19,7 +20,7 @@ def random_model_group(df, train_end_time, n=1):
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest current raw metric value
     """
     return df["model_group_id"].drop_duplicates().sample(frac=1).tolist()[:n]
@@ -30,9 +31,9 @@ def _mg_best_avg_by(df, value_col, metric, n=1):
 
     Args:
         df (pandas.DataFrame)
-        value_col (str) The column which contains the value to be averaged
-        metric (str) the name of the column
-        n (int) numbers of model group id
+        value_col (str): The column which contains the value to be averaged
+        metric (str): the name of the column
+        n (int): the number of model group ids to return
     """
     if n == 1:
         return [
@@ -62,11 +63,11 @@ def best_current_value(df, train_end_time, metric, parameter, n=1):
     """Pick the model group with the best current metric value
 
     Arguments:
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns:
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -74,7 +75,7 @@ def best_current_value(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 dist_from_best_case
-        n (int) numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest current raw metric value
     """
     curr_df = df.loc[
@@ -103,11 +104,11 @@ def best_average_value(df, train_end_time, metric, parameter, n=1):
     """Pick the model with the highest average metric value so far
 
     Arguments:
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -115,7 +116,7 @@ def best_average_value(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 dist_from_best_case
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
     met_df = df.loc[(df["metric"] == metric) & (df["parameter"] == parameter)]
@@ -126,11 +127,11 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
     """Pick the model with the lowest metric variance so far
 
     Arguments:
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -138,7 +139,7 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -151,7 +152,7 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
     if met_df.isnull().sum() == met_df.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info(
+        logger.debug(
             "Null metric variances for %s %s at %s; picking at random",
             metric,
             parameter,
@@ -180,12 +181,12 @@ def most_frequent_best_dist(
     best-performing model group across test sets so far
 
     Arguments:
-        dist_from_best_case (float) -- distance from the best performing model
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        dist_from_best_case (float): distance from the best performing model
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -193,7 +194,7 @@ def most_frequent_best_dist(
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -232,15 +233,15 @@ def best_average_two_metrics(
     of two metrics weighted together using `metric1_weight`
 
     Arguments:
-        metric1_weight (float) -- relative weight of metric1, between 0 and 1
-        metric1 (string) -- model evaluation metric, such as 'precision@'
-        parameter1 (string) -- model evaluation metric parameter,
+        metric1_weight (float): relative weight of metric1, between 0 and 1
+        metric1 (string): model evaluation metric, such as 'precision@'
+        parameter1 (string): model evaluation metric parameter,
             such as '300_abs'
-        metric2 (string) -- model evaluation metric, such as 'precision@'
-        parameter2 (string) -- model evaluation metric parameter,
+        metric2 (string): model evaluation metric, such as 'precision@'
+        parameter2 (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -248,7 +249,7 @@ def best_average_two_metrics(
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -301,12 +302,12 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
      weight of the most recent point (curr_weight).
 
     Arguments:
-        stdev_penalty (float) -- penalty for instability
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        stdev_penalty (float): penalty for instability
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -314,7 +315,7 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -331,7 +332,7 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
     if met_df_grp["raw_stdev"].isnull().sum() == met_df_grp.shape[0]:
         # variance will be undefined in first time window since we only have one obseravtion
         # per model group
-        logging.info(
+        logger.debug(
             "Null metric variances for %s %s at %s; just using mean",
             metric,
             parameter,
@@ -372,16 +373,16 @@ def best_avg_recency_weight(
     model groups
 
     Arguments:
-        decay_type (string) -- either 'linear' or 'exponential'; the shape of
+        decay_type (string): either 'linear' or 'exponential'; the shape of
             how the weights fall off between the current and first point
-        curr_weight (float) -- amount of weight to put on the most recent point,
+        curr_weight (float): amount of weight to put on the most recent point,
             relative to the first point (e.g., a value of 5.0 would mean the
             current data is weighted 5 times as much as the first one)
-        metric (string) -- model evaluation metric, such as 'precision@'
-        parameter (string) -- model evaluation metric parameter,
+        metric (string): model evaluation metric, such as 'precision@'
+        parameter (string): model evaluation metric parameter,
             such as '300_abs'
-        train_end_time (Timestamp) -- current train end time
-        df (pandas.DataFrame) -- dataframe containing the columns:
+        train_end_time (Timestamp): current train end time
+        df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
                 model_id,
                 train_end_time,
@@ -389,7 +390,7 @@ def best_avg_recency_weight(
                 parameter,
                 raw_value,
                 below_best
-        n (int) -- numbers of model group id
+        n (int): the number of model group ids to return
     Returns: (int) the model group id to select, with highest mean raw metric value
     """
 
@@ -447,16 +448,16 @@ SELECTION_RULES = {
 }
 
 
-class BoundSelectionRule(object):
+class BoundSelectionRule:
     """A selection rule bound with a set of arguments
 
     Args:
-        args (dict) A set of keyword arguments, that should be sufficient
+        args (dict): A set of keyword arguments, that should be sufficient
             to call the function when a dataframe and train_end_time is added
-        function_name (string, optional) The name of a function in SELECTION_RULES
-        descriptive_name (string, optional) A descriptive name, used in charts
+        function_name (string, optional): The name of a function in SELECTION_RULES
+        descriptive_name (string, optional): A descriptive name, used in charts
             If none is given it will be automatically constructed
-        function (function, optional) A function
+        function (function, optional): A function
     """
 
     def __init__(self, args, function_name=None, descriptive_name=None, function=None):
@@ -492,7 +493,7 @@ class BoundSelectionRule(object):
 
         Constructed using the function name and arguments.
         """
-        argspec = inspect.getargspec(self.function)
+        argspec = inspect.getfullargspec(self.function)
         args = [arg for arg in argspec.args if arg not in ["df", "train_end_time", "n"]]
         return "_".join([self.function_name] + [str(self.args[key]) for key in args])
 

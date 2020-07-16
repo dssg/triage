@@ -1,4 +1,4 @@
-class BaseRules(object):
+class BaseRules:
     def __init__(self):
         self._metric = None
         self._parameter = None
@@ -27,6 +27,20 @@ class BaseRules(object):
 
 
 class SimpleRuleMaker(BaseRules):
+
+    """
+    Holds methods that generate parameter grids for selection rules that
+    evaluate the performance of a model group in terms of a single metric.
+    These include:
+
+    - [best_current_value][triage.component.audition.selection_rules.best_current_value]
+    - [best_average_value][triage.component.audition.selection_rules.best_average_value]
+    - [lowest_metric_variance][triage.component.audition.selection_rules.lowest_metric_variance]
+    - [most_frequent_best_dist][triage.component.audition.selection_rules.most_frequent_best_dist]
+    - [best_avg_var_penalized][triage.component.audition.selection_rules.best_avg_var_penalized]
+    - [best_avg_recency_weight][triage.component.audition.selection_rules.best_avg_recency_weight]
+    """
+
     def add_rule_best_current_value(self, metric=None, parameter=None, n=1):
         if metric is not None:
             self._metric = metric
@@ -117,12 +131,31 @@ class SimpleRuleMaker(BaseRules):
 
 
 class RandomGroupRuleMaker(BaseRules):
+    
+    """
+    The `RandomGroupRuleMaker` class generates a rule that randomly selects `n`
+    model groups for each train set.
+
+    Unlike the other two RuleMaker classes, it generates its selection rule spec
+    on `__init__`
+    """
+    
     def __init__(self, n=1):
         self.shared_parameters = [{}]
         self.selection_rules = [{"name": "random_model_group", "n": n}]
 
 
 class TwoMetricsRuleMaker(BaseRules):
+
+    """
+    The `TwoMetricsRuleMaker` class allows for the specification of rules that 
+    evaluate a model group's performance in terms of two metrics. It currently
+     supports one rule:
+
+     - [best_average_two_metrics][triage.component.audition.selection_rules.best_average_two_metrics]
+
+    """
+
     def add_rule_best_average_two_metrics(
         self,
         metric1="precision@",

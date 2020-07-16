@@ -26,7 +26,7 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         intercept_scaling=1,
         class_weight=None,
         random_state=None,
-        solver="liblinear",
+        solver="saga",
         max_iter=100,
         multi_class="ovr",
         verbose=0,

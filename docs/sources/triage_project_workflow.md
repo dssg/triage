@@ -1,7 +1,7 @@
 # Using `triage` for a Project: Workflow Tips
 
 !!! warning "Getting Started..."
-    The setup and first iteration here closely follow the [QuickStart Guide](quickstart.md), so that may be a good place to start if you're new to `triage`. 
+    The setup and first iteration here closely follow the [QuickStart Guide](quickstart.md), so that may be a good place to start if you're new to `triage`.
 
     If you've already completed the QuickStart and have a working environment, you may want to jump ahead to [Iteration 2](#iteration-2-refine-the-cohort-and-temporal-setup)
 
@@ -49,7 +49,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 ### Check for Results
 
-For this quick check, we're only running a handful of models for a single time window, so `triage`'s tools for model selection and postmodeling analysis won't be instructive, but you can confirm that by checking out the `triage`-created tables in the `model_metadata`, `test_results`, and `train-results` schemas in your database. In particular, you should find records for all your expected models in `model_metadata.models`, predictions from every model for every entity in `test_results.predictions`, and aggregate performance metrics in `test_results.evaluations` for every model.
+For this quick check, we're only running a handful of models for a single time window, so `triage`'s tools for model selection and postmodeling analysis won't be instructive, but you can confirm that by checking out the `triage`-created tables in the `triage_metadata`, `test_results`, and `train-results` schemas in your database. In particular, you should find records for all your expected models in `triage_metadata.models`, predictions from every model for every entity in `test_results.predictions`, and aggregate performance metrics in `test_results.evaluations` for every model.
 
 If that all looks good, it's time to get started with customizing your modeling configuration to your project...
 
@@ -82,7 +82,7 @@ In most real-world machine learning applications, you're interested in training 
 
 There is a lot of nuance to the temporal configuration and it can take a bit of effort to get right. If you're new to `triage` (or want a refresher), we highly reccomend you check out [the temporal crossvalidation deep dive](dirtyduck/triage_intro.md#temporal-crossvalidation).
 
-In previous iteration, we used a highly simplified temporal config, with just one parameter: `label_timespans`, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed `temporal_config`. Here's what that might look like: 
+In previous iteration, we used a highly simplified temporal config, with just one parameter: `label_timespans`, yielding a single time split to get us started. However, these default values are generally not particularly meaningful in most cases and you'll need to fill out a more detailed `temporal_config`. Here's what that might look like:
 
 ```
 temporal_config:
@@ -153,7 +153,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 
 As above, you should check the `triage`-created tables in your database to ensure the run with your new config has trained and tested all of the expected models. A couple of things to look out for:
 
-- In `triage`, a specification of a model algorithm, related hyperparameters, and set of features is referred to as a `model_group` while an instantiation of these parameters on particular set of data at a specific point in time is referred to as a `model`. As such, with the `quickstart` preset model grid, you should still have the same 3 records in `model_metadata.model_groups` while you should have several new records in `model_metadata.models` with different `train_end_time`s implied by your temporal config.
+- In `triage`, a specification of a model algorithm, related hyperparameters, and set of features is referred to as a `model_group` while an instantiation of these parameters on particular set of data at a specific point in time is referred to as a `model`. As such, with the `quickstart` preset model grid, you should still have the same 3 records in `triage_metadata.model_groups` while you should have several new records in `triage_metadata.models` with different `train_end_time`s implied by your temporal config.
 
 - Likewise, in `test_results.predictions` and `test_results.evaluations`, you will find an `as_of_date` column. In many cases, you will likely have a single `as_of_date` per model that lines up with the model's `train_end_time`, but in some situations, you may want to evaluate at several `as_of_dates` for each model. [See the temporal crossvalidation deep dive](dirtyduck/triage_intro.md#temporal-crossvalidation) for more details.
 
@@ -166,15 +166,15 @@ We generally recommend using `audition` interactively with as a `jupyter noteboo
 
 ## Iteration 3: Add more data/features, models and hyperparameters, and evaluation metrics of interest
 
-After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications. 
+After completing iteration 2, you should now have your cohort, label, and temporal configuration well-defined for your problem and you're ready to focus on features and model specifications.
 
 We've labeled this section `Iteration 3`, but in practice it's probably more like `Iterations 3-n` as you will likely want to do a bit of intermediate testing while adding new features and refine your model grid as you learn more about what does and doesn't seem to work well.
 
 ### Define some additional features
 
-Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible. 
+Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible.
 
-The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
+The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
 
 !!! info "Features in `triage` are temporal aggregations"
 
@@ -187,7 +187,13 @@ The experiment configuration file provides a decent amount of flexibility for de
 
     - Unfortunately, `triage` has not yet implemented functionality for "first value" or "most recent value" feature aggregates, so you'll need to pre-calculate any features you want with this logic (though we do hope to add this ability).
 
-Feature definitions are specified in the `feature_aggregations` section of the config file, under which you should provide a list of sets of related features, and each element in this list must contain several keys (see the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for a detailed example of what this looks like in practice):
+Feature definitions are specified in the `feature_aggregations`
+section of the config file, under which you should provide a list of
+sets of related features, and each element in this list must contain
+several keys (see the [example config
+file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml)
+for a detailed example of what this looks like in practice):
+
 - `prefix`: a simple name to identify this set of related features - all of the features defined by this `feature_aggregations` entry will start with this prefix.
 - `from_obj`: this may be a table name or a SQL expression that provides the source data for these features.
 - `knowledge_date_column`: the date column specifying when information in the source data was known (e.g., available to be used for predictive modeling), which may differ from when the event ocurred.
@@ -195,7 +201,7 @@ Feature definitions are specified in the `feature_aggregations` section of the c
 - `intervals`: The time intervals (as a SQL interval, such a `'5 year'`, `'6 month'`, or `all` for all time) over which to aggregate features.
     - For instance, if you specified a count of the number of events under `aggregates` and `['5 year', '10 year', 'all']` as `intervals`, `triage` would create features for the number of events related to an entity in the last 5 years, 10 years, and since the `feature_start_time` (that is, three separate features)
 - `groups`: levels at which to aggregate the features, often simply `entity_id`, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.
-- You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
+- You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](dssg.github.io/triage/experiments/experiment-config#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
 
 When defining features derived from numerical data, you list them under the `aggregates` key in your feature config, and these should include keys for:
 - `quantity`: A column or SQL expression from the `from_obj` yielding a number that can be aggregated
@@ -213,7 +219,7 @@ When defining features derived from categorical data, you list them under the `c
     - If they are changing over time, `max` would give you something similar to a one-hot encoding, but note that the values would no longer be mutually-exclusive.
 - As noted above, imputation rules can be specified at this level as well.
 
-Much more detail about defining your features can be found in the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-generation).
+Much more detail about defining your features can be found in the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](dssg.github.io/triage/experiments/experiment-config#feature-generation).
 
 ### Expand, then refine, your model grid
 
@@ -266,7 +272,7 @@ scoring:
 
 You can specify any number of evaluation metrics to be calculated for your models on either the training or test sets (the set of available metrics can be found [here](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L161)). For metrics that need to be calculated relative to a specific threshold in the score (e.g. precision), you must specify either `percentiles` or `top_n` (and can optionally provide both) at which to do the calculations.
 
-Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](https://github.com/dssg/triage/blob/master/example/config/README.md#bias-audit-config-optional) for more details on setting it up.
+Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](dssg.github.io/triage/experiments/experiment-config#bias-audit-config-optional) for more details on setting it up.
 
 ### Run `triage`
 
@@ -287,7 +293,7 @@ Alternatively, you can also import `triage` as a package in your python scrips a
 #### Check the database
 
 As before, the first place to look to check on the results of your modeling run is in the database:
-- Even while the modeling is still running, you can check out `test_results.evaluations` to keep an eye on the progress of the run (join it to `model_metadata.models` using `model_id` if you want to see information about the model specifications).
+- Even while the modeling is still running, you can check out `test_results.evaluations` to keep an eye on the progress of the run (join it to `triage_metadata.models` using `model_id` if you want to see information about the model specifications).
 - Once the run has finished, you should see many more models in `test_results.evaluations` reflecting the full model grid evaluated on each of the metrics you specified above.
 - Information on feature importances can be found in `train_results.feature_importances` (note the schema is `train_results` since these are calculated based on the training data).
 
@@ -295,7 +301,7 @@ As before, the first place to look to check on the results of your modeling run 
 
 Once you have a more comprehensive model run with a variety of features and modeling grid, `audition` can help you understand the performance of different specifications and further refine your models for future iterations. In a typical project, you'll likely run through the `audition` flow several times as you progressively improve your modeling configuration.
 
-When you finally settle on a configuration you're happy with, `audition` will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using `postmodeling`. 
+When you finally settle on a configuration you're happy with, `audition` will also help you narrow your models down to a smaller set of well-performing options for futher analysis. Often, this might involve something like specifying a few different "selection rules" (e.g., best mean performance, recency-weighted performance, etc.) and exploring one or two of the best performing under each rule using `postmodeling`.
 
 More about using `audition`:
 - [model selection primer](dirtyduck/audition/).
@@ -352,17 +358,17 @@ feature_group_strategies: ['all', 'leave-one-out']
 If you had five feature groups, this would run a total of six strategies (one including all your feature groups, and five including all but one of them) for each specification in your model grid.
 
 !!! warning "Before using feature group stragies..."
-    Note that model runs specifying `feature_group_strategies` can become quite time and resource-intensive, especially using the `all-combinations` option. 
+    Note that model runs specifying `feature_group_strategies` can become quite time and resource-intensive, especially using the `all-combinations` option.
 
     Before making use of this functionality, it's generally smart to narrow your modeling grid considerably to at most a handful of well-performing models and do some back-of-the-envelope calculations of how many variations `triage` will have to run.
 
-Learn more about feature groups and strategies in the [config README](https://github.com/dssg/triage/blob/master/example/config/README.md#feature-grouping-optional).
+Learn more about feature groups and strategies in the [config README](dssg.github.io/triage/experiments/experiment-config#feature-grouping-optional).
 
 ### Subsets
 
 In some cases, you may be interested in your models' performance on subsets of the full cohort on which it is trained, such as certain demographics or individuals who meet a specific criteria of interest to your program (for instance, a certain level or history of need).
 
-Subsets are defined in the `scoring` section of the configuration file as a list of dictionaries specifying a `name` and `query` that identify the set of entities for each subset of interest using `{as_of_date}` as a placeholder for the modeling date. 
+Subsets are defined in the `scoring` section of the configuration file as a list of dictionaries specifying a `name` and `query` that identify the set of entities for each subset of interest using `{as_of_date}` as a placeholder for the modeling date.
 
 Here's a quick example:
 
@@ -388,7 +394,7 @@ scoring:
                 and demographic_date < '{as_of_date}'::date
 ```
 
-When specify subsets, all of the model evaluation metrics will be calculated for each subset you define here, as well as the cohort overall. In the `test_results.evaluations` table, the `subset_hash` column will identify the subset for the evaluation (`NULL` values indicate evaluations on the entire cohort), and can be joined to `model_metadata.subsets` to obtain the name and definition of the subset.
+When specify subsets, all of the model evaluation metrics will be calculated for each subset you define here, as well as the cohort overall. In the `test_results.evaluations` table, the `subset_hash` column will identify the subset for the evaluation (`NULL` values indicate evaluations on the entire cohort), and can be joined to `triage_metadata.subsets` to obtain the name and definition of the subset.
 
 Note that subsets are only used for the purposes of evaluation, while the model will still be trained and scored on the entire cohort described above.
 
@@ -413,13 +419,14 @@ As described above, once your modeling run has completed, you can explore the re
 #### Check the database
 
 Look for results and associated information in:
-- `model_metadata`
+- `triage_metadata`
 - `train_results`
 - `test_results`
 
 #### Run `audition`
 
 More about using `audition`:
+
 - [model selection primer](dirtyduck/audition/).
 - [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)
 - [`audition` README](https://github.com/dssg/triage/tree/master/src/triage/component/audition)
@@ -427,5 +434,6 @@ More about using `audition`:
 #### Run `postmodeling`
 
 More about `postmodeling`:
-- [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) 
+
+- [`postmodeling` README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md)
 - [example `postmodeling` notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)

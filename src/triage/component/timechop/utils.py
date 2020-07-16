@@ -2,14 +2,14 @@ from six import string_types
 
 
 def convert_to_list(x):
-    """Given an object, if it is not a list, convert it to a list.
+    """
+    Given an object, if it is not a list, convert it to a list.
 
-    :param x: an object to be converted to a list
-    :type x: object
+    Arguments:
+        x (object): an object to be converted to a list
 
-    :return: x as a list
-    :rtype: list
-
+    return:
+        list: x as a list
     """
     if isinstance(x, string_types):
         return [x]

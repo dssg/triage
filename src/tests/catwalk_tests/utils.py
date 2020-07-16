@@ -4,8 +4,8 @@ import tempfile
 from contextlib import contextmanager
 import pytest
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import yaml
 
 from triage.component.catwalk.storage import (
@@ -15,7 +15,7 @@ from triage.util.structs import FeatureNameList
 
 
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def sample_metadata():
 
 @pytest.fixture
 def sample_df():
-    return pandas.DataFrame.from_dict(
+    return pd.DataFrame.from_dict(
         {
             "entity_id": [1, 2],
             "feature_one": [3, 4],
@@ -49,10 +49,10 @@ def sample_df():
 
 
 @pytest.fixture
-def sample_matrix_store():
+def sample_matrix_store(sample_df, sample_metadata):
     with tempfile.TemporaryDirectory() as tempdir:
         project_storage = ProjectStorage(tempdir)
         store = project_storage.matrix_storage_engine().get_store("1234")
-        store.matrix = sample_df()
-        store.metadata = sample_metadata()
+        store.matrix = sample_df
+        store.metadata = sample_metadata
         return store

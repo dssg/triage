@@ -4,9 +4,14 @@ services:
   food_db:
     build:
       context: ./food_db
-    image: tutorial/db
-    container_name: tutorial_db
-    env_file: .env
+    image: dirtyduck/db
+    container_name: dirtyduck_db
+    environment:
+      - POSTGRES_HOST=0.0.0.0
+      - POSTGRES_USER=food_user
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=some_password
+      - POSTGRES_DB=food
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -14,19 +19,20 @@ services:
 
   bastion:
     build:
-      context: ./bastion
-    image: tutorial/bastion
-    container_name: tutorial_bastion
-    command: bash
+      context: ..
+      dockerfile: Dockerfile
+      target: development
+    image: dsapp/triage:development
+    container_name: dirtyduck_bastion
     tty: true
     environment:
-      JUPYTER_SESSION_KEY: "c2e3bb2a-f80c7b34d4fe02d7e5be87d9"
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@food_db/${POSTGRES_DB}"
+      - TRIAGE_IMAGE=dirtyduck
+      - DATABASE_URL=postgresql://food_user:some_password@dirtyduck_db/food
+      - TRIAGE_OUTPUT=/triage-output
     volumes:
-      - "./sql:/sql"
-      - "./triage:/triage"
-    ports:
-      - "56406-56410:56406-56410"
+      - "../example/dirtyduck:/dirtyduck"
+      - "../../triage:/triage"
+      - "../dirtyduck-output:/triage-output"
 
 volumes:
   db-data:

@@ -1,8 +1,9 @@
 from functools import partial
 import pandas as pd
 import numpy as np
-import logging
 
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 def downcast_matrix(df):
     """Downcast the numeric values of a matrix.
@@ -16,14 +17,13 @@ def downcast_matrix(df):
     Callers may pass an index-less dataframe if they wish to re-add the index afterwards
     and save memory on the index storage.
     """
-    logging.debug("Downcasting matrix. Starting memory usage: %s", df.memory_usage())
-
-    logging.debug(df.dtypes)
-
+    logger.spam("Downcasting matrix.")
+    logger.spam(f"Starting memory usage: {df.memory_usage(deep=True).sum()} bytes")
+    logger.spam(f"Initial types: \n {df.dtypes}")
     new_df = df.apply(lambda x: x.astype(np.float32))
 
-    logging.debug(new_df.dtypes)
-
-    logging.debug("Downcasted matrix. Final memory usage: %s", new_df.memory_usage())
+    logger.spam("Downcasting matrix completed.")
+    logger.spam(f"Final memory usage: {new_df.memory_usage(deep=True).sum()} bytes")
+    logger.spam(f"Final data types: \n {new_df.dtypes}")
 
     return new_df

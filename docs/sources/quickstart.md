@@ -126,16 +126,40 @@ defaults for others. The primary parameters to specify (for now) are:
    our [guide to Temporal
    Validation](https://dssg.github.io/triage/experiments/temporal-validation/)
 
-2. LABEL config: This is a `sql` query that defines what the outcome of
-   interest is. The query must return two columns: `entity_id` (an integer) and
-   `outcome` (with integer label values of `0` and `1`), based on a given `as_of_date` and `label_timespan` (you can use these parameters in your query by surrounding them with curly braces as in the example below). See our
-   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/). For example, if your data was in a table called `semantic.events` containing columns `entity_id`, `event_date`, and `label`, this query could simply be:
+2. LABEL config: This is a `sql` query that defines the outcome of
+   interest. 
+   
+   The query should return a relation containing the columns
+   - `entity_id`: each `entity_id` affected by an event within the amount of time specified by `label_timespan` after a given `as_of_date`
+   - `outcome`: a binary variable representing the events that happened to each entity, within the period specified by that `as_of_date` and `label_timespan`
+
+   The query is parameterized over `as_of_date`, and `label_timespan`. These parameters are passed to your query as named keywords using the Python's [`str.format()`](https://docs.python.org/3.7/library/stdtypes.html#str.format) method. You can use them in your query by surrounding their keywords with curly braces (as in the example below).
+   
+   See our
+   [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/) for a more in-depth discussion of this topic.
+   
+   **Example Query** 
+   
+   Given a source table called `semantic.events`, with the following structure:
+
+   |entity_id|event_date|label|
+   |-|-|-|
+   |135|2014-06-04|1|
+   |246|2013-11-05|0|
+   |135|2013-04-19|0|
+   
+   Assuming an early-warning problem, where a client wants to predict the likelihood that each entity experiences at least one positive event (such as a failed inspection) within some period of time, we could use the following label query:
+
    ```
    select entity_id, max(label) as outcome
    from semantic.events
    where '{as_of_date}'::timestamp <= event_date
          and event_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
    ```
+
+   For each `as_of_date`, this query returns:
+   - all `entity_ids` that experienced at least one event (such as an inspection) within the amount of time specified by `label_timespan`
+   - a binary variable that equals 1 if an entity experienced at least one positive event (failed inspection), or 0 if all events experienced by the entity had negative results.
 
 3. FEATURE config: This is where we define different aggregate
    features/attributes/variables to be created and used in our machine
@@ -166,31 +190,78 @@ Copy this into a separate text file, fill in your values and save it as `databas
 An overview of different steps that take place when you run Triage is
 [here](https://dssg.github.io/triage/experiments/algorithm/)
 
+For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).
+
+If you want a bit more detail or documentation, a good overview of running an experiment in triage is [here](https://dssg.github.io/triage/experiments/running/)
+
+#### Using Triage CLI:
+
 1. Validate the configuration files by running:
 ```
 triage experiment config.yaml --project-path '/project_directory' --validate-only
 ```
 
-2. Run triage
+2. Run Triage
 ```
 triage experiment config.yaml --project-path '/project_directory'
 ```
 
-For this quickstart, you shouldn't need much free disk space, but note that in general your project path will contain both data matrices and trained model objects, so will need to have ample free space (you can also specify a location in S3 if you don't want to store the files locally).
+#### Using the Triage python interface:
 
-If you want a bit more detail or documentation, a good overview of running an experiment in triage is [here](https://dssg.github.io/triage/experiments/running/).
+1. Import packages and load config files:
+```py
+import yaml
+from triage.experiments import SingleThreadedExperiment
+from sqlalchemy.engine.url import URL
+from triage.util.db import create_engine
 
+with open('config.yaml', 'r') as fin:
+    experiment_config = yaml.load(fin)
+
+with open('database.yaml', 'r') as fin:
+    db_config = yaml.load(fin)
+```
+
+2. Create a database engine and Triage experiment 
+```py
+# create postgres database url
+db_url = URL(
+            'postgres',
+            host=db_config['host'],
+            username=db_config['user'],
+            database=db_config['db'],
+            password=db_config['pass'],
+            port=db_config['port'],
+        )
+
+experiment = SingleThreadedExperiment(
+    config=experiment_config
+    db_engine=create_engine(db_url)
+    project_path='/path/to/directory/to/save/data'
+)
+```
+
+3. Validate your config
+
+```py
+experiment.validate()
+```
+
+4. Run Triage
+```python
+experiment.run()
+```
 
 ### 5. Look at results generated by Triage
 
 Once the feature/cohort/label/matrix building is done and the
 experiment has moved onto modeling, check out the
-`model_metadata.models` and `test_results.evaluations` tables as data
+`triage_metadata.models` and `test_results.evaluations` tables as data
 starts to come in.
 
 Here are a couple of quick queries to help get you started:
 
-Tables in the `model_metadata` schema have some general information about
+Tables in the `triage_metadata` schema have some general information about
 experiments that you've run and the models they created. The `quickstart`
 model grid preset should have built 3 models. You can check that with:
 
@@ -198,7 +269,7 @@ model grid preset should have built 3 models. You can check that with:
 select 
   model_id, model_group_id, model_type 
   from 
-      model_metadata.models;
+      triage_metadata.models;
 ```
 
 This should give you a result that looks something like:
@@ -245,7 +316,7 @@ set as well as feature importances, where defined).
 
 In a more complete modeling run, you could `audition` with jupyter notebooks to help you
 select the best-performing model specifications from a wide variety of options (see the [overview of
-model selection](https://dssg.github.io/triage/dirtyduck/audition/) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
+model selection](https://dssg.github.io/triage/dirtyduck/audition/audition) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
 
 
 ### 6. Iterate and Explore

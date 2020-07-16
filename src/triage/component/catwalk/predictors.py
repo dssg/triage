@@ -1,7 +1,9 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import math
 
-import numpy
+import numpy as np
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import or_
 
@@ -10,14 +12,14 @@ from triage.component.results_schema import Model
 from triage.util.db import scoped_session
 from triage.util.random import generate_python_random_seed
 import ohio.ext.pandas
-import pandas
+import pandas as pd
 
 
 class ModelNotFoundError(ValueError):
     pass
 
 
-class Predictor(object):
+class Predictor:
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
     available_tiebreakers = AVAILABLE_TIEBREAKERS
 
@@ -35,7 +37,7 @@ class Predictor(object):
         Args:
             model_storage_engine (catwalk.storage.ModelStorageEngine)
             db_engine (sqlalchemy.engine)
-            rank_order 
+            rank_order
 
         """
         self.model_storage_engine = model_storage_engine
@@ -60,7 +62,7 @@ class Predictor(object):
         """
 
         model_hash = retrieve_model_hash_from_id(self.db_engine, model_id)
-        logging.info("Checking for model_hash %s in store", model_hash)
+        logger.spam(f"Checking for model_hash {model_hash} in store")
         if self.model_storage_engine.exists(model_hash):
             return self.model_storage_engine.load(model_hash)
 
@@ -121,7 +123,7 @@ class Predictor(object):
         score_iterator = (
             score_lookup[(entity_id, dt.date())] for (entity_id, dt) in index
         )
-        return numpy.fromiter(score_iterator, float)
+        return np.fromiter(score_iterator, float)
 
     @db_retry
     def _write_predictions_to_db(
@@ -187,10 +189,10 @@ class Predictor(object):
         session.merge(orm_obj)
         session.commit()
         session.close()
-        
+
     def _needs_ranks(self, model_id, matrix_uuid, matrix_type):
         if self.replace:
-            logging.debug("replace flag set, will compute and store ranks regardless")
+            logger.info("Replace flag set, will compute and store ranks regardless")
             return True
         with scoped_session(self.db_engine) as session:
             # if the metadata is different (e.g. they changed the rank order)
@@ -201,7 +203,7 @@ class Predictor(object):
                 tiebreaker_ordering=self.rank_order,
             ).exists()).scalar()
             if not metadata_matches:
-                logging.debug("prediction metadata does not match what is in configuration"
+                logger.debug("Prediction metadata does not match what is in configuration"
                               ", will compute and store ranks")
                 return True
 
@@ -217,10 +219,10 @@ class Predictor(object):
                     )
                 ).exists()).scalar()
             if any_nulls_in_ranks:
-                logging.debug("At least one null in rankings in predictions table",
+                logger.debug("At least one null in rankings in predictions table",
                               ", will compute and store ranks")
                 return True
-        logging.debug("No need to recompute prediction ranks")
+        logger.debug("No need to recompute prediction ranks")
         return False
 
     def update_db_with_ranks(self, model_id, matrix_uuid, matrix_type):
@@ -236,20 +238,19 @@ class Predictor(object):
             matrix_uuid (string) the uuid of the prediction matrix
         """
         if not self.save_predictions:
-            logging.info("save_predictions is set to False so there are no predictions to rank")
+            logger.info("save_predictions is set to False so there are no predictions to rank")
             return
-        logging.info(
-            'Beginning ranking of new Predictions for model %s, matrix %s',
-            model_id,
-            matrix_uuid
+
+        logger.debug(
+            f"Beginning ranking of new Predictions for model {model_id}, matrix {matrix_uuid}"
         )
 
         # retrieve a dataframe with only the data we need to rank
-        ranking_df = pandas.DataFrame.pg_copy_from(
+        ranking_df = pd.DataFrame.pg_copy_from(
             f"""select entity_id, score, as_of_date, label_value
             from {matrix_type.string_name}_results.predictions
             where model_id = {model_id} and matrix_uuid = '{matrix_uuid}'
-            """, engine=self.db_engine)
+            """, connectable=self.db_engine)
 
         sort_seed = None
         if self.rank_order == 'random':
@@ -266,7 +267,7 @@ class Predictor(object):
             parallel_arrays=(ranking_df['entity_id'], ranking_df['as_of_date']),
         )
         ranking_df['score'] = sorted_predictions.values
-        ranking_df['as_of_date'] = pandas.to_datetime(sorted_arrays[1].values)
+        ranking_df['as_of_date'] = pd.to_datetime(sorted_arrays[1].values)
         ranking_df['label_value'] = sorted_labels.values
         ranking_df['entity_id'] = sorted_arrays[0].values
         # at this point, we have the same dataframe that we loaded from postgres,
@@ -276,7 +277,7 @@ class Predictor(object):
         # our secondary ordering is baked in, enabling the 'first' method to break ties.
         ranking_df['rank_abs_no_ties'] = ranking_df['score'].rank(ascending=False, method='first')
         ranking_df['rank_abs_with_ties'] = ranking_df['score'].rank(ascending=False, method='min')
-        ranking_df['rank_pct_no_ties'] = numpy.array([1 - (rank - 1) / len(ranking_df) for rank in ranking_df['rank_abs_no_ties']])
+        ranking_df['rank_pct_no_ties'] = np.array([1 - (rank - 1) / len(ranking_df) for rank in ranking_df['rank_abs_no_ties']])
         ranking_df['rank_pct_with_ties'] = ranking_df['score'].rank(method='min', pct=True)
 
         # with our rankings computed, update these ranks into the existing rows
@@ -301,10 +302,8 @@ class Predictor(object):
             matrix_type=matrix_type,
             random_seed=sort_seed,
         )
-        logging.info(
-            'Completed ranking of new Predictions for model %s, matrix %s',
-            model_id,
-            matrix_uuid
+        logger.info(
+            f"Completed ranking of new Predictions for model {model_id}, matrix {matrix_uuid}"
         )
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
@@ -320,16 +319,14 @@ class Predictor(object):
                 was trained on
 
         Returns:
-            (numpy.Array) the generated prediction values
+            (np.Array) the generated prediction values
         """
         # Setting the Prediction object type - TrainPrediction or TestPrediction
         matrix_type = matrix_store.matrix_type
 
         if not self.replace:
-            logging.info(
-                "replace flag not set for model id %s, matrix %s, looking for old predictions",
-                model_id,
-                matrix_store.uuid,
+            logger.info(
+                f"Replace flag not set for model id {model_id}, matrix {matrix_store.uuid}, looking for old predictions"
             )
             try:
                 session = self.sessionmaker()
@@ -337,34 +334,30 @@ class Predictor(object):
                     matrix_type.prediction_obj, session, model_id, matrix_store
                 )
                 if existing_predictions.count() == len(matrix_store.index):
-                    logging.info(
-                        "Found predictions for model id %s, matrix %s, returning saved versions",
-                        model_id,
-                        matrix_store.uuid,
+                    logger.info(
+                        f"Found predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
                     )
                     return self._load_saved_predictions(existing_predictions, matrix_store)
             finally:
                 session.close()
 
         model = self.load_model(model_id)
-        logging.info("Loaded model %s", model_id)
+        logger.spam(f"Loaded model {model_id}")
         if not model:
-            raise ModelNotFoundError("Model id {} not found".format(model_id))
+            raise ModelNotFoundError(f"Model # {model_id} not found")
 
-        # Labels are popped from matrix (IE, they are removed and returned)
+        # Labels are popped from matrix (i.e. they are removed and returned)
         labels = matrix_store.labels
 
         predictions_proba = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )
-        logging.info(
-            "Generated predictions for model %s, matrix %s", model_id, matrix_store.uuid
+        logger.debug(
+            f"Generated predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}"
         )
         if self.save_predictions:
-            logging.info(
-                "Writing predictions for model %s, matrix %s to database",
-                model_id,
-                matrix_store.uuid,
+            logger.spam(
+                f"Writing predictions for model {model_id} on {matrix_store.matrix_type.string_name}  matrix {matrix_store.uuid} to database"
             )
             self._write_predictions_to_db(
                 model_id,
@@ -374,23 +367,19 @@ class Predictor(object):
                 misc_db_parameters,
                 matrix_type.prediction_obj,
             )
-            logging.info(
-                "Wrote predictions for model %s, matrix %s to database",
-                model_id,
-                matrix_store.uuid,
+            logger.debug(
+                f"Wrote predictions for model {model_id} on  {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid} to database"
             )
         else:
-            logging.info(
-                "Skipping prediction database sync for model %s, matrix %s because "
-                "save_predictions was marked False",
-                model_id,
-                matrix_store.uuid,
+            logger.notice(
+                f"Predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}  weren't written to the db because, because you asked not to do so"
             )
+            logger.spam(f"Status of the save_predictions flag: {self.save_predictions}")
             self._write_metadata_to_db(
                 model_id=model_id,
                 matrix_uuid=matrix_store.uuid,
                 matrix_type=matrix_type,
                 random_seed=None,
             )
-        
+
         return predictions_proba[:, 1]
