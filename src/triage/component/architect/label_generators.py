@@ -129,4 +129,4 @@ class LabelGenerator:
         self.db_engine.execute(full_insert_query)
 
     def clean_up(self, labels_table_name):
-        self.db_engine.execute("drop table if exists {labels_table_name}")
+        self.db_engine.execute(f"drop table if exists {labels_table_name}")
