@@ -11,6 +11,8 @@ theme:
     logo: ./material/book
   favicon: 'assets/images/favicon.ico'
 
+site_url: http://dssg.github.io/triage
+
 docs_dir: sources
 repo_name: 'dssg/triage'
 repo_url: http://github.com/dssg/triage
@@ -73,10 +75,8 @@ plugins:
         python:
           rendering:
             show_source: false
-            show_root_full_path: true
-            show_root_heading: true
       watch:
-        - ../src/triage
+        - src/triage
 
 
 nav:
@@ -127,7 +127,4 @@ nav:
               - Audition Configuration: api/audition/audition-config.md
               - Selection Rules: api/audition/selection_rules.md
               - Database Dependencies: api/audition/database-dependencies.md
-          - Timechop:
-              - Timechop: api/timechop/timechop.md
-              - Plotting: api/timechop/plotting.md
 
