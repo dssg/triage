@@ -61,10 +61,10 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
 @db_retry
-def save_experiment_and_get_hash(config, db_engine):
+def save_experiment_and_get_hash(config, random_seed, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
+    session.merge(Experiment(experiment_hash=experiment_hash, random_seed=random_seed, config=config))
     session.commit()
     session.close()
     return experiment_hash
