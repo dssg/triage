@@ -22,6 +22,9 @@ class ProtectedGroupsGeneratorNoOp:
         )
 
     def as_dataframe(self, *args, **kwargs):
+        logger.notice(
+            "No bias audit configuration is available, so protected groups were not created: returning an empty data frame"
+        )
         return pd.DataFrame()
 
 

@@ -15,10 +15,6 @@ import ohio.ext.pandas
 import pandas as pd
 
 
-class ModelNotFoundError(ValueError):
-    pass
-
-
 class Predictor:
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
     available_tiebreakers = AVAILABLE_TIEBREAKERS
@@ -78,6 +74,7 @@ class Predictor:
 
     @db_retry
     def _existing_predictions(self, Prediction_obj, session, model_id, matrix_store):
+        logger.debug(f"Looking for existing predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix [{matrix_store.uuid}]")
         return (
             session.query(Prediction_obj)
             .filter_by(model_id=model_id)
@@ -333,6 +330,7 @@ class Predictor:
                 existing_predictions = self._existing_predictions(
                     matrix_type.prediction_obj, session, model_id, matrix_store
                 )
+                logger.spam(f"Existing predictions length: {existing_predictions.count()}, Length of matrix: {len(matrix_store.index)}")
                 if existing_predictions.count() == len(matrix_store.index):
                     logger.info(
                         f"Found predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
@@ -342,9 +340,9 @@ class Predictor:
                 session.close()
 
         model = self.load_model(model_id)
-        logger.spam(f"Loaded model {model_id}")
         if not model:
-            raise ModelNotFoundError(f"Model # {model_id} not found")
+            raise ValueError(f"Model id {model_id} not found")
+        logger.spam(f"Loaded model {model_id}")
 
         # Labels are popped from matrix (i.e. they are removed and returned)
         labels = matrix_store.labels
@@ -359,6 +357,7 @@ class Predictor:
             logger.spam(
                 f"Writing predictions for model {model_id} on {matrix_store.matrix_type.string_name}  matrix {matrix_store.uuid} to database"
             )
+
             self._write_predictions_to_db(
                 model_id,
                 matrix_store,
@@ -375,11 +374,12 @@ class Predictor:
                 f"Predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}  weren't written to the db because, because you asked not to do so"
             )
             logger.spam(f"Status of the save_predictions flag: {self.save_predictions}")
-            self._write_metadata_to_db(
-                model_id=model_id,
-                matrix_uuid=matrix_store.uuid,
-                matrix_type=matrix_type,
-                random_seed=None,
-            )
+
+        self._write_metadata_to_db(
+            model_id=model_id,
+            matrix_uuid=matrix_store.uuid,
+            matrix_type=matrix_type,
+            random_seed=None,
+        )
 
         return predictions_proba[:, 1]

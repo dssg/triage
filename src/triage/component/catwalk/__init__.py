@@ -38,7 +38,7 @@ class ModelTrainTester:
         self.predictor = predictor
         self.subsets = subsets
         self.replace = replace
-        self.protected_groups_generator = protected_groups_generator or ProtectedGroupsGeneratorNoOp()
+        self.protected_groups_generator = protected_groups_generator
         self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
@@ -105,6 +105,9 @@ class ModelTrainTester:
         logger.verbose("Split train/test tasks into three task batches. - each batch has models from all splits")
         for batch_num, batch in enumerate(batches, 1):
             logger.verbose(f"Batch {batch_num}: {batch.description} ({len(batch.tasks)} tasks total)")
+
+
+
         return batches
 
 
@@ -154,11 +157,11 @@ class ModelTrainTester:
             model_id = self.model_trainer.process_train_task(**train_kwargs)
 
             if not model_id:
-                logger.warning("No model id returned from ModelTrainer.process_train_task, "
-                               "training unsuccessful. Not attempting to test")
+                logger.warning("Training unsuccessful for {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. "
+                               "No model id returned.  Not attempting to test it")
                 return
 
-            logger.success(f"Trained  {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] and got model id {model_id}")
+            logger.success(f"Trained model id {model_id}: {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. ")
 
             # Storing individual importances (if any)
             self.individual_importance_calculator.calculate_and_save_all_methods_and_dates(
@@ -171,37 +174,62 @@ class ModelTrainTester:
                 f"on test matrix {test_store.uuid}. ")
             logger.spam(f"as_of_times min: {min(as_of_dates)} max: {max(as_of_dates)} num: {len(as_of_dates)}")
 
+
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                predictions_proba = np.array(None)
-                protected_df = None
+                if self.replace or self.model_evaluator.needs_evaluations(store, model_id):
+                    logger.spam(
+                        f"Generating new predictions for "
+                        f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
+                    )
+
+                    predictions_proba = self.predictor.predict(
+                        model_id,
+                        store,
+                        misc_db_parameters=dict(),
+                        train_matrix_columns=train_store.columns(),
+                    )
+
+                    logger.debug(f"Predictions generated for {store.matrix_type.string_name} matrix {store.uuid} using model {model_id}")
+
+
+                    protected_df = self.protected_groups_generator.as_dataframe(
+                        as_of_dates=store.as_of_dates,
+                        cohort_hash=self.cohort_hash,
+                    )
+
+                    logger.spam(
+                        f"Evaluating model {model_id} on {store.matrix_type.string_name} matrix {store.uuid} "
+                    )
+
+                    self.model_evaluator.evaluate(
+                        predictions_proba=predictions_proba,
+                        matrix_store=store,
+                        model_id=model_id,
+                        subset=None,
+                        protected_df=protected_df
+                    )
+
+                    logger.info(
+                        f"Model {model_id} evaluation on {store.matrix_type.string_name} matrix {store.uuid} completed."
+                    )
+
+                else:
+                    logger.notice(
+                        f"The evaluations needed for {store.matrix_type.string_name} matrix {store.uuid} and "
+                        f"model {model_id} are all present"
+                        f"in db from a previous run (or none needed at all), so skipping!",
+                    )
+
 
                 for subset in self.subsets:
-                    if self.replace or self.model_evaluator.needs_evaluations(store, model_id, filename_friendly_hash(subset)):
+                    subset_hash = filename_friendly_hash(subset)
+                    if self.replace or self.model_evaluator.needs_evaluations(store, model_id, subset_hash):
 
-                        logger.debug(
-                            f"Evaluating {store.matrix_type.string_name} matrix {store.uuid}, subset {filename_friendly_hash(subset)}, and model {model_id}"
+                        logger.spam(
+                            f"Evaluating {store.matrix_type.string_name} matrix {store.uuid}, subset {subset_hash}, and model {model_id}"
                         )
 
-
-                        logger.debug(
-                            f"Generating new predictions for "
-                            f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
-                        )
-
-                        predictions_proba = self.predictor.predict(
-                            model_id,
-                            store,
-                            misc_db_parameters=dict(),
-                            train_matrix_columns=train_store.columns(),
-                        )
-
-
-                        if protected_df is None:
-                            protected_df = self.protected_groups_generator.as_dataframe(
-                                as_of_dates=store.as_of_dates,
-                                cohort_hash=self.cohort_hash,
-                            )
 
                         self.model_evaluator.evaluate(
                             predictions_proba=predictions_proba,
@@ -211,13 +239,19 @@ class ModelTrainTester:
                             protected_df=protected_df
                         )
 
+                        logger.info(
+                            f"Model {model_id} evaluation on subset {filename_friendly_hash(subset)} of {store.matrix_type.string_name} matrix {store.uuid} completed."
+                        )
+
                     else:
-                        logger.debug(
+                        logger.notice(
                             f"The evaluations needed for {store.matrix_type.string_name} matrix {store.uuid}, subset {filename_friendly_hash(subset)}, and "
                             f"model {model_id} are all present"
                             f"in db from a previous run (or none needed at all), so skipping!",
                         )
-                self.predictor.update_db_with_ranks(model_id, store.uuid, store.matrix_type)
+
+
+#                self.predictor.update_db_with_ranks(model_id, store.uuid, store.matrix_type)
 
 
 __all__ = (

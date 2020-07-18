@@ -316,7 +316,6 @@ class Experiment(Command):
                 self.experiment.run()
                 logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
             except Exception:
-                logger.exception(f"Run failed!")
                 logger.critical(f"Experiment [config file: {self.args.config}] run failed!")
 
 
