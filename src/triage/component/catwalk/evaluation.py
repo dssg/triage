@@ -552,7 +552,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_worst, labels_worst, metric_defs)
         }
-        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative labels first')
+        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative and NULL labels first')
 
         # 2. get best sorting
         predictions_proba_best, labels_best = sort_predictions_and_labels(
@@ -565,7 +565,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
-        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first')
+        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first, NULL labels at the end')
 
         evals_without_trials = dict()
 

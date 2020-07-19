@@ -271,7 +271,6 @@ class Predictor:
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
         )[:, 1]  # Returning only the scores for the label == 1
 
-        logger.critical(f"Predictions: {predictions}")
 
         logger.debug(
             f"Generated predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}"
@@ -281,16 +280,15 @@ class Predictor:
             df['label_value'] = matrix_store.labels
             df['score'] = predictions
 
-            logger.critical(f"DF reconstruido: \n {df}")
 
-            logger.critical(f"Sorting predictions for model {model_id} using {self.rank_order}")
+            logger.spam(f"Sorting predictions for model {model_id} using {self.rank_order}")
 
             if self.rank_order == 'best':
                 df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,False], na_position='last')
             elif self.rank_order == 'worst':
                 df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
             elif self.rank_order == 'random':
-                pass
+                df.sample(frac=1).sort_values(by='score', inplace=True, ascending=False)
             else:
                 raise ValueError(f"Rank order specified in condiguration file not recognized: {self.rank_order} ")
 
@@ -300,7 +298,7 @@ class Predictor:
             df['rank_pct_with_ties'] = df['score'].rank(ascending=False, method='dense', pct=True)
 
             df.reset_index(inplace=True)
-            logger.critical(f"DF sorted: \n {df}")
+            logger.debug(f"Predictions on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid} from model {model_id} sorted using {self.rank_order}")
 
             logger.spam(
                 f"Writing predictions for model {model_id} on {matrix_store.matrix_type.string_name}  matrix {matrix_store.uuid} to database"
