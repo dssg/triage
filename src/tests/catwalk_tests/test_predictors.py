@@ -125,65 +125,6 @@ def test_predictions_table(predictor, predict_proba, matrix_type):
     assert len(records) == 6
 
 
-def update_ranks_test(
-        predictor,
-        entities_scores_labels,
-        rank_col,
-        expected_result,
-        model_random_seed=12345,
-        need_seed_data=True
-):
-    """Not a test in itself but rather a utility called by many of the ranking tests"""
-    ensure_db(predictor.db_engine)
-    init_engine(predictor.db_engine)
-    model_id = 5
-    matrix_uuid = "4567"
-    matrix_type = "test"
-    as_of_date = datetime.datetime(2012, 1, 1)
-    if need_seed_data:
-        matrix = MatrixFactory(matrix_uuid=matrix_uuid)
-        model = ModelFactory(model_id=model_id, random_seed=model_random_seed)
-        for entity_id, score, label in entities_scores_labels:
-            PredictionFactory(
-                model_rel=model,
-                matrix_rel=matrix,
-                as_of_date=as_of_date,
-                entity_id=entity_id,
-                score=score,
-                label_value=int(label)
-            )
-        factory_session.commit()
-    predictor.update_db_with_ranks(
-        model_id=model_id,
-        matrix_uuid=matrix_uuid,
-        matrix_type=TestMatrixType,
-    )
-    ranks = tuple(
-        row for row in predictor.db_engine.execute(f'''
-select entity_id, {rank_col}::float
-from {matrix_type}_results.predictions
-where as_of_date = %s and model_id = %s and matrix_uuid = %s order by {rank_col} asc''',
-                                                   (as_of_date, model_id, matrix_uuid)
-                                                   )
-    )
-    assert ranks == expected_result
-
-    # Test that the predictions metadata table is populated
-    metadata_records = [row for row in predictor.db_engine.execute(
-        f"""select tiebreaker_ordering, prediction_metadata.random_seed, models.random_seed
-        from {matrix_type}_results.prediction_metadata
-        join triage_metadata.models using (model_id)
-        join triage_metadata.matrices using (matrix_uuid)
-        """
-    )]
-    assert len(metadata_records) == 1
-    tiebreaker_ordering, random_seed, received_model_random_seed = metadata_records[0]
-    if tiebreaker_ordering == 'random':
-        assert random_seed is model_random_seed
-    else:
-        assert not random_seed
-    assert tiebreaker_ordering == predictor.rank_order
-    assert received_model_random_seed == model_random_seed
 
 
 def test_predictions_abs_ranks_no_ties(project_storage, db_engine):
@@ -345,60 +286,6 @@ def test_predictions_abs_ranks_no_ties_user_seed(project_storage, db_engine):
         model_random_seed=15,
         need_seed_data=False
     )
-
-
-def test_prediction_ranks_multiple_dates(project_storage, db_engine):
-    """make sure that multiple as-of-dates in a single matrix are handled correctly.
-    keep the other variables simple by making no within-date ties that would end up
-    testing the tiebreaker logic, just data for two dates with data that could theoretically
-    confound a bad ranking method:
-    - a different order for entities in both dates
-    - each date has some not in the other
-    """
-    ensure_db(db_engine)
-    init_engine(db_engine)
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
-    model_id = 5
-    matrix_uuid = "4567"
-    matrix_type = "test"
-    entities_dates_and_scores = (
-        (23, datetime.datetime(2012, 1, 1), 0.95),
-        (34, datetime.datetime(2012, 1, 1), 0.94),
-        (45, datetime.datetime(2013, 1, 1), 0.92),
-        (23, datetime.datetime(2013, 1, 1), 0.45),
-    )
-    expected_result = (
-        (23, datetime.datetime(2012, 1, 1), 1),
-        (34, datetime.datetime(2012, 1, 1), 2),
-        (45, datetime.datetime(2013, 1, 1), 3),
-        (23, datetime.datetime(2013, 1, 1), 4),
-    )
-    matrix = MatrixFactory(matrix_uuid=matrix_uuid)
-    model = ModelFactory(model_id=model_id)
-    for entity_id, as_of_date, score in entities_dates_and_scores:
-        PredictionFactory(
-            model_rel=model,
-            matrix_rel=matrix,
-            as_of_date=as_of_date,
-            entity_id=entity_id,
-            score=score
-        )
-    factory_session.commit()
-    predictor.update_db_with_ranks(
-        model_id=model_id,
-        matrix_uuid=matrix_uuid,
-        matrix_type=TestMatrixType,
-    )
-    ranks = tuple(
-        row for row in predictor.db_engine.execute(f'''
-select entity_id, as_of_date, rank_abs_no_ties
-from {matrix_type}_results.predictions
-where model_id = %s and matrix_uuid = %s order by rank_abs_no_ties''',
-                                                   (model_id, matrix_uuid)
-                                                   )
-    )
-    assert ranks == expected_result
-
 
 @with_matrix_types
 def test_predictor_save_predictions(matrix_type, predict_setup_args):

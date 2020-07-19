@@ -251,9 +251,6 @@ class ModelTrainTester:
                         )
 
 
-#                self.predictor.update_db_with_ranks(model_id, store.uuid, store.matrix_type)
-
-
 __all__ = (
     "IndividualImportanceCalculator",
     "ModelEvaluator",
