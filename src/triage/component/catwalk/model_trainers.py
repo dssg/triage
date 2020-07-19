@@ -219,6 +219,7 @@ class ModelTrainer:
                 hyperparameters=parameters,
                 model_group_id=model_group_id,
                 built_by_experiment=self.experiment_hash,
+                built_in_experiment_run=self.run_id,
                 model_size=model_size,
                 **misc_db_parameters,
             )
@@ -366,7 +367,7 @@ class ModelTrainer:
                 and self.model_storage_engine.exists(model_hash)
                 and saved_model_id
             ):
-                logger.debug(f"Skipping model {saved_model_id} {class_path}/{parameters}")
+                logger.debug(f"Skipping model {saved_model_id} {class_path} {parameters}")
                 if self.run_id:
                     skipped_model(self.run_id, self.db_engine)
                 return saved_model_id

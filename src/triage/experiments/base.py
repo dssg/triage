@@ -206,6 +206,7 @@ class ExperimentBase(ABC):
                           "e.g. new models per model group are trained, "
                           "tested and evaluated everytime that you run this experiment configuration")
 
+
         self.random_seed = self.config.pop('random_seed', random.randint(1,1e7))
 
         logger.verbose(f"Using random seed [{self.random_seed}] for running the experiment")
@@ -218,6 +219,7 @@ class ExperimentBase(ABC):
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
             experiment_class_path=classpath(self.__class__),
+            random_seed=self.random_seed,
             experiment_kwargs=experiment_kwargs,
             db_engine=self.db_engine
         )

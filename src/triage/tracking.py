@@ -96,6 +96,7 @@ def infer_log_location():
 def initialize_tracking_and_get_run_id(
     experiment_hash,
     experiment_class_path,
+    random_seed,
     experiment_kwargs,
     db_engine
 ):
@@ -104,6 +105,7 @@ def initialize_tracking_and_get_run_id(
     Args:
         experiment_hash (str) An experiment hash that exists in the experiments table
         experiment_class_path (str) The name of the experiment subclass used
+        random_seed (int) Random seed used to run the experiment
         experiment_kwargs (dict) Any runtime Experiment keyword arguments that should be saved
         db_engine (sqlalchemy.engine)
     """
@@ -128,6 +130,7 @@ def initialize_tracking_and_get_run_id(
         ec2_instance_type=infer_ec2_instance_type(),
         log_location=infer_log_location(),
         experiment_class_path=experiment_class_path,
+        random_seed = random_seed,
         experiment_kwargs=cleaned_experiment_kwargs,
     )
     run_id = None
