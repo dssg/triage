@@ -7,7 +7,7 @@ from triage.experiments import ExperimentBase
 try:
     from rq import Queue
 except ImportError:
-    print(
+    logger.error(
         "rq not available. To use RQExperiment, install triage with the RQ extension: "
         "pip install triage[rq]"
     )
