@@ -304,7 +304,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
     assert records == ["accuracy", "roc_auc"]
 
     # Run tests for overall and subset evaluations
-    for subset in [None] + SUBSETS:
+    for subset in SUBSETS:
         if subset is None:
             where_hash = ""
         else:
@@ -567,7 +567,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
 
     # the evaluated model has test evaluations for precision, but not recall,
     # so this needs evaluations
-    for subset in [None] + SUBSETS:
+    for subset in SUBSETS:
         if not subset:
             subset_hash = ""
         else:
@@ -588,7 +588,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
 
     # the evaluated model has test evaluations for precision,
     # so this should not need evaluations
-    for subset in [None] + SUBSETS:
+    for subset in SUBSETS:
         if not subset:
             subset_hash = ""
         else:
@@ -609,7 +609,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
 
     # the non-evaluated model has no evaluations,
     # so this should need evaluations
-    for subset in [None] + SUBSETS:
+    for subset in SUBSETS:
         if not subset:
             subset_hash = ""
         else:
@@ -630,7 +630,7 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
 
     # the evaluated model has no *train* evaluations,
     # so the train matrix should need evaluations
-    for subset in [None] + SUBSETS:
+    for subset in SUBSETS:
         if not subset:
             subset_hash = ""
         else:

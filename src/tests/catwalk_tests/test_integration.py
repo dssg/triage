@@ -19,7 +19,7 @@ def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_
     model_storage_engine = ModelStorageEngine(project_storage)
     matrix_storage_engine = MatrixStorageEngine(project_storage)
     sample_matrix_store = get_matrix_store(project_storage)
-    experiment_hash = save_experiment_and_get_hash({}, db_engine)
+    experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
     # instantiate pipeline objects
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
@@ -87,7 +87,7 @@ def setup_model_train_tester(project_storage, replace):
         model_evaluator=evaluator,
         individual_importance_calculator=individual_importance_calculator,
         predictor=predictor,
-        subsets=[None],
+        subsets=[],
         replace=replace,
         protected_groups_generator=protected_groups_generator
     )

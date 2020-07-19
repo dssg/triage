@@ -64,9 +64,9 @@ def test_save_experiment_and_get_hash():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
-        exp_hash = save_experiment_and_get_hash(experiment_config, engine)
+        exp_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
         assert isinstance(exp_hash, str)
-        new_hash = save_experiment_and_get_hash(experiment_config, engine)
+        new_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
         assert new_hash == exp_hash
 
 
@@ -75,7 +75,7 @@ def test_missing_model_hashes():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
 
-        experiment_hash = save_experiment_and_get_hash({}, db_engine)
+        experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
         model_hashes = ['abcd', 'bcde', 'cdef']
 
         # if we associate model hashes with an experiment but don't actually train the models
@@ -96,7 +96,7 @@ def test_missing_matrix_uuids():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
 
-        experiment_hash = save_experiment_and_get_hash({}, db_engine)
+        experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
         matrix_uuids = ['abcd', 'bcde', 'cdef']
 
         # if we associate matrix uuids with an experiment but don't actually build the matrices
