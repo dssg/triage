@@ -5,14 +5,14 @@ formatters:
     format: '%(asctime)s - %(message)s'
   colored_console:
     (): 'coloredlogs.ColoredFormatter'
-    format: '%(asctime)s :: %(levelname)7s %(message)s'
+    format: '%(asctime)s - %(levelname)7s %(message)s'
   rich:
     format: '%(name)-30s  %(asctime)s %(levelname)10s %(process)6d  %(filename)-24s  %(lineno)4d: %(message)s'
     datefmt: '%d/%m/%Y %I:%M:%S %p'
 
 handlers:
   console:
-    level: 15  # VERBOSE
+    level: 15 # VERBOSE
     class: logging.StreamHandler
     formatter: colored_console
     stream: ext://sys.stdout
