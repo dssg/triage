@@ -293,7 +293,10 @@ class Predictor:
                 raise ValueError(f"Rank order specified in condiguration file not recognized: {self.rank_order} ")
 
             df['rank_abs_no_ties'] = df['score'].rank(ascending=False, method='first')
+            # uses the lowest rank in the group
             df['rank_abs_with_ties'] = df['score'].rank(ascending=False, method='min')
+            # No gaps between groups (so it reaches 1.0). We are using rank_abs_no_ties so we can
+            # respect that order (instead of using the mathematical formula,  as was done before)
             df['rank_pct_no_ties'] = df['rank_abs_no_ties'].rank(ascending=True, method='dense', pct=True)
             df['rank_pct_with_ties'] = df['score'].rank(ascending=False, method='dense', pct=True)
 
