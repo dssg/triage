@@ -62,17 +62,14 @@ class RQExperiment(ExperimentBase):
             num_pending = sum(
                 1 for job in jobs if not job.is_finished and not job.is_failed
             )
-            logger.info(
-                "Report: jobs %s done, %s failed, %s pending",
-                num_done,
-                num_failed,
-                num_pending,
+            logger.debug(
+                f"Report: jobs {num_done} done, {num_failed} failed, {num_pending} pending",
             )
             if num_pending == 0:
-                logger.info("All jobs completed or failed, returning")
+                logger.verbose("All jobs completed or failed, returning")
                 return [job.result for job in jobs]
             else:
-                logger.info("Sleeping for %s seconds", self.sleep_time)
+                logger.spam("Sleeping for {self.sleep_time} seconds")
                 time.sleep(self.sleep_time)
 
     def process_query_tasks(self, query_tasks):
@@ -100,7 +97,7 @@ class RQExperiment(ExperimentBase):
             }
         """
         for table_name, tasks in query_tasks.items():
-            logger.info("Processing features for %s", table_name)
+            logger.spam(f"Processing features for {table_name}")
             self.feature_generator.run_commands(tasks.get("prepare", []))
 
             insert_batches = [
@@ -119,7 +116,7 @@ class RQExperiment(ExperimentBase):
             self.wait_for(jobs)
 
             self.feature_generator.run_commands(tasks.get("finalize", []))
-            logger.info("%s completed", table_name)
+            logger.debug(f"{table_name} completed")
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ
