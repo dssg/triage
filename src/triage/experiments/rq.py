@@ -103,6 +103,7 @@ class RQExperiment(ExperimentBase):
             insert_batches = [
                 list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
             ]
+
             jobs = [
                 self.queue.enqueue(
                     self.feature_generator.run_commands,
@@ -113,6 +114,7 @@ class RQExperiment(ExperimentBase):
                 )
                 for insert_batch in insert_batches
             ]
+
             self.wait_for(jobs)
 
             self.feature_generator.run_commands(tasks.get("finalize", []))
