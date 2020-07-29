@@ -53,6 +53,7 @@ setup(
     url='https://github.com/dssg/triage',
     packages=find_packages('src', exclude=['tests', 'tests.*']),
     package_dir={'': 'src'},
+    package_data={'': ['config/*.yaml']},
     include_package_data=True,
     install_requires=REQUIREMENTS,
     entry_points={
@@ -71,7 +72,6 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    data_files=[('config', ['config/logging.yaml'])],
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST
 )

@@ -10,6 +10,7 @@ recursive-include src model_group_stored_procedure.sql
 recursive-include src/tests *
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 recursive-include src *.yaml
+recursive-include config *.yaml
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
