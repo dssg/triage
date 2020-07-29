@@ -288,7 +288,7 @@ class Predictor:
             elif self.rank_order == 'worst':
                 df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
             elif self.rank_order == 'random':
-                df = df.sample(frac=1).sort_values(by='score', inplace=True, ascending=False)
+                df.sample(frac=1).sort_values(by='score', inplace=True, ascending=False)
             else:
                 raise ValueError(f"Rank order specified in condiguration file not recognized: {self.rank_order} ")
 
