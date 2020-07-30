@@ -33,5 +33,4 @@ class Docs(Local):
     """View Triage documentation through local server"""
     def prepare(self, args):
         yield plumlocal['python']['docs/update_docs.py']
-        with plumlocal.cwd(ROOT_PATH / 'docs'):
-            yield plumlocal['mkdocs']['serve']
+        yield plumlocal['mkdocs']['serve']['-f']['docs/mkdocs.yml']
