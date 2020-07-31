@@ -52,7 +52,6 @@ RUN pip install --no-cache-dir ipython jupyter
 COPY --chown=triage:triage README.md .
 COPY --chown=triage:triage LICENSE .
 COPY --chown=triage:triage src/ src/
-COPY --chown=triage:triage config/ config/
 COPY --chown=triage:triage setup.py .
 
 
