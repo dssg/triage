@@ -288,7 +288,7 @@ class Predictor:
             elif self.rank_order == 'worst':
                 df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
             elif self.rank_order == 'random':
-                df['random'] = np,random.rand(len(df))
+                df['random'] = np.random.rand(len(df))
                 df.sort_values(by=['score', 'random'], inplace=True, ascending=[False, False])
                 df.drop('random', axis=1)
             else:
