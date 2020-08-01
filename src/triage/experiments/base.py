@@ -420,7 +420,7 @@ class ExperimentBase(ABC):
         else:
             self.individual_importance_calculator = IndividualImportanceCalculatorNoOp()
             logger.notice(
-                "individual_importance missing in the configuration file or unrecognized ."
+                "individual_importance missing in the configuration file or unrecognized, "
                 "you will not be able to do analysis on individual feature importances."
             )
 
