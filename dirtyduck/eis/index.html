@@ -1,1199 +1,739 @@
 
+<!DOCTYPE html>
 
-
-
-<!doctype html>
-<html lang="en" class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
-      
-        <meta name="description" content="Documentation for Triage.">
-      
-      
-      
-      
-        <meta name="lang:clipboard.copy" content="Copy to clipboard">
-      
-        <meta name="lang:clipboard.copied" content="Copied to clipboard">
-      
-        <meta name="lang:search.language" content="en">
-      
-        <meta name="lang:search.pipeline.stopwords" content="True">
-      
-        <meta name="lang:search.pipeline.trimmer" content="True">
-      
-        <meta name="lang:search.result.none" content="No matching documents">
-      
-        <meta name="lang:search.result.one" content="1 matching document">
-      
-        <meta name="lang:search.result.other" content="# matching documents">
-      
-        <meta name="lang:search.tokenizer" content="[\s\-]+">
-      
-      <link rel="shortcut icon" href="../../assets/images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.2.0">
-    
-    
-      
-        <title>Early Warning System - Triage Documentation</title>
-      
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application.750b69bd.css">
-      
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.224b79ff.css">
-      
-      
-        
-        
-        <meta name="theme-color" content="#546e7a">
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
-    
-    
-      
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700|Ubuntu+Mono">
-        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
-      
-    
-    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
-    
-    
-    
-      
-    
-    
-  </head>
-  
-    
-    
-    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="deep-orange">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
-    viewBox="0 0 416 448" id="__github">
-  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
-        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
-        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
-        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
-        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
-        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
-        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
-        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
-        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
-        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
-        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
-        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
-        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
-        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
-        99.5z" />
-</svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-    
-      <a href="#an-early-intervention-system-chicago-food-inspections" tabindex="1" class="md-skip">
-        Skip to content
-      </a>
-    
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../.." title="Triage Documentation" class="md-header-nav__button md-logo">
-          
-            <i class="md-icon">book</i>
-          
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="Documentation for Triage." name="description"/>
+<link href="http://dssg.github.io/triage/dirtyduck/eis/" rel="canonical"/>
+<link href="../../assets/images/favicon.ico" rel="shortcut icon"/>
+<meta content="mkdocs-1.1.2, mkdocs-material-5.4.0" name="generator"/>
+<title>Early Warning System - Triage Documentation</title>
+<link href="../../assets/stylesheets/main.fe0cca5b.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.a46bcfb3.min.css" rel="stylesheet"/>
+<meta content="#546e7a" name="theme-color"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
+<style>body,input{font-family:"Ubuntu",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+<link href="../../triage_docs.css" rel="stylesheet"/>
+</head>
+<body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#an-early-intervention-system-chicago-food-inspections">
+          Skip to content
         </a>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-          
-            <span class="md-header-nav__topic">
-              Triage Documentation
-            </span>
-            <span class="md-header-nav__topic">
-              Early Warning System
-            </span>
-          
-        </div>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-          
-<div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
-      <label class="md-icon md-search__icon" for="__search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
-        &#xE5CD;
-      </button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta">
-            Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
-        
-      </div>
-      
-        <div class="md-flex__cell md-flex__cell--shrink">
-          <div class="md-header-nav__source">
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header-nav md-grid">
+<a aria-label="Triage Documentation" class="md-header-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+</a>
+<label class="md-header-nav__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg>
+</label>
+<div class="md-header-nav__title" data-md-component="header-title">
+<div class="md-header-nav__ellipsis">
+<span class="md-header-nav__topic md-ellipsis">
+            Triage Documentation
+          </span>
+<span class="md-header-nav__topic md-ellipsis">
             
-
-
-  
-
-<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
+              Early Warning System
+            
+          </span>
+</div>
+</div>
+<div class="md-header-nav__source">
+<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+</div>
+<div class="md-source__repository">
     dssg/triage
   </div>
 </a>
-          </div>
-        </div>
-      
-    </div>
-  </nav>
+</div>
+</nav>
 </header>
-    
-    <div class="md-container">
-      
-        
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../.." title="Triage Documentation" class="md-nav__button md-logo">
-      
-        <i class="md-icon">book</i>
-      
-    </a>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+</a>
     Triage Documentation
   </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
+<div class="md-nav__source">
+<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+</div>
+<div class="md-source__repository">
     dssg/triage
   </div>
 </a>
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../.." title="Home" class="md-nav__link">
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../.." title="Home">
       Home
     </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
-    
-    <label class="md-nav__link" for="nav-2">
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
+<label class="md-nav__link" for="nav-2">
       Get started with your own project
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Get started with your own project" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-2">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Get started with your own project
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../quickstart/" title="Quickstart guide" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../quickstart/" title="Quickstart guide">
       Quickstart guide
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../triage_project_workflow/" title="Suggested workflow" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../triage_project_workflow/" title="Suggested workflow">
       Suggested workflow
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
-    
-    <label class="md-nav__link" for="nav-3">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-3">
       Dirty Duck Tutorial
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Dirty Duck Tutorial" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Dirty Duck Tutorial
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../" title="Welcome!" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../" title="Welcome!">
       Welcome!
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../dirty_duckling/" title="Dirty duckling" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../dirty_duckling/" title="Dirty duckling">
       Dirty duckling
     </a>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" checked>
-    
-    <label class="md-nav__link" for="nav-3-3">
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" id="nav-3-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-3">
       Case studies
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Case studies" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Case studies
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../problem_description/" title="Problem description" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../problem_description/" title="Problem description">
       Problem description
     </a>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
+</li>
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
         Early Warning System
-      </label>
-    
-    <a href="./" title="Early Warning System" class="md-nav__link md-nav__link--active">
+        <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"></path></svg>
+</span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./" title="Early Warning System">
       Early Warning System
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#problem-description" title="Problem description" class="md-nav__link">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#problem-description">
     Problem description
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#what-are-the-outcomes" title="What are the outcomes?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-are-the-outcomes">
     What are the outcomes?
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#what-are-the-entities-of-interest-the-cohort" title="What are the entities of interest? The cohort" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-are-the-entities-of-interest-the-cohort">
     What are the entities of interest? The cohort
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#modeling-using-machine-learning" title="Modeling Using Machine Learning" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#modeling-using-machine-learning">
     Modeling Using Machine Learning
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#temporal-configuration" title="Temporal configuration" class="md-nav__link">
+<nav aria-label="Modeling Using Machine Learning" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#temporal-configuration">
     Temporal configuration
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#features" title="Features" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#features">
     Features
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#algorithm-and-hyperparameters" title="Algorithm and hyperparameters" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#algorithm-and-hyperparameters">
     Algorithm and hyperparameters
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#lets-explore-more-second-grid" title="Let’s explore more: second grid" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#lets-explore-more-second-grid">
     Let’s explore more: second grid
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#audition-so-many-models-how-can-i-choose-the-best-one" title="Audition: So many models, how can I choose the best one?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#audition-so-many-models-how-can-i-choose-the-best-one">
     Audition: So many models, how can I choose the best one?
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#filtering-model-groups" title="Filtering model groups" class="md-nav__link">
+<nav aria-label="Audition: So many models, how can I choose the best one?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#filtering-model-groups">
     Filtering model groups
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups" title="Selecting the best rule or strategy for choosing model groups" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups">
     Selecting the best rule or strategy for choosing model groups
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#postmodeling-inspecting-the-best-models-closely" title="Postmodeling: Inspecting the best models closely" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#postmodeling-inspecting-the-best-models-closely">
     Postmodeling: Inspecting the best models closely
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup" title="Setup" class="md-nav__link">
+<nav aria-label="Postmodeling: Inspecting the best models closely" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#setup">
     Setup
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#model-groups" title="Model groups" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#model-groups">
     Model groups
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#going-deeper-with-a-model" title="Going deeper with a model" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#going-deeper-with-a-model">
     Going deeper with a model
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#crosstabs-how-are-the-entities-classified" title="Crosstabs: How are the entities classified?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#crosstabs-how-are-the-entities-classified">
     Crosstabs: How are the entities classified?
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#where-to-go-from-here" title="Where to go from here" class="md-nav__link">
+<nav aria-label="Crosstabs: How are the entities classified?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#where-to-go-from-here">
     Where to go from here
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
+</ul>
 </nav>
-    
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../inspections/" title="Resource prioritization" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../inspections/" title="Resource prioritization">
       Resource prioritization
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
-    
-    <label class="md-nav__link" for="nav-3-4">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" id="nav-3-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-4">
       Triage
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Triage" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Triage
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../triage_intro/" title="A deeper look into triage" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../triage_intro/" title="A deeper look into triage">
       A deeper look into triage
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
-    
-    <label class="md-nav__link" for="nav-3-5">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" id="nav-3-5" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-5">
       Are you curious about the setup?
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-5">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Are you curious about the setup?" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-5">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Are you curious about the setup?
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../infrastructure/" title="Infrastructure" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../infrastructure/" title="Infrastructure">
       Infrastructure
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../data_preparation/" title="Data preparation" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../data_preparation/" title="Data preparation">
       Data preparation
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../for_the_impatient/" title="Quick setup" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../for_the_impatient/" title="Quick setup">
       Quick setup
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-4">
       Triage documentation
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Triage documentation" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Triage documentation
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1" type="checkbox" id="nav-4-1">
-    
-    <label class="md-nav__link" for="nav-4-1">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1" id="nav-4-1" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-1">
       Experiment
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-1">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Experiment" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-1">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Experiment
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/experiment-config/" title="Experiment Configuration">
       Experiment Configuration
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/feature-testing/" title="Testing Feature Configuration">
       Testing Feature Configuration
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/running/" title="Running an Experiment" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/running/" title="Running an Experiment">
       Running an Experiment
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
-    
-    <label class="md-nav__link" for="nav-4-1-4">
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1-4" id="nav-4-1-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Upgrading an Experiment" class="md-nav" data-md-level="3">
+<label class="md-nav__title" for="nav-4-1-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Upgrading an Experiment
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v7/" title="v6 -> v7" class="md-nav__link">
-      v6 -> v7
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v7/" title="v6 -&gt; v7">
+      v6 -&gt; v7
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v6/" title="v5 -> v6" class="md-nav__link">
-      v5 -> v6
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v6/" title="v5 -&gt; v6">
+      v5 -&gt; v6
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v5/" title="v3/v4 -> v5" class="md-nav__link">
-      v3/v4 -> v5
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v5/" title="v3/v4 -&gt; v5">
+      v3/v4 -&gt; v5
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive">
       Temporal Validation Deep Dive
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive">
       Cohort and Label Deep Dive
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/prediction-ranking/" title="Prediction Ranking" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/prediction-ranking/" title="Prediction Ranking">
       Prediction Ranking
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/features/" title="Feature Generation Recipe Book" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/features/" title="Feature Generation Recipe Book">
       Feature Generation Recipe Book
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/algorithm/" title="Experiment Algorithm" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/algorithm/" title="Experiment Algorithm">
       Experiment Algorithm
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/architecture/" title="Experiment Architecture" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/architecture/" title="Experiment Architecture">
       Experiment Architecture
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
-    
-    <label class="md-nav__link" for="nav-4-2">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-2" id="nav-4-2" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-2">
       Model selection
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-2">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Model selection" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-2">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Model selection
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
-      Using Audition
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../audition/audition_intro/" title="Intro to Audition">
+      Intro to Audition
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
-      Audition Configuration
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../audition/model_selection/" title="Model Selection Concepts">
+      Model Selection Concepts
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
-    
-    <label class="md-nav__link" for="nav-4-3">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../api/audition/" title="API Reference">
+      API Reference
+    </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-3" id="nav-4-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-3">
       Postmodeling
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Postmodeling" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Postmodeling
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../postmodeling/" title="Using Postmodeling">
       Using Postmodeling
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
-      Postmodeling & Crosstabs Configuration
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../postmodeling/postmodeling-config/" title="Postmodeling &amp; Crosstabs Configuration">
+      Postmodeling &amp; Crosstabs Configuration
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../ml_governance/" title="Model governance" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../ml_governance/" title="Model governance">
       Model governance
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../aws_batch/" title="Scaling up" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../aws_batch/" title="Scaling up">
       Scaling up
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6" id="nav-4-6" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-6">
+      API Reference
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="API Reference" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-6">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+        API Reference
+      </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6-1" id="nav-4-6-1" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-6-1">
+      Audition
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Audition" class="md-nav" data-md-level="3">
+<label class="md-nav__title" for="nav-4-6-1">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+        Audition
+      </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/auditioner/" title="Auditioner">
+      Auditioner
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/audition-config/" title="Audition Configuration">
+      Audition Configuration
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/selection_rules/" title="Selection Rules">
+      Selection Rules
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/database-dependencies/" title="Database Dependencies">
+      Database Dependencies
+    </a>
+</li>
+</ul>
 </nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#problem-description" title="Problem description" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#problem-description">
     Problem description
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#what-are-the-outcomes" title="What are the outcomes?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-are-the-outcomes">
     What are the outcomes?
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#what-are-the-entities-of-interest-the-cohort" title="What are the entities of interest? The cohort" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-are-the-entities-of-interest-the-cohort">
     What are the entities of interest? The cohort
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#modeling-using-machine-learning" title="Modeling Using Machine Learning" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#modeling-using-machine-learning">
     Modeling Using Machine Learning
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#temporal-configuration" title="Temporal configuration" class="md-nav__link">
+<nav aria-label="Modeling Using Machine Learning" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#temporal-configuration">
     Temporal configuration
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#features" title="Features" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#features">
     Features
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#algorithm-and-hyperparameters" title="Algorithm and hyperparameters" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#algorithm-and-hyperparameters">
     Algorithm and hyperparameters
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#lets-explore-more-second-grid" title="Let’s explore more: second grid" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#lets-explore-more-second-grid">
     Let’s explore more: second grid
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#audition-so-many-models-how-can-i-choose-the-best-one" title="Audition: So many models, how can I choose the best one?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#audition-so-many-models-how-can-i-choose-the-best-one">
     Audition: So many models, how can I choose the best one?
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#filtering-model-groups" title="Filtering model groups" class="md-nav__link">
+<nav aria-label="Audition: So many models, how can I choose the best one?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#filtering-model-groups">
     Filtering model groups
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups" title="Selecting the best rule or strategy for choosing model groups" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups">
     Selecting the best rule or strategy for choosing model groups
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#postmodeling-inspecting-the-best-models-closely" title="Postmodeling: Inspecting the best models closely" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#postmodeling-inspecting-the-best-models-closely">
     Postmodeling: Inspecting the best models closely
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup" title="Setup" class="md-nav__link">
+<nav aria-label="Postmodeling: Inspecting the best models closely" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#setup">
     Setup
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#model-groups" title="Model groups" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#model-groups">
     Model groups
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#going-deeper-with-a-model" title="Going deeper with a model" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#going-deeper-with-a-model">
     Going deeper with a model
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#crosstabs-how-are-the-entities-classified" title="Crosstabs: How are the entities classified?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#crosstabs-how-are-the-entities-classified">
     Crosstabs: How are the entities classified?
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#where-to-go-from-here" title="Where to go from here" class="md-nav__link">
+<nav aria-label="Crosstabs: How are the entities classified?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#where-to-go-from-here">
     Where to go from here
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
+</ul>
 </nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/eis.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
-                
-                
-                <h1 id="an-early-intervention-system-chicago-food-inspections">An Early Intervention System: Chicago food inspections<a class="headerlink" href="#an-early-intervention-system-chicago-food-inspections" title="Permanent link">#</a></h1>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content">
+<article class="md-content__inner md-typeset">
+<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/eis.md" title="Edit this page">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
+</a>
+<h1 id="an-early-intervention-system-chicago-food-inspections">An Early Intervention System: Chicago food inspections<a class="headerlink" href="#an-early-intervention-system-chicago-food-inspections" title="Permanent link">#</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Before continue, Did you…?</p>
 <p>This case study, part of the dirtyduck tutorial,  assumes that you already setup the
@@ -1235,7 +775,7 @@ inspected</em>. Our <em>outcomes</em> table will be larger than in the <a href="
 prioritization</a> example because we need an <em>outcome</em> for every <em>active</em>
 facility on every date. The following image tries to exemplify this
 reasoning:</p>
-<p><img alt="img" src="../images/outcomes-eis.png" />
+<p><img alt="img" src="../images/outcomes-eis.png"/>
 <em>Figure. The image shows three facilities (blue, red and orange),
 and next to each, a temporal line with 6 days (0-5). Each dot
 represents the event (whether an inspection happened). Yellow means
@@ -1258,57 +798,55 @@ case study</a></p>
 <p>First the usual stuff. Note that we are changing <code>model_comment</code> and
 <code>label_definition</code> (remember that this is used for generating the
 <em>hash</em> that differentiates models and model groups).</p>
-<div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span> <span class="s">&#39;v7&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">config_version</span><span class="p">:</span> <span class="s">'v7'</span>
 
-<span class="nt">model_comment</span><span class="p">:</span> <span class="s">&#39;eis:</span><span class="nv"> </span><span class="s">01&#39;</span>
+<span class="nt">model_comment</span><span class="p">:</span> <span class="s">'eis:</span><span class="nv"> </span><span class="s">01'</span>
 <span class="nt">random_seed</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">23895478</span>
 
 <span class="nt">user_metadata</span><span class="p">:</span>
-  <span class="nt">label_definition</span><span class="p">:</span> <span class="s">&#39;inspected&#39;</span>
-  <span class="nt">experiment_type</span><span class="p">:</span> <span class="s">&#39;eis&#39;</span>
+  <span class="nt">label_definition</span><span class="p">:</span> <span class="s">'inspected'</span>
+  <span class="nt">experiment_type</span><span class="p">:</span> <span class="s">'eis'</span>
   <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">|</span>
     <span class="no">EIS 01</span>
-  <span class="nt">purpose</span><span class="p">:</span> <span class="s">&#39;model</span><span class="nv"> </span><span class="s">creation&#39;</span>
-  <span class="nt">org</span><span class="p">:</span> <span class="s">&#39;DSaPP&#39;</span>
-  <span class="nt">team</span><span class="p">:</span> <span class="s">&#39;Tutorial&#39;</span>
-  <span class="nt">author</span><span class="p">:</span> <span class="s">&#39;Your</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">here&#39;</span>
-  <span class="nt">etl_date</span><span class="p">:</span> <span class="s">&#39;2019-05-07&#39;</span>
+  <span class="nt">purpose</span><span class="p">:</span> <span class="s">'model</span><span class="nv"> </span><span class="s">creation'</span>
+  <span class="nt">org</span><span class="p">:</span> <span class="s">'DSaPP'</span>
+  <span class="nt">team</span><span class="p">:</span> <span class="s">'Tutorial'</span>
+  <span class="nt">author</span><span class="p">:</span> <span class="s">'Your</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">here'</span>
+  <span class="nt">etl_date</span><span class="p">:</span> <span class="s">'2019-05-07'</span>
 
 <span class="nt">model_group_keys</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;class_path&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;parameters&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;feature_names&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;feature_groups&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;cohort_name&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;state&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;label_name&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;label_timespan&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;training_as_of_date_frequency&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;max_training_history&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;label_definition&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;experiment_type&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;org&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;team&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;author&#39;</span>
-  <span class="p p-Indicator">-</span> <span class="s">&#39;etl_date&#39;</span>
-</pre></div>
-
+  <span class="p p-Indicator">-</span> <span class="s">'class_path'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'parameters'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'feature_names'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'feature_groups'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'cohort_name'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'state'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'label_name'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'label_timespan'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'training_as_of_date_frequency'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'max_training_history'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'label_definition'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'experiment_type'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'org'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'team'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'author'</span>
+  <span class="p p-Indicator">-</span> <span class="s">'etl_date'</span>
+</code></pre></div>
 <p>For the labels the query is pretty simple, if the facility showed in
 the data, it will get a <em>positive</em> outcome, if not they will get a
 <em>negative</em> outcome</p>
-<div class="highlight"><pre><span></span><span class="nt">label_config</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="nt">label_config</span><span class="p">:</span>
   <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
     <span class="no">select</span>
     <span class="no">entity_id,</span>
     <span class="no">True::integer as outcome</span>
     <span class="no">from semantic.events</span>
-    <span class="no">where &#39;{as_of_date}&#39;::timestamp &lt;= date</span>
-    <span class="no">and date &lt; &#39;{as_of_date}&#39;::timestamp + interval &#39;{label_timespan}&#39;</span>
+    <span class="no">where '{as_of_date}'::timestamp &lt;= date</span>
+    <span class="no">and date &lt; '{as_of_date}'::timestamp + interval '{label_timespan}'</span>
     <span class="no">group by entity_id</span>
   <span class="nt">include_missing_labels_in_train_as</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-  <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;inspected&#39;</span>
-</pre></div>
-
+  <span class="nt">name</span><span class="p">:</span> <span class="s">'inspected'</span>
+</code></pre></div>
 <p>Note the two introduced changes in this block, first, the <em>outcome</em> is
 <code>True</code> , because all our observations represent <em>inspected</em> facilities
 (see discussion above and in particular previous image), second, we
@@ -1317,15 +855,14 @@ tells <code>triage</code> to incorporate all the missing facilities in the
 <em>training</em> matrices with <code>False</code> as the <em>label</em>.</p>
 <p>As stated we will use the same configuration block for <em>cohorts</em> that
 we used in inspections:</p>
-<div class="highlight"><pre><span></span><span class="nt">cohort_config</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="nt">cohort_config</span><span class="p">:</span>
   <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
     <span class="no">select e.entity_id</span>
     <span class="no">from semantic.entities as e</span>
     <span class="no">where</span>
-    <span class="no">daterange(start_time, end_time, &#39;[]&#39;) @&gt; &#39;{as_of_date}&#39;::date</span>
-  <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;active_facilities&#39;</span>
-</pre></div>
-
+    <span class="no">daterange(start_time, end_time, '[]') @&gt; '{as_of_date}'::date</span>
+  <span class="nt">name</span><span class="p">:</span> <span class="s">'active_facilities'</span>
+</code></pre></div>
 <h2 id="modeling-using-machine-learning">Modeling Using Machine Learning<a class="headerlink" href="#modeling-using-machine-learning" title="Permanent link">#</a></h2>
 <p>We need to specify the temporal configuration, this section should
 reflect the <em>operationalization</em> of the model.</p>
@@ -1333,180 +870,174 @@ reflect the <em>operationalization</em> of the model.</p>
 an inspection. So, the model needs to answer the question: <em>Will my
 restaurant be inspected in the next 6 months?</em></p>
 <h3 id="temporal-configuration">Temporal configuration<a class="headerlink" href="#temporal-configuration" title="Permanent link">#</a></h3>
-<div class="highlight"><pre><span></span>    <span class="nt">temporal_config</span><span class="p">:</span>
-        <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">&#39;2010-01-04&#39;</span>
-        <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">&#39;2018-06-01&#39;</span>
-        <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">&#39;2014-06-01&#39;</span>
-        <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">&#39;2018-06-01&#39;</span>
+<div class="highlight"><pre><span></span><code>    <span class="nt">temporal_config</span><span class="p">:</span>
+        <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2010-01-04'</span>
+        <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-06-01'</span>
+        <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-06-01'</span>
+        <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-06-01'</span>
 
-        <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">&#39;6month&#39;</span>
-        <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;6month&#39;</span><span class="p p-Indicator">]</span>
-        <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">&#39;6month&#39;</span>
+        <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'6month'</span>
+        <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'6month'</span><span class="p p-Indicator">]</span>
+        <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'6month'</span>
 
-        <span class="nt">test_durations</span><span class="p">:</span> <span class="s">&#39;6month&#39;</span>
-        <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;6month&#39;</span><span class="p p-Indicator">]</span>
-        <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">&#39;6month&#39;</span>
+        <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'6month'</span>
+        <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'6month'</span><span class="p p-Indicator">]</span>
+        <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'6month'</span>
 
-        <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">&#39;5y&#39;</span>
-</pre></div>
-
+        <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'5y'</span>
+</code></pre></div>
 <p>As before, you can generate the image of the temporal blocks:</p>
-<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
 triage experiment experiments/eis_01.yaml --show-timechop
-</pre></div>
-
+</code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">What? … Bastion?</p>
 <p><code>bastion</code> is the docker container that contains all the setup
 required to run this tutorial, if this is the first time that
 you see this word, you should stop and revisit <a href="../infrastructure/">setup infrastructure</a>.</p>
 </div>
-<p><img alt="img" src="../images/triage/eis_01.png" />
+<p><img alt="img" src="../images/triage/eis_01.png"/>
 <em>Figure. Temporal blocks for the Early Warning System. We want to
 predict the most likely facilities to be inspected in the
 following 6 months</em></p>
 <h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h3>
 <p>Regarding the features, we will use the same ones that were used
 in <a href="../inspections/">inspections prioritization</a>:</p>
-<div class="highlight"><pre><span></span>    <span class="nt">feature_aggregations</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code>    <span class="nt">feature_aggregations</span><span class="p">:</span>
       <span class="p p-Indicator">-</span>
-        <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;inspections&#39;</span>
-        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
-        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+        <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
+        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
+        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
 
         <span class="nt">aggregates_imputation</span><span class="p">:</span>
           <span class="nt">count</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero_noflag&#39;</span>
+            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero_noflag'</span>
 
         <span class="nt">aggregates</span><span class="p">:</span>
           <span class="p p-Indicator">-</span>
             <span class="nt">quantity</span><span class="p">:</span>
-              <span class="nt">total</span><span class="p">:</span> <span class="s">&quot;*&quot;</span>
+              <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
             <span class="nt">metrics</span><span class="p">:</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;count&#39;</span>
+              <span class="p p-Indicator">-</span> <span class="s">'count'</span>
 
-        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
 
         <span class="nt">groups</span><span class="p">:</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+          <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
 
       <span class="p p-Indicator">-</span>
-        <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;risks&#39;</span>
-        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
-        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+        <span class="nt">prefix</span><span class="p">:</span> <span class="s">'risks'</span>
+        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
+        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
 
         <span class="nt">categoricals_imputation</span><span class="p">:</span>
           <span class="nt">sum</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
           <span class="nt">avg</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
 
         <span class="nt">categoricals</span><span class="p">:</span>
           <span class="p p-Indicator">-</span>
-            <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;risk&#39;</span>
-            <span class="nt">choices</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;low&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;medium&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;high&#39;</span><span class="p p-Indicator">]</span>
+            <span class="nt">column</span><span class="p">:</span> <span class="s">'risk'</span>
+            <span class="nt">choices</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'low'</span><span class="p p-Indicator">,</span> <span class="s">'medium'</span><span class="p p-Indicator">,</span> <span class="s">'high'</span><span class="p p-Indicator">]</span>
             <span class="nt">metrics</span><span class="p">:</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;avg&#39;</span>
+              <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
+              <span class="p p-Indicator">-</span> <span class="s">'avg'</span>
 
-        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
 
         <span class="nt">groups</span><span class="p">:</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;zip_code&#39;</span>
+          <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+          <span class="p p-Indicator">-</span> <span class="s">'zip_code'</span>
 
       <span class="p p-Indicator">-</span>
-        <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;results&#39;</span>
-        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
-        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+        <span class="nt">prefix</span><span class="p">:</span> <span class="s">'results'</span>
+        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
+        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
 
         <span class="nt">categoricals_imputation</span><span class="p">:</span>
           <span class="nt">all</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero&#39;</span>
+            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
 
         <span class="nt">categoricals</span><span class="p">:</span>
           <span class="p p-Indicator">-</span>
-            <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;result&#39;</span>
-            <span class="nt">choice_query</span><span class="p">:</span> <span class="s">&#39;select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">result</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events&#39;</span>
+            <span class="nt">column</span><span class="p">:</span> <span class="s">'result'</span>
+            <span class="nt">choice_query</span><span class="p">:</span> <span class="s">'select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">result</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events'</span>
             <span class="nt">metrics</span><span class="p">:</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;avg&#39;</span>
+              <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
+              <span class="p p-Indicator">-</span> <span class="s">'avg'</span>
 
-        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
 
         <span class="nt">groups</span><span class="p">:</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
+          <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
 
       <span class="p p-Indicator">-</span>
-        <span class="nt">prefix</span><span class="p">:</span> <span class="s">&#39;inspection_types&#39;</span>
-        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">&#39;semantic.events&#39;</span>
-        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">&#39;date&#39;</span>
+        <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspection_types'</span>
+        <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
+        <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
 
         <span class="nt">categoricals_imputation</span><span class="p">:</span>
           <span class="nt">sum</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">&#39;zero_noflag&#39;</span>
+            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero_noflag'</span>
 
         <span class="nt">categoricals</span><span class="p">:</span>
           <span class="p p-Indicator">-</span>
-            <span class="nt">column</span><span class="p">:</span> <span class="s">&#39;type&#39;</span>
-            <span class="nt">choice_query</span><span class="p">:</span> <span class="s">&#39;select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events</span><span class="nv"> </span><span class="s">where</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">null&#39;</span>
+            <span class="nt">column</span><span class="p">:</span> <span class="s">'type'</span>
+            <span class="nt">choice_query</span><span class="p">:</span> <span class="s">'select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events</span><span class="nv"> </span><span class="s">where</span><span class="nv"> </span><span class="s">type</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">null'</span>
             <span class="nt">metrics</span><span class="p">:</span>
-              <span class="p p-Indicator">-</span> <span class="s">&#39;sum&#39;</span>
+              <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
 
-        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;1month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;3month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;6month&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;1y&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
+        <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
 
         <span class="nt">groups</span><span class="p">:</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;entity_id&#39;</span>
-          <span class="p p-Indicator">-</span> <span class="s">&#39;zip_code&#39;</span>
-</pre></div>
-
+          <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+          <span class="p p-Indicator">-</span> <span class="s">'zip_code'</span>
+</code></pre></div>
 <p>We specify that we want to use all possible feature-group combinations for training:</p>
-<div class="highlight"><pre><span></span>    <span class="nt">feature_group_definition</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code>    <span class="nt">feature_group_definition</span><span class="p">:</span>
        <span class="nt">prefix</span><span class="p">:</span>
-         <span class="p p-Indicator">-</span> <span class="s">&#39;inspections&#39;</span>
-         <span class="p p-Indicator">-</span> <span class="s">&#39;results&#39;</span>
-         <span class="p p-Indicator">-</span> <span class="s">&#39;risks&#39;</span>
-         <span class="p p-Indicator">-</span> <span class="s">&#39;inspection_types&#39;</span>
+         <span class="p p-Indicator">-</span> <span class="s">'inspections'</span>
+         <span class="p p-Indicator">-</span> <span class="s">'results'</span>
+         <span class="p p-Indicator">-</span> <span class="s">'risks'</span>
+         <span class="p p-Indicator">-</span> <span class="s">'inspection_types'</span>
 
-    <span class="nt">feature_group_strategies</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;all&#39;</span><span class="p p-Indicator">]</span>
-</pre></div>
-
+    <span class="nt">feature_group_strategies</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'all'</span><span class="p p-Indicator">]</span>
+</code></pre></div>
 <p>i.e. <code>all</code> will train models with all the features groups,
 <code>leave-one-in</code> will use only one of the feature groups for
 traning, and lastly, <code>leave-one-out</code> will train the model with all
 the features except one.</p>
 <h3 id="algorithm-and-hyperparameters">Algorithm and hyperparameters<a class="headerlink" href="#algorithm-and-hyperparameters" title="Permanent link">#</a></h3>
 <p>We will begin defining some basic models as baselines.</p>
-<div class="highlight"><pre><span></span><span class="s">&#39;triage.component.catwalk.baselines.thresholders.SimpleThresholder&#39;</span><span class="p p-Indicator">:</span>
+<div class="highlight"><pre><span></span><code><span class="s">'triage.component.catwalk.baselines.thresholders.SimpleThresholder'</span><span class="p p-Indicator">:</span>
   <span class="nt">rules</span><span class="p">:</span>
-    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">&#39;inspections_entity_id_1month_total_count</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0&#39;</span><span class="p p-Indicator">]</span>
-    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">&#39;results_entity_id_1month_result_fail_sum</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0&#39;</span><span class="p p-Indicator">]</span>
-    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">&#39;risks_entity_id_1month_risk_high_sum</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0&#39;</span><span class="p p-Indicator">]</span>
+    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">'inspections_entity_id_1month_total_count</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0'</span><span class="p p-Indicator">]</span>
+    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">'results_entity_id_1month_result_fail_sum</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0'</span><span class="p p-Indicator">]</span>
+    <span class="p p-Indicator">-</span> <span class="p p-Indicator">[</span><span class="s">'risks_entity_id_1month_risk_high_sum</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">0'</span><span class="p p-Indicator">]</span>
 
-<span class="s">&#39;triage.component.catwalk.baselines.rankers.PercentileRankOneFeature&#39;</span><span class="p p-Indicator">:</span>
-  <span class="nt">feature</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;risks_entity_id_all_risk_high_sum&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;inspections_entity_id_all_total_count&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;results_entity_id_all_result_fail_sum&#39;</span><span class="p p-Indicator">]</span>
+<span class="s">'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature'</span><span class="p p-Indicator">:</span>
+  <span class="nt">feature</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'risks_entity_id_all_risk_high_sum'</span><span class="p p-Indicator">,</span> <span class="s">'inspections_entity_id_all_total_count'</span><span class="p p-Indicator">,</span> <span class="s">'results_entity_id_all_result_fail_sum'</span><span class="p p-Indicator">]</span>
   <span class="nt">descend</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">True</span><span class="p p-Indicator">]</span>
 
-<span class="s">&#39;sklearn.dummy.DummyClassifier&#39;</span><span class="p p-Indicator">:</span>
-  <span class="nt">strategy</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;prior&#39;</span><span class="p p-Indicator">,</span> <span class="s">&#39;stratified&#39;</span><span class="p p-Indicator">]</span>
+<span class="s">'sklearn.dummy.DummyClassifier'</span><span class="p p-Indicator">:</span>
+  <span class="nt">strategy</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'prior'</span><span class="p p-Indicator">,</span> <span class="s">'stratified'</span><span class="p p-Indicator">]</span>
 
-<span class="s">&#39;sklearn.tree.DecisionTreeClassifier&#39;</span><span class="p p-Indicator">:</span>
-  <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;gini&#39;</span><span class="p p-Indicator">]</span>
-  <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;sqrt&#39;</span><span class="p p-Indicator">]</span>
+<span class="s">'sklearn.tree.DecisionTreeClassifier'</span><span class="p p-Indicator">:</span>
+  <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'gini'</span><span class="p p-Indicator">]</span>
+  <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'sqrt'</span><span class="p p-Indicator">]</span>
   <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="nv">~</span><span class="p p-Indicator">]</span>
   <span class="nt">min_samples_split</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">]</span>
 
-<span class="s">&#39;triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression&#39;</span><span class="p p-Indicator">:</span>
-  <span class="nt">penalty</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;l1&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;l2&#39;</span><span class="p p-Indicator">]</span>
+<span class="s">'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression'</span><span class="p p-Indicator">:</span>
+  <span class="nt">penalty</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'l1'</span><span class="p p-Indicator">,</span><span class="s">'l2'</span><span class="p p-Indicator">]</span>
   <span class="nt">C</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.000001</span><span class="p p-Indicator">,</span> <span class="nv">0.0001</span><span class="p p-Indicator">,</span> <span class="nv">0.01</span><span class="p p-Indicator">,</span>  <span class="nv">1.0</span><span class="p p-Indicator">]</span>
-</pre></div>
-
+</code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">How did I know the name of the features?</p>
 <p><code>triage</code> has a very useful utility called <code>featuretest</code></p>
-<div class="highlight"><pre><span></span>    triage featuretest experiments/eis_01.yaml <span class="m">2018</span>-01-01
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>    triage featuretest experiments/eis_01.yaml <span class="m">2018</span>-01-01
+</code></pre></div>
 <p>You can use for testing the definition of your features and also
 to see if the way that the features are calculated is actually
 what do you expect.</p>
@@ -1515,11 +1046,11 @@ what do you expect.</p>
 <p><code>triage</code> will create <strong>20</strong> <em>model groups</em>: algorithms and
 hyperparameters (4 <code>DecisionTreeClassifier</code>, 8
 <code>ScaledLogisticRegression</code>, 2 <code>DummyClassifier</code>, 3 <code>SimpleThresholder</code>
-and 3 <code>PercentileRankOneFeature</code>) &times; <strong>1</strong>
+and 3 <code>PercentileRankOneFeature</code>) × <strong>1</strong>
 features sets (1 <code>all</code>). The
 total number of <em>models</em> is three times that (we have 6 time
 blocks, so <strong>120</strong> models).</p>
-<div class="highlight"><pre><span></span>    <span class="nt">scoring</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code>    <span class="nt">scoring</span><span class="p">:</span>
         <span class="nt">testing_metric_groups</span><span class="p">:</span>
             <span class="p p-Indicator">-</span>
               <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">precision@</span><span class="p p-Indicator">,</span> <span class="nv">recall@</span><span class="p p-Indicator">]</span>
@@ -1536,18 +1067,15 @@ blocks, so <strong>120</strong> models).</p>
             <span class="nt">thresholds</span><span class="p">:</span>
               <span class="nt">percentiles</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1.0</span><span class="p p-Indicator">,</span> <span class="nv">2.0</span><span class="p p-Indicator">,</span> <span class="nv">3.0</span><span class="p p-Indicator">,</span> <span class="nv">4.0</span><span class="p p-Indicator">,</span> <span class="nv">5.0</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">15</span><span class="p p-Indicator">,</span> <span class="nv">20</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">30</span><span class="p p-Indicator">,</span> <span class="nv">35</span><span class="p p-Indicator">,</span> <span class="nv">40</span><span class="p p-Indicator">,</span> <span class="nv">45</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">55</span><span class="p p-Indicator">,</span> <span class="nv">60</span><span class="p p-Indicator">,</span> <span class="nv">65</span><span class="p p-Indicator">,</span> <span class="nv">70</span><span class="p p-Indicator">,</span> <span class="nv">75</span><span class="p p-Indicator">,</span> <span class="nv">80</span><span class="p p-Indicator">,</span> <span class="nv">85</span><span class="p p-Indicator">,</span> <span class="nv">90</span><span class="p p-Indicator">,</span> <span class="nv">95</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">]</span>
               <span class="nt">top_n</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">25</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">,</span> <span class="nv">250</span><span class="p p-Indicator">,</span> <span class="nv">500</span><span class="p p-Indicator">,</span> <span class="nv">1000</span><span class="p p-Indicator">]</span>
-</pre></div>
-
+</code></pre></div>
 <p>As a last step, we validate that the configuration file is correct:</p>
-<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
 triage experiment experiments/eis_01.yaml  --validate-only
-</pre></div>
-
+</code></pre></div>
 <p>And then just run it:</p>
-<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
 <span class="nb">time</span> triage experiment experiments/eis_01.yaml
-</pre></div>
-
+</code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Protip</p>
 <p>We are including the command <code>time</code> in order to get the total
@@ -1568,12 +1096,12 @@ recommed you to use a PostgreSQL database in the cloud, such as
 Amazon's <strong>PostgreSQL RDS</strong> (we will explore this later in running
 triage in AWS Batch).</p>
 <p>After the experiment finishes, we can create the following table:</p>
-<div class="highlight"><pre><span></span>    <span class="k">with</span> <span class="n">features_groups</span> <span class="k">as</span> <span class="p">(</span>
+<div class="highlight"><pre><span></span><code>    <span class="k">with</span> <span class="n">features_groups</span> <span class="k">as</span> <span class="p">(</span>
     <span class="k">select</span>
         <span class="n">model_group_id</span><span class="p">,</span>
-        <span class="n">split_part</span><span class="p">(</span><span class="k">unnest</span><span class="p">(</span><span class="n">feature_list</span><span class="p">),</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">feature_groups</span>
+        <span class="n">split_part</span><span class="p">(</span><span class="k">unnest</span><span class="p">(</span><span class="n">feature_list</span><span class="p">),</span> <span class="s1">'_'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">feature_groups</span>
     <span class="k">from</span>
-        <span class="n">model_metadata</span><span class="p">.</span><span class="n">model_groups</span>
+        <span class="n">triage_metadata</span><span class="p">.</span><span class="n">model_groups</span>
     <span class="p">),</span>
 
     <span class="n">features_arrays</span> <span class="k">as</span> <span class="p">(</span>
@@ -1588,23 +1116,23 @@ triage in AWS Batch).</p>
 
     <span class="k">select</span>
         <span class="n">model_group_id</span><span class="p">,</span>
-        <span class="n">regexp_replace</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="s1">&#39;^.*\.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_type</span><span class="p">,</span>
+        <span class="n">regexp_replace</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="s1">'^.*\.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_type</span><span class="p">,</span>
         <span class="n">hyperparameters</span><span class="p">,</span>
         <span class="n">feature_groups</span><span class="p">,</span>
         <span class="n">array_agg</span><span class="p">(</span><span class="n">model_id</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="n">models</span><span class="p">,</span>
         <span class="n">array_agg</span><span class="p">(</span><span class="n">train_end_time</span><span class="p">::</span><span class="nb">date</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="n">times</span><span class="p">,</span>
-        <span class="n">array_agg</span><span class="p">(</span><span class="n">to_char</span><span class="p">(</span><span class="n">stochastic_value</span><span class="p">,</span> <span class="s1">&#39;0.999&#39;</span><span class="p">)</span> <span class="k">order</span> <span class="k">by</span>
-    <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;precision@10% (stochastic)&quot;</span>
+        <span class="n">array_agg</span><span class="p">(</span><span class="n">to_char</span><span class="p">(</span><span class="n">stochastic_value</span><span class="p">,</span> <span class="s1">'0.999'</span><span class="p">)</span> <span class="k">order</span> <span class="k">by</span>
+    <span class="n">train_end_time</span> <span class="k">asc</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"precision@10% (stochastic)"</span>
     <span class="k">from</span>
-        <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span>
+        <span class="n">triage_metadata</span><span class="p">.</span><span class="n">models</span>
         <span class="k">join</span>
         <span class="n">features_arrays</span> <span class="k">using</span><span class="p">(</span><span class="n">model_group_id</span><span class="p">)</span>
         <span class="k">join</span>
         <span class="n">test_results</span><span class="p">.</span><span class="n">evaluations</span> <span class="k">using</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
     <span class="k">where</span>
-        <span class="n">model_comment</span> <span class="o">~</span> <span class="s1">&#39;eis&#39;</span>
+        <span class="n">model_comment</span> <span class="o">~</span> <span class="s1">'eis'</span>
         <span class="k">and</span>
-        <span class="n">metric</span> <span class="o">||</span> <span class="k">parameter</span> <span class="o">=</span> <span class="s1">&#39;precision@10_pct&#39;</span>
+        <span class="n">metric</span> <span class="o">||</span> <span class="k">parameter</span> <span class="o">=</span> <span class="s1">'precision@10_pct'</span>
     <span class="k">group</span> <span class="k">by</span>
         <span class="n">model_group_id</span><span class="p">,</span>
         <span class="n">model_type</span><span class="p">,</span>
@@ -1612,8 +1140,7 @@ triage in AWS Batch).</p>
         <span class="n">feature_groups</span>
     <span class="k">order</span> <span class="k">by</span>
         <span class="n">model_group_id</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1822,30 +1349,29 @@ algorithms. We will use a different experiment config file:
 <code>eis_02.yaml</code>.</p>
 <p>The only differences between this experiment config file and the
 previous are in the <code>user_metadata</code> section:</p>
-<div class="highlight"><pre><span></span><span class="nt">config_version</span><span class="p">:</span> <span class="s">&#39;v7&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">config_version</span><span class="p">:</span> <span class="s">'v7'</span>
 
-<span class="nt">model_comment</span><span class="p">:</span> <span class="s">&#39;eis:</span><span class="nv"> </span><span class="s">02&#39;</span>
+<span class="nt">model_comment</span><span class="p">:</span> <span class="s">'eis:</span><span class="nv"> </span><span class="s">02'</span>
 <span class="nt">random_seed</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">23895478</span>
 
 <span class="nt">user_metadata</span><span class="p">:</span>
-  <span class="nt">label_definition</span><span class="p">:</span> <span class="s">&#39;inspected&#39;</span>
-  <span class="nt">experiment_type</span><span class="p">:</span> <span class="s">&#39;eis&#39;</span>
+  <span class="nt">label_definition</span><span class="p">:</span> <span class="s">'inspected'</span>
+  <span class="nt">experiment_type</span><span class="p">:</span> <span class="s">'eis'</span>
   <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">|</span>
     <span class="no">EIS 02</span>
-  <span class="nt">purpose</span><span class="p">:</span> <span class="s">&#39;model</span><span class="nv"> </span><span class="s">creation&#39;</span>
-  <span class="nt">org</span><span class="p">:</span> <span class="s">&#39;DSaPP&#39;</span>
-  <span class="nt">team</span><span class="p">:</span> <span class="s">&#39;Tutorial&#39;</span>
-  <span class="nt">author</span><span class="p">:</span> <span class="s">&#39;Your</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">here&#39;</span>
-  <span class="nt">etl_date</span><span class="p">:</span> <span class="s">&#39;2019-05-07&#39;</span>
-</pre></div>
-
+  <span class="nt">purpose</span><span class="p">:</span> <span class="s">'model</span><span class="nv"> </span><span class="s">creation'</span>
+  <span class="nt">org</span><span class="p">:</span> <span class="s">'DSaPP'</span>
+  <span class="nt">team</span><span class="p">:</span> <span class="s">'Tutorial'</span>
+  <span class="nt">author</span><span class="p">:</span> <span class="s">'Your</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">here'</span>
+  <span class="nt">etl_date</span><span class="p">:</span> <span class="s">'2019-05-07'</span>
+</code></pre></div>
 <p>and in the <code>grid_config</code>:</p>
-<div class="highlight"><pre><span></span><span class="nt">grid_config</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="nt">grid_config</span><span class="p">:</span>
     <span class="c1">## Boosting</span>
-   <span class="s">&#39;sklearn.ensemble.AdaBoostClassifier&#39;</span><span class="p p-Indicator">:</span>
+   <span class="s">'sklearn.ensemble.AdaBoostClassifier'</span><span class="p p-Indicator">:</span>
      <span class="nt">n_estimators</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1000</span><span class="p p-Indicator">,</span> <span class="nv">2000</span><span class="p p-Indicator">]</span>
 
-   <span class="s">&#39;sklearn.ensemble.GradientBoostingClassifier&#39;</span><span class="p p-Indicator">:</span>
+   <span class="s">'sklearn.ensemble.GradientBoostingClassifier'</span><span class="p p-Indicator">:</span>
      <span class="nt">n_estimators</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">1000</span><span class="p p-Indicator">,</span> <span class="nv">2000</span><span class="p p-Indicator">]</span>
      <span class="nt">learning_rate </span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.01</span><span class="p p-Indicator">,</span> <span class="nv">1.0</span><span class="p p-Indicator">]</span>
      <span class="nt">subsample</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.5</span><span class="p p-Indicator">,</span> <span class="nv">1.0</span><span class="p p-Indicator">]</span>
@@ -1853,107 +1379,103 @@ previous are in the <code>user_metadata</code> section:</p>
      <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nv">5</span><span class="p p-Indicator">]</span>
 
    <span class="c1">## Forest</span>
-   <span class="s">&#39;sklearn.tree.DecisionTreeClassifier&#39;</span><span class="p p-Indicator">:</span>
-     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;gini&#39;</span><span class="p p-Indicator">]</span>
+   <span class="s">'sklearn.tree.DecisionTreeClassifier'</span><span class="p p-Indicator">:</span>
+     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'gini'</span><span class="p p-Indicator">]</span>
      <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">]</span>
      <span class="nt">min_samples_split</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">]</span>
 
-   <span class="s">&#39;sklearn.ensemble.RandomForestClassifier&#39;</span><span class="p p-Indicator">:</span>
+   <span class="s">'sklearn.ensemble.RandomForestClassifier'</span><span class="p p-Indicator">:</span>
      <span class="nt">n_estimators</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">10000</span><span class="p p-Indicator">]</span>
-     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;gini&#39;</span><span class="p p-Indicator">]</span>
+     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'gini'</span><span class="p p-Indicator">]</span>
      <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">]</span>
-     <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;sqrt&#39;</span><span class="p p-Indicator">]</span>
+     <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'sqrt'</span><span class="p p-Indicator">]</span>
      <span class="nt">min_samples_split</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">]</span>
      <span class="nt">n_jobs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">-1</span><span class="p p-Indicator">]</span>
 
-   <span class="s">&#39;sklearn.ensemble.ExtraTreesClassifier&#39;</span><span class="p p-Indicator">:</span>
+   <span class="s">'sklearn.ensemble.ExtraTreesClassifier'</span><span class="p p-Indicator">:</span>
      <span class="nt">n_estimators</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">10000</span><span class="p p-Indicator">]</span>
-     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;gini&#39;</span><span class="p p-Indicator">]</span>
+     <span class="nt">criterion</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'gini'</span><span class="p p-Indicator">]</span>
      <span class="nt">max_depth</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">5</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">]</span>
-     <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">&#39;sqrt&#39;</span><span class="p p-Indicator">]</span>
+     <span class="nt">max_features</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'sqrt'</span><span class="p p-Indicator">]</span>
      <span class="nt">min_samples_split</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span> <span class="nv">10</span><span class="p p-Indicator">,</span> <span class="nv">50</span><span class="p p-Indicator">]</span>
      <span class="nt">n_jobs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">-1</span><span class="p p-Indicator">]</span>
-</pre></div>
-
+</code></pre></div>
 <p>This new experiment configuration file will add <strong>37</strong> models groups to our experiment.</p>
 <p>You can run this experiment with:</p>
-<div class="highlight"><pre><span></span><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Remember to run this in bastion  NOT in your laptop shell!</span>
 <span class="nb">time</span> triage experiment experiments/eis_02.yaml
-</pre></div>
-
+</code></pre></div>
 <h2 id="audition-so-many-models-how-can-i-choose-the-best-one">Audition: So many models, how can I choose the best one?<a class="headerlink" href="#audition-so-many-models-how-can-i-choose-the-best-one" title="Permanent link">#</a></h2>
 <p>Let’s select the best model groups, using Audition. We need to make
 small changes to the <code>/triage/audition/eis_audition_config.yaml</code>
 compared to the inspection’s one:</p>
-<div class="highlight"><pre><span></span><span class="c1"># CHOOSE MODEL GROUPS</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># CHOOSE MODEL GROUPS</span>
 <span class="nt">model_groups</span><span class="p">:</span>
     <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
         <span class="no">select distinct(model_group_id)</span>
-        <span class="no">from model_metadata.model_groups</span>
-        <span class="no">where model_config -&gt;&gt; &#39;experiment_type&#39; ~ &#39;eis&#39;</span>
+        <span class="no">from triage_metadata.model_groups</span>
+        <span class="no">where model_config -&gt;&gt; 'experiment_type' ~ 'eis'</span>
 <span class="c1"># CHOOSE TIMESTAMPS/TRAIN END TIMES</span>
 <span class="nt">time_stamps</span><span class="p">:</span>
     <span class="nt">query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
         <span class="no">select distinct train_end_time</span>
-        <span class="no">from model_metadata.models</span>
+        <span class="no">from triage_metadata.models</span>
         <span class="no">where model_group_id in ({})</span>
         <span class="no">and extract(day from train_end_time) in (1)</span>
-        <span class="no">and train_end_time &gt;= &#39;2014-01-01&#39;</span>
+        <span class="no">and train_end_time &gt;= '2014-01-01'</span>
 <span class="c1"># FILTER</span>
 <span class="nt">filter</span><span class="p">:</span>
-    <span class="nt">metric</span><span class="p">:</span> <span class="s">&#39;precision@&#39;</span> <span class="c1"># metric of interest</span>
-    <span class="nt">parameter</span><span class="p">:</span> <span class="s">&#39;10_pct&#39;</span> <span class="c1"># parameter of interest</span>
+    <span class="nt">metric</span><span class="p">:</span> <span class="s">'precision@'</span> <span class="c1"># metric of interest</span>
+    <span class="nt">parameter</span><span class="p">:</span> <span class="s">'10_pct'</span> <span class="c1"># parameter of interest</span>
     <span class="nt">max_from_best</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1.0</span> <span class="c1"># The maximum value that the given metric can be worse than the best model for a given train end time.</span>
     <span class="nt">threshold_value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span> <span class="c1"># The worst absolute value that the given metric should be.</span>
-    <span class="nt">distance_table</span><span class="p">:</span> <span class="s">&#39;eis_distance_table&#39;</span> <span class="c1"># name of the distance table</span>
-    <span class="nt">models_table</span><span class="p">:</span> <span class="s">&#39;models&#39;</span> <span class="c1"># name of the models table</span>
+    <span class="nt">distance_table</span><span class="p">:</span> <span class="s">'eis_distance_table'</span> <span class="c1"># name of the distance table</span>
+    <span class="nt">models_table</span><span class="p">:</span> <span class="s">'models'</span> <span class="c1"># name of the models table</span>
 
 <span class="c1"># RULES</span>
 <span class="nt">rules</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">shared_parameters</span><span class="p">:</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">metric</span><span class="p">:</span> <span class="s">&#39;precision@&#39;</span>
-                <span class="nt">parameter</span><span class="p">:</span> <span class="s">&#39;10_pct&#39;</span>
+                <span class="nt">metric</span><span class="p">:</span> <span class="s">'precision@'</span>
+                <span class="nt">parameter</span><span class="p">:</span> <span class="s">'10_pct'</span>
 
         <span class="nt">selection_rules</span><span class="p">:</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;best_current_value&#39;</span> <span class="c1"># Pick the model group with the best current metric value</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">'best_current_value'</span> <span class="c1"># Pick the model group with the best current metric value</span>
                 <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;best_average_value&#39;</span> <span class="c1"># Pick the model with the highest average metric value</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">'best_average_value'</span> <span class="c1"># Pick the model with the highest average metric value</span>
                 <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;lowest_metric_variance&#39;</span> <span class="c1"># Pick the model with the lowest metric variance</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">'lowest_metric_variance'</span> <span class="c1"># Pick the model with the lowest metric variance</span>
                 <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">name</span><span class="p">:</span> <span class="s">&#39;most_frequent_best_dist&#39;</span> <span class="c1"># Pick the model that is most frequently within `dist_from_best_case`</span>
+                <span class="nt">name</span><span class="p">:</span> <span class="s">'most_frequent_best_dist'</span> <span class="c1"># Pick the model that is most frequently within `dist_from_best_case`</span>
                 <span class="nt">dist_from_best_case</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.05</span><span class="p p-Indicator">]</span>
                 <span class="nt">n</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
-</pre></div>
-
+</code></pre></div>
 <p>And then we run the simulation of the rules againts the experiment as:</p>
-<div class="highlight"><pre><span></span>triage audition -c ./audition/eis_audition_config.yaml --directory audition/eis
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>triage audition -c ./audition/eis_audition_config.yaml --directory audition/eis
+</code></pre></div>
 <p><code>Audition</code> will create several plots that will help you to sort out
 which is the <em>best</em> model group to use (like in a production setting
 or just to generate your list).</p>
 <h3 id="filtering-model-groups">Filtering model groups<a class="headerlink" href="#filtering-model-groups" title="Permanent link">#</a></h3>
 <p><code>Audition</code> will generate two plots that are meant to be used together:
 <em>model performance over time</em> and <em>distance from best</em>.</p>
-<p><img alt="img" src="../images/audition/eis/metric_over_time_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/metric_over_time_precision%4010_pct.png"/>
 <em>Figure. Model group performance over time. In this case the metric
 show is <code>precision@10%</code>. The black dashed line represents the
 (theoretical) system's performance if we select the best performant
 model in a every evaluation date. The colored lines represents
 different model groups. All the model groups that share an algorithm
 will be colored the same.</em></p>
-<p><img alt="img" src="../images/audition/eis/distance_from_best_precision@10_pct.png" />
-<em>Figure. Proportion of <strong>all</strong> the <strong>models</strong> in a <strong>model group</strong> that are
+<p><img alt="img" src="../images/audition/eis/distance_from_best_precision%4010_pct.png"/>
+<em>Figure. Proportion of **all*</em> the <strong>models</strong> in a <strong>model group</strong> that are
 separated from the best model. The distance is measured in percentual
 points, i.e. How much less precision at 10 percent of the population
-compared to the best model in that date.</em></p>
+compared to the best model in that date.*</p>
 <h3 id="selecting-the-best-rule-or-strategy-for-choosing-model-groups">Selecting the best rule or strategy for choosing model groups<a class="headerlink" href="#selecting-the-best-rule-or-strategy-for-choosing-model-groups" title="Permanent link">#</a></h3>
 <p>In this phase of the audition, you will see what will happen in the
 next time if you choose your model group with an specific strategy or
@@ -1962,16 +1484,16 @@ rule.</p>
 difference between the performance of the best model evaluated on the
 "next time" and the performance of the model selected by a particular
 rule.</p>
-<p><img alt="img" src="../images/audition/eis/precision@10_pct_next_time.png" />
+<p><img alt="img" src="../images/audition/eis/precision%4010_pct_next_time.png"/>
 <em>Figure. Given a
 strategy for selecting model groups (in the plot 4 are shown), What
 will be the performace of the model group chosen by that strategy in
 the next evaluation date?</em></p>
-<p><img alt="img" src="../images/audition/eis/regret_distance_from_best_rules_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/regret_distance_from_best_rules_precision%4010_pct.png"/>
 <em>Figure. Given a strategy for selecting model groups (in the plot 4
 are shown). What will be the distance (*regret</em>) to the best
 theoretical model in the following evaluation date.*</p>
-<p><img alt="img" src="../images/audition/eis/regret_over_time_precision@10_pct.png" />
+<p><img alt="img" src="../images/audition/eis/regret_over_time_precision%4010_pct.png"/>
 <em>Figure. Expected regret for the strategies. The less the better.</em></p>
 <p>It seems that the <em>worst</em> strategy (the one with the bigger “regret”)
 for selecting a <em>model_group</em> is
@@ -1982,29 +1504,29 @@ facilities, we will explore how the model is splitting the facilities
 using <em>crosstabs</em>.</p>
 <p>As before, the best <strong>3</strong> <em>model groups</em> per strategy will be stored
 in the file <code>/triage/audition/eis/results_model_group_ids.json</code></p>
-<div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="nt">&quot;most_frequent_best_dist_precision@_10_pct_0.05&quot;</span><span class="p">:</span> <span class="p">[</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+    <span class="nt">"most_frequent_best_dist_precision@_10_pct_0.05"</span><span class="p">:</span> <span class="p">[</span>
         <span class="mi">15</span><span class="p">,</span>
         <span class="mi">16</span><span class="p">,</span>
         <span class="mi">17</span><span class="p">,</span>
         <span class="mi">9</span><span class="p">,</span>
         <span class="mi">18</span>
     <span class="p">],</span>
-    <span class="nt">&quot;lowest_metric_variance_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="nt">"lowest_metric_variance_precision@_10_pct"</span><span class="p">:</span> <span class="p">[</span>
         <span class="mi">2</span><span class="p">,</span>
         <span class="mi">5</span><span class="p">,</span>
         <span class="mi">19</span><span class="p">,</span>
         <span class="mi">11</span><span class="p">,</span>
         <span class="mi">6</span>
     <span class="p">],</span>
-    <span class="nt">&quot;best_average_value_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="nt">"best_average_value_precision@_10_pct"</span><span class="p">:</span> <span class="p">[</span>
         <span class="mi">15</span><span class="p">,</span>
         <span class="mi">16</span><span class="p">,</span>
         <span class="mi">17</span><span class="p">,</span>
         <span class="mi">18</span><span class="p">,</span>
         <span class="mi">9</span>
     <span class="p">],</span>
-    <span class="nt">&quot;best_current_value_precision@_10_pct&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="nt">"best_current_value_precision@_10_pct"</span><span class="p">:</span> <span class="p">[</span>
         <span class="mi">9</span><span class="p">,</span>
         <span class="mi">16</span><span class="p">,</span>
         <span class="mi">15</span><span class="p">,</span>
@@ -2012,17 +1534,16 @@ in the file <code>/triage/audition/eis/results_model_group_ids.json</code></p>
         <span class="mi">18</span>
     <span class="p">]</span>
 <span class="p">}</span>
-</pre></div>
-
+</code></pre></div>
 <h2 id="postmodeling-inspecting-the-best-models-closely">Postmodeling: Inspecting the best models closely<a class="headerlink" href="#postmodeling-inspecting-the-best-models-closely" title="Permanent link">#</a></h2>
 <p>Given that almost all the strategies perform well, we will change the
 parameter <code>model_group_id</code> in the <a href="/triage/eis_postmodeling_config.yaml">postmodeling's configuration
 file</a>
 and we will use the complete set of model groups selected by audition:</p>
-<div class="highlight"><pre><span></span><span class="c1"># Postmodeling Configuration File</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Postmodeling Configuration File</span>
 
-  <span class="nt">project_path</span><span class="p">:</span> <span class="s">&#39;/triage&#39;</span> <span class="c1"># Project path defined in triage with matrices and models</span>
-  <span class="nt">audition_output_path</span><span class="p">:</span> <span class="s">&#39;/triage/audition/eis/results_model_group_ids.json&#39;</span>
+  <span class="nt">project_path</span><span class="p">:</span> <span class="s">'/triage'</span> <span class="c1"># Project path defined in triage with matrices and models</span>
+  <span class="nt">audition_output_path</span><span class="p">:</span> <span class="s">'/triage/audition/eis/results_model_group_ids.json'</span>
 
   <span class="nt">thresholds</span><span class="p">:</span> <span class="c1"># Thresholds for2 defining positive predictions</span>
         <span class="nt">rank_abs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">,</span> <span class="nv">100</span><span class="p p-Indicator">,</span> <span class="nv">250</span><span class="p p-Indicator">]</span>
@@ -2031,7 +1552,7 @@ and we will use the complete set of model groups selected by audition:</p>
   <span class="nt">baseline_query</span><span class="p">:</span> <span class="p p-Indicator">|</span> <span class="c1"># SQL query for defining a baseline for comparison in plots. It needs a metric and parameter</span>
       <span class="no">select g.model_group_id,</span>
              <span class="no">m.model_id,</span>
-             <span class="no">extract(&#39;year&#39; from m.evaluation_end_time) as as_of_date_year,</span>
+             <span class="no">extract('year' from m.evaluation_end_time) as as_of_date_year,</span>
              <span class="no">m.metric,</span>
              <span class="no">m.parameter,</span>
              <span class="no">m.stochastic_value,</span>
@@ -2039,25 +1560,23 @@ and we will use the complete set of model groups selected by audition:</p>
              <span class="no">m.num_labeled_above_threshold,</span>
              <span class="no">m.num_positive_labels</span>
        <span class="no">from test_results.evaluations m</span>
-       <span class="no">left join model_metadata.models g</span>
+       <span class="no">left join triage_metadata.models g</span>
        <span class="no">using(model_id)</span>
        <span class="no">where g.model_group_id = 20</span>
-             <span class="no">and metric = &#39;precision@&#39;</span>
-             <span class="no">and parameter = &#39;10_pct&#39;</span>
+             <span class="no">and metric = 'precision@'</span>
+             <span class="no">and parameter = '10_pct'</span>
 
   <span class="nt">max_depth_error_tree</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> <span class="c1"># For error trees, how depth the decision trees should go?</span>
   <span class="nt">n_features_plots</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span> <span class="c1"># Number of features for importances</span>
   <span class="nt">figsize</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">12</span><span class="p p-Indicator">,</span> <span class="nv">12</span><span class="p p-Indicator">]</span> <span class="c1"># Default size for plots</span>
   <span class="nt">fontsize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">20</span> <span class="c1"># Default fontsize for plots</span>
-</pre></div>
-
+</code></pre></div>
 <p>Launch jupyter in <code>bastion</code>:</p>
-<div class="highlight"><pre><span></span>jupyter-notebook –-ip<span class="o">=</span><span class="m">0</span>.0.0.0  --port<span class="o">=</span><span class="m">56406</span> --allow-root
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>jupyter-notebook –-ip<span class="o">=</span><span class="m">0</span>.0.0.0  --port<span class="o">=</span><span class="m">56406</span> --allow-root
+</code></pre></div>
 <p>And then in your browser location bar type: <a href="http://0.0.0.0:56406">http://0.0.0.0:56406</a></p>
 <h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">#</a></h3>
-<div class="highlight"><pre><span></span>%matplotlib inline
+<div class="highlight"><pre><span></span><code>%matplotlib inline
 import pandas as pd
 import numpy as np
 from collections import OrderedDict
@@ -2067,61 +1586,56 @@ from triage.component.postmodeling.contrast.parameters import PostmodelParameter
 from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
 from triage.component.postmodeling.contrast.model_group_evaluator import ModelGroupEvaluator
 
-params = PostmodelParameters(&#39;../triage/eis_postmodeling_config.yaml&#39;)
+params = PostmodelParameters('../triage/eis_postmodeling_config.yaml')
 
-engine = create_pgconn(&#39;database.yaml&#39;)
+engine = create_pgconn('database.yaml')
 
 # Model group object (useful to compare across model_groups and models in time)
 audited_models_class = ModelGroupEvaluator(tuple(params.model_group_id), engine)
-</pre></div>
-
+</code></pre></div>
 <h3 id="model-groups">Model groups<a class="headerlink" href="#model-groups" title="Permanent link">#</a></h3>
 <p>Let’s start with the behavior in time of the selected model groups</p>
-<div class="highlight"><pre><span></span>audited_models_class.plot_prec_across_time(param_type=&#39;rank_pct&#39;,
+<div class="highlight"><pre><span></span><code>audited_models_class.plot_prec_across_time(param_type='rank_pct',
                                            param=10,
                                            baseline=True,
                                            baseline_query=params.baseline_query,
-                                           metric=&#39;precision@&#39;,
+                                           metric='precision@',
                                            figsize=params.figsize)
-</pre></div>
-
-<p><img alt="img" src="../images/postmodeling/eis_mg_prec_over_time.png" title="Precision@10% over time from the best performing model groups selected by Audition" /></p>
+</code></pre></div>
+<p><img alt="img" src="../images/postmodeling/eis_mg_prec_over_time.png" title="Precision@10% over time from the best performing model groups selected by Audition"/></p>
 <p>Every model selected by audition has a very similar performance across
 time, and they are ~2.5 times above the baseline in precision@10%. We
 could also check the recall of the model groups.</p>
-<div class="highlight"><pre><span></span>audited_models_class.plot_prec_across_time(param_type=&#39;rank_pct&#39;,
+<div class="highlight"><pre><span></span><code>audited_models_class.plot_prec_across_time(param_type='rank_pct',
                                            param=10,
-                                           metric=&#39;recall@&#39;,
+                                           metric='recall@',
                                            figsize=params.figsize)
-</pre></div>
-
-<p><img alt="img" src="../images/postmodeling/eis_mg_recall_over_time.png" title="Recall@10% over time from the best performing model groups selected by Audition" /></p>
+</code></pre></div>
+<p><img alt="img" src="../images/postmodeling/eis_mg_recall_over_time.png" title="Recall@10% over time from the best performing model groups selected by Audition"/></p>
 <p>That behavior is similar for the recall@10%, except for the model group <strong>69</strong></p>
-<div class="highlight"><pre><span></span>audited_models_class.plot_jaccard_preds(param_type=&#39;rank_pct&#39;,
+<div class="highlight"><pre><span></span><code>audited_models_class.plot_jaccard_preds(param_type='rank_pct',
                                         param=10,
                                         temporal_comparison=True)
-</pre></div>
-
-<p><img alt="img" src="../images/postmodeling/eis_jaccard_on_lists_over_time.png" title="How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists." /></p>
+</code></pre></div>
+<p><img alt="img" src="../images/postmodeling/eis_jaccard_on_lists_over_time.png" title="How similar are the model groups’ generated list? We use Jaccard similarity on the predicted lists (length of list 10%) to asses the overlap between lists."/></p>
 <p>There are a high jaccard similarity between some model groups across
 time. This could be an indicator that they are so similar that you can
 choose any and it won’t matter.</p>
 <h3 id="going-deeper-with-a-model">Going deeper with a model<a class="headerlink" href="#going-deeper-with-a-model" title="Permanent link">#</a></h3>
 <p>We will choose the model group <strong>64</strong> as the winner.</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="n">mg</span><span class="p">.</span><span class="n">model_group_id</span><span class="p">,</span>
     <span class="n">mg</span><span class="p">.</span><span class="n">model_type</span><span class="p">,</span>
     <span class="n">mg</span><span class="p">.</span><span class="n">hyperparameters</span><span class="p">,</span>
     <span class="n">array_agg</span><span class="p">(</span><span class="n">model_id</span> <span class="k">order</span> <span class="k">by</span> <span class="n">train_end_time</span><span class="p">)</span> <span class="k">as</span> <span class="n">models</span>
 <span class="k">from</span>
-    <span class="n">model_metadata</span><span class="p">.</span><span class="n">model_groups</span> <span class="k">as</span> <span class="n">mg</span>
+    <span class="n">triage_metadata</span><span class="p">.</span><span class="n">model_groups</span> <span class="k">as</span> <span class="n">mg</span>
     <span class="k">inner</span> <span class="k">join</span>
-    <span class="n">model_metadata</span><span class="p">.</span><span class="n">models</span>
+    <span class="n">triage_metadata</span><span class="p">.</span><span class="n">models</span>
     <span class="k">using</span> <span class="p">(</span><span class="n">model_group_id</span><span class="p">)</span>
 <span class="k">where</span> <span class="n">model_group_id</span> <span class="o">=</span> <span class="mi">76</span>
 <span class="k">group</span> <span class="k">by</span> <span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2141,23 +1655,20 @@ choose any and it won’t matter.</p>
 </tbody>
 </table>
 <p>But before going to production and start making predictions in unseen data, let’s see what the particular models are doing. <em>Postmodeling</em> created a <code>ModelEvaluator</code> (similar to the <code>ModelGroupEvaluator</code>) to do this exploration:</p>
-<div class="highlight"><pre><span></span>models_76 = { f&#39;{model}&#39;: ModelEvaluator(76, model, engine) for model in [198,216,234] }
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>models_76 = { f'{model}': ModelEvaluator(76, model, engine) for model in [198,216,234] }
+</code></pre></div>
 <p>In this tutorial, we will just show some parts of the analysis in the most recent model, but feel free of exploring the behavior of all the models in this model group, and check if you can detect any pattern.</p>
 <ul>
 <li>
 <p>Feature importances</p>
-<div class="highlight"><pre><span></span>models_76[&#39;234&#39;].plot_feature_importances(path=params.project_path,
+<div class="highlight"><pre><span></span><code>models_76['234'].plot_feature_importances(path=params.project_path,
                                           n_features_plots=params.n_features_plots,
                                           figsize=params.figsize)
-</pre></div>
-
-<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_importances.png" title="Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226)." /></p>
-<div class="highlight"><pre><span></span>models_76[&#39;234&#39;].plot_feature_group_aggregate_importances()
-</pre></div>
-
-<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_group_importances.png" title="Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226." /></p>
+</code></pre></div>
+<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_importances.png" title="Top 10 feature importances for de model group 64 at 2017-12-01 (i.e. model 226)."/></p>
+<div class="highlight"><pre><span></span><code>models_76['234'].plot_feature_group_aggregate_importances()
+</code></pre></div>
+<p><img alt="img" src="../images/postmodeling/eis_model_group_64_feature_group_importances.png" title="Feature group “importance” (we are basically taking the max of all the feature importances in a feature group) for the model group 64, model 226."/></p>
 </li>
 </ul>
 <h2 id="crosstabs-how-are-the-entities-classified">Crosstabs: How are the entities classified?<a class="headerlink" href="#crosstabs-how-are-the-entities-classified" title="Permanent link">#</a></h2>
@@ -2168,9 +1679,9 @@ useful, but we could do a lot better.</p>
 list of <em>features importance</em>. <code>crosstabs</code> will run statistical tests
 to compare the predicted positive and the predicted false facilities
 in <em>each</em> feature.</p>
-<div class="highlight"><pre><span></span><span class="nt">output</span><span class="p">:</span>
-  <span class="nt">schema</span><span class="p">:</span> <span class="s">&#39;test_results&#39;</span>
-  <span class="nt">table</span><span class="p">:</span> <span class="s">&#39;eis_crosstabs&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">output</span><span class="p">:</span>
+  <span class="nt">schema</span><span class="p">:</span> <span class="s">'test_results'</span>
+  <span class="nt">table</span><span class="p">:</span> <span class="s">'eis_crosstabs'</span>
 
 <span class="nt">thresholds</span><span class="p">:</span>
     <span class="nt">rank_abs</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">50</span><span class="p p-Indicator">]</span>
@@ -2179,11 +1690,11 @@ in <em>each</em> feature.</p>
 <span class="c1">#(optional): a list of entity_ids to subset on the crosstabs analysis</span>
 <span class="nt">entity_id_list</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
 
-<span class="nt">models_list_query</span><span class="p">:</span> <span class="s">&quot;select</span><span class="nv"> </span><span class="s">unnest(ARRAY[226])</span><span class="nv"> </span><span class="s">::</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">as</span><span class="nv"> </span><span class="s">model_id&quot;</span>
+<span class="nt">models_list_query</span><span class="p">:</span> <span class="s">"select</span><span class="nv"> </span><span class="s">unnest(ARRAY[226])</span><span class="nv"> </span><span class="s">::</span><span class="nv"> </span><span class="s">int</span><span class="nv"> </span><span class="s">as</span><span class="nv"> </span><span class="s">model_id"</span>
 
-<span class="nt">as_of_dates_query</span><span class="p">:</span> <span class="s">&quot;select</span><span class="nv"> </span><span class="s">generate_series(&#39;2017-12-01&#39;::date,</span><span class="nv"> </span><span class="s">&#39;2018-09-01&#39;::date,</span><span class="nv"> </span><span class="s">interval</span><span class="nv"> </span><span class="s">&#39;1month&#39;)</span><span class="nv">  </span><span class="s">as</span><span class="nv"> </span><span class="s">as_of_date&quot;</span>
+<span class="nt">as_of_dates_query</span><span class="p">:</span> <span class="s">"select</span><span class="nv"> </span><span class="s">generate_series('2017-12-01'::date,</span><span class="nv"> </span><span class="s">'2018-09-01'::date,</span><span class="nv"> </span><span class="s">interval</span><span class="nv"> </span><span class="s">'1month')</span><span class="nv">  </span><span class="s">as</span><span class="nv"> </span><span class="s">as_of_date"</span>
 
-<span class="c1">#don&#39;t change this query unless strictly necessary. It is just validating pairs of (model_id,as_of_date)</span>
+<span class="c1">#don't change this query unless strictly necessary. It is just validating pairs of (model_id,as_of_date)</span>
 <span class="c1">#it is just a join with distinct (model_id, as_of_date) in a predictions table</span>
 <span class="nt">models_dates_join_query</span><span class="p">:</span> <span class="p p-Indicator">|</span>
   <span class="no">select model_id,</span>
@@ -2217,13 +1728,11 @@ in <em>each</em> feature.</p>
       <span class="no">join models_dates_join_query using(model_id, as_of_date)</span>
       <span class="no">where model_id in (select model_id from models_list_query)</span>
       <span class="no">and as_of_date in (select as_of_date from as_of_dates_query)</span>
-</pre></div>
-
-<div class="highlight"><pre><span></span>triage --tb crosstabs /triage/eis_crosstabs_config.yaml
-</pre></div>
-
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>triage --tb crosstabs /triage/eis_crosstabs_config.yaml
+</code></pre></div>
 <p>When it finishes, you could explore the table with the following code:</p>
-<div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">significant_features</span> <span class="k">as</span> <span class="p">(</span>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">significant_features</span> <span class="k">as</span> <span class="p">(</span>
 <span class="k">select</span>
     <span class="n">feature_column</span><span class="p">,</span>
     <span class="n">as_of_date</span><span class="p">,</span>
@@ -2231,29 +1740,28 @@ in <em>each</em> feature.</p>
 <span class="k">from</span>
     <span class="n">test_results</span><span class="p">.</span><span class="n">eis_crosstabs</span>
 <span class="k">where</span>
-    <span class="n">metric</span> <span class="o">=</span> <span class="s1">&#39;ttest_p&#39;</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="s1">'ttest_p'</span>
     <span class="k">and</span>
-    <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">05</span> <span class="k">and</span> <span class="n">as_of_date</span> <span class="o">=</span> <span class="s1">&#39;2018-09-01&#39;</span>
+    <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">05</span> <span class="k">and</span> <span class="n">as_of_date</span> <span class="o">=</span> <span class="s1">'2018-09-01'</span>
     <span class="p">)</span>
 
 <span class="k">select</span>
     <span class="k">distinct</span>
     <span class="n">model_id</span><span class="p">,</span>
     <span class="n">as_of_date</span><span class="p">::</span><span class="nb">date</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
-    <span class="n">format</span><span class="p">(</span><span class="s1">&#39;%s %s&#39;</span><span class="p">,</span> <span class="n">threshold_value</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span><span class="p">)</span> <span class="k">as</span> <span class="n">threshold</span><span class="p">,</span>
+    <span class="n">format</span><span class="p">(</span><span class="s1">'%s %s'</span><span class="p">,</span> <span class="n">threshold_value</span><span class="p">,</span> <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span><span class="p">)</span> <span class="k">as</span> <span class="n">threshold</span><span class="p">,</span>
     <span class="n">feature_column</span><span class="p">,</span>
-    <span class="n">value</span> <span class="k">as</span> <span class="ss">&quot;ratio PP / PN&quot;</span>
+    <span class="n">value</span> <span class="k">as</span> <span class="ss">"ratio PP / PN"</span>
 <span class="k">from</span>
     <span class="n">test_results</span><span class="p">.</span><span class="n">eis_crosstabs</span> <span class="k">as</span> <span class="n">t1</span>
     <span class="k">inner</span> <span class="k">join</span>
     <span class="n">significant_features</span> <span class="k">as</span> <span class="n">t2</span> <span class="k">using</span><span class="p">(</span><span class="n">feature_column</span><span class="p">,</span> <span class="n">as_of_date</span><span class="p">)</span>
 <span class="k">where</span>
-    <span class="n">metric</span> <span class="o">=</span> <span class="s1">&#39;ratio_predicted_positive_over_predicted_negative&#39;</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="s1">'ratio_predicted_positive_over_predicted_negative'</span>
     <span class="k">and</span>
-    <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span> <span class="o">=</span> <span class="s1">&#39;pct&#39;</span>
+    <span class="n">t1</span><span class="p">.</span><span class="n">threshold_unit</span> <span class="o">=</span> <span class="s1">'pct'</span>
 <span class="k">order</span> <span class="k">by</span> <span class="n">value</span> <span class="k">desc</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2327,94 +1835,77 @@ in <em>each</em> feature.</p>
 <h3 id="where-to-go-from-here">Where to go from here<a class="headerlink" href="#where-to-go-from-here" title="Permanent link">#</a></h3>
 <p>Ready to get started with your own data? Check out <a href="https://dssg.github.io/triage/triage_project_workflow/">the suggested project workflow</a> for some tips about how to iterate and tune the pipeline for your project.</p>
 <p>Want to work through another example? Take a look at our <a href="https://dssg.github.io/triage/dirtyduck/inspections/">resource prioritization case study</a></p>
-                
-                  
-                
-              
-              
-                
-
-
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
+</article>
+</div>
+</div>
+</main>
 <footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../problem_description/" title="Problem description" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+<div class="md-footer-nav">
+<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
+<a class="md-footer-nav__link md-footer-nav__link--prev" href="../problem_description/" rel="prev" title="Problem description">
+<div class="md-footer-nav__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</div>
+<div class="md-footer-nav__title">
+<div class="md-ellipsis">
+<span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Problem description
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../inspections/" title="Resource prioritization" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </div>
+</div>
+</a>
+<a class="md-footer-nav__link md-footer-nav__link--next" href="../inspections/" rel="next" title="Resource prioritization">
+<div class="md-footer-nav__title">
+<div class="md-ellipsis">
+<span class="md-footer-nav__direction">
                   Next
                 </span>
                 Resource prioritization
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
+              </div>
+</div>
+<div class="md-footer-nav__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"></path></svg>
+</div>
+</a>
+</nav>
+</div>
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-footer-copyright">
         
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        powered by
-        <a href="https://www.mkdocs.org">MkDocs</a>
-        and
-        <a href="https://squidfunk.github.io/mkdocs-material/">
-          Material for MkDocs</a>
-      </div>
-      
-  <div class="md-footer-social">
-    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
-    
-      <a href="https://github.com/dssg/triage" class="md-footer-social__link fa fa-github"></a>
-    
-      <a href="https://twitter.com/datascifellows" class="md-footer-social__link fa fa-twitter"></a>
-    
-      <a href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" class="md-footer-social__link fa fa-linkedin"></a>
-    
-  </div>
-
-    </div>
-  </div>
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+          Material for MkDocs
+        </a>
+</div>
+<div class="md-footer-social">
+<a class="md-footer-social__link" href="https://github.com/dssg/triage" rel="noopener" target="_blank" title="github.com">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+</a>
+<a class="md-footer-social__link" href="https://twitter.com/datascifellows" rel="noopener" target="_blank" title="twitter.com">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"></path></svg>
+</a>
+<a class="md-footer-social__link" href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" rel="noopener" target="_blank" title="linkedin.com">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+</a>
+</div>
+</div>
+</div>
 </footer>
-      
-    </div>
-    
-      <script src="../../assets/javascripts/application.39abc4af.js"></script>
-      
-      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
-      
-        <script src="../../js/mermaid.min.js"></script>
-      
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-      
-    
-  </body>
+</div>
+<script src="../../assets/javascripts/vendor.d710d30a.min.js"></script>
+<script src="../../assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+<script>
+        app = initialize({
+          base: "../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../assets/javascripts/worker/search.a68abb33.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+<script src="../../js/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
 </html>

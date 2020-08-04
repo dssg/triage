@@ -1,1212 +1,751 @@
 
+<!DOCTYPE html>
 
-
-
-<!doctype html>
-<html lang="en" class="no-js">
-  <head>
-    
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
-      
-        <meta name="description" content="Documentation for Triage.">
-      
-      
-      
-      
-        <meta name="lang:clipboard.copy" content="Copy to clipboard">
-      
-        <meta name="lang:clipboard.copied" content="Copied to clipboard">
-      
-        <meta name="lang:search.language" content="en">
-      
-        <meta name="lang:search.pipeline.stopwords" content="True">
-      
-        <meta name="lang:search.pipeline.trimmer" content="True">
-      
-        <meta name="lang:search.result.none" content="No matching documents">
-      
-        <meta name="lang:search.result.one" content="1 matching document">
-      
-        <meta name="lang:search.result.other" content="# matching documents">
-      
-        <meta name="lang:search.tokenizer" content="[\s\-]+">
-      
-      <link rel="shortcut icon" href="../../assets/images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.2.0">
-    
-    
-      
-        <title>Data preparation - Triage Documentation</title>
-      
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application.750b69bd.css">
-      
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.224b79ff.css">
-      
-      
-        
-        
-        <meta name="theme-color" content="#546e7a">
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
-    
-    
-      
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700|Ubuntu+Mono">
-        <style>body,input{font-family:"Ubuntu","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
-      
-    
-    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
-    
-    
-    
-      
-    
-    
-  </head>
-  
-    
-    
-    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="deep-orange">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
-    viewBox="0 0 416 448" id="__github">
-  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
-        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
-        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
-        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
-        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
-        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
-        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
-        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
-        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
-        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
-        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
-        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
-        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
-        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
-        99.5z" />
-</svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-    
-      <a href="#data-preparation" tabindex="1" class="md-skip">
-        Skip to content
-      </a>
-    
-    
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../.." title="Triage Documentation" class="md-header-nav__button md-logo">
-          
-            <i class="md-icon">book</i>
-          
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="Documentation for Triage." name="description"/>
+<link href="http://dssg.github.io/triage/dirtyduck/data_preparation/" rel="canonical"/>
+<link href="../../assets/images/favicon.ico" rel="shortcut icon"/>
+<meta content="mkdocs-1.1.2, mkdocs-material-5.4.0" name="generator"/>
+<title>Data preparation - Triage Documentation</title>
+<link href="../../assets/stylesheets/main.fe0cca5b.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.a46bcfb3.min.css" rel="stylesheet"/>
+<meta content="#546e7a" name="theme-color"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
+<style>body,input{font-family:"Ubuntu",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+<link href="../../triage_docs.css" rel="stylesheet"/>
+</head>
+<body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#data-preparation">
+          Skip to content
         </a>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-          
-            <span class="md-header-nav__topic">
-              Triage Documentation
-            </span>
-            <span class="md-header-nav__topic">
-              Data preparation
-            </span>
-          
-        </div>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-          
-<div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
-      <label class="md-icon md-search__icon" for="__search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
-        &#xE5CD;
-      </button>
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta">
-            Type to start searching
-          </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
-        
-      </div>
-      
-        <div class="md-flex__cell md-flex__cell--shrink">
-          <div class="md-header-nav__source">
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header-nav md-grid">
+<a aria-label="Triage Documentation" class="md-header-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+</a>
+<label class="md-header-nav__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg>
+</label>
+<div class="md-header-nav__title" data-md-component="header-title">
+<div class="md-header-nav__ellipsis">
+<span class="md-header-nav__topic md-ellipsis">
+            Triage Documentation
+          </span>
+<span class="md-header-nav__topic md-ellipsis">
             
-
-
-  
-
-<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
+              Data preparation
+            
+          </span>
+</div>
+</div>
+<div class="md-header-nav__source">
+<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+</div>
+<div class="md-source__repository">
     dssg/triage
   </div>
 </a>
-          </div>
-        </div>
-      
-    </div>
-  </nav>
+</div>
+</nav>
 </header>
-    
-    <div class="md-container">
-      
-        
-      
-      
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../.." title="Triage Documentation" class="md-nav__button md-logo">
-      
-        <i class="md-icon">book</i>
-      
-    </a>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+</a>
     Triage Documentation
   </label>
-  
-    <div class="md-nav__source">
-      
-
-
-  
-
-<a href="http://github.com/dssg/triage/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
+<div class="md-nav__source">
+<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+</div>
+<div class="md-source__repository">
     dssg/triage
   </div>
 </a>
-    </div>
-  
-  <ul class="md-nav__list" data-md-scrollfix>
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../.." title="Home" class="md-nav__link">
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../.." title="Home">
       Home
     </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
-    
-    <label class="md-nav__link" for="nav-2">
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
+<label class="md-nav__link" for="nav-2">
       Get started with your own project
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Get started with your own project" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-2">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Get started with your own project
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../quickstart/" title="Quickstart guide" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../quickstart/" title="Quickstart guide">
       Quickstart guide
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../triage_project_workflow/" title="Suggested workflow" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../triage_project_workflow/" title="Suggested workflow">
       Suggested workflow
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
-    
-    <label class="md-nav__link" for="nav-3">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-3">
       Dirty Duck Tutorial
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Dirty Duck Tutorial" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Dirty Duck Tutorial
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../" title="Welcome!" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../" title="Welcome!">
       Welcome!
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../dirty_duckling/" title="Dirty duckling" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../dirty_duckling/" title="Dirty duckling">
       Dirty duckling
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
-    
-    <label class="md-nav__link" for="nav-3-3">
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" id="nav-3-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-3">
       Case studies
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Case studies" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Case studies
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../problem_description/" title="Problem description" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../problem_description/" title="Problem description">
       Problem description
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../eis/" title="Early Warning System" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../eis/" title="Early Warning System">
       Early Warning System
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../inspections/" title="Resource prioritization" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../inspections/" title="Resource prioritization">
       Resource prioritization
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
-    
-    <label class="md-nav__link" for="nav-3-4">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" id="nav-3-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-4">
       Triage
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Triage" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Triage
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../triage_intro/" title="A deeper look into triage" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../triage_intro/" title="A deeper look into triage">
       A deeper look into triage
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5" checked>
-    
-    <label class="md-nav__link" for="nav-3-5">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" id="nav-3-5" type="checkbox"/>
+<label class="md-nav__link" for="nav-3-5">
       Are you curious about the setup?
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-5">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Are you curious about the setup?" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-3-5">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Are you curious about the setup?
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../infrastructure/" title="Infrastructure" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../infrastructure/" title="Infrastructure">
       Infrastructure
     </a>
-  </li>
-
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
+</li>
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
         Data preparation
-      </label>
-    
-    <a href="./" title="Data preparation" class="md-nav__link md-nav__link--active">
+        <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"></path></svg>
+</span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./" title="Data preparation">
       Data preparation
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#load-the-data" title="Load the data" class="md-nav__link">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#load-the-data">
     Load the data
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#transforming-and-cleaning-the-data" title="Transforming (and cleaning) the data" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#transforming-and-cleaning-the-data">
     Transforming (and cleaning) the data
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rationale" title="Rationale" class="md-nav__link">
+<nav aria-label="Transforming (and cleaning) the data" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#rationale">
     Rationale
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#data-road" title="Data road" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#data-road">
     Data road
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dataset-documentation" title="Dataset documentation" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#dataset-documentation">
     Dataset documentation
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#reality-check" title="Reality check" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#reality-check">
     Reality check
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#cleaning" title="Cleaning" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#cleaning">
     Cleaning
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#semantic-tables" title="Semantic tables" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#semantic-tables">
     Semantic tables
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#entities-table" title="Entities table" class="md-nav__link">
+<nav aria-label="Semantic tables" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#entities-table">
     Entities table
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#events-table" title="Events table" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#events-table">
     Events table
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#lets-eda" title="Let's EDA &#x2026;" class="md-nav__link">
-    Let's EDA &#x2026;
+<li class="md-nav__item">
+<a class="md-nav__link" href="#lets-eda">
+    Let's EDA …
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#inspections-over-time" title="Inspections over time" class="md-nav__link">
+<nav aria-label="Let's EDA …" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#inspections-over-time">
     Inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-inspected-over-time" title="Number of facilities inspected over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-inspected-over-time">
     Number of facilities inspected over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-failed-inspections-over-time" title="Number of failed inspections over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-failed-inspections-over-time">
     Number of failed inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-with-failed-inspections-over-time" title="Number of facilities with failed inspections over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-with-failed-inspections-over-time">
     Number of facilities with failed inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-severe-violations-found-in-a-failed-inspection-over-time" title="Number of severe violations found in a failed inspection over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-severe-violations-found-in-a-failed-inspection-over-time">
     Number of severe violations found in a failed inspection over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time" title="Number of facilities with severe violations found in a failed inspection over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time">
     Number of facilities with severe violations found in a failed inspection over time
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#whats-next" title="What’s next?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#whats-next">
     What’s next?
   </a>
-  
 </li>
-      
-      
-      
-      
-      
-    </ul>
-  
+</ul>
 </nav>
-    
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../for_the_impatient/" title="Quick setup" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../for_the_impatient/" title="Quick setup">
       Quick setup
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-4">
       Triage documentation
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Triage documentation" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="nav-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Triage documentation
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1" type="checkbox" id="nav-4-1">
-    
-    <label class="md-nav__link" for="nav-4-1">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1" id="nav-4-1" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-1">
       Experiment
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-1">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Experiment" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-1">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Experiment
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/experiment-config/" title="Experiment Configuration" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/experiment-config/" title="Experiment Configuration">
       Experiment Configuration
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/feature-testing/" title="Testing Feature Configuration" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/feature-testing/" title="Testing Feature Configuration">
       Testing Feature Configuration
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/running/" title="Running an Experiment" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/running/" title="Running an Experiment">
       Running an Experiment
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-1-4" type="checkbox" id="nav-4-1-4">
-    
-    <label class="md-nav__link" for="nav-4-1-4">
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1-4" id="nav-4-1-4" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-1-4">
       Upgrading an Experiment
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-4-1-4">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Upgrading an Experiment" class="md-nav" data-md-level="3">
+<label class="md-nav__title" for="nav-4-1-4">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Upgrading an Experiment
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v7/" title="v6 -> v7" class="md-nav__link">
-      v6 -> v7
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v7/" title="v6 -&gt; v7">
+      v6 -&gt; v7
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v6/" title="v5 -> v6" class="md-nav__link">
-      v5 -> v6
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v6/" title="v5 -&gt; v6">
+      v5 -&gt; v6
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/upgrade-to-v5/" title="v3/v4 -> v5" class="md-nav__link">
-      v3/v4 -> v5
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v5/" title="v3/v4 -&gt; v5">
+      v3/v4 -&gt; v5
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive">
       Temporal Validation Deep Dive
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive">
       Cohort and Label Deep Dive
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/prediction-ranking/" title="Prediction Ranking" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/prediction-ranking/" title="Prediction Ranking">
       Prediction Ranking
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/features/" title="Feature Generation Recipe Book" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/features/" title="Feature Generation Recipe Book">
       Feature Generation Recipe Book
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/algorithm/" title="Experiment Algorithm" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/algorithm/" title="Experiment Algorithm">
       Experiment Algorithm
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../experiments/architecture/" title="Experiment Architecture" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/architecture/" title="Experiment Architecture">
       Experiment Architecture
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
-    
-    <label class="md-nav__link" for="nav-4-2">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-2" id="nav-4-2" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-2">
       Model selection
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-2">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Model selection" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-2">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Model selection
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../audition/audition/" title="Using Audition" class="md-nav__link">
-      Using Audition
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../audition/audition_intro/" title="Intro to Audition">
+      Intro to Audition
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../audition/audition-config/" title="Audition Configuration" class="md-nav__link">
-      Audition Configuration
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../audition/model_selection/" title="Model Selection Concepts">
+      Model Selection Concepts
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
-    
-    <label class="md-nav__link" for="nav-4-3">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../api/audition/" title="API Reference">
+      API Reference
+    </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-3" id="nav-4-3" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-3">
       Postmodeling
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-3">
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Postmodeling" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-3">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
         Postmodeling
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../postmodeling/" title="Using Postmodeling" class="md-nav__link">
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../postmodeling/" title="Using Postmodeling">
       Using Postmodeling
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../postmodeling/postmodeling-config/" title="Postmodeling & Crosstabs Configuration" class="md-nav__link">
-      Postmodeling & Crosstabs Configuration
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../postmodeling/postmodeling-config/" title="Postmodeling &amp; Crosstabs Configuration">
+      Postmodeling &amp; Crosstabs Configuration
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../ml_governance/" title="Model governance" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../ml_governance/" title="Model governance">
       Model governance
     </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../aws_batch/" title="Scaling up" class="md-nav__link">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../aws_batch/" title="Scaling up">
       Scaling up
     </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-  </ul>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6" id="nav-4-6" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-6">
+      API Reference
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="API Reference" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="nav-4-6">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+        API Reference
+      </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6-1" id="nav-4-6-1" type="checkbox"/>
+<label class="md-nav__link" for="nav-4-6-1">
+      Audition
+      <span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
+</span>
+</label>
+<nav aria-label="Audition" class="md-nav" data-md-level="3">
+<label class="md-nav__title" for="nav-4-6-1">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+        Audition
+      </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/auditioner/" title="Auditioner">
+      Auditioner
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/audition-config/" title="Audition Configuration">
+      Audition Configuration
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/selection_rules/" title="Selection Rules">
+      Selection Rules
+    </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/audition/database-dependencies/" title="Database Dependencies">
+      Database Dependencies
+    </a>
+</li>
+</ul>
 </nav>
-                  </div>
-                </div>
-              </div>
-            
-            
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#load-the-data" title="Load the data" class="md-nav__link">
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#load-the-data">
     Load the data
   </a>
-  
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#transforming-and-cleaning-the-data" title="Transforming (and cleaning) the data" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#transforming-and-cleaning-the-data">
     Transforming (and cleaning) the data
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rationale" title="Rationale" class="md-nav__link">
+<nav aria-label="Transforming (and cleaning) the data" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#rationale">
     Rationale
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#data-road" title="Data road" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#data-road">
     Data road
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dataset-documentation" title="Dataset documentation" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#dataset-documentation">
     Dataset documentation
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#reality-check" title="Reality check" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#reality-check">
     Reality check
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#cleaning" title="Cleaning" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#cleaning">
     Cleaning
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#semantic-tables" title="Semantic tables" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#semantic-tables">
     Semantic tables
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#entities-table" title="Entities table" class="md-nav__link">
+<nav aria-label="Semantic tables" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#entities-table">
     Entities table
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#events-table" title="Events table" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#events-table">
     Events table
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#lets-eda" title="Let's EDA &#x2026;" class="md-nav__link">
-    Let's EDA &#x2026;
+<li class="md-nav__item">
+<a class="md-nav__link" href="#lets-eda">
+    Let's EDA …
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#inspections-over-time" title="Inspections over time" class="md-nav__link">
+<nav aria-label="Let's EDA …" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#inspections-over-time">
     Inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-inspected-over-time" title="Number of facilities inspected over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-inspected-over-time">
     Number of facilities inspected over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-failed-inspections-over-time" title="Number of failed inspections over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-failed-inspections-over-time">
     Number of failed inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-with-failed-inspections-over-time" title="Number of facilities with failed inspections over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-with-failed-inspections-over-time">
     Number of facilities with failed inspections over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-severe-violations-found-in-a-failed-inspection-over-time" title="Number of severe violations found in a failed inspection over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-severe-violations-found-in-a-failed-inspection-over-time">
     Number of severe violations found in a failed inspection over time
   </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time" title="Number of facilities with severe violations found in a failed inspection over time" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time">
     Number of facilities with severe violations found in a failed inspection over time
   </a>
-  
 </li>
-        
-      </ul>
-    </nav>
-  
+</ul>
+</nav>
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#whats-next" title="What’s next?" class="md-nav__link">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#whats-next">
     What’s next?
   </a>
-  
 </li>
-      
-      
-      
-      
-      
-    </ul>
-  
+</ul>
 </nav>
-                  </div>
-                </div>
-              </div>
-            
-          
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/data_preparation.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
-                
-                
-                <h1 id="data-preparation">Data preparation<a class="headerlink" href="#data-preparation" title="Permanent link">#</a></h1>
+</div>
+</div>
+</div>
+<div class="md-content">
+<article class="md-content__inner md-typeset">
+<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/data_preparation.md" title="Edit this page">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
+</a>
+<h1 id="data-preparation">Data preparation<a class="headerlink" href="#data-preparation" title="Permanent link">#</a></h1>
 <p>We need to get the data and transform it into a shape that is suitable for the analysis.</p>
 <p><strong>NOTE:</strong> Unless we say otherwise, you should run all the following commands inside <code>bastion</code>.</p>
 <h2 id="load-the-data">Load the data<a class="headerlink" href="#load-the-data" title="Permanent link">#</a></h2>
 <p>Before loading the data into the database, verify that the database
 table is empty by running the following code:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1223,16 +762,14 @@ table is empty by running the following code:</p>
 database. In particular we will use the powerful
 <a href="https://www.postgresql.org/docs/10/sql-copy.html">copy</a> command and
 the City of Chicago's data API:</p>
-<div class="highlight"><pre><span></span><span class="err">\</span><span class="k">copy</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span> <span class="k">from</span> <span class="n">program</span> <span class="s1">&#39;curl &quot;https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD&quot;&#39;</span> <span class="n">HEADER</span> <span class="n">CSV</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="err">\</span><span class="k">copy</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span> <span class="k">from</span> <span class="n">program</span> <span class="s1">'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"'</span> <span class="n">HEADER</span> <span class="n">CSV</span>
+</code></pre></div>
 <p>Now, you should have some data:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;facilities inspected&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"facilities inspected"</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1247,15 +784,14 @@ the City of Chicago's data API:</p>
 </table>
 <p>You'll probably get a different number because the data are updated
 every day. Let's peek inside the table<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="n">inspection</span><span class="p">,</span>
     <span class="n">dba_name</span><span class="p">,</span>
     <span class="n">risk</span><span class="p">,</span>
     <span class="n">results</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span> <span class="k">limit</span> <span class="mi">1</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1307,9 +843,9 @@ over.</p>
 <li>Apply some simple transformations and store the resulting data in the <code>cleaned</code> schema.</li>
 <li>Organize the data into two <em>unnormalized</em><sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup> tables in the
     semantic schema: <code>events</code> and <code>entities</code>.</li>
-<li>Run <code>triage</code>. It will create several schemas (<code>model_metadata</code>, <code>test_results</code>, <code>train_results</code>).</li>
+<li>Run <code>triage</code>. It will create several schemas (<code>triage_metadata</code>, <code>test_results</code>, <code>train_results</code>).</li>
 </ol>
-<p><img alt="img" src="../images/data_road.png" /></p>
+<p><img alt="img" src="../images/data_road.png"/></p>
 <p><a id="orga5ba5d1"></a></p>
 <h3 id="dataset-documentation">Dataset documentation<a class="headerlink" href="#dataset-documentation" title="Permanent link">#</a></h3>
 <div class="admonition info">
@@ -1443,17 +979,16 @@ Foods)</strong>.</p>
 <h3 id="reality-check">Reality check<a class="headerlink" href="#reality-check" title="Permanent link">#</a></h3>
 <p>It is important to verify that the documentation is correct. Let's start by checking that the <code>risk</code> column <strong>only</strong> has three classifications:</p>
 <p><strong>NOTE</strong> Execute this in <code>psql</code> inside the container <code>bastion</code>.</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
       <span class="n">risk</span><span class="p">,</span>
-      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
   <span class="k">from</span>
       <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
   <span class="k">group</span> <span class="k">by</span>
       <span class="n">risk</span>
   <span class="k">order</span> <span class="k">by</span>
       <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1486,12 +1021,11 @@ Foods)</strong>.</p>
 </table>
 <p>Ok, there are two extra <code>risk</code> types, <code>All</code> and <code>NULL</code>, for a grand total of <strong>5</strong>.</p>
 <p>What about <code>types</code> of inspections?</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
-      <span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="k">type</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;types of inspections&quot;</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
+      <span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="k">type</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"types of inspections"</span>
   <span class="k">from</span>
       <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1506,9 +1040,9 @@ Foods)</strong>.</p>
 </table>
 <p>Wow, there are <strong>108</strong> types of inspections instead of the expected <strong>5</strong>!</p>
 <p>What are those types? How bad is it?</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="k">type</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">group</span> <span class="k">by</span>
@@ -1516,8 +1050,7 @@ Foods)</strong>.</p>
 <span class="k">order</span> <span class="k">by</span>
     <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
     <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1570,17 +1103,16 @@ Foods)</strong>.</p>
 </table>
 <p>This column will require also cleaning.</p>
 <p>Finally, let's look <code>results</code> (should be 3)</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
       <span class="n">results</span><span class="p">,</span>
-      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
   <span class="k">from</span>
       <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
   <span class="k">group</span> <span class="k">by</span>
       <span class="n">results</span>
   <span class="k">order</span> <span class="k">by</span>
       <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1649,15 +1181,14 @@ but it's good enough for this example project.</p>
 <p>Let's review the status of the spatial columns (<code>state, city, zip,
 latitude, longitude</code>). Beginning with <code>state</code>, all the facilities in
 the data should be located in <strong>Illinois</strong>:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="k">state</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">group</span> <span class="k">by</span>
     <span class="k">state</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1677,9 +1208,9 @@ the data should be located in <strong>Illinois</strong>:</p>
 </tbody>
 </table>
 <p>Ok, almost correct, there are some <code>NULL</code> values. We will assume that the <code>NULL</code> values are actually <code>IL</code> (i.e. we will impute them). Moving to the next spatial column, we expect that all the values in the column <code>city</code> are Chicago<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup>:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="k">lower</span><span class="p">(</span><span class="n">city</span><span class="p">)</span> <span class="k">as</span> <span class="n">city</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">group</span> <span class="k">by</span>
@@ -1687,8 +1218,7 @@ the data should be located in <strong>Illinois</strong>:</p>
 <span class="k">order</span> <span class="k">by</span>
     <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
     <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1745,14 +1275,13 @@ even have <code>chicagochicago</code>. All the values are near Chicago, even if
 they're in different counties, so we will ignore this column (or
 equivalently, we will assume that all the records are from Chicago).</p>
 <p>Zip code has a similar <code>NULL</code> problem:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections w/o zip code&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections w/o zip code"</span>
 <span class="k">from</span>
     <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">where</span>
-    <span class="n">zip</span> <span class="k">is</span> <span class="k">null</span> <span class="k">or</span> <span class="n">btrim</span><span class="p">(</span><span class="n">zip</span><span class="p">)</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
-</pre></div>
-
+    <span class="n">zip</span> <span class="k">is</span> <span class="k">null</span> <span class="k">or</span> <span class="n">btrim</span><span class="p">(</span><span class="n">zip</span><span class="p">)</span> <span class="o">=</span> <span class="s1">''</span><span class="p">;</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1781,7 +1310,7 @@ census_tracts</code> and <code>community_areas</code>.</p>
 as possible, we'll put violations in their own table.</p>
 <div class="admonition info">
 <p class="admonition-title">Decisions regarding data</p>
-<p>We will inspections that occurred <em>before</em>  <code>2018-07-01</code>. This is
+<p>We will inspections that occurred <em>before</em> <code>2018-07-01</code>. This is
 due the changes in the types and definition of the violations. See
 <a href="https://www.cityofchicago.org/content/dam/city/depts/cdph/FoodProtection/ChicagoFoodCodeMajorChangesFinal2018.pdf">here</a></p>
 </div>
@@ -1792,9 +1321,8 @@ schema is twofold: to keep our raw data <em>as is</em><sup id="fnref:11"><a clas
 assumptions and cleaning decisions separate from the <em>raw</em> data in a
 schema that <em>semantically</em> transmits that "this is our cleaned data."</p>
 <p>The <code>cleaned</code> schema will contain two tables: <code>cleaned.inspections</code> and <code>cleaned.violations</code>.</p>
-<div class="highlight"><pre><span></span>  <span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>  <span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
+</code></pre></div>
 <p>Then, we will create our mini <strong>ETL</strong> with our cleaning decisions:</p>
 <div class="admonition note">
 <p class="admonition-title">Data changes</p>
@@ -1802,7 +1330,7 @@ schema that <em>semantically</em> transmits that "this is our cleaned data."</p>
 <code>zip_codes, historical_wards, wards, community_areas</code> and <code>census_tracts</code>. The most
 recent code reflects those changes.</p>
 </div>
-<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
 
 <span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span> <span class="k">cascade</span><span class="p">;</span>
 
@@ -1815,10 +1343,10 @@ recent code reflects those changes.</p>
             <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">dba_name</span><span class="p">))</span> <span class="k">as</span> <span class="n">facility</span><span class="p">,</span>
             <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">aka_name</span><span class="p">))</span> <span class="k">as</span> <span class="n">facility_aka</span><span class="p">,</span>
             <span class="k">case</span> <span class="k">when</span>
-            <span class="n">facility_type</span> <span class="k">is</span> <span class="k">null</span> <span class="k">then</span> <span class="s1">&#39;unknown&#39;</span>
+            <span class="n">facility_type</span> <span class="k">is</span> <span class="k">null</span> <span class="k">then</span> <span class="s1">'unknown'</span>
             <span class="k">else</span> <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">facility_type</span><span class="p">))</span>
             <span class="k">end</span> <span class="k">as</span> <span class="n">facility_type</span><span class="p">,</span>
-            <span class="k">lower</span><span class="p">(</span><span class="k">substring</span><span class="p">(</span><span class="n">risk</span> <span class="k">from</span> <span class="s1">&#39;\((.+)\)&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="n">risk</span><span class="p">,</span>
+            <span class="k">lower</span><span class="p">(</span><span class="k">substring</span><span class="p">(</span><span class="n">risk</span> <span class="k">from</span> <span class="s1">'\((.+)\)'</span><span class="p">))</span> <span class="k">as</span> <span class="n">risk</span><span class="p">,</span>
             <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">address</span><span class="p">))</span> <span class="k">as</span> <span class="n">address</span><span class="p">,</span>
             <span class="n">zip</span> <span class="k">as</span> <span class="n">zip_code</span><span class="p">,</span>
             <span class="n">community_areas</span> <span class="k">as</span> <span class="n">community_area</span><span class="p">,</span>
@@ -1826,27 +1354,25 @@ recent code reflects those changes.</p>
             <span class="n">historical_wards</span> <span class="k">as</span> <span class="n">historical_ward</span><span class="p">,</span>
             <span class="n">wards</span> <span class="k">as</span> <span class="n">ward</span><span class="p">,</span>
             <span class="k">substring</span><span class="p">(</span>
-                <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">type</span><span class="p">,</span> <span class="s1">&#39;liquor&#39;</span><span class="p">,</span> <span class="s1">&#39;task force&#39;</span><span class="p">,</span> <span class="s1">&#39;gi&#39;</span><span class="p">)))</span>
-            <span class="k">from</span> <span class="s1">&#39;canvass|task force|complaint|food poisoning|consultation|license|tag removal&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="k">type</span><span class="p">,</span>
+                <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">type</span><span class="p">,</span> <span class="s1">'liquor'</span><span class="p">,</span> <span class="s1">'task force'</span><span class="p">,</span> <span class="s1">'gi'</span><span class="p">)))</span>
+            <span class="k">from</span> <span class="s1">'canvass|task force|complaint|food poisoning|consultation|license|tag removal'</span><span class="p">)</span> <span class="k">as</span> <span class="k">type</span><span class="p">,</span>
             <span class="nb">date</span><span class="p">,</span>
             <span class="c1">-- point(longitude, latitude) as location</span>
             <span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">),</span> <span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span> <span class="k">as</span> <span class="k">location</span>  <span class="c1">-- We use geography so the measurements are in meters</span>
         <span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
         <span class="k">where</span> <span class="n">zip</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>  <span class="c1">-- removing NULL zip codes</span>
-        <span class="k">and</span> <span class="nb">date</span> <span class="o">&lt;</span> <span class="s1">&#39;2018-07-01&#39;</span>
+        <span class="k">and</span> <span class="nb">date</span> <span class="o">&lt;</span> <span class="s1">'2018-07-01'</span>
             <span class="p">)</span>
 
     <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">cleaned</span> <span class="k">where</span> <span class="k">type</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>
         <span class="p">);</span>
-</pre></div>
-
+</code></pre></div>
 <p>The number of inspections now is:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">inspection</span><span class="p">),</span> <span class="s1">&#39;999,999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of</span>
-<span class="ss">    inspections (until 07/01/2018)&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">inspection</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of</span>
+<span class="ss">    inspections (until 07/01/2018)"</span>
 <span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1870,13 +1396,12 @@ the inspector's comments. The comments are free text, which means that
 they can contain line breaks, mispellings, etc. In particular, note
 that pipes (<code>|</code>) seperate multiple violations.</p>
 <p>The following <code>sql</code> code removes line breaks and multiple spaces and creates an array with all the violations for inspection number <code>2145736</code>:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="k">unnest</span><span class="p">(</span><span class="n">string_to_array</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">&#39;[\n\r]+&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span> <span class="p">),</span> <span class="s1">&#39;|&#39;</span><span class="p">))</span>  <span class="k">as</span> <span class="n">violations_array</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="k">unnest</span><span class="p">(</span><span class="n">string_to_array</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">'[\n\r]+'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="s1">'g'</span> <span class="p">),</span> <span class="s1">'|'</span><span class="p">))</span>  <span class="k">as</span> <span class="n">violations_array</span>
 <span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">where</span>
-    <span class="n">inspection</span> <span class="o">=</span> <span class="s1">&#39;2145736&#39;</span><span class="p">;</span>
-</pre></div>
-
+    <span class="n">inspection</span> <span class="o">=</span> <span class="s1">'2145736'</span><span class="p">;</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1909,7 +1434,7 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
 <li>description</li>
 <li>comments</li>
 </ul>
-<div class="highlight"><pre><span></span>   <span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">cascade</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code>   <span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">cascade</span><span class="p">;</span>
 
    <span class="k">create</span> <span class="k">table</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">as</span> <span class="p">(</span>
    <span class="k">select</span>
@@ -1920,10 +1445,10 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
        <span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="k">as</span> <span class="n">description</span><span class="p">,</span>
        <span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span> <span class="k">as</span> <span class="k">comment</span><span class="p">,</span>
        <span class="p">(</span><span class="k">case</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="k">then</span> <span class="k">NULL</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">1</span> <span class="k">and</span> <span class="mi">14</span> <span class="k">then</span> <span class="s1">&#39;critical&#39;</span> <span class="c1">-- From the documentation</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">15</span> <span class="k">and</span> <span class="mi">29</span>  <span class="k">then</span> <span class="s1">&#39;serious&#39;</span>
-           <span class="k">else</span> <span class="s1">&#39;minor&#39;</span>
+           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">=</span> <span class="s1">''</span> <span class="k">then</span> <span class="k">NULL</span>
+           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">1</span> <span class="k">and</span> <span class="mi">14</span> <span class="k">then</span> <span class="s1">'critical'</span> <span class="c1">-- From the documentation</span>
+           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">15</span> <span class="k">and</span> <span class="mi">29</span>  <span class="k">then</span> <span class="s1">'serious'</span>
+           <span class="k">else</span> <span class="s1">'minor'</span>
            <span class="k">end</span>
            <span class="p">)</span> <span class="k">as</span> <span class="n">severity</span> <span class="k">from</span>
        <span class="p">(</span>
@@ -1933,30 +1458,28 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
            <span class="nb">date</span><span class="p">,</span>
            <span class="n">regexp_split_to_array</span><span class="p">(</span>   <span class="c1">-- Create an array we will split the code, description, comment</span>
                <span class="n">regexp_split_to_table</span><span class="p">(</span> <span class="c1">-- Create a row per each comment we split by |</span>
-                   <span class="n">coalesce</span><span class="p">(</span>            <span class="c1">-- If there isn&#39;t a violation add &#39;- Comments:&#39;</span>
-                       <span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">&#39;[\n\r]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span> <span class="p">)</span>  <span class="c1">-- Remove line breaks</span>
-                       <span class="p">,</span> <span class="s1">&#39;- Comments:&#39;</span><span class="p">)</span>
-                   <span class="p">,</span> <span class="s1">&#39;\|&#39;</span><span class="p">)</span>  <span class="c1">-- Split the violations</span>
-               <span class="p">,</span> <span class="s1">&#39;(?&lt;=\d+)\.\s*|\s*-\s*Comments:&#39;</span><span class="p">)</span>  <span class="c1">-- Split each violation in three</span>
-            <span class="c1">-- , &#39;\.\s*|\s*-\s*Comments:&#39;)  -- Split each violation in three (Use this if your postgresql is kind off old</span>
+                   <span class="n">coalesce</span><span class="p">(</span>            <span class="c1">-- If there isn't a violation add '- Comments:'</span>
+                       <span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">'[\n\r]+'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'g'</span> <span class="p">)</span>  <span class="c1">-- Remove line breaks</span>
+                       <span class="p">,</span> <span class="s1">'- Comments:'</span><span class="p">)</span>
+                   <span class="p">,</span> <span class="s1">'\|'</span><span class="p">)</span>  <span class="c1">-- Split the violations</span>
+               <span class="p">,</span> <span class="s1">'(?&lt;=\d+)\.\s*|\s*-\s*Comments:'</span><span class="p">)</span>  <span class="c1">-- Split each violation in three</span>
+            <span class="c1">-- , '\.\s*|\s*-\s*Comments:')  -- Split each violation in three (Use this if your postgresql is kind off old</span>
            <span class="k">as</span> <span class="n">tuple</span>
        <span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-       <span class="k">where</span> <span class="n">results</span> <span class="k">in</span> <span class="p">(</span><span class="s1">&#39;Fail&#39;</span><span class="p">,</span> <span class="s1">&#39;Pass&#39;</span><span class="p">,</span> <span class="s1">&#39;Pass w/ Conditions&#39;</span><span class="p">)</span> <span class="k">and</span> <span class="n">license_num</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>
+       <span class="k">where</span> <span class="n">results</span> <span class="k">in</span> <span class="p">(</span><span class="s1">'Fail'</span><span class="p">,</span> <span class="s1">'Pass'</span><span class="p">,</span> <span class="s1">'Pass w/ Conditions'</span><span class="p">)</span> <span class="k">and</span> <span class="n">license_num</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>
            <span class="p">)</span> <span class="k">as</span> <span class="n">t</span>
        <span class="p">);</span>
-</pre></div>
-
+</code></pre></div>
 <p>This code is in <code>/sql/create_violations_table.sql</code>.</p>
 <p>We can verify the result of the previous script</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="n">inspection</span><span class="p">,</span> <span class="nb">date</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">description</span>
 <span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span>
 <span class="k">where</span>
     <span class="n">inspection</span> <span class="o">=</span> <span class="mi">2145736</span>
 <span class="k">order</span> <span class="k">by</span>
     <span class="n">code</span> <span class="k">asc</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1989,22 +1512,21 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
 </table>
 <p>If everything worked correctly you should be able to run the following
 code<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup>:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="k">case</span>
     <span class="k">when</span>
-    <span class="k">grouping</span><span class="p">(</span><span class="n">severity</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">then</span> <span class="s1">&#39;TOTAL&#39;</span>
+    <span class="k">grouping</span><span class="p">(</span><span class="n">severity</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">then</span> <span class="s1">'TOTAL'</span>
     <span class="k">else</span>
     <span class="n">severity</span>
     <span class="k">end</span> <span class="k">as</span> <span class="n">severity</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
 <span class="k">from</span>
     <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span>
 <span class="k">group</span> <span class="k">by</span>
     <span class="k">rollup</span> <span class="p">(</span><span class="n">severity</span><span class="p">)</span>
 <span class="k">order</span> <span class="k">by</span>
     <span class="n">severity</span> <span class="n">nulls</span> <span class="k">first</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2045,11 +1567,11 @@ can uniquely identify a facility. Let's hope it's easy<sup id="fnref:13"><a clas
 identifier. Let's confirm our hypothesis with some queries.</p>
 <p>We will begin with the following query: <em>What are 5 licenses with the
 most inspections?</em></p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="n">license_num</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">&#39;999,999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span><span class="p">,</span>
-    <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">&#39;fail&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="k">as</span> <span class="ss">&quot;number of failed inspections&quot;</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
+    <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
 <span class="k">from</span>
     <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">group</span> <span class="k">by</span>
@@ -2057,8 +1579,7 @@ most inspections?</em></p>
 <span class="k">order</span> <span class="k">by</span>
      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
     <span class="k">limit</span> <span class="mi">5</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2098,10 +1619,10 @@ most inspections?</em></p>
 <p>This looks weird. There are three license numbers, in particular
 license number <code>0</code>, that have many more inspections than the
 rest. Let's investigate <code>license_num</code> = <code>0</code>.</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
       <span class="n">facility_type</span><span class="p">,</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span><span class="p">,</span>
-      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">&#39;fail&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of failed inspections&quot;</span>
+      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
+      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
   <span class="k">from</span>
       <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
   <span class="k">where</span>
@@ -2109,10 +1630,9 @@ rest. Let's investigate <code>license_num</code> = <code>0</code>.</p>
   <span class="k">group</span> <span class="k">by</span>
       <span class="n">facility_type</span>
   <span class="k">order</span> <span class="k">by</span>
-      <span class="ss">&quot;number of inspections&quot;</span> <span class="k">desc</span>
+      <span class="ss">"number of inspections"</span> <span class="k">desc</span>
   <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2178,26 +1698,25 @@ rest. Let's investigate <code>license_num</code> = <code>0</code>.</p>
 these are related to <em>special events</em>, <em>churches</em>, <em>festivals</em>,
 etc. But what about the <code>restaurants</code> that have <code>license_num</code> = <code>0</code>?
 Are those the same restaurant?</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
       <span class="n">license_num</span><span class="p">,</span>
       <span class="n">facility</span><span class="p">,</span>
       <span class="n">address</span><span class="p">,</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span><span class="p">,</span>
-      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">&#39;fail&#39;</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-      <span class="k">as</span> <span class="ss">&quot;number of failed inspections&quot;</span>
+      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
+      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
   <span class="k">from</span>
       <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
   <span class="k">where</span>
       <span class="n">license_num</span> <span class="o">=</span> <span class="mi">0</span>
       <span class="k">and</span>
-      <span class="n">facility_type</span> <span class="o">=</span> <span class="s1">&#39;restaurant&#39;</span>
+      <span class="n">facility_type</span> <span class="o">=</span> <span class="s1">'restaurant'</span>
   <span class="k">group</span> <span class="k">by</span>
       <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">address</span>
   <span class="k">order</span> <span class="k">by</span>
-      <span class="ss">&quot;number of inspections&quot;</span> <span class="k">desc</span>
+      <span class="ss">"number of inspections"</span> <span class="k">desc</span>
   <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2283,13 +1802,12 @@ Are those the same restaurant?</p>
 </table>
 <p>Nope. Unfortunately, <code>license_num</code> is not a unique identifier.</p>
 <p>Perhaps <code>license_num</code> and <code>address</code> are a unique identifier.</p>
-<div class="highlight"><pre><span></span>  <span class="k">select</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">license_num</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of licenses&quot;</span><span class="p">,</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">facility</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of facilities&quot;</span><span class="p">,</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">address</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of addresses&quot;</span>
+<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
+  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">license_num</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of licenses"</span><span class="p">,</span>
+  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">facility</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of facilities"</span><span class="p">,</span>
+  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">address</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of addresses"</span>
   <span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2313,8 +1831,8 @@ perhaps several facilities share the same address, such as facilities
 at the stadium or the airport.</p>
 <p>We will try to use the combination of <code>license_num</code>, <code>facility</code>,
 <code>facility_aka</code>, <code>facility_type</code>, and <code>address</code> to identify a facility:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span> <span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">&quot;number of inspections&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span> <span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
 <span class="k">from</span>
     <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
 <span class="k">group</span> <span class="k">by</span>
@@ -2322,8 +1840,7 @@ at the stadium or the airport.</p>
 <span class="k">order</span> <span class="k">by</span>
     <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">license_num</span><span class="p">,</span> <span class="n">facility_type</span>
 <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2433,7 +1950,7 @@ predictions for inactive entities.</p>
 the date of the facility's first inspection as <code>start_time</code>, and
 either <code>NULL</code> or the date of inspection if the result was <code>out of
 business</code> or <code>business not located</code> as <code>end_time</code>.</p>
-<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">;</span>
 
 <span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="k">cascade</span><span class="p">;</span>
 
@@ -2455,7 +1972,7 @@ business</code> or <code>business not located</code> as <code>end_time</code>.</
             <span class="n">zip_code</span><span class="p">,</span>
             <span class="k">location</span><span class="p">,</span>
             <span class="k">min</span><span class="p">(</span><span class="nb">date</span><span class="p">)</span> <span class="n">over</span> <span class="p">(</span><span class="n">partition</span> <span class="k">by</span> <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="k">as</span> <span class="n">start_time</span><span class="p">,</span>
-            <span class="k">max</span><span class="p">(</span><span class="k">case</span> <span class="k">when</span> <span class="k">result</span> <span class="k">in</span> <span class="p">(</span><span class="s1">&#39;out of business&#39;</span><span class="p">,</span> <span class="s1">&#39;business not located&#39;</span><span class="p">)</span>
+            <span class="k">max</span><span class="p">(</span><span class="k">case</span> <span class="k">when</span> <span class="k">result</span> <span class="k">in</span> <span class="p">(</span><span class="s1">'out of business'</span><span class="p">,</span> <span class="s1">'business not located'</span><span class="p">)</span>
                 <span class="k">then</span> <span class="nb">date</span>
                 <span class="k">else</span> <span class="k">NULL</span>
                 <span class="k">end</span><span class="p">)</span>
@@ -2480,19 +1997,17 @@ business</code> or <code>business not located</code> as <code>end_time</code>.</
         <span class="n">daterange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span> <span class="k">as</span> <span class="n">activity_period</span>
     <span class="k">from</span> <span class="n">entities</span>
         <span class="p">);</span>
-</pre></div>
-
+</code></pre></div>
 <p>Note that we added a <em>unique</em> identifier (<code>entity_id</code>) to this
 table. This identifier was assigned using a PostgreSQL idiom:
 <code>distinct on()</code>. <code>DISTINCT ON</code> keeps the "first" row of each group. If
 you are interested in this powerful technique see this
 <a href="http://www.postgresqltutorial.com/postgresql-select-distinct/">blogpost</a>.</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">entity_id</span><span class="p">),</span> <span class="s1">&#39;999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">entities</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">entity_id</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="n">entities</span>
 <span class="k">from</span>
     <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2506,7 +2021,7 @@ you are interested in this powerful technique see this
 </tbody>
 </table>
 <p>We will add some indexes to this table<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup>:</p>
-<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">index</span> <span class="n">entities_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">entity_id</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">index</span> <span class="n">entities_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">entity_id</span><span class="p">);</span>
 <span class="k">create</span> <span class="k">index</span> <span class="n">entities_license_num_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">license_num</span><span class="p">);</span>
 <span class="k">create</span> <span class="k">index</span> <span class="n">entities_facility_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">facility</span><span class="p">);</span>
 <span class="k">create</span> <span class="k">index</span> <span class="n">entities_facility_type_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">facility_type</span><span class="p">);</span>
@@ -2516,15 +2031,14 @@ you are interested in this powerful technique see this
 <span class="k">create</span> <span class="k">index</span> <span class="n">entities_location_gix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="k">using</span> <span class="n">gist</span> <span class="p">(</span><span class="k">location</span><span class="p">);</span>
 
 <span class="k">create</span> <span class="k">index</span> <span class="n">entities_full_key_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">address</span><span class="p">);</span>
-</pre></div>
-
+</code></pre></div>
 <h3 id="events-table">Events table<a class="headerlink" href="#events-table" title="Permanent link">#</a></h3>
 <p>We are ready to create the events table. This table will describe the
 inspection, like the <em>type</em> of inspection, <em>when</em> and <em>where</em> the
 inspection happened, and the inspection <em>result</em>. We will add the
 violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>. Finally, we'll rename
 <code>inspection</code> as <code>event_id</code><sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup>.</p>
-<div class="highlight"><pre><span></span><span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">cascade</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">cascade</span><span class="p">;</span>
 
 <span class="k">create</span> <span class="k">table</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">as</span> <span class="p">(</span>
 
@@ -2539,10 +2053,10 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
             <span class="n">i</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">address</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">location</span><span class="p">,</span>
             <span class="n">jsonb_agg</span><span class="p">(</span>
                 <span class="n">jsonb_build_object</span><span class="p">(</span>
-                    <span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">code</span><span class="p">,</span>
-                    <span class="s1">&#39;severity&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">severity</span><span class="p">,</span>
-                <span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="s1">&#39;comment&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="k">comment</span>
+                    <span class="s1">'code'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">code</span><span class="p">,</span>
+                    <span class="s1">'severity'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">severity</span><span class="p">,</span>
+                <span class="s1">'description'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">description</span><span class="p">,</span>
+                <span class="s1">'comment'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="k">comment</span>
                 <span class="p">)</span>
             <span class="k">order</span>  <span class="k">by</span> <span class="n">code</span>
                 <span class="p">)</span> <span class="k">as</span> <span class="n">violations</span>
@@ -2585,10 +2099,9 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
 <span class="k">create</span> <span class="k">index</span> <span class="n">events_violations_json_path</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">using</span> <span class="n">gin</span><span class="p">(</span><span class="n">violations</span> <span class="n">jsonb_path_ops</span><span class="p">);</span>
 
 <span class="k">create</span> <span class="k">index</span> <span class="n">events_event_entity_zip_code_date</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span><span class="n">event_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">,</span> <span class="n">entity_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">,</span> <span class="n">zip_code</span><span class="p">,</span> <span class="nb">date</span> <span class="k">desc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">);</span>
-</pre></div>
-
+</code></pre></div>
 <p>Success! We have one row per event<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Our semantic data looks like:</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
     <span class="n">event_id</span><span class="p">,</span>
     <span class="n">entity_id</span><span class="p">,</span>
     <span class="k">type</span><span class="p">,</span>
@@ -2599,8 +2112,7 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
     <span class="n">zip_code</span>
 <span class="k">from</span>
     <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">limit</span> <span class="mi">1</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2628,11 +2140,10 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
 </tbody>
 </table>
 <p>We omitted <code>violations</code> and <code>location</code> for brevity. The total number of inspections is</p>
-<div class="highlight"><pre><span></span><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">),</span> <span class="s1">&#39;999,999,999&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">events</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="n">events</span>
 <span class="k">from</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
-</pre></div>
-
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -2646,7 +2157,7 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
 </tbody>
 </table>
 <p>Now that we have our data in a good shape, we are ready to use <strong>Triage</strong>.</p>
-<h2 id="lets-eda">Let's EDA &#x2026;<a class="headerlink" href="#lets-eda" title="Permanent link">#</a></h2>
+<h2 id="lets-eda">Let's EDA …<a class="headerlink" href="#lets-eda" title="Permanent link">#</a></h2>
 <p>It is always a good idea to do some <em>Exploratory Data Analysis</em><sup id="fnref:19"><a class="footnote-ref" href="#fn:19">19</a></sup>
 or <strong>EDA</strong> for short. This will help us to learn more about the
 dynamics of the entities or the inspections.</p>
@@ -2658,7 +2169,7 @@ dynamics of the entities or the inspections.</p>
 </ul>
 <h3 id="inspections-over-time">Inspections over time<a class="headerlink" href="#inspections-over-time" title="Permanent link">#</a></h3>
 <p>First, we will try the answer the question: <em>how many inspections are realized every month?</em></p>
-<p><img alt="img" src="../images/EDA/inspections_over_time.png" title="Number of inspections per month across our whole dataset" /></p>
+<p><img alt="img" src="../images/EDA/inspections_over_time.png" title="Number of inspections per month across our whole dataset"/></p>
 <h3 id="number-of-facilities-inspected-over-time">Number of facilities <em>inspected</em> over time<a class="headerlink" href="#number-of-facilities-inspected-over-time" title="Permanent link">#</a></h3>
 <p>The previous plot was about the number of <em>events</em> every month, now we will plot how many <em>entities</em> are acted every month.</p>
 <p>One question, that is useful to answer is: Are there facilities that are inspected more than once in a month?</p>
@@ -2668,20 +2179,20 @@ dynamics of the entities or the inspections.</p>
 contain <strong>all</strong> the facilities in Chicago. This will have an effect
 on the modeling stage.</p>
 </div>
-<p><img alt="img" src="../images/EDA/facilities_inspected_over_time.png" title="Number of unique facilities inspected every month." /></p>
+<p><img alt="img" src="../images/EDA/facilities_inspected_over_time.png" title="Number of unique facilities inspected every month."/></p>
 <h3 id="number-of-failed-inspections-over-time">Number of failed inspections over time<a class="headerlink" href="#number-of-failed-inspections-over-time" title="Permanent link">#</a></h3>
 <p>What is the proportion of inspections every month that actually end in a failed inspection?</p>
-<p><img alt="img" src="../images/EDA/failed_inspections_over_time.png" title="Number of failed inspections every month." /></p>
+<p><img alt="img" src="../images/EDA/failed_inspections_over_time.png" title="Number of failed inspections every month."/></p>
 <h3 id="number-of-facilities-with-failed-inspections-over-time">Number of facilities with failed inspections over time<a class="headerlink" href="#number-of-facilities-with-failed-inspections-over-time" title="Permanent link">#</a></h3>
 <p>Now let's see the behavior of the <em>outcomes</em> of the inspection across
 time. First just if the inspection failed.</p>
-<p><img alt="img" src="../images/EDA/facilities_with_inspections_failed_over_time.png" title="Number of unique facilities with failed inspections every month." /></p>
+<p><img alt="img" src="../images/EDA/facilities_with_inspections_failed_over_time.png" title="Number of unique facilities with failed inspections every month."/></p>
 <h3 id="number-of-severe-violations-found-in-a-failed-inspection-over-time">Number of severe violations found in a failed inspection over time<a class="headerlink" href="#number-of-severe-violations-found-in-a-failed-inspection-over-time" title="Permanent link">#</a></h3>
 <p>Finally let's analyze the evolution of failed inspections with severe
 violations (violation code in 15-29)</p>
-<p><img alt="img" src="../images/EDA/failed_inspections_severe_violations_over_time.png" title="Number of failed inspection with critical violation found" /></p>
+<p><img alt="img" src="../images/EDA/failed_inspections_severe_violations_over_time.png" title="Number of failed inspection with critical violation found"/></p>
 <h3 id="number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time">Number of facilities with severe violations found in a failed inspection over time<a class="headerlink" href="#number-of-facilities-with-severe-violations-found-in-a-failed-inspection-over-time" title="Permanent link">#</a></h3>
-<p><img alt="img" src="../images/EDA/facilities_with_failed_inspections_severe_violations_over_time.png" title="Number of facilities which failed inspections with severe violations." /></p>
+<p><img alt="img" src="../images/EDA/facilities_with_failed_inspections_severe_violations_over_time.png" title="Number of facilities which failed inspections with severe violations."/></p>
 <p>This few plots give us a sense of how the data behaves and will help
 us in detect weird bugs or model-behavior later.</p>
 <h2 id="whats-next">What’s next?<a class="headerlink" href="#whats-next" title="Permanent link">#</a></h2>
@@ -2691,84 +2202,84 @@ us in detect weird bugs or model-behavior later.</p>
 <li>Learn more about <a href="../inspections/">resource prioritization systems</a></li>
 </ul>
 <div class="footnote">
-<hr />
+<hr/>
 <ol>
 <li id="fn:1">
 <p>If you want to try different columns (or you don't remember
-which columns try <code>\d raw.inspectios</code> first&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+which columns try <code>\d raw.inspectios</code> first <a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">↩</a></p>
 </li>
 <li id="fn:2">
 <p>We are following the <a href="https://en.wikipedia.org/wiki/Event_(relativity)">event's definition from
 physics</a>: "an
 event is the instantaneous physical situation or occurrence
-associated with a point in spacetime"&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+associated with a point in spacetime" <a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">↩</a></p>
 </li>
 <li id="fn:3">
 <p>It will make your life easier and most of the Machine Learning
-algorithms only accept data in matrix form (i.e. one big table)&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+algorithms only accept data in matrix form (i.e. one big table) <a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">↩</a></p>
 </li>
 <li id="fn:4">
-<p>Verbatim from the datasource documentation.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p>Verbatim from the datasource documentation. <a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">↩</a></p>
 </li>
 <li id="fn:5">
-<p>A controversial decision, I know.&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+<p>A controversial decision, I know. <a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">↩</a></p>
 </li>
 <li id="fn:6">
 <p>This problem is related to the process of <em>deduplication</em> and there is
 another DSaPP tool for that:
-<a href="https://dssg.github.io/matching-tool/">matching-tool</a>.&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<a href="https://dssg.github.io/matching-tool/">matching-tool</a>. <a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">↩</a></p>
 </li>
 <li id="fn:7">
-<p>It is the <em>Chicago</em> Food Inspections dataset, after all.&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+<p>It is the <em>Chicago</em> Food Inspections dataset, after all. <a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">↩</a></p>
 </li>
 <li id="fn:8">
 <p>We could also use the default geometric data type from postgresql:
 <code>point</code>
-(<a href="https://www.postgresql.org/docs/10/datatype-geometric.html">https://www.postgresql.org/docs/10/datatype-geometric.html</a>)&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+(<a href="https://www.postgresql.org/docs/10/datatype-geometric.html">https://www.postgresql.org/docs/10/datatype-geometric.html</a>) <a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">↩</a></p>
 </li>
 <li id="fn:9">
 <p>We will store the <code>Point</code> as a <code>geography</code> object. As a result,
 spatial database operations (like calculating the distances
 between two facilities) will return answers in meters instead of
 degrees. See
-<a href="http://workshops.boundlessgeo.com/postgis-intro/geography.html">this</a>.&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+<a href="http://workshops.boundlessgeo.com/postgis-intro/geography.html">this</a>. <a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">↩</a></p>
 </li>
 <li id="fn:10">
 <p>As a real geographical object <a href="https://postgis.net/docs/ST_MakePoint.html">check the PostGIS
-documentation</a>&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+documentation</a> <a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">↩</a></p>
 </li>
 <li id="fn:11">
-<p>Remember our tip at the beginning of this section!&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+<p>Remember our tip at the beginning of this section! <a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">↩</a></p>
 </li>
 <li id="fn:12">
 <p>If the code looks funny to you, it is because we are using
 <a href="https://www.postgresql.org/docs/devel/queries-table-expressions.html#QUERIES-GROUPING-SETS">grouping
 sets</a>,
-in particular <code>rollup</code>. See the docs.&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+in particular <code>rollup</code>. See the docs. <a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">↩</a></p>
 </li>
 <li id="fn:13">
-<p>Yeah, you wish&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+<p>Yeah, you wish <a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">↩</a></p>
 </li>
 <li id="fn:14">
-<p>Almost. At least good for this tutorial. Look carefully.&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+<p>Almost. At least good for this tutorial. Look carefully. <a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">↩</a></p>
 </li>
 <li id="fn:15">
-<p><strong>ALWAYS</strong> add indexes to your tables!&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+<p><strong>ALWAYS</strong> add indexes to your tables! <a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">↩</a></p>
 </li>
 <li id="fn:16">
 <p>If you want to have a deep explanation about why is this good
 check <a href="http://coussej.github.io/2016/01/14/Replacing-EAV-with-JSONB-in-PostgreSQL/">this blog
-post</a>&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+post</a> <a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">↩</a></p>
 </li>
 <li id="fn:17">
 <p>As a general rule I hate to add the suffix <code>_id</code>, I would rather
 prefer to name them as <code>event</code> and <code>entity</code> instead of <code>event_id</code>
 and <code>entity_id</code>. But <code>triage</code> named those columns in that way and
-for that we are stuck with that nomenclature.&#160;<a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+for that we are stuck with that nomenclature. <a class="footnote-backref" href="#fnref:17" title="Jump back to footnote 17 in the text">↩</a></p>
 </li>
 <li id="fn:18">
 <p>This will simplify the creation of <em>features</em> for our machine
-learning models.&#160;<a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+learning models. <a class="footnote-backref" href="#fnref:18" title="Jump back to footnote 18 in the text">↩</a></p>
 </li>
 <li id="fn:19">
 <p><a href="https://en.wikipedia.org/wiki/Exploratory_data_analysis">Defined</a>
@@ -2776,98 +2287,81 @@ by John Tukey as: <em>Procedures for analyzing data, techniques for
 interpreting the results of such procedures, ways of planning the
 gathering of data to make its analysis easier, more precise or
 more accurate, and all the machinery and results of (mathematical)
-statistics which apply to analyzing data.</em>&#160;<a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+statistics which apply to analyzing data.</em> <a class="footnote-backref" href="#fnref:19" title="Jump back to footnote 19 in the text">↩</a></p>
 </li>
 </ol>
 </div>
-                
-                  
-                
-              
-              
-                
-
-
-              
-            </article>
-          </div>
-        </div>
-      </main>
-      
-        
+</article>
+</div>
+</div>
+</main>
 <footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../infrastructure/" title="Infrastructure" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+<div class="md-footer-nav">
+<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
+<a class="md-footer-nav__link md-footer-nav__link--prev" href="../infrastructure/" rel="prev" title="Infrastructure">
+<div class="md-footer-nav__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
+</div>
+<div class="md-footer-nav__title">
+<div class="md-ellipsis">
+<span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Infrastructure
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../for_the_impatient/" title="Quick setup" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+              </div>
+</div>
+</a>
+<a class="md-footer-nav__link md-footer-nav__link--next" href="../for_the_impatient/" rel="next" title="Quick setup">
+<div class="md-footer-nav__title">
+<div class="md-ellipsis">
+<span class="md-footer-nav__direction">
                   Next
                 </span>
                 Quick setup
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
+              </div>
+</div>
+<div class="md-footer-nav__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"></path></svg>
+</div>
+</a>
+</nav>
+</div>
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-footer-copyright">
         
-      </nav>
-    </div>
-  
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        powered by
-        <a href="https://www.mkdocs.org">MkDocs</a>
-        and
-        <a href="https://squidfunk.github.io/mkdocs-material/">
-          Material for MkDocs</a>
-      </div>
-      
-  <div class="md-footer-social">
-    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
-    
-      <a href="https://github.com/dssg/triage" class="md-footer-social__link fa fa-github"></a>
-    
-      <a href="https://twitter.com/datascifellows" class="md-footer-social__link fa fa-twitter"></a>
-    
-      <a href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" class="md-footer-social__link fa fa-linkedin"></a>
-    
-  </div>
-
-    </div>
-  </div>
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+          Material for MkDocs
+        </a>
+</div>
+<div class="md-footer-social">
+<a class="md-footer-social__link" href="https://github.com/dssg/triage" rel="noopener" target="_blank" title="github.com">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg>
+</a>
+<a class="md-footer-social__link" href="https://twitter.com/datascifellows" rel="noopener" target="_blank" title="twitter.com">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"></path></svg>
+</a>
+<a class="md-footer-social__link" href="https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago" rel="noopener" target="_blank" title="linkedin.com">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"></path></svg>
+</a>
+</div>
+</div>
+</div>
 </footer>
-      
-    </div>
-    
-      <script src="../../assets/javascripts/application.39abc4af.js"></script>
-      
-      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
-      
-        <script src="../../js/mermaid.min.js"></script>
-      
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-      
-    
-  </body>
+</div>
+<script src="../../assets/javascripts/vendor.d710d30a.min.js"></script>
+<script src="../../assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+<script>
+        app = initialize({
+          base: "../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../assets/javascripts/worker/search.a68abb33.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+<script src="../../js/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
 </html>
