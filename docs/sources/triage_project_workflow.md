@@ -7,10 +7,10 @@
 
 ## Step 1: Get your data set up
 Triage needs data in a `Postgresql` database, with at least one table that contains `events` (one per row) and
-`entities` of interest (people, place, organization, etc.; identified by an integer-valued `entity_id`), a `timestamp` (specifyinfg when the event occurred), and
+`entities` of interest (people, place, organization, etc.; identified by an integer-valued `entity_id`), a `timestamp` (specifying when the event occurred), and
 additional attributes of interest about the event and/or entity (demographics for example).
 
-We will need a database credentials either in a
+We will need database credentials either in a
 [config file](https://github.com/dssg/triage/blob/master/example/database.yaml)
 or as an environment variable called `DATABASE_URL`  that contains the
 name  of the database, server, username, and password to use to
