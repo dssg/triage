@@ -33,6 +33,7 @@ services:
       - "../example/dirtyduck:/dirtyduck"
       - "../../triage:/triage"
       - "../dirtyduck-output:/triage-output"
+    working_dir: /dirtyduck
 
 volumes:
   db-data:
