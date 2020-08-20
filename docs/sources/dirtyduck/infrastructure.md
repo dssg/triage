@@ -86,7 +86,7 @@ To access `bastion`, where the `postgresql` client is, submit the command:
 
 Your prompt should change to something like:
 
-    root@485373fb3c64:/$
+    [triage@dirtyduck$:/dirtyduck]#
 
 **NOTE**: The number you see will be different (i.e. not `485373fb3c64`).
 
@@ -98,7 +98,7 @@ Inside `bastion`, type the next command to connect to the database
 
 The prompt will change again to (or something *very* similar):
 
-    psql (10.7 (Debian 10.7-1.pgdg90+1))
+    psql (12.3 (Debian 12.3-1.pgdg100+1), server 12.2 (Debian 12.2-2.pgdg100+1))
     Type "help" for help.
 
     food=#
@@ -135,16 +135,9 @@ the structure of the `inspections` table. Type the following command:
 | latitude         | numeric           |           |          ||
 | longitude        | numeric           |           |          ||
 | location         | character varying |           |          ||
-| historical\_wards | character varying |           |          ||
-| zip\_codes        | character varying |           |          ||
-| community\_areas  | character varying |           |          ||
-| census\_tracts    | character varying |           |          ||
-| wards            | character varying |           |          | |
 
-!!! info
-    Column `historical_wards` contains the wards code from 2003 - 2015
 
-That's it! We will work with thi table of raw inspections data.
+That's it! We will work with this table of raw inspections data.
 
 You can disconnect from the database by typing `\q`. But don't leave
 the database yet! We still need to do a lot of things[^4]
