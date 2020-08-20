@@ -701,7 +701,7 @@ class ExperimentBase(ABC):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
-        logger.success("Cohort setted up in the table {self.cohort_table_name} successfully")
+        logger.success(f"Cohort setted up in the table {self.cohort_table_name} successfully")
 
 
     @experiment_entrypoint
