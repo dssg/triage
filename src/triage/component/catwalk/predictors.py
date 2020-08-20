@@ -145,12 +145,14 @@ class Predictor:
         """
         try:
             session = self.sessionmaker()
-            self._existing_predictions(
+            existing_predictions = self._existing_predictions(
                 Prediction_obj, session, model_id, matrix_store
-            ).delete(synchronize_session=False)
+            )
+            if existing_predictions.count() > 0:
+                existing_predictions.delete(synchronize_session=False)
+                logger.info(f"Found old predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}. Those predictions were deleted.")
             session.expire_all()
             session.commit()
-            logger.info(f"Found old predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}. Those predictions were deleted.")
         finally:
             session.close()
         test_label_timespan = matrix_store.metadata["label_timespan"]
@@ -253,7 +255,7 @@ class Predictor:
                 logger.spam(f"Existing predictions length: {existing_predictions.count()}, Length of matrix: {len(matrix_store.index)}")
                 if existing_predictions.count() == len(matrix_store.index):
                     logger.info(
-                        f"Found predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
+                        f"Found old predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
                     )
                     return self._load_saved_predictions(existing_predictions, matrix_store)
             finally:
