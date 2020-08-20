@@ -2,23 +2,23 @@ create schema if not exists raw;
 
 drop table if exists raw.inspections;
 create table if not exists raw.inspections (
-       inspection varchar not null,
-       DBA_Name varchar,
-       AKA_Name varchar,
+       inspection text not null,
+       DBA_Name text,
+       AKA_Name text,
        license_Num decimal,
-       facility_type varchar,
-       risk varchar,
-       address varchar,
-       city varchar,
-       state varchar,
-       zip varchar,
+       facility_type text,
+       risk text,
+       address text,
+       city text,
+       state text,
+       zip text,
        date date,
-       type varchar,
-       results varchar,
-       violations varchar,
+       type text,
+       results text,
+       violations text,
        latitude decimal,
        longitude decimal,
-       location varchar
+       location text
 );
 
 copy raw.inspections from program 'bzcat /tmp/inspections_2014_2017.csv.bz2' HEADER CSV QUOTE '"';
