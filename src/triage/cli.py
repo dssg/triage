@@ -286,8 +286,10 @@ class Experiment(Command):
                     n_processes=self.args.n_processes,
                     **common_kwargs,
                 )
+                logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
             else:
                 experiment = SingleThreadedExperiment(**common_kwargs)
+                logger.info("Experiment will run in serial fashion")
             return experiment
         except Exception as e:
             logger.error("Error occurred while creating the experiment!")

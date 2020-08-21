@@ -13,11 +13,10 @@ RUN apt-get -y update \
 COPY inspections_2014_2017.csv.bz2 /tmp
 
 ## DB setup
+ADD 00_create_extensions.sql /docker-entrypoint-initdb.d/
 ADD 01_create_inspections_table.sql /docker-entrypoint-initdb.d/
 ADD 02_create_cleaned_inspections_table.sql /docker-entrypoint-initdb.d/
 ADD 03_create_violations_table.sql /docker-entrypoint-initdb.d/
 ADD 04_create_semantic_tables.sql /docker-entrypoint-initdb.d/
-ADD 00_create_extensions.sql /docker-entrypoint-initdb.d/
-ADD 05_nuke_triage.sql /docker-entrypoint-initdb.d/
 
 RUN chown postgres:postgres /docker-entrypoint-initdb.d/*.sql
