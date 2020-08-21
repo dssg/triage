@@ -1,7 +1,8 @@
 /*
-  Function for wiping all triage tables, schemas and indexes.
-Useful  when ou try to start clean (again) and try to recover some
-previous errors
+  Function for wiping all triage tables, schemas, functions and indexes.
+  It also deletes results_schema_versions (from alembic)
+  Useful  when ou try to start clean (again) and try to recover some
+  previous errors
  */
 create or replace function nuke_triage()
     returns text as $result$
@@ -24,8 +25,12 @@ create or replace function nuke_triage()
     execute 'drop table if exists results_schema_versions';
     raise notice 'results_schema_versions deleted';
 
+    execute 'drop function if exists get_model_group_id';
+    raise notice 'get_model_group_id deleted';
+
     execute 'drop type if exists experimentrunstatus';
     raise notice 'experimentrunstatus type deleted';
+
 
 select into query
     string_agg(

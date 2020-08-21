@@ -16,10 +16,10 @@ depends_on = None
 
 
 def upgrade():
-    group_proc_filename = os.path.join(
-        os.path.dirname(__file__), "../../nuke_triage.sql"
+    nuke_triage_filename = os.path.join(
+        os.path.dirname(__file__), "../../sql/nuke_triage.sql"
     )
-    with open(group_proc_filename) as fd:
+    with open(nuke_triage_filename) as fd:
         stmt = fd.read()
         op.execute(stmt)
 
