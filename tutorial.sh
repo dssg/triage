@@ -16,7 +16,7 @@ OPTIONS:
    rebuild             Builds images (food_db and bastion) ignoring if they already exists
    -l|logs             Shows container's logs
    status              Shows status of the containers
-   -d|clean            Removes containers, images, volumes, netrowrks
+   -d|clean            Removes containers, images, volumes, networks
 
 INFRASTRUCTURE:
    Build the Dirtyduck's DB:

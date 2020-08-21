@@ -26,7 +26,7 @@ installed for you! Just run
 
 The prompt in your command line should change to something like
 
-    [dirtyduck@bastion$:/triage]
+    [triage@dirtyduck$:/dirtyduck]#
 
 Type `triage`, if no error. You completed this step!
 
@@ -129,6 +129,8 @@ the resources available to intervene to define the evaluation metric,  etc.
 Here's the [sample configuration
 file](https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/dirty-duckling.yaml) called `dirty-duckling.yaml`
 
+If you wish, you can check the content of the file with `cat
+experiments/dirty-ducking.yaml`
 
 ```yaml
 config_version: 'v7'
@@ -226,16 +228,26 @@ configuration files by running:
 triage experiment experiments/dirty-duckling.yaml --validate-only
 ```
 
-If everything was OK (it should!), you can run the experiment with:
+If everything was OK (it should!), you will see this in your screen:
+
+```bash
+2020-08-20 16:55:34 - SUCCESS Experiment validation ran to completion with no errors
+2020-08-20 16:55:34 - SUCCESS Experiment (a336de4800cec8964569d051dc56f85d)'s configuration file is OK!
+
+```
+
+Now you can run the experiment with:
 
 ```bash
 triage experiment experiments/dirty-duckling.yaml
 ```
 That's it! If you see this message in your screen:
 
-     INFO:root:Experiment complete
-        INFO:root:All models that were supposed to be trained were trained. Awesome!
-        INFO:root:All matrices that were supposed to be build were built. Awesome!
+     2020-08-20 16:56:56 - SUCCESS Training, testing and evaluatiog models completed
+     2020-08-20 16:56:56 - SUCCESS All matrices that were supposed to be build were built. Awesome!
+     2020-08-20 16:56:56 - SUCCESS All models that were supposed to be trained were trained. Awesome!
+     2020-08-20 16:56:56 - SUCCESS Experiment (a336de4800cec8964569d051dc56f85d) ran through completion
+
 
 it would mean that `triage` actually built (in this order) cohort
 (table `cohort_all_entities...`),
@@ -249,7 +261,7 @@ and evaluations (table `test_results.evaluations`).
 ### 5. Look at results of your duckling!
 
 Next, let's quickly check the tables in the schemas `triage_metadata` and
-`test_results` to make sure everything worked. There you will find a lot 
+`test_results` to make sure everything worked. There you will find a lot
 of information related to the performance of your models.
 
 Still connected to the `bastion` docker container, you can connect to the
@@ -266,9 +278,9 @@ experiments that you've run and the models they created. The `quickstart`
 model grid preset should have built 3 models. Let's check with:
 
 ```sql
-select 
-  model_id, model_group_id, model_type 
-  from 
+select
+  model_id, model_group_id, model_type
+  from
       triage_metadata.models;
 ```
 
@@ -284,7 +296,7 @@ If you want to see predictions for individual entities, you can check out
 `test_results.predictions`, for instance:
 
 ```sql
-select 
+select
   model_id, entity_id, as_of_date, score, label_value
   from
       test_results.predictions
@@ -305,35 +317,36 @@ performance. In our config above, we only focused on precision in the top
 ten percent, so let's see how the models are doing based on this:
 
 ```sql
-select 
-  model_id, metric, parameter, stochastic_value
+select
+  model_id, metric, parameter,
+  round(stochastic_value,3) as stochatic_value
   from
       test_results.evaluations
-  where metric = 'precision@' 
+  where metric = 'precision@'
         and parameter='10_pct'
   order by model_id;
 ```
 
 model_id |   metric   | parameter |  stochastic_value
 ----------|------------|-----------|--------------------
-1 | precision@ | 10_pct     | 0.2865853658536585
-2 | precision@ | 10_pct     |                0.0
-3 | precision@ | 10_pct     |                0.0
+1 | precision@ | 10_pct     | 0.287
+2 | precision@ | 10_pct     | 0.292
+3 | precision@ | 10_pct     | 0.237
 
 Not great! But then again, these were just a couple of overly simple model
 specifications to get things up and running...
 
 Feel free to explore some of the other tables in these schemas (note that
 there's also a `train_results` schema with performance on the training
-set as well as feature importances, where defined). When you're done 
-exploring the database, you can exit the postgres command line interface 
+set as well as feature importances, where defined). When you're done
+exploring the database, you can exit the postgres command line interface
 by typing `\q`
 
-With a real modeling run you could (*should*) do model selection, postmodeling, 
-bias audit, etc. `triage` provides tools for doing all of that, but we 
-the purpose of this little experiment was just to get things up and running. 
-If you have successfully arrived to this point, you are all set to do your own 
-modeling ([here's a good place to start](../quickstart.md)), but if you want to 
+With a real modeling run you could (*should*) do model selection, postmodeling,
+bias audit, etc. `triage` provides tools for doing all of that, but we
+the purpose of this little experiment was just to get things up and running.
+If you have successfully arrived to this point, you are all set to do your own
+modeling ([here's a good place to start](../quickstart.md)), but if you want to
 go deeper in this example and learn about these other `triage` functions,
 [continue reading our in-depth tutorial](problem_description.md).
 

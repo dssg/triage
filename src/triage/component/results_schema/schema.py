@@ -59,6 +59,50 @@ class Experiment(Base):
     matrices_needed = Column(Integer)
     grid_size = Column(Integer)
     models_needed = Column(Integer)
+    random_seed = Column(Integer)
+
+class ExperimentRunStatus(enum.Enum):
+    started = 1
+    completed = 2
+    failed = 3
+
+
+class ExperimentRun(Base):
+
+    __tablename__ = "experiment_runs"
+    __table_args__ = {"schema": "triage_metadata"}
+
+    run_id = Column("id", Integer, primary_key=True)
+    start_time = Column(DateTime)
+    start_method = Column(String)
+    git_hash = Column(String)
+    triage_version = Column(String)
+    python_version = Column(String)
+    experiment_hash = Column(
+        String,
+        ForeignKey("triage_metadata.experiments.experiment_hash")
+    )
+    platform = Column(Text)
+    os_user = Column(Text)
+    working_directory = Column(Text)
+    ec2_instance_type = Column(Text)
+    log_location = Column(Text)
+    experiment_class_path = Column(Text)
+    experiment_kwargs = Column(JSONB)
+    installed_libraries = Column(ARRAY(Text))
+    matrix_building_started = Column(DateTime)
+    matrices_made = Column(Integer, default=0)
+    matrices_skipped = Column(Integer, default=0)
+    matrices_errored = Column(Integer, default=0)
+    model_building_started = Column(DateTime)
+    models_made = Column(Integer, default=0)
+    models_skipped = Column(Integer, default=0)
+    models_errored = Column(Integer, default=0)
+    last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
+    current_status = Column(Enum(ExperimentRunStatus))
+    stacktrace = Column(Text)
+    random_seed = Column(Integer)
+    experiment_rel = relationship("Experiment")
 
 
 class Subset(Base):
@@ -154,6 +198,9 @@ class Model(Base):
     config = Column(JSON)
     built_by_experiment = Column(
         String, ForeignKey("triage_metadata.experiments.experiment_hash")
+    )
+    built_in_experiment_run = Column(
+        Integer, ForeignKey("triage_metadata.experiment_runs.id")
     )
     train_end_time = Column(DateTime)
     test = Column(Boolean)
@@ -494,48 +541,3 @@ class TrainAequitas(Base):
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
-
-
-
-class ExperimentRunStatus(enum.Enum):
-    started = 1
-    completed = 2
-    failed = 3
-
-
-class ExperimentRun(Base):
-
-    __tablename__ = "experiment_runs"
-    __table_args__ = {"schema": "triage_metadata"}
-
-    run_id = Column("id", Integer, primary_key=True)
-    start_time = Column(DateTime)
-    start_method = Column(String)
-    git_hash = Column(String)
-    triage_version = Column(String)
-    python_version = Column(String)
-    experiment_hash = Column(
-        String,
-        ForeignKey("triage_metadata.experiments.experiment_hash")
-    )
-    platform = Column(Text)
-    os_user = Column(Text)
-    working_directory = Column(Text)
-    ec2_instance_type = Column(Text)
-    log_location = Column(Text)
-    experiment_class_path = Column(Text)
-    experiment_kwargs = Column(JSONB)
-    installed_libraries = Column(ARRAY(Text))
-    matrix_building_started = Column(DateTime)
-    matrices_made = Column(Integer, default=0)
-    matrices_skipped = Column(Integer, default=0)
-    matrices_errored = Column(Integer, default=0)
-    model_building_started = Column(DateTime)
-    models_made = Column(Integer, default=0)
-    models_skipped = Column(Integer, default=0)
-    models_errored = Column(Integer, default=0)
-    last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
-    current_status = Column(Enum(ExperimentRunStatus))
-    stacktrace = Column(Text)
-
-    experiment_rel = relationship("Experiment")

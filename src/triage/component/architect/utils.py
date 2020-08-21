@@ -1,3 +1,6 @@
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import datetime
 import shutil
 import sys
@@ -15,6 +18,8 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
 from triage.util.structs import FeatureNameList
+
+
 
 
 def str_in_sql(values):
@@ -104,7 +109,7 @@ def create_entity_date_df(
         for date in ids_dates["as_of_date"]
     ]
     ids_dates = ids_dates[ids_dates["as_of_date"].isin(as_of_dates)]
-    print(ids_dates)
+    logger.spam(ids_dates)
 
     return ids_dates.reset_index(drop=True)
 

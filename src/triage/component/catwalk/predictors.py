@@ -15,10 +15,6 @@ import ohio.ext.pandas
 import pandas as pd
 
 
-class ModelNotFoundError(ValueError):
-    pass
-
-
 class Predictor:
     expected_matrix_ts_format = "%Y-%m-%d %H:%M:%S"
     available_tiebreakers = AVAILABLE_TIEBREAKERS
@@ -78,6 +74,7 @@ class Predictor:
 
     @db_retry
     def _existing_predictions(self, Prediction_obj, session, model_id, matrix_store):
+        logger.debug(f"Looking for existing predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix [{matrix_store.uuid}]")
         return (
             session.query(Prediction_obj)
             .filter_by(model_id=model_id)
@@ -130,8 +127,7 @@ class Predictor:
         self,
         model_id,
         matrix_store,
-        predictions,
-        labels,
+        df,
         misc_db_parameters,
         Prediction_obj,
     ):
@@ -142,18 +138,19 @@ class Predictor:
         Args:
             model_id (int) the id of the model associated with the given predictions
             matrix_store (catwalk.storage.MatrixStore) the matrix and metadata
-            entity_ids (iterable) entity ids that predictions were made on
-            predictions (iterable) predicted values
-            labels (iterable) labels of prediction set (int) the id of the model
-            to predict based off of
+            df (pd.DataFrame) with the following columns entity_id, as_of_date, score, label_value and rank_abs_no_ties, rank_abs_with_ties, rank_pct_no_ties, rank_pct_with_ties
+    predictions (iterable) predicted values
             Prediction_obj (TrainPrediction or TestPrediction) table to store predictions to
 
         """
         try:
             session = self.sessionmaker()
-            self._existing_predictions(
+            existing_predictions = self._existing_predictions(
                 Prediction_obj, session, model_id, matrix_store
-            ).delete(synchronize_session=False)
+            )
+            if existing_predictions.count() > 0:
+                existing_predictions.delete(synchronize_session=False)
+                logger.info(f"Found old predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}. Those predictions were deleted.")
             session.expire_all()
             session.commit()
         finally:
@@ -163,17 +160,18 @@ class Predictor:
         record_stream = (
             Prediction_obj(
                 model_id=int(model_id),
-                entity_id=int(entity_id),
-                as_of_date=as_of_date,
-                score=float(score),
-                label_value=int(label) if not math.isnan(label) else None,
+                entity_id=int(row.entity_id),
+                as_of_date=row.as_of_date,
+                score=float(row.score),
+                label_value=int(row.label_value) if not math.isnan(row.label_value) else None,
+                rank_abs_no_ties = int(row.rank_abs_no_ties),
+                rank_abs_with_ties = int(row.rank_abs_with_ties),
+                rank_pct_no_ties = row.rank_pct_no_ties,
+                rank_pct_with_ties = row.rank_pct_with_ties,
                 matrix_uuid=matrix_store.uuid,
                 test_label_timespan=test_label_timespan,
                 **misc_db_parameters
-            )
-            for ((entity_id, as_of_date), score, label) in zip(
-                matrix_store.index, predictions, labels
-            )
+            ) for row in df.itertuples()
         )
         save_db_objects(self.db_engine, record_stream)
 
@@ -225,86 +223,6 @@ class Predictor:
         logger.debug("No need to recompute prediction ranks")
         return False
 
-    def update_db_with_ranks(self, model_id, matrix_uuid, matrix_type):
-        """Update predictions table with rankings, both absolute and percentile.
-                random_seed=postgres_random_seed,
-        All entities should have different ranks, so to break ties:
-        - abs_rank uses the 'row_number' function, so ties are broken by the database ordering
-            session.close()
-        - pct_rank uses the output of the abs_rank to compute percentiles
-          (as opposed to raw scores), so it inherits the tie-breaking from abs_rank
-        Args:
-            model_id (int) the id of the model associated with the given predictions
-            matrix_uuid (string) the uuid of the prediction matrix
-        """
-        if not self.save_predictions:
-            logger.info("save_predictions is set to False so there are no predictions to rank")
-            return
-
-        logger.debug(
-            f"Beginning ranking of new Predictions for model {model_id}, matrix {matrix_uuid}"
-        )
-
-        # retrieve a dataframe with only the data we need to rank
-        ranking_df = pd.DataFrame.pg_copy_from(
-            f"""select entity_id, score, as_of_date, label_value
-            from {matrix_type.string_name}_results.predictions
-            where model_id = {model_id} and matrix_uuid = '{matrix_uuid}'
-            """, connectable=self.db_engine)
-
-        sort_seed = None
-        if self.rank_order == 'random':
-            with scoped_session(self.db_engine) as session:
-                sort_seed = session.query(Model).get(model_id).random_seed
-                if not sort_seed:
-                    sort_seed = generate_python_random_seed()
-
-        sorted_predictions, sorted_labels, sorted_arrays = sort_predictions_and_labels(
-            predictions_proba=ranking_df['score'],
-            labels=ranking_df['label_value'],
-            tiebreaker=self.rank_order,
-            sort_seed=sort_seed,
-            parallel_arrays=(ranking_df['entity_id'], ranking_df['as_of_date']),
-        )
-        ranking_df['score'] = sorted_predictions.values
-        ranking_df['as_of_date'] = pd.to_datetime(sorted_arrays[1].values)
-        ranking_df['label_value'] = sorted_labels.values
-        ranking_df['entity_id'] = sorted_arrays[0].values
-        # at this point, we have the same dataframe that we loaded from postgres,
-        # but sorted based on score and the self.rank_order.
-
-        # Now we can generate ranks using pandas and only using the 'score' column because
-        # our secondary ordering is baked in, enabling the 'first' method to break ties.
-        ranking_df['rank_abs_no_ties'] = ranking_df['score'].rank(ascending=False, method='first')
-        ranking_df['rank_abs_with_ties'] = ranking_df['score'].rank(ascending=False, method='min')
-        ranking_df['rank_pct_no_ties'] = np.array([1 - (rank - 1) / len(ranking_df) for rank in ranking_df['rank_abs_no_ties']])
-        ranking_df['rank_pct_with_ties'] = ranking_df['score'].rank(method='min', pct=True)
-
-        # with our rankings computed, update these ranks into the existing rows
-        # in the predictions table
-        temp_table_name = f"ranks_mod{model_id}_mat{matrix_uuid}"
-        ranking_df.pg_copy_to(temp_table_name, self.db_engine)
-        self.db_engine.execute(f"""update {matrix_type.string_name}_results.predictions as p
-            set rank_abs_no_ties = tt.rank_abs_no_ties,
-            rank_abs_with_ties = tt.rank_abs_with_ties,
-            rank_pct_no_ties = tt.rank_pct_no_ties,
-            rank_pct_with_ties = tt.rank_pct_with_ties
-            from {temp_table_name} as tt
-            where tt.entity_id = p.entity_id
-            and p.matrix_uuid = '{matrix_uuid}'
-            and p.model_id = {model_id}
-            and p.as_of_date = tt.as_of_date
-                               """)
-        self.db_engine.execute(f"drop table {temp_table_name}")
-        self._write_metadata_to_db(
-            model_id=model_id,
-            matrix_uuid=matrix_uuid,
-            matrix_type=matrix_type,
-            random_seed=sort_seed,
-        )
-        logger.info(
-            f"Completed ranking of new Predictions for model {model_id}, matrix {matrix_uuid}"
-        )
 
     def predict(self, model_id, matrix_store, misc_db_parameters, train_matrix_columns):
         """Generate predictions and store them in the database
@@ -326,44 +244,77 @@ class Predictor:
 
         if not self.replace:
             logger.info(
-                f"Replace flag not set for model id {model_id}, matrix {matrix_store.uuid}, looking for old predictions"
+                f"Replace flag not set, looking for old predictions for model id {model_id} "
+                f"on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}"
             )
             try:
                 session = self.sessionmaker()
                 existing_predictions = self._existing_predictions(
                     matrix_type.prediction_obj, session, model_id, matrix_store
                 )
+                logger.spam(f"Existing predictions length: {existing_predictions.count()}, Length of matrix: {len(matrix_store.index)}")
                 if existing_predictions.count() == len(matrix_store.index):
                     logger.info(
-                        f"Found predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
+                        f"Found old predictions for model id {model_id}, matrix {matrix_store.uuid}, returning saved versions"
                     )
                     return self._load_saved_predictions(existing_predictions, matrix_store)
             finally:
                 session.close()
 
         model = self.load_model(model_id)
-        logger.spam(f"Loaded model {model_id}")
         if not model:
-            raise ModelNotFoundError(f"Model # {model_id} not found")
+            raise ValueError(f"Model id {model_id} not found")
+        logger.spam(f"Loaded model {model_id}")
 
         # Labels are popped from matrix (i.e. they are removed and returned)
         labels = matrix_store.labels
 
-        predictions_proba = model.predict_proba(
+        predictions = model.predict_proba(
             matrix_store.matrix_with_sorted_columns(train_matrix_columns)
-        )
+        )[:, 1]  # Returning only the scores for the label == 1
+
+
         logger.debug(
             f"Generated predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}"
         )
         if self.save_predictions:
+            df = pd.DataFrame(data=None, columns=None, index=matrix_store.index)
+            df['label_value'] = matrix_store.labels
+            df['score'] = predictions
+
+
+            logger.spam(f"Sorting predictions for model {model_id} using {self.rank_order}")
+
+            if self.rank_order == 'best':
+                df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,False], na_position='last')
+            elif self.rank_order == 'worst':
+                df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
+            elif self.rank_order == 'random':
+                df['random'] = np.random.rand(len(df))
+                df.sort_values(by=['score', 'random'], inplace=True, ascending=[False, False])
+                df.drop('random', axis=1)
+            else:
+                raise ValueError(f"Rank order specified in condiguration file not recognized: {self.rank_order} ")
+
+            df['rank_abs_no_ties'] = df['score'].rank(ascending=False, method='first')
+            # uses the lowest rank in the group
+            df['rank_abs_with_ties'] = df['score'].rank(ascending=False, method='min')
+            # No gaps between groups (so it reaches 1.0). We are using rank_abs_no_ties so we can
+            # respect that order (instead of using the mathematical formula,  as was done before)
+            df['rank_pct_no_ties'] = df['rank_abs_no_ties'].rank(ascending=True, method='dense', pct=True)
+            df['rank_pct_with_ties'] = df['score'].rank(ascending=False, method='dense', pct=True)
+
+            df.reset_index(inplace=True)
+            logger.debug(f"Predictions on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid} from model {model_id} sorted using {self.rank_order}")
+
             logger.spam(
                 f"Writing predictions for model {model_id} on {matrix_store.matrix_type.string_name}  matrix {matrix_store.uuid} to database"
             )
+
             self._write_predictions_to_db(
                 model_id,
                 matrix_store,
-                predictions_proba[:, 1],
-                labels,
+                df,
                 misc_db_parameters,
                 matrix_type.prediction_obj,
             )
@@ -375,11 +326,12 @@ class Predictor:
                 f"Predictions for model {model_id} on {matrix_store.matrix_type.string_name} matrix {matrix_store.uuid}  weren't written to the db because, because you asked not to do so"
             )
             logger.spam(f"Status of the save_predictions flag: {self.save_predictions}")
-            self._write_metadata_to_db(
-                model_id=model_id,
-                matrix_uuid=matrix_store.uuid,
-                matrix_type=matrix_type,
-                random_seed=None,
-            )
 
-        return predictions_proba[:, 1]
+        self._write_metadata_to_db(
+            model_id=model_id,
+            matrix_uuid=matrix_store.uuid,
+            matrix_type=matrix_type,
+            random_seed=None,
+        )
+
+        return predictions

@@ -279,15 +279,19 @@ class Experiment(Command):
         logger.info(f"Configuration file: {self.args.config}")
         logger.info(f"Results will be stored in DB: {self.root.db_url}")
         logger.info(f"Artifacts will be saved in {self.args.project_path}")
-        if self.args.n_db_processes > 1 or self.args.n_processes > 1:
-            experiment = MultiCoreExperiment(
-                n_db_processes=self.args.n_db_processes,
-                n_processes=self.args.n_processes,
-                **common_kwargs,
-            )
-        else:
-            experiment = SingleThreadedExperiment(**common_kwargs)
-        return experiment
+        try:
+            if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+                experiment = MultiCoreExperiment(
+                    n_db_processes=self.args.n_db_processes,
+                    n_processes=self.args.n_processes,
+                    **common_kwargs,
+                )
+            else:
+                experiment = SingleThreadedExperiment(**common_kwargs)
+            return experiment
+        except Exception as e:
+            logger.error("Error occurred while creating the experiment!")
+            raise Exception("Error occurred while creating the experiment!") from e
 
     def __call__(self, args):
         if args.validate_only:
@@ -316,7 +320,7 @@ class Experiment(Command):
                 self.experiment.run()
                 logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
             except Exception:
-                logger.exception(f"Run failed!")
+                logger.exception("Something went wrong")
                 logger.critical(f"Experiment [config file: {self.args.config}] run failed!")
 
 

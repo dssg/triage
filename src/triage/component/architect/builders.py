@@ -243,7 +243,7 @@ class MatrixBuilder(BuilderBase):
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
-            logger.info(f"Skipping {matrix_uuid} because matrix already exists")
+            logger.notice(f"Skipping {matrix_uuid} because matrix already exists")
             if self.run_id:
                 skipped_matrix(self.run_id, self.db_engine)
             return

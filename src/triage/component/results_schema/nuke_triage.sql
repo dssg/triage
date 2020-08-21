@@ -1,3 +1,8 @@
+/*
+  Function for wiping all triage tables, schemas and indexes.
+Useful  when ou try to start clean (again) and try to recover some
+previous errors
+ */
 create or replace function nuke_triage()
     returns text as $result$
 

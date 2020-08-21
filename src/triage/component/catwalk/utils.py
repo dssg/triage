@@ -2,6 +2,7 @@ import csv
 import datetime
 import hashlib
 import numpy as np
+import pandas as pd
 import json
 
 import verboselogs, logging
@@ -61,10 +62,10 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
 @db_retry
-def save_experiment_and_get_hash(config, db_engine):
+def save_experiment_and_get_hash(config, random_seed, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
+    session.merge(Experiment(experiment_hash=experiment_hash, random_seed=random_seed, config=config))
     session.commit()
     session.close()
     return experiment_hash
@@ -155,7 +156,7 @@ class Batch:
 
 AVAILABLE_TIEBREAKERS = {'random', 'best', 'worst'}
 
-def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', sort_seed=None, parallel_arrays=()):
+def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', sort_seed=None):
     """Sort predictions and labels with a configured tiebreaking rule
 
     Args:
@@ -163,40 +164,39 @@ def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', 
         labels (np.array) The numeric labels (1/0, not True/False)
         tiebreaker (string) The tiebreaking method ('best', 'worst', 'random')
         sort_seed (signed int) The sort seed. Needed if 'random' tiebreaking is picked.
-        parallel_arrays (tuple of np.array) Any other arrays, understood to be the same size
-            as the predictions and labels, that should be sorted alongside them.
 
     Returns:
         (tuple) (predictions_proba, labels), sorted
     """
     if len(labels) == 0:
         logger.notice("No labels present, skipping predictions sorting .")
-        if parallel_arrays:
-            return (predictions_proba, labels, parallel_arrays)
-        else:
-            return (predictions_proba, labels)
+        return (predictions_proba, labels)
     mask = None
+
+    df = pd.DataFrame(predictions_proba, columns=["score"])
+    df['label_value'] = labels
+
+
     if tiebreaker == 'random':
         if not sort_seed:
             raise ValueError("If random tiebreaker is used, a sort seed must be given")
         random.seed(sort_seed)
         np.random.seed(sort_seed)
-        random_arr = np.random.rand(*predictions_proba.shape)
-        mask = np.lexsort((random_arr, predictions_proba))
+        df['random'] = np.random.rand(len(df))
+        df.sort_values(by=['score', 'random'], inplace=True, ascending=[False, False])
+        df.drop('random', axis=1)
     elif tiebreaker == 'worst':
-        mask = np.lexsort((-labels, predictions_proba))
+        df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
     elif tiebreaker == 'best':
-        mask = np.lexsort((labels, predictions_proba))
+         df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,False], na_position='last')
     else:
-        raise ValueError("Unknown tiebreaker")
+        raise ValueError(f"Unknown tiebreaker: {tiebreaker}")
 
-    return_value = [
-        np.flip(predictions_proba[mask]),
-        np.flip(labels[mask]),
+    return  [
+        df['score'].to_numpy(),
+        df['label_value'].to_numpy()
     ]
-    if parallel_arrays:
-        return_value.append(tuple(np.flip(arr[mask]) for arr in parallel_arrays))
-    return return_value
+
 
 @db_retry
 def retrieve_model_id_from_hash(db_engine, model_hash):

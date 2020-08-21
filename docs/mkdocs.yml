@@ -7,9 +7,11 @@ theme:
   font:
     text: 'Ubuntu'
     code: 'Ubuntu Mono'
-  logo:
-    icon: 'book'
+  icon:
+    logo: ./material/book
   favicon: 'assets/images/favicon.ico'
+
+site_url: http://dssg.github.io/triage
 
 docs_dir: sources
 repo_name: 'dssg/triage'
@@ -19,11 +21,11 @@ site_description: 'Documentation for Triage.'
 
 extra:
   social:
-    - type: 'github'
+    - icon: fontawesome/brands/github
       link: 'https://github.com/dssg/triage'
-    - type: 'twitter'
+    - icon: fontawesome/brands/twitter
       link: 'https://twitter.com/datascifellows'
-    - type: 'linkedin'
+    - icon: fontawesome/brands/linkedin
       link: 'https://linkedin.com/company/center-for-data-science-and-public-policy-university-of-chicago'
 
 
@@ -73,10 +75,8 @@ plugins:
         python:
           rendering:
             show_source: false
-            show_root_full_path: true
-            show_root_heading: true
       watch:
-        - ../src/triage
+        - src/triage
 
 
 nav:
@@ -127,7 +127,4 @@ nav:
               - Audition Configuration: api/audition/audition-config.md
               - Selection Rules: api/audition/selection_rules.md
               - Database Dependencies: api/audition/database-dependencies.md
-          - Timechop:
-              - Timechop: api/timechop/timechop.md
-              - Plotting: api/timechop/plotting.md
 

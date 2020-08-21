@@ -1,2 +1,2 @@
-redis==3.1.0 # pyup: ignore
-rq
+rq==1.4.3 # pyup: ignore
+redis

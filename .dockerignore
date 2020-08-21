@@ -18,3 +18,4 @@ tutorial.sh
 *.yml
 *.inc
 CONTRIBUTING.md
+database.yaml

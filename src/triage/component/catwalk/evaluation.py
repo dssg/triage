@@ -28,7 +28,6 @@ from triage.util.db import scoped_session
 from triage.util.random import generate_python_random_seed
 from triage.component.catwalk.storage import MatrixStore
 
-
 RELATIVE_TOLERANCE = 0.01
 SORT_TRIALS = 30
 
@@ -391,7 +390,7 @@ class ModelEvaluator:
         else:
             return self._flatten_metric_config_groups(self.training_metric_groups)
 
-    def needs_evaluations(self, matrix_store, model_id, subset_hash=""):
+    def needs_evaluations(self, matrix_store, model_id, subset_hash=''):
         """Returns whether or not all the configured metrics are present in the
         database for the given matrix and model.
         Args:
@@ -412,6 +411,7 @@ class ModelEvaluator:
         # assemble a list of evaluation objects from the database
         # by querying the unique metrics and parameters relevant to the passed-in matrix
         session = self.sessionmaker()
+
         evaluation_objects_in_db = session.query(eval_obj).filter_by(
             model_id=model_id,
             evaluation_start_time=matrix_store.as_of_dates[0],
@@ -419,8 +419,10 @@ class ModelEvaluator:
             as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
             subset_hash=subset_hash,
         ).distinct(eval_obj.metric, eval_obj.parameter).all()
+
         # The list of needed metrics and parameters are all the unique metric/params from the config
         # not present in the unique metric/params from the db
+
         evals_needed = bool(
             {(met.metric, met.parameter_string) for met in metric_definitions} -
             {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
@@ -433,6 +435,7 @@ class ModelEvaluator:
         # now check bias config if there
         # if no bias config, no aequitas audits needed, so just return False at this point
         if not self.bias_config:
+            logger.notice(f"No aequitas audit configured, so no evaluation needed")
             return False
 
         # if we do have bias config, return True. Too complicated with aequitas' visibility
@@ -549,7 +552,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_worst, labels_worst, metric_defs)
         }
-        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative labels first')
+        logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative and NULL labels first')
 
         # 2. get best sorting
         predictions_proba_best, labels_best = sort_predictions_and_labels(
@@ -562,7 +565,7 @@ class ModelEvaluator:
             for eval in
             self._compute_evaluations(predictions_proba_best, labels_best, metric_defs)
         }
-        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first')
+        logger.debug(f'Predictions from {model_id} sorted by best case scenario, i.e. all positive labels first, NULL labels at the end')
 
         evals_without_trials = dict()
 
@@ -579,7 +582,7 @@ class ModelEvaluator:
 
         # 4. get average of n random trials
         logger.debug(
-            f"For the model {model_id} {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
+            f"For model {model_id}, {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
         )
 
         random_eval_accumulator = defaultdict(list)

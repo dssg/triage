@@ -1,4 +1,4 @@
-FROM python:3.7-slim as development
+FROM python:3.7-slim AS development
 
 LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
         maintainer="Adolfo De Unánue <adolfo@cmu.edu>" \
@@ -46,12 +46,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY --chown=triage:triage requirement/ requirement/
 RUN pip install --no-cache-dir -r requirement/main.txt
 RUN pip install --no-cache-dir -r requirement/test.txt
+RUN pip install --no-cache-dir -r requirement/extras-rq.txt
 RUN pip install --no-cache-dir ipython jupyter
 
 COPY --chown=triage:triage README.md .
 COPY --chown=triage:triage LICENSE .
 COPY --chown=triage:triage src/ src/
-COPY --chown=triage:triage config/ config/
 COPY --chown=triage:triage setup.py .
 
 

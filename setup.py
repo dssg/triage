@@ -44,13 +44,18 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='4.1.0',
+    version='4.1.1',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     long_description_content_type="text/markdown",
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
-    url='https://github.com/dssg/triage',
+    url="https://dssg.github.io/triage/",
+    project_urls={
+        "Documentation": "https://dssg.github.io/triage/",
+        "Source Code": "https://github.com/dssg/triage",
+        "Tutorial": "https://dssg.github.io/triage/dirtyduck/"
+    },
     packages=find_packages('src', exclude=['tests', 'tests.*']),
     package_dir={'': 'src'},
     include_package_data=True,
@@ -71,7 +76,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    data_files=[('config', ['config/logging.yaml'])],
+    python_requires='>=3.6',
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST
 )

@@ -139,14 +139,6 @@ class ExperimentBase(ABC):
         self._check_config_version(config)
         self.config = config
 
-        if not self.config.get('random_seed', None):
-            logger.notice("Random seed not specified. A random seed will be provided. "
-                          "This could have interesting side effects, "
-                          "e.g. new models are trained everytime that you run the experiment")
-
-        self.config['random_seed'] = self.config.get('random_seed', random.randint(1,1e7))
-        logger.verbose(f"Using random seed [{self.config['random_seed']}] for running the experiment")
-        random.seed(self.config['random_seed'])
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -207,13 +199,27 @@ class ExperimentBase(ABC):
         if grid_config is not None:
             self.config['grid_config'] = grid_config
 
+
+        if not self.config.get('random_seed', None):
+            logger.notice("Random seed not specified. A random seed will be provided. "
+                          "This could have interesting side effects, "
+                          "e.g. new models per model group are trained, "
+                          "tested and evaluated everytime that you run this experiment configuration")
+
+
+        self.random_seed = self.config.pop('random_seed', random.randint(1,1e7))
+
+        logger.verbose(f"Using random seed [{self.random_seed}] for running the experiment")
+        random.seed(self.random_seed)
+
         ###################### RUBICON ######################
 
-        self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
+        self.experiment_hash = save_experiment_and_get_hash(self.config, self.random_seed, self.db_engine)
         logger.debug(f"Experiment hash [{self.experiment_hash}] assigned")
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
             experiment_class_path=classpath(self.__class__),
+            random_seed=self.random_seed,
             experiment_kwargs=experiment_kwargs,
             db_engine=self.db_engine
         )
@@ -286,7 +292,6 @@ class ExperimentBase(ABC):
             self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
             self.cohort_table_generator = CohortTableGeneratorNoOp()
 
-        self.subsets = [None] + self.config.get("scoring", {}).get("subsets", [])
 
         if "label_config" in self.config:
             label_config = self.config["label_config"]
@@ -376,7 +381,8 @@ class ExperimentBase(ABC):
             run_id=self.run_id,
         )
 
-        if self.config.get("scoring", {}).get("subsets", []):
+        self.subsets = self.config.get("scoring", {}).get("subsets", [])
+        if self.subsets:
             self.subsetter = Subsetter(
                 db_engine=self.db_engine,
                 replace=self.replace,
@@ -414,7 +420,7 @@ class ExperimentBase(ABC):
         else:
             self.individual_importance_calculator = IndividualImportanceCalculatorNoOp()
             logger.notice(
-                "individual_importance missing in the configuration file or unrecognized ."
+                "individual_importance missing in the configuration file or unrecognized, "
                 "you will not be able to do analysis on individual feature importances."
             )
 
@@ -695,7 +701,7 @@ class ExperimentBase(ABC):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
-        logger.success("Cohort setted up in the table {self.cohort_table_name} successfully")
+        logger.success(f"Cohort setted up in the table {self.cohort_table_name} successfully")
 
 
     @experiment_entrypoint
@@ -834,11 +840,15 @@ class ExperimentBase(ABC):
             self.generate_subsets()
             self.generate_protected_groups()
             self.train_and_test_models()
+            self._log_end_of_run_report()
+        except Exception:
+            logger.error("Uh oh... Houston we have a problem")
+            raise
         finally:
             if self.cleanup:
                 self.clean_up_matrix_building_tables()
                 self.clean_up_subset_tables()
-            self._log_end_of_run_report()
+                logger.notice("Cleanup flag was set to True, so label, cohort and subset tables were deleted")
 
     def _log_end_of_run_report(self):
         missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
@@ -853,9 +863,9 @@ class ExperimentBase(ABC):
 
         missing_models = missing_model_hashes(self.experiment_hash, self.db_engine)
         if len(missing_models) > 0:
-            logger.notice(f"Found {len(missing_models)} missing model hashes."
-                          f"This means that they were supposed to either be trained or reused"
-                          f"by this experiment but are not present in the models table."
+            logger.notice(f"Found {len(missing_models)} missing model hashes. "
+                          f"This means that they were supposed to either be trained or reused "
+                          f"by this experiment but are not present in the models table. "
                           f"Inspect the logs for any training errors. Full list: {missing_models}"
                           )
         else:

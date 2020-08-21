@@ -2,13 +2,17 @@
 
 __author__ = """Center for Data Science and Public Policy"""
 __email__ = "datascifellows@gmail.com"
-__version__ = '4.1.0' # do not change to double-quotes, it will screw up bumpversion
+__version__ = '4.1.1' # do not change to double-quotes, it will screw up bumpversion
 
 import logging
 import logging.config
 import yaml
+import pathlib
 
-with open('config/logging.yaml') as f:
+
+logging_config = pathlib.Path(__file__).parent / 'config' / 'logging.yaml'
+
+with open(logging_config, 'r') as f:
     config = yaml.safe_load(f.read())
     logging.config.dictConfig(config)
 

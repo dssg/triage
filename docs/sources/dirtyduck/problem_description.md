@@ -7,7 +7,7 @@ Policy](https://dsapp.uchicago.edu). We will use the well-known
 [Chicago Food Inspections
 dataset](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5)[^1].
 
-We will present the two problems that `Triage` was built to model[^2]:
+We will present the two problems that `triage` was built to model[^2]:
 
 1.  [**Resource Prioritization Systems**](inspections.md) (also known as an *inspections problem*)[^3] and
 2.  [**Early Warning Systems**](eis.md)[^4].
@@ -30,6 +30,10 @@ target the most serious violations. Then we'd define the problem as:
 
 > Which $n$ facilities will have a critical or serious violation in the following $X$ period of time?
 
+The answer to this question is a list of length $n$ with the
+facilities at high risk of found a violation if they are inspected in
+the following $X$ period of time.
+
 If you want to continue to this case studie click [here](inspections.md)
 
 ## Early Warning Systems
@@ -47,7 +51,8 @@ If you want to continue to this case studie click [here](eis.md)
 !!! note "Important"
     Note that in both case studies, *resource prioritization* and
     *early warning* systems we are defining a period of time in which
-    the event will potentially happen.
+    the event will potentially happen. This makes this ML problem a
+    _prediction_ problem instead of a _classification_ problem.
 
 
 ## What do they have in common?

@@ -219,6 +219,7 @@ class ModelTrainer:
                 hyperparameters=parameters,
                 model_group_id=model_group_id,
                 built_by_experiment=self.experiment_hash,
+                built_in_experiment_run=self.run_id,
                 model_size=model_size,
                 **misc_db_parameters,
             )
@@ -287,7 +288,7 @@ class ModelTrainer:
             model_size,
             misc_db_parameters,
         )
-        logger.debug(f"Wrote model to db: hash {model_hash}, got id {model_id}")
+        logger.debug(f"Wrote model {model_id} [{model_hash}] to db")
         return model_id
 
     @contextmanager
@@ -366,7 +367,7 @@ class ModelTrainer:
                 and self.model_storage_engine.exists(model_hash)
                 and saved_model_id
             ):
-                logger.debug(f"Skipping {class_path}/{parameters}")
+                logger.debug(f"Skipping model {saved_model_id} {class_path} {parameters}")
                 if self.run_id:
                     skipped_model(self.run_id, self.db_engine)
                 return saved_model_id
@@ -397,7 +398,7 @@ class ModelTrainer:
                 built_model(self.run_id, self.db_engine)
             return model_id
         except Exception as exc:
-            logger.warning(f"Model training for matrix {matrix_store.uuid}, estimator {class_path}/{parameters}, model hash {model_hash} failed due to {exc}")
+            logger.exception(f"Model training for matrix {matrix_store.uuid}, estimator {class_path}/{parameters}, model hash {model_hash} failed.")
             errored_model(self.run_id, self.db_engine)
 
     @staticmethod
