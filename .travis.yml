@@ -2,8 +2,8 @@ dist: bionic
 language: python
 python: ["3.6", "3.7"]
 addons:
-  postgresql: '11.0'
-apt:
+  postgresql: '11'
+  apt:
     packages:
       - postgresql-11
       - postgresql-client-11
