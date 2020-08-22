@@ -49,7 +49,8 @@ nuke_triage_filename = os.path.join(
 with open(nuke_triage_filename) as fd:
     stmt = fd.read()
 
-event.listen(Base.metadata, "before_create", DDL(stmt))
+
+event.listen(Base.metadata, "before_create", DDL(stmt.replace('%', '%%')))
 
 
 class Experiment(Base):
