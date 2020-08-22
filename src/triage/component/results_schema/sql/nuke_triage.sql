@@ -1,5 +1,5 @@
 /*
-  Function for wiping all triage tables, schemas, functions and indexes.
+  Function for wiping out all triage tables, schemas, functions and indexes.
   It also deletes results_schema_versions (from alembic)
   Useful  when ou try to start clean (again) and try to recover some
   previous errors
@@ -32,22 +32,25 @@ create or replace function nuke_triage()
     raise notice 'experimentrunstatus type deleted';
 
 
-select into query
-    string_agg(
-        format('drop table %I cascade;', tablename), E'\n'
-        )
-from   pg_tables
-where  tablename ~ 'cohort_|labels_|ranks_';
+      select into query
+                  string_agg(
+                    format('drop table %I cascade;', tablename), E'\n'
+                  )
+        from   pg_tables
+       where  tablename ~ 'cohort_|labels_|ranks_';
 
+      if query is not null then
+        raise notice '%', query;
+        execute query;
+      else
+        raise notice 'no  labels or states tables from triage found';
+      end if;
 
-
-    if query is not null then
-    raise notice '%', query;
-    execute query;
-    else
-    raise notice 'no  labels or states tables from triage found';
-    end if;
-
-    return 'triage was send to the oblivion. Long live to triage!';
+      return 'triage was send to the oblivion. Long live to triage!';
     end;
-    $result$ language plpgsql;
+$result$ language plpgsql;
+
+comment on function nuke_triage () is 'Function for wiping out all triage tables, schemas, functions and indexes.
+  It also deletes results_schema_versions (from alembic)
+  Useful  when ou try to start clean (again) and try to recover some
+  previous errors';
