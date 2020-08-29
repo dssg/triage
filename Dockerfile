@@ -44,19 +44,19 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --chown=triage:triage requirement/ requirement/
-RUN pip install --no-cache-dir -r requirement/main.txt
-RUN pip install --no-cache-dir -r requirement/test.txt
-RUN pip install --no-cache-dir -r requirement/extras-rq.txt
-RUN pip install --no-cache-dir ipython jupyter
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirement/main.txt && \
+    pip install --no-cache-dir -r requirement/test.txt && \
+    pip install --no-cache-dir -r requirement/extras-rq.txt && \
+    pip install --no-cache-dir ipython jupyter
 
 COPY --chown=triage:triage README.md .
 COPY --chown=triage:triage LICENSE .
 COPY --chown=triage:triage src/ src/
 COPY --chown=triage:triage setup.py .
 
-
 RUN pip install -e .
-
 
 ENTRYPOINT [ "bash" ]
 
