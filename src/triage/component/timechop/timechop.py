@@ -492,7 +492,7 @@ class Timechop:
         # calculate the as_of_times associated with each test data frequency
         # for our example, we just have one, 1month
         for test_as_of_date_frequency in self.test_as_of_date_frequencies:
-            logger.spam("Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
+            logger.spam(f"Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
 
             # for test as_of_times we step _forwards_ from the train_test_split_time
             # to ensure that we always have a prediction set made immediately after
@@ -511,7 +511,7 @@ class Timechop:
                 data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
                 forward=True,
             )
-            logger.spam("test as of times: {test_as_of_times}")
+            logger.spam(f"test as of times: {test_as_of_times}")
             test_definition = {
                 "first_as_of_time": train_test_split_time,
                 "last_as_of_time": max(test_as_of_times),
