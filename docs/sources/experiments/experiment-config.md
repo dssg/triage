@@ -160,10 +160,12 @@ define how to group features and generate combinations
 - `feature_group_strategies`: strategies for generating combinations of groups. available: all, leave-one-out, leave-one-in, all-combinations
 
 ### User Metadata
-These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the `model_group_keys` below. For example, if you run the entity matching algorithm before running the experiment, one can include a `matchdatetime` in the `user_metadata` that signifies which set of `entity_id`s was used to create a given model/model group. That way, we don't accidentally match old predictions with new staged data without looking up the new `entity_id`s first. 
+These are arbitrary keys/values that you can have Triage apply to the metadata for every matrix in the experiment. Any keys you include here can be used in the `model_group_keys` below. User metadata makes Triage extensible to support ad hoc needs for your use case. In the early days of Triage, it was often used as a placeholder for yet-to-be developed features, such as setting a flag for a test run when there was not yet an option to preview experiment components before running. 
+
+Nowadays, user metadata is often used to store details of the system or data state that fall outside of Triage's purview. For example, on cross-systems projects, Triage is often run after an entity-matching algorithm that links users across different databases. When that entity-matching model is updated, the linkage of Triage `entity_id`s to source data records may change, invalidating the predictions tables.  To avoid this, you can add the model id of your entity matching model to the `user_metadata` that signifies which set of `entity_id`s was used to create a given model/model group. That way, you can don't accidentally match old predictions to new ids during postmodel exploration. 
 
 - `user_metadata`: 
-    - `matchdatetime`: `2019-01-01` 
+    - `entity_model_id`: `em-0242ac120002` 
 
 
 ### Model Grouping (optional)
