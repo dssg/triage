@@ -722,7 +722,6 @@ class ModelEvaluator:
         score_thresholds['rank_pct'] = [value / 100.0 for value in self.bias_config['thresholds'].get('percentiles', [])]
         groups_model, attr_cols = g.get_crosstabs(aequitas_df,
                                                   score_thresholds=score_thresholds,
-                                                  model_id=model_id,
                                                   attr_cols=attr_cols_input)
         # analyze bias from reference groups
         bias = Bias()
