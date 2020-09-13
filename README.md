@@ -26,8 +26,14 @@ Triage is designed to:
 To install Triage, you need:
 
 - Python 3.6
-- A PostgreSQL 11+ database with your source data (events, geographical data, etc) loaded.
-- Ample space on an available disk, (or for example in Amazon Web Services's S3), to store the needed matrices and models for your experiments
+- A PostgreSQL 9.6+ database with your source data (events,
+  geographical data, etc) loaded.
+  - **NOTE**: If your database is PostgreSQL 11+ you will get some
+    speed improvements. We recommend to update to a recent
+    version of PostgreSQL.
+- Ample space on an available disk, (or for example in Amazon Web
+  Services's S3), to store the needed matrices and models for your
+  experiments
 
 We recommend starting with a new python virtual environment (with Python 3.6 or greater) and pip installing triage there.
 ```bash
