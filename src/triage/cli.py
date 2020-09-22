@@ -286,12 +286,14 @@ class Experiment(Command):
                     n_processes=self.args.n_processes,
                     **common_kwargs,
                 )
+                logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
             else:
                 experiment = SingleThreadedExperiment(**common_kwargs)
+                logger.info("Experiment will run in serial fashion")
             return experiment
-        except Exception as e:
-            logger.error("Error occurred while creating the experiment!")
-            raise Exception("Error occurred while creating the experiment!") from e
+        except Exception:
+            logger.exception("Error occurred while creating the experiment!")
+            logger.info(f"Experiment [config file: {self.args.config}] failed at creation")
 
     def __call__(self, args):
         if args.validate_only:
@@ -301,7 +303,7 @@ class Experiment(Command):
                 logger.success(f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!")
             except Exception:
                 logger.exception(f"Validation failed!")
-                logger.error(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
+                logger.info(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
 
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
@@ -321,7 +323,7 @@ class Experiment(Command):
                 logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
             except Exception:
                 logger.exception("Something went wrong")
-                logger.critical(f"Experiment [config file: {self.args.config}] run failed!")
+                logger.info(f"Experiment [config file: {self.args.config}] run failed!")
 
 
 @Triage.register

@@ -49,49 +49,49 @@ class Timechop:
     ):
 
         '''
-        Date strings should follow the format `YYYY-MM-DD`. Date intervals 
+        Date strings should follow the format `YYYY-MM-DD`. Date intervals
         should be strings of the Postgres interval input format.
 
-        This class is often used within the Triage experiment pipeline, and 
+        This class is often used within the Triage experiment pipeline, and
         initialized using parameters from a Triage [experiment config](../../../experiments/experiment-config/#time-splitting)
 
         Arguments:
             feature_start_time (str): Earliest date included in any feature
-            feature_end_time (str): Day after last feature date (all data 
+            feature_end_time (str): Day after last feature date (all data
                 included in features are before this date)
             label_start_time (str): Earliest date for which labels are available
-            label_end_time (str): Day AFTER last label date (all dates in any 
+            label_end_time (str): Day AFTER last label date (all dates in any
                 model are before this date)
             model_update_frequency (str): how frequently to retrain models
-            training_as_of_date_frequencies (str): time between rows for same 
+            training_as_of_date_frequencies (str): time between rows for same
                 entity in train matrix
-            max_training_histories (str): Interval specifying how much history 
+            max_training_histories (str): Interval specifying how much history
                 for each entity to train on
             training_label_timespans (str): how much time is included in a label
                 in the train matrix
-            test_as_of_date_frequencies (str): time between rows for same entity 
+            test_as_of_date_frequencies (str): time between rows for same entity
                 in test matrix
-            test_durations (str): How long into the future to make predictions 
+            test_durations (str): How long into the future to make predictions
                 for each entity. Controls the length of time included in a test
                 matrix
-            test_label_timespans (str): How much time is included in a label 
-                in the test matrix. 
+            test_label_timespans (str): How much time is included in a label
+                in the test matrix.
         '''
         self.feature_start_time = dt_from_str(
             feature_start_time
-        ) 
+        )
         self.feature_end_time = dt_from_str(
             feature_end_time
-        ) 
+        )
         if self.feature_start_time > self.feature_end_time:
             raise ValueError("Feature start time after feature end time.")
 
         self.label_start_time = dt_from_str(
             label_start_time
-        ) 
+        )
         self.label_end_time = dt_from_str(
             label_end_time
-        ) 
+        )
         if self.label_start_time > self.label_end_time:
             raise ValueError("Label start time after label end time.")
 
@@ -119,7 +119,7 @@ class Timechop:
         """ Given the attributes of the object, define all train/test splits
         for all combinations of the temporal parameters.
 
-        return: 
+        return:
             list: a list of dictionaries defining train/test splits
         """
         matrix_set_definitions = []
@@ -198,7 +198,7 @@ class Timechop:
             ValueError: if there are no valid split times in the temporal
             config
         """
-       
+
         # we always want to be sure we're using the most recent data, so for the splits,
         # we start from the very end of time for which we have labels and walk backwards,
         # ensuring we leave enough of a buffer for the test_label_timespan to get a full
@@ -213,7 +213,7 @@ class Timechop:
             raise ValueError(
                 "Final test label date cannot be after end of feature time."
             )
-        logger.spam("Final label as of date: {last_test_label_time}")
+        logger.spam(f"Final label as of date: {last_test_label_time}")
 
         # all split times have to allow at least one training label before them
         # e.g., earliest_possible_split_time = max(1995-01-01, 2012-01-01) + 6month = 2012-01-01
@@ -261,7 +261,7 @@ class Timechop:
             as_of_start_limit (datetime.datetime): the earliest possible as of time for a matrix
             as_of_end_limit (datetime.datetime): the last possible as of time for the matrix
             data_frequency (str): The time interval that should pass between rows
-                of a single entity. Of the format `'date unit'`. For example, 
+                of a single entity. Of the format `'date unit'`. For example,
                 `'1 month'`.
             forward (boolean): whether to generate times forward from the start time
                             (True) or backward from the end time (False)
@@ -306,7 +306,7 @@ class Timechop:
 
         return as_of_times
 
-    def generate_matrix_definitions(    
+    def generate_matrix_definitions(
         self,
         train_test_split_time,
         training_as_of_date_frequency,
@@ -317,7 +317,7 @@ class Timechop:
     ):
         """ Given a split time and parameters for train and test matrices,
         generate as of times and metadata for the matrices in the split.
-        
+
         Arguments:
             train_test_split_time (datetime.datetime): the limit of the last label in the matrix
             training_as_of_date_frequency (str): how much time between rows for an entity
@@ -328,7 +328,7 @@ class Timechop:
             training_label_timespan (str): how much time covered by train labels
             test_label_timespan (str): how much time is covered by test labels
 
-        returns: 
+        returns:
             dict: dictionary defining the train and test matrices for a split
         """
 
@@ -467,7 +467,7 @@ class Timechop:
             test_duration (str): how far forward from split do test as_of_times go
             test_label_timespan (str): how much time is covered by test labels
 
-        return: 
+        return:
             list: list of dictionaries defining the test matrices for a split
         """
 
@@ -492,7 +492,7 @@ class Timechop:
         # calculate the as_of_times associated with each test data frequency
         # for our example, we just have one, 1month
         for test_as_of_date_frequency in self.test_as_of_date_frequencies:
-            logger.spam("Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
+            logger.spam(f"Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
 
             # for test as_of_times we step _forwards_ from the train_test_split_time
             # to ensure that we always have a prediction set made immediately after
@@ -511,7 +511,7 @@ class Timechop:
                 data_frequency=convert_str_to_relativedelta(test_as_of_date_frequency),
                 forward=True,
             )
-            logger.spam("test as of times: {test_as_of_times}")
+            logger.spam(f"test as of times: {test_as_of_times}")
             test_definition = {
                 "first_as_of_time": train_test_split_time,
                 "last_as_of_time": max(test_as_of_times),

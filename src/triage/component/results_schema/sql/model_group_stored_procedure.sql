@@ -51,3 +51,18 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
+
+
+
+comment on function get_model_group_id (text, jsonb, text [], jsonb) is 'Function for using the model group table. This function requires a table like
+-----------
+CREATE TABLE triage_metadata.model_groups
+(
+  model_group_id    SERIAL PRIMARY KEY,
+  model_type        TEXT,
+  hyperparameters   JSONB,
+  feature_list      TEXT []
+  model_config		JSONB
+);
+-----------
+populates the table and returns the IDs';

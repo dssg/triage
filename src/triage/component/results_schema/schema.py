@@ -36,12 +36,21 @@ schemas = (
 event.listen(Base.metadata, "before_create", DDL(schemas))
 
 group_proc_filename = os.path.join(
-    os.path.dirname(__file__), "model_group_stored_procedure.sql"
+    os.path.dirname(__file__), "sql", "model_group_stored_procedure.sql"
 )
 with open(group_proc_filename) as fd:
     stmt = fd.read()
 
 event.listen(Base.metadata, "before_create", DDL(stmt))
+
+nuke_triage_filename = os.path.join(
+    os.path.dirname(__file__), "sql", "nuke_triage.sql"
+)
+with open(nuke_triage_filename) as fd:
+    stmt = fd.read()
+
+
+event.listen(Base.metadata, "before_create", DDL(stmt.replace('%', '%%')))
 
 
 class Experiment(Base):
@@ -60,6 +69,7 @@ class Experiment(Base):
     grid_size = Column(Integer)
     models_needed = Column(Integer)
     random_seed = Column(Integer)
+
 
 class ExperimentRunStatus(enum.Enum):
     started = 1
@@ -541,3 +551,12 @@ class TrainAequitas(Base):
 
     matrix_rel = relationship("Matrix")
     model_rel = relationship("Model")
+
+
+hash_partitioning_filename = os.path.join(
+    os.path.dirname(__file__), "sql", "predictions_hash_partitioning.sql"
+)
+with open(hash_partitioning_filename) as fd:
+    stmt = fd.read()
+
+event.listen(Base.metadata, "after_create", DDL(stmt))

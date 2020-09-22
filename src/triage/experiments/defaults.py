@@ -26,7 +26,7 @@ def fill_timechop_config_missing(config, db_engine):
     # Checks if label_timespan is present
     if 'label_timespans' in timechop_config.keys():
         if any([k in timechop_config.keys() for k in ['training_label_timespans', 'test_labels_timespans']]):
-            raise KeyError("You can't always get what you want, but just sometimes, you get what you need")
+            raise KeyError("You can't always get what you want, but just sometimes, you get what you need: The config file has conflicting keys: the 'label_timespan' and 'training_label_timespans' and/or 'test_label_timespans'")
         default_config['training_label_timespans'] = default_config['test_label_timespans'] = timechop_config['label_timespans']
         timechop_config.pop('label_timespans') ## We don't need this value anymore
 

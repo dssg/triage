@@ -7,7 +7,7 @@ Data Science Toolkit for Social Good and Public Policy Problems
 [![image](https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/triage)
 [![image](https://codeclimate.com/github/dssg/triage.png)](https://codeclimate.com/github/dssg/triage)
 
-Building data science systems requires answering many design questions, turning them into modeling choices, which in turn run  machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanantory variables) generation, model/classifier training, evaluation, selection, and list generation are often complicated and hard to choose apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project. 
+Building data science systems requires answering many design questions, turning them into modeling choices, which in turn run  machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanantory variables) generation, model/classifier training, evaluation, selection, and list generation are often complicated and hard to choose apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
 
 Triage is designed to:
 
@@ -18,7 +18,7 @@ Triage is designed to:
 
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Are you completely new to Triage? Go through the tutorial here with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
-- [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation? 
+- [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation?
 - [Development](https://github.com/dssg/triage#development) - Contribute to Triage development.
 
 ## Installation
@@ -26,8 +26,14 @@ Triage is designed to:
 To install Triage, you need:
 
 - Python 3.6
-- A PostgreSQL 9.4+ database with your source data (events, geographical data, etc) loaded.
-- Ample space on an available disk, (or for example in Amazon Web Services's S3), to store the needed matrices and models for your experiments
+- A PostgreSQL 9.6+ database with your source data (events,
+  geographical data, etc) loaded.
+  - **NOTE**: If your database is PostgreSQL 11+ you will get some
+    speed improvements. We recommend to update to a recent
+    version of PostgreSQL.
+- Ample space on an available disk, (or for example in Amazon Web
+  Services's S3), to store the needed matrices and models for your
+  experiments
 
 We recommend starting with a new python virtual environment (with Python 3.6 or greater) and pip installing triage there.
 ```bash
@@ -42,7 +48,7 @@ Triage needs data in a postgres database and a configuration file that has crede
 
 ## Configure Triage for your project
 
-Triage is configured with a config.yaml file that has parameters defined for each component. You can see some [sample configuration with explanations](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to see what configuration looks like. 
+Triage is configured with a config.yaml file that has parameters defined for each component. You can see some [sample configuration with explanations](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to see what configuration looks like.
 
 ## Using Triage
 
@@ -113,4 +119,3 @@ example:
 ### Contributing
 
 If you'd like to contribute to Triage development, see the [CONTRIBUTING.md](https://github.com/dssg/triage/blob/master/CONTRIBUTING.md) document.
-
