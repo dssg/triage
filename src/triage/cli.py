@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import argparse
 import importlib.util
 import os
@@ -438,8 +437,4 @@ class Db(Command):
 
 
 def execute():
-    main(Triage)
-
-
-if __name__ == "__main__":
     main(Triage)

@@ -42,11 +42,11 @@ function start_infrastructure () {
 }
 
 function stop_infrastructure () {
-	docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  stop
+    docker-compose -f ${DIRTYDUCK_HOME}/docker-compose.yml  stop
 }
 
 function build_triage () {
-     docker build -t dsapp/triage:development -f Dockerfile .
+     docker build --target development -t dsapp/triage:development -f Dockerfile .
 }
 
 function build_images () {
@@ -120,7 +120,7 @@ case "$1" in
                 shift
         ;;
    *)
-       echo "${1} is not a valid flag, try running: ${0} --help"
+       echo "${1} is not a valid flag, try running: ${0} -h"
 	   shift
        ;;
 esac

@@ -19,10 +19,8 @@ services:
 
   bastion:
     build:
-      context: ..
-      dockerfile: Dockerfile
-      target: development
-    image: dsapp/triage:development
+      context: ./bastion
+    image: dirtyduck/bastion
     container_name: dirtyduck_bastion
     tty: true
     environment:
