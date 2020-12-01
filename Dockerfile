@@ -70,9 +70,7 @@ COPY --from=development /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends git
-
-RUN pip uninstall triage
+        apt-get install -y --no-install-recommends git libpq-dev
 
 RUN pip install --no-cache-dir git+https://github.com/dssg/triage@master
 
@@ -100,7 +98,7 @@ USER ${USERNAME}
 ENTRYPOINT [ "triage" ]
 
 
-FROM python:3.7-slim AS production
+FROM master AS production
 
 LABEL triage.version="production"
 
@@ -112,21 +110,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip uninstall triage
 
 RUN pip install --no-cache-dir triage
-
-RUN mkdir triage
-
-WORKDIR triage
-
-ENV SHELL=/bin/bash
-ENV USERNAME=triage
-ENV USERID=1000
-
-RUN adduser \
-        --disabled-password \
-        --gecos "" \
-        --home "/home/triage" \
-        --uid "${USERID}" \
-        "${USERNAME}"
 
 RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)production$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 
