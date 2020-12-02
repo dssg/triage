@@ -19,11 +19,14 @@ services:
 
   bastion:
     build:
-      context: ./bastion
-    image: dirtyduck/bastion
+      context: ..
+      dockerfile: Dockerfile
+      target: development
+    image: dsapp/triage:development
     container_name: dirtyduck_bastion
     tty: true
     environment:
+      - PS1=\[$$(tput setaf 4)$$(tput bold)[\]\u@$$(tput setaf 2)$$(tput smul)dirtyduck$$(tput rmul)$$(tput setaf 4)$$:\\w]#\[$$(tput sgr0) ]\
       - TRIAGE_IMAGE=dirtyduck
       - DATABASE_URL=postgresql://food_user:some_password@dirtyduck_db/food
       - TRIAGE_OUTPUT=/triage-output
