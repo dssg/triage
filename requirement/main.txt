@@ -14,7 +14,7 @@ signalled-timeout==1.0.0
 s3fs==0.5.2
 wrapt==1.12.1
 argcmdr==0.7.0
-sqlparse==0.3.1
+sqlparse==0.4.1
 pebble==4.5.3
 adjustText==0.7.3
 graphviz==0.14
