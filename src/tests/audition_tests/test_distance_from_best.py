@@ -117,7 +117,7 @@ def test_DistanceFromBestTable():
             RecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.36 + add_val)
         session.commit()
         distance_table = DistanceFromBestTable(
-            db_engine=engine, models_table="models", distance_table="dist_table"
+            db_engine=engine, models_table="models", distance_table="dist_table", agg_type="worst"
         )
         metrics = [
             {"metric": "precision@", "parameter": "100_abs"},
