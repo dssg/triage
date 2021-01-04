@@ -27,13 +27,16 @@ aud = Auditioner(
     	  'max_from_best': 0.3,
     	  'threshold_value': 0.5}],
     models_table='models',
-    distance_table='best_dist'
+    distance_table='best_dist',
+    agg_type='worst'
 )
 ```
 Here, Auditioner drops all models group that meet at least one of these conditions in at least one training set:
 
 - Achieves precision at least 0.3 worse than the best performing model group
 - Achieves precision worse than 0.5
+
+Note that the `agg_type` parameter is optional for aggregating metric values across multiple models for a given `model_group_id` and `train_end_time` combination (e.g., from different random seeds) -- `mean`, `best`, or `worst` (the default)
 
 ### Selection rules
 [Selection rules](../api/audition/selection_rules.md#Selection-Rules) allow you to pare down your model groups even more.

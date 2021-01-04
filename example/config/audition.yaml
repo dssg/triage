@@ -29,6 +29,7 @@ filter:
     threshold_value: 0.0 # The worst absolute value that the given metric should be. 
     distance_table: 'distance_table' # name of the distance table
     models_table: 'models' # name of the models table
+    agg_type: 'worst' # Optional: how to aggregate multiple metric values if multiple models exist for a model group/train end time.
 
 # RULES
 # The selection rules for Audition to simulate the model selection process for each timestamps. 

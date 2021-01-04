@@ -412,6 +412,7 @@ class AuditionRunner:
             models_table=self.config["filter"]["models_table"],
             distance_table=self.config["filter"]["distance_table"],
             directory=self.dir,
+            agg_type=self.config["filter"].get("agg_type") or 'worst',
         )
 
         aud.plot_model_groups()
