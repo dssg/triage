@@ -40,6 +40,6 @@ jobs:
         pip install flake8 pytest
         pip install -r requirement/include/build.txt
         pip install -r requirement/include/test-management.txt
-    - name: Test with pytest
+    - name: Test with tox
       run: |
-        pytest
+        tox
