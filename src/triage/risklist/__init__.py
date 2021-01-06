@@ -10,6 +10,9 @@ from collections import OrderedDict
 import json
 import re
 
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 
 def get_required_info_from_config(db_engine, model_id):
     """Get all information needed to make the risk list from model_id
@@ -22,17 +25,17 @@ def get_required_info_from_config(db_engine, model_id):
     """
     get_experiment_query = """
         select experiments.config, matrices.matrix_metadata, matrix_uuid
-        from model_metadata.experiments
-        join model_metadata.experiment_matrices using (experiment_hash)
-        join model_metadata.matrices using (matrix_uuid)
-        join model_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
+        from triage_metadata.experiments
+        join triage_metadata.experiment_matrices using (experiment_hash)
+        join triage_metadata.matrices using (matrix_uuid)
+        join triage_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
         where model_id = %s
     """
     results = list(db_engine.execute(get_experiment_query, model_id))
     experiment_config = results[0]['config']
     label_config = experiment_config['label_config']
     original_matrix_uuid = results[0]['matrix_uuid']
-    matrix_metadata = json.loads(results[0]['matrix_metadata'])
+    matrix_metadata = results[0]['matrix_metadata']
     feature_names = matrix_metadata['feature_names']
     feature_config = experiment_config['feature_aggregations']
     cohort_config = experiment_config['cohort_config']
@@ -60,6 +63,7 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
             model_storage_engine (catwalk.storage.model_storage_engine)
             as_of_date (string) a date string like "YYYY-MM-DD"
     """
+    logger.spam("In RISK LIST................")
     upgrade_db(db_engine=db_engine)
     # 1. Get feature and cohort config from database
     model_info = get_required_info_from_config(db_engine, model_id)
@@ -97,12 +101,22 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
     with db_engine.begin() as conn:
         for aggregation in collate_aggregations:
             feature_prefix = aggregation.prefix
+            logger.spam("Feature prefix = %s", feature_prefix)
             feature_group = aggregation.get_table_name(imputed=True).split('.')[1].replace('"', '')
+            logger.spam("Feature group = %s", feature_group)
             feature_names_in_group = [f for f in model_info['feature_names'] if re.match(f'\A{feature_prefix}', f)]
+            logger.spam("Feature names in group = %s", feature_names_in_group)
             reconstructed_feature_dictionary[feature_group] = feature_names_in_group
 
             # Make sure that the features imputed in training should also be imputed in production
-            features_imputed_in_train = [f for f in set(feature_names_in_group) if f + '_imp' in feature_names_in_group]
+            #import pdb
+            #pdb.set_trace()
+            features_imputed_in_train = [
+                f for f in set(feature_names_in_group)
+                if not f.endswith('_imp') 
+                and'_'.join(f.split('_')[0:-1]) + '_imp' in feature_names_in_group
+            ]
+            logger.spam("Features imputed in train = %s", features_imputed_in_train)
             results = conn.execute(aggregation.find_nulls())
             null_counts = results.first().items()
 
@@ -160,7 +174,8 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
     # 6. Predict the risk score for production
     predictor = Predictor(
         model_storage_engine=model_storage_engine,
-        db_engine=db_engine
+        db_engine=db_engine,
+        rank_order='best'
     )
 
     predictor.predict(
