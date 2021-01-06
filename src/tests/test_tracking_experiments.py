@@ -97,6 +97,7 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
     run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
         experiment_class_path='mymodule.MyClassName',
+        random_seed=1234,
         experiment_kwargs={'key': 'value'},
         db_engine=db_engine_with_results_schema
     )
@@ -105,10 +106,12 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
         experiment_run = session.query(ExperimentRun).get(run_id)
         assert experiment_run.experiment_hash == experiment_hash
         assert experiment_run.experiment_class_path == 'mymodule.MyClassName'
+        assert experiment_run.random_seed == 1234
         assert experiment_run.experiment_kwargs == {'key': 'value'}
     new_run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
         experiment_class_path='mymodule.MyClassName',
+        random_seed=5432,
         experiment_kwargs={'key': 'value'},
         db_engine=db_engine_with_results_schema
     )

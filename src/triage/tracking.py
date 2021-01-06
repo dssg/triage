@@ -1,10 +1,12 @@
+import sys
 import datetime
 import platform
 import getpass
 import os
 import requests
 import subprocess
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 from functools import wraps
 from triage.util.db import scoped_session, get_for_update
 from triage.util.introspection import classpath
@@ -30,7 +32,7 @@ def infer_git_hash():
     try:
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
     except Exception as exc:
-        logging.info("Unable to infer git hash, error: %s", exc)
+        logger.spam("Unable to infer git hash")
         git_hash = None
     return git_hash
 
@@ -38,6 +40,9 @@ def infer_git_hash():
 def infer_triage_version():
     return __version__
 
+def infer_python_version():
+    """ Returns python version """
+    return sys.version.replace("\r", "").replace("\n", "")
 
 def infer_installed_libraries():
     """Attempt to infer the installed libraries by running pip freeze and formatting as a list
@@ -47,7 +52,7 @@ def infer_installed_libraries():
     if pip_freeze is not None:
         installed_libraries = pip_freeze.freeze()
     else:
-        logging.info("Unable to pip freeze, cannot list installed libraries")
+        logger.spam("Unable to pip freeze, cannot list installed libraries")
         installed_libraries = []
     return installed_libraries
 
@@ -62,8 +67,8 @@ def infer_ec2_instance_type():
             'http://169.254.169.254/latest/meta-data/instance-type',
             timeout=0.01
         ).text
-    except requests.exceptions.ConnectionError:
-        logging.info(
+    except requests.exceptions.RequestException:
+        logger.spam(
             "Unable to retrieve metadata about ec2 instance, will not set ec2 instance type"
         )
         ec2_instance_type = None
@@ -83,7 +88,7 @@ def infer_log_location():
     if root_logger_handlers:
         log_location = root_logger_handlers[0].baseFilename
     else:
-        logging.info("No FileHandler found in root logger, cannot record logging filename")
+        logger.spam("No FileHandler found in root logger, cannot record logging filename")
         log_location = None
     return log_location
 
@@ -91,6 +96,7 @@ def infer_log_location():
 def initialize_tracking_and_get_run_id(
     experiment_hash,
     experiment_class_path,
+    random_seed,
     experiment_kwargs,
     db_engine
 ):
@@ -99,6 +105,7 @@ def initialize_tracking_and_get_run_id(
     Args:
         experiment_hash (str) An experiment hash that exists in the experiments table
         experiment_class_path (str) The name of the experiment subclass used
+        random_seed (int) Random seed used to run the experiment
         experiment_kwargs (dict) Any runtime Experiment keyword arguments that should be saved
         db_engine (sqlalchemy.engine)
     """
@@ -112,6 +119,7 @@ def initialize_tracking_and_get_run_id(
         start_time=datetime.datetime.now(),
         git_hash=infer_git_hash(),
         triage_version=infer_triage_version(),
+        python_version=infer_python_version(),
         experiment_hash=experiment_hash,
         last_updated_time=datetime.datetime.now(),
         current_status=ExperimentRunStatus.started,
@@ -122,6 +130,7 @@ def initialize_tracking_and_get_run_id(
         ec2_instance_type=infer_ec2_instance_type(),
         log_location=infer_log_location(),
         experiment_class_path=experiment_class_path,
+        random_seed = random_seed,
         experiment_kwargs=cleaned_experiment_kwargs,
     )
     run_id = None

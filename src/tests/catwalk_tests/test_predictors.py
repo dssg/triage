@@ -3,10 +3,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
 import datetime
 from unittest.mock import Mock
-from numpy.testing import assert_array_equal
-import pandas
+from numpy.testing import assert_array_almost_equal
+import pandas as pd
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
+from triage.component.catwalk.storage import TestMatrixType
+from triage.component.catwalk.db import ensure_db
+from tests.results_tests.factories import (
+    MatrixFactory,
+    ModelFactory,
+    PredictionFactory,
+    init_engine,
+    session as factory_session
+)
 from triage.database_reflection import table_has_data
 
 from triage.component.catwalk.predictors import Predictor
@@ -20,8 +29,6 @@ from tests.utils import (
 import pytest
 
 
-AS_OF_DATE = datetime.date(2016, 12, 21)
-
 with_matrix_types = pytest.mark.parametrize(
     ('matrix_type',),
     [
@@ -29,6 +36,8 @@ with_matrix_types = pytest.mark.parametrize(
         ('test',),
     ],
 )
+
+MODEL_RANDOM_SEED = 123456
 
 
 @contextmanager
@@ -43,7 +52,11 @@ def prepare():
             trained_model = MockTrainedModel()
             model_hash = "abcd"
             project_storage.model_storage_engine().write(trained_model, model_hash)
-            db_model = Model(model_hash=model_hash, train_matrix_uuid=train_matrix_uuid)
+            db_model = Model(
+                model_hash=model_hash,
+                train_matrix_uuid=train_matrix_uuid,
+                random_seed=MODEL_RANDOM_SEED
+            )
             session.add(db_model)
             session.commit()
             yield project_storage, db_engine, db_model.model_id
@@ -57,22 +70,27 @@ def fixture_predict_setup_args():
         yield predict_setup_args
 
 
-@with_matrix_types
-def test_predictor(matrix_type, predict_setup_args):
+@pytest.fixture(name='predictor', scope='function')
+def predictor(predict_setup_args):
     (project_storage, db_engine, model_id) = predict_setup_args
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    return Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst')
+
+
+@pytest.fixture(name='predict_proba', scope='function')
+def prediction_results(matrix_type, predictor, predict_setup_args):
+    (project_storage, db_engine, model_id) = predict_setup_args
 
     dayone = datetime.datetime(2011, 1, 1)
     daytwo = datetime.datetime(2011, 1, 2)
     source_dict = {
-        "entity_id": [1, 2, 1, 2],
-        "as_of_date": [dayone, dayone, daytwo, daytwo],
-        "feature_one": [3, 4, 5, 6],
-        "feature_two": [5, 6, 7, 8],
-        "label": [7, 8, 8, 7],
+        "entity_id": [1, 2, 3, 1, 2, 3],
+        "as_of_date": [dayone, dayone, dayone, daytwo, daytwo, daytwo],
+        "feature_one": [3] * 6,
+        "feature_two": [5] * 6,
+        "label": [True, False] * 3
     }
 
-    matrix = pandas.DataFrame.from_dict(source_dict)
+    matrix = pd.DataFrame.from_dict(source_dict)
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
     matrix_store = get_matrix_store(project_storage, matrix, metadata)
 
@@ -82,31 +100,43 @@ def test_predictor(matrix_type, predict_setup_args):
         misc_db_parameters=dict(),
         train_matrix_columns=["feature_one", "feature_two"],
     )
+    return predict_proba
 
-    # assert
-    # 1. that the returned predictions are of the desired length
-    assert len(predict_proba) == 4
 
-    # 2. that the predictions table entries are present and
-    # can be linked to the original models
+@with_matrix_types
+def test_predictor(predict_proba):
+    """assert that the returned predictions are of the desired length"""
+    assert len(predict_proba) == 6
+
+
+@with_matrix_types
+def test_predictions_table(predictor, predict_proba, matrix_type):
+    """assert that the predictions table entries are present, linked to the original models"""
     records = [
         row
-        for row in db_engine.execute(
+        for row in predictor.db_engine.execute(
             """select entity_id, as_of_date
         from {}_results.predictions
-        join model_metadata.models using (model_id)""".format(
+        join triage_metadata.models using (model_id)""".format(
                 matrix_type, matrix_type
             )
         )
     ]
-    assert len(records) == 4
+    assert len(records) == 6
+
+
+
 
 
 @with_matrix_types
 def test_predictor_save_predictions(matrix_type, predict_setup_args):
+    """Test the save_predictions flag being set to False
+
+    We still want to return predict_proba, but not save data to the DB
+    """
     (project_storage, db_engine, model_id) = predict_setup_args
     # if save_predictions is sent as False, don't save
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine, save_predictions=False)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst', save_predictions=False)
 
     matrix_store = get_matrix_store(project_storage)
     train_matrix_columns = matrix_store.columns()
@@ -129,10 +159,11 @@ def test_predictor_save_predictions(matrix_type, predict_setup_args):
 
 @with_matrix_types
 def test_predictor_needs_predictions(matrix_type, predict_setup_args):
+    """Test that the logic that figures out if predictions are needed for a given model/matrix"""
     (project_storage, db_engine, model_id) = predict_setup_args
     # if not all of the predictions for the given model id and matrix are present in the db,
     # needs_predictions should return true. else, false
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
 
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
     matrix_store = get_matrix_store(project_storage, metadata=metadata)
@@ -151,8 +182,10 @@ def test_predictor_needs_predictions(matrix_type, predict_setup_args):
 
 
 def test_predictor_get_train_columns(predict_setup_args):
+    """Test behavior when train/test matrices are created with different column orders
+    """
     (project_storage, db_engine, model_id) = predict_setup_args
-    predictor = Predictor(project_storage.model_storage_engine(), db_engine)
+    predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
     train_store = get_matrix_store(
         project_storage=project_storage,
         matrix=matrix_creator(),
@@ -189,7 +222,7 @@ def test_predictor_get_train_columns(predict_setup_args):
             for row in db_engine.execute(
                 """select entity_id, as_of_date
             from {}_results.predictions
-            join model_metadata.models using (model_id)""".format(
+            join triage_metadata.models using (model_id)""".format(
                     mat_type, mat_type
                 )
             )
@@ -198,9 +231,10 @@ def test_predictor_get_train_columns(predict_setup_args):
 
 
 def test_predictor_retrieve(predict_setup_args):
+    """Test the predictions retrieved from the database match the output from predict_proba"""
     (project_storage, db_engine, model_id) = predict_setup_args
     predictor = Predictor(
-        project_storage.model_storage_engine(), db_engine, replace=False
+        project_storage.model_storage_engine(), db_engine, 'worst', replace=False
     )
 
     # create prediction set
@@ -257,5 +291,5 @@ def test_predictor_retrieve(predict_setup_args):
         misc_db_parameters=dict(),
         train_matrix_columns=matrix_store.columns()
     )
-    assert_array_equal(new_predict_proba, predict_proba)
+    assert_array_almost_equal(new_predict_proba, predict_proba, decimal=5)
     assert not predictor.load_model.called

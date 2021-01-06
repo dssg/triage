@@ -1,9 +1,11 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
 
 
-class FeatureDictionaryCreator(object):
+class FeatureDictionaryCreator:
     def __init__(self, features_schema_name, db_engine):
         self.features_schema_name = features_schema_name
         self.db_engine = db_engine
@@ -35,7 +37,7 @@ class FeatureDictionaryCreator(object):
                 )
             ]
             feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
-        logging.info("Feature dictionary built: %s", feature_dictionary)
+        logger.spam(f"Feature dictionary built: {feature_dictionary}")
         return feature_dictionary
 
     def _build_feature_names_query(self, table_name, index_columns):
@@ -49,21 +51,15 @@ class FeatureDictionaryCreator(object):
         """
         # format the query that gets column names,
         # excluding indices from result
-        feature_names_query = """
+        feature_names_query = f"""
             SELECT column_name
             FROM information_schema.columns
-            WHERE table_name = '{table}' AND
-                  table_schema = '{schema}' AND
-                  column_name NOT IN ({index_columns})
-        """.format(
-            table=table_name,
-            schema=self.features_schema_name,
-            index_columns=str_in_sql(index_columns),
-        )
-        logging.info(
-            "Extracting all possible feature names for table %s with query %s",
-            table_name,
-            feature_names_query,
+            WHERE table_name = '{table_name}' AND
+                  table_schema = '{self.features_schema_name}' AND
+                  column_name NOT IN ({str_in_sql(index_columns)})
+        """
+        logger.spam(
+            f"Extracting all possible feature names for table {table_name} with query {feature_names_query}"
         )
 
         return feature_names_query

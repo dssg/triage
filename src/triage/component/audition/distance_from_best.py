@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import os
 import numpy as np
 import pandas as pd
@@ -8,7 +10,7 @@ from .metric_directionality import sql_rank_order
 from .plotting import plot_cats, plot_bounds
 
 
-class DistanceFromBestTable(object):
+class DistanceFromBestTable:
     def __init__(self, db_engine, models_table, distance_table):
         """A database table that stores the distance from models and the
         best model for that train end time for a variety of chosen metrics
@@ -59,7 +61,7 @@ class DistanceFromBestTable(object):
                 All models should have the test_results.evaluations table populated
                 for all given model group ids, train end times, and metric/param combos
         """
-        logging.info("Polulating data to distance table")
+        logger.debug("Populating data to distance table")
         for metric in metrics:
             self.db_engine.execute(
                 """
@@ -77,14 +79,14 @@ class DistanceFromBestTable(object):
                         m.model_group_id,
                         m.model_id,
                         m.train_end_time,
-                        ev.value,
+                        ev.stochastic_value as value,
                         row_number() OVER (
                             PARTITION BY m.train_end_time
-                            ORDER BY ev.value {metric_value_order}, RANDOM()
+                            ORDER BY ev.stochastic_value {metric_value_order}, RANDOM()
                         ) AS rank
                   FROM first_evals ev
-                  JOIN model_metadata.{models_table} m USING(model_id)
-                  JOIN model_metadata.model_groups mg USING(model_group_id)
+                  JOIN triage_metadata.{models_table} m USING(model_id)
+                  JOIN triage_metadata.model_groups mg USING(model_group_id)
                   WHERE m.model_group_id IN ({model_group_ids})
                         AND train_end_time in ({train_end_times})
                         AND ev.eval_rn = 1
@@ -207,7 +209,7 @@ class DistanceFromBestTable(object):
         return base_df[base_df["train_end_time"] == train_end_time]
 
 
-class BestDistancePlotter(object):
+class BestDistancePlotter:
     def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the effect of different below-best maximum
         thresholds across the dataset.
@@ -278,7 +280,7 @@ class BestDistancePlotter(object):
                     AVG(CASE WHEN dist_from_best_case <= distance THEN 1 ELSE 0 END) AS pct_of_time
             FROM {distance_table} dist
             JOIN x_vals USING(model_group_id)
-            JOIN model_metadata.model_groups mg using (model_group_id)
+            JOIN triage_metadata.model_groups mg using (model_group_id)
             WHERE
                 dist.metric='{metric}'
                 AND dist.parameter='{parameter}'
@@ -310,7 +312,7 @@ class BestDistancePlotter(object):
 
         """
         for metric_filter in metric_filters:
-            logging.info(
+            logger.debug(
                 "Building best distance plot for %s and %s",
                 metric_filter,
                 train_end_times,

@@ -126,7 +126,8 @@ in the aggregation, pre-imputation. Its output location is generally `{prefix}_a
 A table that looks similar, but with imputed values is created. The cohort table from above is passed into collate as
 the comprehensive set of entities and dates for which output should be generated, regardless if they exist in the
 `from_obj`. Each feature column has an imputation rule, inherited from some level of the feature definition. The
-imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value.
+imputation rules that are based on data (e.g. `mean`) use the rows from the `as_of_time` to produce the imputed value. 
+In addition, each column that needs imputation has an imputation flag column created, which contains a boolean flagging which rows were imputed or not. Since the values of these columns are redundant for most aggregate functions that look at a given timespan's worth of data (they will be imputed only if zero events in their timespan are seen), only one imputation flag column per timespan is created. An exception to this are some statistical functions that require not one, but two values, like standard deviation and variance. These boolean imputation flags are *not* merged in with the others.
 Its output location is generally `{prefix}_aggregation_imputed`
 
 ### Recap
@@ -208,7 +209,7 @@ and test matrix.
 
 ### Associating Matrices with Experiment
 
-After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the `model_metadata.experiment_matrices` table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.
+After all matrices for the Experiment are defined but before any are built, the Experiment is associated with each Matrix in the database through the `triage_metadata.experiment_matrices` table. This means that whether or not the Experiment has to end up building a matrix, after the fact a user can query the database to see if it used said matrix.
 
 #### Retrieving Data and Saving Completed Matrix
 
@@ -258,11 +259,11 @@ Experiment constructor, in the subdirectory `matrices`.
 
 ## 4. Running Models
 
-The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'model_metadata', 'train_results', and 'test_results'.
+The last phase of an Experiment run uses the completed design matrices to train, test, and evaluate classifiers. This procedure writes a lot of metadata to the 3 schemas: 'triage_metadata', 'train_results', and 'test_results'.
 
 ### Associating Models with Experiment
 
-Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the `model_metadata.experiment_models` table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.
+Every combination of training matrix + classifier + hyperparameter is considered a Model. Before any Models are trained, the Experiment is associated with each Model in the database through the `triage_metadata.experiment_models` table. This means that whether or not the Experiment has to end up training a model, after the fact a user can query the database to see if it used said model.
 
 ### Train
 
@@ -272,7 +273,7 @@ and hyperparameter combinations contained herein, and calls `.fit()` with that t
 adheres to the scikit-learn `.fit/.transform` interface and is available in the Python environment will work here,
 whether it is a standard scikit-learn classifier, a third-party library like XGBoost, or a custom-built one in the
 calling repository (for instance, one that implements the problem domain's baseline heuristic algorithm for
-comparison).  Metadata about the trained classifier is written to the `model_metadata.models` Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).
+comparison).  Metadata about the trained classifier is written to the `triage_metadata.models` Postgres table. The trained model is saved to a filename with the model hash (see Model Hash section below).
 
 #### Model Groups
 
@@ -283,13 +284,13 @@ data about the classifier (module, hyperparameters), temporal intervals used to 
 timespan, training history, as-of-date frequency), and metadata describing the data in the train matrix (features and
 feature groups, label name, cohort name). The user can override this set of `model_group_keys` in the experiment
 definition, with all of the default information plus other matrix metadata at their disposal (See end of 'Retrieving
-Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `model_metadata.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `model_metadata.models` table.
+Data and Saving Completed Matrix' section for more about matrix metadata). This data is stored in the `triage_metadata.model_groups` table, along with a `model_group_id` that is used as a foreign key in the `triage_metadata.models` table.
 
 #### Model Hash
 Each trained model is assigned a hash, for the purpose of uniquely defining and caching the model. This hash is based
 on the training matrix metadata, classifier path, hyperparameters (except those which concern execution and do not
 affect results of the classifier, such as `n_jobs`), and the given project path for the Experiment. This hash can be
-found in each row of the `model_metadata.models` table. It is enforced as a unique key in the table.
+found in each row of the `triage_metadata.models` table. It is enforced as a unique key in the table.
 
 #### Global Feature Importance
 The training phase also writes global feature importances to the database, in the `train_results.feature_importances` table.
@@ -310,7 +311,17 @@ The trained model's prediction probabilities (`predict_proba()`) are computed bo
 Feature importances (of a configurable number of top features, defaulting to 5) for each prediction are computed and written to the `test_results.individual_importances` table. Right now, there are no sophisticated calculation methods integrated into the experiment; simply the top 5 global feature importances for the model are copied to the `individual_importances` table.
 
 ### Metrics
-Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.evaluations` table or the `test_results.evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through. Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken at random (the random seed can be passed in the config file to make this deterministic), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
+Triage allows for the computation of both testing set and training set evaluation metrics. Evaluation metrics, such as precision and recall at various thresholds, are written to either the `train_results.evaluations` table or the `test_results.evaluations`. Triage defines a number of [Evaluation Metrics](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L45-L58) metrics that can be addressed by name in the experiment definition, along with a list of thresholds and/or other parameters (such as the 'beta' value for fbeta) to iterate through.
+
+Thresholding is done either via absolute value (top k) or percentile by sorting the predictions and labels by the row's predicted probability score, with ties broken in some way (see next paragraph), and assigning the predicted value as True for those above the threshold. Note that the percentile thresholds are in terms of the population percentage, not a cutoff threshold for the predicted probability.
+
+A few different versions of tiebreaking are implemented to deal with the nuances of thresholding, and each result is written to the evaluations table for each metric score, along with some related statistics:
+
+* `worst_value` - Ordering by the label ascending. This has the effect of as many predicted negatives making it above thresholds as possible, thus producing the worst possible score.
+* `best_value` - Ordering by the label descending. This has the effect of as many predicted positives making it above thresholds as possible, thus producing the best possible score.
+* `stochastic_value` - If the `worst_value` and `best_value` are not the same (as defined by the floating point tolerance at catwalk.evaluation.RELATIVE_TOLERANCE), the sorting/thresholding/evaluation will be redone many times, and the mean of all these trials is written to this column. Otherwise, the `worst_value` is written here
+* `num_sort_trials` - If trials are needed to produce the `stochastic_value`, the number of trials taken is written here. Otherwise this will be 0
+* `standard_deviation` - If trials are needed to produce the `stochastic_value`, the standard deviation of these trials is written here. Otherwise this will be 0
 
 Sometimes test matrices may not have labels for every row, so it's worth mentioning here how that is handled and interacts with thresholding. Rows with missing labels are not considered in the metric calculations, and if some of these rows are in the top k of the test matrix, no more rows are taken from the rest of the list for consideration. So if the experiment is calculating precision at the top 100 rows, and 40 of the top 100 rows are missing a label, the precision will actually be calculated on the 60 of the top 100 rows that do have a label. To make the results of this more transparent for users, a few extra pieces of metadata are written to the evaluations table for each metric score.
 
@@ -319,14 +330,18 @@ Sometimes test matrices may not have labels for every row, so it's worth mention
 labels
 * `num_positive_labels` - The number of positive labels in the test matrix
 
+Triage supports performing a bias audit using the Aequitas library, if a `bias_audit_config` is passed in configuration. This is handled first through creating a 'protected groups'table which retrieves the configured protected group information for each member of the cohort, and the time that this protected group information was first known. This table is named using a hash of the bias audit configuration, so data can be reused across experiments as long as the bias configuration does not change.
+
+A bias audit is performed alongside metric calculation time for each model that is built, on both the train and test matrices, and each subset. This is very similar to the evaluations table schema, in that for each slice of data that has evaluation metrics generated for it, also receives a bias audit. The change is that thresholds are not borrowed from the evaluation configuration, as aequitas audits are computationally expensive and large threshold grids are common in Triage experiments; the bias audit has its evaluation thresholds configured in the `bias_audit_config`. All data from the bias audit is saved to either the `train_results.aequitas` or `test_results.aequitas` tables.
+
 Triage also supports evaluating a model on a subset of the predictions made.
 This is done by passing a subset query in the prediction config. The model
 evaluator will then subset the predictions on valid entity-date pairs for the
 given model and will calculate metrics for the subset, re-applying thresholds
 as necessary to the predictions in the subset. Subset definitions are stored in
-the `model_metadata.subsets` table, and the evaluations are stored in the
+the `triage_metadata.subsets` table, and the evaluations are stored in the
 `evaluations` tables. A hash of the subset configuration identifies subset
 evaluations and links the `subsets` table.
 
 ### Recap
-At this point, the 'model_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.
+At this point, the 'triage_metadata', 'train_results', and 'test_results' database schemas are fully populated with data about models, model groups, predictions, feature importances, and evaluation metrics for the researcher to query. In addition, the trained model pickle files are saved in the configured project path. The experiment is considered finished.

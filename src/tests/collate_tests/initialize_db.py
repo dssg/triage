@@ -21,8 +21,9 @@ def load_data(connection):
     subprocess.run(
         [
             "csvsql",
+            "-v",
             "--no-constraints",
-            "--table",
+            "--tables",
             "food_inspections",
             "--insert",
             "--db",

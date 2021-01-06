@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.component.catwalk.utils import save_db_objects
 from triage.component.results_schema import IndividualImportance
@@ -9,7 +10,26 @@ from .uniform import uniform_distribution
 CALCULATE_STRATEGIES = {"uniform": uniform_distribution}
 
 
-class IndividualImportanceCalculator(object):
+class IndividualImportanceCalculatorNoOp:
+    def calculate_and_save_all_methods_and_dates(self, model_id, test_matrix_store):
+        logger.notice(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+    def calculate_and_save(self, model_id, test_matrix_store, method, as_of_date):
+        logger.notice(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+
+    def save(self, importance_records, model_id, as_of_date, method_name):
+        logger.notice(
+            "No individual feature importance configuration is available, so no individual feature importance will be created"
+        )
+
+
+
+class IndividualImportanceCalculator:
     """Calculates and saves individual importance scores and rankings using different methods
 
     Args:
@@ -59,14 +79,14 @@ class IndividualImportanceCalculator(object):
             model_id, as_of_date, method
         )
         expected_importances = matrix_store.num_entities * self.n_ranks
-        logging.debug(
+        logger.debug(
             "model_id=%s/as_of_date=%s/method=%s: found %s importances",
             model_id,
             as_of_date,
             method,
             existing_importances,
         )
-        logging.debug(
+        logger.debug(
             "matrix_uuid=%s/n_ranks=%s: expect %s importances",
             matrix_store.uuid,
             self.n_ranks,
@@ -98,7 +118,7 @@ class IndividualImportanceCalculator(object):
         if not self.replace and not self._needs_new_importances(
             model_id, as_of_date, method, test_matrix_store
         ):
-            logging.info(
+            logger.debug(
                 "Found as many or more individual importances "
                 + "for model_id=%s/as_of_date=%s/method=%s, skipping",
                 model_id,

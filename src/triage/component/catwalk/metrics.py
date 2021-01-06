@@ -19,9 +19,10 @@ Functions defined here are meant to be used in ModelEvaluator.available_metrics
 """
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
+import numpy as np
 
 
-class Metric(object):
+class Metric:
     """decorator for metrics: result will be a callable metric with an
     `greater_is_better` parameter defined as either True or False
     depending on whether larger or smaller metric values indicate
@@ -34,7 +35,7 @@ class Metric(object):
         self.greater_is_better = greater_is_better
 
     def __call__(self, function, *params, **kwparams):
-        class DecoratedMetric(object):
+        class DecoratedMetric:
             def __init__(self, greater_is_better, function):
                 self.greater_is_better = greater_is_better
                 self.function = function
@@ -133,7 +134,7 @@ def false_negatives(_, predictions_binary, labels, parameters):
 @Metric(greater_is_better=False)
 def fpr(_, predictions_binary, labels, parameters):
     fp = false_positives(_, predictions_binary, labels, parameters)
-    return float(fp / labels.count(0))
+    return float(fp / (len(labels) - np.count_nonzero(labels)))
 
 
 class UnknownMetricError(ValueError):

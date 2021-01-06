@@ -1,0 +1,10 @@
+# Connecting to the database requires a configuration file like this one
+
+# address.of.database.server
+host: 0.0.0.0
+user: food_user
+db: food
+# user password
+pass: some_password
+# connection port
+port: 5434

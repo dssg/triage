@@ -1,5 +1,8 @@
 import importlib
-import logging
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
@@ -14,7 +17,7 @@ from triage.util.conf import convert_str_to_relativedelta
 from triage.validation_primitives import string_is_tablesafe
 
 
-class Validator(object):
+class Validator:
     def __init__(self, db_engine=None, strict=True):
         self.db_engine = db_engine
         self.strict = strict
@@ -26,7 +29,7 @@ class Validator(object):
             if self.strict:
                 raise ValueError(e)
             else:
-                logging.warning(
+                logger.warning(
                     "Validation error hit, not running in strict mode so continuing on: %s",
                     str(e),
                 )
@@ -34,6 +37,7 @@ class Validator(object):
 
 class TemporalValidator(Validator):
     def _run(self, temporal_config):
+        logger.spam("Validating temporal configuration")
         def dt_from_str(dt_str):
             return datetime.strptime(dt_str, "%Y-%m-%d")
 
@@ -127,8 +131,11 @@ class TemporalValidator(Validator):
                     )
 
 
+        logger.debug("Validation of temporal configuration was successful")
+
 class FeatureAggregationsValidator(Validator):
     def _validate_keys(self, aggregation_config):
+        logger.spam("Validating feature aggregation keys")
         for key in [
             "from_obj",
             "intervals",
@@ -146,8 +153,20 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
                 )
+                if not string_is_tablesafe(aggregation_config['prefix']):
+                    raise ValueError(
+                        dedent(
+                            f"""Section: feature_aggregations -
+                            Feature aggregation prefix should only contain
+                            lowercase letters, numbers, and underscores.
+                            Aggregation config: {aggregation_config}
+                            """
+                        )
+                    )
 
+        logger.debug("Validation of feature aggregation keys was successful")
     def _validate_aggregates(self, aggregation_config):
+        logger.spam("Validating aggregates")
         if (
             "aggregates" not in aggregation_config
             and "categoricals" not in aggregation_config
@@ -163,8 +182,10 @@ class FeatureAggregationsValidator(Validator):
                     )
                 )
             )
+        logger.debug("Validation of aggregates was successful")
 
     def _validate_categoricals(self, categoricals):
+        logger.spam("Validating categoricals")
         conn = self.db_engine.connect()
         for categorical in categoricals:
             if "choice_query" in categorical and "choices" in categorical:
@@ -190,10 +211,11 @@ class FeatureAggregationsValidator(Validator):
                     )
                 )
             if "choice_query" in categorical:
-                logging.info("Validating choice query")
+                logger.spam("Validating choice query")
                 choice_query = categorical["choice_query"]
                 try:
                     conn.execute("explain {}".format(choice_query))
+                    logger.debug("Validation of choice query was successful")
                 except Exception as e:
                     raise ValueError(
                         dedent(
@@ -207,11 +229,13 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
 
+        logger.debug("Validation of categoricals was successful")
     def _validate_from_obj(self, from_obj):
         conn = self.db_engine.connect()
-        logging.info("Validating from_obj")
+        logger.spam("Validating from_obj")
         try:
             conn.execute("explain select * from {}".format(from_obj))
+            logger.debug("Validation of from_obj was successful")
         except Exception as e:
             raise ValueError(
                 dedent(
@@ -226,7 +250,7 @@ class FeatureAggregationsValidator(Validator):
             )
 
     def _validate_time_intervals(self, intervals):
-        logging.info("Validating time intervals")
+        logger.spam("Validating time intervals")
         for interval in intervals:
             if interval != "all":
                 # this function, used elsewhere to break up time intervals,
@@ -234,6 +258,7 @@ class FeatureAggregationsValidator(Validator):
                 # relativedelta
                 try:
                     convert_str_to_relativedelta(interval)
+                    logger.debug("Validation of time intervals was successful")
                 except Exception as e:
                     raise ValueError(
                         dedent(
@@ -248,6 +273,7 @@ class FeatureAggregationsValidator(Validator):
                     )
 
     def _validate_groups(self, groups):
+        logger.spam("Validating groups")
         if "entity_id" not in groups:
             raise ValueError(
                 dedent(
@@ -259,9 +285,11 @@ class FeatureAggregationsValidator(Validator):
                     )
                 )
             )
+        logger.debug("Validation of groups was successful")
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
         """Validate the imputation rule for a given aggregation type."""
+        logger.spam("Validating imputation rule")
         # dictionary of imputation type : required parameters
         valid_imputations = {
             "all": {
@@ -314,6 +342,7 @@ class FeatureAggregationsValidator(Validator):
                         % (param, impute_rule["type"])
                     )
                 )
+        logger.debug("Validation of imputation rule was successful")
 
     def _validate_imputations(self, aggregation_config):
         """Validate the imputation rules in an aggregation config, looping
@@ -321,31 +350,33 @@ class FeatureAggregationsValidator(Validator):
         done by _validate_imputation_rule() to check the requirements of
         each imputation rule found
         """
+        logger.spam("Validating imputation definitions")
         agg_types = ["aggregates", "categoricals", "array_categoricals"]
 
         for agg_type in agg_types:
-            logging.info('Checking imputation rules for aggregation type %s', agg_type)
+            logger.spam('Validating imputation rules for aggregation type %s', agg_type)
             # base_imp are the top-level rules, `such as aggregates_imputation`
             base_imp = aggregation_config.get(agg_type + "_imputation", {})
 
             # loop through the individual aggregates
             for agg in aggregation_config.get(agg_type, []):
-                logging.info('Checking imputation rules for aggregation %s', agg)
+                logger.spam('Validating imputation rules for aggregation %s', agg)
                 # combine any aggregate-level imputation rules with top-level ones
                 imp_dict = dict(base_imp, **agg.get("imputation", {}))
 
                 # imputation rules are metric-specific, so check each metric's rule
                 for metric in agg["metrics"]:
-                    logging.info('Checking imputation rules for metric: %s', metric)
+                    logger.spam('Validating imputation rules for metric: %s', metric)
                     # metric rules may be defined by the metric name (e.g., 'max')
                     # or with the 'all' catch-all, with named metrics taking
                     # precedence. If we fall back to {}, the rule validator will
                     # error out on no metric found.
                     impute_rule = imp_dict.get(metric, imp_dict.get("all", {}))
                     self._validate_imputation_rule(agg_type, impute_rule)
+        logger.debug("Validation of imputation definitions was successful")
 
     def _validate_aggregation(self, aggregation_config):
-        logging.info("Validating aggregation config %s", aggregation_config)
+        logger.spam("Validating aggregation config %s", aggregation_config)
         self._validate_keys(aggregation_config)
         self._validate_aggregates(aggregation_config)
         self._validate_categoricals(aggregation_config.get("categoricals", []))
@@ -353,6 +384,7 @@ class FeatureAggregationsValidator(Validator):
         self._validate_time_intervals(aggregation_config["intervals"])
         self._validate_groups(aggregation_config["groups"])
         self._validate_imputations(aggregation_config)
+        logger.debug("Validation of aggregation config was successful")
 
     def _run(self, feature_aggregation_config):
         """Validate a feature aggregation config applied to this object
@@ -402,9 +434,10 @@ class LabelConfigValidator(Validator):
             "{label_timespan}", "6month"
         )
         conn = self.db_engine.connect()
-        logging.info("Validating label query via EXPLAIN")
+        logger.spam("Validating label query via SQL EXPLAIN")
         try:
             conn.execute("explain {}".format(bound_query))
+            logger.debug("Validation of label query was successful")
         except Exception as e:
             raise ValueError(
                 dedent(
@@ -420,6 +453,7 @@ class LabelConfigValidator(Validator):
 
     @staticmethod
     def _validate_include_missing_labels_in_train_as(missing_label_flag):
+        logger.spam("Validating include_missing_labels_in_train")
         if missing_label_flag not in {None, True, False}:
             raise ValueError(
                 dedent(
@@ -432,8 +466,10 @@ class LabelConfigValidator(Validator):
                     )
                 )
             )
+        logger.debug("Validation of include_missing_labels_in_train was successful")
 
     def _run(self, label_config):
+        logger.spam("Validating label configuration")
         if not label_config:
             raise ValueError(
                 dedent(
@@ -453,15 +489,17 @@ class LabelConfigValidator(Validator):
             )
         if 'name' in label_config and not string_is_tablesafe(label_config['name']):
             raise ValueError("Section: label_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         self._validate_query(label_config["query"])
         self._validate_include_missing_labels_in_train_as(
             label_config.get("include_missing_labels_in_train_as", None)
         )
+        logger.debug("Validation of label configuration was successful")
 
 
 class CohortConfigValidator(Validator):
     def _run(self, cohort_config):
+        logger.spam("Validating of cohort configuration")
         if "query" not in cohort_config:
             raise ValueError(
                 dedent(
@@ -482,11 +520,12 @@ class CohortConfigValidator(Validator):
             )
         if 'name' in cohort_config and not string_is_tablesafe(cohort_config['name']):
             raise ValueError("Section: cohort_config - "
-                             "name should only contain letters, numbers, and underscores")
+                             "name should only contain lowercase letters, numbers, and underscores")
         dated_query = query.replace("{as_of_date}", "2016-01-01")
-        logging.info("Validating cohort query")
+        logger.spam("Validating cohort query via SQL EXPLAIN")
         try:
             self.db_engine.execute(f"explain {dated_query}")
+            logger.debug("Validation of cohort query was successful")
         except Exception as e:
             raise ValueError(
                 dedent(
@@ -497,6 +536,7 @@ class CohortConfigValidator(Validator):
                 Full error: {e}"""
                 )
             )
+        logger.debug("Validation of cohort configuration was successful")
 
 
 class FeatureGroupDefinitionValidator(Validator):
@@ -505,6 +545,7 @@ class FeatureGroupDefinitionValidator(Validator):
         Ensure that no prefix starts with another prefix + _ to avoid
         an error with feature group subsets when the group names overlap
         """
+        logger.spam("Validating feature group definitions prefixes")
         for prefix1, prefix2 in permutations(prefix_list, 2):
             if prefix2.startswith(prefix1):
                 raise ValueError(
@@ -515,8 +556,10 @@ class FeatureGroupDefinitionValidator(Validator):
                         % (prefix1, prefix2)
                     )
                 )
+        logger.debug("Validation of feature group definitions prefixes was successful")
 
     def _run(self, feature_group_definition, feature_aggregation_config):
+        logger.spam("Validating of feature group definitions")
         if not isinstance(feature_group_definition, dict):
             raise ValueError(
                 dedent(
@@ -552,6 +595,7 @@ class FeatureGroupDefinitionValidator(Validator):
                         )
                     )
                 )
+        logger.debug("Validation of feature group definition was successful")
 
         if "prefix" in feature_group_definition:
             available_prefixes = {
@@ -596,6 +640,7 @@ class FeatureGroupDefinitionValidator(Validator):
 
 class FeatureGroupStrategyValidator(Validator):
     def _run(self, feature_group_strategies):
+        logger.spam("Validating feature group strategies")
         if not isinstance(feature_group_strategies, list):
             raise ValueError(
                 dedent(
@@ -621,10 +666,12 @@ class FeatureGroupStrategyValidator(Validator):
                     )
                 )
             )
+        logger.debug("Validation of feature group strategies was successful")
 
 
 class UserMetadataValidator(Validator):
     def _run(self, user_metadata):
+        logger.spam("Validating user metadata")
         if not isinstance(user_metadata, dict):
             raise ValueError(
                 dedent(
@@ -633,10 +680,12 @@ class UserMetadataValidator(Validator):
             user_metadata section must be a dict"""
                 )
             )
+        logger.debug("Validation of user metadata was successful")
 
 
 class ModelGroupKeysValidator(Validator):
     def _run(self, model_group_keys, user_metadata):
+        logger.spam("Validating model group keys")
         if not isinstance(model_group_keys, list):
             raise ValueError(
                 dedent(
@@ -690,10 +739,12 @@ class ModelGroupKeysValidator(Validator):
                         )
                     )
                 )
+        logger.debug("Validation of model group keys was successful")
 
 
 class GridConfigValidator(Validator):
     def _run(self, grid_config):
+        logger.spam("Validating grid configuration")
         if not grid_config:
             raise ValueError(
                 dedent(
@@ -704,7 +755,7 @@ class GridConfigValidator(Validator):
             )
         for classpath, parameter_config in grid_config.items():
             if classpath == "sklearn.linear_model.LogisticRegression":
-                logging.warning(
+                logger.warning(
                     "sklearn.linear_model.LogisticRegression found in grid. "
                     "This is unscaled and not well-suited for Triage experiments. "
                     "Use triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression "
@@ -740,17 +791,33 @@ class GridConfigValidator(Validator):
                     )
                 )
 
+        logger.debug("Validation of grid configuration was successful")
+
+
+class PredictionConfigValidator(Validator):
+    def _run(self, prediction_config):
+        logger.spam("Validating prediction configuration")
+        rank_tiebreaker = prediction_config.get("rank_tiebreaker", None)
+        # the tiebreaker is optional, so only try and validate if it's there
+        if rank_tiebreaker and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS:
+            raise ValueError(
+                "Section: prediction - "
+                f"given tiebreaker must be in {catwalk.utils.AVAILABLE_TIEBREAKERS}"
+            )
+        logger.spam("Validation of prediction configuration was successful")
+
 
 class ScoringConfigValidator(Validator):
     def _run(self, scoring_config):
+        logger.spam("Validating scoring configuration")
         if "testing_metric_groups" not in scoring_config:
-            logging.warning(
+            logger.warning(
                 "Section: scoring - No testing_metric_groups configured. "
                 + "Your experiment may run, but you will not have any "
                 + "evaluation metrics computed"
             )
         if "training_metric_groups" not in scoring_config:
-            logging.warning(
+            logger.warning(
                 "Section: scoring - No training_metric_groups configured. "
                 + "If training set evaluation metrics are desired, they must be added"
             )
@@ -795,7 +862,7 @@ class ScoringConfigValidator(Validator):
                                 f"""Section: subsets -
                                 The subset {subset} does not have a query key.
                                 To run evaluations on a subset, you must
-                                include a query that returns a list of distinct 
+                                include a query that returns a list of distinct
                                 entity_ids and has a placeholder for an
                                 as_of_date
                                 """
@@ -809,6 +876,15 @@ class ScoringConfigValidator(Validator):
                                 Please give a name to your subset. This is used
                                 in the namespacing of subset tables created by
                                 triage.
+                                """
+                            )
+                        )
+                    if not string_is_tablesafe(subset['name']):
+                        raise ValueError(
+                            dedent(
+                                f"""Section: subsets -
+                                The subset {subset} name should only contain
+                                lowercase letters, numbers, and underscores
                                 """
                             )
                         )
@@ -833,8 +909,52 @@ class ScoringConfigValidator(Validator):
                         )
 
 
+        logger.debug("Validation of scoring configuration was successful")
+
+class BiasAuditConfigValidator(Validator):
+    def _run(self, bias_audit_config):
+        logger.spam("Validating bias audit configuration")
+        if not bias_audit_config:
+            # if empty, that's fine, shortcut out
+            return
+        if 'from_obj_query' in bias_audit_config and 'from_obj_table' in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+                    Section: bias_audit_config -
+                    Both 'from_obj_query' and 'from_obj_table' specified .
+                    Please only specify one."""
+                )
+            )
+        if 'from_obj_query' not in bias_audit_config and 'from_obj_table' not in bias_audit_config:
+            raise ValueError(
+                dedent(
+                    """
+                    Section: bias_audit_config -
+                    Neither 'from_obj_query' and 'from_obj_table' specified .
+                    Please specify one."""
+                )
+            )
+        for key in [
+                "attribute_columns",
+                "knowledge_date_column",
+                "entity_id_column",
+                "ref_groups_method",
+        ]:
+            if key not in bias_audit_config:
+                raise ValueError(
+                    dedent(
+                        f"""Section: bias_audit_config - '{key} required as key: bias_audit_config config: {bias_audit_config}"""
+                    )
+                )
+        percentile_thresholds = bias_audit_config.get('thresholds', {}).get('percentiles', [])
+        if any(threshold < 0 or threshold > 100 for threshold in percentile_thresholds):
+            raise ValueError("Section: bias_audit_config - All percentile thresholds must be between 0 and 100")
+        logger.debug("Validation of bias audit configuration was successful")
+
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
+        logger.spam("Validating experiment configuration")
         TemporalValidator(strict=self.strict).run(
             experiment_config.get("temporal_config", {})
         )
@@ -864,16 +984,17 @@ class ExperimentValidator(Validator):
         GridConfigValidator(strict=self.strict).run(
             experiment_config.get("grid_config", {})
         )
+        PredictionConfigValidator(self.db_engine, strict=self.strict).run(
+            experiment_config.get("prediction", {})
+        )
         ScoringConfigValidator(strict=self.strict).run(
             experiment_config.get("scoring", {})
         )
+        BiasAuditConfigValidator(strict=self.strict).run(
+            experiment_config.get("bias_audit_config", {})
+        )
 
-        # show the success message in the console as well as the logger
-        # as we don't really know how they have configured logging
         if self.strict:
-            success_message = "Experiment validation ran to completion with no errors"
+            logger.success("Experiment validation ran to completion with no errors")
         else:
-            success_message = "Experiment validation complete. "
-            "All configuration problems have been displayed as warnings"
-        logging.info(success_message)
-        print(success_message)
+            logger.warning("Experiment validation complete. All configuration problems have been displayed as warnings")

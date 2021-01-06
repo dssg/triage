@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pandas as pd
 import yaml
-import numpy
+import numpy as np
 
 
 def convert_string_column_to_date(column):
@@ -138,32 +138,8 @@ def TemporaryDirectory():
         shutil.rmtree(name)
 
 
-@contextmanager
-def fake_metta(matrix_dict, metadata):
-    """Stores matrix and metadata in a metta-data-like form
-
-    Args:
-    matrix_dict (dict) of form { columns: values }.
-        Expects an entity_id to be present which it will use as the index
-    metadata (dict). Any metadata that should be set
-
-    Yields:
-        tuple of filenames for matrix and metadata
-    """
-    matrix = pd.DataFrame.from_dict(matrix_dict).set_index("entity_id")
-    with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile("w") as metadata_file:
-            hdf = pd.HDFStore(matrix_file.name)
-            hdf.put("title", matrix, data_columns=True)
-            matrix_file.seek(0)
-
-            yaml.dump(metadata, metadata_file)
-            metadata_file.seek(0)
-            yield (matrix_file.name, metadata_file.name)
-
-
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
 def assert_index(engine, table, column):

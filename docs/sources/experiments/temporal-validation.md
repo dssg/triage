@@ -33,7 +33,7 @@ visualize_chops(chopper)
 
 The Triage CLI exposes the `showtimechops` command which just takes a YAML file as input. This YAML file is expected to have a `temporal_config` section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) from the Triage repository root as an example.
 
-`triage showtimechops example_experiment_config.yaml`
+`triage experiment example_experiment_config.yaml --show-timechops`
 
 ## Result
 

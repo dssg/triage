@@ -5,16 +5,39 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v6'
+config_version: 'v7'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
 # models table for each model created in this experiment
 model_comment: 'test'
+# random_seed will be set in Python at the beginning of the experiment and
+# affect the generation of all model seeds
+# If you don't specify this block it will be set for you and stored in the database
+random_seed: 23895478
 
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
 # train/test splits
+#
+# Most of this values are optional. The following shows the
+# default values that you will get if they are not set
+# mode_update_frequency = 100y
+# training_as_of_date_frequencies = 100y
+# test_as_fo_date_frequencies = 100y
+# max_training_histories = 0d
+# test_durations = 0d
+# feature_start_time = label_start_time = min(date) in your event's tables (from_obj in feature_aggregations)
+# feature_end_time = label_end_time = max(date) in your event's tables  (from_obj in feature_aggregations)
+#
+# Be mindful that this values were selected in order to
+# simplify the beginnings of your project, and by not means
+# they are the *suggested* values for all projects.
+#
+# Another change is that if your label span is the same in
+# testing and training, instead of using training_label_timespans
+# and test_label_timespans you could use label_timespans and
+# triage will take care of it.
 temporal_config:
     feature_start_time: '1995-01-01' # earliest date included in features
     feature_end_time: '2015-01-01'   # latest date included in features
@@ -38,6 +61,9 @@ temporal_config:
 # This will be included in the metadata for each matrix and used to group models
 # If you don't pass one, the string 'default' will be used.
 #
+# This block is completely optional. If you don't specify it
+# it will default to all the entities in your event's tables  (from_obj in feature_aggregations).
+# The name by default in this case will be 'all_entities'
 cohort_config:
     query: "select entity_id from events where outcome_date < '{as_of_date}'"
     name: 'past_events'
@@ -69,6 +95,8 @@ label_config:
             group by entity_id
     #include_missing_labels_in_train_as: False
     #name: 'inspections'
+
+
 
 
 # FEATURE GENERATION
@@ -118,8 +146,8 @@ feature_aggregations:
         # top-level imputation rules that will apply to all aggregates functions
         # can also specify categoricals_imputation or array_categoricals_imputation
         #
-        # You must specified at least one of the top-level or feature-level imputation
-        # to cover ever feature being defined.
+        # You must specify at least one of the top-level or feature-level imputation
+        # to cover every feature being defined.
         aggregates_imputation:
             # The `all` rule will apply to all aggregation functions, unless over-
             # ridden by a more specific one
@@ -209,30 +237,28 @@ feature_aggregations:
 # for instance,
 # - 'tables' allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
 # - 'prefix' allows you to specify a list of feature name prefixes
+#
+# This block is optional. If you don't specify it, it will be defaulted
+# to all the 'prefix' in the 'features_aggregation' block.
 feature_group_definition:
     tables: ['prefix_aggregation_imputed']
 
-# strategies for generating combinations of groups
+# Strategies for generating combinations of groups
 # available: all, leave-one-out, leave-one-in, all-combinations
+# If not present, this will set to 'all'
 feature_group_strategies: ['all']
 
 
 # USER METADATA
 # These are arbitrary keys/values that you can have Triage apply to the
 # metadata for every matrix in the experiment. Any keys you include here can
-# be used in the 'model_group_keys' below. For example, if you run experiments
-# that share a temporal configuration but that use different label definitions
-# (say, labeling building inspections with *any* violation as positive or
-# labeling only building inspections with severe health and safety violations
-# as positive), you can use the user metadata keys to indicate that the matrices
-# from these experiments have different labeling criteria. The matrices from the
-# two experiments will have different filenames (and not be overwritten or
-# inappropriately reused), and if you add the label_definition key to the model
-# group keys, models made on different label definition will have different
-# groups. In this way, user metadata can be used to expand Triage beyond its
-# explicitly supported functionality.
+# be used in the 'model_group_keys' below. For example, if you run the entity
+# matching algorithm before running the experiment, one can include a `matchdatetime`
+# in the `user_metadata` that signifies which set of `entity_id`s was used
+# to create a given model/model group. That way, we don't accidentally match
+# old predictions with new staged data without looking up the new `entity_id`s first.
 user_metadata:
-    label_definition: 'severe_violations'
+    'matchdatetime': '2019-01-01'
 
 # MODEL GROUPING (optional)
 # Model groups are a way of partitioning trained models in a way that makes for easier analysis.
@@ -260,43 +286,60 @@ user_metadata:
 #
 # model_group_keys: ['feature_groups', 'label_definition']
 
-# GRID CONFIGURATION
-# The classifier/hyperparameter combinations that should be trained
+
+
+
+# BIAS AUDIT (optional, please comment the bias_audit_config section if not interested in knowing the biases and equity of the models)
+# Every evaluation will include a bias audit (using the Aequitas toolkit).
+# To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
+# from_obj parameter: it can be a table name or a query (such as with features generators)
+# The from_obj is expected to have the protected attributes in a single table with a entity_id and knowledge date column
+# Triage will use the most recent entry of the source table with date < than current as_of_date as the value for those attributes in a given as of date
 #
-# Each top-level key should be a class name, importable from triage. sklearn is
-# available, and if you have another classifier package you would like available,
-# contribute it to requirement/main.txt
+# thresholds:
+# Running the bias audit might be slow, so the user should specify which thresholds should be used for the bias audit.
+# Percentiles *should be between 0 and 100*, much like Triage model scoring config.
+# People familiar with Aequitas may note that this differs from its expected values - Triage will do the conversion for Aequitas.
 #
-# Each lower-level key is a hyperparameter name for the given classifier, and
-# each value is a list of potential values. All possible combinations of
-# classifiers and hyperparameters are trained.
-grid_config:
-    'sklearn.ensemble.ExtraTreesClassifier':
-        n_estimators: [100,100]
-        criterion: [gini, entropy]
-        max_depth: [1,5,10,20,50]
-        max_features: [sqrt,log2]
-        min_samples_split: [2,5,10]
-    # catwalk's custom model wrapper ScaledLogisticRegression will
-    # automatically scale the train data prior to fitting the model
-    # and then use the same scaling for the test data
-    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
-        penalty: ['l1', 'l2']
-        C: [0.01, 1]
-    # catwalk's PercentileRankOneFeature baseline will score each entity as
-    # as its percentile on the named feature. This is useful for comparing
-    # predictive models to simply ranking entities on a single feature.
-    'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
-        feature: ['feature_one', 'feature_two']
-        descend: True
-    # catwalk's SimpleThresholder baseline will evaluate each entity against
-    # a list of rules and classify entities as 1 based on whether they meet
-    # any or all of these rules, depending on whether 'or' or 'and' is
-    # passed as the logical_operator. This is useful for comparing
-    # predictive modeling against simple rule-based classification.
-    'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
-        rules: [['feature_one > 3', 'feature_two <= 5']]
-        logical_operator: 'and'
+# ref groups:
+# Please have a look to Aequitas documentation for further information about the ref_groups_method
+# https://dssg.github.io/aequitas/config.html
+# By default uses the min_metric, meaning for each bias metric it uses as reference the group with minimum metric value (e.g. the group defined by race that has the lower FPR)
+# Alternatively it can be 'majority' (picks the largest group to serve as reference) or 'predefined' (needs a list of key values, see below)
+bias_audit_config:
+    from_obj_table: 'semantic.demographics'
+    attribute_columns: ['race', 'sex','age']
+    knowledge_date_column: 'event_date'
+    entity_id_column: 'person_id'
+    ref_groups_method: 'predefined'
+    ref_groups:
+        -  'race': 'w'
+        -  'sex': 'm'
+        -  'age': '35-49'
+    thresholds:
+        percentiles: []
+        top_n: [100]
+
+
+# PREDICTION
+# How predictions are computed for train and test matrices
+#
+# Rank tiebreaking - In the predictions.rank_abs and rank_pct columns, ties in the score
+# are broken either at random or based on the 'worst' or 'best' options. 'worst' is the default.
+#
+# 'worst' will break ties with the ascending label value, so if you
+# take the top 'k' predictions, and there are ties across the 'k'
+# threshold, the predictions above the threshold will be negative
+# labels if possible. NULL labels are also pushed to the top.
+# 'best' will break ties with the descending label value, so if you
+# take the top 'k' predictions, and there are ties across the 'k'
+# threshold, the predictions above the threshold will be positive
+# labels if possible. NULL labels are pushed to the bottom.
+# 'random' will choose one random ordering to break ties. The result will be affected by
+# current state of Postgres' random number generator. Before ranking, the generator is seeded
+# based on the *model*'s random seed.
+#prediction:
+#   rank_tiebreaker: "worst"
 
 
 # MODEL SCORING
@@ -313,10 +356,6 @@ grid_config:
 # Thresholds are more specific: The list is dichotomized and only the
 # top percentile or top n entities are scored as positive labels
 #
-# sort_seed, if passed, will seed the random number generator for each model's
-# metric creation phase. This affects how entities with the same probabilities
-# are sorted
-#
 # subsets, if passed, will add evaluations for subset(s) of the predictions to
 # the subset_evaluations tables, using the same testing and training metric
 # groups as used for overall evaluations but with any thresholds reapplied only
@@ -332,12 +371,11 @@ grid_config:
 # for intervention eligibility became more restricted.
 #
 # Subsets should be a list of dictionaries with the following keys:
-#     - "name": a shorthand name for the subset 
+#     - "name": a shorthand name for the subset
 #     - "query": a query that returns distinct entity_ids belonging to the
 #                subset on a given as_of_date with a placeholder for the
 #                as_of_date being queried
 scoring:
-    sort_seed: 5
     testing_metric_groups:
         -
             metrics: [precision@, recall@]
@@ -366,6 +404,9 @@ scoring:
                 and demographic_date < '{as_of_date}'::date
 
 
+
+
+
 # INDIVIDUAL IMPORTANCES
 # How feature importances for individuals should be computed
 # There are two variables here:
@@ -384,3 +425,56 @@ individual_importance:
     methods: [] # empty list means don't calculate individual importances
     # methods: ['uniform']
     n_ranks: 5
+
+
+# MODEL GRID PRESETS
+# Triage now comes with a set of predefined *recommended* grids
+# named: quickstart, small, medium, large
+# See the documentation for recommended uses cases for those.
+#
+# If you set this configuration section you SHOULD NOT include the grid_config section
+# model_grid_presets: ['small']
+
+
+# GRID CONFIGURATION
+# The classifier/hyperparameter combinations that should be trained
+#
+# Each top-level key should be a class name, importable from triage. sklearn is
+# available, and if you have another classifier package you would like available,
+# contribute it to requirement/main.txt
+#
+# Each lower-level key is a hyperparameter name for the given classifier, and
+# each value is a list of potential values. All possible combinations of
+# classifiers and hyperparameters are trained.
+#
+# NOTE: Triage now include a new parameter named 'model_grid_presets' (see above)
+# you can't have both at the same time. The experiment will fail if you forget this.
+#
+grid_config:
+    'sklearn.ensemble.ExtraTreesClassifier':
+        n_estimators: [100,100]
+        criterion: [gini, entropy]
+        max_depth: [1,5,10,20,50]
+        max_features: [sqrt,log2]
+        min_samples_split: [2,5,10]
+    # catwalk's custom model wrapper ScaledLogisticRegression will
+    # automatically scale the train data prior to fitting the model
+    # and then use the same scaling for the test data
+    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression':
+        penalty: ['l1', 'l2']
+        solver: 'lbfgs'
+        C: [0.01, 1]
+    # catwalk's PercentileRankOneFeature baseline will score each entity as
+    # as its percentile on the named feature. This is useful for comparing
+    # predictive models to simply ranking entities on a single feature.
+    'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
+        feature: ['feature_one', 'feature_two']
+        descend: True
+    # catwalk's SimpleThresholder baseline will evaluate each entity against
+    # a list of rules and classify entities as 1 based on whether they meet
+    # any or all of these rules, depending on whether 'or' or 'and' is
+    # passed as the logical_operator. This is useful for comparing
+    # predictive modeling against simple rule-based classification.
+    'triage.component.catwalk.baselines.thresholders.SimpleThresholder':
+        rules: [['feature_one > 3', 'feature_two <= 5']]
+        logical_operator: 'and'

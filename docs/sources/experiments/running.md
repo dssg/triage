@@ -7,7 +7,7 @@ To use a Triage experiment, you first need:
 - Python 3.5
 - A PostgreSQL database with your source data (events, geographical data, etc) loaded.
 - Ample space on an available disk (or S3) to store the needed matrices and models for your experiment
-- An experiment definition (see [Defining an Experiment](defining.md))
+- An experiment definition (see [Experiment configuration](experiment-config.md))
 
 
 
@@ -53,7 +53,7 @@ experiment = SingleThreadedExperiment(
 experiment.run()
 ```
 
-Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the `model_metadata.models` and `test_results.evaluations` tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.
+Either way you run it, you are likely to see a bunch of log output.  Once the feature/cohor/label/matrix building is done and the experiment has moved onto modeling, check out the `triage_metadata.models` and `test_results.evaluations` tables as data starts to come in. You'll see the simple models (Decision Trees, Scaled Logistic Regression, baselines) populate first, followed by your big models, followed by the rest. You can start to look at the simple model results first to get a handle on what basic classifiers can do for your feature space while you wait for the Random Forests to run.
 
 ## Multicore example
 
@@ -114,36 +114,6 @@ experiment.run()
 
 ```
 
-## Using HDF5 as a matrix storage format
-
-Triage by default uses CSV format to store matrices, but this can take up a lot of space. However, this is configurable.  Triage ships with an HDF5 storage module that you can use.
-
-### CLI
-
-On the command-line, this is configurable using the `--matrix-format` option, and supports `csv` and `hdf`.
-
-```bash
-triage experiment example/config/experiment.yaml --matrix-format hdf
-```
-
-### Python
-
-In Python, this is configurable using the `matrix_storage_class` keyword argument. To allow users to write their own storage modules, this is passed in the form of a class. The shipped modules are in `triage.component.catwalk.storage`. If you'd like to write your own storage module, you can use the [existing modules](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/storage.py) as a guide.
-
-```python
-from triage.experiments import SingleThreadedExperiment
-from triage.component.catwalk.storage import HDFMatrixStore
-
-experiment = SingleThreadedExperiment(
-    config=experiment_config
-    db_engine=create_engine(...),
-    matrix_storage_class=HDFMatrixStore,
-    project_path='/path/to/directory/to/save/data',
-)
-experiment.run()
-```
-
-Note: The HDF storage option is *not* compatible with S3.
 
 ## Validating an Experiment
 
@@ -230,14 +200,14 @@ Python: `SingleThreadedExperiment(..., save_predictions=False)`
 
 ## Running parts of an Experiment
 
-If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration), you will need to pass `skip_validation=True` when constructing your experiment object for a partial experiment.
+If you would like incrementally build, or just incrementally run parts of the Experiment look at their outputs, you can do so. Running a full experiment requires the [experiment config](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to be filled out, but when you're getting started using Triage it can be easier to build the experiment piece by piece and see the results as they come in. Make sure logging is set to INFO level before running this to ensure you get all the log messages. Additionally, because the default behavior of triage is to run config file validation (which expects a complete experiment configuration) and fill in missing values in some sections with defaults, you will need to pass `partial_run=True` when constructing your experiment object for a partial experiment (this will also avoid cleaning up intermediate tables from the run, equivalent to `cleanup=False`).
 
 Running parts of an experiment is only supported through the Python interface.
 
 
 ### Python
 
-1. `experiment.run()` will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. If you initialize the Experiment with `cleanup=False`, you can view the intermediate tables that are built. They are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.
+1. `experiment.run()` will run until it no longer has enough configuration to proceed. You will see information in the logs telling you about the steps it was able to perform. You can additionally view the intermediate tables that are built in the database, which are modified with the experiment hash that the experiment calculates, but this will be printed out in the log messages.
 
 	- `labels_*<experiment_hash>*` for the labels generated per entity and as of date.
 	- `tmp_sparse_states_*<experiment_hash>*` for the membership in each cohort per entity and as_of_date
@@ -263,19 +233,21 @@ Running parts of an experiment is only supported through the Python interface.
 
 After the experiment run, a variety of schemas and tables will be created and populated in the configured database:
 
-* model_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
-* model_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
-* model_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
-* model_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
-* model_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
-* model_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
-* model_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
-* model_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
-* model_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
+* triage_metadata.experiments - The experiment configuration, a hash, and some run-invariant details about the configuration
+* triage_metadata.experiment_runs - Information about the experiment run that may change from run to run, pertaining to the run environment, status, and results
+* triage_metadata.matrices - Each train or test matrix that is built has a row here, with some basic metadata
+* triage_metadata.experiment_matrices - A many-to-many table between experiments and matrices. This will have a row if the experiment used the matrix, regardless of whether or not it had to build it
+* triage_metadata.models - A model describes a trained classifier; you'll have one row for each trained file that gets saved.
+* triage_metadata.experiment_models - A many-to-many table between experiments and models. This will have a row if the experiment used the model, regardless of whether or not it had to build it
+* triage_metadata.model_groups - A model groups refers to all models that share parameters like classifier type, hyperparameters, etc, but *have different training windows*. Look at these to see how classifiers perform over different training windows.
+* triage_metadata.matrices - Each matrix that was used for training and testing has metadata written about it such as the matrix hash, length, and time configuration.
+* triage_metadata.subsets - Each evaluation subset that was used for model scoring has its configuation and a hash written here
 * train_results.feature_importances - The sklearn feature importances results for each trained model
 * train_results.predictions - Prediction probabilities for train matrix entities generated against trained models
+* train_results.prediction_metadata - Metadata about the prediction stage for a model and train matrix, such as tiebreaking configuration
 * train_results.evaluations - Metric scores of trained models on the training data.
 * test_results.predictions - Prediction probabilities for test matrix entities generated against trained models
+* test_results.prediction_metadata - Metadata about the prediction stage for a model and test matrix, such as tiebreaking configuration
 * test_results.evaluations - Metric scores of trained models over given testing windows and subsets
 * test_results.individual_importances - Individual feature importance scores for test matrix entities.
 
@@ -287,8 +259,8 @@ Here's an example query, which returns the top 10 model groups by precision at t
     	model_groups.model_type,
     	model_groups.hyperparameters,
     	max(test_evaluations.value) as max_precision
-    from model_metadata.model_groups
-    	join model_metadata.models using (model_group_id)
+    from triage_metadata.model_groups
+    	join triage_metadata.models using (model_group_id)
     	join test_results.evaluations using (model_id)
     where
     	metric = 'precision@'

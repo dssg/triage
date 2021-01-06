@@ -1,4 +1,5 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 import time
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
@@ -6,7 +7,7 @@ from triage.experiments import ExperimentBase
 try:
     from rq import Queue
 except ImportError:
-    print(
+    logger.error(
         "rq not available. To use RQExperiment, install triage with the RQ extension: "
         "pip install triage[rq]"
     )
@@ -61,17 +62,14 @@ class RQExperiment(ExperimentBase):
             num_pending = sum(
                 1 for job in jobs if not job.is_finished and not job.is_failed
             )
-            logging.info(
-                "Report: jobs %s done, %s failed, %s pending",
-                num_done,
-                num_failed,
-                num_pending,
+            logger.debug(
+                f"Report: jobs {num_done} done, {num_failed} failed, {num_pending} pending",
             )
             if num_pending == 0:
-                logging.info("All jobs completed or failed, returning")
+                logger.verbose("All jobs completed or failed, returning")
                 return [job.result for job in jobs]
             else:
-                logging.info("Sleeping for %s seconds", self.sleep_time)
+                logger.spam("Sleeping for {self.sleep_time} seconds")
                 time.sleep(self.sleep_time)
 
     def process_query_tasks(self, query_tasks):
@@ -99,12 +97,13 @@ class RQExperiment(ExperimentBase):
             }
         """
         for table_name, tasks in query_tasks.items():
-            logging.info("Processing features for %s", table_name)
+            logger.spam(f"Processing features for {table_name}")
             self.feature_generator.run_commands(tasks.get("prepare", []))
 
             insert_batches = [
                 list(task_batch) for task_batch in Batch(tasks.get("inserts", []), 25)
             ]
+
             jobs = [
                 self.queue.enqueue(
                     self.feature_generator.run_commands,
@@ -115,10 +114,11 @@ class RQExperiment(ExperimentBase):
                 )
                 for insert_batch in insert_batches
             ]
+
             self.wait_for(jobs)
 
             self.feature_generator.run_commands(tasks.get("finalize", []))
-            logging.info("%s completed", table_name)
+            logger.debug(f"{table_name} completed")
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         """Run matrix build tasks using RQ

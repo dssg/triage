@@ -1,7 +1,12 @@
+dist: bionic
 language: python
-python: 3.6
+python: ["3.6", "3.7"]
 addons:
-  postgresql: '9.5'
+  postgresql: '11'
+  apt:
+    packages:
+      - postgresql-11
+      - postgresql-client-11
 services:
 - postgresql
 before_install:
@@ -11,7 +16,7 @@ install:
 - pip install -r requirement/include/build.txt -r requirement/include/test-management.txt
 env:
   matrix:
-  - BOTO_CONFIG=/tmp/nowhere
+    - BOTO_CONFIG=/tmp/nowhere
   global:
     secure: U00z8IVLCenhcgaf2k+orF2zrNuQDbuSZs7ob+HvUPUHbFf8nadGN7RQ1E/AeiDPuqqOB03gQnqEEM1/o6EzzTGICsjUuSwGkmXXVwkpk5DZeEv6zIlrXpIaPvD0ZRTDh9g2GohmL4AEc7v7cKxMCSW2zYfP9qhiHMmxD98yB3llc3Z/zBjCC1Wp9d6/2+MEiUWytqYg1pI4vamL+awHrgjpImrMYnC4guMpvwHqslL1t/HhvHzzrob1EjxIPZuDzzSmXAcRTDkrX56gFKn6+wPyGf7M8BbiyilqFThN93hhNc3XYXTV+ptQgi6Rn8EfKpKuL0qBW3wOw9e6SExtz8ESNB+DjSe7zTPNXGH1WbeyMUCrArdZj0+FVCjoT8dG9bDUMl+kgMn2J5VBS4umpmIVaJCJvmldojax4W+fuR4nrfnb3pIP+hDjemlgbpdmjBh39c+A3ZC7Zcv3fhpvGIyg8/2GBzNRaNc4wiVcd8An+VlToJLLwuBekA0J1NDWvKmuMX5Kew+Y4w1w1WgJAW8kWMEY51tlIwuWYdsdIRGLFgOucbtLMJpQXjtP8OxKHcWsCDiIEZJk49IMdcU3q6Wmss1TfElNwxpdpECrLEn8y1CDIhzb+PcUYdqHWPgW30TKOs4URags4m/XVmDJZrgv3JcwiQiYbUepZ8hPdTY=
 script: tox
@@ -19,11 +24,21 @@ notifications:
   email: false
 after_success: codecov
 deploy:
-  on:
+  -
     repo: dssg/triage
-    tags: true
-  distributions: sdist bdist_wheel
-  password:
-    secure: pJkSXYD04vwgw8KHIlMtuN2b24utupFHfXL9wnijFDJtXgoMTqo2SIW+l6gAG25bp6Z69w3P7l+ZJefc6YkgCTaE+/ypEQdpiD2NZJ//fldXp8Xc68biLP76TOVEMLDVd0pYzbCpV8/6gBzUuL/f1GUadRBLwrxuxzl/TlQEnOiMiCW9Crc02r8Y/QYDF0COIZu436ez4B6KpWXM+q88ZiiSnFfcy8hDfgjuKrcva5K+c6lVEoVua4HAq5wDFkTrg8hCH/3HHoqR561yyWkUPYYaOE8Y8KnyKg+8jrEe/qpkGbmsQ+2EuJ05DiJIkC40Yw634pr1MMxXLro5FszeEl4vAYzPjPrd2M9PQCpvR1MTD3r7ac2bIa+AIQuw8lYRrTdh3PmfypJXDgE3/qfKIsf76slYDsZbX+261GC8XebS/hqa5m7LJTHFsdlr8hcQlKuXYQAz2X+f7xSWrx+l6utCmpPZsGxCU6LmHfAJDLa3HpR+/1bq1CM6Q8CW/dWmCxsc/0bduu5+NmFY/maRhPhqvMClRbD6/D17hEqugMRo8JK4g/9PF4W8INo60q0CTePOp+iBD4HF3jh77hBylzvb68opRlTr0MJRPTfgvb3HGs5fDMd059CBLMZo53EdZ5Ri36jrkDABN+b8yVcdTdh998nfWqACNKJtqL5/an4=
-  provider: pypi
-  user: dssg
+    distributions: sdist bdist_wheel
+    password:
+      secure: o0JpnmjqbYgu75eUXfxX/FUw0ek6Pp1bdhqRH4x3VnINy3TdBZ1tdD35B0l8L5UaR+j8LawOwTt3md3EyQTNpJQypFChcF6LDTS2hF0ZxyFphgWWo+DWhx8abAT/xAECO7Z7pjynQcYy1OAC3U+V8E7gevlr/nWD1/Le0mC+BJocJQ6QBZCD84E4ennXdLUgMqQZlCUKvi6j7EXvV4NoXbuZPaZKhC77CZ0xpEu0aQG9IPPGgkmL3a5RQd5/Uu8rlBES5lzh9bysW3NvXSUaq5XXrQAx5Fba3/lDN8aVkFvseLwOfjZ1pdTnbcDH5ti24YYecBsRsF4qmOY5pVZQZWeQRZFZ+/wp0fa34M9XjIyN7rXKyPm2UX7A8IYyF95xvniKs0qUOBXGRq5IFse6OSUIuKLYl3XjN3IPUPRCXnxoCXyRFV3NNyvtfb47+eejrgfqav9SKE5auA/t5ioQh6FuVqBMCWK7FFiZCt4z1g6RmYAFlRcTuHeedKjOfzWU79AeUoTJA1tfz4FtNjIWfoZJyCNCUCQjYzD/yCJGuDCuY/42+QGaMo9oEVgw7ublC0Xzib+zyuogTvjxYQR+XGJnCgeDYEs7A/o8CHdJKSeIbxpnuZShPpkdBQgzWmnvlfgJTYICaa10oAf5+sDnBQQsumZBT3iuKJETXIkNxeo=
+    provider: pypi
+    user: dssg
+    on:
+       repo: dssg/triage
+       tags: true
+  -
+    provider: pages
+    skip_cleanup: true
+    keep_history: true
+    on:
+      tags: true
+    github_token:
+      secure: k9B6boJecrnckJaei63Ulyqq0Guj1D6hEGcnvChqlG0K7rbC8ItK9WAB+l349mPzFVflQqXvovcr+skB3FuVTiv8nD6y5ACKZTYy9IAC0OURHIBYEwnTyBFc7xuUKRlHsGok5DfQkUeQgiyUGTPLAExDkufjSAamnevATSGk3uCzpDzexRqSKm69Py1ZMEgSmTriH+Z90p/OET0lZPn0rkBXlgeReElJ2ffPjE8HaE9JovL22/9ZoNlBjnK85fAt4WEAWSdoL1f2Ye+XILlfIx2abFzbthU+0mPZf3U3bvzPWNwYzMs5fwnV635yHEMT2yRDA8Hrpbe+EFEk+/GfwITnVpSawmZutsuH4xjmh9owCTqMvI2IWNJ5cTVgs4NoRIlqU0Eiaxyn2Iv123WNO3SjoLKJ7i3CXK82V2rMkufbVBEzG010G24wJ087w+mZux7wxxQ5DQmgm1leNBLqGmkdGMYVBQubAyS5rKBW8akvBX+T3b8c/CUoamOnWXP6nTS3jGfSP0doBBqhe8C7qA75FfwS350ln/CJBfuU2mS7ya1PawS1sdZ9M8eYm1gl3ueLQjaXnG2BcbDqDGRNHrrXDGtNCdD7AeoQ+3jVUR1hoyHS+zxMxRUBb/Gpd7sKwyiF4kR5sQ2M3mLLo2YCk9+l8Y/nY9E3MuZggfq1d7c=

@@ -1,21 +1,20 @@
-#!/usr/bin/env python
 import argparse
 import importlib.util
-import logging
 import os
 import yaml
+
+
 from datetime import datetime
 
 from descriptors import cachedproperty
 from argcmdr import RootCommand, Command, main, cmdmethod
 from sqlalchemy.engine.url import URL
-
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
-from triage.component.results_schema import upgrade_db, stamp_db, REVISION_MAPPING
+from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
 from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import CSVMatrixStore, HDFMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -24,7 +23,8 @@ from triage.experiments import (
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
-logging.basicConfig(level=logging.INFO)
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 
 def natural_number(value):
@@ -67,23 +67,22 @@ class Triage(RootCommand):
             return
 
         setup_path = self.args.setup or self.SETUP_FILE_DEFAULT
-        logging.info("Loading setup module at %s", setup_path)
+        logger.info("Loading setup module at %s", setup_path)
         spec = importlib.util.spec_from_file_location("triage_config", setup_path)
         triage_config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(triage_config)
-        logging.info(f"Setup module loaded")
+        logger.info(f"Setup module loaded")
 
     @cachedproperty
     def db_url(self):
         if self.args.dbfile:
             dbfile = self.args.dbfile
+        elif os.path.isfile(self.DATABASE_FILE_DEFAULT):
+            dbfile = open(self.DATABASE_FILE_DEFAULT)
         else:
             environ_url = os.getenv('DATABASE_URL')
             if environ_url:
                 return environ_url
-
-            if os.path.isfile(self.DATABASE_FILE_DEFAULT):
-                dbfile = open(self.DATABASE_FILE_DEFAULT)
             else:
                 raise EnvironmentError(
                     f"could not determine database connection information from "
@@ -92,7 +91,7 @@ class Triage(RootCommand):
                 )
 
         with dbfile:
-            dbconfig = yaml.load(dbfile)
+            dbconfig = yaml.full_load(dbfile)
 
         return URL(
             'postgres',
@@ -128,7 +127,7 @@ class FeatureTest(Command):
     def __call__(self, args):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
-        full_config = yaml.load(args.feature_config_file)
+        full_config = yaml.full_load(args.feature_config_file)
         feature_config = full_config['feature_aggregations']
         cohort_config = full_config.get('cohort_config', None)
         if cohort_config:
@@ -144,10 +143,8 @@ class FeatureTest(Command):
             feature_dates=[args.as_of_date],
             state_table="features_test.test_cohort"
         )
-        logging.info(
-            "Features created for feature_config %s and date %s",
-            feature_config,
-            args.as_of_date,
+        logger.success(
+            f"Features created for feature_config {feature_config} and date {args.as_of_date}"
         )
 
 
@@ -157,7 +154,6 @@ class Experiment(Command):
 
     matrix_storage_map = {
         "csv": CSVMatrixStore,
-        "hdf": HDFMatrixStore,
     }
     matrix_storage_default = "csv"
 
@@ -258,7 +254,7 @@ class Experiment(Command):
 
     def _load_config(self):
         config_file = Store.factory(self.args.config)
-        return yaml.load(config_file.load())
+        return yaml.full_load(config_file.load())
 
     @cachedproperty
     def experiment(self):
@@ -278,19 +274,36 @@ class Experiment(Command):
             "save_predictions": self.args.save_predictions,
             "skip_validation": not self.args.validate
         }
-        if self.args.n_db_processes > 1 or self.args.n_processes > 1:
-            experiment = MultiCoreExperiment(
-                n_db_processes=self.args.n_db_processes,
-                n_processes=self.args.n_processes,
-                **common_kwargs,
-            )
-        else:
-            experiment = SingleThreadedExperiment(**common_kwargs)
-        return experiment
+        logger.info(f"Setting up the experiment")
+        logger.info(f"Configuration file: {self.args.config}")
+        logger.info(f"Results will be stored in DB: {self.root.db_url}")
+        logger.info(f"Artifacts will be saved in {self.args.project_path}")
+        try:
+            if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+                experiment = MultiCoreExperiment(
+                    n_db_processes=self.args.n_db_processes,
+                    n_processes=self.args.n_processes,
+                    **common_kwargs,
+                )
+                logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
+            else:
+                experiment = SingleThreadedExperiment(**common_kwargs)
+                logger.info("Experiment will run in serial fashion")
+            return experiment
+        except Exception:
+            logger.exception("Error occurred while creating the experiment!")
+            logger.info(f"Experiment [config file: {self.args.config}] failed at creation")
 
     def __call__(self, args):
         if args.validate_only:
-            self.experiment.validate()
+            try:
+                logger.info(f"Validating experiment [config file: {self.args.config}]")
+                self.experiment.validate()
+                logger.success(f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!")
+            except Exception:
+                logger.exception(f"Validation failed!")
+                logger.info(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
+
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
@@ -303,7 +316,13 @@ class Experiment(Command):
                 visualize_chops(self.experiment.chopper, save_target=fd)
 
         else:
-            self.experiment.run()
+            try:
+                logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
+                self.experiment.run()
+                logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
+            except Exception:
+                logger.exception("Something went wrong")
+                logger.info(f"Experiment [config file: {self.args.config}] run failed!")
 
 
 @Triage.register
@@ -348,7 +367,7 @@ class Audition(Command):
         self.root.setup()  # Loading configuration (if exists)
         db_url = self.root.db_url
         dir_plot = self.args.directory
-        config = yaml.load(self.args.config)
+        config = yaml.full_load(self.args.config)
         db_engine = create_engine(db_url)
         return AuditionRunner(config, db_engine, dir_plot)
 
@@ -376,7 +395,7 @@ class Crosstabs(Command):
         db_engine = create_engine(self.root.db_url)
         config_store = Store.factory(args.config)
         with config_store.open() as fd:
-            config = CrosstabsConfigLoader(config=yaml.load(fd))
+            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
         run_crosstabs(db_engine, config)
 
 
@@ -384,34 +403,38 @@ class Crosstabs(Command):
 class Db(Command):
     """Manage experiment database"""
 
-    @cmdmethod
+    @cmdmethod("-r", "--revision", default="head", help="database schema revision to upgrade to (see triage db history)")
     def upgrade(self, args):
         """Upgrade triage results database"""
-        upgrade_db(dburl=self.root.db_url)
+        upgrade_db(revision=args.revision, dburl=self.root.db_url)
 
-    @cmdmethod(
-        "configversion",
-        choices=REVISION_MAPPING.keys(),
-        help="config version of last experiment you ran",
-    )
+    @cmdmethod("-r", "--revision", default="-1", help="database schema revision to downgrade to (see triage db history)")
+    def downgrade(self, args):
+        """Downgrade triage results database"""
+        downgrade_db(revision=args.revision, dburl=self.root.db_url)
+
+    @cmdmethod("revision", help="database schema revision to stamp to (see triage db history)")
     def stamp(self, args):
-        """Instruct the triage results database to mark itself as updated to a
-        known version without doing any upgrading.
+        """Mark triage results database as updated to a known version without doing any upgrading.
 
-        Use this if the database was created without an 'alembic_version' table.
-        Uses the config version of your experiment to infer what database version is suitable.
+        The revision can be anything alembic recognizes, such as a specific revision or 'head' (the most recent revision in the current codebase)
+
+        This is most useful if the database was created without a 'results_schema_versions' table (i.e. old versions of triage that didn't enforce alembic use), but could also be useful after general database mangling.
+
+        If you don't know what the right revision is, here are some database revisions that old experiment configs are associated with:
+            - no config version: 8b3f167d0418
+            - v1 or v2: 72ac5cbdca05
+            - v3: 7d57d1cf3429
+            - v4: 89a8ce240bae
+            - v5: 2446a931de7a
         """
-        revision = REVISION_MAPPING[args.configversion]
-        print(
-            f"Based on config version {args.configversion} "
-            f"we think your results schema is version {revision} and are upgrading to it"
-        )
-        stamp_db(revision, dburl=self.root.db_url)
+        stamp_db(revision=args.revision, dburl=self.root.db_url)
+
+    @cmdmethod
+    def history(self, args):
+        """Show triage results database history"""
+        db_history(dburl=self.root.db_url)
 
 
 def execute():
-    main(Triage)
-
-
-if __name__ == "__main__":
     main(Triage)

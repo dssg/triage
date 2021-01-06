@@ -9,7 +9,7 @@ ROOT_PATH = Path(__file__).parent
 
 LICENSE_PATH = ROOT_PATH / 'LICENSE'
 
-README_PATH = ROOT_PATH / 'README.rst'
+README_PATH = ROOT_PATH / 'README.md'
 
 REQUIREMENTS_PATH = ROOT_PATH / 'requirement' / 'main.txt'
 
@@ -44,12 +44,18 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='3.3.0',
+    version='4.2.0',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
+    long_description_content_type="text/markdown",
     author="Center for Data Science and Public Policy",
     author_email='datascifellows@gmail.com',
-    url='https://github.com/dssg/triage',
+    url="https://dssg.github.io/triage/",
+    project_urls={
+        "Documentation": "https://dssg.github.io/triage/",
+        "Source Code": "https://github.com/dssg/triage",
+        "Tutorial": "https://dssg.github.io/triage/dirtyduck/"
+    },
     packages=find_packages('src', exclude=['tests', 'tests.*']),
     package_dir={'': 'src'},
     include_package_data=True,
@@ -58,7 +64,7 @@ setup(
         'console_scripts': ['triage = triage.cli:execute'],
     },
     extras_require={'rq': RQ_REQUIREMENTS},
-    license=LICENSE_PATH.read_text(),
+    license="MIT License",
     zip_safe=False,
     keywords='triage',
     classifiers=[
@@ -67,8 +73,10 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
+    python_requires='>=3.6',
     test_suite='tests',
     tests_require=REQUIREMENTS_TEST
 )

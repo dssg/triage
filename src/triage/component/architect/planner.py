@@ -1,12 +1,14 @@
 import copy
 import itertools
-import logging
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 
 from triage.component.catwalk.utils import filename_friendly_hash
 from . import utils, entity_date_table_generators
 
 
-class Planner(object):
+class Planner:
     def __init__(
         self,
         feature_start_time,
@@ -116,8 +118,8 @@ class Planner(object):
         updated_definitions = []
         build_tasks = dict()
         for matrix_set in matrix_set_definitions:
-            logging.info("Making plans for matrix set %s", matrix_set)
-            logging.info(
+            logger.debug("Making plans for matrix set %s", matrix_set)
+            logger.debug(
                 "Iterating over %s label names, %s label_types, %s cohort_names, "
                 "%s feature dictionaries",
                 len(self.label_names),
@@ -145,7 +147,7 @@ class Planner(object):
                     "train",
                 )
                 train_uuid = filename_friendly_hash(train_metadata)
-                logging.info(
+                logger.debug(
                     "Matrix UUID %s found for train metadata %s",
                     train_uuid,
                     train_metadata,
@@ -154,12 +156,12 @@ class Planner(object):
                     build_tasks[train_uuid] = self._generate_build_task(
                         train_metadata, train_uuid, train_matrix, feature_dictionary
                     )
-                    logging.info(
+                    logger.debug(
                         "Train uuid %s not found in build tasks yet, " "so added",
                         train_uuid,
                     )
                 else:
-                    logging.info(
+                    logger.debug(
                         "Train uuid %s already found in build tasks", train_uuid
                     )
                 matrix_set_clone["train_uuid"] = train_uuid
@@ -175,7 +177,7 @@ class Planner(object):
                         "test",
                     )
                     test_uuid = filename_friendly_hash(test_metadata)
-                    logging.info(
+                    logger.debug(
                         "Matrix UUID %s found for test metadata %s",
                         test_uuid,
                         test_metadata,
@@ -184,12 +186,12 @@ class Planner(object):
                         build_tasks[test_uuid] = self._generate_build_task(
                             test_metadata, test_uuid, test_matrix, feature_dictionary
                         )
-                        logging.info(
+                        logger.debug(
                             "Test uuid %s not found in build tasks " "yet, so added",
                             test_uuid,
                         )
                     else:
-                        logging.info(
+                        logger.debug(
                             "Test uuid %s already found in build tasks", test_uuid
                         )
 
@@ -197,11 +199,11 @@ class Planner(object):
                 matrix_set_clone["test_uuids"] = test_uuids
                 updated_definitions.append(matrix_set_clone)
 
-        logging.info(
+        logger.debug(
             "Planner is finished generating matrix plans. "
             "%s matrix definitions and %s unique build tasks found",
             len(updated_definitions),
             len(build_tasks.keys()),
         )
-        logging.info("Associated all tasks with experiment in database")
+        logger.debug("Associated all tasks with experiment in database")
         return updated_definitions, build_tasks

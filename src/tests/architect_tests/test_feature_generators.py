@@ -1,7 +1,7 @@
 import copy
 from datetime import date
 
-import pandas
+import pandas as pd
 import pytest
 import sqlalchemy
 from sqlalchemy import text as t
@@ -109,10 +109,8 @@ def test_feature_generation(test_engine):
                 "aprefix_zip_code_all_cat_one_good_sum": 0,
                 "aprefix_zip_code_all_cat_one_bad_sum": 0,
                 "aprefix_zip_code_all_cat_one__NULL_sum": 1,
-                "aprefix_entity_id_all_quantity_one_sum_imp": 1,
-                "aprefix_entity_id_all_quantity_one_count_imp": 1,
-                "aprefix_zip_code_all_quantity_one_sum_imp": 1,
-                "aprefix_zip_code_all_quantity_one_count_imp": 1,
+                "aprefix_entity_id_all_quantity_one_imp": 1,
+                "aprefix_zip_code_all_quantity_one_imp": 1,
             },
             {
                 "entity_id": 1,
@@ -128,10 +126,8 @@ def test_feature_generation(test_engine):
                 "aprefix_zip_code_all_cat_one_good_sum": 1,
                 "aprefix_zip_code_all_cat_one_bad_sum": 0,
                 "aprefix_zip_code_all_cat_one__NULL_sum": 0,
-                "aprefix_entity_id_all_quantity_one_sum_imp": 0,
-                "aprefix_entity_id_all_quantity_one_count_imp": 0,
-                "aprefix_zip_code_all_quantity_one_sum_imp": 0,
-                "aprefix_zip_code_all_quantity_one_count_imp": 0,
+                "aprefix_entity_id_all_quantity_one_imp": 0,
+                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 3,
@@ -147,10 +143,8 @@ def test_feature_generation(test_engine):
                 "aprefix_zip_code_all_cat_one_good_sum": 0,
                 "aprefix_zip_code_all_cat_one_bad_sum": 1,
                 "aprefix_zip_code_all_cat_one__NULL_sum": 0,
-                "aprefix_entity_id_all_quantity_one_sum_imp": 0,
-                "aprefix_entity_id_all_quantity_one_count_imp": 0,
-                "aprefix_zip_code_all_quantity_one_sum_imp": 0,
-                "aprefix_zip_code_all_quantity_one_count_imp": 0,
+                "aprefix_entity_id_all_quantity_one_imp": 0,
+                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 3,
@@ -166,10 +160,8 @@ def test_feature_generation(test_engine):
                 "aprefix_zip_code_all_cat_one_good_sum": 0,
                 "aprefix_zip_code_all_cat_one_bad_sum": 2,
                 "aprefix_zip_code_all_cat_one__NULL_sum": 0,
-                "aprefix_entity_id_all_quantity_one_sum_imp": 0,
-                "aprefix_entity_id_all_quantity_one_count_imp": 0,
-                "aprefix_zip_code_all_quantity_one_sum_imp": 0,
-                "aprefix_zip_code_all_quantity_one_count_imp": 0,
+                "aprefix_entity_id_all_quantity_one_imp": 0,
+                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 4,
@@ -185,10 +177,8 @@ def test_feature_generation(test_engine):
                 "aprefix_zip_code_all_cat_one_good_sum": 0,
                 "aprefix_zip_code_all_cat_one_bad_sum": 2,
                 "aprefix_zip_code_all_cat_one__NULL_sum": 0,
-                "aprefix_entity_id_all_quantity_one_sum_imp": 0,
-                "aprefix_entity_id_all_quantity_one_count_imp": 0,
-                "aprefix_zip_code_all_quantity_one_sum_imp": 0,
-                "aprefix_zip_code_all_quantity_one_count_imp": 0,
+                "aprefix_entity_id_all_quantity_one_imp": 0,
+                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
         ]
     }
@@ -205,7 +195,7 @@ def test_feature_generation(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by entity_id, as_of_date".format(
                 features_schema_name,
                 output_table,
@@ -317,7 +307,7 @@ def test_feature_generation_feature_start_time(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name,
                 output_table,
@@ -403,7 +393,7 @@ def test_dynamic_categoricals(test_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name, output_table
             ),
@@ -521,7 +511,7 @@ def test_array_categoricals(db_engine):
     )
 
     for output_table in output_tables:
-        records = pandas.read_sql(
+        records = pd.read_sql(
             "select * from {}.{} order by as_of_date, entity_id".format(
                 features_schema_name, output_table
             ),

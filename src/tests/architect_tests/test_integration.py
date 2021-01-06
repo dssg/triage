@@ -5,7 +5,7 @@ import yaml
 
 
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from triage.component.results_schema import Base
 from triage.component.timechop import Timechop
@@ -108,7 +108,8 @@ def populate_source_data(db_engine):
     )
 
     for complaint in cat_complaints:
-        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
+        db_engine.execute(
+            "insert into cat_complaints values (%s, %s, %s)", complaint)
 
     db_engine.execute(
         """create table dog_complaints (
@@ -119,7 +120,8 @@ def populate_source_data(db_engine):
     )
 
     for complaint in dog_complaints:
-        db_engine.execute("insert into dog_complaints values (%s, %s, %s)", complaint)
+        db_engine.execute(
+            "insert into dog_complaints values (%s, %s, %s)", complaint)
 
     db_engine.execute(
         """create table events (
@@ -167,7 +169,8 @@ def basic_integration_test(
             )
 
             label_generator = LabelGenerator(
-                db_engine=db_engine, query=sample_config()["label_config"]["query"]
+                db_engine=db_engine, query=sample_config()[
+                    "label_config"]["query"]
             )
 
             feature_generator = FeatureGenerator(
@@ -178,7 +181,8 @@ def basic_integration_test(
                 db_engine=db_engine, features_schema_name="features"
             )
 
-            feature_group_creator = FeatureGroupCreator(feature_group_create_rules)
+            feature_group_creator = FeatureGroupCreator(
+                feature_group_create_rules)
 
             feature_group_mixer = FeatureGroupMixer(feature_group_mix_rules)
             project_storage = ProjectStorage(temp_dir)
@@ -218,7 +222,8 @@ def basic_integration_test(
             all_as_of_times = list(set(all_as_of_times))
 
             # generate entity_date state table
-            entity_date_table_generator.generate_entity_date_table(as_of_dates=all_as_of_times)
+            entity_date_table_generator.generate_entity_date_table(
+                as_of_dates=all_as_of_times)
 
             # create labels table
             label_generator.generate_all_labels(
@@ -256,7 +261,8 @@ def basic_integration_test(
                             "avg": {"type": "zero"},
                         },
                         "aggregates": [
-                            {"quantity": "dog_sightings", "metrics": ["count", "avg"]}
+                            {"quantity": "dog_sightings",
+                                "metrics": ["count", "avg"]}
                         ],
                         "intervals": ["1y"],
                         "groups": ["entity_id"],
@@ -283,7 +289,8 @@ def basic_integration_test(
             # subsetting config
             master_feature_dict = feature_dictionary_creator.feature_dictionary(
                 feature_table_names=feature_table_imp_tasks.keys(),
-                index_column_lookup=feature_generator.index_column_lookup(aggregations),
+                index_column_lookup=feature_generator.index_column_lookup(
+                    aggregations),
             )
 
             feature_dicts = feature_group_mixer.generate(
@@ -302,22 +309,25 @@ def basic_integration_test(
             matrices_records = list(
                 db_engine.execute(
                     """select matrix_uuid, num_observations, matrix_type
-                    from model_metadata.matrices
+                    from triage_metadata.matrices
                     """
                 )
             )
             matrix_directory = os.path.join(temp_dir, "matrices")
-            matrices = [path for path in os.listdir(matrix_directory) if ".csv" in path]
+            matrices = [path for path in os.listdir(
+                matrix_directory) if ".csv" in path]
             metadatas = [
                 path for path in os.listdir(matrix_directory) if ".yaml" in path
             ]
-            assert len(matrices) == num_split_matrices * expected_matrix_multiplier
-            assert len(metadatas) == num_split_matrices * expected_matrix_multiplier
+            assert len(matrices) == num_split_matrices * \
+                expected_matrix_multiplier
+            assert len(metadatas) == num_split_matrices * \
+                expected_matrix_multiplier
             assert len(matrices) == len(matrices_records)
             feature_group_name_lists = []
             for metadata_path in metadatas:
                 with open(os.path.join(matrix_directory, metadata_path)) as f:
-                    metadata = yaml.load(f)
+                    metadata = yaml.full_load(f)
                     feature_group_name_lists.append(metadata["feature_groups"])
 
             for matrix_uuid, num_observations, matrix_type in matrices_records:
@@ -336,12 +346,12 @@ def basic_integration_test(
 def test_integration_simple():
     basic_integration_test(
         cohort_names=["mycohort"],
-        feature_group_create_rules={"all": [True]},
+        feature_group_create_rules={"prefix": ["cat", "dog"]}, # Will be set by defaults.py
         feature_group_mix_rules=["all"],
         # only looking at one state, and one feature group.
         # so we don't multiply timechop's output by anything
         expected_matrix_multiplier=1,
-        expected_group_lists=[["all: True"]],
+        expected_group_lists=[["prefix: cat", "prefix: dog"]],
     )
 
 

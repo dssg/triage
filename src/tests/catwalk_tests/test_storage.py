@@ -1,29 +1,31 @@
+import datetime
 import os
 import tempfile
 from collections import OrderedDict
 
+import boto3
 import pandas as pd
-import datetime
+import pytest
 import yaml
 from moto import mock_s3
-import boto3
 from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 from unittest import mock
-import pytest
 
 from triage.component.catwalk.storage import (
     MatrixStore,
     CSVMatrixStore,
     FSStore,
-    HDFMatrixStore,
     S3Store,
     ProjectStorage,
     ModelStorageEngine,
 )
 
+from tests.utils import CallSpy
 
-class SomeClass(object):
+
+class SomeClass:
+
     def __init__(self, val):
         self.val = val
 
@@ -40,6 +42,70 @@ def test_S3Store():
         assert newVal.decode("utf-8") == "val"
         store.delete()
         assert not store.exists()
+
+
+@mock_s3
+def test_S3Store_large():
+    client = boto3.client('s3')
+    client.create_bucket(Bucket='test_bucket', ACL='public-read-write')
+
+    store = S3Store('s3://test_bucket/a_path')
+    assert not store.exists()
+
+    # NOTE: The issue under test (currently) arises when too large a "part"
+    # NOTE: is sent to S3 for upload -- greater than its 5 GiB limit on any
+    # NOTE: single upload request.
+    #
+    # NOTE: Though s3fs uploads file parts as soon as its buffer reaches
+    # NOTE: 5+ MiB, it does not ensure that its buffer -- and resulting
+    # NOTE: upload "parts" -- remain under this limit (as the result of a
+    # NOTE: single "write()").
+    #
+    # NOTE: Therefore, until s3fs adds handling to ensure it never attempts
+    # NOTE: to upload such large payloads, we'll handle this in S3Store,
+    # NOTE: by chunking out writes to s3fs.
+    #
+    # NOTE: This is all not only to explain the raison d'etre of this test,
+    # NOTE: but also as context for the following warning: The
+    # NOTE: payload we'll attempt to write, below, is far less than 5 GiB!!
+    # NOTE: (Attempting to provision a 5 GiB string in RAM just for this
+    # NOTE: test would be an ENORMOUS drag on test runs, and a conceivable
+    # NOTE: disruption, depending on the test environment's resources.)
+    #
+    # NOTE: As such, this test *may* fall out of sync with either the code
+    # NOTE: that it means to test or with the reality of the S3 API -- even
+    # NOTE: to the point of self-invalidation. (But, this should do the
+    # NOTE: trick; and, we can always increase the payload size here, or
+    # NOTE: otherwise tweak configuration, as necessary.)
+    one_mb = 2 ** 20
+    payload = b"0" * (10 * one_mb)  # 10MiB text of all zeros
+
+    with CallSpy('botocore.client.BaseClient._make_api_call') as spy:
+        store.write(payload)
+
+    call_args = [call[0] for call in spy.calls]
+    call_methods = [args[1] for args in call_args]
+
+    assert call_methods == [
+        'CreateMultipartUpload',
+        'UploadPart',
+        'UploadPart',
+        'CompleteMultipartUpload',
+    ]
+
+    upload_args = call_args[1]
+    upload_body = upload_args[2]['Body']
+
+    # NOTE: Why is this a BufferIO rather than the underlying buffer?!
+    # NOTE: (Would have expected the result of BufferIO.read() -- str.)
+    body_length = len(upload_body.getvalue())
+    assert body_length == 5 * one_mb
+
+    assert store.exists()
+    assert store.load() == payload
+
+    store.delete()
+    assert not store.exists()
 
 
 def test_FSStore():
@@ -95,22 +161,16 @@ def matrix_stores():
         project_storage = ProjectStorage(tmpdir)
         tmpcsv = os.path.join(tmpdir, "df.csv.gz")
         tmpyaml = os.path.join(tmpdir, "df.yaml")
-        tmphdf = os.path.join(tmpdir, "df.h5")
         with open(tmpyaml, "w") as outfile:
             yaml.dump(METADATA, outfile, default_flow_style=False)
         df.to_csv(tmpcsv, compression="gzip")
-        df.to_hdf(tmphdf, "matrix")
         csv = CSVMatrixStore(project_storage, [], "df")
-        hdf = HDFMatrixStore(project_storage, [], "df")
-        assert csv.design_matrix.equals(hdf.design_matrix)
         # first test with caching
-        with csv.cache(), hdf.cache():
+        with csv.cache():
             yield csv
-            yield hdf
         # with the caching out of scope they will be nuked
-        # and these last two versions will not have any cache
+        # and this last version will not have any cache
         yield csv
-        yield hdf
 
 
 def test_MatrixStore_empty():
@@ -210,7 +270,12 @@ def test_as_of_dates(project_storage):
         "entity_id": [1, 2, 1, 2],
         "feature_one": [0.5, 0.6, 0.5, 0.6],
         "feature_two": [0.5, 0.6, 0.5, 0.6],
-        "as_of_date": [pd.Timestamp(2016, 1, 1), pd.Timestamp(2016, 1, 1), pd.Timestamp(2017, 1, 1), pd.Timestamp(2017, 1, 1)],
+        "as_of_date": [
+            pd.Timestamp(2016, 1, 1),
+            pd.Timestamp(2016, 1, 1),
+            pd.Timestamp(2017, 1, 1),
+            pd.Timestamp(2017, 1, 1),
+        ],
         "label": [1, 0, 1, 0]
     }
     df = pd.DataFrame.from_dict(data)

@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import os
 import pandas as pd
 import numpy as np
@@ -7,7 +9,7 @@ from .plotting import plot_cats
 from .utils import str_in_sql
 
 
-class ModelGroupPerformancePlotter(object):
+class ModelGroupPerformancePlotter:
     def __init__(self, distance_from_best_table, directory=None):
         """Generate a plot illustrating the performance of a model group over time
 
@@ -33,10 +35,8 @@ class ModelGroupPerformancePlotter(object):
 
         """
         for metric_filter in metric_filters:
-            logging.info(
-                "Plotting model group performance for %s, %s",
-                metric_filter,
-                train_end_times,
+            logger.debug(
+                f"Plotting model group performance for {metric_filter}, {train_end_times}",
             )
             df = self.generate_plot_data(
                 metric=metric_filter["metric"],
@@ -77,7 +77,7 @@ class ModelGroupPerformancePlotter(object):
                     raw_value,
                     mg.model_type as model_type
                 from {dist_table} as dist
-                join model_metadata.model_groups mg using (model_group_id)
+                join triage_metadata.model_groups mg using (model_group_id)
                 where model_group_id in ({model_group_ids})
                 union
                 select
@@ -101,7 +101,7 @@ class ModelGroupPerformancePlotter(object):
             ),
             self.distance_from_best_table.db_engine,
         )
-       
+
         return df
 
     def plot(
@@ -126,7 +126,7 @@ class ModelGroupPerformancePlotter(object):
         plt_title = "{} {} over time".format(metric, parameter)
 
         # when setting the ticks, matplotlib sometimes has problems with datetimes given
-        # as numpy.datetime64 objects, and converting from them to datetimes is ugly.
+        # as np.datetime64 objects, and converting from them to datetimes is ugly.
         # to get around this, we use the train_end_times given to the plot call as ticks
         # But to be defensive, we verify that these two versions of the list are the same
         for given_time, matrix_time in zip(

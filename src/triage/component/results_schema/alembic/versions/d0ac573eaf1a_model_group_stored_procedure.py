@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     group_proc_filename = os.path.join(
-        os.path.dirname(__file__), "../../model_group_stored_procedure.sql"
+        os.path.dirname(__file__), "../../sql/model_group_stored_procedure.sql"
     )
     with open(group_proc_filename) as fd:
         stmt = fd.read()

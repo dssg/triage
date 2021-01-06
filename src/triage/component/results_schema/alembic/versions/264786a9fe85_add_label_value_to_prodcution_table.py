@@ -29,7 +29,7 @@ def upgrade():
         sa.Column("rank_pct", sa.Float(), nullable=True),
         sa.Column("matrix_uuid", sa.Text(), nullable=True),
         sa.Column("test_label_window", sa.Interval(), nullable=True),
-        sa.ForeignKeyConstraint(["model_id"], ["model_metadata.models.model_id"]),
+        sa.ForeignKeyConstraint(["model_id"], ["triage_metadata.models.model_id"]),
         sa.PrimaryKeyConstraint("model_id", "entity_id", "as_of_date"),
         schema="production",
     )
@@ -47,7 +47,7 @@ def downgrade():
         sa.Column("rank_pct", sa.Float(), nullable=True),
         sa.Column("matrix_uuid", sa.Text(), nullable=True),
         sa.Column("test_label_window", sa.Interval(), nullable=True),
-        sa.ForeignKeyConstraint(["model_id"], ["results.models.model_id"]),
+        sa.ForeignKeyConstraint(["model_id"], ["triage_metadata.models.model_id"]),
         sa.PrimaryKeyConstraint("model_id", "entity_id", "as_of_date"),
         schema="results",
     )

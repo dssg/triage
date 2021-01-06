@@ -35,7 +35,7 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
 
     Args:
         db_engine (sqlalchemy.engine)
-        model_id (int) A model id, expected to be present in model_metadata.models
+        model_id (int) A model id, expected to be present in triage_metadata.models
         as_of_date (datetime.date) The date to produce individual importances as of
         test_matrix_store (catwalk.storage.MatrixStore) The test matrix
         n_ranks (int) Number of ranks to calculate and save. Defaults to 5

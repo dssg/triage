@@ -1,7 +1,9 @@
 import io
-import json
-import logging
-import pandas
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
+import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
 
@@ -11,7 +13,7 @@ from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
 
 
-class BuilderBase(object):
+class BuilderBase:
     def __init__(
         self,
         db_config,
@@ -48,14 +50,14 @@ class BuilderBase(object):
                 )
 
     def build_all_matrices(self, build_tasks):
-        logging.info("Building %s matrices", len(build_tasks.keys()))
+        logger.info(f"Building {len(build_tasks.keys())} matrices")
 
-        for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items()):
-            logging.info(
-                f"Building matrix {matrix_uuid} ({i}/{len(build_tasks.keys())})"
+        for i, (matrix_uuid, task_arguments) in enumerate(build_tasks.items(), start=1):
+            logger.info(
+                f"Building matrix {matrix_uuid} [{i}/{len(build_tasks.keys())}]"
             )
             self.build_matrix(**task_arguments)
-            logging.debug(f"Matrix {matrix_uuid} built")
+            logger.success(f"Matrix {matrix_uuid} built")
 
     def _outer_join_query(
         self,
@@ -83,23 +85,17 @@ class BuilderBase(object):
         """
 
         # put everything into the query
-        query = """
+        query = f"""
             SELECT ed.entity_id,
-                   ed.as_of_date{columns}
+                   ed.as_of_date{"".join(right_column_selections)}
             FROM {entity_date_table_name} ed
-            LEFT OUTER JOIN {right_table} r
+            LEFT OUTER JOIN {right_table_name} r
             ON ed.entity_id = r.entity_id AND
                ed.as_of_date = r.as_of_date
-               {more}
+               {additional_conditions}
             ORDER BY ed.entity_id,
                      ed.as_of_date
-        """.format(
-            columns="".join(right_column_selections),
-            feature_schema=self.db_config["features_schema_name"],
-            entity_date_table_name=entity_date_table_name,
-            right_table=right_table_name,
-            more=additional_conditions,
-        )
+        """
         return query
 
     def make_entity_date_table(
@@ -148,23 +144,18 @@ class BuilderBase(object):
                 label_timespan=label_timespan,
             )
         else:
-            raise ValueError("Unknown matrix type passed: {}".format(matrix_type))
+            raise ValueError(f"Unknown matrix type passed: {matrix_type}")
 
         table_name = "_".join([matrix_uuid, "matrix_entity_date"])
-        query = """
-            DROP TABLE IF EXISTS {features_schema_name}."{table_name}";
-            CREATE TABLE {features_schema_name}."{table_name}"
-            AS ({index_query})
-        """.format(
-            features_schema_name=self.db_config["features_schema_name"],
-            table_name=table_name,
-            index_query=indices_query,
+        query = f"""
+            DROP TABLE IF EXISTS {self.db_config["features_schema_name"]}."{table_name}";
+            CREATE TABLE {self.db_config["features_schema_name"]}."{table_name}"
+            AS ({indices_query})
+        """
+        logger.debug(
+            f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
-        logging.debug(
-            "Creating matrix-specific entity-date table for matrix " "%s with query %s",
-            matrix_uuid,
-            query,
-        )
+        logger.spam(f"with query {query}")
         self.db_engine.execute(query)
 
         return table_name
@@ -172,41 +163,28 @@ class BuilderBase(object):
     def _all_labeled_entity_dates_query(
         self, as_of_time_strings, state, label_name, label_type, label_timespan
     ):
-        query = """
+        query = f"""
             SELECT entity_id, as_of_date
-            FROM {states_table}
-            JOIN {labels_schema_name}.{labels_table_name} using (entity_id, as_of_date)
-            WHERE {state_string}
-            AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
-            AND label_name = '{l_name}'
-            AND label_type = '{l_type}'
-            AND label_timespan = '{timespan}'
+            FROM {self.db_config["cohort_table_name"]}
+            JOIN {self.db_config["labels_schema_name"]}.{self.db_config["labels_table_name"]} using (entity_id, as_of_date)
+            WHERE {state}
+            AND as_of_date IN (SELECT (UNNEST (ARRAY{as_of_time_strings}::timestamp[])))
+            AND label_name = '{label_name}'
+            AND label_type = '{label_type}'
+            AND label_timespan = '{label_timespan}'
             AND label is not null
             ORDER BY entity_id, as_of_date
-        """.format(
-            states_table=self.db_config["cohort_table_name"],
-            state_string=state,
-            labels_schema_name=self.db_config["labels_schema_name"],
-            labels_table_name=self.db_config["labels_table_name"],
-            l_name=label_name,
-            l_type=label_type,
-            timespan=label_timespan,
-            times=as_of_time_strings,
-        )
+        """
         return query
 
     def _all_valid_entity_dates_query(self, state, as_of_time_strings):
-        query = """
+        query = f"""
             SELECT entity_id, as_of_date
-            FROM {states_table}
-            WHERE {state_string}
-            AND as_of_date IN (SELECT (UNNEST (ARRAY{times}::timestamp[])))
+            FROM {self.db_config["cohort_table_name"]}
+            WHERE {state}
+            AND as_of_date IN (SELECT (UNNEST (ARRAY{as_of_time_strings}::timestamp[])))
             ORDER BY entity_id, as_of_date
-        """.format(
-            states_table=self.db_config["cohort_table_name"],
-            state_string=state,
-            times=as_of_time_strings,
-        )
+        """
         if not table_has_data(
             self.db_config["cohort_table_name"], self.db_engine
         ):
@@ -246,42 +224,36 @@ class MatrixBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        logging.info("popped matrix %s build off the queue", matrix_uuid)
+        logger.spam(f"popped matrix {matrix_uuid} build off the queue")
         if not table_has_data(
             self.db_config["cohort_table_name"], self.db_engine
         ):
-            logging.warning("cohort table is not populated, cannot build matrix")
+            logger.warning("cohort table is not populated, cannot build matrix")
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
 
         if self.includes_labels:
             if not table_has_data(
-                "{}.{}".format(
-                    self.db_config["labels_schema_name"],
-                    self.db_config["labels_table_name"],
-                ),
-                self.db_engine,
+                    f"{self.db_config['labels_schema_name']}.{self.db_config['labels_table_name']}",
+                    self.db_engine,
             ):
-                logging.warning("labels table is not populated, cannot build matrix")
-                return
+                logger.warning("labels table is not populated, cannot build matrix")
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
-            logging.info("Skipping %s because matrix already exists", matrix_uuid)
+            logger.notice(f"Skipping {matrix_uuid} because matrix already exists")
             if self.run_id:
                 skipped_matrix(self.run_id, self.db_engine)
             return
 
-        logging.info(
-            "Creating matrix %s > %s",
-            matrix_metadata["matrix_id"],
-            matrix_store.matrix_base_store.path,
+        logger.debug(
+            f'Storing matrix {matrix_metadata["matrix_id"]} in {matrix_store.matrix_base_store.path}'
         )
         # make the entity time table and query the labels and features tables
-        logging.info("Making entity date table for matrix %s", matrix_uuid)
+        logger.debug(f"Making entity date table for matrix {matrix_uuid}")
         try:
             entity_date_table_name = self.make_entity_date_table(
                 as_of_times,
@@ -293,28 +265,25 @@ class MatrixBuilder(BuilderBase):
                 matrix_metadata.get("label_timespan", None),
             )
         except ValueError as e:
-            logging.warning(
-                "Not able to build entity-date table due to: %s - will not build matrix",
-                exc_info=True,
+            logger.exception(
+                "Not able to build entity-date table,  will not build matrix",
             )
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
-        logging.info(
-            "Extracting feature group data from database into file " "for matrix %s",
-            matrix_uuid,
+        logger.spam(
+            f"Extracting feature group data from database into file  for matrix {matrix_uuid}"
         )
         dataframes = self.load_features_data(
             as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
         )
-        logging.info(f"Feature data extracted for matrix {matrix_uuid}")
+        logger.debug(f"Feature data extracted for matrix {matrix_uuid}")
 
         # dataframes add label_name
 
         if self.includes_labels:
-            logging.info(
-                "Extracting label data from database into file for " "matrix %s",
-                matrix_uuid,
+            logger.spam(
+                "Extracting label data from database into file for matrix {matrix_uuid}",
             )
             labels_df = self.load_labels_data(
                 label_name,
@@ -324,21 +293,22 @@ class MatrixBuilder(BuilderBase):
                 matrix_metadata["label_timespan"],
             )
             dataframes.insert(0, labels_df)
-            logging.info(f"Label data extracted for matrix {matrix_uuid}")
+            logging.debug(f"Label data extracted for matrix {matrix_uuid}")
         else:
-            labels_df = pandas.DataFrame(index=dataframes[0].index, columns=[label_name])
+            labels_df = pd.DataFrame(index=dataframes[0].index, columns=[label_name])
             dataframes.insert(0, labels_df)
 
         # stitch together the csvs
-        logging.info("Merging feature files for matrix %s", matrix_uuid)
+        logger.spam(f"Merging feature files for matrix {matrix_uuid}")
         output = self.merge_feature_csvs(dataframes, matrix_uuid)
-        logging.info(f"Features data merged for matrix {matrix_uuid}")
+        logger.debug(f"Features data merged for matrix {matrix_uuid}")
+
         matrix_store.metadata = matrix_metadata
         # store the matrix
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
-        logging.info("Matrix %s saved", matrix_uuid)
+        logger.info(f"Matrix {matrix_uuid} saved in {matrix_store.matrix_base_store.path}")
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
         if matrix_type == "train":
@@ -355,7 +325,7 @@ class MatrixBuilder(BuilderBase):
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             feature_dictionary=feature_dictionary,
-            matrix_metadata=json.dumps(matrix_metadata, sort_keys=True, default=str),
+            matrix_metadata=matrix_metadata,
             built_by_experiment=self.experiment_hash
         )
         session = self.sessionmaker()
@@ -399,28 +369,18 @@ class MatrixBuilder(BuilderBase):
             label_predicate = "coalesce(r.label, 1)"
         else:
             raise ValueError(
-                'incorrect value "{}" for include_missing_labels_in_train_as'.format(
-                    self.include_missing_labels_in_train_as
-                )
+                f'incorrect value "{self.include_missing_labels_in_train_as}" for include_missing_labels_in_train_as'
             )
 
         labels_query = self._outer_join_query(
-            right_table_name="{schema}.{table}".format(
-                schema=self.db_config["labels_schema_name"],
-                table=self.db_config["labels_table_name"],
-            ),
-            entity_date_table_name='"{schema}"."{table}"'.format(
-                schema=self.db_config["features_schema_name"],
-                table=entity_date_table_name,
-            ),
-            right_column_selections=", {} as {}".format(label_predicate, label_name),
-            additional_conditions="""AND
-                r.label_name = '{name}' AND
-                r.label_type = '{type}' AND
-                r.label_timespan = '{timespan}'
-            """.format(
-                name=label_name, type=label_type, timespan=label_timespan
-            ),
+            right_table_name=f'{self.db_config["labels_schema_name"]}.{self.db_config["labels_table_name"]}',
+            entity_date_table_name=f'"{self.db_config["features_schema_name"]}"."{entity_date_table_name}"',
+            right_column_selections=f", {label_predicate} as {label_name}",
+            additional_conditions=f"""AND
+                r.label_name = '{label_name}' AND
+                r.label_type = '{label_type}' AND
+                r.label_timespan = '{label_timespan}'
+            """
         )
 
         return self.query_to_df(labels_query)
@@ -449,16 +409,10 @@ class MatrixBuilder(BuilderBase):
         # iterate! for each table, make query, write csv, save feature & file names
         feature_dfs = []
         for feature_table_name, feature_names in feature_dictionary.items():
-            logging.info("Retrieving feature data from %s", feature_table_name)
+            logger.spam(f"Retrieving feature data from {feature_table_name}")
             features_query = self._outer_join_query(
-                right_table_name="{schema}.{table}".format(
-                    schema=self.db_config["features_schema_name"],
-                    table=feature_table_name,
-                ),
-                entity_date_table_name='{schema}."{table}"'.format(
-                    schema=self.db_config["features_schema_name"],
-                    table=entity_date_table_name,
-                ),
+                right_table_name=f'{self.db_config["features_schema_name"]}.{feature_table_name}',
+                entity_date_table_name=f'{self.db_config["features_schema_name"]}."{entity_date_table_name}"',
                 # collate imputation shouldn't leave any nulls and we double-check
                 # the imputed table in FeatureGenerator.create_all_tables() but as
                 # a final check, raise a divide by zero error on export if the
@@ -483,16 +437,14 @@ class MatrixBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        logging.debug("Copying to CSV query %s", query_string)
-        copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
-            query=query_string, head=header
-        )
+        logger.spam(f"Copying to CSV query {query_string}")
+        copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV {header}"
         conn = self.db_engine.raw_connection()
         cur = conn.cursor()
         out = io.StringIO()
         cur.copy_expert(copy_sql, out)
         out.seek(0)
-        df = pandas.read_csv(out, parse_dates=["as_of_date"])
+        df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         return downcast_matrix(df)
 
@@ -533,8 +485,7 @@ class MatrixBuilder(BuilderBase):
                 ]
                 if len(columns_with_nulls) > 0:
                     raise ValueError(
-                        "Imputation failed for the following features: %s"
-                        % columns_with_nulls
+                        "Imputation failed for the following features: {columns_with_nulls}"
                     )
             i += 1
 

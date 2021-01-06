@@ -1,0 +1,57 @@
+config_version: 'v7'
+
+model_comment: 'dirtyduck-quickstart'
+
+random_seed: 1234
+
+temporal_config:
+    label_timespans: ['3months']
+
+label_config:
+  query: |
+    select
+    entity_id,
+    bool_or(result = 'fail')::integer as outcome
+    from semantic.events
+    where '{as_of_date}'::timestamp <= date
+    and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+    group by entity_id
+  name: 'failed_inspections'
+
+feature_aggregations:
+  -
+    prefix: 'inspections'
+    from_obj: 'semantic.events'
+    knowledge_date_column: 'date'
+
+    aggregates_imputation:
+      count:
+        type: 'zero_noflag'
+
+    aggregates:
+      -
+        quantity:
+          total: "*"
+        metrics:
+          - 'count'
+
+    intervals: ['all']
+
+    groups:
+      - 'entity_id'
+
+model_grid_preset:  'quickstart'
+
+scoring:
+    testing_metric_groups:
+        -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [10]
+
+
+    training_metric_groups:
+      -
+          metrics: [precision@]
+          thresholds:
+            percentiles: [10]

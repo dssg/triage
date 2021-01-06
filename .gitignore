@@ -6,6 +6,8 @@ dist/
 .cache/
 .coverage*
 .tox/
+docs/site/
+**/.hypothesis/
 
 /.install.*.bash.inc
 /.python-version
@@ -14,3 +16,8 @@ dist/
 venv/
 my_db_config.yaml
 database.yaml
+dirtyduck/triage/**
+
+*~
+**/trained_models/**
+**/matrices

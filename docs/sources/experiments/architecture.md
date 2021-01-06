@@ -20,6 +20,7 @@ graph TD
     subgraph Catwalk, per-model
     MT[Model Trainer]
     PR[Predictor]
+    PG[Protected Group Generator]
     EV[Model Evaluator]
     end
     TC --> LG
@@ -31,6 +32,8 @@ graph TD
     MB --> MT
     MB --> PR
     MT --> PR
+    EDG --> PG
+    PG --> EV
     PR --> EV
 </div>
 
@@ -75,6 +78,7 @@ These are where the interesting data science work is done.
     - [Model Grouper](#model-grouper)
     - [Model Trainer](#model-trainer)
     - [Predictor](#predictor)
+    - [Protected Group Table Generator](#protected-group-table-generator)
     - [Model Evaluator](#model-evaluator)
     - [Individual Importance Calculator](#individual-importance-calculator)
 
@@ -216,7 +220,7 @@ Takes matrix build tasks from the [Planner](#planner) and builds them if they do
 **Output**
 
 - The built matrix saved in the [MatrixStorageEngine](#matrix-storage)
-- A row describing the matrix saved in the database's `model_metadata.matrices` table.
+- A row describing the matrix saved in the database's `triage_metadata.matrices` table.
 
 ### ModelTrainTester
 
@@ -243,7 +247,7 @@ Assigns a `model group` to each model based on its metadata.
 
 **Output**
 
-- a model group id corresponding to a row in the `model_metadata.model_groups` table, either a matching one that already existed in the table or one that it autoprovisioned.
+- a model group id corresponding to a row in the `triage_metadata.model_groups` table, either a matching one that already existed in the table or one that it autoprovisioned.
 
 
 ### ModelTrainer
@@ -258,7 +262,7 @@ Trains a model, stores it, and saves its metadata (including model group informa
 - an importable classifier path and a set of hyperparameters
 
 **Output**
-- a row in the database's `model_metadata.model_groups` table, the `model_metadata.models` table, and rows in `train_results.feature_importances` for each feature.
+- a row in the database's `triage_metadata.model_groups` table, the `triage_metadata.models` table, and rows in `train_results.feature_importances` for each feature.
 - the trained model persisted in the [ModelStorageEngine](#model-storage)
 
 ### Predictor
@@ -277,6 +281,21 @@ Generates predictions for a given model and matrix, both returning them for imme
 - The predictions as an array
 - Each prediction saved to the database, unless configured not to. The table they are stored in depends on which type of matrix it is (e.g. `test_results.predictions` or `train_results.predictions`)
 
+### Protected Group Table Generator
+
+Generates a table containing *protected group attributes* (e.g. race, sex, age).
+
+**Input**
+
+- A cohort table name and its configuration's unique hash
+- Bias audit configuration, specifically a from object (either a table or query), and column names in the from object for protected attributes, knowledge date, and entity id.
+- A name for the protected groups table
+
+**Output**
+
+- A protected groups table, containing all rows from the cohort and any protected group information present in the from object, as well as the cohort hash so multiple cohorts can live in the same table.
+
+
 ### ModelEvaluator
 
 Generates evaluation metrics for a given model and matrix over the entire matrix and for any subsets.
@@ -287,10 +306,13 @@ Generates evaluation metrics for a given model and matrix over the entire matrix
 - array of predictions
 - the [MatrixStore](#matrix-store) and model_id that the predictions were generated from
 - the subset to be evaluated (or `None` for the whole matrix)
+- the reference group and thresholding rules from `bias_audit_config` in experiment config
+- the protected group generator object (for retrieving protected group data)
 
 **Output**
 
 - A row in the database for each evaluation metric for each subset. The table they are stored in depends on which type of matrix it is (e.g. `test_results.evaluations` or `train_results.evaluations`).
+- A row in the database for each Aequitas bias report. Either `test_results.aequitas` or `train_results.aequitas`.
 
 ### Individual Importance Calculator
 

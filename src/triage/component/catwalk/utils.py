@@ -1,8 +1,13 @@
 import csv
 import datetime
 import hashlib
+import numpy as np
+import pandas as pd
 import json
-import logging
+
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import random
 from itertools import chain
 from functools import partial
@@ -57,10 +62,10 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
 @db_retry
-def save_experiment_and_get_hash(config, db_engine):
+def save_experiment_and_get_hash(config, random_seed, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
+    session.merge(Experiment(experiment_hash=experiment_hash, random_seed=random_seed, config=config))
     session.commit()
     session.close()
     return experiment_hash
@@ -73,7 +78,7 @@ def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine)
         session.merge(ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid))
     session.commit()
     session.close()
-    logging.info("Associated matrices with experiment in database")
+    logger.spam("Associated matrices with experiment in database")
 
 
 @db_retry
@@ -83,7 +88,7 @@ def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
         session.merge(ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash))
     session.commit()
     session.close()
-    logging.info("Associated models with experiment in database")
+    logger.spam("Associated models with experiment in database")
 
 
 @db_retry
@@ -149,20 +154,48 @@ class Batch:
             yield self.group()
 
 
-def sort_predictions_and_labels(predictions_proba, labels, sort_seed):
+AVAILABLE_TIEBREAKERS = {'random', 'best', 'worst'}
+
+def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', sort_seed=None):
+    """Sort predictions and labels with a configured tiebreaking rule
+
+    Args:
+        predictions_proba (np.array) The predicted scores
+        labels (np.array) The numeric labels (1/0, not True/False)
+        tiebreaker (string) The tiebreaking method ('best', 'worst', 'random')
+        sort_seed (signed int) The sort seed. Needed if 'random' tiebreaking is picked.
+
+    Returns:
+        (tuple) (predictions_proba, labels), sorted
+    """
     if len(labels) == 0:
-        logging.debug("No labels present, skipping sorting.")
-        return predictions_proba, labels
-    else:
+        logger.notice("No labels present, skipping predictions sorting .")
+        return (predictions_proba, labels)
+    mask = None
+
+    df = pd.DataFrame(predictions_proba, columns=["score"])
+    df['label_value'] = labels
+
+
+    if tiebreaker == 'random':
+        if not sort_seed:
+            raise ValueError("If random tiebreaker is used, a sort seed must be given")
         random.seed(sort_seed)
-        predictions_proba_sorted, labels_sorted = zip(
-            *sorted(
-                zip(predictions_proba, labels),
-                key=lambda pair: (pair[0], random.random()),
-                reverse=True,
-            )
-        )
-        return predictions_proba_sorted, labels_sorted
+        np.random.seed(sort_seed)
+        df['random'] = np.random.rand(len(df))
+        df.sort_values(by=['score', 'random'], inplace=True, ascending=[False, False])
+        df.drop('random', axis=1)
+    elif tiebreaker == 'worst':
+        df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
+    elif tiebreaker == 'best':
+         df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,False], na_position='last')
+    else:
+        raise ValueError(f"Unknown tiebreaker: {tiebreaker}")
+
+    return  [
+        df['score'].to_numpy(),
+        df['label_value'].to_numpy()
+    ]
 
 
 @db_retry
@@ -222,10 +255,14 @@ def save_db_objects(db_engine, db_objects):
     db_objects = iter(db_objects)
     first_object = next(db_objects)
     type_of_object = type(first_object)
+    columns = [col.name for col in first_object.__table__.columns]
 
     with PipeTextIO(partial(
             _write_csv,
             db_objects=chain((first_object,), db_objects),
             type_of_object=type_of_object
     )) as pipe:
-        postgres_copy.copy_from(pipe, type_of_object, db_engine, format="csv")
+        postgres_copy.copy_from(source=pipe, dest=type_of_object,
+                                engine_or_conn=db_engine,
+                                columns=columns,
+                                format="csv")

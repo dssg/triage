@@ -20,7 +20,7 @@ from scipy.stats import spearmanr
 # Get indivual model information/metadata from Audition output
 
 
-class ModelGroupEvaluator(object):
+class ModelGroupEvaluator:
     '''
     ModelGroup class calls the model group metadata from the database
     and hold metadata features on each of the class attibutes.
@@ -51,8 +51,8 @@ class ModelGroupEvaluator(object):
                    m.training_label_timespan,
                    m.model_type,
                    mg.model_config
-                FROM model_metadata.models m
-                JOIN model_metadata.model_groups mg
+                FROM triage_metadata.models m
+                JOIN triage_metadata.model_groups mg
                 USING (model_group_id)
                 WHERE model_group_id IN {self.model_group_id}
             ''')
@@ -113,13 +113,13 @@ class ModelGroupEvaluator(object):
                    EXTRACT('YEAR' from m.as_of_date) AS as_of_date_year,
                    m.score,
                    m.label_value,
-                   COALESCE(rank_abs, RANK() OVER(PARTITION BY m.model_id
+                   COALESCE(rank_abs_with_ties, RANK() OVER(PARTITION BY m.model_id
                    ORDER BY m.score DESC)) AS rank_abs,
-                   COALESCE(m.rank_pct, percent_rank() OVER(PARTITION BY
+                   COALESCE(m.rank_pct_with_ties, percent_rank() OVER(PARTITION BY
                    m.model_id ORDER BY m.score DESC)) * 100 AS rank_pct,
                    m.test_label_timespan
             FROM test_results.predictions m
-            LEFT JOIN model_metadata.models g
+            LEFT JOIN triage_metadata.models g
             USING (model_id)
             WHERE model_id IN {tuple(self.model_id)}
             AND label_value IS NOT NULL
@@ -141,7 +141,7 @@ class ModelGroupEvaluator(object):
                   m.feature_importance,
                   m.rank_abs
            FROM train_results.feature_importances m
-           LEFT JOIN model_metadata.models g
+           LEFT JOIN triage_metadata.models g
            USING (model_id)
            WHERE m.model_id IN {tuple(self.model_id)}
            ''', con=self.engine)
@@ -156,12 +156,12 @@ class ModelGroupEvaluator(object):
                    EXTRACT('YEAR' FROM m.evaluation_end_time) AS as_of_date_year,
                    m.metric,
                    m.parameter,
-                   m.value,
+                   m.stochastic_value as value,
                    m.num_labeled_examples,
                    m.num_labeled_above_threshold,
                    m.num_positive_labels
             FROM test_results.evaluations m
-            LEFT JOIN model_metadata.models g
+            LEFT JOIN triage_metadata.models g
             USING (model_id)
             WHERE m.model_id IN {tuple(self.model_id)}
             ''', con=self.engine)
@@ -176,7 +176,7 @@ class ModelGroupEvaluator(object):
             SELECT
             model_group_id,
             model_config->>'feature_groups' as features
-            FROM model_metadata.model_groups
+            FROM triage_metadata.model_groups
             WHERE model_group_id IN {self.model_group_id}
             ),
             feature_groups_unnest AS(
@@ -224,7 +224,7 @@ class ModelGroupEvaluator(object):
                       SELECT
                       train_end_time,
                       array_agg(model_id) AS model_id_array
-                      FROM model_metadata.models
+                      FROM triage_metadata.models
                       WHERE model_group_id IN {self.model_group_id}
                       GROUP BY train_end_time
                       ''', con=self.engine)
@@ -272,8 +272,8 @@ class ModelGroupEvaluator(object):
         model_metrics = self.metrics
         model_metrics[['param', 'param_type']] = \
                 model_metrics['parameter'].str.split('_', 1, expand=True)
-        model_metrics['param'] =  model_metrics['param'].astype(str).astype(float)
-        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: 'rank_'+x)
+        model_metrics['param'] =  model_metrics['param'].replace('',np.nan).astype('float')
+        model_metrics['param_type'] = model_metrics['param_type'].apply(lambda x: f'rank_{x}' if x is not None else x)
 
         # Filter model_group_id metrics and create pivot table by each
         # model_group_id.

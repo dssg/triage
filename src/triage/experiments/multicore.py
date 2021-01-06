@@ -1,4 +1,6 @@
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import traceback
 from functools import partial
 from pebble import ProcessPool
@@ -26,7 +28,7 @@ class MultiCoreExperiment(ExperimentBase):
         if n_db_processes < 1:
             raise ValueError("n_db_processes must be 1 or greater")
         if n_db_processes == 1 and n_processes == 1:
-            logging.warning(
+            logger.notice(
                 "Both n_processes and n_db_processes were set to 1. "
                 "If you only wish to use one process to run the experiment, "
                 "consider using the SingleThreadedExperiment class instead"
@@ -49,7 +51,7 @@ class MultiCoreExperiment(ExperimentBase):
                 except StopIteration:
                     break
                 except Exception:
-                    logging.exception('Child failure')
+                    logger.exception('Child failure')
 
     def process_train_test_batches(self, batches):
         partial_test = partial(
@@ -58,24 +60,21 @@ class MultiCoreExperiment(ExperimentBase):
 
         for batch in batches:
             if batch.parallelizable:
-                logging.info(
-                    "Starting parallelizable batch train/testing with %s tasks, %s processes",
-                    len(batch.tasks),
-                    self.n_processes
+                logger.info(
+                    f"Starting parallelizable batch train/testing with {len(batch.tasks)} tasks, {self.n_processes} processes",
                 )
                 parallelize(partial_test, batch.tasks, self.n_processes)
             else:
-                logging.info(
-                    "Starting serial batch train/testing with %s tasks",
-                    len(batch.tasks),
+                logger.info(
+                    "Starting serial batch train/testing with {len(batch.tasks)} tasks",
                 )
                 for serial_task in batch.tasks:
                     self.model_train_tester.process_task(**serial_task)
 
     def process_query_tasks(self, query_tasks):
-        logging.info("Processing query tasks with %s processes", self.n_db_processes)
+        logger.info("Processing query tasks with %s processes", self.n_db_processes)
         for table_name, tasks in query_tasks.items():
-            logging.info("Processing features for %s", table_name)
+            logger.info("Processing features for %s", table_name)
             self.feature_generator.run_commands(tasks.get("prepare", []))
             partial_insert = partial(
                 insert_into_table, feature_generator=self.feature_generator
@@ -86,16 +85,14 @@ class MultiCoreExperiment(ExperimentBase):
             ]
             parallelize(partial_insert, insert_batches, n_processes=self.n_db_processes)
             self.feature_generator.run_commands(tasks.get("finalize", []))
-            logging.info("%s completed", table_name)
+            logger.info(f"{table_name} completed")
 
     def process_matrix_build_tasks(self, matrix_build_tasks):
         partial_build_matrix = partial(
             run_task_with_splatted_arguments, self.matrix_builder.build_matrix
         )
-        logging.info(
-            "Starting parallel matrix building: %s matrices, %s processes",
-            len(self.matrix_build_tasks.keys()),
-            self.n_processes,
+        logger.info(
+            f"Starting parallel matrix building: {len(self.matrix_build_tasks.keys())} matrices, {self.n_processes} processes",
         )
         parallelize(
             partial_build_matrix, self.matrix_build_tasks.values(), self.n_processes
@@ -106,10 +103,8 @@ class MultiCoreExperiment(ExperimentBase):
             run_task_with_splatted_arguments, self.subsetter.process_task
         )
 
-        logging.info(
-            "Starting parallel subset creation: %s subsets, %s processes",
-            len(subset_tasks),
-            self.n_db_processes,
+        logger.info(
+            f"Starting parallel subset creation: {len(subset_tasks)} subsets, {self.n_db_processes} processes",
         )
         parallelize(
             partial_subset, subset_tasks, self.n_db_processes
@@ -118,11 +113,11 @@ class MultiCoreExperiment(ExperimentBase):
 
 def insert_into_table(insert_statements, feature_generator):
     try:
-        logging.info("Beginning insert batch")
+        logger.info("Beginning insert batch")
         feature_generator.run_commands(insert_statements)
         return True
     except Exception:
-        logging.error("Child error: %s", traceback.format_exc())
+        logger.exception("Child error")
         return False
 
 
@@ -140,13 +135,13 @@ def parallelize(partially_bound_function, tasks, n_processes):
             except StopIteration:
                 break
             except Exception:
-                logging.exception('Child failure')
+                logger.exception('Child failure')
                 num_failures += 1
             else:
                 results.append(result)
                 num_successes += 1
 
-        logging.info("Done. successes: %s, failures: %s", num_successes, num_failures)
+        logger.info("Done. successes: %s, failures: %s", num_successes, num_failures)
         return results
 
 
@@ -154,5 +149,5 @@ def run_task_with_splatted_arguments(task_runner, task):
     try:
         return task_runner(**task)
     except Exception:
-        logging.error("Child error: %s", traceback.format_exc())
+        logger.exception("Child error")
         return None

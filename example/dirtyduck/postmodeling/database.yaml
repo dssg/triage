@@ -1,0 +1,5 @@
+host: food_db
+user: food_user
+password: some_password
+port: 5432
+dbname: food

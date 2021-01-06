@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+PROJECT_NAME=dirtyduck
+TRIAGE_VERSION=3.3.0
+ENV=development
+AWS_REGISTRY={your-ecr-registry}
+AWS_JOB_QUEUE={your-job-queue}
+POSTGRES_DB={postgresql://user:password@db_server/dbname}
+S3_BUCKET={your-bucket}

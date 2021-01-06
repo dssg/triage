@@ -1,10 +1,12 @@
 import pandas as pd
-import logging
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from scipy import stats
 import yaml
 
 
-class CrosstabsConfigLoader(object):
+class CrosstabsConfigLoader:
     def __init__(self, config_path=None, config=None):
         self.output = {}
         self.models_list_query = None
@@ -16,11 +18,12 @@ class CrosstabsConfigLoader(object):
         if config:
             config_to_load = config
         elif config_path:
-            with open(config_path, 'r') as stream:
-                config_to_load = yaml.load(stream)
+            with open(config_path, "r") as stream:
+                config_to_load = yaml.full_load(stream)
         else:
             raise ValueError("Either config_path or config are needed")
         self.__dict__.update(config_to_load)
+
 
 # Later to be run against feature matrices of high- and low-risk entities.
 # Each function receives two arguments: A dataframe of high-risk entities'
@@ -41,44 +44,46 @@ hr_lr_ratio = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
 def hr_lr_ttest(hr, lr):
     """ Returns the t-test (T statistic and p value), comparing the features for
     high- and low-risk entities. """
-    res = stats.ttest_ind(hr.as_matrix(), lr.as_matrix(), axis=0, nan_policy='omit',
-                          equal_var=False)
+    res = stats.ttest_ind(hr.to_numpy(), lr.to_numpy(), axis=0, nan_policy="omit", equal_var=False)
 
     r0 = pd.Series(res[0], index=hr.columns)
     r1 = pd.Series(res[1], index=hr.columns)
 
-    return pd.DataFrame({'ttest_T': r0, 'ttest_p': r1})
+    return pd.DataFrame({"ttest_T": r0, "ttest_p": r1})
 
 
 # the crosstab functions are passed as a list of tuples;
 # the first tuple element gives the name (or names) of the
 # metric that the function calculates
 crosstab_functions = [
-    ('count_predicted_positive', high_risk_n),
-    ('count_predicted_negative', low_risk_n),
-    ('mean_predicted_positive', high_risk_mean),
-    ('mean_predicted_negative', low_risk_mean),
-    ('std_predicted_positive', high_risk_std),
-    ('std_predicted_negative', low_risk_std),
-    ('ratio_predicted_positive_over_predicted_negative', hr_lr_ratio),
-    (['ttest_T', 'ttest_p'], hr_lr_ttest)
+    ("count_predicted_positive", high_risk_n),
+    ("count_predicted_negative", low_risk_n),
+    ("mean_predicted_positive", high_risk_mean),
+    ("mean_predicted_negative", low_risk_mean),
+    ("std_predicted_positive", high_risk_std),
+    ("std_predicted_negative", low_risk_std),
+    ("ratio_predicted_positive_over_predicted_negative", hr_lr_ratio),
+    (["ttest_T", "ttest_p"], hr_lr_ttest),
 ]
 
 
 def list_to_str(list_sql):
-    str = '(' + ','.join(list_sql) + ')'
+    str = "(" + ",".join(list_sql) + ")"
     return str
 
 
-def populate_crosstabs_table(model_id, as_of_date,
-                             df,
-                             thresholds=None,
-                             crosstab_functions=crosstab_functions,
-                             push_to_db=True,
-                             return_df=False,
-                             engine=None,
-                             schema='results',
-                             table='crosstabs'):
+def populate_crosstabs_table(
+    model_id,
+    as_of_date,
+    df,
+    thresholds=None,
+    crosstab_functions=crosstab_functions,
+    push_to_db=True,
+    return_df=False,
+    engine=None,
+    schema="results",
+    table="crosstabs",
+):
     """ This function populates the results.crosstabs table.
 
         Args:
@@ -108,27 +113,26 @@ def populate_crosstabs_table(model_id, as_of_date,
 
             Returns: A DataFrame, corresponding to results.crosstabs
     """
-    print('\n\n****************\nRUNNING populate_crosstabs_table for model_id ', model_id, 'and as_of_date ', as_of_date)
+    print("\n\n****************\nRUNNING populate_crosstabs_table for model_id ", model_id, "and as_of_date ", as_of_date)
     if len(df) == 0:
         raise ValueError("No data could be fetched.")
 
     dfs = []
 
     # this will be useful later - the non-feature columns we'll grab
-    model_cols = ['model_id', 'as_of_date', 'entity_id', 'score', 'rank_abs',
-                  'rank_pct', 'label_value']
+    model_cols = ["model_id", "as_of_date", "entity_id", "score", "rank_abs", "rank_pct", "label_value"]
 
     # drop the all-null columns
     null_cols = df.columns[df.isnull().sum() == df.shape[0]]
     null_cols = [c for c in null_cols if c not in model_cols]
 
     if len(null_cols) > 0:
-        logging.warning("Dropping the all-null columns: %s" % str(null_cols))
+        logger.warning("Dropping the all-null columns: %s" % str(null_cols))
         df = df.drop(null_cols, 1)
 
     # if the dataframe isn't dummified, do it
     if object in df.dtypes.values or pd.Categorical.dtype in df.dtypes.values:
-        to_dummify = [c for c in df.select_dtypes(include=['category', object]) if c not in model_cols]
+        to_dummify = [c for c in df.select_dtypes(include=["category", object]) if c not in model_cols]
         print("Dummifying the data")
         df = pd.get_dummies(df, columns=to_dummify, dummy_na=True)
 
@@ -138,42 +142,39 @@ def populate_crosstabs_table(model_id, as_of_date,
         for thres in thress:
 
             results = pd.DataFrame(index=feat_cols)
-            print('split dataframe in high risk and lowriks')
+            print("split dataframe in high risk and lowriks")
             # split dataframe into high/low risk
             df_pred_pos = df.loc[df[thres_type] <= thres, feat_cols]
             df_pred_neg = df.loc[df[thres_type] > thres, feat_cols]
-            print('len of hr and lr', len(df_pred_pos), len(df_pred_neg))
+            print("len of hr and lr", len(df_pred_pos), len(df_pred_neg))
             for name, func in crosstab_functions:
                 print(name)
                 this_result = pd.DataFrame(func(df_pred_pos, df_pred_neg))
-                if name in ['ttest_T', 'ttest_p']:
+                if name in ["ttest_T", "ttest_p"]:
                     print("this_result:", this_result.shape)
                     print("Results:", results.shape)
                 if not type(name) in [list, tuple]:
                     name = [name]
                 # the metric name is coming from the crosstab_functions tuples
                 this_result.columns = name
-                results = results.join(this_result,
-                                       how='outer')
+                results = results.join(this_result, how="outer")
 
             results = results.stack()
-            results.index.names = ['feature_column', 'metric']
-            results.name = 'value'
+            results.index.names = ["feature_column", "metric"]
+            results.name = "value"
             results = results.to_frame()
 
-            results['model_id'] = model_id
-            results['as_of_date'] = as_of_date
-            results['threshold_unit'] = thres_type[-3:]
-            results['threshold_value'] = thres
+            results["model_id"] = model_id
+            results["as_of_date"] = as_of_date
+            results["threshold_unit"] = thres_type[-3:]
+            results["threshold_value"] = thres
 
             dfs.append(results)
 
     df = pd.concat(dfs)
     if push_to_db:
         print("Pushing results to database...")
-        df.reset_index().set_index(['model_id', 'as_of_date', 'metric']) \
-            .to_sql(schema=schema, name=table,
-                    con=engine, if_exists='append')
+        df.reset_index().set_index(["model_id", "as_of_date", "metric"]).to_sql(schema=schema, name=table, con=engine, if_exists="append")
     if return_df:
         return df
 
@@ -191,28 +192,33 @@ def run_crosstabs(db_engine, crosstabs_config):
         ), predictions_query as (
         {predictions_query}
         )
-        select * from predictions_query 
-        left join features_query f using (model_id,entity_id, as_of_date)   
-        """.format(models_list_query=crosstabs_config.models_list_query,
-                   as_of_dates_query=crosstabs_config.as_of_dates_query,
-                   models_dates_join_query=crosstabs_config.models_dates_join_query,
-                   features_query=crosstabs_config.features_query,
-                   predictions_query=crosstabs_config.predictions_query)
+        select * from predictions_query
+        left join features_query f using (model_id,entity_id, as_of_date)
+        """.format(
+        models_list_query=crosstabs_config.models_list_query,
+        as_of_dates_query=crosstabs_config.as_of_dates_query,
+        models_dates_join_query=crosstabs_config.models_dates_join_query,
+        features_query=crosstabs_config.features_query,
+        predictions_query=crosstabs_config.predictions_query,
+    )
     if len(crosstabs_config.entity_id_list) > 0:
-        crosstabs_query += " where entity_id=ANY('{%s}') "%', '.join(map(str, crosstabs_config.entity_id_list))
+        crosstabs_query += " where entity_id=ANY('{%s}') " % ", ".join(map(str, crosstabs_config.entity_id_list))
     crosstabs_query += "  order by model_id, as_of_date, rank_abs asc;"
     df = pd.read_sql(crosstabs_query, db_engine)
     if len(df) == 0:
         raise ValueError("No data could be fetched.")
-    groupby_obj = df.groupby(['model_id', 'as_of_date'])
+    groupby_obj = df.groupby(["model_id", "as_of_date"])
     for group, values in groupby_obj:
         df_modelid_asofdate = groupby_obj.get_group(group)
-        res = populate_crosstabs_table(model_id=group[0], as_of_date=group[1],
-                                       df=df_modelid_asofdate,
-                                       thresholds=crosstabs_config.thresholds,
-                                       crosstab_functions=crosstab_functions,
-                                       push_to_db=True,
-                                       return_df=False,
-                                       engine=db_engine,
-                                       schema=crosstabs_config.output['schema'],
-                                       table=crosstabs_config.output['table'])
+        res = populate_crosstabs_table(
+            model_id=group[0],
+            as_of_date=group[1],
+            df=df_modelid_asofdate,
+            thresholds=crosstabs_config.thresholds,
+            crosstab_functions=crosstab_functions,
+            push_to_db=True,
+            return_df=False,
+            engine=db_engine,
+            schema=crosstabs_config.output["schema"],
+            table=crosstabs_config.output["table"],
+        )

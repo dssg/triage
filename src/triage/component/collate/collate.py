@@ -1,8 +1,11 @@
-# -*- coding: utf-8 -*-
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from numbers import Number
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
 import re
+from descriptors import cachedproperty
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
 from .imputations import (
@@ -35,6 +38,7 @@ def make_tuple(a):
 
 
 DISTINCT_REGEX = re.compile(r"distinct[ (]")
+AGGFUNCS_NEED_MULTIPLE_VALUES = set(['stddev', 'stddev_samp', 'variance', 'var_samp'])
 
 
 def split_distinct(quantity):
@@ -48,7 +52,7 @@ def split_distinct(quantity):
         return "", (q,)
 
 
-class AggregateExpression(object):
+class AggregateExpression:
     def __init__(
         self,
         aggregate1,
@@ -434,7 +438,7 @@ class Categorical(Compare):
         )
 
 
-class Aggregation(object):
+class Aggregation:
     def __init__(
         self,
         aggregates,
@@ -478,6 +482,29 @@ class Aggregation(object):
         self.suffix = suffix if suffix else "aggregation"
         self.schema = schema
 
+    @cachedproperty
+    def colname_aggregate_lookup(self):
+        """A reverse lookup from column name to the source collate.Aggregate
+
+        Will error if the Aggregation contains duplicate column names
+        """
+        lookup = {}
+        for group, groupby in self.groups.items():
+            for agg in self.aggregates:
+                for col in agg.get_columns(prefix=self._col_prefix(group)):
+                    if col.name in lookup:
+                        raise ValueError("Duplicate feature column name found: ", col.name)
+                    lookup[col.name] = agg
+        return lookup
+
+    def _col_prefix(self, group):
+        """
+        Helper for creating a column prefix for the group
+            group: group clause, for naming columns
+        Returns: string for a common column prefix for columns in that group
+        """
+        return "{prefix}_{group}_".format(prefix=self.prefix, group=group)
+
     def _get_aggregates_sql(self, group):
         """
         Helper for getting aggregates sql
@@ -485,9 +512,7 @@ class Aggregation(object):
             group: group clause, for naming columns
         Returns: collection of aggregate column SQL strings
         """
-        prefix = "{prefix}_{group}_".format(prefix=self.prefix, group=group)
-
-        return chain(*[a.get_columns(prefix=prefix) for a in self.aggregates])
+        return chain(*[a.get_columns(prefix=self._col_prefix(group)) for a in self.aggregates])
 
     def get_selects(self):
         """
@@ -500,11 +525,11 @@ class Aggregation(object):
         queries = {}
 
         for group, groupby in self.groups.items():
-            columns = [groupby]
+            columns = [make_sql_clause(groupby, ex.text)]
             columns += self._get_aggregates_sql(group)
 
             gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=self.from_obj).group_by(
+            query = ex.select(columns=columns, from_obj=make_sql_clause(self.from_obj, ex.text)).group_by(
                 gb_clause
             )
 
@@ -607,7 +632,10 @@ class Aggregation(object):
         """
         Generate a query for a join table
         """
-        return ex.Select(columns=self.groups.values(), from_obj=self.from_obj).group_by(
+        return ex.Select(
+            columns=[make_sql_clause(group, ex.column) for group in self.groups.values()],
+            from_obj=self.from_obj
+        ).group_by(
             *self.groups.values()
         )
 
@@ -680,6 +708,7 @@ class Aggregation(object):
         # key columns and date column
         query = ""
 
+        used_impflags = set()
         # pre-sort and iterate through the combined set to ensure column order
         for col in sorted(nonimpute_cols + impute_cols):
             # just pass through columns that don't require imputation (no nulls found)
@@ -690,6 +719,25 @@ class Aggregation(object):
             # and a flag for whether the value was imputed
             if col in impute_cols:
 
+                # we don't want to add redundant imputation flags. for a given source
+                # column and time interval, all of the functions will have identical
+                # sets of rows that needed imputation
+                # to reliably merge these, we lookup the original aggregate that produced
+                # the function, and see its available functions. we expect exactly one of
+                # these functions to end the column name and remove it if so
+                # this is passed to the imputer
+                if hasattr(self.colname_aggregate_lookup[col], 'functions'):
+                    agg_functions = self.colname_aggregate_lookup[col].functions
+                    used_function = next(funcname for funcname in agg_functions if col.endswith(funcname))
+                    if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+                        impflag_basecol = col
+                    else:
+                        impflag_basecol = col.rstrip('_' + used_function)
+                else:
+                    logger.warning("Imputation flag merging is not implemented for "
+                                    "AggregateExpression objects that don't define an aggregate "
+                                    "function (e.g. composites)")
+                    impflag_basecol = col
                 impute_rule = imprules[col]
 
                 try:
@@ -700,13 +748,17 @@ class Aggregation(object):
                         % (impute_rule.get("type", ""), col)
                     ) from err
 
-                imputer = imputer(column=col, partitionby=partitionby, **impute_rule)
+                imputer = imputer(column=col, column_base_for_impflag=impflag_basecol, partitionby=partitionby, **impute_rule)
 
                 query += "\n,%s" % imputer.to_sql()
                 if not imputer.noflag:
                     # Add an imputation flag for non-categorical columns (this is handeled
                     # for categorical columns with a separate NULL category)
-                    query += "\n,%s" % imputer.imputed_flag_sql()
+                    # but only add it if another functionally equivalent impflag hasn't already been added
+                    impflag_select, impflag_alias = imputer.imputed_flag_select_and_alias()
+                    if impflag_alias not in used_impflags:
+                        used_impflags.add(impflag_alias)
+                        query += "\n,%s as \"%s\" " % (impflag_select, impflag_alias)
 
         return query
 

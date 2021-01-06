@@ -1,11 +1,12 @@
-class BaseImputation(object):
+class BaseImputation:
     """Base class for various imputation methods
     """
 
     def __init__(
-        self, column, coltype, partitionby=None, null_cat_pattern=None, noflag=False
+        self, column, coltype, column_base_for_impflag=None, partitionby=None, null_cat_pattern=None, noflag=False
     ):
         self.column = column
+        self.column_base_for_impflag = column_base_for_impflag
         self.coltype = coltype
         self.catcol = coltype in ["categorical", "array_categorical"]
         # categoricals have a null category, so don't need a flag
@@ -22,15 +23,25 @@ class BaseImputation(object):
     def _base_sql(self):
         return """COALESCE("{col}", {{imp}}) AS "{col}" """.format(col=self.column)
 
-    def imputed_flag_sql(self):
+    def imputed_flag_select_and_alias(self):
         if not self.noflag:
-            return """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END AS "{col}_imp" """.format(
-                col=self.column
-            )
+            template = """CASE WHEN "{col}" IS NULL THEN 1::SMALLINT ELSE 0::SMALLINT END""" 
+            alias_template = "{base_for_impflag}_imp"
+            if self.column_base_for_impflag:
+                return (
+                    template.format(col=self.column),
+                    alias_template.format(base_for_impflag=self.column_base_for_impflag)
+                )
+            else:
+                return (
+                    template.format(col=self.column),
+                    alias_template.format(base_for_impflag=self.column)
+                )
+
         else:
             # don't need to create a flag for categoricals (since this is handled with the
             # null category) or other imputations that suppress the flag (e.g., zero_noflag)
-            return None
+            return None, None
 
 
 class ImputeMean(BaseImputation):
@@ -45,12 +56,13 @@ class ImputeMean(BaseImputation):
     """
 
     def __init__(
-        self, column, coltype, partitionby=None, null_cat_pattern=None, **kwargs
+        self, column, coltype, column_base_for_impflag=None, partitionby=None, null_cat_pattern=None, **kwargs
     ):
         BaseImputation.__init__(
             self,
             column=column,
             coltype=coltype,
+            column_base_for_impflag=column_base_for_impflag,
             partitionby=partitionby,
             null_cat_pattern=null_cat_pattern,
         )
@@ -82,11 +94,12 @@ class ImputeConstant(BaseImputation):
     column with a 1 (as well as the NULL category column)
     """
 
-    def __init__(self, column, coltype, value, null_cat_pattern=None, **kwargs):
+    def __init__(self, column, coltype, value, column_base_for_impflag=None, null_cat_pattern=None, **kwargs):
         BaseImputation.__init__(
             self,
             column=column,
             coltype=coltype,
+            column_base_for_impflag=column_base_for_impflag,
             partitionby=None,
             null_cat_pattern=null_cat_pattern,
         )
@@ -114,11 +127,12 @@ class ImputeZero(BaseImputation):
     variables, which is filled with a 1
     """
 
-    def __init__(self, column, coltype, null_cat_pattern=None, **kwargs):
+    def __init__(self, column, coltype, column_base_for_impflag=None, null_cat_pattern=None, **kwargs):
         BaseImputation.__init__(
             self,
             column=column,
             coltype=coltype,
+            column_base_for_impflag=column_base_for_impflag,
             partitionby=None,
             null_cat_pattern=null_cat_pattern,
         )
@@ -139,11 +153,12 @@ class ImputeZeroNoFlag(BaseImputation):
     has occurred.
     """
 
-    def __init__(self, column, coltype, null_cat_pattern=None, **kwargs):
+    def __init__(self, column, coltype, column_base_for_impflag=None, null_cat_pattern=None, **kwargs):
         BaseImputation.__init__(
             self,
             column=column,
             coltype=coltype,
+            column_base_for_impflag=column_base_for_impflag,
             partitionby=None,
             null_cat_pattern=null_cat_pattern,
             noflag=True,
@@ -161,11 +176,12 @@ class ImputeNullCategory(BaseImputation):
     (essentially the same as ImputeZero for categoricals only)
     """
 
-    def __init__(self, column, coltype, null_cat_pattern=None, **kwargs):
+    def __init__(self, column, coltype, column_base_for_impflag=None, null_cat_pattern=None, **kwargs):
         BaseImputation.__init__(
             self,
             column=column,
             coltype=coltype,
+            column_base_for_impflag=column_base_for_impflag,
             partitionby=None,
             null_cat_pattern=null_cat_pattern,
         )
@@ -187,9 +203,10 @@ class ImputeBinaryMode(BaseImputation):
     as it does not determine the modal category, just whether a binary is over 50%.
     """
 
-    def __init__(self, column, coltype, partitionby=None, **kwargs):
+    def __init__(self, column, coltype, column_base_for_impflag=None, partitionby=None, **kwargs):
         BaseImputation.__init__(
-            self, column=column, coltype=coltype, partitionby=partitionby
+            self, column=column, coltype=coltype, partitionby=partitionby,
+            column_base_for_impflag=column_base_for_impflag,
         )
         if self.catcol:
             raise ValueError(
@@ -212,8 +229,8 @@ class ImputeError(BaseImputation):
     an imputation.
     """
 
-    def __init__(self, column, coltype, **kwargs):
-        BaseImputation.__init__(self, column=column, coltype=coltype)
+    def __init__(self, column, coltype, column_base_for_impflag=None, **kwargs):
+        BaseImputation.__init__(self, column=column, coltype=coltype, column_base_for_impflag=column_base_for_impflag)
 
     def to_sql(self):
         raise ValueError(

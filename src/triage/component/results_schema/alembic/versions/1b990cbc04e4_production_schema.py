@@ -11,16 +11,16 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '1b990cbc04e4'
-down_revision = 'cfd5c3386014'
+down_revision = '45219f25072b'
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     op.execute("CREATE SCHEMA IF NOT EXISTS production")
-    op.execute("ALTER TABLE model_metadata.list_predictions SET SCHEMA production;")
+    op.execute("ALTER TABLE triage_metadata.list_predictions SET SCHEMA production;")
 
 
 def downgrade():
-    op.execute("ALTER TABLE production.list_predictions SET SCHEMA model_metadata;")
+    op.execute("ALTER TABLE production.list_predictions SET SCHEMA triage_metadata;")
     op.execute("DROP SCHEMA IF EXISTS production")

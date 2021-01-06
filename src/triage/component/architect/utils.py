@@ -1,3 +1,6 @@
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 import datetime
 import shutil
 import sys
@@ -10,12 +13,13 @@ import tempfile
 import sqlalchemy
 
 import pandas as pd
-import yaml
-import numpy
+import numpy as np
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
 from triage.util.structs import FeatureNameList
+
+
 
 
 def str_in_sql(values):
@@ -105,7 +109,7 @@ def create_entity_date_df(
         for date in ids_dates["as_of_date"]
     ]
     ids_dates = ids_dates[ids_dates["as_of_date"].isin(as_of_dates)]
-    print(ids_dates)
+    logger.spam(ids_dates)
 
     return ids_dates.reset_index(drop=True)
 
@@ -126,37 +130,13 @@ def TemporaryDirectory():
         shutil.rmtree(name)
 
 
-@contextmanager
-def fake_metta(matrix_dict, metadata):
-    """Stores matrix and metadata in a metta-data-like form
-
-    Args:
-    matrix_dict (dict) of form { columns: values }.
-        Expects an entity_id to be present which it will use as the index
-    metadata (dict). Any metadata that should be set
-
-    Yields:
-        tuple of filenames for matrix and metadata
-    """
-    matrix = pd.DataFrame.from_dict(matrix_dict).set_index("entity_id")
-    with tempfile.NamedTemporaryFile() as matrix_file:
-        with tempfile.NamedTemporaryFile("w") as metadata_file:
-            hdf = pd.HDFStore(matrix_file.name)
-            hdf.put("title", matrix, data_columns=True)
-            matrix_file.seek(0)
-
-            yaml.dump(metadata, metadata_file)
-            metadata_file.seek(0)
-            yield (matrix_file.name, metadata_file.name)
-
-
 def fake_labels(length):
-    return numpy.array([random.choice([True, False]) for i in range(0, length)])
+    return np.array([random.choice([True, False]) for i in range(0, length)])
 
 
-class MockTrainedModel(object):
+class MockTrainedModel:
     def predict_proba(self, dataset):
-        return numpy.random.rand(len(dataset), len(dataset))
+        return np.random.rand(len(dataset), len(dataset))
 
 
 def fake_trained_model(project_path, model_storage_engine, db_engine):

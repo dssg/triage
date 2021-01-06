@@ -26,16 +26,15 @@ Triage could always use more documentation, whether as part of the
 official Triage docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
-The [documentation site](https://dssg.github.io/triage) runs on [mkdocs](https://www.mkdocs.org) and is controlled by the [docs/sources](docs/sources) directory. We recommend building the docs locally to preview any documentation pages. The python dependencies for this are handled by [requirements/dev.txt](requirements/dev.txt):
+The [documentation site](https://dssg.github.io/triage) runs on [mkdocs](https://www.mkdocs.org) and is controlled by the [docs/sources](docs/sources) directory. We recommend building the docs locally to preview any documentation pages. The python dependencies for this are handled by [requirement/dev.txt](requirement/dev.txt):
 
 ```
-pip install -r requirements/dev.txt
+pip install -r requirement/dev.txt
 ```
 
 Once this is done, you can modify any of the pages under the documentation root directory, and change general doc site configuration in [docs/mkdocs.yml](docs/mkdocs.yml). While modifying a documentation page, you can preview your changes by running the mkdocs dev server:
 ```
-cd docs
-mkdocs serve
+manage docs
 ```
 
 ### Submit Feedback

@@ -1,17 +1,11 @@
-import pandas
-import testing.postgresql
-import sqlalchemy
-import unittest
-from unittest.mock import patch
+import pandas as pd
+import random
 import pytest
 
-from sqlalchemy import create_engine
-from triage.component.catwalk.db import ensure_db
-from tests.results_tests.factories import init_engine
 
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
-from tests.utils import rig_engines, get_matrix_store
+from tests.utils import get_matrix_store
 
 
 @pytest.fixture
@@ -43,6 +37,9 @@ def test_model_trainer(grid_config, default_model_trainer):
     project_storage = trainer.model_storage_engine.project_storage
     model_storage_engine = trainer.model_storage_engine
 
+    def set_test_seed():
+        random.seed(5)
+    set_test_seed()
     model_ids = trainer.train_models(
         grid_config=grid_config,
         misc_db_parameters=dict(),
@@ -61,7 +58,7 @@ def test_model_trainer(grid_config, default_model_trainer):
 
     records = [
         row
-        for row in db_engine.execute("select model_hash from model_metadata.models")
+        for row in db_engine.execute("select model_hash from triage_metadata.models")
     ]
     assert len(records) == 4
     hashes = [row[0] for row in records]
@@ -70,7 +67,16 @@ def test_model_trainer(grid_config, default_model_trainer):
     records = [
         row
         for row in db_engine.execute(
-            "select distinct model_group_id from model_metadata.models"
+            "select distinct model_group_id from triage_metadata.models"
+        )
+    ]
+    assert len(records) == 4
+
+    # 2. that the random seeds are distinct
+    records = [
+        row
+        for row in db_engine.execute(
+            "select distinct random_seed from triage_metadata.models"
         )
     ]
     assert len(records) == 4
@@ -78,7 +84,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     # 3. that the model sizes are saved in the table and all are < 1 kB
     records = [
         row
-        for row in db_engine.execute("select model_size from model_metadata.models")
+        for row in db_engine.execute("select model_size from triage_metadata.models")
     ]
     assert len(records) == 4
     for i in records:
@@ -91,7 +97,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert len([x for x in model_pickles if x is not None]) == 4
 
     # 5. that their results can have predictions made on it
-    test_matrix = pandas.DataFrame.from_dict(
+    test_matrix = pd.DataFrame.from_dict(
         {"entity_id": [3, 4], "feature_one": [4, 4], "feature_two": [6, 5]}
     ).set_index("entity_id")
 
@@ -99,7 +105,8 @@ def test_model_trainer(grid_config, default_model_trainer):
         predictions = model_pickle.predict(test_matrix)
         assert len(predictions) == 2
 
-    # 6. when run again, same models are returned
+    # 6. when run again with the same starting seed, same models are returned
+    set_test_seed()
     new_model_ids = trainer.train_models(
         grid_config=grid_config,
         misc_db_parameters=dict(),
@@ -110,7 +117,7 @@ def test_model_trainer(grid_config, default_model_trainer):
             [
                 row
                 for row in db_engine.execute(
-                    "select model_hash from model_metadata.models"
+                    "select model_hash from triage_metadata.models"
                 )
             ]
         )
@@ -122,7 +129,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     max_batch_run_time = [
         row[0]
         for row in db_engine.execute(
-            "select max(batch_run_time) from model_metadata.models"
+            "select max(batch_run_time) from triage_metadata.models"
         )
     ][0]
     trainer = ModelTrainer(
@@ -134,6 +141,7 @@ def test_model_trainer(grid_config, default_model_trainer):
         db_engine=db_engine,
         replace=True,
     )
+    set_test_seed()
     new_model_ids = trainer.train_models(
         grid_config=grid_config,
         misc_db_parameters=dict(),
@@ -143,13 +151,13 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert [
         row["model_id"]
         for row in db_engine.execute(
-            "select model_id from model_metadata.models order by 1 asc"
+            "select model_id from triage_metadata.models order by 1 asc"
         )
     ] == model_ids
     new_max_batch_run_time = [
         row[0]
         for row in db_engine.execute(
-            "select max(batch_run_time) from model_metadata.models"
+            "select max(batch_run_time) from triage_metadata.models"
         )
     ][0]
     assert new_max_batch_run_time > max_batch_run_time
@@ -163,7 +171,8 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert len(records) == 4 * 2  # maybe exclude entity_id? yes
 
     # 8. if the cache is missing but the metadata is still there, reuse the metadata
-    for row in db_engine.execute("select model_hash from model_metadata.models"):
+    set_test_seed()
+    for row in db_engine.execute("select model_hash from triage_metadata.models"):
         model_storage_engine.delete(row[0])
     new_model_ids = trainer.train_models(
         grid_config=grid_config,
@@ -173,6 +182,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     assert model_ids == sorted(new_model_ids)
 
     # 9. that the generator interface works the same way
+    set_test_seed()
     new_model_ids = trainer.generate_trained_models(
         grid_config=grid_config,
         misc_db_parameters=dict(),
@@ -218,7 +228,7 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
     records = [
         row[0]
         for row in db_engine_with_results_schema.execute(
-            "select distinct model_group_id from model_metadata.models"
+            "select distinct model_group_id from triage_metadata.models"
         )
     ]
     assert len(records) == 1
@@ -233,7 +243,7 @@ def test_n_jobs_not_new_model(default_model_trainer):
             "max_features": ["sqrt", "log2"],
             "max_depth": [5, 10, 15, 20],
             "criterion": ["gini", "entropy"],
-            "n_jobs": [12, 24],
+            "n_jobs": [12],
         },
     }
 
@@ -241,22 +251,32 @@ def test_n_jobs_not_new_model(default_model_trainer):
     project_storage = trainer.model_storage_engine.project_storage
     db_engine = trainer.db_engine
 
+    # generate train tasks, with a specific random seed so that we can compare
+    # apples to apples later
+    random.seed(5)
     train_tasks = trainer.generate_train_tasks(
         grid_config, dict(), get_matrix_store(project_storage)
-    )
-
-    assert len(train_tasks) == 35  # 32+3, would be (32*2)+3 if we didn't remove
-    assert (
-        len([task for task in train_tasks if "n_jobs" in task["parameters"]]) == 32
     )
 
     for train_task in train_tasks:
         trainer.process_train_task(**train_task)
 
+    # since n_jobs is a runtime attribute of the model, it should not make it
+    # into the model group
     for row in db_engine.execute(
-        "select hyperparameters from model_metadata.model_groups"
+        "select hyperparameters from triage_metadata.model_groups"
     ):
         assert "n_jobs" not in row[0]
+
+    hashes = set(task['model_hash'] for task in train_tasks)
+    # generate the grid again with a different n_jobs (but the same random seed!)
+    # and make sure that the hashes are the same as before
+    random.seed(5)
+    grid_config['sklearn.ensemble.RandomForestClassifier']['n_jobs'] = [24]
+    new_train_tasks = trainer.generate_train_tasks(
+        grid_config, dict(), get_matrix_store(project_storage)
+    )
+    assert hashes == set(task['model_hash'] for task in new_train_tasks)
 
 
 def test_cache_models(default_model_trainer):

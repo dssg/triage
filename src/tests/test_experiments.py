@@ -13,7 +13,7 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
 from tests.utils import sample_config, populate_source_data
-from triage.component.catwalk.storage import HDFMatrixStore, CSVMatrixStore
+from triage.component.catwalk.storage import CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
 
 from triage.experiments import (
@@ -29,7 +29,7 @@ def num_linked_evaluations(db_engine):
     ((result,),) = db_engine.execute(
         """
         select count(*) from test_results.evaluations e
-        join model_metadata.models using (model_id)
+        join triage_metadata.models using (model_id)
         join test_results.predictions p on (
             e.model_id = p.model_id and
             e.evaluation_start_time <= p.as_of_date and
@@ -54,14 +54,9 @@ parametrize_experiment_classes = pytest.mark.parametrize(
     ],
 )
 
-parametrize_matrix_storage_classes = pytest.mark.parametrize(
-    ("matrix_storage_class",), [(HDFMatrixStore,), (CSVMatrixStore,)]
-)
-
 
 @parametrize_experiment_classes
-@parametrize_matrix_storage_classes
-def test_simple_experiment(experiment_class, matrix_storage_class):
+def test_simple_experiment(experiment_class):
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
@@ -70,7 +65,6 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 config=sample_config(),
                 db_engine=db_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
-                matrix_storage_class=matrix_storage_class,
                 cleanup=True,
             ).run()
 
@@ -80,10 +74,11 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
             [
                 row
                 for row in db_engine.execute(
-                    "select * from model_metadata.model_groups"
+                    "select * from triage_metadata.model_groups"
                 )
             ]
         )
+        print(f"========================Model groups {num_mgs}")
         assert num_mgs > 0
 
         # 2. that model entries are present, and linked to model groups
@@ -92,13 +87,14 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 row
                 for row in db_engine.execute(
                     """
-                select * from model_metadata.model_groups
-                join model_metadata.models using (model_group_id)
+                select * from triage_metadata.model_groups
+                join triage_metadata.models using (model_group_id)
                 where model_comment = 'test2-final-final'
             """
                 )
             ]
         )
+        print(f"========================Model {num_models}")
         assert num_models > 0
 
         # 3. predictions, linked to models for both training and testing predictions
@@ -109,16 +105,17 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                     for row in db_engine.execute(
                         """
                     select * from {}_results.predictions
-                    join model_metadata.models using (model_id)""".format(
+                    join triage_metadata.models using (model_id)""".format(
                             set_type, set_type
                         )
                     )
                 ]
             )
+            print(f"========================Predictions {num_predictions}")
             assert num_predictions > 0
 
         # 4. evaluations linked to predictions linked to models, for training and testing
-        
+
         for set_type in ("train", "test"):
             num_evaluations = len(
                 [
@@ -126,7 +123,7 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                     for row in db_engine.execute(
                         """
                     select * from {}_results.evaluations e
-                    join model_metadata.models using (model_id)
+                    join triage_metadata.models using (model_id)
                     join {}_results.predictions p on (
                         e.model_id = p.model_id and
                         e.evaluation_start_time <= p.as_of_date and
@@ -137,8 +134,9 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                     )
                 ]
             )
+            print(f"========================Evaluations {num_evaluations}")
             assert num_evaluations > 0
-        
+
         # 5. subset evaluations linked to subsets and predictions linked to
         #    models, for training and testing
         for set_type in ("train", "test"):
@@ -148,8 +146,8 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                     for row in db_engine.execute(
                         """
                         select e.model_id, e.subset_hash from {}_results.evaluations e
-                        join model_metadata.models using (model_id)
-                        join model_metadata.subsets using (subset_hash)
+                        join triage_metadata.models using (model_id)
+                        join triage_metadata.subsets using (subset_hash)
                         join {}_results.predictions p on (
                             e.model_id = p.model_id and
                             e.evaluation_start_time <= p.as_of_date and
@@ -168,7 +166,7 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         num_experiments = len(
             [
                 row
-                for row in db_engine.execute("select * from model_metadata.experiments")
+                for row in db_engine.execute("select * from triage_metadata.experiments")
             ]
         )
         assert num_experiments == 1
@@ -179,9 +177,9 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
                 row
                 for row in db_engine.execute(
                     """
-                select * from model_metadata.experiments
-                join model_metadata.experiment_models using (experiment_hash)
-                join model_metadata.models using (model_hash)
+                select * from triage_metadata.experiments
+                join triage_metadata.experiment_models using (experiment_hash)
+                join triage_metadata.models using (model_hash)
             """
                 )
             ]
@@ -191,7 +189,7 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
         # 8. that models have the train end date and label timespan
         results = [
             (model["train_end_time"], model["training_label_timespan"])
-            for model in db_engine.execute("select * from model_metadata.models")
+            for model in db_engine.execute("select * from triage_metadata.models")
         ]
         assert sorted(set(results)) == [
             (datetime(2012, 6, 1), timedelta(180)),
@@ -204,7 +202,7 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
             for row in db_engine.execute(
                 """
             select * from test_results.individual_importances
-            join model_metadata.models using (model_id)
+            join triage_metadata.models using (model_id)
         """
             )
         ]
@@ -215,7 +213,7 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
             row
             for row in db_engine.execute(
                 """
-            select matrix_type, num_observations from model_metadata.matrices"""
+            select matrix_type, num_observations from triage_metadata.matrices"""
             )
         ]
         types = [i[0] for i in matrices]
@@ -228,9 +226,9 @@ def test_simple_experiment(experiment_class, matrix_storage_class):
 
         # 11. Checking that all matrices are associated with the experiment
         linked_matrices = list(db_engine.execute(
-            """select * from model_metadata.matrices
-            join model_metadata.experiment_matrices using (matrix_uuid)
-            join model_metadata.experiments using (experiment_hash)"""
+            """select * from triage_metadata.matrices
+            join triage_metadata.experiment_matrices using (matrix_uuid)
+            join triage_metadata.experiments using (experiment_hash)"""
         ))
         assert len(linked_matrices) == len(matrices)
 
@@ -459,7 +457,7 @@ def test_baselines_with_missing_features(experiment_class):
             [
                 row
                 for row in db_engine.execute(
-                    "select * from model_metadata.model_groups"
+                    "select * from triage_metadata.model_groups"
                 )
             ]
         )
@@ -471,8 +469,8 @@ def test_baselines_with_missing_features(experiment_class):
                 row
                 for row in db_engine.execute(
                     """
-                select * from model_metadata.model_groups
-                join model_metadata.models using (model_group_id)
+                select * from triage_metadata.model_groups
+                join triage_metadata.models using (model_group_id)
                 where model_comment = 'test2-final-final'
             """
                 )
@@ -487,7 +485,7 @@ def test_baselines_with_missing_features(experiment_class):
                 for row in db_engine.execute(
                     """
                 select * from test_results.predictions
-                join model_metadata.models using (model_id)"""
+                join triage_metadata.models using (model_id)"""
                 )
             ]
         )
@@ -500,7 +498,7 @@ def test_baselines_with_missing_features(experiment_class):
                 for row in db_engine.execute(
                     """
                 select * from test_results.evaluations e
-                join model_metadata.models using (model_id)
+                join triage_metadata.models using (model_id)
                 join test_results.predictions p on (
                     e.model_id = p.model_id and
                     e.evaluation_start_time <= p.as_of_date and
@@ -515,7 +513,7 @@ def test_baselines_with_missing_features(experiment_class):
         num_experiments = len(
             [
                 row
-                for row in db_engine.execute("select * from model_metadata.experiments")
+                for row in db_engine.execute("select * from triage_metadata.experiments")
             ]
         )
         assert num_experiments == 1
@@ -526,9 +524,9 @@ def test_baselines_with_missing_features(experiment_class):
                 row
                 for row in db_engine.execute(
                     """
-                select * from model_metadata.experiments
-                join model_metadata.experiment_models using (experiment_hash)
-                join model_metadata.models using (model_hash)
+                select * from triage_metadata.experiments
+                join triage_metadata.experiment_models using (experiment_hash)
+                join triage_metadata.models using (model_hash)
             """
                 )
             ]
@@ -538,7 +536,7 @@ def test_baselines_with_missing_features(experiment_class):
         # 7. that models have the train end date and label timespan
         results = [
             (model["train_end_time"], model["training_label_timespan"])
-            for model in db_engine.execute("select * from model_metadata.models")
+            for model in db_engine.execute("select * from triage_metadata.models")
         ]
         assert sorted(set(results)) == [
             (datetime(2012, 6, 1), timedelta(180)),
@@ -551,7 +549,7 @@ def test_baselines_with_missing_features(experiment_class):
             for row in db_engine.execute(
                 """
             select * from test_results.individual_importances
-            join model_metadata.models using (model_id)
+            join triage_metadata.models using (model_id)
         """
             )
         ]
