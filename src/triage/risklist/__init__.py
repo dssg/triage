@@ -53,18 +53,18 @@ def get_required_info_from_config(db_engine, model_id):
     return model_info
 
 
-def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, model_id, as_of_date):
+def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     """Generate the risk list based model_id and as_of_date
 
     Args:
             db_engine (sqlalchemy.db.engine)
+            project_storage (catwalk.storage.ProjectStorage)
             model_id (int) The id of a given model in the database
-            matrix_storage_engine (catwalk.storage.matrix_storage_engine)
-            model_storage_engine (catwalk.storage.model_storage_engine)
             as_of_date (string) a date string like "YYYY-MM-DD"
     """
     logger.spam("In RISK LIST................")
     upgrade_db(db_engine=db_engine)
+    matrix_storage_engine = project_storage.matrix_storage_engine()
     # 1. Get feature and cohort config from database
     model_info = get_required_info_from_config(db_engine, model_id)
 
@@ -173,7 +173,7 @@ def generate_risk_list(db_engine, matrix_storage_engine, model_storage_engine, m
 
     # 6. Predict the risk score for production
     predictor = Predictor(
-        model_storage_engine=model_storage_engine,
+        model_storage_engine=project_storage.model_storage_engine(),
         db_engine=db_engine,
         rank_order='best'
     )

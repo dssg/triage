@@ -20,6 +20,7 @@ from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
+from triage.risklist import generate_risk_list
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
@@ -398,6 +399,37 @@ class Crosstabs(Command):
             config = CrosstabsConfigLoader(config=yaml.full_load(fd))
         run_crosstabs(db_engine, config)
 
+
+@Triage.register
+class Risklist(Command):
+    """Generate a list of risk scores from an already-trained model and new data"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "model_id",
+            type=natural_number,
+            help="The model_id of an existing trained model in the models table",
+        )
+        parser.add_argument(
+            "as_of_date",
+            type=valid_date,
+            help="The date as of which to run features. Format YYYY-MM-DD",
+        )
+        parser.add_argument(
+            "--project-path",
+            default=os.getcwd(),
+            help="path to store matrices and trained models",
+        )
+
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+
+        generate_risk_list(
+            db_engine,
+            ProjectStorage(args.project_path),
+            args.model_id,
+            args.as_of_date
+        )
 
 @Triage.register
 class Db(Command):

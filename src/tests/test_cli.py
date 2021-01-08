@@ -2,6 +2,7 @@ import argcmdr
 import triage.cli as cli
 from unittest.mock import Mock, patch
 import os
+import datetime
 
 
 # we do not need a real database URL but one SQLalchemy thinks looks like a real one
@@ -56,3 +57,13 @@ def test_featuretest():
             try_command('featuretest', 'example/config/experiment.yaml', '2017-06-06')
             featuremock.assert_called_once()
             cohortmock.assert_called_once()
+
+
+def test_cli_risklist():
+    with patch('triage.cli.generate_risk_list', autospec=True) as mock:
+        try_command('risklist', '40', '2019-06-04')
+        mock.assert_called_once()
+        assert mock.call_args[0][0].url
+        assert mock.call_args[0][1].project_path
+        assert mock.call_args[0][2] == 40
+        assert mock.call_args[0][3] == datetime.datetime(2019, 6, 4)
