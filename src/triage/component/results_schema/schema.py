@@ -150,12 +150,27 @@ class ListPrediction(Base):
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
     label_value = Column(Integer)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text)
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+
+
+class ListPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "production"}
+
+    model_id = Column(
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
 
 
 class ExperimentMatrix(Base):

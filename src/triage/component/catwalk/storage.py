@@ -26,6 +26,7 @@ from triage.component.results_schema import (
     ListPrediction,
     TestPredictionMetadata,
     TrainPredictionMetadata,
+    ListPredictionMetadata,
     TestAequitas,
     TrainAequitas
 )
@@ -621,4 +622,5 @@ class TrainMatrixType:
 class ProductionMatrixType(object):
     string_name = "production"
     prediction_obj = ListPrediction
+    prediction_metadata_obj = ListPredictionMetadata
 
