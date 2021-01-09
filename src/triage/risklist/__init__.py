@@ -51,6 +51,35 @@ def train_matrix_info_from_model_id(db_engine, model_id):
     return db_engine.execute(get_train_matrix_query, model_id).first()
 
 
+def get_feature_names(aggregation, matrix_metadata):
+    """Returns a feature group name and a list of feature names from a SpacetimeAggregation object"""
+    feature_prefix = aggregation.prefix
+    logger.spam("Feature prefix = %s", feature_prefix)
+    feature_group = aggregation.get_table_name(imputed=True).split('.')[1].replace('"', '')
+    logger.spam("Feature group = %s", feature_group)
+    feature_names_in_group = [f for f in matrix_metadata['feature_names'] if re.match(f'\\A{feature_prefix}', f)]
+    logger.spam("Feature names in group = %s", feature_names_in_group)
+    
+    return feature_group, feature_names_in_group
+
+def get_feature_needs_imputation_in_train(feature_names):
+    features_imputed_in_train = [
+                f for f in set(feature_names)
+                if not f.endswith('_imp') 
+                and '_'.join(f.split('_')[0:-1]) + '_imp' in feature_names
+            ]
+    logger.spam("Features imputed in train = %s", features_imputed_in_train)
+    return features_imputed_in_train
+
+
+def get_feature_needs_imputation_in_production(aggregation, conn):
+    nulls_results = conn.execute(aggregation.find_nulls())
+    null_counts = nulls_results.first().items()
+    features_imputed_in_production = [col for (col, val) in null_counts if val > 0]
+    
+    return features_imputed_in_production
+
+
 def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     """Generate the risk list based model_id and as_of_date
 
@@ -99,30 +128,19 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     imputation_table_tasks = OrderedDict()
     with db_engine.begin() as conn:
         for aggregation in collate_aggregations:
-            feature_prefix = aggregation.prefix
-            logger.spam("Feature prefix = %s", feature_prefix)
-            feature_group = aggregation.get_table_name(imputed=True).split('.')[1].replace('"', '')
-            logger.spam("Feature group = %s", feature_group)
-            feature_names_in_group = [f for f in matrix_metadata['feature_names'] if re.match(f'\A{feature_prefix}', f)]
-            logger.spam("Feature names in group = %s", feature_names_in_group)
-            reconstructed_feature_dictionary[feature_group] = feature_names_in_group
+            feature_group, feature_names = get_feature_names(aggregation, matrix_metadata)
+            reconstructed_feature_dictionary[feature_group] = feature_names
 
             # Make sure that the features imputed in training should also be imputed in production
-            #import pdb
-            #pdb.set_trace()
-            features_imputed_in_train = [
-                f for f in set(feature_names_in_group)
-                if not f.endswith('_imp') 
-                and'_'.join(f.split('_')[0:-1]) + '_imp' in feature_names_in_group
-            ]
-            logger.spam("Features imputed in train = %s", features_imputed_in_train)
-            results = conn.execute(aggregation.find_nulls())
-            null_counts = results.first().items()
+            
+            features_imputed_in_train = get_feature_needs_imputation_in_train(feature_names)
+            features_imputed_in_production = get_feature_needs_imputation_in_production(aggregation, conn)
 
-            features_imputed_in_production = [col for (col, val) in null_counts if val > 0]
             total_impute_cols = set(features_imputed_in_production) | set(features_imputed_in_train)
-            total_nonimpute_cols = set(f for f in set(feature_names_in_group) if '_imp' not in f) - total_impute_cols
+            total_nonimpute_cols = set(f for f in set(feature_names) if '_imp' not in f) - total_impute_cols
+            
             task_generator = feature_generator._generate_imp_table_tasks_for
+            
             imputation_table_tasks.update(task_generator(
                 aggregation,
                 impute_cols=list(total_impute_cols),
@@ -141,7 +159,7 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     matrix_builder = MatrixBuilder(
         db_config=db_config,
         matrix_storage_engine=matrix_storage_engine,
-        engine=db_engine,
+                engine=db_engine,
         experiment_hash=None,
         replace=True,
     )
