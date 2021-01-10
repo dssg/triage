@@ -4,6 +4,7 @@
 Unit tests for `collate` module.
 
 """
+import pytest
 from triage.component.collate import Aggregate, Aggregation, Categorical
 
 def test_aggregate():
@@ -191,3 +192,54 @@ def test_distinct():
             ),
         )
     ) == ["count(distinct (x,y)) FILTER (WHERE date < '2012-01-01')"]
+
+
+def test_Aggregation_colname_aggregate_lookup():
+    n = Aggregate("x", "sum", {})
+    d = Aggregate("1", "count", {})
+    m = Aggregate("y", "avg", {})
+    aggregation = Aggregation(
+        [n, d, m],
+        groups=['entity_id'],
+        from_obj="source",
+        prefix="mysource",
+        state_table="tbl"
+    )
+    assert aggregation.colname_aggregate_lookup == {
+        'mysource_entity_id_x_sum': 'sum',
+        'mysource_entity_id_1_count': 'count',
+        'mysource_entity_id_y_avg': 'avg'
+    }
+
+def test_Aggregation_colname_agg_function():
+    n = Aggregate("x", "sum", {})
+    d = Aggregate("1", "count", {})
+    m = Aggregate("y", "stddev_samp", {})
+    aggregation = Aggregation(
+        [n, d, m],
+        groups=['entity_id'],
+        from_obj="source",
+        prefix="mysource",
+        state_table="tbl"
+    )
+
+    assert aggregation.colname_agg_function('mysource_entity_id_x_sum') == 'sum'
+    assert aggregation.colname_agg_function('mysource_entity_id_y_stddev_samp') == 'stddev_samp'
+
+
+def test_Aggregation_imputation_flag_base():
+    n = Aggregate("x", ["sum", "count"], {})
+    m = Aggregate("y", "stddev_samp", {})
+    aggregation = Aggregation(
+        [n, m],
+        groups=['entity_id'],
+        from_obj="source",
+        prefix="mysource",
+        state_table="tbl"
+    )
+
+    assert aggregation.imputation_flag_base('mysource_entity_id_x_sum') == 'mysource_entity_id_x'
+    assert aggregation.imputation_flag_base('mysource_entity_id_x_count') == 'mysource_entity_id_x'
+    assert aggregation.imputation_flag_base('mysource_entity_id_y_stddev_samp') == 'mysource_entity_id_y_stddev_samp'
+    with pytest.raises(KeyError):
+        aggregation.imputation_flag_base('mysource_entity_id_x_stddev_samp')

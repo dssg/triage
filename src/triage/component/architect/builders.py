@@ -239,8 +239,8 @@ class MatrixBuilder(BuilderBase):
                     self.db_engine,
             ):
                 logger.warning("labels table is not populated, cannot build matrix")
-            if self.run_id:
-                errored_matrix(self.run_id, self.db_engine)
+                if self.run_id:
+                    errored_matrix(self.run_id, self.db_engine)
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:

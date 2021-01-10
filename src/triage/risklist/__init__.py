@@ -62,11 +62,11 @@ def get_feature_names(aggregation, matrix_metadata):
     
     return feature_group, feature_names_in_group
 
-def get_feature_needs_imputation_in_train(feature_names):
+def get_feature_needs_imputation_in_train(aggregation, feature_names):
     features_imputed_in_train = [
                 f for f in set(feature_names)
                 if not f.endswith('_imp') 
-                and '_'.join(f.split('_')[0:-1]) + '_imp' in feature_names
+                and aggregation.imputation_flag_base(f) + '_imp' in feature_names
             ]
     logger.spam("Features imputed in train = %s", features_imputed_in_train)
     return features_imputed_in_train
@@ -133,7 +133,7 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
 
             # Make sure that the features imputed in training should also be imputed in production
             
-            features_imputed_in_train = get_feature_needs_imputation_in_train(feature_names)
+            features_imputed_in_train = get_feature_needs_imputation_in_train(aggregation, feature_names)
             features_imputed_in_production = get_feature_needs_imputation_in_production(aggregation, conn)
 
             total_impute_cols = set(features_imputed_in_production) | set(features_imputed_in_train)
