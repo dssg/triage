@@ -750,7 +750,7 @@ class Aggregation:
                 # this is passed to the imputer
                 try:
                     impflag_basecol = self.imputation_flag_base(col)
-                except NoAggregationFunctionError:
+                except NoAggregateFunctionError:
                     logger.warning("Imputation flag merging is not implemented for "
                                     "AggregateExpression objects that don't define an aggregate "
                                     "function (e.g. composites)")
