@@ -64,10 +64,10 @@ def get_feature_names(aggregation, matrix_metadata):
 
 def get_feature_needs_imputation_in_train(aggregation, feature_names):
     features_imputed_in_train = [
-                f for f in set(feature_names)
-                if not f.endswith('_imp') 
-                and aggregation.imputation_flag_base(f) + '_imp' in feature_names
-            ]
+        f for f in set(feature_names)
+        if not f.endswith('_imp') 
+        and aggregation.imputation_flag_base(f) + '_imp' in feature_names
+    ]
     logger.spam("Features imputed in train = %s", features_imputed_in_train)
     return features_imputed_in_train
 
