@@ -1,10 +1,13 @@
 from triage.component.results_schema import upgrade_db, Experiment, ExperimentModel 
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, DEFAULT_ACTIVE_STATE
 from triage.component.architect.features import FeatureGenerator
+from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.architect.builders import MatrixBuilder
+from triage.component.architect.planner import Planner
+from triage.component.timechop import Timechop
 from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.utils import filename_friendly_hash
-from triage.util.conf import dt_from_str
+from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.db import scoped_session
 from sqlalchemy import select
 
@@ -63,6 +66,11 @@ def get_feature_names(aggregation, matrix_metadata):
     return feature_group, feature_names_in_group
 
 def get_feature_needs_imputation_in_train(aggregation, feature_names):
+    """Returns features that needs imputation from training data
+    Args:
+        aggregation (SpacetimeAggregation)
+        feature_names (list) A list of feature names
+    """
     features_imputed_in_train = [
         f for f in set(feature_names)
         if not f.endswith('_imp') 
@@ -72,8 +80,15 @@ def get_feature_needs_imputation_in_train(aggregation, feature_names):
     return features_imputed_in_train
 
 
-def get_feature_needs_imputation_in_production(aggregation, conn):
-    nulls_results = conn.execute(aggregation.find_nulls())
+def get_feature_needs_imputation_in_production(aggregation, db_engine):
+    """Returns features that needs imputation from production
+    Args:
+        aggregation (SpacetimeAggregation)
+        db_engine (sqlalchemy.db.engine)
+    """
+    with db_engine.begin() as conn:
+        nulls_results = conn.execute(aggregation.find_nulls())
+    
     null_counts = nulls_results.first().items()
     features_imputed_in_production = [col for (col, val) in null_counts if val > 0]
     
@@ -95,7 +110,7 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     # 1. Get feature and cohort config from database
     (train_matrix_uuid, matrix_metadata) = train_matrix_info_from_model_id(db_engine, model_id)
     experiment_config = experiment_config_from_model_id(db_engine, model_id)
-
+    
     # 2. Generate cohort
     cohort_table_name = f"production.cohort_{experiment_config['cohort_config']['name']}"
     cohort_table_generator = EntityDateTableGenerator(
@@ -124,29 +139,31 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
     )
 
     # 4. Reconstruct feature disctionary from feature_names and generate imputation
-    reconstructed_feature_dictionary = {}
+    
+    reconstructed_feature_dict = FeatureGroup()
     imputation_table_tasks = OrderedDict()
-    with db_engine.begin() as conn:
-        for aggregation in collate_aggregations:
-            feature_group, feature_names = get_feature_names(aggregation, matrix_metadata)
-            reconstructed_feature_dictionary[feature_group] = feature_names
 
-            # Make sure that the features imputed in training should also be imputed in production
-            
-            features_imputed_in_train = get_feature_needs_imputation_in_train(aggregation, feature_names)
-            features_imputed_in_production = get_feature_needs_imputation_in_production(aggregation, conn)
+    for aggregation in collate_aggregations:
+        feature_group, feature_names = get_feature_names(aggregation, matrix_metadata)
+        reconstructed_feature_dict[feature_group] = feature_names
 
-            total_impute_cols = set(features_imputed_in_production) | set(features_imputed_in_train)
-            total_nonimpute_cols = set(f for f in set(feature_names) if '_imp' not in f) - total_impute_cols
-            
-            task_generator = feature_generator._generate_imp_table_tasks_for
-            
-            imputation_table_tasks.update(task_generator(
-                aggregation,
-                impute_cols=list(total_impute_cols),
-                nonimpute_cols=list(total_nonimpute_cols)
-                )
+        # Make sure that the features imputed in training should also be imputed in production
+        
+        features_imputed_in_train = get_feature_needs_imputation_in_train(aggregation, feature_names)
+        
+        features_imputed_in_production = get_feature_needs_imputation_in_production(aggregation, db_engine)
+
+        total_impute_cols = set(features_imputed_in_production) | set(features_imputed_in_train)
+        total_nonimpute_cols = set(f for f in set(feature_names) if '_imp' not in f) - total_impute_cols
+        
+        task_generator = feature_generator._generate_imp_table_tasks_for
+        
+        imputation_table_tasks.update(task_generator(
+            aggregation,
+            impute_cols=list(total_impute_cols),
+            nonimpute_cols=list(total_nonimpute_cols)
             )
+        )
     feature_generator.process_table_tasks(imputation_table_tasks)
 
     # 5. Build matrix
@@ -163,26 +180,42 @@ def generate_risk_list(db_engine, project_storage, model_id, as_of_date):
         experiment_hash=None,
         replace=True,
     )
-
-    matrix_metadata = {
-        'as_of_times': [as_of_date],
-        'matrix_id': str(as_of_date) + '_prediction',
-        'state': DEFAULT_ACTIVE_STATE,
-        'test_duration': '1y',
-        'matrix_type': 'production',
-        'label_timespan': None,
-        'label_name': experiment_config['label_config']['name'],
-        'indices': ["entity_id", "as_of_date"],
-        'feature_start_time': experiment_config['temporal_config']['feature_start_time'],
-    }
+       
+    feature_start_time = experiment_config['temporal_config']['feature_start_time']
+    label_name = experiment_config['label_config']['name']
+    label_type = 'binary'
+    cohort_name = experiment_config['cohort_config']['name']
+    user_metadata = experiment_config['user_metadata']
+    
+    # Use timechop to get the time definition for production
+    temporal_config = experiment_config["temporal_config"]
+    timechopper = Timechop(**temporal_config)
+    prod_definitions = timechopper.define_test_matrices(
+            dt_from_str(as_of_date), 
+            temporal_config['test_durations'][0],
+            temporal_config['test_label_timespans'][0]
+    )
+    
+    matrix_metadata = Planner.make_metadata(
+            prod_definitions[-1],
+            reconstructed_feature_dict,
+            label_name,
+            label_type,
+            cohort_name,
+            'production',
+            feature_start_time,
+            user_metadata,
+    )
+    
+    matrix_metadata['matrix_id'] = str(as_of_date) +  f'_model_id_{model_id}' + '_risklist'
 
     matrix_uuid = filename_friendly_hash(matrix_metadata)
-
+    
     matrix_builder.build_matrix(
         as_of_times=[as_of_date],
-        label_name=experiment_config['label_config']['name'],
-        label_type=None,
-        feature_dictionary=reconstructed_feature_dictionary,
+        label_name=label_name,
+        label_type=label_type,
+        feature_dictionary=reconstructed_feature_dict,
         matrix_metadata=matrix_metadata,
         matrix_uuid=matrix_uuid,
         matrix_type="production",

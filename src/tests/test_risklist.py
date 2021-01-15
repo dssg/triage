@@ -8,7 +8,7 @@ def test_risklist_should_write_predictions(finished_experiment):
     # generate records in listpredictions
     # the # of records should equal the size of the cohort for that date
     model_id = 1
-    as_of_date = '2013-01-01'
+    as_of_date = '2014-01-01'
     generate_risk_list(
             db_engine=finished_experiment.db_engine,
             project_storage=finished_experiment.project_storage,
@@ -22,7 +22,7 @@ def test_risklist_should_write_predictions(finished_experiment):
 
 def test_risklist_should_be_same_shape_as_cohort(finished_experiment):
     model_id = 1
-    as_of_date = '2013-01-01'
+    as_of_date = '2014-01-01'
     generate_risk_list(
             db_engine=finished_experiment.db_engine,
             project_storage=finished_experiment.project_storage,
@@ -44,7 +44,7 @@ def test_risklist_should_be_same_shape_as_cohort(finished_experiment):
 
 def test_risklist_matrix_record_is_populated(finished_experiment):
     model_id = 1
-    as_of_date = '2013-01-01'
+    as_of_date = '2014-01-01'
     generate_risk_list(
             db_engine=finished_experiment.db_engine,
             project_storage=finished_experiment.project_storage,
