@@ -14,7 +14,6 @@ def random_model_group(df, train_end_time, n=1):
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -69,7 +68,6 @@ def best_current_value(df, train_end_time, metric, parameter, n=1):
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns:
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -110,7 +108,6 @@ def best_average_value(df, train_end_time, metric, parameter, n=1):
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -133,7 +130,6 @@ def lowest_metric_variance(df, train_end_time, metric, parameter, n=1):
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -188,7 +184,6 @@ def most_frequent_best_dist(
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -243,7 +238,6 @@ def best_average_two_metrics(
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -309,7 +303,6 @@ def best_avg_var_penalized(df, train_end_time, metric, parameter, stdev_penalty,
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,
@@ -384,7 +377,6 @@ def best_avg_recency_weight(
         train_end_time (Timestamp): current train end time
         df (pandas.DataFrame): dataframe containing the columns
                 model_group_id,
-                model_id,
                 train_end_time,
                 metric,
                 parameter,

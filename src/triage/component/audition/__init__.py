@@ -23,6 +23,7 @@ class Auditioner:
         models_table=None,
         distance_table=None,
         directory=None,
+        agg_type='worst',
     ):
         """Filter model groups using a two-step process:
 
@@ -79,6 +80,9 @@ class Auditioner:
             distance_table (string, optional): The name of the 'best distance' table to use.
                 Will default to 'best_distance', but this can be sent if you want to avoid
                 clobbering the results from a prior analysis.
+            agg_type (string) Method for aggregating metric values (for instance, if there
+                are multiple models at a given train_end_time with different random seeds).
+                Can be: 'mean', 'best', or 'worst' (the default)
         """
         self.metric_filters = initial_metric_filters
         # sort the train end times so we can reliably pick off the last time later
@@ -90,6 +94,7 @@ class Auditioner:
             db_engine=db_engine,
             models_table=models_table,
             distance_table=distance_table,
+            agg_type=agg_type
         )
         self.best_distance_plotter = BestDistancePlotter(
             self.distance_from_best_table, self.directory
@@ -407,6 +412,7 @@ class AuditionRunner:
             models_table=self.config["filter"]["models_table"],
             distance_table=self.config["filter"]["distance_table"],
             directory=self.dir,
+            agg_type=self.config["filter"].get("agg_type") or 'worst',
         )
 
         aud.plot_model_groups()

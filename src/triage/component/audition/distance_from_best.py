@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 
 from .utils import str_in_sql
-from .metric_directionality import sql_rank_order
+from .metric_directionality import sql_rank_order, value_agg_funcs
 from .plotting import plot_cats, plot_bounds
 
 
 class DistanceFromBestTable:
-    def __init__(self, db_engine, models_table, distance_table):
+    def __init__(self, db_engine, models_table, distance_table, agg_type):
         """A database table that stores the distance from models and the
         best model for that train end time for a variety of chosen metrics
 
@@ -20,10 +20,13 @@ class DistanceFromBestTable:
             models_table (string) The name of a models table in the database, pre-populated
             distance_table (string) The desired name of the distance table to be
                 produced by this class
+            agg_type (string) Method for aggregating metric values (for instance, if there
+                are multiple models at a given train_end_time with different random seeds)
         """
         self.db_engine = db_engine
         self.models_table = models_table
         self.distance_table = distance_table
+        self.agg_type = agg_type
 
     def _delete(self):
         """Delete the distance-from-best table if it exists"""
@@ -34,7 +37,6 @@ class DistanceFromBestTable:
         self.db_engine.execute(
             """create table {} (
             model_group_id int,
-            model_id int,
             train_end_time timestamp,
             metric text,
             parameter text,
@@ -74,25 +76,32 @@ class DistanceFromBestTable:
                     FROM test_results.evaluations
                     WHERE metric='{metric}' AND parameter='{parameter}' AND subset_hash=''
                 ),
-                model_ranks AS (
+                metric_values AS (
                     SELECT
                         m.model_group_id,
-                        m.model_id,
                         m.train_end_time,
-                        ev.stochastic_value as value,
-                        row_number() OVER (
-                            PARTITION BY m.train_end_time
-                            ORDER BY ev.stochastic_value {metric_value_order}, RANDOM()
-                        ) AS rank
+                        {metric_agg_fcn}(ev.stochastic_value) as value
                   FROM first_evals ev
                   JOIN triage_metadata.{models_table} m USING(model_id)
                   JOIN triage_metadata.model_groups mg USING(model_group_id)
                   WHERE m.model_group_id IN ({model_group_ids})
                         AND train_end_time in ({train_end_times})
                         AND ev.eval_rn = 1
+                  GROUP BY model_group_id, train_end_time
+                ),
+                model_ranks AS (
+                    SELECT
+                        model_group_id,
+                        train_end_time,
+                        value,
+                        row_number() OVER (
+                            PARTITION BY train_end_time
+                            ORDER BY value {metric_value_order}, RANDOM()
+                        ) AS rank
+                  FROM metric_values
                 ),
                 model_tols AS (
-                  SELECT train_end_time, model_group_id, model_id,
+                  SELECT train_end_time, model_group_id,
                          rank,
                          value,
                          first_value(value) over (
@@ -104,7 +113,6 @@ class DistanceFromBestTable:
                 current_best_vals as (
                     SELECT
                         model_group_id,
-                        model_id,
                         train_end_time,
                         '{metric}',
                         '{parameter}',
@@ -135,6 +143,7 @@ class DistanceFromBestTable:
                     parameter=metric["parameter"],
                     metric_value_order=sql_rank_order(metric["metric"]),
                     new_table=self.distance_table,
+                    metric_agg_fcn=value_agg_funcs(metric["metric"])[self.agg_type],
                 )
             )
 

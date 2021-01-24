@@ -9,7 +9,7 @@ Choosing the best classifier models
 ## Overview
 Audition is a tool for picking the best trained classifiers from a predictive analytics experiment. Often, production-scale experiments will come up with thousands of trained models, and sifting through all of those results can be time-consuming even after calculating the usual basic metrics like precision and recall. Which metrics matter most? Should you prioritize the best metric value over time or treat recent data as most important? Is low metric variance important? The answers to questions like these may not be obvious up front. Audition introduces a structured, semi-automated way of filtering models based on what you consider important, with an interface that is easy to interact with from a Jupyter notebook (with plots), but is driven by configuration that can easily be scripted.
 
-**Find documentation for Audition [here](https://dssg.github.io/triage/audition/audition/)**
+**Find documentation for Audition [here](https://dssg.github.io/triage/audition/audition_intro/)**
 
 ### Use Case
 We’ve just built hundreds of models over time - each model group trains on a given train set and scores the test set and calculates several metrics.
@@ -21,6 +21,7 @@ We’ve just built hundreds of models over time - each model group trains on a g
 	* The train end times for each model group should be the same as the list or subset of the list, otherwise those models with unmatched train end times would be pruned out in the first round.
 * Model selection rules
 * Metric(s) of interest
+* (Optional) Method of aggregating metrics when multiple models exist for a given `model_group_id` and `train_end_time` combination (e.g., from different random seeds) -- `mean`, `best`, or `worst` (the default)
 
 **Process**:
 

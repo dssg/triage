@@ -43,6 +43,7 @@ rules:
     - `threshold_value` (float): Model groups that perform worse than this value in at least one train/test period will be pruned.
     - `distance_table` (string): Name of the table that will store model distance results (created by Triage if not found). 
     - `models_table` (string): Name of the table that stores trained model groups to be evaluated.
+    - `agg_type` (string): optional for aggregating metric values across multiple models for a given `model_group_id` and `train_end_time` combination (e.g., from different random seeds) -- `mean`, `best`, or `worst` (the default)
   - `rules` (list): A list of selection rule groups
     - (dict):
         - `shared_parameters` (list): A list of parameters shared by the selection rules in a group
