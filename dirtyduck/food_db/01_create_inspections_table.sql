@@ -20,5 +20,3 @@ create table if not exists raw.inspections (
        longitude decimal,
        location text
 );
-
-copy raw.inspections from program 'bzcat /tmp/inspections_2014_2017.csv.bz2' HEADER CSV QUOTE '"';

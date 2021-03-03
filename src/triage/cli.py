@@ -20,7 +20,6 @@ from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
-from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -379,24 +378,6 @@ class Audition(Command):
             self.runner.run()
         else:
             self.runner.run()
-
-
-@Triage.register
-class Crosstabs(Command):
-    """Run crosstabs for postmodeling"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            help="config file for crosstabs"
-        )
-
-    def __call__(self, args):
-        db_engine = create_engine(self.root.db_url)
-        config_store = Store.factory(args.config)
-        with config_store.open() as fd:
-            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
-        run_crosstabs(db_engine, config)
 
 
 @Triage.register

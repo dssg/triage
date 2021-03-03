@@ -29,6 +29,8 @@ from .utils import (
     save_db_objects,
 )
 
+import mlflow 
+
 NO_FEATURE_IMPORTANCE = (
     "Algorithm does not support a standard way" + " to calculate feature importance."
 )
@@ -237,6 +239,15 @@ class ModelTrainer:
                 model_id = model.model_id
                 logger.notice(f"Model {model_id}, not found from previous runs. Adding the new model")
             session.close()
+            with mlflow.start_run(run_name=model_id) as run:
+                params = {
+                    'model_hash': model_hash,
+                    'model_type': class_path,
+                    'hyperparameters': parameters,
+                    'model_group_id': model_group_id,
+                    **misc_db_parameters
+                }
+                mlflow.log_params(params)
 
         logger.spam(f"Saving feature importances for model_id {model_id}")
         self._save_feature_importances(
