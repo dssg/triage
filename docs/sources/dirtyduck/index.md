@@ -19,9 +19,9 @@ multi-entity, time-series structure.
     triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
 
 
-## What is in the name?
+## What's in a name?
 
-There is a famous (and delicious) chinese duck restaurant in Chicago,
+There is a famous (and delicious) peking duck restaurant in Chicago,
 we love that place, and as every restaurant in Chicago area, it gets
 inspected, so the naming is an *homage* to them.
 
