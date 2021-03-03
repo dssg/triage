@@ -31,6 +31,8 @@ $ . triage-env/bin/activate
 
 ### 2. Make sure your have access to a Postgres database
 
+You'll need to have the servername, databasename, username, and password and put it in a credentials file in Step 5 below.
+
 ### 3. Structure your data
 
 The simplest way to start is to structure your data as a series of
