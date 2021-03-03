@@ -36,7 +36,7 @@ events connected to your entity of interest (people, organization,
 business, etc.) that take place at a certain time. Each row of the
 data will be an **event**. Each event will have some `event_id`, and an
 `entity_id` to link it to the entity it happened to, a date, as well as
-additional attributes about the event (type for example) and the
+additional attributes about the event (`type`, for example) and the
 entity (`age`, `gender`, `race`, etc.). A sample row might look like:
 
 ```
@@ -50,15 +50,15 @@ project.
 
 ### 3. Set up Triage configuration files
 
-The configuration file sets up the modeling process to mirror the
-operational scenario the models will be used in. This involved
+The Triage configuration file sets up the modeling process to mirror the
+operational scenario the models will be used in. This involves
 defining the cohort to train/predict on, the outcome we're predicting,
 how far out we're predicting, how often will the model be updated, how
 often will the predicted list be used for interventions, what are the
 resources available to intervene to define the evaluation metric,
 etc.
 
-A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simplier configuration file below:
+A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simpler configuration file below:
 
 ```yaml
 config_version: 'v7'
