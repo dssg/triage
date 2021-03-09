@@ -159,7 +159,7 @@ As above, you should check the `triage`-created tables in your database to ensur
 
 #### A first look at model selection with `audition`
 
-Now that we have models trained across several time periods, we can use `audition` to take a look at each `model_group`'s performance over time. While the `quickstart` models are quite simple and there isn't much meaningful model selection to do at this point, we can start to explore how model selection works in `triage`. A good place to begin is with the [model selection primer](dirtyduck/audition/).
+Now that we have models trained across several time periods, we can use `audition` to take a look at each `model_group`'s performance over time. While the `quickstart` models are quite simple and there isn't much meaningful model selection to do at this point, we can start to explore how model selection works in `triage`. A good place to begin is with the [model selection primer](https://dssg.github.io/triage/audition/audition_intro/).
 
 We generally recommend using `audition` interactively with as a `jupyter notebook`. If you don't already have `jupyter` installed, you can learn more about it [here](https://jupyter.org/index.html). Once you have a notebook server running, you can modify the [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb) to take a look at the data from your current experiment. The [`audition README`](https://github.com/dssg/triage/tree/master/src/triage/component/audition) is also a good resource for options available with the tool.
 
