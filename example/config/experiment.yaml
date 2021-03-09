@@ -317,7 +317,7 @@ bias_audit_config:
         'sex': 'm'
         'age': '35-49'
     thresholds:
-        percentiles: []
+        percentiles: [1]
         top_n: [100]
 
 
