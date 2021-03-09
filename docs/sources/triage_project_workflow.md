@@ -11,7 +11,7 @@ Triage needs data in a `Postgresql` database, with at least one table that conta
 additional attributes of interest about the event and/or entity (demographics for example).
 
 We will need database credentials either in a
-[config file](https://github.com/dssg/triage/blob/master/example/database.yaml)
+[config file](https://github.com/dssg/triage/blob/master/example/config/database.yaml)
 or as an environment variable called `DATABASE_URL`  that contains the
 name  of the database, server, username, and password to use to
 connect to it.
