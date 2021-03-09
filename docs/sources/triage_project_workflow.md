@@ -174,7 +174,7 @@ We've labeled this section `Iteration 3`, but in practice it's probably more lik
 
 Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible.
 
-The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
+The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](http://dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
 
 !!! info "Features in `triage` are temporal aggregations"
 
