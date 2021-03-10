@@ -97,7 +97,7 @@ def fill_feature_group_definition(config):
     if not feature_group_definition:
         feature_aggregations = config['feature_aggregations']
 
-        feature_group_definition['prefix'] = list({agg['prefix'] for agg in feature_aggregations})
+        feature_group_definition['prefix'] = sorted(list({agg['prefix'] for agg in feature_aggregations}))
 
     return feature_group_definition
 
