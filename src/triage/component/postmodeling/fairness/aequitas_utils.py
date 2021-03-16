@@ -1,7 +1,7 @@
 import pandas as pd
 
-def get_aequitas_results(engine, schema="test_results", table="aequtias", model_id=None):
-    ''' This function returns the current contents of the aequtias table.
+def get_aequitas_results(engine, schema="test_results", table="aequitas", model_id=None):
+    ''' This function returns the current contents of the aequitas table.
 
         Args:
             - engine: SQLAlchemy engine conected to database
