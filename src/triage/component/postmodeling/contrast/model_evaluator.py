@@ -1,15 +1,14 @@
 """
 Model Evaluator
 
-This module will use the model_id as a modeling unit of analysis to answer
-different type of questions related with the quality and behavior of my
-predictions. The ModelEvaluator (and by extension de ModelGroupEvaluator) are
+This module will use model_id as a unit of analysis to understand the model
+and it's predictions. The ModelEvaluator (and by extension de ModelGroupEvaluator) are
 part of the triage framework, hence they depend on the results schema
 structure, and the rest of the triage elements.
 
 ModelEvaluator will use a tuple: (model_group_id, model_id) to run diffent
 functions that will help the triage user to explore the final models, ideally
-selected by the Audition module. To initiate this classes, the user need to
+selected by the Audition module. To instantiate this classes, the user needs to
 have a tuple and a SQLAlchemy engine object to call the necesary data from the
 SQL database.
 """
