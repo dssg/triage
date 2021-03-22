@@ -1,0 +1,16 @@
+# The relevant experiment hash
+experiment_hash: 'hash_of_the_experiment'
+
+# Path where the models and matrices are stored
+project_path: 'path/to/models/and/matrices'
+
+# Model group ids we need predictions for
+# List of integers
+model_group_ids:
+  - 1
+  - 2
+
+# This is optional. 
+# If not specificied, all the models in the group will be scored
+# Should be a list of two items
+range_train_end_times: ['range_st_date', 'range_end_date']
