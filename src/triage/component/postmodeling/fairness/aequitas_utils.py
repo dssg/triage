@@ -15,11 +15,11 @@ def get_aequitas_results(engine, parameter, schema="test_results", table="aequit
         Returns: A DataFrame, corresponding to schema.table
     '''
 
-    query = f"SELECT * FROM {schema}.{table} WHERE parameter = '{parameter}'"
+    query = f"""SELECT * FROM {schema}.{table} 
+                 WHERE parameter = '{parameter}' 
+                   AND subset_hash = '{subset_hash}'
+                   AND tie_breaker = '{tie_breaker}'
+                   """
     if model_id:
         query += f" AND model_id = {model_id}"
-    if subset_hash:
-        query += f" AND subset_hash = '{subset_hash}'"
-    if tie_breaker:
-        query += f" AND tie_breaker = '{tie_breaker}'"
     return pd.read_sql(query, con=engine)
