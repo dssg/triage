@@ -9,12 +9,6 @@ from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.storage import ProjectStorage
 from triage import create_engine
 
-# This script accepts a list of model group ids and an experiment hash, and generates & saves test predictions 
-# for the relevant models. 
-# This util is primarily targetted to be used post-audition for the following use-case:
-# 1. A large model grid was used in the experiment with (save_predictions=False)
-# 2. Audition was used to narrowdown model_groups of interest & predictions are required for postmodeling
-
 
 def _fetch_relevant_model_matrix_info(db_engine, experiment_hash, model_groups):
     """ For the given experiment and model groups, fetch the model_ids, and match them with their train/test matrix pairs 
