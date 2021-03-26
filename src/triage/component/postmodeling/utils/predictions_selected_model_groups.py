@@ -69,7 +69,12 @@ def generate_predictions(db_engine, experiment_hash, model_groups, project_path,
 
     if len(model_matrix_info)==0:
         raise ValueError('No models were found for the given experiment and model group(s)')
-
+    
+    # All the model groups we want to save predictions for, should be in the DB 
+    not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
+    if len(not_fetched_model_grps) > 0:
+        raise ValueError('No models were found for the model groups {}. All specified model groups should be a part of the given experiment'.format(not_fetched_model_grps))
+    
     logging.info('Found {} model ids'.format(len(model_matrix_info)))
 
     # If we are only generating predictions for a specific time range
