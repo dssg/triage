@@ -13,4 +13,5 @@ model_group_ids:
 # This is optional. 
 # If not specificied, all the models in the group will be scored
 # Should be a list of two items
+# The end points are inclusive
 range_train_end_times: ['range_st_date', 'range_end_date']
