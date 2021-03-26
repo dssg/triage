@@ -10,7 +10,7 @@ This utility accepts a list of model group ids and an experiment hash, and gener
 
 **Usage**
 
-`predictions_selected_model_groups.py -c <config_file> -d <database_credentials_file>`
+`python predictions_selected_model_groups.py -c <config_file> -d <database_credentials_file>`
 
 The `<config_file>` is a required argument. If the `<database_credentials_file>` is not provided, the working directory should contain a `database.yaml`.
 
