@@ -29,4 +29,4 @@ seaborn==0.10.1
 ohio==0.5.0
 
 
-aequitas==0.41.0
+aequitas==0.42.0
