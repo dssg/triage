@@ -7,7 +7,8 @@ import yaml
 from datetime import datetime
 
 from descriptors import cachedproperty
-from argcmdr import RootCommand, Command, main, cmdmethod
+from argcmdr import RootCommand, Command, main, cmdmethod, local
+from getpass import getpass
 from sqlalchemy.engine.url import URL
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
@@ -20,7 +21,6 @@ from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
-from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -382,24 +382,6 @@ class Audition(Command):
 
 
 @Triage.register
-class Crosstabs(Command):
-    """Run crosstabs for postmodeling"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            help="config file for crosstabs"
-        )
-
-    def __call__(self, args):
-        db_engine = create_engine(self.root.db_url)
-        config_store = Store.factory(args.config)
-        with config_store.open() as fd:
-            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
-        run_crosstabs(db_engine, config)
-
-
-@Triage.register
 class Db(Command):
     """Manage experiment database"""
 
@@ -434,6 +416,45 @@ class Db(Command):
     def history(self, args):
         """Show triage results database history"""
         db_history(dburl=self.root.db_url)
+
+
+    @cmdmethod('password', action='store_true', help='hidden password prompt')
+    @local
+    def up(self, args):
+        (retcode, stdout, stderr) = self.local['docker']['image', 'inspect', 'triage_db:latest'].run(retcode=None)
+        if retcode == 0:
+            logger.info('Already built image')
+        else:
+            logger.info(self.local['docker']['build', './dirtyduck/food_db/', '-t', 'triage_db']())
+
+
+        (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
+        if retcode != 0:
+            logger.info('Container does not exist')
+            if os.path.exists('database.yaml'):
+                logger.error("database.yaml already exists, which indicates you are "
+                              "already using Triage with a database and likely do not "
+                              "need to run this command. If you would like to provision "
+                              "a new database to use with Triage, remove database.yaml") 
+                return
+            if args.password:
+                password = getpass(prompt='Enter a password for your new database user: ')
+                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'triage_db']())
+                with open('database.yaml', 'w') as out_fd:
+                    config = {
+                        'host': '0.0.0.0',
+                        'user': 'triage_user',
+                        'pass': password,
+                        'port': 5432,
+                        'db': 'triage'
+                    }
+                    out_fd.write(yaml.dump(config))
+                logger.info('New database created with credentials saved to database.yaml. It will take a minute or so to be ready. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections. At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
+        elif 'running' in stdout:
+            logger.info('Already running, will not start')
+        else:
+            logger.info('Container exists, but is not running. Starting')
+            logger.info(self.local['docker']['start', 'triage_db'])
 
 
 def execute():
