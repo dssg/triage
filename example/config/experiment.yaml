@@ -437,7 +437,7 @@ individual_importance:
 # to the preset grid. Generally, this is most useful for including additional commonsense
 # baselines that are specific to your project.
 #
-# model_grid_presets: ['small']
+# model_grid_preset: 'small'
 
 
 # GRID CONFIGURATION
@@ -451,7 +451,7 @@ individual_importance:
 # each value is a list of potential values. All possible combinations of
 # classifiers and hyperparameters are trained.
 #
-# NOTE: Triage now include a new parameter named 'model_grid_presets' (see above)
+# NOTE: Triage now include a new parameter named 'model_grid_preset' (see above)
 # If you include both, triage will combine the unique model specifications across
 # the preset and user-specified grids.
 #
