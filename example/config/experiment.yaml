@@ -432,7 +432,11 @@ individual_importance:
 # named: quickstart, small, medium, large
 # See the documentation for recommended uses cases for those.
 #
-# If you set this configuration section you SHOULD NOT include the grid_config section
+# If you set this configuration section you DO NOT NEED TO include the grid_config section.
+# However, you MAY optionally include both sections if you want to add additional model types
+# to the preset grid. Generally, this is most useful for including additional commonsense
+# baselines that are specific to your project.
+#
 # model_grid_presets: ['small']
 
 
@@ -448,7 +452,8 @@ individual_importance:
 # classifiers and hyperparameters are trained.
 #
 # NOTE: Triage now include a new parameter named 'model_grid_presets' (see above)
-# you can't have both at the same time. The experiment will fail if you forget this.
+# If you include both, triage will combine the unique model specifications across
+# the preset and user-specified grids.
 #
 grid_config:
     'sklearn.ensemble.ExtraTreesClassifier':
