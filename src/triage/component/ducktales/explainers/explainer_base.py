@@ -39,7 +39,7 @@ class ExplainerBase:
         raise NotImplementedError
 
 
-    def get_individual_feature_importance_matrix(self, dataset, pred_class=1, n_jobs=1): 
+    def get_individual_feature_importance_scores(self, dataset, pred_class=1, n_jobs=1): 
         """ Implements the relevant explain_dataset function from the subclass and parallelizes the explanation process
         
             Args:
