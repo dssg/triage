@@ -1,0 +1,30 @@
+experiment_hash: 0f0abbf0d62a61706253f2ec9769273c
+
+model_group_ids:
+  - 1
+  - 2
+
+project_path: 'path/to/models/matrices'
+
+explainers:
+  'triage.component.ducktales.explainers.lime.Lime'
+  # 'triage.component.ducktales.explainers.shap.Shap'
+
+# We explain instances only specified here
+# The user acn specify to explain one or more of the following options
+# Top_k_pct, top_k_abs, bottom_k_pct, bottom_k_abs, score_range (both limits inclusive)
+# Note -- make sure that the same instance is not explained twice by the same method
+thresholds:
+  top_pct: # percentage of records to be explained from the top
+  top_n: # absolute number of records to be explained from the top
+  bottom_pct: # percentage of records to be explained from the bottom
+  bottom_n: # absolute number of records to be explained from the bottom
+  score_range: # The range of scores we are interested in. This is defined as a list. Each item has to be a list of two items (lower and upper bounds of the range)
+    - [0.1, 0.3]
+    - [0.3, 0.5]
+
+
+# OPTIONAL -- Specify the train end time ranges we are interested in
+range_train_end_times: ['range_start', 'range_end']
+
+
