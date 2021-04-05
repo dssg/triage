@@ -243,7 +243,7 @@ grid_config:
         min_samples_leaf: [0.01,0.05,0.10]
 ```
 
-Here, each top-level key is the modeling package (this needs to be a classification algorithm with a `scikit-learn`-style interface, but need not come from `scikit-learn` specifically), and the keys listed under it are hyperparameters of the algorithm with a list of values to test. `triage` will run the grid of all possible combinations of these hyperparameter values. Note that you can't specify both a `model_grid_preset` and `grid_config` at the same time.
+Here, each top-level key is the modeling package (this needs to be a classification algorithm with a `scikit-learn`-style interface, but need not come from `scikit-learn` specifically), and the keys listed under it are hyperparameters of the algorithm with a list of values to test. `triage` will run the grid of all possible combinations of these hyperparameter values. Note that if you specify both a `model_grid_preset` and `grid_config` at the same time, triage will combine the unique model specifications across the two sets (generally, this is most useful when adding project-specific commonsense baselines to the preset grid).
 
 Check out the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details on specifying your grid.
 
