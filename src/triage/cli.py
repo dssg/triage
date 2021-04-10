@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import os
 import yaml
+import pathlib
 
 
 from datetime import datetime
@@ -14,6 +15,7 @@ from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
+from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
@@ -382,6 +384,24 @@ class Audition(Command):
 
 
 @Triage.register
+class Crosstabs(Command):
+    """Run crosstabs for postmodeling"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "config",
+            help="config file for crosstabs"
+        )
+
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+        config_store = Store.factory(args.config)
+        with config_store.open() as fd:
+            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
+        run_crosstabs(db_engine, config)
+
+
+@Triage.register
 class Db(Command):
     """Manage experiment database"""
 
@@ -425,7 +445,9 @@ class Db(Command):
         if retcode == 0:
             logger.info('Already built image')
         else:
-            logger.info(self.local['docker']['build', './dirtyduck/food_db/', '-t', 'triage_db']())
+            path = pathlib.Path(__file__).parent.absolute()
+
+            logger.info(self.local['docker']['build', path + '/dirtyduck/food_db/', '-t', 'triage_db']())
 
 
         (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
