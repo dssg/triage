@@ -4,7 +4,7 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
-recursive-include dirtyduck/food_db/ *
+recursive-include dirtyduck *
 recursive-include requirement *.txt
 recursive-include src alembic.ini
 recursive-include src *.sql
