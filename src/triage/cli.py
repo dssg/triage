@@ -445,9 +445,9 @@ class Db(Command):
         if retcode == 0:
             logger.info('Already built image')
         else:
-            path = pathlib.Path(__file__).parent.absolute()
+            path = pathlib.Path(__file__).parent.absolute() / 'dirtyduck' / 'food_db'
 
-            logger.info(self.local['docker']['build', path + '/dirtyduck/food_db/', '-t', 'triage_db']())
+            logger.info(self.local['docker']['build', path, '-t', 'triage_db']())
 
 
         (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
