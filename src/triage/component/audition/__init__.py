@@ -112,7 +112,7 @@ class Auditioner:
                 db_engine=db_engine,
             )
         else:
-            self.baseline_model_groups = []
+            self.baseline_model_groups = set([])
 
         self.first_pass_model_groups = model_groups_filter(
             train_end_times=train_end_times,
@@ -142,7 +142,7 @@ class Auditioner:
         # note we populate the distance from best table using both the
         # baseline and candidate model groups
         self.distance_from_best_table.create_and_populate(
-            self.first_pass_model_groups + self.baseline_model_groups, 
+            self.first_pass_model_groups | self.baseline_model_groups, 
             self.train_end_times, 
             self.metrics
         )
@@ -241,13 +241,13 @@ class Auditioner:
             return
         self.best_distance_plotter.plot_all_best_dist(
             self.metrics, 
-            thresholded_model_group_ids + self.baseline_model_groups, 
+            thresholded_model_group_ids | self.baseline_model_groups, 
             self.train_end_times
         )
         logger.debug("Showing model group performance plots for all metrics")
         self.model_group_performance_plotter.plot_all(
             metric_filters=self.metric_filters,
-            model_group_ids=thresholded_model_group_ids + self.baseline_model_groups,
+            model_group_ids=thresholded_model_group_ids | self.baseline_model_groups,
             train_end_times=self.train_end_times,
         )
 

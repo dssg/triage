@@ -349,6 +349,8 @@ class BestDistancePlotter:
                 parameter=metric_filter["parameter"],
                 df_best_dist=df,
                 directory=self.directory,
+                colordict=self.colordict,
+                styledict=self.styledict,
             )
 
 
@@ -401,7 +403,5 @@ def plot_best_dist(metric, parameter, df_best_dist, directory=None, **plt_format
         y_label="fraction of models",
         x_ticks=np.arange(0, 1.1, 0.1),
         path_to_save=path_to_save,
-        colordict=self.colordict,
-        styledict=self.styledict,
         **plt_format_args,
     )
