@@ -15,7 +15,7 @@ class PreAudition:
         self.baseline_model_groups = None
 
         if baseline_model_types:
-            baseline_types_list = ', '.join(["'%s'" for mt in baseline_model_types])
+            baseline_types_list = ', '.join(["'%s'" % mt for mt in baseline_model_types])
             self.baseline_where = 'AND model_type IN (%s)' % baseline_types_list
             self.nonbaseline_where = 'AND model_type NOT IN (%s)' % baseline_types_list
         else:
