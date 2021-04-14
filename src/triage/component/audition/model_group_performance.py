@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from .plotting import plot_cats
+from .plotting import plot_cats, category_colordict, category_styledict
 from .utils import str_in_sql
 
 
@@ -19,6 +19,10 @@ class ModelGroupPerformancePlotter:
         """
         self.distance_from_best_table = distance_from_best_table
         self.directory = directory
+        self.colordict = None
+        self.styledict = None
+        self.highlight_grp = "best case"
+        self.cmap_name = "tab10"
 
     def plot_all(self, metric_filters, model_group_ids, train_end_times):
         """For each metric, plot the value of that metric over time
@@ -44,6 +48,14 @@ class ModelGroupPerformancePlotter:
                 model_group_ids=model_group_ids,
                 train_end_times=train_end_times,
             )
+
+            # set stable colors/styles by model type
+            categories = np.unique(df['model_type'])
+            if not self.colordict:
+                self.colordict = category_colordict(self.cmap_name, categories, self.highlight_grp)
+            if not self.styledict:
+                self.styledict = category_styledict(self.colordict, self.highlight_grp)
+
             self.plot(
                 metric=metric_filter["metric"],
                 parameter=metric_filter["parameter"],
@@ -153,11 +165,13 @@ class ModelGroupPerformancePlotter:
             x_col="train_end_time",
             y_col="raw_value",
             cat_col=cat_col,
-            highlight_grp="best case",
+            highlight_grp=self.highlight_grp,
             title=plt_title,
             x_label="train end time",
             y_label="value of {}".format(metric),
             x_ticks=train_end_times,
             path_to_save=path_to_save,
+            colordict=self.colordict,
+            styledict=self.styledict,
             **plt_format_args,
         )

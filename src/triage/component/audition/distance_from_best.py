@@ -7,7 +7,7 @@ import pandas as pd
 
 from .utils import str_in_sql
 from .metric_directionality import sql_rank_order, value_agg_funcs
-from .plotting import plot_cats, plot_bounds
+from .plotting import plot_cats, plot_bounds, category_colordict, category_styledict
 
 
 class DistanceFromBestTable:
@@ -230,6 +230,10 @@ class BestDistancePlotter:
         self.distance_from_best_table = distance_from_best_table
         self.directory = directory
 
+        self.colordict = None
+        self.styledict = None
+        self.cmap_name = "tab10"
+
     def plot_bounds(self, metric, parameter):
         observed_min, observed_max = self.distance_from_best_table.observed_bounds[
             (metric, parameter)
@@ -333,6 +337,13 @@ class BestDistancePlotter:
                 train_end_times=train_end_times,
             )
 
+            # set stable colors/styles by model type
+            categories = np.unique(df['model_type'])
+            if not self.colordict:
+                self.colordict = category_colordict(self.cmap_name, categories, None)
+            if not self.styledict:
+                self.styledict = category_styledict(self.colordict, None)
+
             plot_best_dist(
                 metric=metric_filter["metric"],
                 parameter=metric_filter["parameter"],
@@ -390,5 +401,7 @@ def plot_best_dist(metric, parameter, df_best_dist, directory=None, **plt_format
         y_label="fraction of models",
         x_ticks=np.arange(0, 1.1, 0.1),
         path_to_save=path_to_save,
+        colordict=self.colordict,
+        styledict=self.styledict,
         **plt_format_args,
     )
