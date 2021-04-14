@@ -78,9 +78,12 @@ def test_PreAudition():
         pre_aud = PreAudition(db_engine)
 
         # Expect the number of model groups with label_1
-        assert len(pre_aud.get_model_groups_from_label("label_1")) == sum(
+        assert len(pre_aud.get_model_groups_from_label("label_1")['model_groups']) == sum(
             [x["label_definition"] == "label_1" for x in model_configs]
         )
+
+        # Expect no baseline model groups
+        assert len(pre_aud.get_model_groups_from_label("label_1")['baseline_model_groups']) == 0
 
         # Expect the number of model groups with certain experiment_hash
         experiment_hash = list(
@@ -92,7 +95,7 @@ def test_PreAudition():
                 con=db_engine,
             )["experiment_hash"]
         )[0]
-        assert len(pre_aud.get_model_groups_from_experiment(experiment_hash)) == 1
+        assert len(pre_aud.get_model_groups_from_experiment(experiment_hash)['model_groups']) == 1
 
         # Expect the number of model groups for customs SQL
         query = """

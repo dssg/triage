@@ -19,8 +19,8 @@ class PreAudition:
             self.baseline_where = 'AND model_type IN (%s)' % baseline_types_list
             self.nonbaseline_where = 'AND model_type NOT IN (%s)' % baseline_types_list
         else:
-            self.baseline_where = ''
-            self.nonbaseline_where = 'AND FALSE'
+            self.baseline_where = 'AND FALSE'
+            self.nonbaseline_where = ''
 
 
     def get_model_groups_from_label(self, label_def):
