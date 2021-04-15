@@ -391,7 +391,7 @@ class Retrainer:
         today = dt_from_str(today)
         as_of_date = datetime.strftime(today - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
  
-        new_train_definition = {
+        retrain_definition = {
             'first_as_of_time': dt_from_str(as_of_date),
             'last_as_of_time': dt_from_str(as_of_date),
             'matrix_info_end_time': today,
@@ -449,7 +449,7 @@ class Retrainer:
             replace=True,
         )
         new_matrix_metadata = Planner.make_metadata(
-            matrix_definition=new_train_definition,
+            matrix_definition=retrain_definition,
             feature_dictionary=feature_group_dict,
             label_name=self.label_name,
             label_type='binary',
