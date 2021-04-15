@@ -20,7 +20,7 @@ from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
-from triage.risklist import generate_risk_list
+from triage.predictlist import predict_forward_with_existed_model, Retrainer
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.util.db import create_engine
 
@@ -399,9 +399,41 @@ class Crosstabs(Command):
             config = CrosstabsConfigLoader(config=yaml.full_load(fd))
         run_crosstabs(db_engine, config)
 
+@Triage.register
+class RetrainPredict(Command):
+    """Given a model_group_id, retrain and predict forwoard use all data up to current date"""
+    
+    def __init__(self, parser):
+        parser.add_argument(
+            "model_group_id",
+            type=natural_number,
+            help="The model_group_id to use for retrain and predict"
+        )
+        
+        parser.add_argument(
+            "today",
+            type=valid_date,
+            help="The date as of which to run features. Format YYYY-MM-DD",
+        )
+        parser.add_argument(
+            "--project-path",
+            default=os.getcwd(),
+            help="path to store matrices and trained models",
+        )
+        
+    def __call__(self, args):
+        db_engine = create_engine(self.root.db_url)
+        retrainer = Retrainer(
+            db_engine,
+            args.project_path,
+            args.model_group_id,
+        )
+        retrainer.retrain(args.today)
+        retrainer.predict(args.today)
+
 
 @Triage.register
-class Risklist(Command):
+class Predictlist(Command):
     """Generate a list of risk scores from an already-trained model and new data"""
 
     def __init__(self, parser):
@@ -423,10 +455,9 @@ class Risklist(Command):
 
     def __call__(self, args):
         db_engine = create_engine(self.root.db_url)
-
-        generate_risk_list(
+        predict_forward_with_existed_model(
             db_engine,
-            ProjectStorage(args.project_path),
+            args.project_path,
             args.model_id,
             args.as_of_date
         )

@@ -59,11 +59,20 @@ def test_featuretest():
             cohortmock.assert_called_once()
 
 
-def test_cli_risklist():
-    with patch('triage.cli.generate_risk_list', autospec=True) as mock:
-        try_command('risklist', '40', '2019-06-04')
+def test_cli_predictlist():
+    with patch('triage.cli.predict_forward_with_existed_model', autospec=True) as mock:
+        try_command('predictlist', '40', '2019-06-04')
         mock.assert_called_once()
         assert mock.call_args[0][0].url
-        assert mock.call_args[0][1].project_path
+        assert mock.call_args[0][1]
         assert mock.call_args[0][2] == 40
         assert mock.call_args[0][3] == datetime.datetime(2019, 6, 4)
+
+
+def test_cli_retrain_predict():
+    with patch('triage.cli.Retrainer', autospec=True) as mock:
+        try_command('retrainpredict', '3', '2021-04-04')
+        mock.assert_called_once()
+        assert mock.call_args[0][0].url
+        assert mock.call_args[0][1]
+        assert mock.call_args[0][2] == 3

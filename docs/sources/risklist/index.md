@@ -1,6 +1,8 @@
-# Risklist
+# Predictlist
+If you would like to generate a list of predictions on already-trained Triage model with new data, you can use the 'Predictlist' module.
 
-If you would like to generate a list of predictions on already-trained Triage model with new data, you can use the 'Risklist' module.
+# Predict Foward with Existed Model
+Use an existing model object to generate predictions on new data.
 
 ## Examples
 Both examples assume you have already run a Triage Experiment in the past, and know these two pieces of information:
@@ -8,35 +10,76 @@ Both examples assume you have already run a Triage Experiment in the past, and k
 2. An `as_of_date` to generate your predictions on.
 
 ### CLI
-`triage risklist <model_id> <as_of_date>`
+`triage predictlist <model_id> <as_of_date>`
 
 Example:
-`triage risklist 46 2019-05-06`
+`triage predictlist 46 2019-05-06`
 
-The risklist will assume the current path to be the 'project path' to find models and write matrices, but this can be overridden by sending the `--project-path` option.
+The predictlist will assume the current path to be the 'project path' to find models and write matrices, but this can be overridden by sending the `--project-path` option.
 
 ### Python
 
-The `generate_risk_list` function from the `triage.risklist` module can be used similarly to the CLI, with the addition of the database engine and project storage as inputs.
+The `predict_forward_with_existed_model` function from the `triage.predictlist` module can be used similarly to the CLI, with the addition of the database engine and project storage as inputs.
 ```
-from triage.risklist generate generate_risk_list
-from triage.catwalk.component.storage import ProjectStorage
+from triage.predictlist import generate predict_forward_with_existed_model 
 from triage import create_engine
 
-generate_risk_list(
+predict_forward_with_existed_model(
     db_engine=create_engine(<your-db-info>),
-    project_storage=ProjectStorage('/home/you/triage/project2')
+    project_path='/home/you/triage/project2'
     model_id=46,
     as_of_date='2019-05-06'
 )
 ```
 
 ## Output
-The Risklist is stored similarly to the matrices created during an Experiment:
+The Predictlist is stored similarly to the matrices created during an Experiment:
 - Raw Matrix saved to the matrices directory in project storage
-- Predictions saved in a table (production.list_predictions)
-- Prediction metadata (tiebreaking, random seed) saved in a table (production.prediction_metadata)
+- Predictions saved in a table (triage_production.predictions)
+- Prediction metadata (tiebreaking, random seed) saved in a table (triage_production.prediction_metadata)
 
 ## Notes
-- The cohort and features for the Risklist are all inferred from the Experiment that trained the given model_id (as defined by the experiment_models table).
-- The feature list ensures that imputation flag columns are present for any columns that either needed to be imputed in the training process, or that needed to be imputed in the risklist dataset.
+- The cohort and features for the Predictlist are all inferred from the Experiment that trained the given model_id (as defined by the experiment_models table).
+- The feature list ensures that imputation flag columns are present for any columns that either needed to be imputed in the training process, or that needed to be imputed in the predictlist dataset.
+
+# Retrain and Predict
+Use an existing model group to retrain a new model on all the data up to the current date and then predict forward into the future.
+
+## Examples
+Both examples assume you have already run a Triage Experiment in the past, and know these two pieces of information:
+1. A `model_group_id` from a Triage model group that you want to use to retrain a model and generate prediction
+2. A `today` to generate your predictions on.
+
+### CLI
+`triage retrainpredict <model_group_id> <today>`
+
+Example:
+`triage retrainpredict 30 2021-04-04`
+
+The `retrainpredict` will assume the current path to be the 'project path' to train models and write matrices, but this can be overridden by sending the `--project-path` option
+
+### Python
+The `Retrainer` class from `triage.predictlist` module can be used to retrain a model and predict forward.
+
+```python
+from triage.predictlist import Retrainer
+from triage import create_engine
+
+retrainer = Retrainer(
+    db_engine=create_engine(<your-db-info>),
+    project_path='/home/you/triage/project2'
+    model_group_id=36,
+)
+retrainer.retrain(today='2021-04-04')
+retrainer.predict(today='2021-04-04')
+```
+
+## Output
+The retrained model is sotred similariy to the matrices created during an Experiment:
+- Raw Matrix saved to the matrices directory in project storage
+- Raw Model saved to the trained_model directory in project storage
+- Retrained Model info saved in a table (triage_metadata.models) where model_comment = 'retrain_2021-04-04'
+- Predictions saved in a table (triage_production.predictions)
+- Prediction metadata (tiebreaking, random seed) saved in a table (triage_produciton.prediction_metadata)
+
+

@@ -31,7 +31,7 @@ schemas = (
     "CREATE SCHEMA IF NOT EXISTS triage_metadata;"
     " CREATE SCHEMA IF NOT EXISTS test_results;"
     " CREATE SCHEMA IF NOT EXISTS train_results;"
-    " CREATE SCHEMA IF NOT EXISTS production;"
+    " CREATE SCHEMA IF NOT EXISTS triage_production;"
 )
 
 event.listen(Base.metadata, "before_create", DDL(schemas))
@@ -140,8 +140,8 @@ class ModelGroup(Base):
 
 class ListPrediction(Base):
 
-    __tablename__ = "list_predictions"
-    __table_args__ = {"schema": "production"}
+    __tablename__ = "predictions"
+    __table_args__ = {"schema": "triage_production"}
 
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
@@ -162,7 +162,7 @@ class ListPrediction(Base):
 
 class ListPredictionMetadata(Base):
     __tablename__ = "prediction_metadata"
-    __table_args__ = {"schema": "production"}
+    __table_args__ = {"schema": "triage_production"}
 
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
