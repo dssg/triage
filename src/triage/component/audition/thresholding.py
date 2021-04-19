@@ -72,7 +72,7 @@ def model_groups_filter(
                 model_group_id,
                 array_agg(distinct train_end_time::date::text) as train_end_time_list
             FROM triage_metadata.{models_table}
-            WHERE model_group_id in {tuple(initial_model_group_ids)}
+            WHERE model_group_id in ({','.join([str(m) for m in initial_model_group_ids])})
             GROUP BY model_group_id
         ) as t
         WHERE train_end_time_list @> {end_times_sql}
