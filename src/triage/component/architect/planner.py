@@ -86,7 +86,7 @@ class Planner:
             # columns
             "indices": ["entity_id", "as_of_date"],
             "feature_names": utils.feature_list(feature_dictionary),
-            "feature_groups": feature_dictionary.names,
+            "feature_groups": sorted(feature_dictionary.names),
             "label_name": label_name,
             # other information
             "label_type": label_type,

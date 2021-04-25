@@ -32,7 +32,7 @@ def test_fill_cohort_config_missing():
 def test_fill_feature_group_definition():
     config = sample_config()
     fg_definition = fill_feature_group_definition(config)
-    assert sorted(fg_definition['prefix']) == ['entity_features', 'zip_code_features']
+    assert sorted(fg_definition['all']) == [True]
 
 
 def test_fill_timechop_config_missing():
