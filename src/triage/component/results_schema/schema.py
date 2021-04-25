@@ -31,6 +31,7 @@ schemas = (
     "CREATE SCHEMA IF NOT EXISTS triage_metadata;"
     " CREATE SCHEMA IF NOT EXISTS test_results;"
     " CREATE SCHEMA IF NOT EXISTS train_results;"
+    " CREATE SCHEMA IF NOT EXISTS triage_production;"
 )
 
 event.listen(Base.metadata, "before_create", DDL(schemas))
@@ -139,8 +140,8 @@ class ModelGroup(Base):
 
 class ListPrediction(Base):
 
-    __tablename__ = "list_predictions"
-    __table_args__ = {"schema": "triage_metadata"}
+    __tablename__ = "predictions"
+    __table_args__ = {"schema": "triage_production"}
 
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
@@ -148,12 +149,28 @@ class ListPrediction(Base):
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    label_value = Column(Integer)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text)
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+
+
+class ListPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "triage_production"}
+
+    model_id = Column(
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
 
 
 class ExperimentMatrix(Base):

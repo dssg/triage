@@ -184,6 +184,7 @@ class ModelTrainer:
         model_group_id,
         model_size,
         misc_db_parameters,
+        retrain,
     ):
         """Writes model and feature importance data to a database
         Will overwrite the data of any previous versions
@@ -207,22 +208,33 @@ class ModelTrainer:
             misc_db_parameters (dict) params to pass through to the database
         """
         model_id = retrieve_model_id_from_hash(self.db_engine, model_hash)
-        if model_id and not self.replace:
+        if model_id and not self.replace and not retrain:
             logger.notice(
                 f"Metadata for model {model_id} found in database. Reusing model metadata."
             )
             return model_id
         else:
-            model = Model(
-                model_hash=model_hash,
-                model_type=class_path,
-                hyperparameters=parameters,
-                model_group_id=model_group_id,
-                built_by_experiment=self.experiment_hash,
-                built_in_experiment_run=self.run_id,
-                model_size=model_size,
-                **misc_db_parameters,
-            )
+            if retrain:
+                model = Model(
+                    model_group_id=model_group_id,
+                    model_hash=model_hash,
+                    model_type=class_path,
+                    hyperparameters=parameters,
+                    model_size=model_size,
+                    **misc_db_parameters,
+                )
+
+            else:
+                model = Model(
+                    model_hash=model_hash,
+                    model_type=class_path,
+                    hyperparameters=parameters,
+                    model_group_id=model_group_id,
+                    built_by_experiment=self.experiment_hash,
+                    built_in_experiment_run=self.run_id,
+                    model_size=model_size,
+                    **misc_db_parameters,
+                )    
             session = self.sessionmaker()
             if model_id:
                 logger.notice(
@@ -237,7 +249,7 @@ class ModelTrainer:
                 model_id = model.model_id
                 logger.notice(f"Model {model_id}, not found from previous runs. Adding the new model")
             session.close()
-
+        
         logger.spam(f"Saving feature importances for model_id {model_id}")
         self._save_feature_importances(
             model_id, get_feature_importances(trained_model), feature_names
@@ -246,7 +258,7 @@ class ModelTrainer:
         return model_id
 
     def _train_and_store_model(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed
+        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed, retrain, model_group_id, 
     ):
         """Train a model, cache it, and write metadata to a database
 
@@ -267,17 +279,29 @@ class ModelTrainer:
 
         unique_parameters = self.unique_parameters(parameters)
 
-        model_group_id = self.model_grouper.get_model_group_id(
-            class_path, unique_parameters, matrix_store.metadata, self.db_engine
-        )
+               
+        if model_hash is None and retrain and model_group_id:
+            model_hash = self._model_hash(
+                matrix_store.metadata,
+                class_path,
+                parameters,
+                random_seed,
+            )
+        else:
+            model_group_id = self.model_grouper.get_model_group_id(
+                class_path, unique_parameters, matrix_store.metadata, self.db_engine
+            )
+
+        # Writing th model to storage, then getting its size in kilobytes.
+        self.model_storage_engine.write(trained_model, model_hash)
+        
         logger.debug(
             f"Trained model: hash {model_hash}, model group {model_group_id} "
         )
-        # Writing th model to storage, then getting its size in kilobytes.
-        self.model_storage_engine.write(trained_model, model_hash)
+        logger.spam(f"Cached model: {model_hash}")
+ 
         model_size = sys.getsizeof(trained_model) / (1024.0)
 
-        logger.spam(f"Cached model: {model_hash}")
         model_id = self._write_model_to_db(
             class_path,
             unique_parameters,
@@ -287,9 +311,10 @@ class ModelTrainer:
             model_group_id,
             model_size,
             misc_db_parameters,
+            retrain,
         )
         logger.debug(f"Wrote model {model_id} [{model_hash}] to db")
-        return model_id
+        return model_id, model_hash 
 
     @contextmanager
     def cache_models(self):
@@ -347,7 +372,7 @@ class ModelTrainer:
         ]
 
     def process_train_task(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed=None
+        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed=None, retrain=False, model_group_id=None, 
     ):
         """Trains and stores a model, or skips it and returns the existing id
 
@@ -384,8 +409,8 @@ class ModelTrainer:
                 f"(reason to train: {reason})"
             )
             try:
-                model_id = self._train_and_store_model(
-                    matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed
+                model_id, _ = self._train_and_store_model(
+                    matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed, retrain, model_group_id
                 )
             except BaselineFeatureNotInMatrix:
                 logger.warning(

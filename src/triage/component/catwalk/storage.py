@@ -23,8 +23,10 @@ from triage.component.results_schema import (
     TrainEvaluation,
     TestPrediction,
     TrainPrediction,
+    ListPrediction,
     TestPredictionMetadata,
     TrainPredictionMetadata,
+    ListPredictionMetadata,
     TestAequitas,
     TrainAequitas
 )
@@ -454,7 +456,7 @@ class MatrixStore:
         if include_label:
             return columns
         else:
-            return [col for col in columns if col != self.metadata["label_name"]]
+            return [col for col in columns if col != self.metadata.get("label_name", None)]
 
     @property
     def label_column_name(self):
@@ -498,6 +500,8 @@ class MatrixStore:
             return TrainMatrixType
         elif self.metadata["matrix_type"] == "test":
             return TestMatrixType
+        elif self.metadata["matrix_type"] == "production":
+            return ProductionMatrixType
         else:
             raise Exception(
                 """matrix metadata for matrix {} must contain 'matrix_type'
@@ -544,7 +548,10 @@ class MatrixStore:
 
     @property
     def full_matrix_for_saving(self):
-        return self.design_matrix.assign(**{self.label_column_name: self.labels})
+        if self.labels is not None:
+            return self.design_matrix.assign(**{self.label_column_name: self.labels})
+        else:
+            return self.design_matrix
 
     def load_metadata(self):
         """Load metadata from storage"""
@@ -610,3 +617,10 @@ class TrainMatrixType:
     aequitas_obj = TrainAequitas
     prediction_metadata_obj = TrainPredictionMetadata
     is_test = False
+
+
+class ProductionMatrixType(object):
+    string_name = "production"
+    prediction_obj = ListPrediction
+    prediction_metadata_obj = ListPredictionMetadata
+

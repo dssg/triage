@@ -695,7 +695,7 @@ class ModelGroupKeysValidator(Validator):
                 )
             )
         classifier_keys = ["class_path", "parameters"]
-        # planner_keys are defined in architect.Planner._make_metadata
+        # planner_keys are defined in architect.Planner.make_metadata
         planner_keys = [
             "feature_start_time",
             "end_time",
