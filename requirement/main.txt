@@ -18,7 +18,7 @@ sqlparse==0.4.1
 pebble==4.6.1
 adjustText==0.7.3
 graphviz==0.16
-requests==2.24.0
+requests==2.25.1
 coloredlogs==14.0
 verboselogs==1.7
 scipy==1.5.0
