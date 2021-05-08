@@ -232,6 +232,45 @@ def retrieve_model_hash_from_id(db_engine, model_id):
         session.close()
 
 
+@db_retry
+def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed):
+    """Retrieve existing model random seeds matching the model parameters and
+    experiment-level random seed to allow for reusing seeds before creating a
+    new one.
+    """
+    query = f"""
+        select models.random_seed
+        from {ExperimentModel.__table__.fullname} experiment_models
+        join {Model.__table__.fullname} models
+        on (experiment_models.model_hash = models.model_hash)
+        join {Experiment.__table__.fullname} experiments
+        on (experiment_models.experiment_hash = experiments.experiment_hash)
+        where models.model_group_id = %s
+        and models.train_end_time = %s
+        and models.train_matrix_uuid = %s
+        and models.training_label_timespan = %s
+        and experiments.random_seed = %s
+        order by models.run_time DESC, random()
+    """
+    return [row[0] for row in db_engine.execute(query, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed)]
+
+
+@db_retry
+def retrieve_experiment_seed_from_hash(db_engine, experiment_hash):
+    """Retrieves the random seed associated with a given experiment hash
+
+    Args:
+        experiment_hash (str) The hash of a given experiment in the database
+
+    Returns: (int) the stored random seed from the experiment
+    """
+    session = sessionmaker(bind=db_engine)()
+    try:
+        return session.query(Experiment).get(experiment_hash).random_seed
+    finally:
+        session.close()
+
+
 def _write_csv(file_like, db_objects, type_of_object):
     writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
     for db_object in db_objects:
