@@ -27,6 +27,8 @@ from .utils import (
     retrieve_model_id_from_hash,
     db_retry,
     save_db_objects,
+    retrieve_existing_model_random_seeds,
+    retrieve_experiment_seed_from_hash,
 )
 
 NO_FEATURE_IMPORTANCE = (
@@ -71,6 +73,7 @@ class ModelTrainer:
         self.db_engine = db_engine
         self.replace = replace
         self.run_id = run_id
+        self.experiment_random_seed = retrieve_experiment_seed_from_hash(self.db_engine, self.experiment_hash)
 
     @property
     def sessionmaker(self):
@@ -405,6 +408,17 @@ class ModelTrainer:
     def flattened_grid_config(grid_config):
         return flatten_grid_config(grid_config)
 
+
+    def get_or_generate_random_seed(self, model_group_id, matrix_metadata, train_matrix_uuid):
+        train_end_time = matrix_metadata["end_time"]
+        training_label_timespan = matrix_metadata["label_timespan"]
+        existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
+        if existing_seeds:
+            return existing_seeds[0]
+        else:
+            return generate_python_random_seed()
+
+
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
         """Train and store configured models, yielding the ids one by one
 
@@ -432,7 +446,15 @@ class ModelTrainer:
         tasks = []
 
         for class_path, parameters in self.flattened_grid_config(grid_config):
-            random_seed = generate_python_random_seed()
+
+            unique_parameters = self.unique_parameters(parameters)
+            model_group_id = self.model_grouper.get_model_group_id(
+                class_path, unique_parameters, matrix_store.metadata, self.db_engine
+            )
+            random_seed = self.get_or_generate_random_seed(
+                model_group_id, matrix_store.metadata, matrix_store.uuid
+            )
+
             model_hash = self._model_hash(
                 matrix_store.metadata,
                 class_path,
