@@ -135,6 +135,7 @@ class SelectionRulePerformancePlotter:
             y_label="regret in {}".format(metric),
             x_lim=(df["train_end_time"].min(), df["train_end_time"].max()),
             path_to_save=path_to_save,
+            alpha=1.0,
             **plt_format_args,
         )
 
@@ -170,5 +171,6 @@ class SelectionRulePerformancePlotter:
             y_label="value of {} next time".format(metric),
             x_lim=(df["train_end_time"].min(), df["train_end_time"].max()),
             path_to_save=path_to_save,
+            alpha=1.0,
             **plt_format_args,
         )

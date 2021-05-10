@@ -24,6 +24,7 @@ class Auditioner:
         distance_table=None,
         directory=None,
         agg_type='worst',
+        baseline_model_group_ids=None,
     ):
         """Filter model groups using a two-step process:
 
@@ -83,6 +84,9 @@ class Auditioner:
             agg_type (string) Method for aggregating metric values (for instance, if there
                 are multiple models at a given train_end_time with different random seeds).
                 Can be: 'mean', 'best', or 'worst' (the default)
+            baseline_model_group_ids (list): An optional list of model groups for baseline 
+                models which will be included on all plots without being subject to filtering 
+                or included as candidate models from the selection process.
         """
         self.metric_filters = initial_metric_filters
         # sort the train end times so we can reliably pick off the last time later
@@ -99,6 +103,16 @@ class Auditioner:
         self.best_distance_plotter = BestDistancePlotter(
             self.distance_from_best_table, self.directory
         )
+
+        if baseline_model_group_ids:
+            self.baseline_model_groups = model_groups_filter(
+                train_end_times=train_end_times,
+                initial_model_group_ids=baseline_model_group_ids,
+                models_table=models_table,
+                db_engine=db_engine,
+            )
+        else:
+            self.baseline_model_groups = set([])
 
         self.first_pass_model_groups = model_groups_filter(
             train_end_times=train_end_times,
@@ -125,8 +139,12 @@ class Auditioner:
             self.selection_rule_picker, directory
         )
 
+        # note we populate the distance from best table using both the
+        # baseline and candidate model groups
         self.distance_from_best_table.create_and_populate(
-            self.first_pass_model_groups, self.train_end_times, self.metrics
+            self.first_pass_model_groups | self.baseline_model_groups, 
+            self.train_end_times, 
+            self.metrics
         )
         self.results_for_rule = {}
 
@@ -222,12 +240,14 @@ class Auditioner:
             )
             return
         self.best_distance_plotter.plot_all_best_dist(
-            self.metrics, thresholded_model_group_ids, self.train_end_times
+            self.metrics, 
+            thresholded_model_group_ids | self.baseline_model_groups, 
+            self.train_end_times
         )
         logger.debug("Showing model group performance plots for all metrics")
         self.model_group_performance_plotter.plot_all(
             metric_filters=self.metric_filters,
-            model_group_ids=thresholded_model_group_ids,
+            model_group_ids=thresholded_model_group_ids | self.baseline_model_groups,
             train_end_times=self.train_end_times,
         )
 

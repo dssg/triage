@@ -327,7 +327,7 @@ def basic_integration_test(
             feature_group_name_lists = []
             for metadata_path in metadatas:
                 with open(os.path.join(matrix_directory, metadata_path)) as f:
-                    metadata = yaml.full_load(f)
+                    metadata = yaml.load(f, Loader=yaml.Loader)
                     feature_group_name_lists.append(metadata["feature_groups"])
 
             for matrix_uuid, num_observations, matrix_type in matrices_records:

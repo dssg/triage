@@ -241,4 +241,5 @@ class SelectionRulePlotter:
             y_label="fraction of models",
             x_lim=self.plot_bounds(regret_metric, regret_parameter),
             path_to_save=path_to_save,
+            alpha=1.0,
         )
