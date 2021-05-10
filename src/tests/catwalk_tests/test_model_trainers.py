@@ -5,6 +5,7 @@ import pytest
 
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
+from triage.component.catwalk.utils import save_experiment_and_get_hash
 from tests.utils import get_matrix_store
 
 
@@ -22,8 +23,13 @@ def grid_config():
 @pytest.fixture(scope="function")
 def default_model_trainer(db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
+    experiment_hash = save_experiment_and_get_hash(
+        config={'foo': 'bar'}, 
+        random_seed=112358, 
+        db_engine=db_engine_with_results_schema
+        )
     trainer = ModelTrainer(
-        experiment_hash=None,
+        experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         db_engine=db_engine_with_results_schema,
         model_grouper=ModelGrouper(),
@@ -132,8 +138,13 @@ def test_model_trainer(grid_config, default_model_trainer):
             "select max(batch_run_time) from triage_metadata.models"
         )
     ][0]
+    experiment_hash = save_experiment_and_get_hash(
+        config={'foo': 'bar'}, 
+        random_seed=112358, 
+        db_engine=db_engine
+        )
     trainer = ModelTrainer(
-        experiment_hash=None,
+        experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         model_grouper=ModelGrouper(
             model_group_keys=["label_name", "label_timespan"]
@@ -212,8 +223,13 @@ def test_baseline_exception_handling(default_model_trainer):
 
 def test_custom_groups(grid_config, db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
+    experiment_hash = save_experiment_and_get_hash(
+        config={'foo': 'bar'}, 
+        random_seed=112358, 
+        db_engine=db_engine_with_results_schema
+        )
     trainer = ModelTrainer(
-        experiment_hash=None,
+        experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         model_grouper=ModelGrouper(["class_path"]),
         db_engine=db_engine_with_results_schema,
