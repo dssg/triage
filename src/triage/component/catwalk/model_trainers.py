@@ -410,6 +410,15 @@ class ModelTrainer:
 
 
     def get_or_generate_random_seed(self, model_group_id, matrix_metadata, train_matrix_uuid):
+        """Look for an existing model with the same model group, train matrix metadata, and experiment-level
+           random seed and reuse this model's random seed if found, otherwise generate a new one. If multiple
+           matching models are found, we'll use the one with the most recent run time.
+
+           Args:
+                model_group_id (int): unique id for the model group this model is associated with
+                matrix_metadata (dict): metatdata associated with the model's training matrix
+                train_matrix_uuid (str): unique identifier for the model's training matrix
+        """
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
         existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
