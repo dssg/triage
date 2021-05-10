@@ -25,7 +25,7 @@ def default_model_trainer(db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=112358, 
+        random_seed=5, 
         db_engine=db_engine_with_results_schema
         )
     trainer = ModelTrainer(
@@ -140,7 +140,7 @@ def test_model_trainer(grid_config, default_model_trainer):
     ][0]
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=112358, 
+        random_seed=5, 
         db_engine=db_engine
         )
     trainer = ModelTrainer(
@@ -225,7 +225,7 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
     model_storage_engine = project_storage.model_storage_engine()
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=112358, 
+        random_seed=5, 
         db_engine=db_engine_with_results_schema
         )
     trainer = ModelTrainer(
@@ -249,6 +249,92 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
     ]
     assert len(records) == 1
     assert records[0] == model_ids[0]
+
+
+def test_reuse_model_random_seeds(grid_config, default_model_trainer):
+    trainer = default_model_trainer
+    db_engine = trainer.db_engine
+    project_storage = trainer.model_storage_engine.project_storage
+    model_storage_engine = trainer.model_storage_engine
+
+    # re-using the random seeds requires the association between experiments and models
+    # to exist, which we're not getting in these tests since we aren't using the experiment
+    # architecture, so back-fill these associations after each train_models() run
+    def update_experiment_models(db_engine):
+        sql = """
+            INSERT INTO triage_metadata.experiment_models(experiment_hash,model_hash) 
+            SELECT m.built_by_experiment, m.model_hash 
+            FROM triage_metadata.models m 
+            LEFT JOIN triage_metadata.experiment_models em 
+                ON m.model_hash = em.model_hash 
+                AND m.built_by_experiment = em.experiment_hash 
+            WHERE em.experiment_hash IS NULL
+            """
+        db_engine.execute(sql)
+        db_engine.execute('COMMIT;')
+
+    random.seed(5)
+    model_ids = trainer.train_models(
+        grid_config=grid_config,
+        misc_db_parameters=dict(),
+        matrix_store=get_matrix_store(project_storage),
+    )
+    update_experiment_models(db_engine)
+
+    # simulate running a new experiment where the experiment hash has changed
+    # (e.g. because the model grid is different), but experiment seed is the
+    # same, so previously-trained models should not get new seeds
+    experiment_hash = save_experiment_and_get_hash(
+        config={'baz': 'qux'}, 
+        random_seed=5, 
+        db_engine=db_engine
+        )
+    trainer = ModelTrainer(
+        experiment_hash=experiment_hash,
+        model_storage_engine=model_storage_engine,
+        db_engine=db_engine,
+        model_grouper=ModelGrouper(),
+    )
+    new_grid = grid_config.copy()
+    new_grid['sklearn.tree.DecisionTreeClassifier']['min_samples_split'] = [3,10,100]
+    random.seed(5)
+    new_model_ids = trainer.train_models(
+        grid_config=new_grid,
+        misc_db_parameters=dict(),
+        matrix_store=get_matrix_store(project_storage),
+    )
+    update_experiment_models(db_engine)
+
+    # should have received 5 models
+    assert len(new_model_ids) == 6
+
+    # all the original model ids should be in the new set
+    assert len(set(new_model_ids) & set(model_ids)) == len(model_ids)
+
+    # however, we should NOT re-use the random seeds (and so get new model_ids)
+    # if the experiment-level seed is different
+    experiment_hash = save_experiment_and_get_hash(
+        config={'lorem': 'ipsum'}, 
+        random_seed=42, 
+        db_engine=db_engine
+        )
+    trainer = ModelTrainer(
+        experiment_hash=experiment_hash,
+        model_storage_engine=model_storage_engine,
+        db_engine=db_engine,
+        model_grouper=ModelGrouper(),
+    )
+    random.seed(42) # different from above
+    newer_model_ids = trainer.train_models(
+        grid_config=new_grid,
+        misc_db_parameters=dict(),
+        matrix_store=get_matrix_store(project_storage),
+    )
+    update_experiment_models(db_engine)
+
+    # should get entirely new models now (different IDs)
+    assert len(newer_model_ids) == 6
+    assert len(set(new_model_ids) & set(newer_model_ids)) == 0
 
 
 def test_n_jobs_not_new_model(default_model_trainer):
