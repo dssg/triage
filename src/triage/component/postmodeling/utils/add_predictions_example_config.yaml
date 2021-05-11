@@ -23,4 +23,7 @@ experiments:
 # The first element should be the start date, and the second element should be the end date
 # All models (in the above model groups) that has a train_end_time that falls within this range will be scored 
 # range end points are inclusive
-train_end_times: ['range_start_date', 'range_end_date']
+# If you only specify one limit, an open ended interval is used. 
+train_end_times: 
+  range_start_date: '1970-01-01' # If only this is specified, all train_end_times on and after this date will be incuded
+  range_end_date: '1980-01-01' # If only this is specified, all train_end_times on and before this date will be included

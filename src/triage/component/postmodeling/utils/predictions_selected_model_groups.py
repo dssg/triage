@@ -47,15 +47,15 @@ def _fetch_relevant_model_matrix_info(db_engine, model_groups, experiment_hashes
     return pd.read_sql(q, db_engine)
 
     
-def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, range_train_end_times=None, rank_odrer='worst', replace=False):
+def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_odrer='worst', replace=False):
     """ Generate predictions and write to DB for a set of model_groups in an experiment
         Args:
             db_conn: Sqlalchemy engine
             model_groups (list): The list of model group ids we are interested in (ideally, chosen through audition)
             project_path (str): Path where the created matrices and trained model objects are stored for the experiment
-            experiment_hashes (List[str]): hash of the experiment (currently handling only one experiment)
-            range_train_end_times (): Optional. If given, only the models with train_end_times that fall in the range are scored.
-                                        Should be a list of two dates (str). [range_start_date, range_end_date]
+            experiment_hashes (List[str]): Optional. hash of the experiment (currently handling only one experiment)
+            range_train_end_times (Dict): Optional. If given, only the models with train_end_times that fall in the range are scored.
+                                        A dictionary with two possible keys 'range_start_date' and 'range_end_date'. Either or both could be set
             rank_order (str) : How to deal with ties in the scores. 
             replace (bool) : Whether to overwrite the preditctions for a model_id, if already found in the DB
 
@@ -79,13 +79,18 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     logging.info('Found {} model ids'.format(len(model_matrix_info)))
 
     # If we are only generating predictions for a specific time range
-    if range_train_end_times is not None: 
-        range_st = range_train_end_times[0]
-        range_en = range_train_end_times[1]
+    msk = None
+    if train_end_times_range is not None: 
+        if 'range_start_date' in train_end_times_range:
+            range_st = train_end_times_range['range_start_date']
+            msk = (model_matrix_info['train_end_time'] >= range_st)
+            logging.info('Filtering out models with a train_end_time before {}'.format(range_st))
 
-        logging.info('Filtering out models with a train_end_time outside of the range ({}, {})'.format(range_st, range_en))
+        if 'range_end_date' in train_end_times_range:       
+            range_en = train_end_times_range['range_end_date']
+            msk = msk & (model_matrix_info['train_end_time'] <= range_en)
+            logging.info('Filtering out models with a train_end_time after {}'.format(range_en))
 
-        msk = (model_matrix_info['train_end_time'] >= range_st) & (model_matrix_info['train_end_time'] <= range_en)
         model_matrix_info = model_matrix_info[msk]
 
         if len(model_matrix_info) == 0:
@@ -177,7 +182,7 @@ def run(config_file, db_credentials_file='database.yaml'):
         model_groups=config['model_group_ids'],
         project_path=config['project_path'],
         experiment_hashes=config.get('experiments'),
-        range_train_end_times=config.get('train_end_times')
+        train_end_times_range=config.get('train_end_times')
     )
 
 
