@@ -71,27 +71,29 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     if len(model_matrix_info)==0:
         raise ValueError('No models were found for the given experiment and model group(s)')
     
-    # All the model groups we want to save predictions for, should be in the DB 
+    # All the model groups specified in the  
     not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
+    
     if len(not_fetched_model_grps) > 0:
         raise ValueError('No models were found for the model groups {}. All specified model groups should be a part of the given experiment'.format(not_fetched_model_grps))
     
     logging.info('Found {} model ids'.format(len(model_matrix_info)))
 
     # If we are only generating predictions for a specific time range
-    msk = None
     if train_end_times_range is not None: 
         if 'range_start_date' in train_end_times_range:
             range_st = train_end_times_range['range_start_date']
             msk = (model_matrix_info['train_end_time'] >= range_st)
             logging.info('Filtering out models with a train_end_time before {}'.format(range_st))
 
+            model_matrix_info = model_matrix_info[msk]
+
         if 'range_end_date' in train_end_times_range:       
             range_en = train_end_times_range['range_end_date']
-            msk = msk & (model_matrix_info['train_end_time'] <= range_en)
+            msk = (model_matrix_info['train_end_time'] <= range_en)
             logging.info('Filtering out models with a train_end_time after {}'.format(range_en))
 
-        model_matrix_info = model_matrix_info[msk]
+            model_matrix_info = model_matrix_info[msk]
 
         if len(model_matrix_info) == 0:
             raise ValueError('No models were found for the given time range')
