@@ -35,7 +35,7 @@ def _fetch_relevant_model_matrix_info(db_engine, model_groups, experiment_hashes
         WHERE model_group_id in ({model_groups})"""
 
     args_dict = {
-        'model_ids': ', '.join([str(x) for x in model_groups])
+        'model_groups': ', '.join([str(x) for x in model_groups])
     }
 
     if experiment_hashes is not None:
