@@ -1,6 +1,3 @@
-# The relevant experiment hash
-experiment_hash: 'hash_of_the_experiment'
-
 # Path where the models and matrices are stored
 project_path: 'path/to/models/and/matrices'
 
@@ -10,8 +7,20 @@ model_group_ids:
   - 1
   - 2
 
-# This is optional. 
-# If not specificied, all the models in the group will be scored
-# Should be a list of two items
-# The end points are inclusive
-range_train_end_times: ['range_st_date', 'range_end_date']
+# Following parameters are optional
+# These will help narrow down the model_ids in the above model groups in case you are not interested in all the models in a group
+# If these are not specificied, all the models in the group will be scored
+# Either (or both) can be specified independent of the other
+
+# Narrowing down by the experiment hash(es)
+# If this is provided, only the model ids relevant to these experiment hashes will be scored
+experiments: 
+  - 'experiment_hash1'
+  - 'experiment_hash2'
+
+# Narrowing down by the train_end_time
+# Here you can score models that are trained with data from a certain time period
+# The first element should be the start date, and the second element should be the end date
+# All models (in the above model groups) that has a train_end_time that falls within this range will be scored 
+# range end points are inclusive
+train_end_times: ['range_start_date', 'range_end_date']

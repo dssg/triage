@@ -10,11 +10,12 @@ from triage.component.catwalk.storage import ProjectStorage
 from triage import create_engine
 
 
-def _fetch_relevant_model_matrix_info(db_engine, experiment_hash, model_groups):
+def _fetch_relevant_model_matrix_info(db_engine, model_groups, experiment_hashes=None):
     """ For the given experiment and model groups, fetch the model_ids, and match them with their train/test matrix pairs 
         Args:
-            experiment_hash (str): The experiment hash we are interested in
             model_groups (List[int]): A list of model groups in the experiment
+            experiment_hashes (List[str]): Optional. A list of experiment hashes we are interested in.
+                If this is provided, only the model_ids that are relevant to the given experiments will be returned
 
         Return: 
             A DataFrame that contains the relevant model_ids, train_end_times, and matrix information
@@ -31,23 +32,29 @@ def _fetch_relevant_model_matrix_info(db_engine, experiment_hash, model_groups):
         FROM triage_metadata.experiment_models a 
             JOIN triage_metadata.models b using(model_hash)
                 JOIN test_results.prediction_metadata c using(model_id)
-        WHERE experiment_hash='{experiment_hash}' AND model_group_id in {model_groups}
-    """.format(
-        experiment_hash=experiment_hash,
-        model_groups=tuple(model_groups)
-    )
+        WHERE model_group_id in ({model_groups})"""
+
+    args_dict = {
+        'model_ids': ', '.join([str(x) for x in model_groups])
+    }
+
+    if experiment_hashes is not None:
+        q = q + " AND experiment_hash in ({experiment_hashes})"
+        args_dict['experiment_hashes'] = ', '.join(["'" + str(x) + "'" for x in experiment_hashes])
+    
+    q = q.format(**args_dict)
 
     return pd.read_sql(q, db_engine)
 
     
-def generate_predictions(db_engine, experiment_hash, model_groups, project_path, range_train_end_times=None, rank_odrer='worst', replace=False):
+def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, range_train_end_times=None, rank_odrer='worst', replace=False):
     """ Generate predictions and write to DB for a set of model_groups in an experiment
         Args:
             db_conn: Sqlalchemy engine
-            experiment_hash (str): hash of the experiment (currently handling only one experiment)
             model_groups (list): The list of model group ids we are interested in (ideally, chosen through audition)
             project_path (str): Path where the created matrices and trained model objects are stored for the experiment
-            range_train_end_times (List): Optional. If given, only the models with train_end_times that fall in the range are scored.
+            experiment_hashes (List[str]): hash of the experiment (currently handling only one experiment)
+            range_train_end_times (): Optional. If given, only the models with train_end_times that fall in the range are scored.
                                         Should be a list of two dates (str). [range_start_date, range_end_date]
             rank_order (str) : How to deal with ties in the scores. 
             replace (bool) : Whether to overwrite the preditctions for a model_id, if already found in the DB
@@ -57,8 +64,8 @@ def generate_predictions(db_engine, experiment_hash, model_groups, project_path,
     """
     model_matrix_info = _fetch_relevant_model_matrix_info(
         db_engine=db_engine,
-        experiment_hash=experiment_hash,
-        model_groups=model_groups
+        model_groups=model_groups,
+        experiment_hashes=experiment_hashes
     )
 
     if len(model_matrix_info)==0:
@@ -167,10 +174,10 @@ def run(config_file, db_credentials_file='database.yaml'):
     config = _load_yaml(config_file)
     generate_predictions(
         db_engine=db_engine,
-        experiment_hash=config['experiment_hash'],
         model_groups=config['model_group_ids'],
         project_path=config['project_path'],
-        range_train_end_times=config.get('range_train_end_times')
+        experiment_hashes=config.get('experiments'),
+        range_train_end_times=config.get('train_end_times')
     )
 
 
