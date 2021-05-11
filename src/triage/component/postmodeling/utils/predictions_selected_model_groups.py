@@ -46,6 +46,28 @@ def _fetch_relevant_model_matrix_info(db_engine, model_groups, experiment_hashes
 
     return pd.read_sql(q, db_engine)
 
+
+def _summary_of_models(models_df):
+    """generates logging summaries and warnings about the models being scored"""
+
+    # how many models per model group?
+    cts = models_df.groupby('model_group_id').count()['model_id']
+    cts.name = 'num_models'
+    model_counts = cts.unique()
+    if len(model_counts) > 1:
+        logging.warning('No. of models is different between model groups. See below: \n {}'.format(cts.reset_index()))
+    else:
+        logging.info('Each model group contains {} models'.format(model_counts[0]))
+
+    # how many models per model group at each train_end_time?
+    # Sometimes there are more than one model for each model group with different random seeds
+    time_cts = models_df.groupby(['train_end_time', 'model_group_id']).count()['model_id']
+    time_cts.name = 'num_models'
+    msk = time_cts > 1
+
+    if len(time_cts[msk]) > 1:
+        logging.warning('There are model groups with more than one model per train_end_time. See below: \n {}'.format(time_cts[msk].reset_index()))
+        
     
 def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_odrer='worst', replace=False):
     """ Generate predictions and write to DB for a set of model_groups in an experiment
@@ -75,7 +97,7 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
     
     if len(not_fetched_model_grps) > 0:
-        raise ValueError('No models were found for the model groups {}. All specified model groups should be a part of the given experiment'.format(not_fetched_model_grps))
+        raise ValueError('No models were found for the model group(s) {}. All specified model groups should be present'.format(not_fetched_model_grps))
     
     logging.info('Found {} model ids'.format(len(model_matrix_info)))
 
@@ -100,6 +122,9 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
 
         logging.info('Scoring {} models'.format(len(model_matrix_info)))
 
+    # summary of the models that we are scoring. To check any special things worth noting
+    _summary_of_models(model_matrix_info)
+    
     logging.info('Instantiating storage engines and the predictor')
     
     # Storage objects to handle already stored models and matrices
