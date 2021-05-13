@@ -47,7 +47,6 @@ Triage needs data in a postgres database and a configuration file that has crede
 
 If you don't want to install Postgres yourself, try `triage db up` to create a vanilla Postgres 12 database using docker. For more details on this command, check out [Triage Database Provisioner](db.md)
 
-
 ## Configure Triage for your project
 
 Triage is configured with a config.yaml file that has parameters defined for each component. You can see some [sample configuration with explanations](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) to see what configuration looks like.
