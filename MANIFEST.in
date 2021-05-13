@@ -4,8 +4,6 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
-graft dirtyduck
-
 recursive-include requirement *.txt
 recursive-include src alembic.ini
 recursive-include src *.sql
