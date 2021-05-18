@@ -136,7 +136,7 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     predictor = Predictor(
         model_storage_engine=model_storage_engine,
         db_engine=db_engine,
-        rank_order=rank_odrer,
+        rank_order=rank_order,
         replace=replace,
         save_predictions=True
     )
