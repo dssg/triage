@@ -69,7 +69,7 @@ def _summary_of_models(models_df):
         logging.warning('There are model groups with more than one model per train_end_time. See below: \n {}'.format(time_cts[msk].reset_index()))
         
     
-def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_odrer='worst', replace=False):
+def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_order='worst', replace=False):
     """ Generate predictions and write to DB for a set of model_groups in an experiment
         Args:
             db_conn: Sqlalchemy engine
