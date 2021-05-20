@@ -64,9 +64,9 @@ def test_save_experiment_and_get_hash():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
-        exp_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
+        exp_hash = save_experiment_and_get_hash(experiment_config, engine)
         assert isinstance(exp_hash, str)
-        new_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
+        new_hash = save_experiment_and_get_hash(experiment_config, engine)
         assert new_hash == exp_hash
 
 

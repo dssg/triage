@@ -6,6 +6,7 @@ import pytest
 from triage.component.catwalk.model_grouping import ModelGrouper
 from triage.component.catwalk.model_trainers import ModelTrainer
 from triage.component.catwalk.utils import save_experiment_and_get_hash
+from triage.tracking import initialize_tracking_and_get_run_id
 from tests.utils import get_matrix_store
 
 
@@ -25,9 +26,15 @@ def default_model_trainer(db_engine_with_results_schema, project_storage):
     model_storage_engine = project_storage.model_storage_engine()
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=5, 
         db_engine=db_engine_with_results_schema
         )
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=5,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
@@ -140,9 +147,15 @@ def test_model_trainer(grid_config, default_model_trainer):
     ][0]
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=5, 
         db_engine=db_engine
         )
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=5,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
@@ -225,9 +238,15 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
     model_storage_engine = project_storage.model_storage_engine()
     experiment_hash = save_experiment_and_get_hash(
         config={'foo': 'bar'}, 
-        random_seed=5, 
         db_engine=db_engine_with_results_schema
         )
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=5,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
@@ -286,9 +305,15 @@ def test_reuse_model_random_seeds(grid_config, default_model_trainer):
     # same, so previously-trained models should not get new seeds
     experiment_hash = save_experiment_and_get_hash(
         config={'baz': 'qux'}, 
-        random_seed=5, 
         db_engine=db_engine
         )
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=5,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
@@ -315,9 +340,15 @@ def test_reuse_model_random_seeds(grid_config, default_model_trainer):
     # if the experiment-level seed is different
     experiment_hash = save_experiment_and_get_hash(
         config={'lorem': 'ipsum'}, 
-        random_seed=42, 
         db_engine=db_engine
         )
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=42,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,

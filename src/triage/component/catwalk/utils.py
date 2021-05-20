@@ -24,6 +24,7 @@ from triage.component.results_schema import (
     Model,
     ExperimentMatrix,
     ExperimentModel,
+    ExperimentRun,
 )
 
 
@@ -62,10 +63,10 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
 @db_retry
-def save_experiment_and_get_hash(config, random_seed, db_engine):
+def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, random_seed=random_seed, config=config))
+    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
     session.commit()
     session.close()
     return experiment_hash
@@ -243,13 +244,13 @@ def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_ti
         from {ExperimentModel.__table__.fullname} experiment_models
         join {Model.__table__.fullname} models
         on (experiment_models.model_hash = models.model_hash)
-        join {Experiment.__table__.fullname} experiments
-        on (experiment_models.experiment_hash = experiments.experiment_hash)
+        join {ExperimentRun.__table__.fullname} experiment_runs
+        on (experiment_models.experiment_hash = experiment_runs.experiment_hash)
         where models.model_group_id = %s
         and models.train_end_time = %s
         and models.train_matrix_uuid = %s
         and models.training_label_timespan = %s
-        and experiments.random_seed = %s
+        and experiment_runs.random_seed = %s
         order by models.run_time DESC, random()
     """
     return [row[0] for row in db_engine.execute(query, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed)]
