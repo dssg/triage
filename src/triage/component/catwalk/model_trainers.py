@@ -28,7 +28,7 @@ from .utils import (
     db_retry,
     save_db_objects,
     retrieve_existing_model_random_seeds,
-    retrieve_experiment_seed_from_hash,
+    retrieve_experiment_seed_from_run_id,
 )
 
 NO_FEATURE_IMPORTANCE = (
@@ -73,7 +73,7 @@ class ModelTrainer:
         self.db_engine = db_engine
         self.replace = replace
         self.run_id = run_id
-        self.experiment_random_seed = retrieve_experiment_seed_from_hash(self.db_engine, self.experiment_hash)
+        self.experiment_random_seed = retrieve_experiment_seed_from_run_id(self.db_engine, self.run_id)
 
     @property
     def sessionmaker(self):

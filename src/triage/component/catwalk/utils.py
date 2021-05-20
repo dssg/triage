@@ -257,17 +257,17 @@ def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_ti
 
 
 @db_retry
-def retrieve_experiment_seed_from_hash(db_engine, experiment_hash):
-    """Retrieves the random seed associated with a given experiment hash
+def retrieve_experiment_seed_from_run_id(db_engine, run_id):
+    """Retrieves the random seed associated with a given experiment run
 
     Args:
-        experiment_hash (str) The hash of a given experiment in the database
+        run_id (int) The id of a given experiment run in the database
 
     Returns: (int) the stored random seed from the experiment
     """
     session = sessionmaker(bind=db_engine)()
     try:
-        return session.query(Experiment).get(experiment_hash).random_seed
+        return session.query(ExperimentRun).get(run_id).random_seed
     finally:
         session.close()
 
