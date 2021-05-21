@@ -35,11 +35,13 @@ def default_model_trainer(db_engine_with_results_schema, project_storage):
         experiment_kwargs={},
         db_engine=db_engine_with_results_schema
     )
+    # import pdb; pdb.set_trace()
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         db_engine=db_engine_with_results_schema,
         model_grouper=ModelGrouper(),
+        run_id=run_id,
     )
     yield trainer
 
@@ -154,7 +156,7 @@ def test_model_trainer(grid_config, default_model_trainer):
         experiment_class_path="",
         random_seed=5,
         experiment_kwargs={},
-        db_engine=db_engine_with_results_schema
+        db_engine=db_engine
     )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
@@ -164,6 +166,7 @@ def test_model_trainer(grid_config, default_model_trainer):
         ),
         db_engine=db_engine,
         replace=True,
+        run_id=run_id,
     )
     set_test_seed()
     new_model_ids = trainer.train_models(
@@ -252,6 +255,7 @@ def test_custom_groups(grid_config, db_engine_with_results_schema, project_stora
         model_storage_engine=model_storage_engine,
         model_grouper=ModelGrouper(["class_path"]),
         db_engine=db_engine_with_results_schema,
+        run_id=run_id,
     )
     # create training set
     model_ids = trainer.train_models(
@@ -312,13 +316,14 @@ def test_reuse_model_random_seeds(grid_config, default_model_trainer):
         experiment_class_path="",
         random_seed=5,
         experiment_kwargs={},
-        db_engine=db_engine_with_results_schema
+        db_engine=db_engine
     )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         db_engine=db_engine,
         model_grouper=ModelGrouper(),
+        run_id=run_id,
     )
     new_grid = grid_config.copy()
     new_grid['sklearn.tree.DecisionTreeClassifier']['min_samples_split'] = [3,10,100]
@@ -347,13 +352,14 @@ def test_reuse_model_random_seeds(grid_config, default_model_trainer):
         experiment_class_path="",
         random_seed=42,
         experiment_kwargs={},
-        db_engine=db_engine_with_results_schema
+        db_engine=db_engine
     )
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         db_engine=db_engine,
         model_grouper=ModelGrouper(),
+        run_id=run_id,
     )
     random.seed(42) # different from above
     newer_model_ids = trainer.train_models(
