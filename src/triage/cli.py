@@ -452,7 +452,7 @@ class Db(Command):
                 return
             if args.password:
                 password = getpass(prompt='Enter a password for your new database user: ')
-                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'postgres:12']())
+                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'triage-db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'postgres:12']())
                 with open('database.yaml', 'w') as out_fd:
                     config = {
                         'host': '0.0.0.0',
@@ -462,7 +462,7 @@ class Db(Command):
                         'db': 'triage'
                     }
                     out_fd.write(yaml.dump(config))
-                logger.info('New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections. At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
+                logger.info('New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
         elif 'running' in stdout:
             logger.info('Already running, will not start')
         else:
