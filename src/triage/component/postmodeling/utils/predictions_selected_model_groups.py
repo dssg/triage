@@ -84,6 +84,7 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
         Returns: None
             This directly writes to the test_results.predictions table
     """
+
     model_matrix_info = _fetch_relevant_model_matrix_info(
         db_engine=db_engine,
         model_groups=model_groups,
@@ -172,69 +173,3 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
             )
 
     logging.info('Successfully generated predictions for {} models!'.format(len(model_matrix_info)))
-
-
-def _load_yaml(file_path):
-    try: 
-        with open(file_path, 'r') as f:
-            config = yaml.safe_load(f)
-    except:
-        raise FileNotFoundError('File {} was not found'.format(file_path))
-
-    return config
-
-
-def run(config_file, db_credentials_file='database.yaml'):
-    """Run the prediction generation pipeline
-        Args: 
-            config_file (str) : path to the config file
-            db_credentials_file (str): Path to the database credentials file. 
-                                If not specified, the working directory should contain a database.yaml.
-    """
-
-    db_conf = _load_yaml(db_credentials_file)
-    dburl = sqlalchemy.engine.url.URL(
-        "postgres",
-        host=db_conf["host"],
-        username=db_conf["user"],
-        database=db_conf["db"],
-        password=db_conf["pass"],
-        port=db_conf["port"],
-    )
-    db_engine = sqlalchemy.create_engine(dburl, poolclass=sqlalchemy.pool.QueuePool)
-   
-    config = _load_yaml(config_file)
-    generate_predictions(
-        db_engine=db_engine,
-        model_groups=config['model_group_ids'],
-        project_path=config['project_path'],
-        experiment_hashes=config.get('experiments'),
-        train_end_times_range=config.get('train_end_times')
-    )
-
-
-if __name__ == '__main__':
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        "-c",
-        "--configfile",
-        type=str,
-        help="Path to the configuration file (required)",
-        required=True
-    )
-    arg_parser.add_argument(
-        "-d",
-        "--dbfile",
-        type=str,
-        help="Pass the db connection information",
-        default='database.yaml'
-    )
-
-    args = arg_parser.parse_args()
-
-    run(
-        config_file=args.configfile, 
-        db_credentials_file=args.dbfile
-    )
-
-
