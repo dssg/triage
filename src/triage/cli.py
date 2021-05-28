@@ -445,7 +445,7 @@ class SavePredictions(Command):
         parser.add_argument(
             "-c",
             "--configfile",
-            type=str,
+            type=argparse.FileType("r"),
             help="Path to the configuration file (required)",
             required=True
         )
