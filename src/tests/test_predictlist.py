@@ -3,7 +3,7 @@ from triage.validation_primitives import table_should_have_data
 
 
 def test_predict_forward_with_existed_model_should_write_predictions(finished_experiment):
-    # given a model id and as-of-date <= today
+    # given a model id and as-of-date <= today 
     # and the model id is trained and is linked to an experiment with feature and cohort config
     # generate records in triage_production.predictions
     # the # of records should equal the size of the cohort for that date
@@ -72,31 +72,32 @@ def test_train_matrix_info_from_model_id(finished_experiment):
 
 
 def test_retrain_should_write_model(finished_experiment):
-    # given a model id and today
+    # given a model id and prediction_date 
     # and the model id is trained and is linked to an experiment with feature and cohort config
     # create matrix for retraining a model
     # generate records in production models
     # retrain_model_hash should be the same with model_hash in triage_metadata.models
     model_group_id = 1
-    today = '2014-03-01'
+    prediction_date = '2014-03-01'
 
     retrainer = Retrainer(
         db_engine=finished_experiment.db_engine,
         project_path=finished_experiment.project_storage.project_path,
         model_group_id=model_group_id,
     )
-    retrainer.retrain(today)
+    retrain_info = retrainer.retrain(prediction_date)
+    model_comment = retrain_info['retrain_model_comment']
 
     records = [
         row
         for row in finished_experiment.db_engine.execute(
-            "select model_hash from triage_metadata.models where model_comment = 'retrain_2014-03-01'"
+            f"select model_hash from triage_metadata.models where model_comment = '{model_comment}'"
         )
     ]
     assert len(records) == 1
     assert retrainer.retrained_model_hash == records[0][0]
 
-    retrainer.predict(today)
+    retrainer.predict(prediction_date)
     
     table_should_have_data(
         db_engine=finished_experiment.db_engine,

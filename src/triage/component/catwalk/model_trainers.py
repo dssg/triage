@@ -409,7 +409,7 @@ class ModelTrainer:
                 f"(reason to train: {reason})"
             )
             try:
-                model_id, _ = self._train_and_store_model(
+                model_id, model_hash = self._train_and_store_model(
                     matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed, retrain, model_group_id
                 )
             except BaselineFeatureNotInMatrix:

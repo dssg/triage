@@ -15,7 +15,7 @@ from triage.component.catwalk.storage import ModelStorageEngine, ProjectStorage
 from triage.component.catwalk import ModelTrainer
 from triage.component.catwalk.model_trainers import flatten_grid_config
 from triage.component.catwalk.predictors import Predictor
-from triage.component.catwalk.utils import filename_friendly_hash
+from triage.component.catwalk.utils import retrieve_model_hash_from_id, filename_friendly_hash
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.db import scoped_session
 
@@ -276,7 +276,7 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     
 
 class Retrainer:
-    """Given a model_group_id and today, retrain a model using the all the data till today
+    """Given a model_group_id and prediction_date, retrain a model using the all the data till prediction_date 
     Args:
         db_engine (sqlalchemy.engine)
         project_path (string)
@@ -322,7 +322,7 @@ class Retrainer:
             experiment_hash=None,
             model_storage_engine=ModelStorageEngine(self.project_storage),
             db_engine=self.db_engine,
-            replace=False,
+            replace=True,
             run_id=None,
         )
 
@@ -382,19 +382,19 @@ class Retrainer:
             )
         return reconstructed_feature_dict, imputation_table_tasks
     
-    def retrain(self, today):
-        """Retrain a model by going back one split from today, so the as_of_date for training would be (today - training_label_timespan)
+    def retrain(self, prediction_date):
+        """Retrain a model by going back one split from prediction_date, so the as_of_date for training would be (prediction_date - training_label_timespan)
         
         Args:
-            today (str) 
+            prediction_date(str) 
         """
-        today = dt_from_str(today)
-        as_of_date = datetime.strftime(today - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
+        prediction_date = dt_from_str(prediction_date)
+        as_of_date = datetime.strftime(prediction_date - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
  
         retrain_definition = {
             'first_as_of_time': dt_from_str(as_of_date),
             'last_as_of_time': dt_from_str(as_of_date),
-            'matrix_info_end_time': today,
+            'matrix_info_end_time': prediction_date,
             'as_of_times': [dt_from_str(as_of_date)],
             'training_label_timespan': self.training_label_timespan,
             'training_as_of_date_frequency': self.experiment_config['temporal_config']['training_as_of_date_frequencies'],
@@ -427,6 +427,7 @@ class Retrainer:
             feature_table_names=feature_imputation_table_tasks.keys(),
             index_column_lookup=self.feature_generator.index_column_lookup(collate_aggregations),
         )
+        
         feature_group_creator = FeatureGroupCreator({"all": [True]})
         feature_group_mixer = FeatureGroupMixer(["all"])
         feature_group_dict = feature_group_mixer.generate(
@@ -478,15 +479,17 @@ class Retrainer:
             matrix_uuid=matrix_uuid,
             matrix_type="train",
         )
+        
+        retrain_model_comment = 'retrain_' + str(datetime.now())
 
         misc_db_parameters = {
             'train_end_time': dt_from_str(as_of_date),
             'test': False,
             'train_matrix_uuid': matrix_uuid, 
             'training_label_timespan': self.training_label_timespan,
-            'model_comment': 'retrain_' + datetime.strftime(today, '%Y-%m-%d'),
+            'model_comment': retrain_model_comment,
         }
-        retrained_model_id, retrained_model_hash = self.model_trainer._train_and_store_model(
+        retrained_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 
             parameters=self.model_group_info['hyperparameters'], 
@@ -496,23 +499,26 @@ class Retrainer:
             retrain=True,
             model_group_id=self.model_group_id,
         )
-        self.retrained_model_hash = retrained_model_hash
+
+        self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
         self.retrained_matrix_uuid = matrix_uuid
         self.retrained_model_id = retrained_model_id
+        
+        return {'retrain_model_comment': retrain_model_comment}
 
-    def predict(self, today):
-        """Predict forward by creating a matrix using as_of_date = today and applying the retrained model on it
+    def predict(self, prediction_date):
+        """Predict forward by creating a matrix using as_of_date = prediction_date and applying the retrained model on it
 
         Args:
-            today (str)
+            prediction_date(str)
         """
         cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_predict"
 
         # 1. Generate cohort
-        self.generate_entity_date_table(today, cohort_table_name)
+        self.generate_entity_date_table(prediction_date, cohort_table_name)
 
         # 2. Generate feature aggregations
-        collate_aggregations = self.get_collate_aggregations(today, cohort_table_name)
+        collate_aggregations = self.get_collate_aggregations(prediction_date, cohort_table_name)
         self.feature_generator.process_table_tasks(
             self.feature_generator.generate_all_table_tasks(
                 collate_aggregations,
@@ -544,7 +550,7 @@ class Retrainer:
         temporal_config = self.experiment_config["temporal_config"]
         timechopper = Timechop(**temporal_config)
         prod_definitions = timechopper.define_test_matrices(
-            train_test_split_time=dt_from_str(today), 
+            train_test_split_time=dt_from_str(prediction_date), 
             test_duration=temporal_config['test_durations'][0],
             test_label_timespan=temporal_config['test_label_timespans'][0]
         )
@@ -562,12 +568,12 @@ class Retrainer:
             user_metadata=self.user_metadata,
         )
     
-        matrix_metadata['matrix_id'] = str(today) +  f'_model_id_{self.retrained_model_id}' + '_risklist'
+        matrix_metadata['matrix_id'] = str(prediction_date) +  f'_model_id_{self.retrained_model_id}' + '_risklist'
 
         matrix_uuid = filename_friendly_hash(matrix_metadata)
     
         matrix_builder.build_matrix(
-            as_of_times=[today],
+            as_of_times=[prediction_date],
             label_name=self.label_name,
             label_type='binary',
             feature_dictionary=reconstructed_feature_dict,
