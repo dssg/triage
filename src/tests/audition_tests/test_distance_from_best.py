@@ -117,7 +117,7 @@ def test_DistanceFromBestTable():
             RecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.36 + add_val)
         session.commit()
         distance_table = DistanceFromBestTable(
-            db_engine=engine, models_table="models", distance_table="dist_table"
+            db_engine=engine, models_table="models", distance_table="dist_table", agg_type="worst"
         )
         metrics = [
             {"metric": "precision@", "parameter": "100_abs"},
@@ -128,25 +128,25 @@ def test_DistanceFromBestTable():
             model_group_ids, ["2014-01-01", "2015-01-01", "2016-01-01"], metrics
         )
 
-        # get an ordered list of the models/groups for a particular metric/time
+        # get an ordered list of the model groups for a particular metric/time
         query = """
-            select model_id, raw_value, dist_from_best_case, dist_from_best_case_next_time
+            select model_group_id, raw_value, dist_from_best_case, dist_from_best_case_next_time
             from dist_table where metric = %s and parameter = %s and train_end_time = %s
             order by dist_from_best_case
         """
 
         prec_3y_ago = engine.execute(query, ("precision@", "100_abs", "2014-01-01"))
         assert [row for row in prec_3y_ago] == [
-            (models["spiky_3y_ago"].model_id, 0.8, 0, 0.17),
-            (models["stable_3y_ago"].model_id, 0.6, 0.2, 0),
-            (models["bad_3y_ago"].model_id, 0.4, 0.4, 0.18),
+            (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
+            (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
+            (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
         ]
 
         recall_2y_ago = engine.execute(query, ("recall@", "100_abs", "2015-01-01"))
         assert [row for row in recall_2y_ago] == [
-            (models["spiky_2y_ago"].model_id, 0.8, 0, 0.19),
-            (models["stable_2y_ago"].model_id, 0.56, 0.24, 0),
-            (models["bad_2y_ago"].model_id, 0.34, 0.46, 0.19),
+            (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
+            (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
+            (models["bad_2y_ago"].model_group_id, 0.34, 0.46, 0.19),
         ]
 
         assert distance_table.observed_bounds == {

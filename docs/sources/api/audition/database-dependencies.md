@@ -4,7 +4,7 @@ Note: If you are familiar with the DSaPP 'results schema', you can skip this sec
 
 Audition expects to be able to read experiment metadata from a relational database. This includes information about models, what we call 'model groups', and evaluations. 
 
-The full experiment schema used by DSaPP post-modeling tools such as Audition is defined in the [results-schema](https://github.com/dssg/triage/tree/master/src/triage/component/results_schema) repository, and is automatically populated after a [triage.Experiment](github.com/dssg/triage). However, even without using those tools, you can populate these tables for other experiments. 
+The full experiment schema used by DSaPP post-modeling tools such as Audition is defined in the [results-schema](https://github.com/dssg/triage/tree/master/src/triage/component/results_schema) repository, and is automatically populated after a [triage.Experiment](http://github.com/dssg/triage). However, even without using those tools, you can populate these tables for other experiments. 
 
 Here's an overview of Audition's direct dependencies:
 

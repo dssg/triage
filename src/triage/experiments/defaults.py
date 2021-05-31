@@ -115,20 +115,20 @@ def fill_model_grid_presets(config):
     preset_type = config.get('model_grid_preset')
 
     if preset_type is not None:
-        if grid_config is not None:
-            # if you specified both grid_config and model_grid_preset, you're doing something wrong
-            raise KeyError("There can only be one (cannot specify both model_grid_preset and grid_config)")
-        grid_config = model_grid_preset(preset_type)
+        grid_config = model_grid_preset(preset_type, grid_config)
 
     return grid_config
 
 
-def model_grid_preset(grid_type):
+def model_grid_preset(grid_type, grid_config=None):
     """Load a preset model grid.
 
        Args:
             grid_type (string) The type of preset grid to load. May
                 by `quickstart`, `small`, `medium`, `large`, or `texas`
+            grid_config (dict) The user-specified model grid, allowing
+                users to extend a preset grid with other models, such
+                as common-sense baselines specific to their project
 
         Returns: (dict) a triage model grid config
     """
@@ -137,10 +137,11 @@ def model_grid_preset(grid_type):
     with open(presets_file, 'r') as f:
         model_grid_presets = yaml.full_load(f)
 
-    # output is a collector for the resulting grid, so initialize it with the parameters
-    # at the level of preset grid we want and find the next-lowest level to incorporate
-    output = model_grid_presets[grid_type]['grid'].copy()
-    prev_type = model_grid_presets[grid_type]['prev']
+    # output is a collector for the resulting grid, so initialize with the user-specified
+    # triage grid (if present), otherwise start with an empty dict. We initialize
+    # prev_type with the preset grid type to start crawling the presets at that point
+    output = (grid_config or {}).copy()
+    prev_type = grid_type
 
     # collapse the grid parameters down the levels until we reach one with no lower level
     while prev_type is not None:

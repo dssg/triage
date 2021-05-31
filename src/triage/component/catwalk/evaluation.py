@@ -741,7 +741,7 @@ class ModelEvaluator:
         group_value_df['evaluation_start_time'] = evaluation_start_time
         group_value_df['evaluation_end_time'] = evaluation_end_time
         group_value_df['matrix_uuid'] = matrix_uuid
-        group_value_df = group_value_df.rename(index=str, columns={"score_threshold": "parameter"})
+        group_value_df = group_value_df.rename(index=str, columns={"score_threshold": "parameter", "for": "for_"})
         if group_value_df.empty:
             raise ValueError(f"""
             Bias audit: aequitas_audit() failed.

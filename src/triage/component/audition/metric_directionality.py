@@ -63,6 +63,19 @@ def best_in_series(metric):
         return "min"
 
 
+def worst_in_series(metric):
+    """The worst value in a series
+    Args:
+        metric (str): The name of a metric, ie 'precision@'
+    Returns: (str) The name of a pandas Series function that will provide
+        the worst value
+    """
+    if greater_is_better(metric):
+        return "min"
+    else:
+        return "max"
+
+
 def idxbest(metric):
     """Index of first occurrence of the best value
 
@@ -75,3 +88,25 @@ def idxbest(metric):
         return "idxmax"
     else:
         return "idxmin"
+
+
+def value_agg_funcs(metric, lang='sql'):
+    """Aggregation functions for combining multiple metric values (e.g., from different random seeds):
+        metric (str): The name of a metric, ie 'precision@'
+        lang (str): Either 'sql' or 'pandas' to return appropriate function names
+    Returns: (dict) Dictionary of function names to provide the desired 
+        aggregation of metric values
+    """
+    if lang=='sql':
+        mean_fcn = 'avg'
+    elif lang=='pandas':
+        mean_fcn = 'mean'
+    else:
+        raise ValueError('lang must be sql or pandas')
+
+    return {
+        'worst': worst_in_series(metric),
+        'best': best_in_series(metric),
+        'mean': mean_fcn
+    }
+

@@ -89,7 +89,7 @@ rows in them). Another impact will be in the metrics. You will need to be
 very careful about interpreting the metrics in an inspections
 problem. Finally, when you are designing the field validation of your
 model, you need to take in account **selection bias**. If not, you
-will be inspecting the same facilities over and over[^6].
+will be inspecting the same facilities over and over and never inspect any facilities you have not inspected before.
 
 
 ## What's next?
@@ -102,10 +102,9 @@ will be inspecting the same facilities over and over[^6].
 
 [^2]: It is also possible to do "visit-level prediction" type of ML problem.
 
-[^3]: Examples include [Predictive Enforcement of Hazardous Waste Regulations](http://dsapp.uchicago.edu/projects/environment/) and [Targeting Proactive Inspections for Lead Hazards](http://dsapp.uchicago.edu/projects/health/lead-prevention/).
+[^3]: Examples include [Predictive Enforcement of Hazardous Waste Regulations](http://www.datasciencepublicpolicy.org/projects/energy-and-environment/) and [Targeting Proactive Inspections for Lead Hazards](http://www.datasciencepublicpolicy.org/projects/public-health/poison-prevention/).
 
-[^4]: Examples include [Increasing High School Graduation Rates: Early Warnings and Predictive Systems](http://dsapp.uchicago.edu/projects/education/), [Building Data-Driven Early Intervention Systems for Police Officers](http://dsapp.uchicago.edu/projects/public-safety/police-eis/), and [Data-Driven Justice Initiative: Identifying Frequent Users of Multiple Public Systems for More Effective Early Assistance](http://dsapp.uchicago.edu/projects/criminal-justice/data-driven-justice-initiative/).
+[^4]: Examples include [Increasing High School Graduation Rates: Early Warnings and Predictive Systems](http://www.datasciencepublicpolicy.org/projects/education/), [Building Data-Driven Early Intervention Systems for Police Officers](http://www.datasciencepublicpolicy.org/projects/public-safety/), and [Data-Driven Justice Initiative: Identifying Frequent Users of Multiple Public Systems for More Effective Early Assistance](http://www.datasciencepublicpolicy.org/projects/criminal-justice/).
 
 [^5]: Defined as "bakery, banquet hall, candy store, caterer, coffee shop, day care center (for ages less than 2), day care center (for ages 2 – 6), day care center (combo, for ages less than 2 and 2 – 6 combined), gas station, Golden Diner, grocery store, hospital, long term care center(nursing home), liquor store, mobile food dispenser, restaurant, paleteria, school, shelter, tavern, social club, wholesaler, or Wrigley Field Rooftop" ([source](https://data.cityofchicago.org/api/views/4ijn-s7e5/files/O9cwLJ4wvxQJ2MirxkNzAUCCMQiM31DMzRkckMsKlxc?download=true&filename=foodinspections_description.pdf)).
 
-[^6]:This points is particularly acute: Imagine the scenario in which the *inspections* problem is **crime prediction** in order to send cops (inspectors)to that "risky" area (facilities)&#x2026;

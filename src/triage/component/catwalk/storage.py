@@ -556,7 +556,7 @@ class MatrixStore:
     def load_metadata(self):
         """Load metadata from storage"""
         with self.metadata_base_store.open("rb") as fd:
-            return yaml.full_load(fd)
+            return yaml.load(fd, Loader=yaml.Loader)
 
     def save(self):
         raise NotImplementedError

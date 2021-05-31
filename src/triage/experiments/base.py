@@ -214,7 +214,7 @@ class ExperimentBase(ABC):
 
         ###################### RUBICON ######################
 
-        self.experiment_hash = save_experiment_and_get_hash(self.config, self.random_seed, self.db_engine)
+        self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
         logger.debug(f"Experiment hash [{self.experiment_hash}] assigned")
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,

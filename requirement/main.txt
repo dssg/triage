@@ -1,6 +1,6 @@
 alembic==1.4.2
 SQLAlchemy==1.3.18
-PyYAML==5.3.1
+PyYAML==5.4.1
 psycopg2-binary==2.8.5
 python-dateutil==2.8.1
 boto3==1.14.45
@@ -29,4 +29,4 @@ seaborn==0.10.1
 ohio==0.5.0
 
 
-aequitas==0.41.0
+aequitas==0.42.0

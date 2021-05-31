@@ -121,5 +121,7 @@ def test_fill_model_grid_presets():
     # case 4: both
     config = sample_config()
     config['model_grid_preset'] = 'quickstart'
-    with pytest.raises(KeyError):
-        fill_grid = fill_model_grid_presets(config)
+    fill_grid = fill_model_grid_presets(config)
+    assert len(fill_grid) == 3
+    assert len(fill_grid.get('sklearn.tree.DecisionTreeClassifier', {}).get('max_depth', [])) == 3
+    assert len(fill_grid.get('sklearn.tree.DecisionTreeClassifier', {}).get('criterion', [])) == 1

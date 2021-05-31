@@ -69,7 +69,6 @@ class Experiment(Base):
     matrices_needed = Column(Integer)
     grid_size = Column(Integer)
     models_needed = Column(Integer)
-    random_seed = Column(Integer)
 
 
 class ExperimentRunStatus(enum.Enum):

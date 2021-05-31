@@ -11,7 +11,7 @@ Triage needs data in a `Postgresql` database, with at least one table that conta
 additional attributes of interest about the event and/or entity (demographics for example).
 
 We will need database credentials either in a
-[config file](https://github.com/dssg/triage/blob/master/example/database.yaml)
+[config file](https://github.com/dssg/triage/blob/master/example/config/database.yaml)
 or as an environment variable called `DATABASE_URL`  that contains the
 name  of the database, server, username, and password to use to
 connect to it.
@@ -159,7 +159,7 @@ As above, you should check the `triage`-created tables in your database to ensur
 
 #### A first look at model selection with `audition`
 
-Now that we have models trained across several time periods, we can use `audition` to take a look at each `model_group`'s performance over time. While the `quickstart` models are quite simple and there isn't much meaningful model selection to do at this point, we can start to explore how model selection works in `triage`. A good place to begin is with the [model selection primer](dirtyduck/audition/).
+Now that we have models trained across several time periods, we can use `audition` to take a look at each `model_group`'s performance over time. While the `quickstart` models are quite simple and there isn't much meaningful model selection to do at this point, we can start to explore how model selection works in `triage`. A good place to begin is with the [model selection primer](https://dssg.github.io/triage/audition/audition_intro/).
 
 We generally recommend using `audition` interactively with as a `jupyter notebook`. If you don't already have `jupyter` installed, you can learn more about it [here](https://jupyter.org/index.html). Once you have a notebook server running, you can modify the [`audition` tutorial notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb) to take a look at the data from your current experiment. The [`audition README`](https://github.com/dssg/triage/tree/master/src/triage/component/audition) is also a good resource for options available with the tool.
 
@@ -174,7 +174,7 @@ We've labeled this section `Iteration 3`, but in practice it's probably more lik
 
 Generally speaking, the biggest determinant of the performance of many models is the quality of the underlying features, so you'll likely spend a considerable amount of time at this stage of the process. Here, you'll likely want to add additional features based on the data you've already prepared, but likely will discover that you want to structure or collect additional raw data as well where possible.
 
-The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
+The experiment configuration file provides a decent amount of flexibility for defining features, so we'll walk through some of the details here, however you may also want to refer to the relevant sections of the [config README](http://dssg.github.io/triage/experiments/experiment-config#feature-generation) and [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details.
 
 !!! info "Features in `triage` are temporal aggregations"
 
@@ -243,7 +243,7 @@ grid_config:
         min_samples_leaf: [0.01,0.05,0.10]
 ```
 
-Here, each top-level key is the modeling package (this needs to be a classification algorithm with a `scikit-learn`-style interface, but need not come from `scikit-learn` specifically), and the keys listed under it are hyperparameters of the algorithm with a list of values to test. `triage` will run the grid of all possible combinations of these hyperparameter values. Note that you can't specify both a `model_grid_preset` and `grid_config` at the same time.
+Here, each top-level key is the modeling package (this needs to be a classification algorithm with a `scikit-learn`-style interface, but need not come from `scikit-learn` specifically), and the keys listed under it are hyperparameters of the algorithm with a list of values to test. `triage` will run the grid of all possible combinations of these hyperparameter values. Note that if you specify both a `model_grid_preset` and `grid_config` at the same time, triage will combine the unique model specifications across the two sets (generally, this is most useful when adding project-specific commonsense baselines to the preset grid).
 
 Check out the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) for more details on specifying your grid.
 
@@ -272,7 +272,7 @@ scoring:
 
 You can specify any number of evaluation metrics to be calculated for your models on either the training or test sets (the set of available metrics can be found [here](https://github.com/dssg/triage/blob/master/src/triage/component/catwalk/evaluation.py#L161)). For metrics that need to be calculated relative to a specific threshold in the score (e.g. precision), you must specify either `percentiles` or `top_n` (and can optionally provide both) at which to do the calculations.
 
-Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](dssg.github.io/triage/experiments/experiment-config#bias-audit-config-optional) for more details on setting it up.
+Additionally, you can have `triage` pre-calculate statistics about bias and disparities in your modeling results by specifying a `bias_audit_config` section, which should give details about the attributes of interest (e.g., race, age, sex) and thresholds at which to do the calculations. See the [example config file](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) and associated [README](http://dssg.github.io/triage/experiments/experiment-config#bias-audit-config-optional) for more details on setting it up.
 
 ### Run `triage`
 
