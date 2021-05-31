@@ -437,7 +437,7 @@ def sample_config():
         "label_config": label_config,
         "entity_column_name": "entity_id",
         "model_comment": "test2-final-final",
-        "model_group_keys": ["label_name", "label_type", "custom_key"],
+        "model_group_keys": ["label_name", "label_type", "custom_key", "class_path", "parameters"],
         "feature_aggregations": feature_config,
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,

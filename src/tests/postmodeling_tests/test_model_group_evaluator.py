@@ -11,7 +11,7 @@ def model_group_evaluator(finished_experiment):
 
 def test_ModelGroupEvaluator_metadata(model_group_evaluator):
     assert isinstance(model_group_evaluator.metadata, list)
-    assert len(model_group_evaluator.metadata) == 8 # 8 model groups expected from basic experiment
+    assert len(model_group_evaluator.metadata) == 2 # 2 models expected for a model_group from basic experiment
     for row in model_group_evaluator.metadata:
         assert isinstance(row, dict)
         

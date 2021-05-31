@@ -54,21 +54,26 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
 
     Returns: (dict) experiment config
     """
-    get_experiment_query = '''select experiments.config
+    get_experiment_query = '''
+    select experiment_runs.id as run_id, experiments.config
     from triage_metadata.experiments
-    join triage_metadata.models on (experiments.experiment_hash = models.built_by_experiment)
+    join triage_metadata.models 
+    on (experiments.experiment_hash = models.built_by_experiment)
+    join triage_metadata.experiment_runs 
+    on (experiment_runs.experiment_hash = models.built_by_experiment)
     where model_group_id = %s
     '''
-    (config,) = db_engine.execute(get_experiment_query, model_group_id).first()
-    return config
+    (run_id, config) = db_engine.execute(get_experiment_query, model_group_id).first()
+    return run_id, config
 
 
 def get_model_group_info(db_engine, model_group_id):
     query = """
-    SELECT m.model_group_id, m.model_type, m.hyperparameters
+    SELECT m.model_group_id, m.model_type, m.hyperparameters, m.model_id as model_id_last_split
     FROM triage_metadata.models m
     JOIN triage_metadata.model_groups mg using (model_group_id)
     WHERE model_group_id = %s
+    ORDER BY m.train_end_time DESC
     """
     model_group_info = db_engine.execute(query, model_group_id).fetchone()
     return dict(model_group_info)
@@ -285,11 +290,11 @@ class Retrainer:
     def __init__(self, db_engine, project_path, model_group_id):
         self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
-
         self.project_storage = ProjectStorage(project_path)
         self.model_group_id = model_group_id
         self.model_trainer = None
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
+        self.run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
         self.label_name = self.experiment_config['label_config']['name']
@@ -323,14 +328,9 @@ class Retrainer:
             model_storage_engine=ModelStorageEngine(self.project_storage),
             db_engine=self.db_engine,
             replace=True,
-            run_id=None,
+            run_id=self.run_id,
         )
 
-    @property
-    def experiment_config(self):
-        experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
-        return experiment_config
-    
     def generate_all_labels(self, as_of_date):
         self.label_generator.generate_all_labels(
                 labels_table=self.labels_table_name, 
@@ -401,7 +401,7 @@ class Retrainer:
             'max_training_history': self.experiment_config['temporal_config']['max_training_histories'][0],
         }
         cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
- 
+        
         # 1. Generate all labels
         self.generate_all_labels(as_of_date)
 
@@ -479,7 +479,6 @@ class Retrainer:
             matrix_uuid=matrix_uuid,
             matrix_type="train",
         )
-        
         retrain_model_comment = 'retrain_' + str(datetime.now())
 
         misc_db_parameters = {
@@ -489,15 +488,27 @@ class Retrainer:
             'training_label_timespan': self.training_label_timespan,
             'model_comment': retrain_model_comment,
         }
+
+        last_split_train_matrix_uuid, last_split_matrix_metadata = train_matrix_info_from_model_id(
+            self.db_engine, 
+            model_id=self.model_group_info['model_id_last_split']
+        )
+
+        random_seed = self.model_trainer.get_or_generate_random_seed( 
+            model_group_id=self.model_group_id, 
+            matrix_metadata=last_split_matrix_metadata, 
+            train_matrix_uuid=last_split_train_matrix_uuid
+        )
+
         retrained_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 
             parameters=self.model_group_info['hyperparameters'], 
             model_hash=None, 
             misc_db_parameters=misc_db_parameters, 
-            random_seed=random.randint(1,1e7), 
+            random_seed=random_seed, 
             retrain=True,
-            model_group_id=self.model_group_id,
+            model_group_id=self.model_group_id
         )
 
         self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
