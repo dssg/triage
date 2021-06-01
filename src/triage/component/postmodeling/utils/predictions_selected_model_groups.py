@@ -69,17 +69,18 @@ def _summary_of_models(models_df):
         logging.warning('There are model groups with more than one model per train_end_time. See below: \n {}'.format(time_cts[msk].reset_index()))
         
     
-def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_order='worst', replace=False):
-    """ Generate predictions and write to DB for a set of model_groups in an experiment
+def generate_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_order='worst', replace=True):
+    """ For a set of modl_groups generate test predictions and write to DB
         Args:
-            db_conn: Sqlalchemy engine
+            db_engine: Sqlalchemy engine
             model_groups (list): The list of model group ids we are interested in (ideally, chosen through audition)
             project_path (str): Path where the created matrices and trained model objects are stored for the experiment
-            experiment_hashes (List[str]): Optional. hash of the experiment (currently handling only one experiment)
-            range_train_end_times (Dict): Optional. If given, only the models with train_end_times that fall in the range are scored.
+            experiment_hashes (List[str]): Optional. hash(es) of the experiments we are interested in. Can be used to narrow down the model_ids in the model groups specified
+            range_train_end_times (Dict): Optional. If provided, only the models with train_end_times that fall in the range are scored. 
+                                        This too, helps narrow down model_ids in the model groups specified.
                                         A dictionary with two possible keys 'range_start_date' and 'range_end_date'. Either or both could be set
             rank_order (str) : How to deal with ties in the scores. 
-            replace (bool) : Whether to overwrite the preditctions for a model_id, if already found in the DB
+            replace (bool) : Whether to overwrite the preditctions for a model_id, if already found in the DB.
 
         Returns: None
             This directly writes to the test_results.predictions table
@@ -94,7 +95,7 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     if len(model_matrix_info)==0:
         raise ValueError('No models were found for the given experiment and model group(s)')
     
-    # All the model groups specified in the  
+    # Al the model groups specified in the config file should valid (even if the experiment_hashes and train_end_times are specified)
     not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
     
     if len(not_fetched_model_grps) > 0:
@@ -105,16 +106,16 @@ def generate_predictions(db_engine, model_groups, project_path, experiment_hashe
     # If we are only generating predictions for a specific time range
     if train_end_times_range is not None: 
         if 'range_start_date' in train_end_times_range:
-            range_st = train_end_times_range['range_start_date']
-            msk = (model_matrix_info['train_end_time'] >= range_st)
-            logging.info('Filtering out models with a train_end_time before {}'.format(range_st))
+            range_start = train_end_times_range['range_start_date']
+            msk = (model_matrix_info['train_end_time'] >= range_start)
+            logging.info('Filtering out models with a train_end_time before {}'.format(range_start))
 
             model_matrix_info = model_matrix_info[msk]
 
         if 'range_end_date' in train_end_times_range:       
-            range_en = train_end_times_range['range_end_date']
-            msk = (model_matrix_info['train_end_time'] <= range_en)
-            logging.info('Filtering out models with a train_end_time after {}'.format(range_en))
+            range_end = train_end_times_range['range_end_date']
+            msk = (model_matrix_info['train_end_time'] <= range_end)
+            logging.info('Filtering out models with a train_end_time after {}'.format(range_end))
 
             model_matrix_info = model_matrix_info[msk]
 
