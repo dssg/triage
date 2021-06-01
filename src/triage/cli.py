@@ -438,8 +438,8 @@ class Db(Command):
 
 
 @Triage.register
-class SavePredictions(Command):
-    """Save the predictions of selected model groups"""
+class AddPredictions(Command):
+    """Save test predictions of selected model groups"""
 
     def __init__(self, parser):
         parser.add_argument(
