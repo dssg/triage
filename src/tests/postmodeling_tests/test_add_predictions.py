@@ -31,11 +31,20 @@ def test_add_predictions(finished_experiment_without_predictions):
         project_path=project_path
     )
 
+    # We check for the number of predictions in the DB for each model in each model group
+
+    predictions_present = True
     for model_group_id in model_groups:
         model_ids = db_engine.execute(MODEL_IDS_QUERY.format(model_group_id))
 
         # Asserting that all model_ids in the groups have the predictions written to the DB
         for model_id in model_ids:
             predictions = db_engine.execute(PREDICTIONS_QUERY.format(model_id))
-
-            assert len(predictions) > 0
+            if len(predictions) == 0:
+                predictions_present = False
+                break
+        
+        if not predictions_present:
+            break
+            
+    assert predictions_present == True
