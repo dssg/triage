@@ -1,6 +1,6 @@
 ## Util for Saving Predictions of Selected Model Groups
 
-The script: `predictions_selected_model_groups.py`
+The script: `add_predictions.py`
 
 config file example: `add_predictions_example_config.py`
 
@@ -23,9 +23,9 @@ The `<config_file>` is a required argument. If the `<database_credentials_file>`
 
 The function can be imported into a python script to add predictions of selected model groups as shown below. The parameters could be read
 
-    from src.triage.postmodeling.utils.predictions_selected_model_groups import generate_predictions
+    from src.triage.postmodeling.utils.add_predictions import add_predictions
 
-    generate_predictions(
+    add_predictions(
         db_engine=conn, # The database connection
         model_groups=[1, 2, 3], # List of model groups  
         project_path='path/to/models/and/matrices', # where the models and matrices are stored

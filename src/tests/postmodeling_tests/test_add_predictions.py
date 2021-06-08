@@ -1,6 +1,4 @@
-import pytest
-
-from triage.component.postmodeling.utils.predictions_selected_model_groups import generate_predictions
+from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.component.architect.database_reflection import table_has_data
 
 
@@ -25,7 +23,7 @@ def test_populate_predictions_table(finished_experiment_without_predictions):
     model_groups = [1]
     project_path = finished_experiment_without_predictions.project_storage.project_path
 
-    generate_predictions(
+    add_predictions(
         db_engine=db_engine,
         model_groups=model_groups,
         project_path=project_path
@@ -41,7 +39,7 @@ def test_add_predictions_all_models(finished_experiment_without_predictions):
     model_groups = [1]
     project_path = finished_experiment_without_predictions.project_storage.project_path
 
-    generate_predictions(
+    add_predictions(
         db_engine=db_engine,
         model_groups=model_groups,
         project_path=project_path

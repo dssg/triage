@@ -21,7 +21,7 @@ from triage.experiments import (
     SingleThreadedExperiment,
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
-from triage.component.postmodeling.utils.predictions_selected_model_groups import generate_predictions
+from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -455,7 +455,7 @@ class AddPredictions(Command):
         db_engine = create_engine(self.root.db_url)
         config = yaml.full_load(self.args.configfile)
 
-        generate_predictions(
+        add_predictions(
             db_engine=db_engine,
             model_groups=config['model_group_ids'],
             project_path=config['project_path'],
