@@ -92,17 +92,6 @@ def add_predictions(db_engine, model_groups, project_path, experiment_hashes=Non
         experiment_hashes=experiment_hashes
     )
 
-    if len(model_matrix_info)==0:
-        raise ValueError('No models were found for the given experiment and model group(s)')
-    
-    # Al the model groups specified in the config file should valid (even if the experiment_hashes and train_end_times are specified)
-    not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
-    
-    if len(not_fetched_model_grps) > 0:
-        raise ValueError('No models were found for the model group(s) {}. All specified model groups should be present'.format(not_fetched_model_grps))
-    
-    logging.info('Found {} model ids'.format(len(model_matrix_info)))
-
     # If we are only generating predictions for a specific time range
     if train_end_times_range is not None: 
         if 'range_start_date' in train_end_times_range:
@@ -119,10 +108,16 @@ def add_predictions(db_engine, model_groups, project_path, experiment_hashes=Non
 
             model_matrix_info = model_matrix_info[msk]
 
-        if len(model_matrix_info) == 0:
-            raise ValueError('No models were found for the given time range')
-
-        logging.info('Scoring {} models'.format(len(model_matrix_info)))
+    if len(model_matrix_info)==0:
+        raise ValueError('Configis not valid. No models were found!')
+    
+    # Al the model groups specified in the config file should valid (even if the experiment_hashes and train_end_times are specified)
+    not_fetched_model_grps = [x for x in model_groups if not x in model_matrix_info['model_group_id'].unique()]
+    
+    if len(not_fetched_model_grps) > 0:
+        raise ValueError('The config is not valid. No models were found for the model group(s) {}. All specified model groups should be present'.format(not_fetched_model_grps))
+    
+    logging.info('Scoring {} model ids'.format(len(model_matrix_info)))
 
     # summary of the models that we are scoring. To check any special things worth noting
     _summary_of_models(model_matrix_info)
