@@ -21,7 +21,7 @@ The `<config_file>` is a required argument. If the `<database_credentials_file>`
 
 **Python Interface**
 
-The function can be imported into a python script to add predictions of selected model groups as shown below. The parameters could be read
+The function can be imported into a python script to add predictions of selected model groups as shown below. 
 
     from src.triage.postmodeling.utils.add_predictions import add_predictions
 
