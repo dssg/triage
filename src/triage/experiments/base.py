@@ -104,6 +104,9 @@ class ExperimentBase(ABC):
         materialize_subquery_fromobjs (bool, default True) Whether or not to create and index
             tables for feature "from objects" that are subqueries. Can speed up performance
             when building features for many as-of-dates.
+        additional_bigtrain_classnames (list) Any additional class names to perform in the second batch
+            of training, which focuses on large modeling algorithms that tend to run with less parallelization
+            as there is generally parallelization and high memory requirements built into the algorithm. 
         profile (bool)
     """
 
@@ -120,6 +123,7 @@ class ExperimentBase(ABC):
         cleanup_timeout=None,
         materialize_subquery_fromobjs=True,
         features_ignore_cohort=False,
+        additional_bigtrain_classnames=None,
         profile=False,
         save_predictions=True,
         skip_validation=False,
@@ -185,6 +189,7 @@ class ExperimentBase(ABC):
                           "time is you are running different similar experiments with "
                           "different cohorts.")
 
+        self.additional_bigtrain_classnames = additional_bigtrain_classnames 
         # only fill default values for full runs
         if not partial_run:
             ## Defaults to sane values

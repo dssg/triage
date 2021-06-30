@@ -1,4 +1,5 @@
 """Main application"""
+from enum import Enum
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
 from .evaluation import ModelEvaluator
@@ -15,7 +16,12 @@ from collections import namedtuple
 
 import numpy as np
 
-TaskBatch = namedtuple('TaskBatch', ['parallelizable', 'tasks', 'description'])
+TaskBatch = namedtuple('TaskBatch', ['key', 'tasks', 'description'])
+
+class BatchKey(Enum):
+    QUICKTRAIN = 1
+    BIGTRAIN = 2
+    MAYBETRAIN = 3
 
 
 class ModelTrainTester:
@@ -28,6 +34,7 @@ class ModelTrainTester:
         predictor,
         subsets,
         protected_groups_generator,
+        additional_bigtrain_classnames=None,
         cohort_hash=None,
         replace=True
     ):
@@ -39,6 +46,17 @@ class ModelTrainTester:
         self.subsets = subsets
         self.replace = replace
         self.protected_groups_generator = protected_groups_generator
+        self.bigtrain_classnames = (
+            'sklearn.ensemble.RandomForestClassifier',
+            'sklearn.ensemble.ExtraTreesClassifier',
+            'sklearn.ensemble.AdaBoostClassifier',
+            'sklearn.ensemble.GradientBoostingClassifier',
+            'xgboost.XGBClassifier',
+            'lightgbm.LGBMCLassifier',
+        )
+        if additional_bigtrain_classnames:
+            self.bigtrain_classnames += additional_bigtrain_classnames
+
         self.cohort_hash = cohort_hash
 
     def generate_task_batches(self, splits, grid_config, model_comment=None):
@@ -71,17 +89,17 @@ class ModelTrainTester:
     def order_and_batch_tasks(self, tasks):
         batches = (
             TaskBatch(
-                parallelizable=True,
+                key=BatchKey.QUICKTRAIN,
                 tasks=[],
                 description="Baselines or simple classifiers (e.g. DecisionTree, SLR)"
             ),
             TaskBatch(
-                parallelizable=False,
+                key=BatchKey.BIGTRAIN,
                 tasks=[],
-                description="Heavyweight classifiers with n_jobs set to -1."
+                description="Heavyweight classifiers."
             ),
             TaskBatch(
-                parallelizable=True,
+                key=BatchKey.MAYBETRAIN,
                 tasks=[],
                 description="All classifiers not found in one of the other batches (e.g. gradient boosting)."
             ),
@@ -96,7 +114,7 @@ class ModelTrainTester:
                     ):
                 # First priority: baselines or simple, effective classifiers
                 batches[0].tasks.append(task)
-            elif task['train_kwargs']['parameters'].get('n_jobs', None) == -1:
+            elif task['train_kwargs']['class_path'] in self.bigtrain_classnames:
                 # Second priority: heavyweight classifiers that we use the whole machines for
                 batches[1].tasks.append(task)
             else:
