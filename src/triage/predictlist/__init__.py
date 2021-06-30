@@ -18,124 +18,25 @@ from triage.component.catwalk.predictors import Predictor
 from triage.component.catwalk.utils import retrieve_model_hash_from_id, filename_friendly_hash
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.db import scoped_session
+from .utils import (
+    experiment_config_from_model_id,
+    experiment_config_from_model_group_id,
+    get_model_group_info,
+    train_matrix_info_from_model_id,
+    get_feature_names,
+    get_feature_needs_imputation_in_train,
+    get_feature_needs_imputation_in_production,
+)
+
 
 from collections import OrderedDict
 import json
-import re
 import random
 from datetime import datetime
 
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
-
-def experiment_config_from_model_id(db_engine, model_id):
-    """Get original experiment config from model_id 
-    Args:
-            db_engine (sqlalchemy.db.engine)
-            model_id (int) The id of a given model in the database
-
-    Returns: (dict) experiment config
-    """
-    get_experiment_query = '''select experiments.config
-    from triage_metadata.experiments
-    join triage_metadata.models on (experiments.experiment_hash = models.built_by_experiment)
-    where model_id = %s
-    '''
-    (config,) = db_engine.execute(get_experiment_query, model_id).first()
-    return config
-
-
-def experiment_config_from_model_group_id(db_engine, model_group_id):
-    """Get original experiment config from model_id 
-    Args:
-            db_engine (sqlalchemy.db.engine)
-            model_id (int) The id of a given model in the database
-
-    Returns: (dict) experiment config
-    """
-    get_experiment_query = '''
-    select experiment_runs.id as run_id, experiments.config
-    from triage_metadata.experiments
-    join triage_metadata.models 
-    on (experiments.experiment_hash = models.built_by_experiment)
-    join triage_metadata.experiment_runs 
-    on (experiment_runs.experiment_hash = models.built_by_experiment)
-    where model_group_id = %s
-    '''
-    (run_id, config) = db_engine.execute(get_experiment_query, model_group_id).first()
-    return run_id, config
-
-
-def get_model_group_info(db_engine, model_group_id):
-    query = """
-    SELECT m.model_group_id, m.model_type, m.hyperparameters, m.model_id as model_id_last_split
-    FROM triage_metadata.models m
-    JOIN triage_metadata.model_groups mg using (model_group_id)
-    WHERE model_group_id = %s
-    ORDER BY m.train_end_time DESC
-    """
-    model_group_info = db_engine.execute(query, model_group_id).fetchone()
-    return dict(model_group_info)
-
-
-def train_matrix_info_from_model_id(db_engine, model_id):
-    """Get original train matrix information from model_id 
-    Args:
-            db_engine (sqlalchemy.db.engine)
-            model_id (int) The id of a given model in the database
-
-    Returns: (str, dict) matrix uuid and matrix metadata
-    """
-    get_train_matrix_query = """
-        select matrix_uuid, matrices.matrix_metadata
-        from triage_metadata.matrices
-        join triage_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
-        where model_id = %s
-    """
-    return db_engine.execute(get_train_matrix_query, model_id).first()
-
-
-def get_feature_names(aggregation, matrix_metadata):
-    """Returns a feature group name and a list of feature names from a SpacetimeAggregation object"""
-    feature_prefix = aggregation.prefix
-    logger.spam("Feature prefix = %s", feature_prefix)
-    feature_group = aggregation.get_table_name(imputed=True).split('.')[1].replace('"', '')
-    logger.spam("Feature group = %s", feature_group)
-    feature_names_in_group = [f for f in matrix_metadata['feature_names'] if re.match(f'\\A{feature_prefix}_', f)]
-    logger.spam("Feature names in group = %s", feature_names_in_group)
-    
-    return feature_group, feature_names_in_group
-
-
-def get_feature_needs_imputation_in_train(aggregation, feature_names):
-    """Returns features that needs imputation from training data
-    Args:
-        aggregation (SpacetimeAggregation)
-        feature_names (list) A list of feature names
-    """
-    features_imputed_in_train = [
-        f for f in set(feature_names)
-        if not f.endswith('_imp') 
-        and aggregation.imputation_flag_base(f) + '_imp' in feature_names
-    ]
-    logger.spam("Features imputed in train = %s", features_imputed_in_train)
-    return features_imputed_in_train
-
-
-def get_feature_needs_imputation_in_production(aggregation, db_engine):
-    """Returns features that needs imputation from triage_production
-    Args:
-        aggregation (SpacetimeAggregation)
-        db_engine (sqlalchemy.db.engine)
-    """
-    with db_engine.begin() as conn:
-        nulls_results = conn.execute(aggregation.find_nulls())
-    
-    null_counts = nulls_results.first().items()
-    features_imputed_in_production = [col for (col, val) in null_counts if val is not None and val > 0]
-    
-    return features_imputed_in_production
 
 
 def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_date):
@@ -147,7 +48,7 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
             model_id (int) The id of a given model in the database
             as_of_date (string) a date string like "YYYY-MM-DD"
     """
-    logger.spam("In RISK LIST................")
+    logger.spam("In PREDICT LIST................")
     upgrade_db(db_engine=db_engine)
     project_storage = ProjectStorage(project_path)
     matrix_storage_engine = project_storage.matrix_storage_engine()
@@ -292,7 +193,6 @@ class Retrainer:
         upgrade_db(db_engine=self.db_engine)
         self.project_storage = ProjectStorage(project_path)
         self.model_group_id = model_group_id
-        self.model_trainer = None
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
         self.run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
@@ -331,6 +231,21 @@ class Retrainer:
             replace=True,
             run_id=self.run_id,
         )
+    
+    def get_temporal_config_for_retrain(self, prediction_date):
+        temporal_config = self.experiment_config['temporal_config'].copy()
+        temporal_config['feature_end_time'] = datetime.strftime(prediction_date, "%Y-%m-%d")
+        temporal_config['label_start_time'] = datetime.strftime(
+                prediction_date - 
+                convert_str_to_relativedelta(self.training_label_timespan) - 
+                convert_str_to_relativedelta(self.test_label_timespan), 
+                "%Y-%m-%d")
+        temporal_config['label_end_time'] = datetime.strftime(
+                prediction_date + convert_str_to_relativedelta(self.test_label_timespan), 
+                "%Y-%m-%d")
+        temporal_config['model_update_frequency'] = self.test_label_timespan
+        
+        return temporal_config
 
     def generate_all_labels(self, as_of_date):
         self.label_generator.generate_all_labels(
@@ -390,18 +305,7 @@ class Retrainer:
             prediction_date(str) 
         """
         prediction_date = dt_from_str(prediction_date)
-        # as_of_date = datetime.strftime(prediction_date - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
-        temporal_config = self.experiment_config['temporal_config'].copy()
-        temporal_config['feature_end_time'] = datetime.strftime(prediction_date, "%Y-%m-%d")
-        temporal_config['label_start_time'] = datetime.strftime(
-                prediction_date - 
-                convert_str_to_relativedelta(self.training_label_timespan) - 
-                convert_str_to_relativedelta(self.test_label_timespan), 
-                "%Y-%m-%d")
-        temporal_config['label_end_time'] = datetime.strftime(
-                prediction_date + convert_str_to_relativedelta(self.test_label_timespan), 
-                "%Y-%m-%d")
-        temporal_config['model_update_frequency'] = self.test_label_timespan
+        temporal_config = self.get_temporal_config_for_retrain(prediction_date)
         timechopper = Timechop(**temporal_config)
         chops = timechopper.chop_time()
         assert len(chops) == 1
@@ -503,7 +407,8 @@ class Retrainer:
             'training_label_timespan': self.training_label_timespan,
             'model_comment': retrain_model_comment,
         }
-
+        
+        # get the random seed fromthe last split 
         last_split_train_matrix_uuid, last_split_matrix_metadata = train_matrix_info_from_model_id(
             self.db_engine, 
             model_id=self.model_group_info['model_id_last_split']
@@ -514,12 +419,20 @@ class Retrainer:
             matrix_metadata=last_split_matrix_metadata, 
             train_matrix_uuid=last_split_train_matrix_uuid
         )
+        
+        # create retrained model hash
+        retrained_model_hash = self.model_trainer._model_hash(
+                self.matrix_storage_engine.get_store(matrix_uuid).metadata,
+                class_path=self.model_group_info['model_type'],
+                parameters=self.model_group_info['hyperparameters'],
+                random_seed=random_seed,
+            ) 
 
         retrained_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 
             parameters=self.model_group_info['hyperparameters'], 
-            model_hash=None, 
+            model_hash=retrained_model_hash, 
             misc_db_parameters=misc_db_parameters, 
             random_seed=random_seed, 
             retrain=True,
@@ -572,16 +485,15 @@ class Retrainer:
             replace=True,
         )
         # Use timechop to get the time definition for production
-        temporal_config = self.experiment_config["temporal_config"]
+        # temporal_config = self.experiment_config["temporal_config"]
+        temporal_config = self.get_temporal_config_for_retrain(dt_from_str(prediction_date))
         timechopper = Timechop(**temporal_config)
         prod_definitions = timechopper.define_test_matrices(
             train_test_split_time=dt_from_str(prediction_date), 
             test_duration=temporal_config['test_durations'][0],
             test_label_timespan=temporal_config['test_label_timespans'][0]
         )
-        
         last_split_definition = prod_definitions[-1]
-            
         matrix_metadata = Planner.make_metadata(
             matrix_definition=last_split_definition,
             feature_dictionary=reconstructed_feature_dict,
