@@ -283,13 +283,11 @@ class ModelTrainer:
         unique_parameters = self.unique_parameters(parameters)
 
                
-        if model_hash is None and retrain and model_group_id:
-            model_hash = self._model_hash(
-                matrix_store.metadata,
-                class_path,
-                parameters,
-                random_seed,
-            )
+        if retrain:
+            # if retrain, use the provided model_group_id
+            if not model_group_id:
+                raise ValueError("model_group_id should be provided when retrain") 
+            
         else:
             model_group_id = self.model_grouper.get_model_group_id(
                 class_path, unique_parameters, matrix_store.metadata, self.db_engine
