@@ -296,6 +296,7 @@ class Retrainer:
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
         self.run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
+        self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
         self.label_name = self.experiment_config['label_config']['name']
         self.cohort_name = self.experiment_config['cohort_config']['name']
@@ -389,19 +390,33 @@ class Retrainer:
             prediction_date(str) 
         """
         prediction_date = dt_from_str(prediction_date)
-        as_of_date = datetime.strftime(prediction_date - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
- 
+        # as_of_date = datetime.strftime(prediction_date - convert_str_to_relativedelta(self.training_label_timespan), "%Y-%m-%d")
+        temporal_config = self.experiment_config['temporal_config'].copy()
+        temporal_config['feature_end_time'] = datetime.strftime(prediction_date, "%Y-%m-%d")
+        temporal_config['label_start_time'] = datetime.strftime(
+                prediction_date - 
+                convert_str_to_relativedelta(self.training_label_timespan) - 
+                convert_str_to_relativedelta(self.test_label_timespan), 
+                "%Y-%m-%d")
+        temporal_config['label_end_time'] = datetime.strftime(
+                prediction_date + convert_str_to_relativedelta(self.test_label_timespan), 
+                "%Y-%m-%d")
+        temporal_config['model_update_frequency'] = self.test_label_timespan
+        timechopper = Timechop(**temporal_config)
+        chops = timechopper.chop_time()
+        assert len(chops) == 1
+        chops_train_matrix = chops[0]['train_matrix']
         retrain_definition = {
-            'first_as_of_time': dt_from_str(as_of_date),
-            'last_as_of_time': dt_from_str(as_of_date),
-            'matrix_info_end_time': prediction_date,
-            'as_of_times': [dt_from_str(as_of_date)],
-            'training_label_timespan': self.training_label_timespan,
-            'training_as_of_date_frequency': self.experiment_config['temporal_config']['training_as_of_date_frequencies'],
-            'max_training_history': self.experiment_config['temporal_config']['max_training_histories'][0],
+            'first_as_of_time': chops_train_matrix['first_as_of_time'],
+            'last_as_of_time': chops_train_matrix['last_as_of_time'],
+            'matrix_info_end_time': chops_train_matrix['matrix_info_end_time'],
+            'as_of_times': chops_train_matrix['as_of_times'],
+            'training_label_timespan': chops_train_matrix['training_label_timespan'],
+            'max_training_history': chops_train_matrix['max_training_history'],
         }
-        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
+        as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         
+        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
         # 1. Generate all labels
         self.generate_all_labels(as_of_date)
 
@@ -514,7 +529,6 @@ class Retrainer:
         self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
         self.retrained_matrix_uuid = matrix_uuid
         self.retrained_model_id = retrained_model_id
-        
         return {'retrain_model_comment': retrain_model_comment}
 
     def predict(self, prediction_date):
