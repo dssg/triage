@@ -86,7 +86,7 @@ def test_retrain_should_write_model(finished_experiment):
         model_group_id=model_group_id,
     )
     retrain_info = retrainer.retrain(prediction_date)
-    model_comment = retrain_info['retrain_model_comment']
+    model_comment = retrain_info['retrained_model_comment']
 
     records = [
         row

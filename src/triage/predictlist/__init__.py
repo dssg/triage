@@ -398,14 +398,14 @@ class Retrainer:
             matrix_uuid=matrix_uuid,
             matrix_type="train",
         )
-        retrain_model_comment = 'retrain_' + str(datetime.now())
+        retrained_model_comment = 'retrain_' + str(datetime.now())
 
         misc_db_parameters = {
             'train_end_time': dt_from_str(as_of_date),
             'test': False,
             'train_matrix_uuid': matrix_uuid, 
             'training_label_timespan': self.training_label_timespan,
-            'model_comment': retrain_model_comment,
+            'model_comment': retrained_model_comment,
         }
         
         # get the random seed fromthe last split 
@@ -442,7 +442,7 @@ class Retrainer:
         self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
         self.retrained_matrix_uuid = matrix_uuid
         self.retrained_model_id = retrained_model_id
-        return {'retrain_model_comment': retrain_model_comment, 'retrained_model_id': retrained_model_id}
+        return {'retrained_model_comment': retrained_model_comment, 'retrained_model_id': retrained_model_id}
 
     def predict(self, prediction_date):
         """Predict forward by creating a matrix using as_of_date = prediction_date and applying the retrained model on it

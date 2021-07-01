@@ -28,13 +28,14 @@ retrainer = Retrainer(
 )
 retrainer.retrain(today='2021-04-04')
 retrainer.predict(today='2021-04-04')
+
 ```
 
 ## Output
 The retrained model is sotred similariy to the matrices created during an Experiment:
 - Raw Matrix saved to the matrices directory in project storage
 - Raw Model saved to the trained_model directory in project storage
-- Retrained Model info saved in a table (triage_metadata.models) where model_comment = 'retrain_2021-04-04'
+- Retrained Model info saved in a table (triage_metadata.models) where model_comment = 'retrain_2021-04-04 21:19:09.975112'
 - Predictions saved in a table (triage_production.predictions)
 - Prediction metadata (tiebreaking, random seed) saved in a table (triage_produciton.prediction_metadata)
 
