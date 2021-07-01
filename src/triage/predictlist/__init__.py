@@ -274,11 +274,9 @@ class Retrainer:
         (train_matrix_uuid, matrix_metadata) = train_matrix_info_from_model_id(self.db_engine, model_id)
         reconstructed_feature_dict = FeatureGroup()
         imputation_table_tasks = OrderedDict()
-
         for aggregation in collate_aggregations:
             feature_group, feature_names = get_feature_names(aggregation, matrix_metadata)
             reconstructed_feature_dict[feature_group] = feature_names
-
             # Make sure that the features imputed in training should also be imputed in production
             
             features_imputed_in_train = get_feature_needs_imputation_in_train(aggregation, feature_names)
@@ -317,6 +315,7 @@ class Retrainer:
             'as_of_times': chops_train_matrix['as_of_times'],
             'training_label_timespan': chops_train_matrix['training_label_timespan'],
             'max_training_history': chops_train_matrix['max_training_history'],
+            'training_as_of_date_frequency': chops_train_matrix['training_as_of_date_frequency'],
         }
         as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         
@@ -336,23 +335,16 @@ class Retrainer:
         self.feature_generator.process_table_tasks(feature_aggregation_table_tasks)
 
         # 4. Reconstruct feature disctionary from feature_names and generate imputation
-        feature_imputation_table_tasks = self.feature_generator.generate_all_table_tasks(
-            collate_aggregations,
-            task_type='imputation'
+        reconstructed_feature_dict, imputation_table_tasks = self.get_feature_dict_and_imputation_task(
+                collate_aggregations,
+                self.model_group_info['model_id_last_split'],
         )
-        self.feature_generator.process_table_tasks(feature_imputation_table_tasks)
-        
-        feature_dict = self.feature_dictionary_creator.feature_dictionary(
-            feature_table_names=feature_imputation_table_tasks.keys(),
-            index_column_lookup=self.feature_generator.index_column_lookup(collate_aggregations),
-        )
-        
-        feature_group_creator = FeatureGroupCreator({"all": [True]})
+        feature_group_creator = FeatureGroupCreator(self.experiment_config['feature_group_definition'])
         feature_group_mixer = FeatureGroupMixer(["all"])
         feature_group_dict = feature_group_mixer.generate(
-            feature_group_creator.subsets(feature_dict) 
+            feature_group_creator.subsets(reconstructed_feature_dict)
         )[0]
-
+        self.feature_generator.process_table_tasks(imputation_table_tasks)
         # 5. Build new matrix
         db_config = {
             "features_schema_name": "triage_production",
@@ -375,7 +367,7 @@ class Retrainer:
             label_type='binary',
             cohort_name=self.cohort_name,
             matrix_type='train',
-            feature_start_time=self.feature_start_time,
+            feature_start_time=dt_from_str(self.feature_start_time),
             user_metadata=self.user_metadata,
         )
         
