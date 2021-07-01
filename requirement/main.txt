@@ -25,7 +25,7 @@ scipy==1.7.0
 scikit-learn==0.24.2
 matplotlib==3.4.2
 pandas==1.2.5
-seaborn==0.10.1
+seaborn==0.11.1
 ohio==0.5.0
 
 
