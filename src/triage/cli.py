@@ -411,7 +411,7 @@ class RetrainPredict(Command):
         )
         
         parser.add_argument(
-            "today",
+            "prediction_date",
             type=valid_date,
             help="The date as of which to run features. Format YYYY-MM-DD",
         )
@@ -428,8 +428,8 @@ class RetrainPredict(Command):
             args.project_path,
             args.model_group_id,
         )
-        retrainer.retrain(args.today)
-        retrainer.predict(args.today)
+        retrainer.retrain(args.prediction_date)
+        retrainer.predict(args.prediction_date)
 
 
 @Triage.register
