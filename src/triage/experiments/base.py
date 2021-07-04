@@ -446,7 +446,8 @@ class ExperimentBase(ABC):
             subsets=self.subsets,
             protected_groups_generator=self.protected_groups_generator,
             cohort_hash=self.cohort_hash,
-            replace=self.replace
+            replace=self.replace,
+            additional_bigtrain_classnames=self.additional_bigtrain_classnames
         )
 
 

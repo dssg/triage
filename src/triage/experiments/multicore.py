@@ -83,7 +83,7 @@ class MultiCoreExperiment(ExperimentBase):
 
         for batch in batches:
             logger.info(
-                f"Starting parallelizable batch train/testing with {len(batch.tasks)} tasks, {self.n_processes} processes",
+                f"Starting parallelizable batch train/testing with {len(batch.tasks)} tasks, {self.n_processes_lookup[batch.key]} processes",
             )
             parallelize(partial_test, batch.tasks, self.n_processes_lookup[batch.key])
 
