@@ -46,14 +46,14 @@ class ModelTrainTester:
         self.subsets = subsets
         self.replace = replace
         self.protected_groups_generator = protected_groups_generator
-        self.bigtrain_classnames = (
+        self.bigtrain_classnames = [
             'sklearn.ensemble.RandomForestClassifier',
             'sklearn.ensemble.ExtraTreesClassifier',
             'sklearn.ensemble.AdaBoostClassifier',
             'sklearn.ensemble.GradientBoostingClassifier',
             'xgboost.XGBClassifier',
             'lightgbm.LGBMCLassifier',
-        )
+        ]
         if additional_bigtrain_classnames:
             self.bigtrain_classnames += additional_bigtrain_classnames
 
