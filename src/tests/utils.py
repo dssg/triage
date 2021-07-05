@@ -124,7 +124,9 @@ def fake_trained_model(
     )
     session.add(db_model)
     session.commit()
-    return trained_model, db_model.model_id
+    model_id = db_model.model_id
+    session.close()
+    return trained_model, model_id
 
 
 def matrix_metadata_creator(**override_kwargs):
