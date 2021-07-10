@@ -53,9 +53,9 @@ class MultiCoreExperiment(ExperimentBase):
         self.n_db_processes = n_db_processes
         self.n_bigtrain_processes = n_bigtrain_processes
         self.n_processes_lookup = {
-            BatchKey.QUICKTRAIN: self.n_db_processes,
+            BatchKey.QUICKTRAIN: self.n_processes,
             BatchKey.BIGTRAIN: self.n_bigtrain_processes,
-            BatchKey.MAYBETRAIN: self.n_db_processes
+            BatchKey.MAYBETRAIN: self.n_processes
         }
 
 

@@ -52,7 +52,7 @@ class ModelTrainTester:
             'sklearn.ensemble.AdaBoostClassifier',
             'sklearn.ensemble.GradientBoostingClassifier',
             'xgboost.XGBClassifier',
-            'lightgbm.LGBMCLassifier',
+            'lightgbm.LGBMClassifier',
         ]
         if additional_bigtrain_classnames:
             self.bigtrain_classnames += additional_bigtrain_classnames

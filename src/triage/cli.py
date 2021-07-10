@@ -186,9 +186,9 @@ class Experiment(Command):
             help="number of cores to use for big, computationally-intensive classifiers (e.g. Random Forests)",
         )
         parser.add_argument(
-            "--additional-bigtrain-classnames",
+            "--add-bigtrain-classes",
             nargs="*",
-            help="Additional classifier names to train alongside the 'big' classifiers like random forests.",
+            help="Additional classifier paths (e.g. sklearn.ensemble.RandomForestClassifier) to train alongside the 'big' classifiers like random forests.",
         )
         parser.add_argument(
             "--matrix-format",
@@ -284,7 +284,7 @@ class Experiment(Command):
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions,
             "skip_validation": not self.args.validate,
-            "additional_bigtrain_classnames": self.args.additional_bigtrain_classnames
+            "additional_bigtrain_classnames": self.args.add_bigtrain_classes
         }
         logger.info(f"Setting up the experiment")
         logger.info(f"Configuration file: {self.args.config}")
