@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import ParameterGrid
+from sklearn.utils import parallel_backend
 from sqlalchemy.orm import sessionmaker
 
 from triage.util.random import generate_python_random_seed
@@ -119,7 +120,12 @@ class ModelTrainer:
         cls = getattr(module, class_name)
         instance = cls(**parameters)
 
-        return instance.fit(matrix_store.design_matrix, matrix_store.labels)
+        # using a threading backend because the default loky backend doesn't
+        # allow for nested parallelization (e.g., multiprocessing at triage level)
+        with parallel_backend('threading'):
+            fitted = instance.fit(matrix_store.design_matrix, matrix_store.labels)
+
+        return fitted
 
     @db_retry
     def _save_feature_importances(self, model_id, feature_importances, feature_names):
