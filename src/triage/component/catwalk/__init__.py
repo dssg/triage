@@ -101,7 +101,7 @@ class ModelTrainTester:
             TaskBatch(
                 key=BatchKey.MAYBETRAIN,
                 tasks=[],
-                description="All classifiers not found in one of the other batches (e.g. gradient boosting)."
+                description="All classifiers not found in one of the other batches."
             ),
         )
 
