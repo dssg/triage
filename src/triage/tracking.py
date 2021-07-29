@@ -120,6 +120,7 @@ def initialize_tracking_and_get_run_id(
         git_hash=infer_git_hash(),
         triage_version=infer_triage_version(),
         python_version=infer_python_version(),
+        run_type="experiment",
         experiment_hash=experiment_hash,
         last_updated_time=datetime.datetime.now(),
         current_status=ExperimentRunStatus.started,

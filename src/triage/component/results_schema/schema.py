@@ -23,6 +23,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # One declarative_base object for each schema created
 Base = declarative_base()
@@ -71,6 +72,15 @@ class Experiment(Base):
     models_needed = Column(Integer)
 
 
+class Retrain(Base):
+    __tablename__ = "retrain"
+    __table_args__ = {"schema": "triage_metadata"}
+
+    retrain_hash = Column(String, primary_key=True)
+    config = Column(JSONB)
+    prediction_date = Column(DateTime)
+
+
 class ExperimentRunStatus(enum.Enum):
     started = 1
     completed = 2
@@ -78,6 +88,7 @@ class ExperimentRunStatus(enum.Enum):
 
 
 class ExperimentRun(Base):
+# class TriageRun(Base):
 
     __tablename__ = "experiment_runs"
     __table_args__ = {"schema": "triage_metadata"}
@@ -88,9 +99,14 @@ class ExperimentRun(Base):
     git_hash = Column(String)
     triage_version = Column(String)
     python_version = Column(String)
+    run_type = Column(String)
     experiment_hash = Column(
         String,
         ForeignKey("triage_metadata.experiments.experiment_hash")
+    )
+    retrain_hash = Column(
+        String,
+        ForeignKey("triage_metadata.retrain.retrain_hash")
     )
     platform = Column(Text)
     os_user = Column(Text)
@@ -113,6 +129,11 @@ class ExperimentRun(Base):
     stacktrace = Column(Text)
     random_seed = Column(Integer)
     experiment_rel = relationship("Experiment")
+    retrain_rel = relationship("Retrain")
+        
+    @hybrid_property
+    def external_hash(self):
+        return self.experiment_hash or self.retrain_hash
 
 
 class Subset(Base):
@@ -225,8 +246,11 @@ class Model(Base):
     built_by_experiment = Column(
         String, ForeignKey("triage_metadata.experiments.experiment_hash")
     )
-    built_in_experiment_run = Column(
-        Integer, ForeignKey("triage_metadata.experiment_runs.id")
+    built_by_retrain = Column(
+        String, ForeignKey("triage_metadata.retrain.retrain_hash")
+    )
+    built_in_triage_run = Column(
+        Integer, ForeignKey("triage_metadata.experiment_runs.id"), nullable=True
     )
     train_end_time = Column(DateTime)
     test = Column(Boolean)
@@ -259,6 +283,20 @@ class ExperimentModel(Base):
 
     model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
     experiment_rel = relationship("Experiment")
+
+
+class RetrainModel(Base):
+    __tablename__ = "retrain_models"
+    __table_args__ = {"schema": "triage_metadata"}
+
+    retrain_hash = Column(
+        String,
+        ForeignKey("triage_metadata.retrain.retrain_hash"),
+        primary_key=True
+    )
+    model_hash = Column(String, primary_key=True)
+    model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
+    retrain_rel = relationship("Retrain")
 
 
 class FeatureImportance(Base):

@@ -1,4 +1,8 @@
+from triage.component.results_schema import RetrainModel, Retrain
+from triage.component.catwalk.utils import db_retry, filename_friendly_hash
+
 import re
+from sqlalchemy.orm import sessionmaker
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
@@ -34,7 +38,7 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     join triage_metadata.models 
     on (experiments.experiment_hash = models.built_by_experiment)
     join triage_metadata.experiment_runs 
-    on (experiment_runs.id = models.built_in_experiment_run)
+    on (experiment_runs.id = models.built_in_triage_run)
     where model_group_id = %s
     order by experiment_runs.start_time desc
     '''
@@ -110,5 +114,24 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
     features_imputed_in_production = [col for (col, val) in null_counts if val is not None and val > 0]
     
     return features_imputed_in_production
+
+
+@db_retry
+def associate_models_with_retrain(retrain_hash, model_hashes, db_engine):
+    session = sessionmaker(bind=db_engine)()
+    for model_hash in model_hashes:
+        session.merge(RetrainModel(retrain_hash=retrain_hash, model_hash=model_hash))
+    session.commit()
+    session.close()
+    logger.spam("Associated models with retrain in database")
+
+@db_retry
+def save_retrain_and_get_hash(config, db_engine):
+    retrain_hash = filename_friendly_hash(config)
+    session = sessionmaker(bind=db_engine)()
+    session.merge(Retrain(retrain_hash=retrain_hash, config=config))
+    session.commit()
+    session.close()
+    return retrain_hash
 
 

@@ -1,4 +1,4 @@
-from triage.component.results_schema import upgrade_db
+from triage.component.results_schema import upgrade_db, Retrain, ExperimentRun, ExperimentRunStatus
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, DEFAULT_ACTIVE_STATE
 from triage.component.architect.features import (
         FeatureGenerator, 
@@ -15,9 +15,19 @@ from triage.component.catwalk.storage import ModelStorageEngine, ProjectStorage
 from triage.component.catwalk import ModelTrainer
 from triage.component.catwalk.model_trainers import flatten_grid_config
 from triage.component.catwalk.predictors import Predictor
-from triage.component.catwalk.utils import retrieve_model_hash_from_id, filename_friendly_hash
+from triage.component.catwalk.utils import retrieve_model_hash_from_id, filename_friendly_hash, retrieve_experiment_seed_from_run_id
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
-from triage.util.db import scoped_session
+from triage.util.db import scoped_session, get_for_update
+from triage.util.introspection import classpath
+from triage.tracking import (
+    infer_git_hash, 
+    infer_ec2_instance_type, 
+    infer_installed_libraries,
+    infer_python_version,
+    infer_triage_version,
+    infer_log_location,
+
+)
 from .utils import (
     experiment_config_from_model_id,
     experiment_config_from_model_group_id,
@@ -26,12 +36,17 @@ from .utils import (
     get_feature_names,
     get_feature_needs_imputation_in_train,
     get_feature_needs_imputation_in_production,
+    associate_models_with_retrain,
+    save_retrain_and_get_hash,
 )
 
 
 from collections import OrderedDict
 import json
 import random
+import platform
+import getpass
+import os
 from datetime import datetime
 
 import verboselogs, logging
@@ -189,12 +204,13 @@ class Retrainer:
         model_group_id (string)
     """
     def __init__(self, db_engine, project_path, model_group_id):
+        self.retrain_hash = None
         self.db_engine = db_engine
         upgrade_db(db_engine=self.db_engine)
         self.project_storage = ProjectStorage(project_path)
         self.model_group_id = model_group_id
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
-        self.run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
+        self.experiment_run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
         self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
@@ -229,7 +245,7 @@ class Retrainer:
             model_storage_engine=ModelStorageEngine(self.project_storage),
             db_engine=self.db_engine,
             replace=True,
-            run_id=self.run_id,
+            run_id=self.experiment_run_id,
         )
     
     def get_temporal_config_for_retrain(self, prediction_date):
@@ -295,13 +311,24 @@ class Retrainer:
                 )
             )
         return reconstructed_feature_dict, imputation_table_tasks
-    
+
     def retrain(self, prediction_date):
         """Retrain a model by going back one split from prediction_date, so the as_of_date for training would be (prediction_date - training_label_timespan)
         
         Args:
             prediction_date(str) 
         """
+
+        retrain_config = {
+            "model_group_id": self.model_group_id,
+            "prediction_date": prediction_date,
+        }
+        self.retrain_hash = save_retrain_and_get_hash(retrain_config, self.db_engine)
+
+        with get_for_update(self.db_engine, Retrain, self.retrain_hash) as retrain:
+            retrain.prediction_date = prediction_date
+
+        # Timechop
         prediction_date = dt_from_str(prediction_date)
         temporal_config = self.get_temporal_config_for_retrain(prediction_date)
         timechopper = Timechop(**temporal_config)
@@ -319,11 +346,42 @@ class Retrainer:
         }
         as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         
-        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
+        # Set ExperimentRun
+        run = ExperimentRun(
+            start_time=datetime.now(),
+            git_hash=infer_git_hash(),
+            triage_version=infer_triage_version(),
+            python_version=infer_python_version(),
+            run_type="retrain",
+            retrain_hash=self.retrain_hash,
+            last_updated_time=datetime.now(),
+            current_status=ExperimentRunStatus.started,
+            installed_libraries=infer_installed_libraries(),
+            platform=platform.platform(),
+            os_user=getpass.getuser(),
+            working_directory=os.getcwd(),
+            ec2_instance_type=infer_ec2_instance_type(),
+            log_location=infer_log_location(),
+            experiment_class_path=classpath(self.__class__),
+            random_seed = retrieve_experiment_seed_from_run_id(self.db_engine, self.experiment_run_id),
+        )
+        run_id = None
+        with scoped_session(self.db_engine) as session:
+            session.add(run)
+            session.commit()
+            run_id = run.run_id
+        if not run_id:
+            raise ValueError("Failed to retrieve run_id from saved row")
+
+        # set ModelTrainer's run_id and experiment_hash for Retrain run
+        self.model_trainer.run_id = run_id
+        self.model_trainer.experiment_hash = self.retrain_hash
+
         # 1. Generate all labels
         self.generate_all_labels(as_of_date)
 
         # 2. Generate cohort
+        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
         self.generate_entity_date_table(as_of_date, cohort_table_name)
 
         # 3. Generate feature aggregations
@@ -400,7 +458,7 @@ class Retrainer:
             'model_comment': retrained_model_comment,
         }
         
-        # get the random seed fromthe last split 
+        # get the random seed from the last split 
         last_split_train_matrix_uuid, last_split_matrix_metadata = train_matrix_info_from_model_id(
             self.db_engine, 
             model_id=self.model_group_info['model_id_last_split']
@@ -420,6 +478,8 @@ class Retrainer:
                 random_seed=random_seed,
             ) 
 
+        associate_models_with_retrain(self.retrain_hash, (retrained_model_hash, ), self.db_engine)
+
         retrained_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 
@@ -434,6 +494,8 @@ class Retrainer:
         self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
         self.retrained_matrix_uuid = matrix_uuid
         self.retrained_model_id = retrained_model_id
+        # import ipdb
+        # ipdb.set_trace()
         return {'retrained_model_comment': retrained_model_comment, 'retrained_model_id': retrained_model_id}
 
     def predict(self, prediction_date):
@@ -524,5 +586,4 @@ class Retrainer:
             misc_db_parameters={},
             train_matrix_columns=self.matrix_storage_engine.get_store(self.retrained_matrix_uuid).columns(),
         )
-        
         self.predict_matrix_uuid = matrix_uuid

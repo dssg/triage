@@ -218,11 +218,14 @@ class ModelTrainer:
             return model_id
         else:
             if retrain:
+                logger.debug("Retrain model...")
                 model = Model(
                     model_group_id=model_group_id,
                     model_hash=model_hash,
                     model_type=class_path,
                     hyperparameters=parameters,
+                    built_by_retrain=self.experiment_hash,
+                    built_in_triage_run=self.run_id,
                     model_size=model_size,
                     **misc_db_parameters,
                 )
@@ -234,7 +237,7 @@ class ModelTrainer:
                     hyperparameters=parameters,
                     model_group_id=model_group_id,
                     built_by_experiment=self.experiment_hash,
-                    built_in_experiment_run=self.run_id,
+                    built_in_triage_run=self.run_id,
                     model_size=model_size,
                     **misc_db_parameters,
                 )    
