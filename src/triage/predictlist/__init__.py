@@ -494,8 +494,6 @@ class Retrainer:
         self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
         self.retrained_matrix_uuid = matrix_uuid
         self.retrained_model_id = retrained_model_id
-        # import ipdb
-        # ipdb.set_trace()
         return {'retrained_model_comment': retrained_model_comment, 'retrained_model_id': retrained_model_id}
 
     def predict(self, prediction_date):
