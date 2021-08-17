@@ -532,6 +532,11 @@ class ModelEvaluator:
             labels = matrix_store.labels
             subset_hash = ""
 
+        # confirm protected_df and labels have same set and count of values
+        if (protected_df is not None) and (not protected_df.empty):
+            if (protected_df.index.shape != labels.index.shape) or (not protected_df.index.symmetric_difference(labels.index).empty):
+                raise ValueError("Mismatch between protected_df and labels indices")
+
         df_index = labels.index
         labels = np.array(labels)
 
