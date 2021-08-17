@@ -813,7 +813,7 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
     model_evaluator.evaluate(
         testing_prediction_probas, fake_test_matrix_store, model_id, protected_df
     )
-    # import pdb; pdb.set_trace()
+
     for record in db_engine_with_results_schema.execute(
         """select * from test_results.aequitas
         where model_id = %s and evaluation_start_time = %s
