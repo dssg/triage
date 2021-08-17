@@ -771,16 +771,8 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
     testing_labels = np.array([1, 1, 1, 0, 1])
     testing_prediction_probas = np.array([0.56, 0.55, 0.92, 0.85, 0.24])
 
-    # Seems unclear why this is overriden from the MatrixStore behavior
-    # in MockMatrixStore, but I we need the proper indexing here for the
-    # joins in evaluate() with the protected_df to work!
-    class MockMatrixStoreFixed(MockMatrixStore):
-        @property
-        def labels(self):
-            return self.matrix_label_tuple[1]
-
-    fake_test_matrix_store = MockMatrixStoreFixed(
-        "test", "1234", 5, db_engine_with_results_schema, testing_labels,
+    fake_test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema,
         metadata_overrides={'as_of_times': [TRAIN_END_TIME]},
         matrix=pd.DataFrame.from_dict(
                 {
@@ -790,7 +782,15 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
                     "feature_two": [5, 6, 5, 6, 5],
                     "label": testing_labels,
                 }
-            ).set_index(MatrixStore.indices)
+            ).set_index(MatrixStore.indices),
+        init_labels=pd.DataFrame(
+            {
+                "label_value": testing_labels,
+                "entity_id": [1, 2, 3, 4, 5],
+                "as_of_date": [pd.Timestamp(2016, 1, 1)]*5,
+            }
+        ).set_index(["entity_id", "as_of_date"]).label_value,
+        init_as_of_dates=[TRAIN_END_TIME]
     )
 
     trained_model, model_id = fake_trained_model(
