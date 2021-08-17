@@ -156,25 +156,26 @@ class Batch:
 
 AVAILABLE_TIEBREAKERS = {'random', 'best', 'worst'}
 
-def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', sort_seed=None):
+def sort_predictions_and_labels(predictions_proba, labels, df_index, tiebreaker='random', sort_seed=None):
     """Sort predictions and labels with a configured tiebreaking rule
 
     Args:
         predictions_proba (np.array) The predicted scores
         labels (np.array) The numeric labels (1/0, not True/False)
+        df_index (pd.MultiIndex) Index (generally entity_id, as_of_date tuples) to be sorted with the labels/scores
         tiebreaker (string) The tiebreaking method ('best', 'worst', 'random')
         sort_seed (signed int) The sort seed. Needed if 'random' tiebreaking is picked.
 
     Returns:
-        (tuple) (predictions_proba, labels), sorted
+        (tuple) (predictions_proba, labels, df_index), sorted
     """
     if len(labels) == 0:
         logger.notice("No labels present, skipping predictions sorting .")
-        return (predictions_proba, labels)
-    mask = None
+        return (predictions_proba, labels, df_index)
 
     df = pd.DataFrame(predictions_proba, columns=["score"])
     df['label_value'] = labels
+    df.set_index(df_index, inplace=True)
 
 
     if tiebreaker == 'random':
@@ -194,7 +195,8 @@ def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', 
 
     return  [
         df['score'].to_numpy(),
-        df['label_value'].to_numpy()
+        df['label_value'].to_numpy(),
+        df.index
     ]
 
 
