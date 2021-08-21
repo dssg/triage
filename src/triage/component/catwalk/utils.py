@@ -24,7 +24,7 @@ from triage.component.results_schema import (
     Model,
     ExperimentMatrix,
     ExperimentModel,
-    ExperimentRun,
+    TriageRun,
 )
 
 
@@ -244,13 +244,13 @@ def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_ti
         from {ExperimentModel.__table__.fullname} experiment_models
         join {Model.__table__.fullname} models
         on (experiment_models.model_hash = models.model_hash)
-        join {ExperimentRun.__table__.fullname} experiment_runs
-        on (experiment_models.experiment_hash = experiment_runs.experiment_hash)
+        join {TriageRun.__table__.fullname} triage_runs
+        on (experiment_models.experiment_hash = triage_runs.run_hash)
         where models.model_group_id = %s
         and models.train_end_time = %s
         and models.train_matrix_uuid = %s
         and models.training_label_timespan = %s
-        and experiment_runs.random_seed = %s
+        and triage_runs.random_seed = %s
         order by models.run_time DESC, random()
     """
     return [row[0] for row in db_engine.execute(query, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed)]
@@ -267,7 +267,7 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
     """
     session = sessionmaker(bind=db_engine)()
     try:
-        return session.query(ExperimentRun).get(run_id).random_seed
+        return session.query(TriageRun).get(run_id).random_seed
     finally:
         session.close()
 

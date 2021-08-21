@@ -1,4 +1,4 @@
-from triage.component.results_schema import upgrade_db, Retrain, ExperimentRun, ExperimentRunStatus
+from triage.component.results_schema import upgrade_db, Retrain, TriageRun, TriageRunStatus
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, DEFAULT_ACTIVE_STATE
 from triage.component.architect.features import (
         FeatureGenerator, 
@@ -210,7 +210,7 @@ class Retrainer:
         self.project_storage = ProjectStorage(project_path)
         self.model_group_id = model_group_id
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
-        self.experiment_run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
+        self.triage_run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
         self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
@@ -245,7 +245,7 @@ class Retrainer:
             model_storage_engine=ModelStorageEngine(self.project_storage),
             db_engine=self.db_engine,
             replace=True,
-            run_id=self.experiment_run_id,
+            run_id=self.triage_run_id,
         )
     
     def get_temporal_config_for_retrain(self, prediction_date):
@@ -347,15 +347,15 @@ class Retrainer:
         as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         
         # Set ExperimentRun
-        run = ExperimentRun(
+        run = TriageRun(
             start_time=datetime.now(),
             git_hash=infer_git_hash(),
             triage_version=infer_triage_version(),
             python_version=infer_python_version(),
             run_type="retrain",
-            retrain_hash=self.retrain_hash,
+            run_hash=self.retrain_hash,
             last_updated_time=datetime.now(),
-            current_status=ExperimentRunStatus.started,
+            current_status=TriageRunStatus.started,
             installed_libraries=infer_installed_libraries(),
             platform=platform.platform(),
             os_user=getpass.getuser(),
@@ -363,7 +363,7 @@ class Retrainer:
             ec2_instance_type=infer_ec2_instance_type(),
             log_location=infer_log_location(),
             experiment_class_path=classpath(self.__class__),
-            random_seed = retrieve_experiment_seed_from_run_id(self.db_engine, self.experiment_run_id),
+            random_seed = retrieve_experiment_seed_from_run_id(self.db_engine, self.triage_run_id),
         )
         run_id = None
         with scoped_session(self.db_engine) as session:

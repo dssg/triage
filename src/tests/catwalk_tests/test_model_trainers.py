@@ -60,7 +60,6 @@ def test_model_trainer(grid_config, default_model_trainer):
         misc_db_parameters=dict(),
         matrix_store=get_matrix_store(project_storage),
     )
-
     # assert
     # 1. that the models and feature importances table entries are present
     records = [
@@ -286,11 +285,13 @@ def test_reuse_model_random_seeds(grid_config, default_model_trainer):
     def update_experiment_models(db_engine):
         sql = """
             INSERT INTO triage_metadata.experiment_models(experiment_hash,model_hash) 
-            SELECT m.built_by_experiment, m.model_hash 
-            FROM triage_metadata.models m 
+            SELECT er.run_hash, m.model_hash
+            FROM triage_metadata.models m
+            LEFT JOIN triage_metadata.triage_runs er
+                ON m.built_in_triage_run = er.id
             LEFT JOIN triage_metadata.experiment_models em 
-                ON m.model_hash = em.model_hash 
-                AND m.built_by_experiment = em.experiment_hash 
+                ON m.model_hash = em.model_hash
+                AND er.run_hash = em.experiment_hash
             WHERE em.experiment_hash IS NULL
             """
         db_engine.execute(sql)

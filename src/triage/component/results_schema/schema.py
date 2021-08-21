@@ -60,7 +60,11 @@ class Experiment(Base):
     __tablename__ = "experiments"
     __table_args__ = {"schema": "triage_metadata"}
 
-    experiment_hash = Column(String, primary_key=True)
+    experiment_hash = Column(
+            String,
+            # ForeignKey("triage_metadata.experiment_runs.run_hash"),
+            primary_key=True
+    )
     config = Column(JSONB)
     time_splits = Column(Integer)
     as_of_times = Column(Integer)
@@ -70,27 +74,33 @@ class Experiment(Base):
     matrices_needed = Column(Integer)
     grid_size = Column(Integer)
     models_needed = Column(Integer)
+    # run_rel = relationship("ExperimentRun")
 
 
 class Retrain(Base):
     __tablename__ = "retrain"
     __table_args__ = {"schema": "triage_metadata"}
 
-    retrain_hash = Column(String, primary_key=True)
+    retrain_hash = Column(
+            String,
+            # ForeignKey("triage_metadata.experiment_runs.run_hash"),
+            primary_key=True
+    )
     config = Column(JSONB)
     prediction_date = Column(DateTime)
+    # run_rel = relationship("ExperimentRun")
 
 
-class ExperimentRunStatus(enum.Enum):
+class TriageRunStatus(enum.Enum):
     started = 1
     completed = 2
     failed = 3
 
 
-class ExperimentRun(Base):
-# class TriageRun(Base):
+# class ExperimentRun(Base):
+class TriageRun(Base):
 
-    __tablename__ = "experiment_runs"
+    __tablename__ = "triage_runs"
     __table_args__ = {"schema": "triage_metadata"}
 
     run_id = Column("id", Integer, primary_key=True)
@@ -100,14 +110,15 @@ class ExperimentRun(Base):
     triage_version = Column(String)
     python_version = Column(String)
     run_type = Column(String)
-    experiment_hash = Column(
-        String,
-        ForeignKey("triage_metadata.experiments.experiment_hash")
-    )
-    retrain_hash = Column(
-        String,
-        ForeignKey("triage_metadata.retrain.retrain_hash")
-    )
+    run_hash = Column(String)
+    # experiment_hash = Column(
+    #     String,
+    #     ForeignKey("triage_metadata.experiments.experiment_hash")
+    # )
+    # retrain_hash = Column(
+    #     String,
+    #     ForeignKey("triage_metadata.retrain.retrain_hash")
+    # )
     platform = Column(Text)
     os_user = Column(Text)
     working_directory = Column(Text)
@@ -125,15 +136,15 @@ class ExperimentRun(Base):
     models_skipped = Column(Integer, default=0)
     models_errored = Column(Integer, default=0)
     last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
-    current_status = Column(Enum(ExperimentRunStatus))
+    current_status = Column(Enum(TriageRunStatus))
     stacktrace = Column(Text)
     random_seed = Column(Integer)
-    experiment_rel = relationship("Experiment")
-    retrain_rel = relationship("Retrain")
+    # experiment_rel = relationship("Experiment")
+    # retrain_rel = relationship("Retrain")
         
-    @hybrid_property
-    def external_hash(self):
-        return self.experiment_hash or self.retrain_hash
+    # @hybrid_property
+    # def external_hash(self):
+    #     return self.experiment_hash or self.retrain_hash
 
 
 class Subset(Base):
@@ -243,14 +254,14 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    built_by_experiment = Column(
-        String, ForeignKey("triage_metadata.experiments.experiment_hash")
-    )
-    built_by_retrain = Column(
-        String, ForeignKey("triage_metadata.retrain.retrain_hash")
-    )
+    # built_by_experiment = Column(
+    #     String, ForeignKey("triage_metadata.experiments.experiment_hash")
+    # )
+    # built_by_retrain = Column(
+    #     String, ForeignKey("triage_metadata.retrain.retrain_hash")
+    # )
     built_in_triage_run = Column(
-        Integer, ForeignKey("triage_metadata.experiment_runs.id"), nullable=True
+        Integer, ForeignKey("triage_metadata.triage_runs.id"), nullable=True
     )
     train_end_time = Column(DateTime)
     test = Column(Boolean)

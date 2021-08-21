@@ -16,8 +16,9 @@ def experiment_config_from_model_id(db_engine, model_id):
     Returns: (dict) experiment config
     """
     get_experiment_query = '''select experiments.config
-    from triage_metadata.experiments
-    join triage_metadata.models on (experiments.experiment_hash = models.built_by_experiment)
+    from triage_metadata.triage_runs
+    join triage_metadata.models on (triage_runs.id = models.built_in_triage_run)
+    join triage_metadata.experiments on (experiments.experiment_hash = triage_runs.run_hash)
     where model_id = %s
     '''
     (config,) = db_engine.execute(get_experiment_query, model_id).first()
@@ -33,14 +34,14 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     Returns: (dict) experiment config
     """
     get_experiment_query = '''
-    select experiment_runs.id as run_id, experiments.config
-    from triage_metadata.experiments
-    join triage_metadata.models 
-    on (experiments.experiment_hash = models.built_by_experiment)
-    join triage_metadata.experiment_runs 
-    on (experiment_runs.id = models.built_in_triage_run)
+    select triage_runs.id as run_id, experiments.config
+    from triage_metadata.triage_runs
+    join triage_metadata.models
+    on (triage_runs.id = models.built_in_triage_run)
+    join triage_metadata.experiments
+    on (experiments.experiment_hash = triage_runs.run_hash)
     where model_group_id = %s
-    order by experiment_runs.start_time desc
+    order by triage_runs.start_time desc
     '''
     (run_id, config) = db_engine.execute(get_experiment_query, model_group_id).first()
     return run_id, config
