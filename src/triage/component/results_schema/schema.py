@@ -62,7 +62,6 @@ class Experiment(Base):
 
     experiment_hash = Column(
             String,
-            # ForeignKey("triage_metadata.experiment_runs.run_hash"),
             primary_key=True
     )
     config = Column(JSONB)
@@ -74,7 +73,6 @@ class Experiment(Base):
     matrices_needed = Column(Integer)
     grid_size = Column(Integer)
     models_needed = Column(Integer)
-    # run_rel = relationship("ExperimentRun")
 
 
 class Retrain(Base):
@@ -83,12 +81,10 @@ class Retrain(Base):
 
     retrain_hash = Column(
             String,
-            # ForeignKey("triage_metadata.experiment_runs.run_hash"),
             primary_key=True
     )
     config = Column(JSONB)
     prediction_date = Column(DateTime)
-    # run_rel = relationship("ExperimentRun")
 
 
 class TriageRunStatus(enum.Enum):
@@ -97,7 +93,6 @@ class TriageRunStatus(enum.Enum):
     failed = 3
 
 
-# class ExperimentRun(Base):
 class TriageRun(Base):
 
     __tablename__ = "triage_runs"
@@ -111,14 +106,6 @@ class TriageRun(Base):
     python_version = Column(String)
     run_type = Column(String)
     run_hash = Column(String)
-    # experiment_hash = Column(
-    #     String,
-    #     ForeignKey("triage_metadata.experiments.experiment_hash")
-    # )
-    # retrain_hash = Column(
-    #     String,
-    #     ForeignKey("triage_metadata.retrain.retrain_hash")
-    # )
     platform = Column(Text)
     os_user = Column(Text)
     working_directory = Column(Text)
@@ -139,13 +126,7 @@ class TriageRun(Base):
     current_status = Column(Enum(TriageRunStatus))
     stacktrace = Column(Text)
     random_seed = Column(Integer)
-    # experiment_rel = relationship("Experiment")
-    # retrain_rel = relationship("Retrain")
         
-    # @hybrid_property
-    # def external_hash(self):
-    #     return self.experiment_hash or self.retrain_hash
-
 
 class Subset(Base):
 
@@ -254,12 +235,6 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    # built_by_experiment = Column(
-    #     String, ForeignKey("triage_metadata.experiments.experiment_hash")
-    # )
-    # built_by_retrain = Column(
-    #     String, ForeignKey("triage_metadata.retrain.retrain_hash")
-    # )
     built_in_triage_run = Column(
         Integer, ForeignKey("triage_metadata.triage_runs.id"), nullable=True
     )

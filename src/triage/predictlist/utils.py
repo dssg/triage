@@ -117,6 +117,18 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
     return features_imputed_in_production
 
 
+def get_retrain_config_from_model_id(db_engine, model_id):
+    query = """
+    SELECT re.config FROM triage_metadata.models m
+    LEFT JOIN triage_metadata.triage_runs r ON m.built_in_triage_run = r.id
+    LEFT JOIN triage_metadata.retrain re on re.retrain_hash = r.run_hash
+    WHERE m.model_id = %s;
+    """
+
+    (config,) = db_engine.execute(query, model_id).first()
+    return config
+
+
 @db_retry
 def associate_models_with_retrain(retrain_hash, model_hashes, db_engine):
     session = sessionmaker(bind=db_engine)()

@@ -38,6 +38,7 @@ from .utils import (
     get_feature_needs_imputation_in_production,
     associate_models_with_retrain,
     save_retrain_and_get_hash,
+    get_retrain_config_from_model_id,
 )
 
 
@@ -213,6 +214,7 @@ class Retrainer:
         self.triage_run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
         self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
+        self.test_duration = self.experiment_config['temporal_config']['test_durations'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
         self.label_name = self.experiment_config['label_config']['name']
         self.cohort_name = self.experiment_config['cohort_config']['name']
@@ -318,15 +320,19 @@ class Retrainer:
         Args:
             prediction_date(str) 
         """
-
+        # Retrain config and hash
         retrain_config = {
             "model_group_id": self.model_group_id,
             "prediction_date": prediction_date,
+            "test_label_timespan": self.test_label_timespan,
+            "test_duration": self.test_duration,
+
         }
         self.retrain_hash = save_retrain_and_get_hash(retrain_config, self.db_engine)
 
         with get_for_update(self.db_engine, Retrain, self.retrain_hash) as retrain:
             retrain.prediction_date = prediction_date
+
 
         # Timechop
         prediction_date = dt_from_str(prediction_date)
@@ -335,17 +341,17 @@ class Retrainer:
         chops = timechopper.chop_time()
         assert len(chops) == 1
         chops_train_matrix = chops[0]['train_matrix']
+        as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         retrain_definition = {
             'first_as_of_time': chops_train_matrix['first_as_of_time'],
             'last_as_of_time': chops_train_matrix['last_as_of_time'],
             'matrix_info_end_time': chops_train_matrix['matrix_info_end_time'],
-            'as_of_times': chops_train_matrix['as_of_times'],
+            'as_of_times': [as_of_date],
             'training_label_timespan': chops_train_matrix['training_label_timespan'],
             'max_training_history': chops_train_matrix['max_training_history'],
             'training_as_of_date_frequency': chops_train_matrix['training_as_of_date_frequency'],
         }
-        as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
-        
+
         # Set ExperimentRun
         run = TriageRun(
             start_time=datetime.now(),
@@ -448,14 +454,14 @@ class Retrainer:
             matrix_uuid=matrix_uuid,
             matrix_type="train",
         )
-        retrained_model_comment = 'retrain_' + str(datetime.now())
+        retrain_model_comment = 'retrain_' + str(datetime.now())
 
         misc_db_parameters = {
             'train_end_time': dt_from_str(as_of_date),
             'test': False,
             'train_matrix_uuid': matrix_uuid, 
             'training_label_timespan': self.training_label_timespan,
-            'model_comment': retrained_model_comment,
+            'model_comment': retrain_model_comment,
         }
         
         # get the random seed from the last split 
@@ -470,34 +476,34 @@ class Retrainer:
             train_matrix_uuid=last_split_train_matrix_uuid
         )
         
-        # create retrained model hash
-        retrained_model_hash = self.model_trainer._model_hash(
+        # create retrain model hash
+        retrain_model_hash = self.model_trainer._model_hash(
                 self.matrix_storage_engine.get_store(matrix_uuid).metadata,
                 class_path=self.model_group_info['model_type'],
                 parameters=self.model_group_info['hyperparameters'],
                 random_seed=random_seed,
             ) 
 
-        associate_models_with_retrain(self.retrain_hash, (retrained_model_hash, ), self.db_engine)
+        associate_models_with_retrain(self.retrain_hash, (retrain_model_hash, ), self.db_engine)
 
-        retrained_model_id = self.model_trainer.process_train_task(
+        retrain_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 
             parameters=self.model_group_info['hyperparameters'], 
-            model_hash=retrained_model_hash, 
+            model_hash=retrain_model_hash,
             misc_db_parameters=misc_db_parameters, 
             random_seed=random_seed, 
             retrain=True,
             model_group_id=self.model_group_id
         )
 
-        self.retrained_model_hash = retrieve_model_hash_from_id(self.db_engine, retrained_model_id)
-        self.retrained_matrix_uuid = matrix_uuid
-        self.retrained_model_id = retrained_model_id
-        return {'retrained_model_comment': retrained_model_comment, 'retrained_model_id': retrained_model_id}
+        self.retrain_model_hash = retrieve_model_hash_from_id(self.db_engine, retrain_model_id)
+        self.retrain_matrix_uuid = matrix_uuid
+        self.retrain_model_id = retrain_model_id
+        return {'retrain_model_comment': retrain_model_comment, 'retrain_model_id': retrain_model_id}
 
     def predict(self, prediction_date):
-        """Predict forward by creating a matrix using as_of_date = prediction_date and applying the retrained model on it
+        """Predict forward by creating a matrix using as_of_date = prediction_date and applying the retrain model on it
 
         Args:
             prediction_date(str)
@@ -518,7 +524,7 @@ class Retrainer:
         # 3. Reconstruct feature disctionary from feature_names and generate imputation
         reconstructed_feature_dict, imputation_table_tasks = self.get_feature_dict_and_imputation_task(
                 collate_aggregations, 
-                self.retrained_model_id
+                self.retrain_model_id
         )
         self.feature_generator.process_table_tasks(imputation_table_tasks)
  
@@ -537,13 +543,15 @@ class Retrainer:
             replace=True,
         )
         # Use timechop to get the time definition for production
-        # temporal_config = self.experiment_config["temporal_config"]
         temporal_config = self.get_temporal_config_for_retrain(dt_from_str(prediction_date))
         timechopper = Timechop(**temporal_config)
+
+        retrain_config = get_retrain_config_from_model_id(self.db_engine, self.retrain_model_id)
+
         prod_definitions = timechopper.define_test_matrices(
             train_test_split_time=dt_from_str(prediction_date), 
-            test_duration=temporal_config['test_durations'][0],
-            test_label_timespan=temporal_config['test_label_timespans'][0]
+            test_duration=retrain_config['test_duration'],
+            test_label_timespan=retrain_config['test_label_timespan']
         )
         last_split_definition = prod_definitions[-1]
         matrix_metadata = Planner.make_metadata(
@@ -557,7 +565,7 @@ class Retrainer:
             user_metadata=self.user_metadata,
         )
     
-        matrix_metadata['matrix_id'] = str(prediction_date) +  f'_model_id_{self.retrained_model_id}' + '_risklist'
+        matrix_metadata['matrix_id'] = str(prediction_date) +  f'_model_id_{self.retrain_model_id}' + '_risklist'
 
         matrix_uuid = filename_friendly_hash(matrix_metadata)
     
@@ -579,9 +587,9 @@ class Retrainer:
         )
 
         predictor.predict(
-            model_id=self.retrained_model_id,
+            model_id=self.retrain_model_id,
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid),
             misc_db_parameters={},
-            train_matrix_columns=self.matrix_storage_engine.get_store(self.retrained_matrix_uuid).columns(),
+            train_matrix_columns=self.matrix_storage_engine.get_store(self.retrain_matrix_uuid).columns(),
         )
         self.predict_matrix_uuid = matrix_uuid
