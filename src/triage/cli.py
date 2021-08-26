@@ -2,17 +2,20 @@ import argparse
 import importlib.util
 import os
 import yaml
+import pathlib
 
 
 from datetime import datetime
 
 from descriptors import cachedproperty
-from argcmdr import RootCommand, Command, main, cmdmethod
+from argcmdr import RootCommand, Command, main, cmdmethod, local
+from getpass import getpass
 from sqlalchemy.engine.url import URL
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
+from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
@@ -450,6 +453,37 @@ class Db(Command):
         db_history(dburl=self.root.db_url)
 
 
+    @cmdmethod('password', action='store_true', help='hidden password prompt')
+    @local
+    def up(self, args):
+        (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
+        if retcode != 0:
+            logger.info('Container does not exist')
+            if os.path.exists('database.yaml'):
+                logger.error("database.yaml already exists, which indicates you are "
+                              "already using Triage with a database and likely do not "
+                              "need to run this command. If you would like to provision "
+                              "a new database to use with Triage, remove database.yaml") 
+                return
+            if args.password:
+                password = getpass(prompt='Enter a password for your new database user: ')
+                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'triage-db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'postgres:12']())
+                with open('database.yaml', 'w') as out_fd:
+                    config = {
+                        'host': '0.0.0.0',
+                        'user': 'triage_user',
+                        'pass': password,
+                        'port': 5432,
+                        'db': 'triage'
+                    }
+                    out_fd.write(yaml.dump(config))
+                logger.info('New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
+        elif 'running' in stdout:
+            logger.info('Already running, will not start')
+        else:
+            logger.info('Container exists, but is not running. Starting')
+            logger.info(self.local['docker']['start', 'triage_db'])
+
 @Triage.register
 class AddPredictions(Command):
     """Save test predictions of selected model groups"""
@@ -475,7 +509,6 @@ class AddPredictions(Command):
             experiment_hashes=config.get('experiments'),
             train_end_times_range=config.get('train_end_times')
         )
-        
 
 def execute():
     main(Triage)
