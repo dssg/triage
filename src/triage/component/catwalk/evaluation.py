@@ -512,8 +512,6 @@ class ModelEvaluator:
                 name for the subset to evaluate on, if any
             protected_df (pandas.DataFrame) A dataframe with protected group attributes
         """
-        if (protected_df is not None) and (not protected_df.empty):
-            protected_df = protected_df.align(matrix_store.labels, join="inner", axis=0)[0]
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
         if subset:
@@ -534,6 +532,12 @@ class ModelEvaluator:
             labels = matrix_store.labels
             subset_hash = ""
 
+        # confirm protected_df and labels have same set and count of values
+        if (protected_df is not None) and (not protected_df.empty):
+            if (protected_df.index.shape != labels.index.shape) or (not protected_df.index.symmetric_difference(labels.index).empty):
+                raise ValueError("Mismatch between protected_df and labels indices")
+
+        df_index = labels.index
         labels = np.array(labels)
 
         matrix_type = matrix_store.matrix_type
@@ -542,9 +546,10 @@ class ModelEvaluator:
         logger.spam(f"Found {len(metric_defs)} metric definitions total")
 
         # 1. get worst sorting
-        predictions_proba_worst, labels_worst = sort_predictions_and_labels(
+        predictions_proba_worst, labels_worst, df_index_worst = sort_predictions_and_labels(
             predictions_proba=predictions_proba,
             labels=labels,
+            df_index=df_index,
             tiebreaker='worst',
         )
         worst_lookup = {
@@ -555,9 +560,10 @@ class ModelEvaluator:
         logger.debug(f'Predictions from {model_id} sorted by worst case scenario, i.e. all negative and NULL labels first')
 
         # 2. get best sorting
-        predictions_proba_best, labels_best = sort_predictions_and_labels(
+        predictions_proba_best, labels_best, df_index_best = sort_predictions_and_labels(
             predictions_proba=predictions_proba_worst,
             labels=labels_worst,
+            df_index=df_index_worst,
             tiebreaker='best',
         )
         best_lookup = {
@@ -588,9 +594,10 @@ class ModelEvaluator:
         random_eval_accumulator = defaultdict(list)
         for _ in range(0, SORT_TRIALS):
             sort_seed = generate_python_random_seed()
-            predictions_proba_random, labels_random = sort_predictions_and_labels(
+            predictions_proba_random, labels_random, df_index_random = sort_predictions_and_labels(
                 predictions_proba=predictions_proba_worst,
                 labels=labels_worst,
+                df_index=df_index_worst,
                 tiebreaker='random',
                 sort_seed=sort_seed
             )
@@ -647,7 +654,7 @@ class ModelEvaluator:
         if protected_df is not None:
             self._write_audit_to_db(
                 model_id=model_id,
-                protected_df=protected_df,
+                protected_df=protected_df.reindex(df_index_worst),
                 predictions_proba=predictions_proba_worst,
                 labels=labels_worst,
                 tie_breaker='worst',
@@ -658,7 +665,7 @@ class ModelEvaluator:
                 matrix_uuid=matrix_store.uuid)
             self._write_audit_to_db(
                 model_id=model_id,
-                protected_df=protected_df,
+                protected_df=protected_df.reindex(df_index_best),
                 predictions_proba=predictions_proba_best,
                 labels=labels_best,
                 tie_breaker='best',
