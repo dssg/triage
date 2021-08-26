@@ -178,7 +178,18 @@ class Experiment(Command):
             "--n-processes",
             type=natural_number,
             default=1,
-            help="number of cores to use",
+            help="number of cores to use for small classifiers (e.g. Logistic Regression)",
+        )
+        parser.add_argument(
+            "--n-bigtrain-processes",
+            type=natural_number,
+            default=1,
+            help="number of cores to use for big, computationally-intensive classifiers (e.g. Random Forests)",
+        )
+        parser.add_argument(
+            "--add-bigtrain-classes",
+            nargs="*",
+            help="Additional classifier paths (e.g. sklearn.ensemble.RandomForestClassifier) to train alongside the 'big' classifiers like random forests.",
         )
         parser.add_argument(
             "--matrix-format",
@@ -273,17 +284,19 @@ class Experiment(Command):
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions,
-            "skip_validation": not self.args.validate
+            "skip_validation": not self.args.validate,
+            "additional_bigtrain_classnames": self.args.add_bigtrain_classes
         }
         logger.info(f"Setting up the experiment")
         logger.info(f"Configuration file: {self.args.config}")
         logger.info(f"Results will be stored in DB: {self.root.db_url}")
         logger.info(f"Artifacts will be saved in {self.args.project_path}")
         try:
-            if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+            if self.args.n_db_processes > 1 or self.args.n_processes > 1 or self.args.n_bigtrain_processes > 1:
                 experiment = MultiCoreExperiment(
                     n_db_processes=self.args.n_db_processes,
                     n_processes=self.args.n_processes,
+                    n_bigtrain_processes=self.args.n_bigtrain_processes,
                     **common_kwargs,
                 )
                 logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
