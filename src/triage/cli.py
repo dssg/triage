@@ -21,6 +21,7 @@ from triage.experiments import (
     SingleThreadedExperiment,
 )
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
+from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -435,6 +436,33 @@ class Db(Command):
         """Show triage results database history"""
         db_history(dburl=self.root.db_url)
 
+
+@Triage.register
+class AddPredictions(Command):
+    """Save test predictions of selected model groups"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "-c",
+            "--configfile",
+            type=argparse.FileType("r"),
+            help="Path to the configuration file (required)",
+            required=True
+        )
+
+
+    def __call__(self):
+        db_engine = create_engine(self.root.db_url)
+        config = yaml.full_load(self.args.configfile)
+
+        add_predictions(
+            db_engine=db_engine,
+            model_groups=config['model_group_ids'],
+            project_path=config['project_path'],
+            experiment_hashes=config.get('experiments'),
+            train_end_times_range=config.get('train_end_times')
+        )
+        
 
 def execute():
     main(Triage)

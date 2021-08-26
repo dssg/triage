@@ -1,0 +1,29 @@
+# Path where the models and matrices are stored
+project_path: 'path/to/models/and/matrices'
+
+# Model group ids we need predictions for
+# List of integers
+model_group_ids:
+  - 1
+  - 2
+
+# Following parameters are optional
+# These will help narrow down the model_ids in the above model groups in case you are not interested in all the models in a group
+# If these are not specificied, all the models in the group will be scored
+# Either (or both) can be specified independent of the other
+
+# Narrowing down by the experiment hash(es)
+# If this is provided, only the model ids relevant to these experiment hashes will be scored
+experiments: 
+  - 'experiment_hash1'
+  - 'experiment_hash2'
+
+# Narrowing down by the train_end_time
+# Here you can score models that are trained with data from a certain time period
+# The first element should be the start date, and the second element should be the end date
+# All models (in the above model groups) that has a train_end_time that falls within this range will be scored 
+# range end points are inclusive
+# If you only specify one limit, an open ended interval is used. 
+train_end_times: 
+  range_start_date: '1970-01-01' # If only this is specified, all train_end_times on and after this date will be incuded
+  range_end_date: '1980-01-01' # If only this is specified, all train_end_times on and before this date will be included
