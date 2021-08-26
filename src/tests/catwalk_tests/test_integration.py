@@ -6,6 +6,7 @@ from triage.component.catwalk.storage import (
     MatrixStore,
     MatrixStorageEngine,
 )
+from triage.tracking import initialize_tracking_and_get_run_id
 from tests.utils import (
     get_matrix_store,
     matrix_metadata_creator,
@@ -19,12 +20,20 @@ def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_
     model_storage_engine = ModelStorageEngine(project_storage)
     matrix_storage_engine = MatrixStorageEngine(project_storage)
     sample_matrix_store = get_matrix_store(project_storage)
-    experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
+    experiment_hash = save_experiment_and_get_hash({}, db_engine)
+    run_id = initialize_tracking_and_get_run_id(
+        experiment_hash,
+        experiment_class_path="",
+        random_seed=5,
+        experiment_kwargs={},
+        db_engine=db_engine_with_results_schema
+    )
     # instantiate pipeline objects
     trainer = ModelTrainer(
         experiment_hash=experiment_hash,
         model_storage_engine=model_storage_engine,
         db_engine=db_engine,
+        run_id=run_id,
     )
     train_tester = ModelTrainTester(
         matrix_storage_engine=matrix_storage_engine,
