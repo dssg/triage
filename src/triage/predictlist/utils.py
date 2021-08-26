@@ -18,7 +18,8 @@ def experiment_config_from_model_id(db_engine, model_id):
     get_experiment_query = '''select experiments.config
     from triage_metadata.triage_runs
     join triage_metadata.models on (triage_runs.id = models.built_in_triage_run)
-    join triage_metadata.experiments on (experiments.experiment_hash = triage_runs.run_hash)
+    join triage_metadata.experiments 
+        on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
     where model_id = %s
     '''
     (config,) = db_engine.execute(get_experiment_query, model_id).first()
@@ -39,7 +40,7 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     join triage_metadata.models
     on (triage_runs.id = models.built_in_triage_run)
     join triage_metadata.experiments
-    on (experiments.experiment_hash = triage_runs.run_hash)
+    on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
     where model_group_id = %s
     order by triage_runs.start_time desc
     '''
@@ -120,8 +121,10 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
 def get_retrain_config_from_model_id(db_engine, model_id):
     query = """
     SELECT re.config FROM triage_metadata.models m
-    LEFT JOIN triage_metadata.triage_runs r ON m.built_in_triage_run = r.id
-    LEFT JOIN triage_metadata.retrain re on re.retrain_hash = r.run_hash
+    LEFT JOIN triage_metadata.triage_runs r 
+        ON m.built_in_triage_run = r.id 
+    LEFT JOIN triage_metadata.retrain re 
+        ON (re.retrain_hash = r.run_hash and r.run_type='retrain')
     WHERE m.model_id = %s;
     """
 
