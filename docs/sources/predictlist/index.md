@@ -4,10 +4,10 @@ Use an existing model group to retrain a new model on all the data up to the cur
 ## Examples
 Both examples assume you have already run a Triage Experiment in the past, and know these two pieces of information:
 1. A `model_group_id` from a Triage model group that you want to use to retrain a model and generate prediction
-2. A `today` to generate your predictions on.
+2. A `prediction_date` to generate your predictions on.
 
 ### CLI
-`triage retrainpredict <model_group_id> <today>`
+`triage retrainpredict <model_group_id> <prediction_date>`
 
 Example:
 `triage retrainpredict 30 2021-04-04`
@@ -26,8 +26,8 @@ retrainer = Retrainer(
     project_path='/home/you/triage/project2'
     model_group_id=36,
 )
-retrainer.retrain(today='2021-04-04')
-retrainer.predict(today='2021-04-04')
+retrainer.retrain(prediction_date='2021-04-04')
+retrainer.predict(prediction_date='2021-04-04')
 
 ```
 
