@@ -64,9 +64,9 @@ def test_save_experiment_and_get_hash():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
-        exp_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
+        exp_hash = save_experiment_and_get_hash(experiment_config, engine)
         assert isinstance(exp_hash, str)
-        new_hash = save_experiment_and_get_hash(experiment_config, 1234, engine)
+        new_hash = save_experiment_and_get_hash(experiment_config, engine)
         assert new_hash == exp_hash
 
 
@@ -75,7 +75,7 @@ def test_missing_model_hashes():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
 
-        experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
+        experiment_hash = save_experiment_and_get_hash({}, db_engine)
         model_hashes = ['abcd', 'bcde', 'cdef']
 
         # if we associate model hashes with an experiment but don't actually train the models
@@ -96,7 +96,7 @@ def test_missing_matrix_uuids():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
 
-        experiment_hash = save_experiment_and_get_hash({}, 1234, db_engine)
+        experiment_hash = save_experiment_and_get_hash({}, db_engine)
         matrix_uuids = ['abcd', 'bcde', 'cdef']
 
         # if we associate matrix uuids with an experiment but don't actually build the matrices
@@ -114,43 +114,48 @@ def test_missing_matrix_uuids():
 
 def test_sort_predictions_and_labels():
     predictions = np.array([0.5, 0.4, 0.6, 0.5, 0.6])
-    entities = np.array(range(6))
+    entities = np.array(range(5))
     labels = np.array([0, 0, 1, 1, None])
 
     # best sort
-    sorted_predictions, sorted_labels = sort_predictions_and_labels(
-        predictions, labels, tiebreaker='best'
+    sorted_predictions, sorted_labels, sorted_entities = sort_predictions_and_labels(
+        predictions, labels, entities, tiebreaker='best'
     )
     assert_array_equal(sorted_predictions, np.array([0.6, 0.6, 0.5, 0.5, 0.4]))
     assert_array_equal(sorted_labels, np.array([1, None, 1, 0, 0]))
+    assert_array_equal(sorted_entities.to_numpy(), np.array([2, 4, 3, 0, 1]))
 
-    # worst wort
-    sorted_predictions, sorted_labels = sort_predictions_and_labels(
-        predictions, labels, tiebreaker='worst'
+    # worst sort
+    sorted_predictions, sorted_labels, sorted_entities = sort_predictions_and_labels(
+        predictions, labels, entities, tiebreaker='worst'
     )
     assert_array_equal(sorted_predictions, np.array([0.6, 0.6, 0.5, 0.5, 0.4]))
     assert_array_equal(sorted_labels, np.array([None, 1, 0, 1, 0]))
+    assert_array_equal(sorted_entities.to_numpy(), np.array([4, 2, 0, 3, 1]))
 
     # random tiebreaker needs a seed
     with pytest.raises(ValueError):
-        sort_predictions_and_labels(predictions, labels, tiebreaker='random')
+        sort_predictions_and_labels(predictions, labels, entities, tiebreaker='random')
 
     # random tiebreaker respects the seed
-    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+    sorted_predictions, sorted_labels, sorted_entities = sort_predictions_and_labels(
         predictions,
         labels,
+        entities,
         tiebreaker='random',
         sort_seed=1234
     )
     assert_array_equal(sorted_predictions, np.array([0.6, 0.6, 0.5, 0.5, 0.4]))
     assert_array_equal(sorted_labels, np.array([None, 1, 1, 0, 0]))
+    assert_array_equal(sorted_entities.to_numpy(), np.array([4, 2, 3, 0, 1]))
 
-
-    sorted_predictions, sorted_labels = sort_predictions_and_labels(
+    sorted_predictions, sorted_labels, sorted_entities = sort_predictions_and_labels(
         predictions,
         labels,
+        entities,
         tiebreaker='random',
         sort_seed=24376234
     )
     assert_array_equal(sorted_predictions, np.array([0.6, 0.6, 0.5, 0.5, 0.4]))
     assert_array_equal(sorted_labels, np.array([None, 1, 0, 1, 0]))
+    assert_array_equal(sorted_entities.to_numpy(), np.array([4, 2, 0, 3, 1]))

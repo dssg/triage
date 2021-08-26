@@ -24,6 +24,7 @@ from triage.component.results_schema import (
     Model,
     ExperimentMatrix,
     ExperimentModel,
+    ExperimentRun,
 )
 
 
@@ -62,10 +63,10 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
 @db_retry
-def save_experiment_and_get_hash(config, random_seed, db_engine):
+def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
     session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, random_seed=random_seed, config=config))
+    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
     session.commit()
     session.close()
     return experiment_hash
@@ -156,25 +157,26 @@ class Batch:
 
 AVAILABLE_TIEBREAKERS = {'random', 'best', 'worst'}
 
-def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', sort_seed=None):
+def sort_predictions_and_labels(predictions_proba, labels, df_index, tiebreaker='random', sort_seed=None):
     """Sort predictions and labels with a configured tiebreaking rule
 
     Args:
         predictions_proba (np.array) The predicted scores
         labels (np.array) The numeric labels (1/0, not True/False)
+        df_index (pd.MultiIndex) Index (generally entity_id, as_of_date tuples) to be sorted with the labels/scores
         tiebreaker (string) The tiebreaking method ('best', 'worst', 'random')
         sort_seed (signed int) The sort seed. Needed if 'random' tiebreaking is picked.
 
     Returns:
-        (tuple) (predictions_proba, labels), sorted
+        (tuple) (predictions_proba, labels, df_index), sorted
     """
     if len(labels) == 0:
         logger.notice("No labels present, skipping predictions sorting .")
-        return (predictions_proba, labels)
-    mask = None
+        return (predictions_proba, labels, df_index)
 
     df = pd.DataFrame(predictions_proba, columns=["score"])
     df['label_value'] = labels
+    df.set_index(df_index, inplace=True)
 
 
     if tiebreaker == 'random':
@@ -194,7 +196,8 @@ def sort_predictions_and_labels(predictions_proba, labels, tiebreaker='random', 
 
     return  [
         df['score'].to_numpy(),
-        df['label_value'].to_numpy()
+        df['label_value'].to_numpy(),
+        df.index
     ]
 
 
@@ -228,6 +231,45 @@ def retrieve_model_hash_from_id(db_engine, model_id):
     session = sessionmaker(bind=db_engine)()
     try:
         return session.query(Model).get(model_id).model_hash
+    finally:
+        session.close()
+
+
+@db_retry
+def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed):
+    """Retrieve existing model random seeds matching the model parameters and
+    experiment-level random seed to allow for reusing seeds before creating a
+    new one.
+    """
+    query = f"""
+        select models.random_seed
+        from {ExperimentModel.__table__.fullname} experiment_models
+        join {Model.__table__.fullname} models
+        on (experiment_models.model_hash = models.model_hash)
+        join {ExperimentRun.__table__.fullname} experiment_runs
+        on (experiment_models.experiment_hash = experiment_runs.experiment_hash)
+        where models.model_group_id = %s
+        and models.train_end_time = %s
+        and models.train_matrix_uuid = %s
+        and models.training_label_timespan = %s
+        and experiment_runs.random_seed = %s
+        order by models.run_time DESC, random()
+    """
+    return [row[0] for row in db_engine.execute(query, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed)]
+
+
+@db_retry
+def retrieve_experiment_seed_from_run_id(db_engine, run_id):
+    """Retrieves the random seed associated with a given experiment run
+
+    Args:
+        run_id (int) The id of a given experiment run in the database
+
+    Returns: (int) the stored random seed from the experiment
+    """
+    session = sessionmaker(bind=db_engine)()
+    try:
+        return session.query(ExperimentRun).get(run_id).random_seed
     finally:
         session.close()
 

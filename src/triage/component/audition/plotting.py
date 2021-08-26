@@ -57,14 +57,14 @@ def category_styledict(colordict, highlight_grp):
     )
 
 
-def _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict):
+def _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict, alpha):
     # plot the lines, one for each model group,
     # looking up the color by model type from above
     for grp_val in np.unique(frame[grp_col]):
         df = frame.loc[frame[grp_col] == grp_val]
         cat = df.iloc[0][cat_col]
         df.plot(
-            x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False, alpha=0.4
+            x_col, y_col, ax=ax, c=colordict[cat], style=styledict[cat], legend=False, alpha=alpha
         )
 
 
@@ -145,6 +145,9 @@ def plot_cats(
     title_fontsize=16,
     label_fcn=None,
     path_to_save=None,
+    alpha=0.4,
+    colordict=None,
+    styledict=None,
 ):
     """Plot a line plot with each line colored by a category variable.
 
@@ -172,6 +175,10 @@ def plot_cats(
         title_fontsize (int) -- allows specifying font size for plot title
         label_fcn (method) -- function to map category names to more readable
                                 names, accepting values of cat_col
+        path_to_save (str) -- optional file path to save plot to disk
+        alpha (float) -- value of alpha for plotting lines
+        colordict (dict) -- optional dict mapping categories to colors
+        styledict (dict) -- optional dict mapping categories to styles
 
     """
     fig, ax = plt.subplots(1, 1, figsize=figsize)
@@ -182,12 +189,12 @@ def plot_cats(
 
     categories = np.unique(frame[cat_col])
 
-    colordict = category_colordict(cmap_name, categories, highlight_grp)
-    styledict = category_styledict(colordict, highlight_grp)
+    colordict = colordict or category_colordict(cmap_name, categories, highlight_grp)
+    styledict = styledict or category_styledict(colordict, highlight_grp)
 
     # plot the lines, one for each model group,
     # looking up the color by model type from above
-    _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict)
+    _plot_lines(frame, x_col, y_col, ax, grp_col, colordict, cat_col, styledict, alpha)
 
     # have to set the legend manually since we don't want one legend
     # entry per line on the plot, just one per model type.

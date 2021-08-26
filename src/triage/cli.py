@@ -23,6 +23,8 @@ from triage.experiments import (
     MultiCoreExperiment,
     SingleThreadedExperiment,
 )
+from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
+from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -179,7 +181,18 @@ class Experiment(Command):
             "--n-processes",
             type=natural_number,
             default=1,
-            help="number of cores to use",
+            help="number of cores to use for small classifiers (e.g. Logistic Regression)",
+        )
+        parser.add_argument(
+            "--n-bigtrain-processes",
+            type=natural_number,
+            default=1,
+            help="number of cores to use for big, computationally-intensive classifiers (e.g. Random Forests)",
+        )
+        parser.add_argument(
+            "--add-bigtrain-classes",
+            nargs="*",
+            help="Additional classifier paths (e.g. sklearn.ensemble.RandomForestClassifier) to train alongside the 'big' classifiers like random forests.",
         )
         parser.add_argument(
             "--matrix-format",
@@ -274,17 +287,19 @@ class Experiment(Command):
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions,
-            "skip_validation": not self.args.validate
+            "skip_validation": not self.args.validate,
+            "additional_bigtrain_classnames": self.args.add_bigtrain_classes
         }
         logger.info(f"Setting up the experiment")
         logger.info(f"Configuration file: {self.args.config}")
         logger.info(f"Results will be stored in DB: {self.root.db_url}")
         logger.info(f"Artifacts will be saved in {self.args.project_path}")
         try:
-            if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+            if self.args.n_db_processes > 1 or self.args.n_processes > 1 or self.args.n_bigtrain_processes > 1:
                 experiment = MultiCoreExperiment(
                     n_db_processes=self.args.n_db_processes,
                     n_processes=self.args.n_processes,
+                    n_bigtrain_processes=self.args.n_bigtrain_processes,
                     **common_kwargs,
                 )
                 logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
@@ -469,6 +484,31 @@ class Db(Command):
             logger.info('Container exists, but is not running. Starting')
             logger.info(self.local['docker']['start', 'triage_db'])
 
+@Triage.register
+class AddPredictions(Command):
+    """Save test predictions of selected model groups"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "-c",
+            "--configfile",
+            type=argparse.FileType("r"),
+            help="Path to the configuration file (required)",
+            required=True
+        )
+
+
+    def __call__(self):
+        db_engine = create_engine(self.root.db_url)
+        config = yaml.full_load(self.args.configfile)
+
+        add_predictions(
+            db_engine=db_engine,
+            model_groups=config['model_group_ids'],
+            project_path=config['project_path'],
+            experiment_hashes=config.get('experiments'),
+            train_end_times_range=config.get('train_end_times')
+        )
 
 def execute():
     main(Triage)

@@ -11,6 +11,7 @@ docs/site/
 
 /.install.*.bash.inc
 /.python-version
+.DS_Store
 
 .ipynb_checkpoints/
 venv/

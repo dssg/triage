@@ -7,12 +7,26 @@ from pebble import ProcessPool
 from multiprocessing.reduction import ForkingPickler
 
 from triage.component.catwalk.utils import Batch
+from triage.component.catwalk import BatchKey
 
 from triage.experiments import ExperimentBase
 
 
 class MultiCoreExperiment(ExperimentBase):
-    def __init__(self, config, db_engine, *args, n_processes=1, n_db_processes=1, **kwargs):
+    def __init__(self, config, db_engine, *args, n_processes=1, n_bigtrain_processes=1, n_db_processes=1, **kwargs):
+        """
+        Args:
+            config (dict)
+            db_engine (sqlalchemy engine)
+            n_processes (int) How many parallel processes to use for most CPU-bound tasks.
+                Logistic regression and decision trees fall under this category.
+                Usually good to set to the # of cores on the machine.
+            n_bigtrain_processes (int) How many parallel processes to use for memory-intensive tasks
+                Random forests and extra trees fall under this category.
+                Usually good to start at 1, but can be increased if you have available memory.
+            n_db_processes (int) How many parallel processes to use for database IO-intensive tasks.
+                Cohort creation, label creation, and feature creation fall under this category. 
+        """
         try:
             ForkingPickler.dumps(db_engine)
         except Exception as exc:
@@ -27,7 +41,9 @@ class MultiCoreExperiment(ExperimentBase):
             raise ValueError("n_processes must be 1 or greater")
         if n_db_processes < 1:
             raise ValueError("n_db_processes must be 1 or greater")
-        if n_db_processes == 1 and n_processes == 1:
+        if n_bigtrain_processes < 1:
+            raise ValueError("n_bigtrain_processes must be 1 or greater")
+        if n_db_processes == 1 and n_processes == 1 and n_bigtrain_processes == 1:
             logger.notice(
                 "Both n_processes and n_db_processes were set to 1. "
                 "If you only wish to use one process to run the experiment, "
@@ -35,6 +51,13 @@ class MultiCoreExperiment(ExperimentBase):
             )
         self.n_processes = n_processes
         self.n_db_processes = n_db_processes
+        self.n_bigtrain_processes = n_bigtrain_processes
+        self.n_processes_lookup = {
+            BatchKey.QUICKTRAIN: self.n_processes,
+            BatchKey.BIGTRAIN: self.n_bigtrain_processes,
+            BatchKey.MAYBETRAIN: self.n_processes
+        }
+
 
     def generated_chunked_parallelized_results(
         self, partially_bound_function, tasks, n_processes, chunksize=1
@@ -59,17 +82,10 @@ class MultiCoreExperiment(ExperimentBase):
         )
 
         for batch in batches:
-            if batch.parallelizable:
-                logger.info(
-                    f"Starting parallelizable batch train/testing with {len(batch.tasks)} tasks, {self.n_processes} processes",
-                )
-                parallelize(partial_test, batch.tasks, self.n_processes)
-            else:
-                logger.info(
-                    "Starting serial batch train/testing with {len(batch.tasks)} tasks",
-                )
-                for serial_task in batch.tasks:
-                    self.model_train_tester.process_task(**serial_task)
+            logger.info(
+                f"Starting parallelizable batch train/testing with {len(batch.tasks)} tasks, {self.n_processes_lookup[batch.key]} processes",
+            )
+            parallelize(partial_test, batch.tasks, self.n_processes_lookup[batch.key])
 
     def process_query_tasks(self, query_tasks):
         logger.info("Processing query tasks with %s processes", self.n_db_processes)

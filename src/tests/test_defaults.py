@@ -32,7 +32,7 @@ def test_fill_cohort_config_missing():
 def test_fill_feature_group_definition():
     config = sample_config()
     fg_definition = fill_feature_group_definition(config)
-    assert sorted(fg_definition['prefix']) == ['entity_features', 'zip_code_features']
+    assert sorted(fg_definition['all']) == [True]
 
 
 def test_fill_timechop_config_missing():
@@ -121,5 +121,7 @@ def test_fill_model_grid_presets():
     # case 4: both
     config = sample_config()
     config['model_grid_preset'] = 'quickstart'
-    with pytest.raises(KeyError):
-        fill_grid = fill_model_grid_presets(config)
+    fill_grid = fill_model_grid_presets(config)
+    assert len(fill_grid) == 3
+    assert len(fill_grid.get('sklearn.tree.DecisionTreeClassifier', {}).get('max_depth', [])) == 3
+    assert len(fill_grid.get('sklearn.tree.DecisionTreeClassifier', {}).get('criterion', [])) == 1

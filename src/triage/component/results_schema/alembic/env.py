@@ -3,6 +3,7 @@ from __future__ import with_statement
 import os
 
 import yaml
+import re
 from alembic import context
 from sqlalchemy import create_engine
 from sqlalchemy import pool
@@ -25,6 +26,35 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+def get_excludes_from_config(config_, type_="tables"):
+    excludes = config_.get(type_, None)
+    if excludes is not None:
+        excludes = excludes.split(",")
+    excludes = excludes or []
+    return excludes
+
+
+excluded_tables = get_excludes_from_config(config.get_section('exclude'), "tables")
+excluded_indices = get_excludes_from_config(config.get_section('exclude'), "indices")
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    if type_ == "table":
+        for table_pat in excluded_tables:
+            if re.match(table_pat, name):
+                return False
+        return True
+
+    elif type_ == "index":
+        for index_pat in excluded_indices:
+            if re.match(index_pat, name):
+                return False
+        return True
+
+    else:
+        return True
+
 
 url = None
 
@@ -52,7 +82,6 @@ if not url:
             port=config["port"],
         )
 
-
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -70,6 +99,7 @@ def run_migrations_offline():
         target_metadata=target_metadata,
         literal_binds=True,
         version_table="results_schema_versions",
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -92,6 +122,7 @@ def run_migrations_online():
             target_metadata=target_metadata,
             version_table="results_schema_versions",
             include_schemas=True,
+            include_object=include_object,
         )
         connection.execute('set search_path to "{}", public'.format("results"))
 
