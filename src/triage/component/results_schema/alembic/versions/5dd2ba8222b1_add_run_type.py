@@ -50,7 +50,7 @@ def downgrade():
     op.execute("ALTER TABLE triage_metadata.triage_runs RENAME TO experiment_runs")
     op.drop_column('experiment_runs', 'run_type', schema='triage_metadata')
     op.alter_column('experiment_runs', 'run_hash', nullable=True, new_column_name='experiment_hash', schema='triage_metadata')
-    op.create_foreign_key('experiment_runs_experiment_hash_fkey', 'experiment_runs', 'experiments', ['experiment_hash'], ['experiment_hash'], schema='triage_metadata')
+    op.create_foreign_key('experiment_runs_experiment_hash_fkey', 'experiment_runs', 'experiments', ['experiment_hash'], ['experiment_hash'], source_schema='triage_metadata', referent_schema='triage_metadata')
     op.drop_table('retrain_models', schema='triage_metadata')
     op.drop_table('retrain', schema='triage_metadata')
     op.add_column('models', sa.Column('built_by_experiment', sa.Text(), nullable=True), schema='triage_metadata')
