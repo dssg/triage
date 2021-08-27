@@ -92,13 +92,14 @@ def test_matrix_info_from_model_id(db_engine, model_id):
     Returns: (str, dict) matrix uuid and matrix metadata
     """
     get_test_matrix_query = """
-        select matrix_uuid, mat.matrix_metadata
+        select mat.matrix_uuid, mat.matrix_metadata
         from triage_metadata.matrices mat
         join test_results.prediction_metadata pm on (pm.matrix_uuid = mat.matrix_uuid)
         join triage_metadata.triage_runs tr
             on (mat.built_by_experiment = tr.run_hash AND tr.run_type='experiment')
         where pm.model_id = %s
         order by start_time DESC, RANDOM()
+        limit 1
     """
     return db_engine.execute(get_test_matrix_query, model_id).first()
 

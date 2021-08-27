@@ -18,9 +18,10 @@ depends_on = None
 
 def upgrade():
     op.add_column('experiment_runs', sa.Column('run_type', sa.Text(), nullable=True), schema='triage_metadata')
-    op.execute("UPATE triage_metadata.experiment_runs SET run_type='experiment' WHERE run_type IS NULL")
+    op.execute("UPDATE triage_metadata.experiment_runs SET run_type='experiment' WHERE run_type IS NULL")
 
     op.alter_column('experiment_runs', 'experiment_hash', nullable=True, new_column_name='run_hash', schema='triage_metadata')
+    op.drop_constraint('experiment_runs_experiment_hash_fkey', 'experiment_runs', type_='foreignkey', schema='triage_metadata')
 
     op.execute("ALTER TABLE triage_metadata.experiment_runs RENAME TO triage_runs")
 
@@ -49,6 +50,7 @@ def downgrade():
     op.execute("ALTER TABLE triage_metadata.triage_runs RENAME TO experiment_runs")
     op.drop_column('experiment_runs', 'run_type', schema='triage_metadata')
     op.alter_column('experiment_runs', 'run_hash', nullable=True, new_column_name='experiment_hash', schema='triage_metadata')
+    op.create_foreign_key('experiment_runs_experiment_hash_fkey', 'experiment_runs', 'experiments', ['experiment_hash'], ['experiment_hash'], schema='triage_metadata')
     op.drop_table('retrain_models', schema='triage_metadata')
     op.drop_table('retrain', schema='triage_metadata')
     op.add_column('models', sa.Column('built_by_experiment', sa.Text(), nullable=True), schema='triage_metadata')

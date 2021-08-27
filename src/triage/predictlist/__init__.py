@@ -219,7 +219,7 @@ class Retrainer:
         # This feels like it needs some refactoring since in some edge cases at least the test matrix temporal parameters
         # might differ across models in the mdoel group (the training ones shouldn't), but this should probably work for
         # the vast majorty of use cases...
-        self.experiment_config['temporal_config'].update(self.db_engine, self.model_group_info['model_id_last_split'])
+        self.experiment_config['temporal_config'].update(temporal_params_from_matrix_metadata(self.db_engine, self.model_group_info['model_id_last_split']))
 
         # Since "testing" here is predicting forward to a single new date, the test_duration should always be '0day'
         # (regardless of what it may have been before)
@@ -268,15 +268,15 @@ class Retrainer:
     def get_temporal_config_for_retrain(self, prediction_date):
         temporal_config = self.experiment_config['temporal_config'].copy()
         temporal_config['feature_end_time'] = datetime.strftime(prediction_date, "%Y-%m-%d")
-        temporal_config['label_start_time'] = datetime.strftime(
-                prediction_date - 
-                convert_str_to_relativedelta(self.training_label_timespan) - 
-                convert_str_to_relativedelta(self.test_label_timespan), 
-                "%Y-%m-%d")
         temporal_config['label_end_time'] = datetime.strftime(
                 prediction_date + convert_str_to_relativedelta(self.test_label_timespan), 
                 "%Y-%m-%d")
-        temporal_config['model_update_frequency'] = self.test_label_timespan
+        # just needs to be bigger than the gap between the label start and end times
+        # to ensure we only get one time split for the retraining
+        temporal_config['model_update_frequency'] = '%syears' % (
+                dt_from_str(temporal_config['label_end_time']).year - 
+                dt_from_str(temporal_config['label_start_time']).year + 10
+                )
         
         return temporal_config
 
