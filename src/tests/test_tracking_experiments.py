@@ -1,8 +1,8 @@
 from tests.utils import sample_config, populate_source_data
 from triage.util.db import scoped_session
 from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
-from triage.component.results_schema import ExperimentRun, ExperimentRunStatus
-from tests.results_tests.factories import ExperimentFactory, ExperimentRunFactory, session as factory_session
+from triage.component.results_schema import TriageRun, TriageRunStatus
+from tests.results_tests.factories import ExperimentFactory, TriageRunFactory, session as factory_session
 from sqlalchemy.orm import Session
 import pytest
 import datetime
@@ -30,9 +30,10 @@ def test_experiment_tracker(test_engine, project_path):
         project_path=project_path,
         n_processes=4,
     )
-    experiment_run = Session(bind=test_engine).query(ExperimentRun).get(experiment.run_id)
-    assert experiment_run.current_status == ExperimentRunStatus.started
-    assert experiment_run.experiment_hash == experiment.experiment_hash
+    experiment_run = Session(bind=test_engine).query(TriageRun).get(experiment.run_id)
+    assert experiment_run.current_status == TriageRunStatus.started
+    assert experiment_run.run_hash == experiment.experiment_hash
+    assert experiment_run.run_type == 'experiment'
     assert experiment_run.experiment_class_path == 'triage.experiments.multicore.MultiCoreExperiment'
     assert experiment_run.platform
     assert experiment_run.os_user
@@ -45,7 +46,7 @@ def test_experiment_tracker(test_engine, project_path):
     assert experiment_run.models_made == 0
 
     experiment.run()
-    experiment_run = Session(bind=test_engine).query(ExperimentRun).get(experiment.run_id)
+    experiment_run = Session(bind=test_engine).query(TriageRun).get(experiment.run_id)
     assert experiment_run.start_method == "run"
     assert experiment_run.matrices_made == len(experiment.matrix_build_tasks)
     assert experiment_run.matrices_skipped == 0
@@ -57,7 +58,7 @@ def test_experiment_tracker(test_engine, project_path):
     assert isinstance(experiment_run.model_building_started, datetime.datetime)
     assert isinstance(experiment_run.last_updated_time, datetime.datetime)
     assert not experiment_run.stacktrace
-    assert experiment_run.current_status == ExperimentRunStatus.completed
+    assert experiment_run.current_status == TriageRunStatus.completed
 
 
 def test_experiment_tracker_exception(db_engine, project_path):
@@ -71,8 +72,8 @@ def test_experiment_tracker_exception(db_engine, project_path):
         experiment.run()
 
     with scoped_session(db_engine) as session:
-        experiment_run = session.query(ExperimentRun).get(experiment.run_id)
-        assert experiment_run.current_status == ExperimentRunStatus.failed
+        experiment_run = session.query(TriageRun).get(experiment.run_id)
+        assert experiment_run.current_status == TriageRunStatus.failed
         assert isinstance(experiment_run.last_updated_time, datetime.datetime)
         assert experiment_run.stacktrace
 
@@ -86,7 +87,7 @@ def test_experiment_tracker_in_parts(test_engine, project_path):
     experiment.generate_matrices()
     experiment.train_and_test_models()
     with scoped_session(test_engine) as session:
-        experiment_run = session.query(ExperimentRun).get(experiment.run_id)
+        experiment_run = session.query(TriageRun).get(experiment.run_id)
         assert experiment_run.start_method == "generate_matrices"
 
 
@@ -103,8 +104,8 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
     )
     assert run_id
     with scoped_session(db_engine_with_results_schema) as session:
-        experiment_run = session.query(ExperimentRun).get(run_id)
-        assert experiment_run.experiment_hash == experiment_hash
+        experiment_run = session.query(TriageRun).get(run_id)
+        assert experiment_run.run_hash == experiment_hash
         assert experiment_run.experiment_class_path == 'mymodule.MyClassName'
         assert experiment_run.random_seed == 1234
         assert experiment_run.experiment_kwargs == {'key': 'value'}
@@ -119,7 +120,7 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
 
 
 def test_get_run_for_update(db_engine_with_results_schema):
-    experiment_run = ExperimentRunFactory()
+    experiment_run = TriageRunFactory()
     factory_session.commit()
     with get_run_for_update(
         db_engine=db_engine_with_results_schema,
@@ -128,16 +129,16 @@ def test_get_run_for_update(db_engine_with_results_schema):
         run_obj.stacktrace = "My stacktrace"
 
     with scoped_session(db_engine_with_results_schema) as session:
-        experiment_run_from_db = session.query(ExperimentRun).get(experiment_run.run_id)
+        experiment_run_from_db = session.query(TriageRun).get(experiment_run.run_id)
         assert experiment_run_from_db.stacktrace == "My stacktrace"
 
 
 def test_increment_field(db_engine_with_results_schema):
-    experiment_run = ExperimentRunFactory()
+    experiment_run = TriageRunFactory()
     factory_session.commit()
     increment_field('matrices_made', experiment_run.run_id, db_engine_with_results_schema)
     increment_field('matrices_made', experiment_run.run_id, db_engine_with_results_schema)
 
     with scoped_session(db_engine_with_results_schema) as session:
-        experiment_run_from_db = session.query(ExperimentRun).get(experiment_run.run_id)
+        experiment_run_from_db = session.query(TriageRun).get(experiment_run.run_id)
         assert experiment_run_from_db.matrices_made == 2

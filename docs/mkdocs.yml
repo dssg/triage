@@ -120,6 +120,7 @@ nav:
           - Using Postmodeling: postmodeling/index.md
           - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
       - Model governance:  dirtyduck/ml_governance.md
+      -Predictlist: predictlist/index.md
       - Scaling up: dirtyduck/aws_batch.md
       - Database Provisioner: db.md
       - API Reference:

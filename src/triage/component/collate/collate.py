@@ -29,6 +29,10 @@ available_imputations = {
 }
 
 
+class NoAggregateFunctionError(ValueError):
+    pass
+
+
 def make_list(a):
     return [a] if not isinstance(a, list) else a
 
@@ -497,6 +501,24 @@ class Aggregation:
                     lookup[col.name] = agg
         return lookup
 
+    def colname_agg_function(self, colname): 
+        if colname.endswith('_imp'):
+            raise ValueError('Imputation flag columns cannot have their aggregation function inferred')
+
+        aggregate = self.colname_aggregate_lookup[colname] 
+        if hasattr(aggregate, 'functions'):
+            used_function = next(funcname for funcname in aggregate.functions if colname.endswith(funcname))
+            return used_function
+        else:
+            raise NoAggregateFunctionError()
+
+    def imputation_flag_base(self, colname):
+        used_function = self.colname_agg_function(colname)
+        if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
+            return colname
+        else:
+            return colname.rstrip('_' + used_function)
+
     def _col_prefix(self, group):
         """
         Helper for creating a column prefix for the group
@@ -726,18 +748,14 @@ class Aggregation:
                 # the function, and see its available functions. we expect exactly one of
                 # these functions to end the column name and remove it if so
                 # this is passed to the imputer
-                if hasattr(self.colname_aggregate_lookup[col], 'functions'):
-                    agg_functions = self.colname_aggregate_lookup[col].functions
-                    used_function = next(funcname for funcname in agg_functions if col.endswith(funcname))
-                    if used_function in AGGFUNCS_NEED_MULTIPLE_VALUES:
-                        impflag_basecol = col
-                    else:
-                        impflag_basecol = col.rstrip('_' + used_function)
-                else:
+                try:
+                    impflag_basecol = self.imputation_flag_base(col)
+                except NoAggregateFunctionError:
                     logger.warning("Imputation flag merging is not implemented for "
                                     "AggregateExpression objects that don't define an aggregate "
                                     "function (e.g. composites)")
                     impflag_basecol = col
+
                 impute_rule = imprules[col]
 
                 try:

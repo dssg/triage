@@ -37,15 +37,17 @@ class Planner:
             "matrix_metadata": matrix_metadata,
             "matrix_type": matrix_metadata["matrix_type"],
         }
-
-    def _make_metadata(
-        self,
+    
+    @staticmethod
+    def make_metadata( 
         matrix_definition,
         feature_dictionary,
         label_name,
         label_type,
         cohort_name,
         matrix_type,
+        feature_start_time,
+        user_metadata,
     ):
         """ Generate dictionary of matrix metadata.
 
@@ -77,7 +79,7 @@ class Planner:
         )
         matrix_metadata = {
             # temporal information
-            "feature_start_time": self.feature_start_time,
+            "feature_start_time": feature_start_time,
             "end_time": matrix_definition["matrix_info_end_time"],
             "as_of_date_frequency": matrix_definition.get(
                 "training_as_of_date_frequency",
@@ -100,7 +102,7 @@ class Planner:
             "matrix_type": matrix_type,
         }
         matrix_metadata.update(matrix_definition)
-        matrix_metadata.update(self.user_metadata)
+        matrix_metadata.update(user_metadata)
 
         return matrix_metadata
 
@@ -138,13 +140,15 @@ class Planner:
             ):
                 matrix_set_clone = copy.deepcopy(matrix_set)
                 # get a uuid
-                train_metadata = self._make_metadata(
+                train_metadata = self.make_metadata(
                     train_matrix,
                     feature_dictionary,
                     label_name,
                     label_type,
                     cohort_name,
                     "train",
+                    self.feature_start_time,
+                    self.user_metadata,
                 )
                 train_uuid = filename_friendly_hash(train_metadata)
                 logger.debug(
@@ -168,13 +172,15 @@ class Planner:
 
                 test_uuids = []
                 for test_matrix in matrix_set_clone["test_matrices"]:
-                    test_metadata = self._make_metadata(
+                    test_metadata = self.make_metadata(
                         test_matrix,
                         feature_dictionary,
                         label_name,
                         label_type,
                         cohort_name,
                         "test",
+                        self.feature_start_time,
+                        self.user_metadata,
                     )
                     test_uuid = filename_friendly_hash(test_metadata)
                     logger.debug(

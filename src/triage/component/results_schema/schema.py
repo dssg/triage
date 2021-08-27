@@ -23,6 +23,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # One declarative_base object for each schema created
 Base = declarative_base()
@@ -31,6 +32,7 @@ schemas = (
     "CREATE SCHEMA IF NOT EXISTS triage_metadata;"
     " CREATE SCHEMA IF NOT EXISTS test_results;"
     " CREATE SCHEMA IF NOT EXISTS train_results;"
+    " CREATE SCHEMA IF NOT EXISTS triage_production;"
 )
 
 event.listen(Base.metadata, "before_create", DDL(schemas))
@@ -58,7 +60,10 @@ class Experiment(Base):
     __tablename__ = "experiments"
     __table_args__ = {"schema": "triage_metadata"}
 
-    experiment_hash = Column(String, primary_key=True)
+    experiment_hash = Column(
+            String,
+            primary_key=True
+    )
     config = Column(JSONB)
     time_splits = Column(Integer)
     as_of_times = Column(Integer)
@@ -70,15 +75,27 @@ class Experiment(Base):
     models_needed = Column(Integer)
 
 
-class ExperimentRunStatus(enum.Enum):
+class Retrain(Base):
+    __tablename__ = "retrain"
+    __table_args__ = {"schema": "triage_metadata"}
+
+    retrain_hash = Column(
+            String,
+            primary_key=True
+    )
+    config = Column(JSONB)
+    prediction_date = Column(DateTime)
+
+
+class TriageRunStatus(enum.Enum):
     started = 1
     completed = 2
     failed = 3
 
 
-class ExperimentRun(Base):
+class TriageRun(Base):
 
-    __tablename__ = "experiment_runs"
+    __tablename__ = "triage_runs"
     __table_args__ = {"schema": "triage_metadata"}
 
     run_id = Column("id", Integer, primary_key=True)
@@ -87,10 +104,8 @@ class ExperimentRun(Base):
     git_hash = Column(String)
     triage_version = Column(String)
     python_version = Column(String)
-    experiment_hash = Column(
-        String,
-        ForeignKey("triage_metadata.experiments.experiment_hash")
-    )
+    run_type = Column(String)
+    run_hash = Column(String)
     platform = Column(Text)
     os_user = Column(Text)
     working_directory = Column(Text)
@@ -108,11 +123,10 @@ class ExperimentRun(Base):
     models_skipped = Column(Integer, default=0)
     models_errored = Column(Integer, default=0)
     last_updated_time = Column(DateTime, onupdate=datetime.datetime.now)
-    current_status = Column(Enum(ExperimentRunStatus))
+    current_status = Column(Enum(TriageRunStatus))
     stacktrace = Column(Text)
     random_seed = Column(Integer)
-    experiment_rel = relationship("Experiment")
-
+        
 
 class Subset(Base):
 
@@ -138,8 +152,8 @@ class ModelGroup(Base):
 
 class ListPrediction(Base):
 
-    __tablename__ = "list_predictions"
-    __table_args__ = {"schema": "triage_metadata"}
+    __tablename__ = "predictions"
+    __table_args__ = {"schema": "triage_production"}
 
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
@@ -147,12 +161,28 @@ class ListPrediction(Base):
     entity_id = Column(BigInteger, primary_key=True)
     as_of_date = Column(DateTime, primary_key=True)
     score = Column(Numeric)
-    rank_abs = Column(Integer)
-    rank_pct = Column(Float)
+    label_value = Column(Integer)
+    rank_abs_no_ties = Column(Integer)
+    rank_abs_with_ties = Column(Integer)
+    rank_pct_no_ties = Column(Float)
+    rank_pct_with_ties = Column(Float)
     matrix_uuid = Column(Text)
     test_label_timespan = Column(Interval)
 
     model_rel = relationship("Model")
+
+
+class ListPredictionMetadata(Base):
+    __tablename__ = "prediction_metadata"
+    __table_args__ = {"schema": "triage_production"}
+
+    model_id = Column(
+        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
+    )
+    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    tiebreaker_ordering = Column(Text)
+    random_seed = Column(Integer)
+    predictions_saved = Column(Boolean)
 
 
 class ExperimentMatrix(Base):
@@ -205,11 +235,8 @@ class Model(Base):
     model_comment = Column(Text)
     batch_comment = Column(Text)
     config = Column(JSON)
-    built_by_experiment = Column(
-        String, ForeignKey("triage_metadata.experiments.experiment_hash")
-    )
-    built_in_experiment_run = Column(
-        Integer, ForeignKey("triage_metadata.experiment_runs.id")
+    built_in_triage_run = Column(
+        Integer, ForeignKey("triage_metadata.triage_runs.id"), nullable=True
     )
     train_end_time = Column(DateTime)
     test = Column(Boolean)
@@ -242,6 +269,20 @@ class ExperimentModel(Base):
 
     model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
     experiment_rel = relationship("Experiment")
+
+
+class RetrainModel(Base):
+    __tablename__ = "retrain_models"
+    __table_args__ = {"schema": "triage_metadata"}
+
+    retrain_hash = Column(
+        String,
+        ForeignKey("triage_metadata.retrain.retrain_hash"),
+        primary_key=True
+    )
+    model_hash = Column(String, primary_key=True)
+    model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
+    retrain_rel = relationship("Retrain")
 
 
 class FeatureImportance(Base):

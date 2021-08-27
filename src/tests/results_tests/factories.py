@@ -181,12 +181,12 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     matrix_uuid = factory.SelfAttribute("matrix_rel.matrix_uuid")
 
 
-class ExperimentRunFactory(factory.alchemy.SQLAlchemyModelFactory):
+class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
-        model = schema.ExperimentRun
+        model = schema.TriageRun
         sqlalchemy_session = session
 
-    experiment_rel = factory.SubFactory(ExperimentFactory)
+    # experiment_rel = factory.SubFactory(ExperimentFactory)
 
     start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     start_method = "run"
@@ -210,7 +210,7 @@ class ExperimentRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     models_skipped = 0
     models_errored = 0
     last_updated_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
-    current_status = schema.ExperimentRunStatus.started
+    current_status = schema.TriageRunStatus.started
     stacktrace = ""
 
 

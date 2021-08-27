@@ -21,7 +21,7 @@ except ImportError:
     pip_freeze = None
 
 
-from triage.component.results_schema import ExperimentRun, ExperimentRunStatus
+from triage.component.results_schema import TriageRun, TriageRunStatus
 
 
 def infer_git_hash():
@@ -100,7 +100,7 @@ def initialize_tracking_and_get_run_id(
     experiment_kwargs,
     db_engine
 ):
-    """Create a row in the ExperimentRun table with some initial info and return the created run_id
+    """Create a row in the TriageRun table with some initial info and return the created run_id
 
     Args:
         experiment_hash (str) An experiment hash that exists in the experiments table
@@ -115,14 +115,15 @@ def initialize_tracking_and_get_run_id(
         k: (classpath(v) if isinstance(v, type) else v)
         for k, v in experiment_kwargs.items()
     }
-    run = ExperimentRun(
+    run = TriageRun(
         start_time=datetime.datetime.now(),
         git_hash=infer_git_hash(),
         triage_version=infer_triage_version(),
         python_version=infer_python_version(),
-        experiment_hash=experiment_hash,
+        run_type="experiment",
+        run_hash=experiment_hash,
         last_updated_time=datetime.datetime.now(),
-        current_status=ExperimentRunStatus.started,
+        current_status=TriageRunStatus.started,
         installed_libraries=infer_installed_libraries(),
         platform=platform.platform(),
         os_user=getpass.getuser(),
@@ -144,7 +145,7 @@ def initialize_tracking_and_get_run_id(
 
 
 def get_run_for_update(db_engine, run_id):
-    """Yields an ExperimentRun at the given run_id for update
+    """Yields an TriageRun at the given run_id for update
 
     Will kick the last_update_time timestamp of the row each time.
 
@@ -152,7 +153,7 @@ def get_run_for_update(db_engine, run_id):
         db_engine (sqlalchemy.engine)
         run_id (int) The identifier/primary key of the run
     """
-    return get_for_update(db_engine, ExperimentRun, run_id)
+    return get_for_update(db_engine, TriageRun, run_id)
 
 
 def experiment_entrypoint(entrypoint_func):
@@ -161,8 +162,8 @@ def experiment_entrypoint(entrypoint_func):
     To update the database, it requires the instance of the wrapped method to have a
     db_engine and run_id.
 
-    Upon method entry, will update the ExperimentRun row with the wrapped method name.
-    Upon method exit, will update the ExperimentRun row with the status (either failed or completed)
+    Upon method entry, will update the TriageRun row with the wrapped method name.
+    Upon method exit, will update the TriageRun row with the status (either failed or completed)
     """
     @wraps(entrypoint_func)
     def with_entrypoint(self, *args, **kwargs):
@@ -174,12 +175,12 @@ def experiment_entrypoint(entrypoint_func):
             return_value = entrypoint_func(self, *args, **kwargs)
         except Exception as exc:
             with get_run_for_update(self.db_engine, self.run_id) as run_obj:
-                run_obj.current_status = ExperimentRunStatus.failed
+                run_obj.current_status = TriageRunStatus.failed
                 run_obj.stacktrace = str(exc)
             raise exc
 
         with get_run_for_update(self.db_engine, self.run_id) as run_obj:
-            run_obj.current_status = ExperimentRunStatus.completed
+            run_obj.current_status = TriageRunStatus.completed
 
         return return_value
 
@@ -187,7 +188,7 @@ def experiment_entrypoint(entrypoint_func):
 
 
 def increment_field(field, run_id, db_engine):
-    """Increment an ExperimentRun's named field.
+    """Increment an TriageRun's named field.
 
     Expects that the field is an integer in the database.
 
@@ -201,8 +202,8 @@ def increment_field(field, run_id, db_engine):
     with scoped_session(db_engine) as session:
         # Use an update query instead of a session merge so it happens in one atomic query
         # and protect against race conditions
-        session.query(ExperimentRun).filter_by(run_id=run_id).update({
-            field: getattr(ExperimentRun, field) + 1,
+        session.query(TriageRun).filter_by(run_id=run_id).update({
+            field: getattr(TriageRun, field) + 1,
             'last_updated_time': datetime.datetime.now()
         })
 
@@ -230,7 +231,7 @@ def record_model_building_started(run_id, db_engine):
 
 
 def built_matrix(run_id, db_engine):
-    """Increment the matrix build counter for the ExperimentRun
+    """Increment the matrix build counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run
@@ -240,7 +241,7 @@ def built_matrix(run_id, db_engine):
 
 
 def skipped_matrix(run_id, db_engine):
-    """Increment the matrix skip counter for the ExperimentRun
+    """Increment the matrix skip counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run
@@ -250,7 +251,7 @@ def skipped_matrix(run_id, db_engine):
 
 
 def errored_matrix(run_id, db_engine):
-    """Increment the matrix error counter for the ExperimentRun
+    """Increment the matrix error counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run
@@ -260,7 +261,7 @@ def errored_matrix(run_id, db_engine):
 
 
 def built_model(run_id, db_engine):
-    """Increment the model build counter for the ExperimentRun
+    """Increment the model build counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run
@@ -270,7 +271,7 @@ def built_model(run_id, db_engine):
 
 
 def skipped_model(run_id, db_engine):
-    """Increment the model skip counter for the ExperimentRun
+    """Increment the model skip counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run
@@ -280,7 +281,7 @@ def skipped_model(run_id, db_engine):
 
 
 def errored_model(run_id, db_engine):
-    """Increment the model error counter for the ExperimentRun
+    """Increment the model error counter for the TriageRun
 
     Args:
         run_id (int) The identifier/primary key of the run

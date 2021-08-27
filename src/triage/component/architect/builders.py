@@ -1,5 +1,4 @@
 import io
-import json
 
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
@@ -32,6 +31,7 @@ class BuilderBase:
         self.replace = replace
         self.include_missing_labels_in_train_as = include_missing_labels_in_train_as
         self.run_id = run_id
+        self.includes_labels = 'labels_table_name' in self.db_config
 
     @property
     def sessionmaker(self):
@@ -131,7 +131,7 @@ class BuilderBase:
         """
 
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
-        if matrix_type == "test" or self.include_missing_labels_in_train_as is not None:
+        if matrix_type == "test" or matrix_type == "production" or self.include_missing_labels_in_train_as is not None:
             indices_query = self._all_valid_entity_dates_query(
                 as_of_time_strings=as_of_time_strings, state=state
             )
@@ -232,14 +232,15 @@ class MatrixBuilder(BuilderBase):
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             return
-        if not table_has_data(
-                f"{self.db_config['labels_schema_name']}.{self.db_config['labels_table_name']}",
-                self.db_engine,
-        ):
-            logger.warning("labels table is not populated, cannot build matrix")
-            if self.run_id:
-                errored_matrix(self.run_id, self.db_engine)
-            return
+
+        if self.includes_labels:
+            if not table_has_data(
+                    f"{self.db_config['labels_schema_name']}.{self.db_config['labels_table_name']}",
+                    self.db_engine,
+            ):
+                logger.warning("labels table is not populated, cannot build matrix")
+                if self.run_id:
+                    errored_matrix(self.run_id, self.db_engine)
 
         matrix_store = self.matrix_storage_engine.get_store(matrix_uuid)
         if not self.replace and matrix_store.exists:
@@ -261,7 +262,7 @@ class MatrixBuilder(BuilderBase):
                 matrix_metadata["state"],
                 matrix_type,
                 matrix_uuid,
-                matrix_metadata["label_timespan"],
+                matrix_metadata.get("label_timespan", None),
             )
         except ValueError as e:
             logger.exception(
@@ -277,19 +278,26 @@ class MatrixBuilder(BuilderBase):
             as_of_times, feature_dictionary, entity_date_table_name, matrix_uuid
         )
         logger.debug(f"Feature data extracted for matrix {matrix_uuid}")
-        logger.spam(
-            "Extracting label data from database into file for matrix {matrix_uuid}",
-        )
-        labels_df = self.load_labels_data(
-            label_name,
-            label_type,
-            entity_date_table_name,
-            matrix_uuid,
-            matrix_metadata["label_timespan"],
-        )
-        dataframes.insert(0, labels_df)
 
-        logger.debug(f"Label data extracted for matrix {matrix_uuid}")
+        # dataframes add label_name
+
+        if self.includes_labels:
+            logger.spam(
+                "Extracting label data from database into file for matrix {matrix_uuid}",
+            )
+            labels_df = self.load_labels_data(
+                label_name,
+                label_type,
+                entity_date_table_name,
+                matrix_uuid,
+                matrix_metadata["label_timespan"],
+            )
+            dataframes.insert(0, labels_df)
+            logging.debug(f"Label data extracted for matrix {matrix_uuid}")
+        else:
+            labels_df = pd.DataFrame(index=dataframes[0].index, columns=[label_name])
+            dataframes.insert(0, labels_df)
+
         # stitch together the csvs
         logger.spam(f"Merging feature files for matrix {matrix_uuid}")
         output = self.merge_feature_csvs(dataframes, matrix_uuid)
