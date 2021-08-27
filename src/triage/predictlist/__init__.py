@@ -39,6 +39,7 @@ from .utils import (
     associate_models_with_retrain,
     save_retrain_and_get_hash,
     get_retrain_config_from_model_id,
+    temporal_params_from_matrix_metadata,
 )
 
 
@@ -150,6 +151,7 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     
     # Use timechop to get the time definition for production
     temporal_config = experiment_config["temporal_config"]
+    temporal_config.update(temporal_params_from_matrix_metadata(db_engine, model_id))
     timechopper = Timechop(**temporal_config)
     prod_definitions = timechopper.define_test_matrices(
             train_test_split_time=dt_from_str(as_of_date), 
@@ -210,16 +212,29 @@ class Retrainer:
         upgrade_db(db_engine=self.db_engine)
         self.project_storage = ProjectStorage(project_path)
         self.model_group_id = model_group_id
+        self.model_group_info = get_model_group_info(self.db_engine, self.model_group_id)
         self.matrix_storage_engine = self.project_storage.matrix_storage_engine()
         self.triage_run_id, self.experiment_config = experiment_config_from_model_group_id(self.db_engine, self.model_group_id)
+
+        # This feels like it needs some refactoring since in some edge cases at least the test matrix temporal parameters
+        # might differ across models in the mdoel group (the training ones shouldn't), but this should probably work for
+        # the vast majorty of use cases...
+        self.experiment_config['temporal_config'].update(self.db_engine, self.model_group_info['model_id_last_split'])
+
+        # Since "testing" here is predicting forward to a single new date, the test_duration should always be '0day'
+        # (regardless of what it may have been before)
+        self.experiment_config['temporal_config']['test_durations'] = ['0day']
+
+        # These lists should now only contain one item (the value actually used for the last model in this group)
         self.training_label_timespan = self.experiment_config['temporal_config']['training_label_timespans'][0]
         self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
         self.test_duration = self.experiment_config['temporal_config']['test_durations'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
+
         self.label_name = self.experiment_config['label_config']['name']
         self.cohort_name = self.experiment_config['cohort_config']['name']
         self.user_metadata = self.experiment_config['user_metadata']
-        self.model_group_info = get_model_group_info(self.db_engine, self.model_group_id)
+
         
         self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name='triage_production', db_engine=self.db_engine

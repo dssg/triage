@@ -76,6 +76,60 @@ def train_matrix_info_from_model_id(db_engine, model_id):
     return db_engine.execute(get_train_matrix_query, model_id).first()
 
 
+def test_matrix_info_from_model_id(db_engine, model_id):
+    """Get original test matrix information from model_id 
+
+    Note: because a model may have been tested on multiple matrices, this
+          chooses the matrix associated with the most recently run experiment
+          (then randomly if multiple test matrices are associated with the model_id
+          in that experiment). Generally, this will be an edge case, but may be
+          worth considering providing more control over which to choose here.
+    
+    Args:
+            db_engine (sqlalchemy.db.engine)
+            model_id (int) The id of a given model in the database
+
+    Returns: (str, dict) matrix uuid and matrix metadata
+    """
+    get_test_matrix_query = """
+        select matrix_uuid, mat.matrix_metadata
+        from triage_metadata.matrices mat
+        join test_results.prediction_metadata pm on (pm.matrix_uuid = mat.matrix_uuid)
+        join triage_metadata.triage_runs tr
+            on (mat.built_by_experiment = tr.run_hash AND tr.run_type='experiment')
+        where pm.model_id = %s
+        order by start_time DESC, RANDOM()
+    """
+    return db_engine.execute(get_test_matrix_query, model_id).first()
+
+
+
+def temporal_params_from_matrix_metadata(db_engine, model_id):
+    """Read temporal parameters associated with model training/testing from the associated
+    matrices. Because a grid of multiple values may be provided in the experiment config
+    for these parameters, we need to find the specific values that were actually used for
+    the given model at runtime.
+
+    Args:
+            db_engine (sqlalchemy.db.engine)
+            model_id (int) The id of a given model in the database
+
+    Returns: (dict) The parameters for use in a temporal config for timechop
+    """
+    train_uuid, train_metadata = train_matrix_info_from_model_id(db_engine, model_id)
+    test_uuid, test_metadata = test_matrix_info_from_model_id(db_engine, model_id)
+
+    temporal_params = {}
+
+    temporal_params['training_as_of_date_frequencies'] = train_metadata['training_as_of_date_frequency']
+    temporal_params['test_as_of_date_frequencies'] = test_metadata['test_as_of_date_frequency']
+    temporal_params['max_training_histories'] = [ train_metadata['max_training_history'] ]
+    temporal_params['test_durations'] = [ test_metadata['test_duration'] ]
+    temporal_params['training_label_timespans'] = [ train_metadata.get('training_label_timespan', train_metadata['label_timespan']) ]
+    temporal_params['test_label_timespans'] = [ test_metadata.get('test_label_timespan', test_metadata['label_timespan']) ]
+
+    return temporal_params
+
 def get_feature_names(aggregation, matrix_metadata):
     """Returns a feature group name and a list of feature names from a SpacetimeAggregation object"""
     feature_prefix = aggregation.prefix
