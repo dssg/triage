@@ -16,6 +16,7 @@ from numpy.testing import assert_almost_equal, assert_array_equal
 import pandas as pd
 from sqlalchemy.sql.expression import text
 from triage.component.catwalk.utils import filename_friendly_hash, get_subset_table_name
+from triage.component.catwalk.storage import MatrixStore
 from tests.utils import fake_labels, fake_trained_model, MockMatrixStore
 from tests.results_tests.factories import (
     ModelFactory,
@@ -749,6 +750,82 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         assert record['parameter'] == '2_abs'
         assert record['attribute_name'] == 'protectedattribute1'
         assert record['attribute_value'] == 'value1'
+
+
+def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
+    # Test that if a protected_df is passed (along with bias config, the only real needed one
+    # being threshold info), an Aequitas report is written to the database.
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        bias_config={
+            'thresholds': {'top_n': [2]}
+        },
+        db_engine=db_engine_with_results_schema,
+    )
+    testing_labels = np.array([1, 1, 1, 0, 1])
+    testing_prediction_probas = np.array([0.56, 0.55, 0.92, 0.85, 0.24])
+
+    fake_test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema,
+        metadata_overrides={'as_of_times': [TRAIN_END_TIME]},
+        matrix=pd.DataFrame.from_dict(
+                {
+                    "entity_id": [1, 2, 3, 4, 5],
+                    "as_of_date": [pd.Timestamp(2016, 1, 1)]*5,
+                    "feature_one": [3, 4, 3, 4, 3],
+                    "feature_two": [5, 6, 5, 6, 5],
+                    "label": testing_labels,
+                }
+            ).set_index(MatrixStore.indices),
+        init_labels=pd.DataFrame(
+            {
+                "label_value": testing_labels,
+                "entity_id": [1, 2, 3, 4, 5],
+                "as_of_date": [pd.Timestamp(2016, 1, 1)]*5,
+            }
+        ).set_index(["entity_id", "as_of_date"]).label_value,
+        init_as_of_dates=[TRAIN_END_TIME]
+    )
+
+    trained_model, model_id = fake_trained_model(
+        db_engine_with_results_schema,
+        train_end_time=TRAIN_END_TIME,
+    )
+
+    protected_df = pd.DataFrame({
+        # "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
+        # "as_of_date": fake_test_matrix_store.design_matrix.index.levels[1].tolist(),
+        "protectedattribute1": ["low", "low", "low", "high", "high"]
+    }, index=fake_test_matrix_store.design_matrix.index)
+    # should be low has 3 records, all 1's; high has 2 records, one 1
+
+    expected = {
+        "low": {"group_size": 3, "group_label_neg": 0, "group_label_pos": 3},
+        "high": {"group_size": 2, "group_label_neg": 1, "group_label_pos": 1}
+    }
+
+    model_evaluator.evaluate(
+        testing_prediction_probas, fake_test_matrix_store, model_id, protected_df
+    )
+
+    for record in db_engine_with_results_schema.execute(
+        """select * from test_results.aequitas
+        where model_id = %s and evaluation_start_time = %s
+        order by 1""",
+        (model_id, fake_test_matrix_store.as_of_dates[0]),
+    ):
+        assert record['model_id'] == model_id
+        assert record['parameter'] == '2_abs'
+        assert record['attribute_name'] == 'protectedattribute1'
+        for col, value in expected[record['attribute_value']].items():
+            assert record[col] == value
+
 
 
 def test_generate_binary_at_x():

@@ -2,17 +2,20 @@ import argparse
 import importlib.util
 import os
 import yaml
+import pathlib
 
 
 from datetime import datetime
 
 from descriptors import cachedproperty
-from argcmdr import RootCommand, Command, main, cmdmethod
+from argcmdr import RootCommand, Command, main, cmdmethod, local
+from getpass import getpass
 from sqlalchemy.engine.url import URL
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
 from triage.component.audition import AuditionRunner
 from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
+from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
 from triage.experiments import (
@@ -22,6 +25,7 @@ from triage.experiments import (
 )
 from triage.predictlist import predict_forward_with_existed_model, Retrainer
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
+from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.util.db import create_engine
 
 import verboselogs, logging
@@ -178,7 +182,18 @@ class Experiment(Command):
             "--n-processes",
             type=natural_number,
             default=1,
-            help="number of cores to use",
+            help="number of cores to use for small classifiers (e.g. Logistic Regression)",
+        )
+        parser.add_argument(
+            "--n-bigtrain-processes",
+            type=natural_number,
+            default=1,
+            help="number of cores to use for big, computationally-intensive classifiers (e.g. Random Forests)",
+        )
+        parser.add_argument(
+            "--add-bigtrain-classes",
+            nargs="*",
+            help="Additional classifier paths (e.g. sklearn.ensemble.RandomForestClassifier) to train alongside the 'big' classifiers like random forests.",
         )
         parser.add_argument(
             "--matrix-format",
@@ -273,17 +288,19 @@ class Experiment(Command):
             "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions,
-            "skip_validation": not self.args.validate
+            "skip_validation": not self.args.validate,
+            "additional_bigtrain_classnames": self.args.add_bigtrain_classes
         }
         logger.info(f"Setting up the experiment")
         logger.info(f"Configuration file: {self.args.config}")
         logger.info(f"Results will be stored in DB: {self.root.db_url}")
         logger.info(f"Artifacts will be saved in {self.args.project_path}")
         try:
-            if self.args.n_db_processes > 1 or self.args.n_processes > 1:
+            if self.args.n_db_processes > 1 or self.args.n_processes > 1 or self.args.n_bigtrain_processes > 1:
                 experiment = MultiCoreExperiment(
                     n_db_processes=self.args.n_db_processes,
                     n_processes=self.args.n_processes,
+                    n_bigtrain_processes=self.args.n_bigtrain_processes,
                     **common_kwargs,
                 )
                 logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
@@ -498,6 +515,63 @@ class Db(Command):
         """Show triage results database history"""
         db_history(dburl=self.root.db_url)
 
+
+    @cmdmethod('password', action='store_true', help='hidden password prompt')
+    @local
+    def up(self, args):
+        (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
+        if retcode != 0:
+            logger.info('Container does not exist')
+            if os.path.exists('database.yaml'):
+                logger.error("database.yaml already exists, which indicates you are "
+                              "already using Triage with a database and likely do not "
+                              "need to run this command. If you would like to provision "
+                              "a new database to use with Triage, remove database.yaml") 
+                return
+            if args.password:
+                password = getpass(prompt='Enter a password for your new database user: ')
+                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'triage-db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'postgres:12']())
+                with open('database.yaml', 'w') as out_fd:
+                    config = {
+                        'host': '0.0.0.0',
+                        'user': 'triage_user',
+                        'pass': password,
+                        'port': 5432,
+                        'db': 'triage'
+                    }
+                    out_fd.write(yaml.dump(config))
+                logger.info('New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
+        elif 'running' in stdout:
+            logger.info('Already running, will not start')
+        else:
+            logger.info('Container exists, but is not running. Starting')
+            logger.info(self.local['docker']['start', 'triage_db'])
+
+@Triage.register
+class AddPredictions(Command):
+    """Save test predictions of selected model groups"""
+
+    def __init__(self, parser):
+        parser.add_argument(
+            "-c",
+            "--configfile",
+            type=argparse.FileType("r"),
+            help="Path to the configuration file (required)",
+            required=True
+        )
+
+
+    def __call__(self):
+        db_engine = create_engine(self.root.db_url)
+        config = yaml.full_load(self.args.configfile)
+
+        add_predictions(
+            db_engine=db_engine,
+            model_groups=config['model_group_ids'],
+            project_path=config['project_path'],
+            experiment_hashes=config.get('experiments'),
+            train_end_times_range=config.get('train_end_times')
+        )
 
 def execute():
     main(Triage)

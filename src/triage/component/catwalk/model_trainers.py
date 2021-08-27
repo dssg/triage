@@ -89,6 +89,7 @@ class ModelTrainer:
         same attributes there would be no reason to keep the old one)
 
         Args:
+        matrix_metadata (dict): metadata associated with training matrix for this model
         class_path (string): a full class path for the classifier
         parameters (dict): all hyperparameters to be passed to the classifier
         random_seed (int) an integer suitable for seeding the random generator before training
@@ -99,7 +100,6 @@ class ModelTrainer:
         unique = {
             "className": class_path,
             "parameters": self.unique_parameters(parameters),
-            "project_path": self.model_storage_engine.project_storage.project_path,
             "training_metadata": matrix_metadata,
             "random_seed": random_seed,
         }

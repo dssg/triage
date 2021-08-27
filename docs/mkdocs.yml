@@ -122,6 +122,7 @@ nav:
       - Model governance:  dirtyduck/ml_governance.md
       -Predictlist: predictlist/index.md
       - Scaling up: dirtyduck/aws_batch.md
+      - Database Provisioner: db.md
       - API Reference:
           - Audition: 
               - Auditioner: api/audition/auditioner.md

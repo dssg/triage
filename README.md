@@ -45,6 +45,7 @@ $ . triage-env/bin/activate
 ## Data
 Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example/database.yaml](https://github.com/dssg/triage/blob/master/example/database.yaml)).
 
+If you don't want to install Postgres yourself, try `triage db up` to create a vanilla Postgres 12 database using docker. For more details on this command, check out [Triage Database Provisioner](db.md)
 
 ## Configure Triage for your project
 

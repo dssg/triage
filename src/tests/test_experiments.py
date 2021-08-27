@@ -579,3 +579,4 @@ def test_experiment_metadata(finished_experiment):
     assert experiment_row.matrices_needed == experiment_row.time_splits * 2 * experiment_row.feature_group_combinations # x2 for train and test
     assert experiment_row.grid_size == 4
     assert experiment_row.models_needed == (experiment_row.matrices_needed/2) * experiment_row.grid_size # /2 because we only need models per train matrix
+    session.close()

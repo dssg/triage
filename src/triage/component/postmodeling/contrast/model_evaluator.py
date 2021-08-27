@@ -525,14 +525,14 @@ class ModelEvaluator:
 
         fig, ax = plt.subplots(figsize=figsize)
         ax.tick_params(labelsize=16)
-        importances.plot(kind="barh", legend=False, ax=ax)
         ax.set_frame_on(False)
         ax.set_xlabel('Feature Importance', fontsize=20)
         ax.set_ylabel('Feature', fontsize=20)
         plt.tight_layout()
         plt.title(f'Top {n_features_plots} Feature Importances',
                   fontsize=fontsize).set_position([.5, 0.99])
-
+        importances.plot(kind="barh", legend=False, ax=ax)
+        
     def plot_feature_importances_std_err(self,
                                          path,
                                          bar=True,
