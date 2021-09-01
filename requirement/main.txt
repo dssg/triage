@@ -3,7 +3,7 @@ SQLAlchemy==1.4.23
 PyYAML==5.4.1
 psycopg2-binary==2.9.1
 python-dateutil==2.8.2
-boto3==1.14.45
+boto3==1.18.33
 click==7.1.2
 inflection==0.5.0
 numpy==1.19.0
