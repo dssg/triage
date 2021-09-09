@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from triage.component.catwalk import ModelTrainTester, Predictor, ModelTrainer, ModelEvaluator, IndividualImportanceCalculator, ProtectedGroupsGenerator
 from triage.component.catwalk.utils import save_experiment_and_get_hash
 from triage.component.catwalk.model_trainers import flatten_grid_config
@@ -87,6 +88,12 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
 
     predictor = MagicMock(spec_set=create_autospec(Predictor))
     trainer = MagicMock(spec_set=create_autospec(ModelTrainer))
+
+    @contextmanager
+    def noop():
+        yield
+
+    trainer.cache_models = noop
     evaluator = MagicMock(spec_set=create_autospec(ModelEvaluator))
     individual_importance_calculator = MagicMock(spec_set=create_autospec(IndividualImportanceCalculator))
     protected_groups_generator = MagicMock(spec_set=create_autospec(ProtectedGroupsGenerator))
@@ -102,6 +109,10 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
         additional_bigtrain_classnames=additional_bigtrain_classnames
     )
     return train_tester, train_test_task
+
+
+def noop():
+    yield
 
 
 def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_storage):

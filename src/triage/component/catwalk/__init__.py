@@ -195,7 +195,7 @@ class ModelTrainTester:
 
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                if self.replace or self.model_evaluator.needs_evaluations(store, model_id):
+                if self.replace or self.model_evaluator.needs_evaluations(store, model_id) is True:
                     logger.spam(
                         f"Generating new predictions for "
                         f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
