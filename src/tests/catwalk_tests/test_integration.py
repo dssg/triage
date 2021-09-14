@@ -88,12 +88,6 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
 
     predictor = MagicMock(spec_set=Predictor)
     trainer = MagicMock(spec_set=ModelTrainer)
-
-    @contextmanager
-    def noop():
-        yield
-
-    trainer.cache_models = noop
     evaluator = MagicMock(spec_set=ModelEvaluator)
     individual_importance_calculator = MagicMock(spec_set=IndividualImportanceCalculator)
     protected_groups_generator = MagicMock(spec_set=ProtectedGroupsGenerator)
@@ -109,10 +103,6 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
         additional_bigtrain_classnames=additional_bigtrain_classnames
     )
     return train_tester, train_test_task
-
-
-def noop():
-    yield
 
 
 def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_storage):
