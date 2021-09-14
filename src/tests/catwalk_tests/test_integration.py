@@ -13,7 +13,7 @@ from tests.utils import (
     matrix_metadata_creator,
 )
 
-from unittest.mock import patch, create_autospec, MagicMock
+from unittest.mock import patch, MagicMock
 
 
 def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_storage, sample_timechop_splits, sample_grid_config):
@@ -86,17 +86,17 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
         'test_store': test_matrix_store
     }
 
-    predictor = MagicMock(spec_set=create_autospec(Predictor))
-    trainer = MagicMock(spec_set=create_autospec(ModelTrainer))
+    predictor = MagicMock(spec_set=Predictor)
+    trainer = MagicMock(spec_set=ModelTrainer)
 
     @contextmanager
     def noop():
         yield
 
     trainer.cache_models = noop
-    evaluator = MagicMock(spec_set=create_autospec(ModelEvaluator))
-    individual_importance_calculator = MagicMock(spec_set=create_autospec(IndividualImportanceCalculator))
-    protected_groups_generator = MagicMock(spec_set=create_autospec(ProtectedGroupsGenerator))
+    evaluator = MagicMock(spec_set=ModelEvaluator)
+    individual_importance_calculator = MagicMock(spec_set=IndividualImportanceCalculator)
+    protected_groups_generator = MagicMock(spec_set=ProtectedGroupsGenerator)
     train_tester = ModelTrainTester(
         matrix_storage_engine=matrix_storage_engine,
         model_trainer=trainer,
