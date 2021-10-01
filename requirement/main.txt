@@ -17,7 +17,7 @@ argcmdr==0.7.0
 sqlparse==0.4.2
 pebble==4.6.3
 adjustText==0.7.3
-graphviz==0.14
+graphviz==0.17
 requests==2.24.0
 coloredlogs==14.0
 verboselogs==1.7
