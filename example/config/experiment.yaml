@@ -474,7 +474,7 @@ grid_config:
     # predictive models to simply ranking entities on a single feature.
     'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
         feature: ['feature_one', 'feature_two']
-        descend: True
+        high_score_low_value: True
     # catwalk's SimpleThresholder baseline will evaluate each entity against
     # a list of rules and classify entities as 1 based on whether they meet
     # any or all of these rules, depending on whether 'or' or 'and' is

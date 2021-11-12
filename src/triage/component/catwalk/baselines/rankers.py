@@ -4,10 +4,10 @@ from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
 class PercentileRankOneFeature:
-    def __init__(self, feature, descend=False):
+    def __init__(self, feature, high_score_low_value=False):
         self.feature = feature  # which feature to rank on
-        self.descend = (
-            descend
+        self.high_score_low_value = (
+            high_score_low_value
         )  # should feature be ranked so lower values -> higher scores
         self.feature_importances_ = None
 
@@ -48,7 +48,7 @@ class PercentileRankOneFeature:
         # values of the feature. so if the entities have values [0, 0, 1, 2, 2],
         # the first two entities will have the lowest ranks (and therefore the
         # lowest risk scores) and the last two will have the highest ranks (and
-        # highest risk scores). for the descending method, we need to reverse
+        # highest risk scores). for the "high_score_low_value" method, we need to reverse
         # this, and for both sorting directions, we need to convert the ranks to
         # percentiles.
 
@@ -60,7 +60,7 @@ class PercentileRankOneFeature:
         method = "min"
         subtract = 1
 
-        # when descending: tied entities should get the *highest* rank, so for
+        # when `high_score_low_value=True`: tied entities should get the *highest* rank, so for
         # [0, 0, 1, 2, 2] the ranks should be [2, 2, 3, 5, 5]. if we reverse
         # these ranks by substracting all items from the maximum rank (5), we
         # end up with the correct ranks for calculating percentiles:
@@ -70,14 +70,14 @@ class PercentileRankOneFeature:
         #   ([5, 5, 5, 5, 5] -  [2, 2, 3, 5, 5]) / 5  = [0.6, 0.6, 0.4, 0, 0]
         # and
         #    [1, 1, 1, 1, 1] - ([2, 2, 3, 5, 5]  / 5) = [0.6, 0.6, 0.4, 0, 0]
-        if self.descend:
+        if self.high_score_low_value:
             method = "max"
             subtract = 0
 
         # get the ranks and convert to percentiles
         ranks = stats.rankdata(x, method)
         ranks = [(rank - subtract) / len(x) for rank in ranks]
-        if self.descend:
+        if self.high_score_low_value:
             ranks = [1 - rank for rank in ranks]
 
         # format it like sklearn output and return

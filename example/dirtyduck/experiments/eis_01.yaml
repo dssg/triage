@@ -177,7 +177,7 @@ grid_config:
 
   'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
     feature: ['risks_entity_id_all_risk_high_sum', 'inspections_entity_id_all_total_count', 'results_entity_id_all_result_fail_sum']
-    descend: [True]
+    high_score_low_value: [True]
 
   'sklearn.dummy.DummyClassifier':
     strategy: ['prior', 'stratified']
