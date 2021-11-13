@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
-REQUIRED_KEYS = ["feature", "low_value_high_score"]
+REQUIRED_KEYS = frozenset(["feature", "low_value_high_score"])
 
 
 class PercentileRankOneFeature:

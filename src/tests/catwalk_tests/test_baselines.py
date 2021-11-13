@@ -108,7 +108,8 @@ class TestRankMultiFeature(TestCase):
             ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
             results = ranker.predict_proba(self.data["X_test"])
             if direction_value:
-                expected_scores = [0.875, 0.125, 0.375, 0, 0.625, 0.25, 0.5, 0.625]
+                expected_ranks = [6, 1, 3, 0, 5, 2, 4, 5]
+                expected_scores = [x/max(expected_ranks) for x in expected_ranks]
                 expected_results = np.array(
                     [
                         [1-s for s in expected_scores],
@@ -116,7 +117,8 @@ class TestRankMultiFeature(TestCase):
                     ]
                 ).transpose()
             else:
-                expected_scores = [0, 0.75, 0.5, 0.875, 0.125, 0.625, 0.375, 0.125]
+                expected_ranks = [0, 5, 3, 6, 1, 4, 2, 1]
+                expected_scores = [x/max(expected_ranks) for x in expected_ranks]
                 expected_results = np.array(
                     [
                         [1-s for s in expected_scores],
