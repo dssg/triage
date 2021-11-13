@@ -1,10 +1,29 @@
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
 from scipy import stats
 import numpy as np
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 
 class PercentileRankOneFeature:
-    def __init__(self, feature, low_value_high_score=False):
+    def __init__(self, feature, low_value_high_score=None, descend=None):
+        if descend is not None:
+            # If the deprecated `descend` parameter has been specified, raise a
+            # warning, then use this value for low_value_high_score, which has
+            # the same behavior
+            logger.warning("DEPRECATION WARNING: parameter `descend` is deprecated for"
+                "PercentileRankOneFeature. Use `low_value_high_score` instead."
+            )
+            if low_value_high_score is not None:
+                raise ValueError("Only one of `descend` or `low_value_high_score` can be"
+                    "specified for PercentileRankOneFeature."
+                    )
+            low_value_high_score = descend
+
+        # set default this way so we can check if both have been specified above
+        if low_value_high_score is None:
+            low_value_high_score = False
+
         self.feature = feature  # which feature to rank on
         self.low_value_high_score = (
             low_value_high_score
