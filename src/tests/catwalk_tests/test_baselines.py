@@ -6,6 +6,7 @@ import pytest
 from unittest import TestCase
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
+from triage.component.catwalk.baselines.rankers import BaselineRankMultiFeature
 from triage.component.catwalk.baselines.thresholders import SimpleThresholder
 from triage.component.catwalk.baselines.thresholders import get_operator_method
 from triage.component.catwalk.baselines.thresholders import OPERATOR_METHODS
@@ -81,6 +82,69 @@ class TestRankOneFeature(TestCase):
                     ]
                 ).transpose()
             np.testing.assert_array_equal(results, expected_results)
+
+
+@pytest.mark.usefixtures("data")
+class TestRankMultiFeature(TestCase):
+    def test_fit(self):
+        rules = {'feature': 'x3', 'low_value_high_score': False}
+        ranker = BaselineRankMultiFeature(rules=rules)
+        assert ranker.feature_importances_ is None
+        ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+        np.testing.assert_array_equal(
+            ranker.feature_importances_, np.array([0, 0, 1, 0])
+        )
+
+    def test_ranking_on_unavailable_feature_raises_error(self):
+        rules = [{'feature': 'x5', 'low_value_high_score': False}]
+        ranker = BaselineRankMultiFeature(rules=rules)
+        with self.assertRaises(BaselineFeatureNotInMatrix):
+            ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+
+    def test_predict_proba_one_feature(self):
+        for direction_value in [True, False]:
+            rules = {'feature': 'x3', 'low_value_high_score': direction_value}
+            ranker = BaselineRankMultiFeature(rules=rules)
+            ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+            results = ranker.predict_proba(self.data["X_test"])
+            if direction_value:
+                expected_scores = [0.875, 0.125, 0.375, 0, 0.625, 0.25, 0.5, 0.625]
+                expected_results = np.array(
+                    [
+                        [1-s for s in expected_scores],
+                        expected_scores,
+                    ]
+                ).transpose()
+            else:
+                expected_scores = [0, 0.75, 0.5, 0.875, 0.125, 0.625, 0.375, 0.125]
+                expected_results = np.array(
+                    [
+                        [1-s for s in expected_scores],
+                        expected_scores,
+                    ]
+                ).transpose()
+            np.testing.assert_array_equal(results, expected_results)
+
+    def test_predict_proba_multi_feature(self):
+        rules = [
+            {'feature': 'x3', 'low_value_high_score': True},
+            {'feature': 'x2', 'low_value_high_score': False}
+        ]
+
+        ranker = BaselineRankMultiFeature(rules=rules)
+        ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+        results = ranker.predict_proba(self.data["X_test"])
+
+        expected_ranks = [7, 1, 3, 0, 5, 2, 4, 6]
+        expected_scores = [x/max(expected_ranks) for x in expected_ranks]
+        expected_results = np.array(
+            [
+                [1-s for s in expected_scores],
+                expected_scores,
+            ]
+        ).transpose()
+
+        np.testing.assert_array_equal(results, expected_results)
 
 
 @pytest.mark.parametrize('operator', OPERATOR_METHODS.keys())
