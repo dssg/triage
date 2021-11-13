@@ -63,7 +63,7 @@ class TestRankOneFeature(TestCase):
 
     def test_predict_proba(self):
         for direction_value in [True, False]:
-            ranker = PercentileRankOneFeature(feature="x3", high_score_low_value=direction_value)
+            ranker = PercentileRankOneFeature(feature="x3", low_value_high_score=direction_value)
             ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
             results = ranker.predict_proba(self.data["X_test"])
             if direction_value:
