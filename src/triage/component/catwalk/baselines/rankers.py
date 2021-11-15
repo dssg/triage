@@ -116,7 +116,7 @@ class BaselineRankMultiFeature:
             if not isinstance(rule, dict):
                 raise ValueError('Rules for BaselineRankMultiFeature must be of type dict')
             if not rule.keys() >= REQUIRED_KEYS:
-                raise ValueError(f'BaselineRankMultiFeature rule "{rule}" missing one or more reuired keys ({REQUIRED_KEYS})')
+                raise ValueError(f'BaselineRankMultiFeature rule "{rule}" missing one or more required keys ({REQUIRED_KEYS})')
 
         self.rules = rules
         self.feature_importances_ = None
