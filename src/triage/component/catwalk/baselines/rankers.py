@@ -10,15 +10,19 @@ REQUIRED_KEYS = frozenset(["feature", "low_value_high_score"])
 
 class PercentileRankOneFeature:
     def __init__(self, feature, low_value_high_score=None, descend=None):
+        logger.warning("DEPRECATION WARNING: PercentileRankOneFeature is being replaced by "
+            "BaselineRankMultiFeature. Note, however, that the scores returned by the new "
+            "ranker cannot be interpreted as percentiles."
+        )
         if descend is not None:
             # If the deprecated `descend` parameter has been specified, raise a
             # warning, then use this value for low_value_high_score, which has
             # the same behavior
-            logger.warning("DEPRECATION WARNING: parameter `descend` is deprecated for"
+            logger.warning("DEPRECATION WARNING: parameter `descend` is deprecated for "
                 "PercentileRankOneFeature. Use `low_value_high_score` instead."
             )
             if low_value_high_score is not None:
-                raise ValueError("Only one of `descend` or `low_value_high_score` can be"
+                raise ValueError("Only one of `descend` or `low_value_high_score` can be "
                     "specified for PercentileRankOneFeature."
                     )
             low_value_high_score = descend
