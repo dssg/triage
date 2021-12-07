@@ -158,5 +158,6 @@ class ProtectedGroupsGenerator:
             parse_dates=["as_of_date"],
             index_col=MatrixStore.indices,
         )
+        protected_df[self.attribute_columns] = protected_df[self.attribute_columns].astype(str)
         del protected_df['cohort_hash']
         return protected_df
