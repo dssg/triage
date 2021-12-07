@@ -259,7 +259,7 @@ def sample_grid_config():
         },
         'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature': {
             'feature': ['feature_one', 'feature_two'],
-            'descend': [True]
+            'low_value_high_score': [True]
         },
         'triage.component.catwalk.baselines.thresholders.SimpleThresholder': {
             'rules': [['feature_one > 3', 'feature_two <= 5']],

@@ -474,7 +474,18 @@ grid_config:
     # predictive models to simply ranking entities on a single feature.
     'triage.component.catwalk.baselines.rankers.PercentileRankOneFeature':
         feature: ['feature_one', 'feature_two']
-        descend: True
+        low_value_high_score: [True]
+    # catwalk's BaselineRankMultiFeature baseline will score based on the ranking
+    # by one or more feature (note that the scores don't map to the percentiles as
+    # in PercentileRankOneFeature. This provides a slightly more complex baseline
+    # than above, but still realistic for what might be encountered in practice.
+    # The example below will create two ranker "models": one ranking by two features
+    # and the other just by a single feature. Note that the rules are lists of
+    # dictionaries.
+    'triage.component.catwalk.baselines.rankers.BaselineRankMultiFeature':
+        rules:
+            - [{feature: 'feature_1', low_value_high_score: True}, {feature: 'feature_2', low_value_high_score: False}]
+            - [{feature: 'feature_3', low_value_high_score: True}]
     # catwalk's SimpleThresholder baseline will evaluate each entity against
     # a list of rules and classify entities as 1 based on whether they meet
     # any or all of these rules, depending on whether 'or' or 'and' is
