@@ -6,6 +6,7 @@ import math
 import numpy as np
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import or_
+from sklearn.utils import parallel_backend
 
 from .utils import db_retry, retrieve_model_hash_from_id, save_db_objects, sort_predictions_and_labels, AVAILABLE_TIEBREAKERS
 from triage.component.results_schema import Model
@@ -269,9 +270,12 @@ class Predictor:
         # Labels are popped from matrix (i.e. they are removed and returned)
         labels = matrix_store.labels
 
-        predictions = model.predict_proba(
-            matrix_store.matrix_with_sorted_columns(train_matrix_columns)
-        )[:, 1]  # Returning only the scores for the label == 1
+        # using a threading backend because the default loky backend doesn't
+        # allow for nested parallelization (e.g., multiprocessing at triage level)
+        with parallel_backend('threading'):
+            predictions = model.predict_proba(
+                matrix_store.matrix_with_sorted_columns(train_matrix_columns)
+            )[:, 1]  # Returning only the scores for the label == 1
 
 
         logger.debug(
