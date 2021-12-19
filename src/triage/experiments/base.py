@@ -154,22 +154,22 @@ class ExperimentBase(ABC):
         self.replace = replace
         if self.replace:
             logger.notice(f"Replace flag is set to true. Matrices, models, "
-                          "evaluations and predictions (if exist) will be replaced")
+                          "evaluations and predictions (if they exist) will be replaced")
 
         self.save_predictions = save_predictions
         if not self.save_predictions:
             logger.notice(f"Save predictions flag is set to false. "
-                          "Predictions won't be stored in the predictions "
+                          "Individual predictions won't be stored in the predictions "
                           "table. This will decrease both the running time "
                           "of an experiment and also decrease the space needed in the db")
 
         self.skip_validation = skip_validation
         if self.skip_validation:
-           logger.notice(f"Skip validation flag is set to true. "
+           logger.notice(f"Warning: Skip validation flag is set to true. "
                          "The experiment config file specified won't be validated. "
                          "This will reduce (a little) the running time of the experiment, "
                          "but has some potential risks, e.g. the experiment could fail"
-                         "after some time due some misconfiguration. Proceed with care.")
+                         "after some time due to some misconfiguration. Proceed with care.")
 
         self.db_engine = db_engine
         results_schema.upgrade_if_clean(dburl=self.db_engine.url)
@@ -186,7 +186,7 @@ class ExperimentBase(ABC):
             logger.notice("Features will be calculated for all the entities "
                           "(i.e. ignoring cohort) this setting will have the effect "
                           "that more db space will be used, but potentially could save "
-                          "time is you are running different similar experiments with "
+                          "time if you are running several similar experiments with "
                           "different cohorts.")
 
         self.additional_bigtrain_classnames = additional_bigtrain_classnames 
@@ -335,7 +335,7 @@ class ExperimentBase(ABC):
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logger.notice(
                 "bias_audit_config missing in the configuration file or unrecognized. "
-                "Without protected groups, you will not audit your models for bias and fairness."
+                "Without protected groups, you will not be able to audit your models for bias and fairness."
             )
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
@@ -699,7 +699,7 @@ class ExperimentBase(ABC):
         self.label_generator.generate_all_labels(
             self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
-        logger.success(f"Labels setted up in the table {self.labels_table_name} successfully ")
+        logger.success(f"Labels set up in the table {self.labels_table_name} successfully ")
 
     @experiment_entrypoint
     def generate_cohort(self):
@@ -707,7 +707,7 @@ class ExperimentBase(ABC):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
-        logger.success(f"Cohort setted up in the table {self.cohort_table_name} successfully")
+        logger.success(f"Cohort set up in the table {self.cohort_table_name} successfully")
 
 
     @experiment_entrypoint
