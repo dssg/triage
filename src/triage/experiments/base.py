@@ -275,29 +275,6 @@ class ExperimentBase(ABC):
 
         self.chopper = Timechop(**split_config)
 
-        cohort_config = self.config.get("cohort_config", {})
-        if "query" in cohort_config:
-            self.cohort_table_name = "cohort_{}_{}".format(
-                cohort_config.get('name', 'default'),
-                self.cohort_hash
-            )
-            self.cohort_table_generator = EntityDateTableGenerator(
-                entity_date_table_name=self.cohort_table_name,
-                db_engine=self.db_engine,
-                query=cohort_config["query"],
-                replace=self.replace
-            )
-        else:
-            logger.warning(
-                "cohort_config missing or unrecognized. Without a cohort, "
-                "you will not be able to make matrices, perform feature imputation, "
-                "or save time by only computing features for that cohort."
-            )
-            self.features_ignore_cohort = True
-            self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
-            self.cohort_table_generator = CohortTableGeneratorNoOp()
-
-
         if "label_config" in self.config:
             label_config = self.config["label_config"]
             self.labels_table_name = "labels_{}_{}".format(
@@ -317,6 +294,27 @@ class ExperimentBase(ABC):
                 "label_config missing or unrecognized. Without labels, "
                 "you will not be able to make matrices."
             )
+
+        cohort_config = self.config.get("cohort_config", {})
+        if "query" in cohort_config:
+            self.cohort_table_name = "cohort_{}_{}".format(
+                cohort_config.get('name', 'default'),
+                self.cohort_hash
+            )
+            self.cohort_table_generator = EntityDateTableGenerator(
+                entity_date_table_name=self.cohort_table_name,
+                db_engine=self.db_engine,
+                query=cohort_config["query"],
+                replace=self.replace
+            )
+        else:
+            logger.info(
+                "cohort_config missing or unrecognized. Labels will be used as the cohort."
+            )
+            self.features_ignore_cohort = True
+            self.cohort_table_name = self.labels_table_name
+            self.cohort_table_generator = CohortTableGeneratorNoOp()
+
 
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
