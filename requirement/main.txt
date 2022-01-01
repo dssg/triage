@@ -1,5 +1,5 @@
 alembic==1.7.5
-SQLAlchemy==1.3.18
+SQLAlchemy==1.4.29
 PyYAML==5.4.1
 psycopg2-binary==2.8.5
 python-dateutil==2.8.1
