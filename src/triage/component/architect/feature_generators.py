@@ -42,6 +42,7 @@ class FeatureGenerator:
                 for different cohorts.
         """
         self.db_engine = db_engine
+        self.db_url = db_engine.url
         self.features_schema_name = features_schema_name
         self.categorical_cache = {}
         self.replace = replace
@@ -683,3 +684,13 @@ class FeatureGenerator:
             logger.debug("Added drop table cleanup tasks: %s", imp_tbl_name)
 
         return table_tasks
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['db_engine']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.db_engine = sqlalchemy.create_engine(self.db_url)
+
