@@ -291,8 +291,10 @@ class ExperimentBase(ABC):
         cohort_config = self.config.get("cohort_config", {})
         if "query" in self.config.get("cohort_config", {}):
             self.cohort_hash = filename_friendly_hash(self.config["cohort_config"]["query"])
-        else:
+        elif 'query' in self.config.get("label_config", {}):
             self.cohort_hash = filename_friendly_hash(self.config["label_config"]["query"])
+        else:
+            self.cohort_hash = ''
 
         self.cohort_table_name = "cohort_{}_{}".format(
             cohort_config.get('name', 'default'),

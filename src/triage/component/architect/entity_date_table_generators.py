@@ -118,7 +118,11 @@ class EntityDateTableGenerator:
         from the labels table
         """
         self._maybe_create_entity_date_table()
-        logger.spam(f"Populating entity_date table {self.entity_date_table_name} from labels table")
+        logger.spam(f"Populating entity_date table {self.entity_date_table_name} from labels table {self.labels_table_name}")
+        if not table_exists(self.labels_table_name, self.db_engine):
+            logger.warning("Labels table does not exist, cannot populate entity-dates")
+            return
+
         self.db_engine.execute(f"""insert into {self.entity_date_table_name}
             select distinct entity_id, as_of_date
             from {self.labels_table_name}

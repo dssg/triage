@@ -66,11 +66,11 @@ experiment. This value is not processed when we generate the labels table, but l
 
 ### Cohort Table
 
-The Experiment keeps track of the which entities are in the cohort on any given date. Similarly to the labels table, the experiment populates a cohort table using the following input:
+The Experiment keeps track of the which entities are in the cohort on any given date. Similarly to the labels table, the experiment populates a cohort table. using one of two options:
 
-1. A query, provided by the user in the configuration file, that generates entity_ids for a given as_of_date.
+1. A query, provided by the user in the configuration file, that generates entity_ids for a given as_of_date. This is run for each as_of_date as generated from the temporal config.
 
-2. Each as_of_date as defined in temporal config
+2. All distinct entity ids and as_of_dates in the labels table, if no query is provided by the user in the configuration file.
 
 This cohort table is scoped to the entire Experiment, so all `as_of_times` (computed in step 1) are present. 
 

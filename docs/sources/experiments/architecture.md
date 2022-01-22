@@ -97,7 +97,7 @@ Timechop does the necessary temporal math to set up temporal cross-validation. I
 
 ### Entity-Date Table Generator
 
-The `EntityDateTableGenerator` manages entity-date tables (including cohort and subset tables) by running the configured query for a number of different `as_of_dates`.
+The `EntityDateTableGenerator` manages entity-date tables (including cohort and subset tables) by running the configured query for a number of different `as_of_dates`. Alternately, will retrieve all unique entities and dates from the labels table if no query is configured.
 
 **Input**
 
