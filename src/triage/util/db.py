@@ -30,21 +30,21 @@ def json_dumps(d):
 
 
 
-class SerializableDbEngine(wrapt.ObjectProxy):
+class SerializableDbEngine:
     """A sqlalchemy engine that can be serialized across process boundaries.
 
     Works by saving all kwargs used to create the engine and reconstructs them later.  As a result, the state won't be saved upon serialization/deserialization.
     """
 
-    __slots__ = ("url", "creator", "kwargs")
+    # __slots__ = ("url", "creator", "kwargs")
 
     def __init__(self, url, *, creator=sqlalchemy.create_engine, **kwargs):
         self.url = make_url(url)
         self.creator = creator
         self.kwargs = kwargs
 
-        engine = creator(url, **kwargs)
-        super().__init__(engine)
+        self.engine = creator(url, **kwargs)
+        # super().__init__(engine)
 
     def __reduce__(self):
         return (self.__reconstruct__, (self.url, self.creator, self.kwargs))
@@ -57,8 +57,10 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     def __reconstruct__(cls, url, creator, kwargs):
         return cls(url, creator=creator, **kwargs)
 
+    def __getattr__(self, attr):
+        return getattr(self.engine, attr)
 
-create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps)
+create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps, pool_size=20, max_overflow=100)
 
 @contextmanager
 def scoped_session(db_engine):
