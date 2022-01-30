@@ -292,26 +292,30 @@ class ExperimentBase(ABC):
         if "query" in self.config.get("cohort_config", {}):
             self.cohort_hash = filename_friendly_hash(self.config["cohort_config"]["query"])
         elif 'query' in self.config.get("label_config", {}):
+            if "query" not in cohort_config:
+                logger.info(
+                    "cohort_config missing or unrecognized, but labels are configured. Labels will be used as the cohort."
+                )
             self.cohort_hash = filename_friendly_hash(self.config["label_config"]["query"])
         else:
-            self.cohort_hash = ''
+            self.features_ignore_cohort = True
+            self.cohort_hash = None
+            self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
+            self.cohort_table_generator = CohortTableGeneratorNoOp()
 
-        self.cohort_table_name = "cohort_{}_{}".format(
-            cohort_config.get('name', 'default'),
-            self.cohort_hash
-        )
-        if "query" not in cohort_config:
-            logger.info(
-                "cohort_config missing or unrecognized. Labels will be used as the cohort."
+
+        if not self.cohort_table_generator:
+            self.cohort_table_name = "cohort_{}_{}".format(
+                cohort_config.get('name', 'default'),
+                self.cohort_hash
             )
-
-        self.cohort_table_generator = EntityDateTableGenerator(
-            entity_date_table_name=self.cohort_table_name,
-            db_engine=self.db_engine,
-            query=cohort_config.get("query", None),
-            labels_table_name=self.labels_table_name,
-            replace=self.replace
-        )
+            self.cohort_table_generator = EntityDateTableGenerator(
+                entity_date_table_name=self.cohort_table_name,
+                db_engine=self.db_engine,
+                query=cohort_config.get("query", None),
+                labels_table_name=self.labels_table_name,
+                replace=self.replace
+            )
 
 
         if "bias_audit_config" in self.config:
@@ -624,6 +628,10 @@ class ExperimentBase(ABC):
         values being lists of feature names
 
         """
+        if not self.master_feature_dictionary:
+            logger.warning("No features have been created. Either there is no feature configuration" \
+                           "or there was some problem processing them.")
+            return []
         combinations = self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
