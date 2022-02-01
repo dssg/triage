@@ -1,7 +1,7 @@
 -r include/build.txt
 bumpversion==0.6.0
 mkdocs==1.2.3
-pymdown-extensions==7.1
+pymdown-extensions==9.1
 mkdocs-material==7.0.6
 mkdocstrings==0.12.0
 black==19.10b0
