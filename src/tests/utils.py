@@ -28,21 +28,37 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa
 
 
-LABEL_QUERY = """
-    select
-        events.entity_id,
-        bool_or(outcome::bool)::integer as outcome
-    from events
-    where '{as_of_date}'::date <= outcome_date
-        and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
-    group by entity_id
-"""
+CONFIG_QUERY_DATA = {
+    "cohort": {
+        "query": """
+            select distinct(entity_id)
+            from events
+            where '{as_of_date}'::date >= outcome_date
+        """,
+        "filepath": "cohorts/file.sql"
+    },
+    "label": {
+        "query": """
+            select
+                events.entity_id,
+                bool_or(outcome::bool)::integer as outcome
+            from events
+            where '{as_of_date}'::date <= outcome_date
+                and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
+            group by entity_id
+        """,
+        "filepath": "labels/file.sql"
+    }
+}
 
-COHORT_QUERY = """
-    select distinct(entity_id)
-    from events
-    where '{as_of_date}'::date >= outcome_date
-"""
+MOCK_FILES = {
+    f"./{CONFIG_QUERY_DATA['label']['filepath']}": CONFIG_QUERY_DATA["label"]["query"],
+    f"./{CONFIG_QUERY_DATA['cohort']['filepath']}": CONFIG_QUERY_DATA["cohort"]["query"],
+}
+
+
+def open_side_effect(name):
+    return mock.mock_open(read_data=MOCK_FILES[name]).return_value
 
 
 def fake_labels(length):
@@ -354,7 +370,7 @@ def populate_source_data(db_engine):
         db_engine.execute("insert into events values (%s, %s, %s)", event)
 
 
-def sample_config():
+def sample_config(query_source="filepath"):
     temporal_config = {
         "feature_start_time": "2010-01-01",
         "feature_end_time": "2014-01-01",
@@ -419,12 +435,12 @@ def sample_config():
     ]
 
     cohort_config = {
-        "query": COHORT_QUERY,
         "name": "has_past_events",
+        query_source: CONFIG_QUERY_DATA["cohort"][query_source],
     }
 
     label_config = {
-        "query": LABEL_QUERY,
+        query_source: CONFIG_QUERY_DATA["label"][query_source],
         "name": "custom_label_name",
         "include_missing_labels_in_train_as": False,
     }
