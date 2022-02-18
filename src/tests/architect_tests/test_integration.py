@@ -169,7 +169,7 @@ def basic_integration_test(
             )
 
             label_generator = LabelGenerator(
-                db_engine=db_engine, query=sample_config()[
+                db_engine=db_engine, query=sample_config("query")[
                     "label_config"]["query"]
             )
 
