@@ -55,7 +55,8 @@ temporal_config:
 # COHORT CONFIG
 # Cohorts are configured by passing a query with placeholders for the 'as_of_date'.
 #
-# The 'query' key should have a query, parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs. The returned 'entity_id' must be an integer.
+# You may pass a relative filepath to a cohort query to the 'filepath' key (preferred) or use the 'query' key to include the a cohort query directly in the config
+# Cohort queries should return a column named 'entity_id' and be parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs. The returned 'entity_id' must be an integer.
 #
 # You may enter a 'name' for your configuration.
 # This will be included in the metadata for each matrix and used to group models
@@ -65,12 +66,12 @@ temporal_config:
 # it will default to all the entities in your event's tables  (from_obj in feature_aggregations).
 # The name by default in this case will be 'all_entities'
 cohort_config:
-    query: "select entity_id from events where outcome_date < '{as_of_date}'"
+    filepath: 'example/cohort/past_events.sql'
     name: 'past_events'
 
 
 # LABEL GENERATION
-# Labels are configured by passing a query with placeholders for the 'as_of_date' and 'label_timespan'.
+# Labels are configured with a query with placeholders for the 'as_of_date' and 'label_timespan'. You can include a local path to a sql file containing the label query to the 'filepath' key (preferred) or include the query in the 'query' key
 #
 # The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
 # The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
@@ -85,14 +86,7 @@ cohort_config:
 # that will be present in matrix metadata for each matrix created by this experiment,
 # under the 'label_name' key. The default label_name is 'outcome'.
 label_config:
-    query: |
-        select
-        events.entity_id,
-        bool_or(outcome::bool)::integer as outcome
-        from events
-        where '{as_of_date}' <= outcome_date
-            and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
-            group by entity_id
+    filepath: 'example/label/events.sql'
     #include_missing_labels_in_train_as: False
     #name: 'inspections'
 

@@ -2,6 +2,7 @@ import csv
 import datetime
 import hashlib
 import numpy as np
+import os
 import pandas as pd
 import json
 
@@ -60,6 +61,30 @@ DEFAULT_RETRY_KWARGS = {
 
 
 db_retry = retry(**DEFAULT_RETRY_KWARGS)
+
+
+def load_query_if_needed(config_component):
+    """ Load the cohort or label query from a file
+
+    Args:
+        config_component (dict) A cohort or label config
+
+    Returns: None
+    """
+    if "filepath" in config_component:
+        if "query" in config_component:
+            raise ValueError(
+                "Both filepath and query are present. Please provide only one."
+            )
+
+        query_filename = os.path.join(
+            os.curdir, config_component["filepath"]
+        )
+
+        with open(query_filename) as f:
+            config_component["query"] = f.read()
+
+        config_component.pop("filepath")
 
 
 @db_retry

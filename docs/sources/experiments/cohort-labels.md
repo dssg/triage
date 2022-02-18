@@ -55,24 +55,27 @@ Triage expects the cohort query passed to it to return a unique list of `entity_
 
 #### Inspections Cohort Config
 
-The way this looks in an Experiment configuration YAML is as follows:
+We recommend storing your cohort queries as files in their own directory. This allows you to more easily reuse and update cohorts in multiple experiments. The way this looks in an Experiment configuration YAML is as follows:
 
 ```
 cohort_config:
-  query: |
-    select distinct(entity_id)
-    from permits
-    where
-    tsrange(start_time, end_time, '[]') @> {as_of_date}
+  filepath: 'cohorts/permits_in_last_year.sql'
   name: 'permits_in_last_year'
 ```
 
 The `name` key is optional. Part of its purpose is to help you organize different cohorts in your configuration, but it is also included in each matrix's metadata file to help you keep them straight afterwards.
 
+In the `cohorts` directory of your project, you would then have the `permits_in_last_year.sql` file, which would look like:
+
+```
+select distinct(entity_id)
+from permits
+where tsrange(start_time, end_time, '[]') @> {as_of_date}
+```
 
 ### Example: Early Intervention
 
-An example of an early intervention system is identifying people at risk of recidivism so they can receive extra support to encourage positive outcomes. 
+An example of an early intervention system is identifying people at risk of recidivism so they can receive extra support to encourage positive outcomes.
 
 
 This example defines the cohort as everybody who has been released from jail within the last three years. It does this by querying an events table for events of type 'release'.
@@ -89,12 +92,17 @@ entity_id | event_type | knowledge_date
 #### Early Intervention Cohort Config
 ```
 cohort_config:
-    query: |
-        SELECT distinct(entity_id)
-          FROM events
-         WHERE event_type = 'release'
-           AND knowledge_date <@ daterange(('{as_of_date}'::date - '3 years'::interval)::date, '{as_of_date}'::date)
+    filepath: 'cohorts/booking_last_3_years.sql'
     name: 'booking_last_3_years'
+```
+
+In the `cohorts/booking_last_3_years.sql` file:
+
+```
+SELECT distinct(entity_id)
+  FROM events
+ WHERE event_type = 'release'
+   AND knowledge_date <@ daterange(('{as_of_date}'::date - '3 years'::interval)::date, '{as_of_date}'::date)
 ```
 
 ### Example: Visits
@@ -128,18 +136,23 @@ Whether or not this is correct depends on the feasability of generating a predic
 
 ```
 cohort_config:
-  query: |
-    select distinct(entity_id)
-    from appointments
-    where appointment_date = ('{as_of_date}'::date - interval '1 days')::date
-      and not exists(
-          select entity_id
-          from diabetes_diagnoses
-          where entity_id = appointments.entity_id
-            and as_of_date < '{as_of_date}'
-          group by entity_id)
-    group by entity_id
-    name: 'visit_day_no_previous_diabetes'
+  filepath: 'cohorts/visit_day_no_previous_diabetes.sql'
+  name: 'visit_day_no_previous_diabetes'
+```
+
+In the `cohorts/visit_day_no_previous_diabetes.sql` file:
+
+```
+select distinct(entity_id)
+from appointments
+where appointment_date = ('{as_of_date}'::date - interval '1 days')::date
+  and not exists(
+      select entity_id
+      from diabetes_diagnoses
+      where entity_id = appointments.entity_id
+        and as_of_date < '{as_of_date}'
+      group by entity_id)
+group by entity_id
 ```
 
 ### Testing Cohort Configuration
@@ -221,18 +234,23 @@ The entity id is the same as the cohort above: it identifies the restaurant. The
 
 In constructing the label query, we have to consider the note above that we want to return only one row for a given entity id. The easiest way to do this, given that this query is run per as-of-date, is to group by the entity id and aggregate all the matched events somehow. In this case, a sensible definition is that we want any failed inspections to trigger a positive label. So if there is one pass and one fail that falls under the label timespan , the label should be True. `bool_or` is a handy Postgres aggregation function that does this.
 
-A query to find any failed inspections would be written in an experiment YAML config as follows:
+A query to find any failed inspections would be written in a sql file as follows:
+
+```sql
+select
+    entity_id,
+    bool_or(result = 'fail')::integer as outcome
+from inspections
+where '{as_of_date}'::timestamp <= date
+and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+group by entity_id
+```
+
+And referenced in your config file as follows:
 
 ```yaml
 label_config:
-  query: |
-    select
-    entity_id,
-    bool_or(result = 'fail')::integer as outcome
-    from inspections
-    where '{as_of_date}'::timestamp <= date
-    and date < '{as_of_date}'::timestamp + interval '{label_timespan}'
-    group by entity_id
+  filepath: 'labels/failed_inspection.sql'
   name: 'failed_inspection'
 ```
 
@@ -246,15 +264,21 @@ We reuse the [generic events table](#early-intervention-cohort-source-table) use
 
 We would like to assign a `True` label to everybody who is booked into jail within the label timespan. Note the `include_missing_labels_in_train_as` value: `False`. Anybody who does not show up in this query can be assumed to not have been booked into jail, so they can be assigned a `False` label.
 
+Your query file would look like:
 
+```sql
+SELECT entity_id,
+       bool_or(CASE WHEN event_type = 'booking' THEN TRUE END)::integer AS outcome
+  FROM events
+ WHERE knowledge_date <@ daterange('{as_of_date}'::date, ('{as_of_date}'::date + interval '{label_timespan}')::date)
+ GROUP BY entity_id
 ```
+
+And should be referenced in your config file like so:
+
+```yaml
 label_config:
-    query: |
-        SELECT entity_id,
-               bool_or(CASE WHEN event_type = 'booking' THEN TRUE END)::integer AS outcome
-          FROM events
-         WHERE knowledge_date <@ daterange('{as_of_date}'::date, ('{as_of_date}'::date + interval '{label_timespan}')::date)
-         GROUP BY entity_id
+    file: 'labels/booking.sql'
     include_missing_labels_in_train_as: False
     name: 'booking'
 ```
@@ -269,13 +293,18 @@ We reuse the [diabetes_diagnoses table](#visits-cohort-source-tables) from the c
 
 We would like to identify people who are diagnosed with diabetes within a certain `label_timespan` after the given `as-of-date`. Note that `include_missing_labels_in_train_as` is False here as well. Any diagnoses would show up here, so the lack of any results from this query would remove all ambiguity.
 
+Your query file should look like:
+
+```sql
+select entity_id, 1 as outcome
+from diabetes_diagnoses
+where as_of_date <@ daterange('{as_of_date}' :: date, ('{as_of_date}' :: date + interval '{label_timespan}') :: date)
+group by entity_id
 ```
+
+```yaml
 label_config:
-  query: |
-    select entity_id, 1 as outcome
-    from diabetes_diagnoses
-    where as_of_date <@ daterange('{as_of_date}' :: date, ('{as_of_date}' :: date + interval '{label_timespan}') :: date)
-    group by entity_id
+  filepath: 'labels/diabetes.sql'
   include_missing_labels_in_train_as: False
   name: 'diabetes'
 ```
@@ -406,7 +435,7 @@ entity_id | as_of_date | ...features... | label
 60 | 2016-03-01 | ... | True
 
 
-If you would like to test how your cohort and label combine to make matrices, you can tell Triage to generate matrices and then inspect the matrices. To do this, we assume that you have your cohort and label defined in an experiment config file, as well as temporal config. The last piece needed to make matrices is some kind of features. Of course, the features aren't our main focus here, so let's use a placeholder feature that should create very quickly.
+If you would like to test how your cohort and label combine to make matrices, you can tell Triage to generate matrices and then inspect the matrices. To do this, we assume that you have your cohort and label defined in sql files referenced in an experiment config file, as well as temporal config. For convenience, we show a config using the `query` keys for cohort and label configs, but we recommend using the `filepath` keys as shown in other examples in your actual project. The last piece needed to make matrices is some kind of features. Of course, the features aren't our main focus here, so let's use a placeholder feature that should create very quickly.
 
 
 ```

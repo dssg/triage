@@ -28,6 +28,23 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa
 
 
+LABEL_QUERY = """
+    select
+        events.entity_id,
+        bool_or(outcome::bool)::integer as outcome
+    from events
+    where '{as_of_date}'::date <= outcome_date
+        and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
+    group by entity_id
+"""
+
+COHORT_QUERY = """
+    select distinct(entity_id)
+    from events
+    where '{as_of_date}'::date >= outcome_date
+"""
+
+
 def fake_labels(length):
     return np.array([random.choice([True, False]) for i in range(0, length)])
 
@@ -402,21 +419,12 @@ def sample_config():
     ]
 
     cohort_config = {
-        "query": "select distinct(entity_id) from events "
-                 "where '{as_of_date}'::date >= outcome_date",
+        "query": COHORT_QUERY,
         "name": "has_past_events",
     }
 
     label_config = {
-        "query": """
-            select
-            events.entity_id,
-            bool_or(outcome::bool)::integer as outcome
-            from events
-            where '{as_of_date}'::date <= outcome_date
-                and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
-                group by entity_id
-        """,
+        "query": LABEL_QUERY,
         "name": "custom_label_name",
         "include_missing_labels_in_train_as": False,
     }

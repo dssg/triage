@@ -73,8 +73,7 @@ temporal_config:
     label_timespans: ['<< YOUR_VALUE_HERE >>']
 
 label_config:
-  query: |
-    << YOUR_VALUE_HERE >>
+  filepath: '<< YOUR_VALUE_HERE >>'
   name: 'quickstart_label'
 
 feature_aggregations:

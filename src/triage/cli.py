@@ -18,6 +18,7 @@ from triage.component.results_schema import upgrade_db, stamp_db, db_history, do
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
+from triage.component.catwalk.utils import load_query_if_needed
 from triage.experiments import (
     CONFIG_VERSION,
     MultiCoreExperiment,
@@ -135,6 +136,7 @@ class FeatureTest(Command):
         full_config = yaml.full_load(args.feature_config_file)
         feature_config = full_config['feature_aggregations']
         cohort_config = full_config.get('cohort_config', None)
+        load_query_if_needed(cohort_config)
         if cohort_config:
             EntityDateTableGenerator(
                 entity_date_table_name="features_test.test_cohort",

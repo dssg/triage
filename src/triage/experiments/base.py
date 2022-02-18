@@ -4,6 +4,7 @@ logger = verboselogs.VerboseLogger(__name__)
 from abc import ABC, abstractmethod
 import cProfile
 import marshal
+import os
 import random
 import time
 import itertools
@@ -54,6 +55,7 @@ from triage.component.catwalk.utils import (
     missing_matrix_uuids,
     missing_model_hashes,
     filename_friendly_hash,
+    load_query_if_needed,
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -106,7 +108,7 @@ class ExperimentBase(ABC):
             when building features for many as-of-dates.
         additional_bigtrain_classnames (list) Any additional class names to perform in the second batch
             of training, which focuses on large modeling algorithms that tend to run with less parallelization
-            as there is generally parallelization and high memory requirements built into the algorithm. 
+            as there is generally parallelization and high memory requirements built into the algorithm.
         profile (bool)
     """
 
@@ -142,7 +144,9 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
-
+        load_query_if_needed(self.config.get("cohort_config", {}))
+        load_query_if_needed(self.config.get("label_config", {}))
+        logger.info(self.config.get("cohort_config", {}))
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)
@@ -189,7 +193,7 @@ class ExperimentBase(ABC):
                           "time if you are running several similar experiments with "
                           "different cohorts.")
 
-        self.additional_bigtrain_classnames = additional_bigtrain_classnames 
+        self.additional_bigtrain_classnames = additional_bigtrain_classnames
         # only fill default values for full runs
         if not partial_run:
             ## Defaults to sane values
@@ -276,6 +280,7 @@ class ExperimentBase(ABC):
         self.chopper = Timechop(**split_config)
 
         cohort_config = self.config.get("cohort_config", {})
+
         if "query" in cohort_config:
             self.cohort_table_name = "cohort_{}_{}".format(
                 cohort_config.get('name', 'default'),

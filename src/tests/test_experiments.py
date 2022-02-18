@@ -12,7 +12,7 @@ from triage import create_engine
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
-from tests.utils import sample_config, populate_source_data
+from tests.utils import sample_config, populate_source_data, COHORT_QUERY, LABEL_QUERY
 from triage.component.catwalk.storage import CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
 
@@ -53,6 +53,55 @@ parametrize_experiment_classes = pytest.mark.parametrize(
         ),
     ],
 )
+
+
+@parametrize_experiment_classes
+def test_filepaths_and_queries_give_same_hashes(experiment_class):
+
+    mock_files = {
+        "./cohorts/file.sql": COHORT_QUERY,
+        "./labels/file.sql": LABEL_QUERY
+    }
+
+    def open_side_effect(name):
+        return mock.mock_open(read_data=mock_files[name]).return_value
+
+    with testing.postgresql.Postgresql() as postgresql:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        config = sample_config()
+
+        file_config = sample_config()
+        file_config.pop("cohort_config")
+        file_config.pop("label_config")
+        file_config["cohort_config"] = {
+            "filepath": "cohorts/file.sql",
+            "name": "has_past_events",
+        }
+
+        file_config["label_config"] = {
+            "filepath": "labels/file.sql",
+            "name": "custom_label_name",
+            "include_missing_labels_in_train_as": False,
+        }
+
+        with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+            with TemporaryDirectory() as temp_dir:
+                experiment_with_queries = experiment_class(
+                    config=config,
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                    cleanup=True,
+                )
+                experiment_with_filepaths = experiment_class(
+                    config=file_config,
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                    cleanup=True,
+                )
+                assert experiment_with_queries.experiment_hash == experiment_with_filepaths.experiment_hash
+                assert experiment_with_queries.cohort_table_name == experiment_with_filepaths.cohort_table_name
+                assert experiment_with_queries.labels_table_name == experiment_with_filepaths.labels_table_name
 
 
 @parametrize_experiment_classes
