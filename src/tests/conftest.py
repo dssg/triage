@@ -1,7 +1,9 @@
 import pytest
 import testing.postgresql
 import tempfile
-from tests.utils import sample_config, populate_source_data
+from unittest import mock
+
+from tests.utils import sample_config, populate_source_data, open_side_effect
 from triage import create_engine
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.catwalk.db import ensure_db
@@ -77,11 +79,12 @@ def finished_experiment(shared_db_engine, shared_project_storage):
     """
     populate_source_data(shared_db_engine)
     base_config = sample_config()
-    experiment = SingleThreadedExperiment(
-        base_config,
-        db_engine=shared_db_engine,
-        project_path=shared_project_storage.project_path
-    )
+    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        experiment = SingleThreadedExperiment(
+            base_config,
+            db_engine=shared_db_engine,
+            project_path=shared_project_storage.project_path
+        )
     experiment.run()
     return experiment
 
