@@ -370,6 +370,13 @@ def populate_source_data(db_engine):
         db_engine.execute("insert into events values (%s, %s, %s)", event)
 
 
+def sample_cohort_config(query_source="filepath"):
+    return {
+        "name": "has_past_events",
+        query_source: CONFIG_QUERY_DATA["cohort"][query_source],
+    }
+
+
 def sample_config(query_source="filepath"):
     temporal_config = {
         "feature_start_time": "2010-01-01",
@@ -434,16 +441,14 @@ def sample_config(query_source="filepath"):
         },
     ]
 
-    cohort_config = {
-        "name": "has_past_events",
-        query_source: CONFIG_QUERY_DATA["cohort"][query_source],
-    }
+    cohort_config = sample_cohort_config(query_source)
 
     label_config = {
         query_source: CONFIG_QUERY_DATA["label"][query_source],
         "name": "custom_label_name",
         "include_missing_labels_in_train_as": False,
     }
+
     bias_audit_config = {
         'from_obj_query': 'select * from zip_code_demographics join entity_zip_codes using (zip_code)',
         'attribute_columns': ['ethnicity'],

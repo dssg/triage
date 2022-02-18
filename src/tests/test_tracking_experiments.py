@@ -1,16 +1,18 @@
-from tests.utils import sample_config, populate_source_data
-from triage.util.db import scoped_session
-from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
-from triage.component.results_schema import TriageRun, TriageRunStatus
-from tests.results_tests.factories import ExperimentFactory, TriageRunFactory, session as factory_session
 from sqlalchemy.orm import Session
 import pytest
 import datetime
+from unittest import mock
+
 from triage.tracking import (
     initialize_tracking_and_get_run_id,
     get_run_for_update,
     increment_field
 )
+from triage.util.db import scoped_session
+from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
+from triage.component.results_schema import TriageRun, TriageRunStatus
+from tests.results_tests.factories import ExperimentFactory, TriageRunFactory, session as factory_session
+from tests.utils import sample_config, populate_source_data, open_side_effect
 
 
 @pytest.fixture(name="test_engine", scope="module")
@@ -24,12 +26,13 @@ def shared_db_engine_with_source_data(shared_db_engine):
 
 
 def test_experiment_tracker(test_engine, project_path):
-    experiment = MultiCoreExperiment(
-        config=sample_config(),
-        db_engine=test_engine,
-        project_path=project_path,
-        n_processes=4,
-    )
+    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        experiment = MultiCoreExperiment(
+            config=sample_config(),
+            db_engine=test_engine,
+            project_path=project_path,
+            n_processes=4,
+        )
     experiment_run = Session(bind=test_engine).query(TriageRun).get(experiment.run_id)
     assert experiment_run.current_status == TriageRunStatus.started
     assert experiment_run.run_hash == experiment.experiment_hash
@@ -62,11 +65,12 @@ def test_experiment_tracker(test_engine, project_path):
 
 
 def test_experiment_tracker_exception(db_engine, project_path):
-    experiment = SingleThreadedExperiment(
-        config=sample_config(),
-        db_engine=db_engine,
-        project_path=project_path,
-    )
+    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        experiment = SingleThreadedExperiment(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=project_path,
+        )
     # no source data means this should blow up
     with pytest.raises(Exception):
         experiment.run()
@@ -79,11 +83,12 @@ def test_experiment_tracker_exception(db_engine, project_path):
 
 
 def test_experiment_tracker_in_parts(test_engine, project_path):
-    experiment = SingleThreadedExperiment(
-        config=sample_config(),
-        db_engine=test_engine,
-        project_path=project_path,
-    )
+    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        experiment = SingleThreadedExperiment(
+            config=sample_config(),
+            db_engine=test_engine,
+            project_path=project_path,
+        )
     experiment.generate_matrices()
     experiment.train_and_test_models()
     with scoped_session(test_engine) as session:
