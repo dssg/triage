@@ -97,12 +97,13 @@ def finished_experiment_without_predictions(shared_db_engine, shared_project_sto
     """
     populate_source_data(shared_db_engine)
     base_config = sample_config()
-    experiment = SingleThreadedExperiment(
-        base_config,
-        db_engine=shared_db_engine,
-        project_path=shared_project_storage.project_path,
-        save_predictions=False
-    )
+    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        experiment = SingleThreadedExperiment(
+            base_config,
+            db_engine=shared_db_engine,
+            project_path=shared_project_storage.project_path,
+            save_predictions=False
+        )
     experiment.run()
     return experiment
 
