@@ -479,14 +479,17 @@ class LabelConfigValidator(Validator):
                 )
             )
 
-        if "query" not in label_config:
+        if len(set(label_config.keys()).intersection({"query", "filepath"})) != 1:
             raise ValueError(
                 dedent(
                     """
             Section: label_config -
-            key 'query' not found. You must define a label query."""
+            keys ({label_config.keys()}) do not contain exactly one of 'filepath'
+            or 'query'. You must pass a filepath to a label query or include one
+            in the config."""
                 )
             )
+        catwalk.utils.load_query_if_needed(label_config)
         if 'name' in label_config and not string_is_tablesafe(label_config['name']):
             raise ValueError("Section: label_config - "
                              "name should only contain lowercase letters, numbers, and underscores")
@@ -500,14 +503,17 @@ class LabelConfigValidator(Validator):
 class CohortConfigValidator(Validator):
     def _run(self, cohort_config):
         logger.spam("Validating of cohort configuration")
-        if "query" not in cohort_config:
+        if len(set(cohort_config.keys()).intersection({"query", "filepath"})) != 1:
             raise ValueError(
                 dedent(
                     """
             Section: cohort_config -
-            key 'query' not found. You must define a cohort query."""
+            keys ({cohort_config.keys()}) do not contain exactly one of 'filepath'
+            or 'query'. You must pass a filepath to a cohort query or include one
+            in the config."""
                 )
             )
+        catwalk.utils.load_query_if_needed(cohort_config)
         query = cohort_config["query"]
         if "{as_of_date}" not in query:
             raise ValueError(
