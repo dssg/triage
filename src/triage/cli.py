@@ -12,9 +12,16 @@ from argcmdr import RootCommand, Command, main, cmdmethod, local
 from getpass import getpass
 from sqlalchemy.engine.url import URL
 from triage.component.architect.feature_generators import FeatureGenerator
-from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
+from triage.component.architect.entity_date_table_generators import (
+    EntityDateTableGenerator,
+)
 from triage.component.audition import AuditionRunner
-from triage.component.results_schema import upgrade_db, stamp_db, db_history, downgrade_db
+from triage.component.results_schema import (
+    upgrade_db,
+    stamp_db,
+    db_history,
+    downgrade_db,
+)
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
 from triage.component.timechop.plotting import visualize_chops
 from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
@@ -29,6 +36,7 @@ from triage.component.postmodeling.utils.add_predictions import add_predictions
 from triage.util.db import create_engine
 
 import verboselogs, logging
+
 logger = verboselogs.VerboseLogger(__name__)
 
 
@@ -51,8 +59,8 @@ def valid_date(value):
 class Triage(RootCommand):
     """manage Triage database and experiments"""
 
-    DATABASE_FILE_DEFAULT = os.path.abspath('database.yaml')
-    SETUP_FILE_DEFAULT = os.path.abspath('experiment.py')
+    DATABASE_FILE_DEFAULT = os.path.abspath("database.yaml")
+    SETUP_FILE_DEFAULT = os.path.abspath("experiment.py")
 
     def __init__(self, parser):
         parser.add_argument(
@@ -62,9 +70,10 @@ class Triage(RootCommand):
             help="database connection file",
         )
         parser.add_argument(
-            '-s', '--setup',
+            "-s",
+            "--setup",
             help=f"file path to Python module to import before running the "
-                 f"Experiment (default: {self.SETUP_FILE_DEFAULT})",
+            f"Experiment (default: {self.SETUP_FILE_DEFAULT})",
         )
 
     def setup(self):
@@ -85,7 +94,7 @@ class Triage(RootCommand):
         elif os.path.isfile(self.DATABASE_FILE_DEFAULT):
             dbfile = open(self.DATABASE_FILE_DEFAULT)
         else:
-            environ_url = os.getenv('DATABASE_URL')
+            environ_url = os.getenv("DATABASE_URL")
             if environ_url:
                 return environ_url
             else:
@@ -99,12 +108,12 @@ class Triage(RootCommand):
             dbconfig = yaml.full_load(dbfile)
 
         return URL(
-            'postgres',
-            host=dbconfig['host'],
-            username=dbconfig['user'],
-            database=dbconfig['db'],
-            password=dbconfig['pass'],
-            port=dbconfig['port'],
+            "postgresql",
+            host=dbconfig["host"],
+            username=dbconfig["user"],
+            database=dbconfig["db"],
+            password=dbconfig["pass"],
+            port=dbconfig["port"],
         )
 
     @cmdmethod
@@ -133,20 +142,20 @@ class FeatureTest(Command):
         self.root.setup()  # Loading configuration (if exists)
         db_engine = create_engine(self.root.db_url)
         full_config = yaml.full_load(args.feature_config_file)
-        feature_config = full_config['feature_aggregations']
-        cohort_config = full_config.get('cohort_config', None)
+        feature_config = full_config["feature_aggregations"]
+        cohort_config = full_config.get("cohort_config", None)
         if cohort_config:
             EntityDateTableGenerator(
                 entity_date_table_name="features_test.test_cohort",
                 db_engine=db_engine,
                 query=cohort_config["query"],
-                replace=True
+                replace=True,
             ).generate_entity_date_table(as_of_dates=[args.as_of_date])
 
         FeatureGenerator(db_engine, "features_test").create_features_before_imputation(
             feature_aggregation_config=feature_config,
             feature_dates=[args.as_of_date],
-            state_table="features_test.test_cohort"
+            state_table="features_test.test_cohort",
         )
         logger.success(
             f"Features created for feature_config {feature_config} and date {args.as_of_date}"
@@ -163,10 +172,7 @@ class Experiment(Command):
     matrix_storage_default = "csv"
 
     def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            help="config file for Experiment"
-        )
+        parser.add_argument("config", help="config file for Experiment")
         parser.add_argument(
             "--project-path",
             default=os.getcwd(),
@@ -199,7 +205,7 @@ class Experiment(Command):
             "--matrix-format",
             choices=self.matrix_storage_map.keys(),
             default=self.matrix_storage_default,
-            help=f"The matrix storage format to use. [default: {self.matrix_storage_default}]"
+            help=f"The matrix storage format to use. [default: {self.matrix_storage_default}]",
         )
         parser.add_argument("--replace", dest="replace", action="store_true")
         parser.add_argument(
@@ -223,14 +229,14 @@ class Experiment(Command):
             "--profile",
             action="store_true",
             dest="profile",
-            help="Record the time spent in various functions using cProfile"
+            help="Record the time spent in various functions using cProfile",
         )
 
         parser.add_argument(
             "--no-materialize-fromobjs",
             action="store_false",
             dest="materialize_fromobjs",
-            help="do not attempt to create tables out of any feature 'from obj' subqueries."
+            help="do not attempt to create tables out of any feature 'from obj' subqueries.",
         )
 
         parser.add_argument(
@@ -254,19 +260,21 @@ class Experiment(Command):
             action="store_true",
             default=False,
             dest="features_ignore_cohort",
-            help="Will save all features independently of cohort. " +
-            "This can require more disk space but allow you to reuse " +
-            "features across different cohorts"
+            help="Will save all features independently of cohort. "
+            + "This can require more disk space but allow you to reuse "
+            + "features across different cohorts",
         )
 
         parser.add_argument(
             "--show-timechop",
             action="store_true",
             default=False,
-            help="Visualize time chops (temporal cross-validation blocks')"
+            help="Visualize time chops (temporal cross-validation blocks')",
         )
 
-        parser.set_defaults(validate=True, validate_only=False, materialize_fromobjs=True)
+        parser.set_defaults(
+            validate=True, validate_only=False, materialize_fromobjs=True
+        )
 
     def _load_config(self):
         config_file = Store.factory(self.args.config)
@@ -289,55 +297,68 @@ class Experiment(Command):
             "profile": self.args.profile,
             "save_predictions": self.args.save_predictions,
             "skip_validation": not self.args.validate,
-            "additional_bigtrain_classnames": self.args.add_bigtrain_classes
+            "additional_bigtrain_classnames": self.args.add_bigtrain_classes,
         }
         logger.info(f"Setting up the experiment")
         logger.info(f"Configuration file: {self.args.config}")
         logger.info(f"Results will be stored in DB: {self.root.db_url}")
         logger.info(f"Artifacts will be saved in {self.args.project_path}")
         try:
-            if self.args.n_db_processes > 1 or self.args.n_processes > 1 or self.args.n_bigtrain_processes > 1:
+            if (
+                self.args.n_db_processes > 1
+                or self.args.n_processes > 1
+                or self.args.n_bigtrain_processes > 1
+            ):
                 experiment = MultiCoreExperiment(
                     n_db_processes=self.args.n_db_processes,
                     n_processes=self.args.n_processes,
                     n_bigtrain_processes=self.args.n_bigtrain_processes,
                     **common_kwargs,
                 )
-                logger.info(f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes")
+                logger.info(
+                    f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes"
+                )
             else:
                 experiment = SingleThreadedExperiment(**common_kwargs)
                 logger.info("Experiment will run in serial fashion")
             return experiment
         except Exception:
             logger.exception("Error occurred while creating the experiment!")
-            logger.info(f"Experiment [config file: {self.args.config}] failed at creation")
+            logger.info(
+                f"Experiment [config file: {self.args.config}] failed at creation"
+            )
 
     def __call__(self, args):
         if args.validate_only:
             try:
                 logger.info(f"Validating experiment [config file: {self.args.config}]")
                 self.experiment.validate()
-                logger.success(f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!")
+                logger.success(
+                    f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!"
+                )
             except Exception:
                 logger.exception(f"Validation failed!")
-                logger.info(f"Experiment [config file: {self.args.config}] configuration file is incorrect")
+                logger.info(
+                    f"Experiment [config file: {self.args.config}] configuration file is incorrect"
+                )
 
         elif args.show_timechop:
             experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
             project_storage = ProjectStorage(self.args.project_path)
             timechop_store = project_storage.get_store(
-                ["images"],
-                f"{experiment_name}.png"
-                )
+                ["images"], f"{experiment_name}.png"
+            )
 
-            with timechop_store.open('wb') as fd:
+            with timechop_store.open("wb") as fd:
                 visualize_chops(self.experiment.chopper, save_target=fd)
 
         else:
             try:
                 logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
                 self.experiment.run()
-                logger.success(f"Experiment ({self.experiment.experiment_hash}) ran through completion")
+                logger.success(
+                    f"Experiment ({self.experiment.experiment_hash}) ran through completion"
+                )
             except Exception:
                 logger.exception("Something went wrong")
                 logger.info(f"Experiment [config file: {self.args.config}] run failed!")
@@ -345,8 +366,7 @@ class Experiment(Command):
 
 @Triage.register
 class Audition(Command):
-    """Audition models from a completed experiment to pick a smaller group of promising models
-    """
+    """Audition models from a completed experiment to pick a smaller group of promising models"""
 
     def __init__(self, parser):
         parser.add_argument(
@@ -404,10 +424,7 @@ class Crosstabs(Command):
     """Run crosstabs for postmodeling"""
 
     def __init__(self, parser):
-        parser.add_argument(
-            "config",
-            help="config file for crosstabs"
-        )
+        parser.add_argument("config", help="config file for crosstabs")
 
     def __call__(self, args):
         db_engine = create_engine(self.root.db_url)
@@ -416,17 +433,18 @@ class Crosstabs(Command):
             config = CrosstabsConfigLoader(config=yaml.full_load(fd))
         run_crosstabs(db_engine, config)
 
+
 @Triage.register
 class RetrainPredict(Command):
     """Given a model_group_id, retrain and predict forwoard use all data up to current date"""
-    
+
     def __init__(self, parser):
         parser.add_argument(
             "model_group_id",
             type=natural_number,
-            help="The model_group_id to use for retrain and predict"
+            help="The model_group_id to use for retrain and predict",
         )
-        
+
         parser.add_argument(
             "prediction_date",
             type=valid_date,
@@ -437,7 +455,7 @@ class RetrainPredict(Command):
             default=os.getcwd(),
             help="path to store matrices and trained models",
         )
-        
+
     def __call__(self, args):
         db_engine = create_engine(self.root.db_url)
         retrainer = Retrainer(
@@ -473,27 +491,37 @@ class Predictlist(Command):
     def __call__(self, args):
         db_engine = create_engine(self.root.db_url)
         predict_forward_with_existed_model(
-            db_engine,
-            args.project_path,
-            args.model_id,
-            args.as_of_date
+            db_engine, args.project_path, args.model_id, args.as_of_date
         )
+
 
 @Triage.register
 class Db(Command):
     """Manage experiment database"""
 
-    @cmdmethod("-r", "--revision", default="head", help="database schema revision to upgrade to (see triage db history)")
+    @cmdmethod(
+        "-r",
+        "--revision",
+        default="head",
+        help="database schema revision to upgrade to (see triage db history)",
+    )
     def upgrade(self, args):
         """Upgrade triage results database"""
         upgrade_db(revision=args.revision, dburl=self.root.db_url)
 
-    @cmdmethod("-r", "--revision", default="-1", help="database schema revision to downgrade to (see triage db history)")
+    @cmdmethod(
+        "-r",
+        "--revision",
+        default="-1",
+        help="database schema revision to downgrade to (see triage db history)",
+    )
     def downgrade(self, args):
         """Downgrade triage results database"""
         downgrade_db(revision=args.revision, dburl=self.root.db_url)
 
-    @cmdmethod("revision", help="database schema revision to stamp to (see triage db history)")
+    @cmdmethod(
+        "revision", help="database schema revision to stamp to (see triage db history)"
+    )
     def stamp(self, args):
         """Mark triage results database as updated to a known version without doing any upgrading.
 
@@ -515,37 +543,67 @@ class Db(Command):
         """Show triage results database history"""
         db_history(dburl=self.root.db_url)
 
-
-    @cmdmethod('password', action='store_true', help='hidden password prompt')
+    @cmdmethod("password", action="store_true", help="hidden password prompt")
     @local
     def up(self, args):
-        (retcode, stdout, stderr) = self.local['docker']['container', 'inspect', '-f', "'{{.State.Status}}'", 'triage_db'].run(retcode=None)
+        (retcode, stdout, stderr) = self.local["docker"][
+            "container", "inspect", "-f", "'{{.State.Status}}'", "triage_db"
+        ].run(retcode=None)
         if retcode != 0:
-            logger.info('Container does not exist')
-            if os.path.exists('database.yaml'):
-                logger.error("database.yaml already exists, which indicates you are "
-                              "already using Triage with a database and likely do not "
-                              "need to run this command. If you would like to provision "
-                              "a new database to use with Triage, remove database.yaml") 
+            logger.info("Container does not exist")
+            if os.path.exists("database.yaml"):
+                logger.error(
+                    "database.yaml already exists, which indicates you are "
+                    "already using Triage with a database and likely do not "
+                    "need to run this command. If you would like to provision "
+                    "a new database to use with Triage, remove database.yaml"
+                )
                 return
             if args.password:
-                password = getpass(prompt='Enter a password for your new database user: ')
-                logger.info(self.local['docker']['run', '-d', '-p', '5432:5432', '-e', 'POSTGRES_HOST=0.0.0.0', '-e', 'POSTGRES_USER=triage_user', '-e', 'POSTGRES_PORT=5432', '-e', f'POSTGRES_PASSWORD={password}', '-e', 'POSTGRES_DB=triage', '-v', 'triage-db-data:/var/lib/postgresql/data', '--name', 'triage_db', 'postgres:12']())
-                with open('database.yaml', 'w') as out_fd:
+                password = getpass(
+                    prompt="Enter a password for your new database user: "
+                )
+                logger.info(
+                    self.local["docker"][
+                        "run",
+                        "-d",
+                        "-p",
+                        "5432:5432",
+                        "-e",
+                        "POSTGRES_HOST=0.0.0.0",
+                        "-e",
+                        "POSTGRES_USER=triage_user",
+                        "-e",
+                        "POSTGRES_PORT=5432",
+                        "-e",
+                        f"POSTGRES_PASSWORD={password}",
+                        "-e",
+                        "POSTGRES_DB=triage",
+                        "-v",
+                        "triage-db-data:/var/lib/postgresql/data",
+                        "--name",
+                        "triage_db",
+                        "postgres:12",
+                    ]()
+                )
+                with open("database.yaml", "w") as out_fd:
                     config = {
-                        'host': '0.0.0.0',
-                        'user': 'triage_user',
-                        'pass': password,
-                        'port': 5432,
-                        'db': 'triage'
+                        "host": "0.0.0.0",
+                        "user": "triage_user",
+                        "pass": password,
+                        "port": 5432,
+                        "db": "triage",
                     }
                     out_fd.write(yaml.dump(config))
-                logger.info('New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml')
-        elif 'running' in stdout:
-            logger.info('Already running, will not start')
+                logger.info(
+                    'New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml'
+                )
+        elif "running" in stdout:
+            logger.info("Already running, will not start")
         else:
-            logger.info('Container exists, but is not running. Starting')
-            logger.info(self.local['docker']['start', 'triage_db'])
+            logger.info("Container exists, but is not running. Starting")
+            logger.info(self.local["docker"]["start", "triage_db"])
+
 
 @Triage.register
 class AddPredictions(Command):
@@ -557,9 +615,8 @@ class AddPredictions(Command):
             "--configfile",
             type=argparse.FileType("r"),
             help="Path to the configuration file (required)",
-            required=True
+            required=True,
         )
-
 
     def __call__(self):
         db_engine = create_engine(self.root.db_url)
@@ -567,11 +624,12 @@ class AddPredictions(Command):
 
         add_predictions(
             db_engine=db_engine,
-            model_groups=config['model_group_ids'],
-            project_path=config['project_path'],
-            experiment_hashes=config.get('experiments'),
-            train_end_times_range=config.get('train_end_times')
+            model_groups=config["model_group_ids"],
+            project_path=config["project_path"],
+            experiment_hashes=config.get("experiments"),
+            train_end_times_range=config.get("train_end_times"),
         )
+
 
 def execute():
     main(Triage)
