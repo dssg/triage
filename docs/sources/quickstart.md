@@ -229,8 +229,8 @@ with open('database.yaml', 'r') as fin:
 2. Create a database engine and Triage experiment 
 ```py
 # create postgres database url
-db_url = URL(
-            'postgres',
+db_url = URL.create(
+            'postgresql',
             host=db_config['host'],
             username=db_config['user'],
             database=db_config['db'],

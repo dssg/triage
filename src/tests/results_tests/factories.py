@@ -87,7 +87,7 @@ class ExperimentModelFactory(factory.alchemy.SQLAlchemyModelFactory):
 
 
 class ModelFactory(BaseModelFactory):
-    experiment_association = factory.RelatedFactory(ExperimentModelFactory, 'model_rel')
+    experiment_association = factory.RelatedFactory(ExperimentModelFactory, "model_rel")
 
 
 class SubsetFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -126,7 +126,6 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     test_label_timespan = "3m"
 
 
-
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.ListPrediction
@@ -162,7 +161,7 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = session
 
     model_rel = factory.SubFactory(ModelFactory)
-    subset_hash = ''
+    subset_hash = ""
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     evaluation_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     as_of_date_frequency = "3d"
@@ -192,7 +191,7 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     start_method = "run"
     git_hash = "abcd"
     triage_version = "4.2.0"
-    python_version = '3.6.2 (default, May 28 2020, 13:23:43) \n[GCC 9.3.0]'
+    python_version = "3.8.2 (default, Mar 13 2020, 10:14:16)  \n[GCC 9.3.0]"
     platform = "Linux!!!"
     os_user = "dsapp"
     working_directory = "/the/best/directory"
@@ -200,7 +199,7 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     log_location = "/the/logs"
     experiment_class_path = "triage.experiments.singlethreaded.SingleThreadedExperiment"
     experiment_kwargs = {}
-    installed_libraries = ['triage']
+    installed_libraries = ["triage"]
     matrix_building_started = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     matrices_made = 0
     matrices_skipped = 0
