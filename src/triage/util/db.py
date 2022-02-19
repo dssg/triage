@@ -29,8 +29,7 @@ def json_dumps(d):
     return json.dumps(d, default=serialize_to_database)
 
 
-
-class SerializableDbEngine(wrapt.ObjectProxy):
+class SerializableDbEngine(wrapt.ObjectProxy, sqlalchemy.engine.base.Engine):
     """A sqlalchemy engine that can be serialized across process boundaries.
 
     Works by saving all kwargs used to create the engine and reconstructs them later.  As a result, the state won't be saved upon serialization/deserialization.
@@ -60,6 +59,7 @@ class SerializableDbEngine(wrapt.ObjectProxy):
 
 create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps)
 
+
 @contextmanager
 def scoped_session(db_engine):
     """Provide a transactional scope around a series of operations."""
@@ -76,7 +76,7 @@ def scoped_session(db_engine):
 
 @contextmanager
 def get_for_update(db_engine, orm_class, primary_key):
-    """ Gets object from the database to updated it """
+    """Gets object from the database to updated it"""
     with scoped_session(db_engine) as session:
         obj = session.query(orm_class).get(primary_key)
         yield obj

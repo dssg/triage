@@ -128,7 +128,7 @@ This section describes the initial setup of a Triage development environment tha
 
         (pyenv) installed ✓
 
-        (python-3.6.2) installed ✓
+        (python-3.8.10) installed ✓
 
         (virtualenv) installed ✓
 
