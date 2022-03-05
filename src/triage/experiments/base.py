@@ -290,13 +290,12 @@ class ExperimentBase(ABC):
 
         cohort_config = self.config.get("cohort_config", {})
         self.cohort_table_generator = None
-        if "query" in self.config.get("cohort_config", {}):
+        if "query" in cohort_config:
             self.cohort_hash = filename_friendly_hash(self.config["cohort_config"]["query"])
         elif 'query' in self.config.get("label_config", {}):
-            if "query" not in cohort_config:
-                logger.info(
-                    "cohort_config missing or unrecognized, but labels are configured. Labels will be used as the cohort."
-                )
+            logger.info(
+                "cohort_config missing or unrecognized, but labels are configured. Labels will be used as the cohort."
+            )
             self.cohort_hash = filename_friendly_hash(self.config["label_config"]["query"])
         else:
             self.features_ignore_cohort = True
