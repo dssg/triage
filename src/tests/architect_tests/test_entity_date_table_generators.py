@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 import testing.postgresql
@@ -188,6 +188,56 @@ def test_entity_date_table_generator_noreplace():
             engine.execute(
                 f"""
                 select entity_id, as_of_date, active from {table_generator.entity_date_table_name}
+                order by entity_id, as_of_date
+            """
+            )
+        )
+        assert results == expected_output
+
+
+def test_entity_date_table_generator_from_labels():
+    labels_data = [
+        (1, datetime(2016, 1, 1), timedelta(180), 'outcome', 'binary', 0),
+        (1, datetime(2016, 4, 1), timedelta(180), 'outcome', 'binary', 1),
+        (1, datetime(2016, 3, 1), timedelta(180), 'outcome', 'binary', 0),
+        (2, datetime(2016, 1, 1), timedelta(180), 'outcome', 'binary', 0),
+        (2, datetime(2016, 1, 1), timedelta(180), 'outcome', 'binary', 1),
+        (3, datetime(2016, 1, 1), timedelta(180), 'outcome', 'binary', 0),
+        (5, datetime(2016, 3, 1), timedelta(180), 'outcome', 'binary', 0),
+        (5, datetime(2016, 4, 1), timedelta(180), 'outcome', 'binary', 1),
+        (1, datetime(2016, 1, 1), timedelta(90), 'outcome', 'binary', 0),
+        (1, datetime(2016, 4, 1), timedelta(90), 'outcome', 'binary', 0),
+        (1, datetime(2016, 3, 1), timedelta(90), 'outcome', 'binary', 1),
+        (2, datetime(2016, 1, 1), timedelta(90), 'outcome', 'binary', 0),
+        (2, datetime(2016, 1, 1), timedelta(90), 'outcome', 'binary', 1),
+        (3, datetime(2016, 1, 1), timedelta(90), 'outcome', 'binary', 0),
+        (5, datetime(2016, 3, 1), timedelta(90), 'outcome', 'binary', 0),
+        (5, datetime(2016, 4, 1), timedelta(90), 'outcome', 'binary', 0),
+    ]
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        labels_table_name = utils.create_labels(engine, labels_data)
+        table_generator = EntityDateTableGenerator(
+            query=None,
+            labels_table_name=labels_table_name,
+            db_engine=engine,
+            entity_date_table_name="exp_hash_entity_date",
+            replace=False
+        )
+        table_generator.generate_entity_date_table([])
+        expected_output = [
+            (1, datetime(2016, 1, 1)),
+            (1, datetime(2016, 3, 1)),
+            (1, datetime(2016, 4, 1)),
+            (2, datetime(2016, 1, 1)),
+            (3, datetime(2016, 1, 1)),
+            (5, datetime(2016, 3, 1)),
+            (5, datetime(2016, 4, 1)),
+        ]
+        results = list(
+            engine.execute(
+                f"""
+                select entity_id, as_of_date from {table_generator.entity_date_table_name}
                 order by entity_id, as_of_date
             """
             )
