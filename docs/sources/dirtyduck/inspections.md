@@ -181,7 +181,7 @@ The config file for this first experiment is located in
 [inspections_baseline.yaml](https://github.com/dssg/triage/blob/master/example/dirtyduck/experiments/inspections_baseline.yaml).
 
 The first lines of the experiment config file specify the config-file
-version (`v7` at the moment of writing this tutorial), a comment
+version (`v8` at the moment of writing this tutorial), a comment
 (`model_comment`, which will end up as a value in the
 `triage_metadata.models` table), and a list of user-defined metadata
 (`user_metadata`) that can help to identify the resulting model
@@ -197,7 +197,7 @@ overwritten or incorrectly used), and if you add the
 different label definitions will belong to different model groups.
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'inspections: baseline'
 random_seed: 23895478
@@ -370,9 +370,6 @@ feature_aggregations:
           - 'count'
 
     intervals: ['all']
-
-    groups:
-      - 'entity_id'
 
 feature_group_definition:
    prefix:
@@ -732,7 +729,7 @@ smart enough to use the previous tables and matrices instead of
 generating them from scratch.
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'inspections: basic ML'
 
@@ -792,9 +789,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-
   -
     prefix: 'risks'
     from_obj: 'semantic.events'
@@ -816,10 +810,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-      - 'zip_code'
-
   -
     prefix: 'results'
     from_obj: 'semantic.events'
@@ -839,9 +829,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-
   -
     prefix: 'inspection_types'
     from_obj: 'semantic.events'
@@ -859,10 +846,6 @@ feature_aggregations:
           - 'sum'
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
-
-    groups:
-      - 'entity_id'
-      - 'zip_code'
 
 ```
 
@@ -1177,7 +1160,7 @@ back to this problem in the Early Warning Systems.
 Ok, let's add a more complete experiment. First the usual generalities.
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'inspections: advanced'
 

@@ -74,7 +74,7 @@ First the usual stuff. Note that we are changing `model_comment` and
 *hash* that differentiates models and model groups).
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'eis: 01'
 random_seed: 23895478
@@ -223,9 +223,6 @@ in [inspections prioritization](inspections.md):
 
         intervals: ['1month', '3month', '6month', '1y', 'all']
 
-        groups:
-          - 'entity_id'
-
       -
         prefix: 'risks'
         from_obj: 'semantic.events'
@@ -247,10 +244,6 @@ in [inspections prioritization](inspections.md):
 
         intervals: ['1month', '3month', '6month', '1y', 'all']
 
-        groups:
-          - 'entity_id'
-          - 'zip_code'
-
       -
         prefix: 'results'
         from_obj: 'semantic.events'
@@ -270,9 +263,6 @@ in [inspections prioritization](inspections.md):
 
         intervals: ['1month', '3month', '6month', '1y', 'all']
 
-        groups:
-          - 'entity_id'
-
       -
         prefix: 'inspection_types'
         from_obj: 'semantic.events'
@@ -291,9 +281,6 @@ in [inspections prioritization](inspections.md):
 
         intervals: ['1month', '3month', '6month', '1y', 'all']
 
-        groups:
-          - 'entity_id'
-          - 'zip_code'
 ```
 
 We specify that we want to use all possible feature-group combinations for training:
@@ -513,7 +500,7 @@ The only differences between this experiment config file and the
 previous are in the `user_metadata` section:
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'eis: 02'
 random_seed: 23895478
@@ -942,8 +929,8 @@ models_dates_join_query: |
 #features_query must join models_dates_join_query with 1 or more features table using as_of_date
 features_query: |
   select m.model_id, m.as_of_date, f4.entity_id, f4.results_entity_id_1month_result_fail_avg, f4.results_entity_id_3month_result_fail_avg, f4.results_entity_id_6month_result_fail_avg,
-  f2.inspection_types_zip_code_1month_type_canvass_sum, f3.risks_zip_code_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,
-  f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_zip_code_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,
+  f2.inspection_types_entity_id_1month_type_canvass_sum, f3.risks_entity_id_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,
+  f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_entity_id_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,
   f2.inspection_types_entity_id_all_type_canvass_sum
   from features.inspection_types_aggregation_imputed as f2
   inner join features.risks_aggregation_imputed as f3 using (entity_id, as_of_date)

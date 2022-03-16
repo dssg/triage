@@ -65,9 +65,10 @@ etc.
 A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simpler configuration file below:
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'quickstart_test_run'
+random_seed: 1234
 
 temporal_config:
     label_timespans: ['<< YOUR_VALUE_HERE >>']
@@ -95,9 +96,6 @@ feature_aggregations:
           - 'count'
 
     intervals: ['all']
-
-    groups:
-      - 'entity_id'
 
 model_grid_preset:  'quickstart'
 

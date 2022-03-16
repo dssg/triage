@@ -25,8 +25,8 @@ models_dates_join_query: |
 #features_query must join models_dates_join_query with 1 or more features table using as_of_date
 features_query: |
   select m.model_id, m.as_of_date, f4.entity_id, f4.results_entity_id_1month_result_fail_avg, f4.results_entity_id_3month_result_fail_avg, f4.results_entity_id_6month_result_fail_avg,
-  f2.inspection_types_zip_code_1month_type_canvass_sum, f3.risks_zip_code_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,
-  f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_zip_code_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,
+  f2.inspection_types_entity_id_1month_type_canvass_sum, f3.risks_entity_id_1month_risk_high_sum, f4.results_entity_id_6month_result_pass_avg,
+  f3.risks_entity_id_all_risk_high_sum, f2.inspection_types_entity_id_3month_type_canvass_sum, f4.results_entity_id_6month_result_pass_sum,
   f2.inspection_types_entity_id_all_type_canvass_sum
   from features.inspection_types_aggregation_imputed as f2
   inner join features.risks_aggregation_imputed as f3 using (entity_id, as_of_date)

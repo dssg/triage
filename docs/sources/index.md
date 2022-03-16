@@ -25,7 +25,7 @@ Triage is designed to:
 
 To install Triage, you need:
 
-- Python 3.6
+- Python 3.7+
 - A PostgreSQL 9.6+ database with your source data (events,
   geographical data, etc) loaded.
   - **NOTE**: If your database is PostgreSQL 11+ you will get some
@@ -106,7 +106,7 @@ example:
 
     (pyenv) installed
 
-    (python-3.6.2) installed
+    (python-3.9.10) installed
 
     (virtualenv) installed
 

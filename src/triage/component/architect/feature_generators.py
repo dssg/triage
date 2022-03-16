@@ -55,7 +55,6 @@ class FeatureGenerator:
         for key in [
             "from_obj",
             "intervals",
-            "groups",
             "knowledge_date_column",
             "prefix",
         ]:
@@ -65,6 +64,17 @@ class FeatureGenerator:
                         key, aggregation_config
                     )
                 )
+        if "groups" in aggregation_config:
+            if aggregation_config["groups"] != [self.entity_id_column]:
+                raise ValueError(
+                    "Specifying groupings for feature aggregation is not supported. "
+                    "Features can only be grouped at the {} level.".format(self.entity_id_column)
+                    )
+            else:
+                logger.warning(
+                    "Specifying groupings for feature aggregation is not supported. "
+                    "In the future, please exclude this key from your feature configuration."
+                    )
 
     def _validate_aggregates(self, aggregation_config):
         if (
@@ -107,13 +117,6 @@ class FeatureGenerator:
         for interval in intervals:
             if interval != "all":
                 convert_str_to_relativedelta(interval)
-
-    def _validate_groups(self, groups):
-        logger.spam("Validating groups")
-        if self.entity_id_column not in groups:
-            raise ValueError(
-                "One of the aggregation groups is required to be %s" % self.entity_id_column
-            )
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
         """Validate the imputation rule for a given aggregation type."""
@@ -189,7 +192,6 @@ class FeatureGenerator:
         self._validate_categoricals(aggregation_config.get("categoricals", []))
         self._validate_from_obj(aggregation_config["from_obj"])
         self._validate_time_intervals(aggregation_config["intervals"])
-        self._validate_groups(aggregation_config["groups"])
         self._validate_imputations(aggregation_config)
 
     def validate(self, feature_aggregation_config):
@@ -307,7 +309,7 @@ class FeatureGenerator:
             aggregates + categoricals + array_categoricals,
             from_obj=aggregation_config["from_obj"],
             intervals=aggregation_config["intervals"],
-            groups=aggregation_config["groups"],
+            groups=[self.entity_id_column],
             dates=feature_dates,
             state_table=state_table,
             state_group=self.entity_id_column,
