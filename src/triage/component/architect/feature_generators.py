@@ -110,9 +110,9 @@ class FeatureGenerator:
 
     def _validate_groups(self, groups):
         logger.spam("Validating groups")
-        if "entity_id" not in groups:
+        if self.entity_id_column not in groups:
             raise ValueError(
-                "One of the aggregation groups is required to be entity_id"
+                "One of the aggregation groups is required to be %s" % self.entity_id_column
             )
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
