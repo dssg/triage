@@ -388,7 +388,6 @@ def sample_config():
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
             "aggregates": [{"quantity": "cat_sightings", "metrics": ["count", "avg"]}],
             "intervals": ["1year"],
-            "groups": ["entity_id"],
         },
         {
             "prefix": "zip_code_features",
@@ -397,7 +396,6 @@ def sample_config():
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
             "aggregates": [{"quantity": "num_events", "metrics": ["max", "min"]}],
             "intervals": ["1year"],
-            "groups": ["entity_id", "zip_code"],
         },
     ]
 
