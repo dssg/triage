@@ -30,5 +30,5 @@ def copy_templates():
 
 if __name__ == "__main__":
     #copy_templates()
-    update_index_md()
+    #update_index_md()
     #generate_api_docs()
