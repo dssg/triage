@@ -26,21 +26,7 @@ def create_schemas(engine, features_tables, labels, states):
     for table_number, table in enumerate(features_tables):
         create_features_table(table_number, table, engine)
     # create labels schema and table
-    engine.execute("drop schema if exists labels cascade; create schema labels;")
-    engine.execute(
-        """
-            create table labels.labels (
-                entity_id int,
-                as_of_date date,
-                label_timespan interval,
-                label_name char(30),
-                label_type char(30),
-                label int
-            )
-        """
-    )
-    for row in labels:
-        engine.execute("insert into labels.labels values (%s, %s, %s, %s, %s, %s)", row)
+    create_labels(engine, labels)
 
     # create cohort table
     engine.execute("drop schema if exists staging cascade; create schema staging;")
@@ -56,6 +42,24 @@ def create_schemas(engine, features_tables, labels, states):
     for row in states:
         engine.execute("insert into cohort values (%s, %s, %s)", row)
 
+
+def create_labels(engine, labels):
+    engine.execute("drop schema if exists labels cascade; create schema labels;")
+    engine.execute(
+        """
+            create table labels.labels (
+                entity_id int,
+                as_of_date date,
+                label_timespan interval,
+                label_name char(30),
+                label_type char(30),
+                label int
+            )
+        """
+    )
+    for row in labels:
+        engine.execute("insert into labels.labels values (%s, %s, %s, %s, %s, %s)", row)
+    return 'labels.labels'
 
 def create_features_table(table_number, table, engine):
     engine.execute(

@@ -1,10 +1,10 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+import verboselogs
 
 from triage.component.architect.database_reflection import table_has_data
 from triage.database_reflection import table_row_count, table_exists
 
 
+logger = verboselogs.VerboseLogger(__name__)
 DEFAULT_ACTIVE_STATE = "active"
 
 
@@ -27,10 +27,11 @@ class EntityDateTableGenerator:
                 and not run the query if so.
             If true, the existing table will be dropped and recreated.
     """
-    def __init__(self, query, db_engine, entity_date_table_name, replace=True):
+    def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True):
         self.db_engine = db_engine
         self.query = query
         self.entity_date_table_name = entity_date_table_name
+        self.labels_table_name = labels_table_name
         self.replace = replace
 
     def generate_entity_date_table(self, as_of_dates):
@@ -41,8 +42,14 @@ class EntityDateTableGenerator:
             as_of_dates (list of datetime.dates) Dates to include in the
                 state table
         """
-        logger.spam(f"Generating entity_date table {self.entity_date_table_name} using as_of_dates: {as_of_dates}")
-        self._create_and_populate_entity_date_table(as_of_dates)
+        logger.spam(f"Generating entity_date table {self.entity_date_table_name}")
+        if self.query:
+            logger.spam(f"Query is present, so running query on as_of_dates: {as_of_dates}")
+            self._create_and_populate_entity_date_table_from_query(as_of_dates)
+        elif self.labels_table_name:
+            self._create_and_populate_entity_date_table_from_labels()
+        else:
+            raise ValueError("Neither query not labels table name is available, cannot compute cohort")
         logger.spam(f"Table {self.entity_date_table_name} created and populated")
 
         if not table_has_data(self.entity_date_table_name, self.db_engine):
@@ -76,7 +83,7 @@ class EntityDateTableGenerator:
                 f"replace flag was set to False and table was found to exist"
             )
 
-    def _create_and_populate_entity_date_table(self, as_of_dates):
+    def _create_and_populate_entity_date_table_from_query(self, as_of_dates):
         """Create an entity_date table by sequentially running a
             given date-parameterized query for all known dates.
 
@@ -105,6 +112,21 @@ class EntityDateTableGenerator:
             """
             logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
             self.db_engine.execute(full_query)
+
+    def _create_and_populate_entity_date_table_from_labels(self):
+        """Create an entity_date table by storing all distinct entity-id/as-of-date pairs
+        from the labels table
+        """
+        self._maybe_create_entity_date_table()
+        logger.spam(f"Populating entity_date table {self.entity_date_table_name} from labels table {self.labels_table_name}")
+        if not table_exists(self.labels_table_name, self.db_engine):
+            logger.warning("Labels table does not exist, cannot populate entity-dates")
+            return
+
+        self.db_engine.execute(f"""insert into {self.entity_date_table_name}
+            select distinct entity_id, as_of_date
+            from {self.labels_table_name}
+            """)
 
     def _empty_table_message(self, as_of_dates):
         return """Query does not return any rows for the given as_of_dates:

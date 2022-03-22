@@ -89,7 +89,7 @@ class LabelGenerator:
             raise ValueError(f"{label_table} is empty!")
         else:
             logger.debug(f"Labels table generated at {labels_table}")
-            logger.spam(f"Row count of {labels_table}: nrows")
+            logger.spam(f"Row count of {labels_table}: {nrows}")
 
     def generate(self, start_date, label_timespan, labels_table):
         """Generate labels table using a query

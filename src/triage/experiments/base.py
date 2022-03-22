@@ -154,22 +154,22 @@ class ExperimentBase(ABC):
         self.replace = replace
         if self.replace:
             logger.notice(f"Replace flag is set to true. Matrices, models, "
-                          "evaluations and predictions (if exist) will be replaced")
+                          "evaluations and predictions (if they exist) will be replaced")
 
         self.save_predictions = save_predictions
         if not self.save_predictions:
             logger.notice(f"Save predictions flag is set to false. "
-                          "Predictions won't be stored in the predictions "
+                          "Individual predictions won't be stored in the predictions "
                           "table. This will decrease both the running time "
                           "of an experiment and also decrease the space needed in the db")
 
         self.skip_validation = skip_validation
         if self.skip_validation:
-           logger.notice(f"Skip validation flag is set to true. "
+           logger.notice(f"Warning: Skip validation flag is set to true. "
                          "The experiment config file specified won't be validated. "
                          "This will reduce (a little) the running time of the experiment, "
                          "but has some potential risks, e.g. the experiment could fail"
-                         "after some time due some misconfiguration. Proceed with care.")
+                         "after some time due to some misconfiguration. Proceed with care.")
 
         self.db_engine = db_engine
         results_schema.upgrade_if_clean(dburl=self.db_engine.url)
@@ -186,7 +186,7 @@ class ExperimentBase(ABC):
             logger.notice("Features will be calculated for all the entities "
                           "(i.e. ignoring cohort) this setting will have the effect "
                           "that more db space will be used, but potentially could save "
-                          "time is you are running different similar experiments with "
+                          "time if you are running several similar experiments with "
                           "different cohorts.")
 
         self.additional_bigtrain_classnames = additional_bigtrain_classnames 
@@ -263,40 +263,10 @@ class ExperimentBase(ABC):
                 "Will not run experiment.".format(config_version, CONFIG_VERSION)
             )
 
-    @cachedproperty
-    def cohort_hash(self):
-        if "query" in self.config.get("cohort_config", {}):
-            return filename_friendly_hash(self.config["cohort_config"]["query"])
-        else:
-            return None
-
     def initialize_components(self):
         split_config = self.config["temporal_config"]
 
         self.chopper = Timechop(**split_config)
-
-        cohort_config = self.config.get("cohort_config", {})
-        if "query" in cohort_config:
-            self.cohort_table_name = "cohort_{}_{}".format(
-                cohort_config.get('name', 'default'),
-                self.cohort_hash
-            )
-            self.cohort_table_generator = EntityDateTableGenerator(
-                entity_date_table_name=self.cohort_table_name,
-                db_engine=self.db_engine,
-                query=cohort_config["query"],
-                replace=self.replace
-            )
-        else:
-            logger.warning(
-                "cohort_config missing or unrecognized. Without a cohort, "
-                "you will not be able to make matrices, perform feature imputation, "
-                "or save time by only computing features for that cohort."
-            )
-            self.features_ignore_cohort = True
-            self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
-            self.cohort_table_generator = CohortTableGeneratorNoOp()
-
 
         if "label_config" in self.config:
             label_config = self.config["label_config"]
@@ -318,6 +288,36 @@ class ExperimentBase(ABC):
                 "you will not be able to make matrices."
             )
 
+        cohort_config = self.config.get("cohort_config", {})
+        self.cohort_table_generator = None
+        if "query" in cohort_config:
+            self.cohort_hash = filename_friendly_hash(self.config["cohort_config"]["query"])
+        elif 'query' in self.config.get("label_config", {}):
+            logger.info(
+                "cohort_config missing or unrecognized, but labels are configured. Labels will be used as the cohort."
+            )
+            self.cohort_hash = filename_friendly_hash(self.config["label_config"]["query"])
+        else:
+            self.features_ignore_cohort = True
+            self.cohort_hash = None
+            self.cohort_table_name = "cohort_{}".format(self.experiment_hash)
+            self.cohort_table_generator = CohortTableGeneratorNoOp()
+
+
+        if not self.cohort_table_generator:
+            self.cohort_table_name = "cohort_{}_{}".format(
+                cohort_config.get('name', 'default'),
+                self.cohort_hash
+            )
+            self.cohort_table_generator = EntityDateTableGenerator(
+                entity_date_table_name=self.cohort_table_name,
+                db_engine=self.db_engine,
+                query=cohort_config.get("query", None),
+                labels_table_name=self.labels_table_name,
+                replace=self.replace
+            )
+
+
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
             self.bias_hash = filename_friendly_hash(bias_config)
@@ -335,7 +335,7 @@ class ExperimentBase(ABC):
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logger.notice(
                 "bias_audit_config missing in the configuration file or unrecognized. "
-                "Without protected groups, you will not audit your models for bias and fairness."
+                "Without protected groups, you will not be able to audit your models for bias and fairness."
             )
 
         self.feature_dictionary_creator = FeatureDictionaryCreator(
@@ -628,6 +628,10 @@ class ExperimentBase(ABC):
         values being lists of feature names
 
         """
+        if not self.master_feature_dictionary:
+            logger.warning("No features have been created. Either there is no feature configuration" \
+                           "or there was some problem processing them.")
+            return []
         combinations = self.feature_group_mixer.generate(
             self.feature_group_creator.subsets(self.master_feature_dictionary)
         )
@@ -699,7 +703,7 @@ class ExperimentBase(ABC):
         self.label_generator.generate_all_labels(
             self.labels_table_name, self.all_as_of_times, self.all_label_timespans
         )
-        logger.success(f"Labels setted up in the table {self.labels_table_name} successfully ")
+        logger.success(f"Labels set up in the table {self.labels_table_name} successfully ")
 
     @experiment_entrypoint
     def generate_cohort(self):
@@ -707,7 +711,7 @@ class ExperimentBase(ABC):
         self.cohort_table_generator.generate_entity_date_table(
             as_of_dates=self.all_as_of_times
         )
-        logger.success(f"Cohort setted up in the table {self.cohort_table_name} successfully")
+        logger.success(f"Cohort set up in the table {self.cohort_table_name} successfully")
 
 
     @experiment_entrypoint
@@ -784,8 +788,8 @@ class ExperimentBase(ABC):
     @experiment_entrypoint
     def generate_matrices(self):
         self.all_as_of_times # Forcing the calculation of all the as of times, so the logging makes more sense
-        self.generate_cohort()
         self.generate_labels()
+        self.generate_cohort()
         self.generate_preimputation_features()
         self.impute_missing_features()
         self.build_matrices()
