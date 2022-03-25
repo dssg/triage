@@ -99,6 +99,35 @@ def table_row_count(table_name, db_engine):
     )
 
 
+def table_has_duplicates(table_name, column_list, db_engine):
+    """Check whether the table has duplicate rows on the set of columns.
+
+    The table is expected to exist and contain the columns in column_list.
+
+    Args:
+        table_name (string) A table name (with schema)
+        column_list (list) A list of column names
+        db_engine (sqlalchemy.engine)
+
+    Returns: (boolean) Whether or not duplicates are found
+    """
+    if not table_has_data(table_name, db_engine):
+        return False
+
+    cols = ','.join(['"%s"' % c for c in column_list])
+    sql = f"""
+    WITH counts AS (
+        SELECT {cols}
+        , COUNT(*) AS num_records
+        FROM {table_name}
+        GROUP BY {cols}
+    )
+    SELECT MAX(num_records) FROM counts
+    """
+    result = next(db_engine.execute(sql))
+    return result > 1
+
+
 def table_has_column(table_name, column, db_engine):
     """Check whether the table contains a column of the given name
 

@@ -1,7 +1,7 @@
 import verboselogs
 
 from triage.component.architect.database_reflection import table_has_data
-from triage.database_reflection import table_row_count, table_exists
+from triage.database_reflection import table_row_count, table_exists, table_has_duplicates
 
 
 logger = verboselogs.VerboseLogger(__name__)
@@ -54,6 +54,13 @@ class EntityDateTableGenerator:
 
         if not table_has_data(self.entity_date_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
+
+        if table_has_duplicates(
+            self.entity_date_table_name,
+            ['entity_id', 'as_of_date'],
+            self.db_engine
+            ):
+            raise ValueError(f"Duplicates found in {self.entity_date_table_name}!")
 
         logger.debug(f"Entity-date table generated at {self.entity_date_table_name}")
         logger.spam(f"Generating stats on {self.entity_date_table_name}")
