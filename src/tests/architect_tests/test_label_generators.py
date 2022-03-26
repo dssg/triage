@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 import testing.postgresql
+import pytest
 from sqlalchemy import create_engine
 
 from triage.component.architect.label_generators import LabelGenerator
