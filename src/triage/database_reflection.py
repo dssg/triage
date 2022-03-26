@@ -124,7 +124,7 @@ def table_has_duplicates(table_name, column_list, db_engine):
     )
     SELECT MAX(num_records) FROM counts
     """
-    result = next(db_engine.execute(sql))
+    result = next(db_engine.execute(sql))[0]
     return result > 1
 
 
