@@ -169,3 +169,30 @@ def test_generate_all_labels_noreplace():
             (4, date(2014, 9, 30), timedelta(90), "outcome", "binary", False),
         ]
         assert records == expected
+
+
+def test_generate_all_labels_errors_on_duplicates():
+
+    # label query that will yield duplicates (one row for each event in the timespan)
+    BAD_LABEL_GENERATE_QUERY = """
+    select
+        events.entity_id,
+        1 as outcome
+    from events
+    where
+        '{as_of_date}' <= outcome_date
+        and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
+    """
+
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        create_binary_outcome_events(engine, "events", events_data)
+
+        label_generator = LabelGenerator(db_engine=engine, query=BAD_LABEL_GENERATE_QUERY, replace=True)
+        with pytest.raises(ValueError):
+            label_generator.generate_all_labels(
+                labels_table=LABELS_TABLE_NAME,
+                as_of_dates=["2014-09-30", "2015-03-30"],
+                label_timespans=["6month", "3month"],
+            )
+
