@@ -1,4 +1,4 @@
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'inspections: advanced'
 random_seed: 23895478
@@ -86,9 +86,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-
   -
     prefix: 'risks'
     from_obj: 'semantic.events'
@@ -110,10 +107,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-      - 'zip_code'
-
   -
     prefix: 'results'
     from_obj: 'semantic.events'
@@ -133,9 +126,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-
   -
     prefix: 'inspection_types'
     from_obj: 'semantic.events'
@@ -153,10 +143,6 @@ feature_aggregations:
           - 'sum'
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
-
-    groups:
-      - 'entity_id'
-      - 'zip_code'
 
 feature_group_definition:
    prefix:

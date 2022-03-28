@@ -103,6 +103,7 @@ nav:
           - Testing Feature Configuration: experiments/feature-testing.md
           - Running an Experiment: experiments/running.md
           - Upgrading an Experiment:
+              - v7 -> v8: experiments/upgrade-to-v8.md
               - v6 -> v7: experiments/upgrade-to-v7.md
               - v5 -> v6: experiments/upgrade-to-v6.md
               - v3/v4 -> v5: experiments/upgrade-to-v5.md

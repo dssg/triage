@@ -823,22 +823,19 @@ feature_aggregations:
 
     intervals: ['6month']
 
-    groups:
-        - 'entity_id'
 ```
 
 `feature_aggregations` is a `yaml` list<sup><a id="fnr.10"
 class="footref" href="#fn.10">10</a></sup> of *feature groups
 construction specification* or just *feature group*. A *feature group*
-is a way of grouping several features that share `intervals` and
-`groups`. `triage` requires the following configuration parameter for
+is a way of grouping several features that share `intervals` and source data
+(`from_obj`). `triage` requires the following configuration parameter for
 every *feature group*:
 
 -   **`prefix`:** This will be used for name of the *feature* created
 -   **`from_obj`:** Represents a `TABLE` object in `PostgreSQL`. You can pass a *table* like in the example above (`semantic.events`) or a `SQL` query that returns a table. We will see an example of this later. `triage` will use it like the `FROM` clause in the `SQL` query.
 -   **`knowlege_date_column`:** Column that indicates the date of the event.
 -   **`intervals`:** A `yaml` list. `triage` will create one feature per interval listed.
--   **`groups`:** A `yaml` list of the attributes that we will use to aggregate. This will be translated to a `SQL` `GROUP BY` by `triage`.
 
 The last section to discuss is `imputation`. Imputation is very
 important step in the modeling, and you should carefully think about
@@ -852,7 +849,7 @@ will return to this later in this tutorial.
 `Collate` is in charge of creating the `SQL` agregation
 queries. Another way of thinking about it is that `collate`
 encapsulates the `FROM` part of the query (`from_obj`) as well as the
-`GROUP BY` columns (`groups`).
+`GROUP BY` aggregation at the `entity_id` level.
 
 `triage` (`collate`) supports two types of objects to be aggregated:
 `aggregates` and `categoricals` (more on this one later)<sup><a
@@ -863,7 +860,7 @@ example, the whole row `*`) and an alias (`total`), defines the
 `imputation` strategy for `NULLs`, and the `metric` refers to the
 `aggregation function` to be applied to the `quantity` (`count`).
 
-`triage` will generate the following (or a very similar one), one per each combination of `interval` &times; `groups` &times; `quantity`:
+`triage` will generate the following (or a very similar one), one per each combination of `interval` &times; `quantity`:
 
 ```sql
 select
@@ -873,7 +870,7 @@ from
 where
   as_of_date <@ (as_of_date - interval, as_of_date)
 group by
-  groups
+  grouping sets(entity_id)
 ```
 
 With the previous configuration `triage` will generate **1** feature with the following name:<sup><a id="fnr.12" class="footref" href="#fn.12">12</a></sup>
@@ -920,8 +917,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-        - 'entity_id'
 ```
 
 You will end with 5 new *features*, one for each interval (5) &times; the only aggregate definition we have. Note the weird `all` in the `intervals` definition. `all` is the time interval between the `feature_start_time` and the `as_of_date`.
@@ -948,8 +943,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-        - 'entity_id'
   -
     prefix: 'risks'
     from_obj: 'semantic.events'
@@ -968,9 +961,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-      - 'entity_id'
-
 ```
 
 There are several changes. First, the imputation strategy in this new
@@ -983,7 +973,7 @@ aggregated and the query to get all the distinct values.
 With this configuration, `triage` will generate two tables, one per
 *feature group*. The new table will be
 `features.risks_aggregation_imputed`. This table will have more
-columns: `intervals` (5) &times; `groups` (1) &times; `metric` (1)
+columns: `intervals` (5) &times; `metric` (1)
 &times; *features* (1) &times; *number of choices returned by the
 query*.
 
@@ -1028,8 +1018,6 @@ feature_aggregations:
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
 
-    groups:
-        - 'entity_id'
   -
     prefix: 'risks'
     from_obj: 'semantic.events'
@@ -1047,9 +1035,6 @@ feature_aggregations:
             - 'sum'
 
     intervals: ['1month', '3month', '6month', '1y', 'all']
-
-    groups:
-      - 'entity_id'
 
 ```
 
@@ -1063,77 +1048,23 @@ prefix_group_interval_column_choice_aggregation_operation
 
 So, `risks_entity_id_1month_risk_medium_sum` will be among our new features in the last example.
 
-As a next step, let's investigate the effect of having several elements in the `groups` list.
-
-```yaml
-feature_aggregations:
-  -
-    prefix: 'inspections'
-    from_obj: 'semantic.events'
-    knowledge_date_column: 'date'
-
-    aggregates:
-      - # number of inspections
-        quantity:
-          total: "*"
-
-        imputation:
-          count:
-            type: 'mean'
-
-        metrics: ['count']
-
-    intervals: ['1month', '3month', '6month', '1y', 'all']
-
-    groups:
-        - 'entity_id'
-
-  -
-    prefix: 'risks'
-    from_obj: 'semantic.events'
-    knowledge_date_column: 'date'
-
-    categoricals_imputation:
-      sum:
-        type: 'zero'
-
-    categoricals:
-      -
-        column: 'risk'
-        choices: ['low', 'medium', 'high']
-          metrics:
-            - 'sum'
-
-    intervals: ['1month', '3month', '6month', '1y', 'all']
-
-    groups:
-      - 'entity_id'
-      - 'zip_code'
-
-```
-
-The number of features created in the table
-`features.risks_aggregation_imputed` is now 60 (`intervals` (5)
-&times; `groups` (2) &times; `metric` (2) &times; *features* (1)
-&times; *number  of choices* (3).
-
-`Triage` will add several imputation *flag* (binary) columns per
+`Triage` will also add several imputation *flag* (binary) columns per
 feature. Those columns convey information about if that particular
-value was *imputed* or *not*. So in the last counting we need to add
-20 more columns to a grand total of 80 columns.
+value was *imputed* or *not*. The section below describes how imputation
+can be specified in `triage` in more detail.
 
 
 ### Imputation
 
 `Triage` currently supports the following imputation strategies:
 
--   **mean:** The mean value of the feature.
+-   `mean`: The mean value of the feature.
 
--   **constant:** Fill with a constant (you need to provide the constant value).
+-   `constant`: Fill with a constant (you need to provide the constant value).
 
--   **zero:** Same that the previous one, but the constant is zero.
+-   `zero`: Same that the previous one, but the constant is zero.
 
--   **zero<sub>noflag</sub>:** Sometimes, the absence (i.e. a NULL)
+-   `zero_noflag`: Sometimes, the absence (i.e. a NULL)
     doesn't mean that the value is missing, that actually means that
     the event didn't happen to that entity. For example a `NULL` in
     the `inspections_entity_id_1month_total_count` column in
@@ -1144,15 +1075,15 @@ value was *imputed* or *not*. So in the last counting we need to add
 
 Only for aggregates:
 
--   **binary<sub>mode</sub>:** Takes the mode of a binary feature
+-   `binary_mode`: Takes the mode of a binary feature
 
-Only for categoricals::
+Only for categoricals:
 
--   **null<sub>category</sub>:** Just flag null values with the null category column
+-   `null_category`: Just flag null values with the null category column
 
 and finally, if you are sure that is not possible to have *NULLS:*
 
--   **error:** Raise an exception if ant null values are encountered.
+-   `error`: Raise an exception if ant null values are encountered.
 
 
 ### Feature groups strategies
