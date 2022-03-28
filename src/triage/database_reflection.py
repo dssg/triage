@@ -76,11 +76,11 @@ def table_has_data(table_name, db_engine):
     """
     if not table_exists(table_name, db_engine):
         return False
-    result = [
-        row for row in db_engine.execute("select 1 from {} limit 1".format(table_name))
+    results = [
+        row for row in db_engine.execute("select * from {} limit 1".format(table_name))
     ]
 
-    return any(result)
+    return len(results) > 0
 
 
 def table_row_count(table_name, db_engine):
