@@ -62,11 +62,11 @@ markdown_extensions:
   - pymdownx.superfences
 
 extra_javascript:
-    - "js/mermaid.min.js"
-    - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
+  - "js/mermaid.min.js"
+  - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
 
 extra_css:
-    - "triage_docs.css"
+  - "triage_docs.css"
 
 plugins: 
   - mkdocstrings:
@@ -82,8 +82,8 @@ plugins:
 nav:
   - Home: index.md
   - Get started with your own project:
-      - Quickstart guide: quickstart.md
-      - Suggested workflow: triage_project_workflow.md
+    - Quickstart guide: quickstart.md
+    - Suggested workflow: triage_project_workflow.md
   - Dirty Duck Tutorial:
     - Welcome!: dirtyduck/index.md
     - Dirty duckling: dirtyduck/dirty_duckling.md
@@ -98,36 +98,36 @@ nav:
       - Data preparation: dirtyduck/data_preparation.md
       - Quick setup: dirtyduck/for_the_impatient.md
   - Triage documentation:
-      - Experiment:
-          - Experiment Configuration: experiments/experiment-config.md
-          - Testing Feature Configuration: experiments/feature-testing.md
-          - Running an Experiment: experiments/running.md
-          - Upgrading an Experiment:
-              - v7 -> v8: experiments/upgrade-to-v8.md
-              - v6 -> v7: experiments/upgrade-to-v7.md
-              - v5 -> v6: experiments/upgrade-to-v6.md
-              - v3/v4 -> v5: experiments/upgrade-to-v5.md
-          - Temporal Validation Deep Dive: experiments/temporal-validation.md
-          - Cohort and Label Deep Dive: experiments/cohort-labels.md
-          - Prediction Ranking: experiments/prediction-ranking.md
-          - Feature Generation Recipe Book: experiments/features.md
-          - Experiment Algorithm: experiments/algorithm.md
-          - Experiment Architecture: experiments/architecture.md
-      - Model selection: 
-          - Intro to Audition: audition/audition_intro.md
-          - Model Selection Concepts: audition/model_selection.md
-          - API Reference: ../api/audition/
-      - Postmodeling: 
-          - Using Postmodeling: postmodeling/index.md
-          - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
-      - Model governance:  dirtyduck/ml_governance.md
-      -Predictlist: predictlist/index.md
-      - Scaling up: dirtyduck/aws_batch.md
-      - Database Provisioner: db.md
-      - API Reference:
-          - Audition: 
-              - Auditioner: api/audition/auditioner.md
-              - Audition Configuration: api/audition/audition-config.md
-              - Selection Rules: api/audition/selection_rules.md
-              - Database Dependencies: api/audition/database-dependencies.md
+    - Experiment:
+      - Experiment Configuration: experiments/experiment-config.md
+      - Testing Feature Configuration: experiments/feature-testing.md
+      - Running an Experiment: experiments/running.md
+      - Upgrading an Experiment:
+        - v7 -> v8: experiments/upgrade-to-v8.md
+        - v6 -> v7: experiments/upgrade-to-v7.md
+        - v5 -> v6: experiments/upgrade-to-v6.md
+        - v3/v4 -> v5: experiments/upgrade-to-v5.md
+      - Temporal Validation Deep Dive: experiments/temporal-validation.md
+      - Cohort and Label Deep Dive: experiments/cohort-labels.md
+      - Prediction Ranking: experiments/prediction-ranking.md
+      - Feature Generation Recipe Book: experiments/features.md
+      - Experiment Algorithm: experiments/algorithm.md
+      - Experiment Architecture: experiments/architecture.md
+    - Model selection: 
+      - Intro to Audition: audition/audition_intro.md
+      - Model Selection Concepts: audition/model_selection.md
+      - API Reference: api/audition/index.md
+    - Postmodeling: 
+      - Using Postmodeling: postmodeling/index.md
+      - Postmodeling & Crosstabs Configuration: postmodeling/postmodeling-config.md
+    - Model governance: dirtyduck/ml_governance.md
+    - Predictlist: predictlist/index.md
+    - Scaling up: dirtyduck/aws_batch.md
+    - Database Provisioner: db.md
+    - API Reference:
+      - Audition: 
+        - Auditioner: api/audition/auditioner.md
+        - Audition Configuration: api/audition/audition-config.md
+        - Selection Rules: api/audition/selection_rules.md
+        - Database Dependencies: api/audition/database-dependencies.md
 
