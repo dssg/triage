@@ -6,10 +6,10 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for Triage." name="description"/>
-<link href="http://dssg.github.io/triage/postmodeling/postmodeling-config/" rel="canonical"/>
+<link href="http://dssg.github.io/triage/experiments/upgrade-to-v8/" rel="canonical"/>
 <link href="../../assets/images/favicon.ico" rel="icon"/>
 <meta content="mkdocs-1.3.0, mkdocs-material-7.0.6" name="generator"/>
-<title>Postmodeling &amp; Crosstabs Configuration - Triage Documentation</title>
+<title>v7 -&gt; v8 - Triage Documentation</title>
 <link href="../../assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
 <meta content="#546d78" name="theme-color"/>
@@ -23,7 +23,7 @@
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#postmodeling-configuration">
+<a class="md-skip" href="#upgrading-your-experiment-configuration-to-v8">
           Skip to content
         </a>
 </div>
@@ -47,7 +47,7 @@
 <div class="md-header__topic" data-md-component="header-topic">
 <span class="md-ellipsis">
             
-              Postmodeling &amp; Crosstabs Configuration
+              v7 -&gt; v8
             
           </span>
 </div>
@@ -238,8 +238,8 @@
           Triage documentation
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
-<li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" id="__nav_4_1" type="checkbox"/>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" id="__nav_4_1" type="checkbox"/>
 <label class="md-nav__link" for="__nav_4_1">
         Experiment
         <span class="md-nav__icon md-icon"></span>
@@ -251,22 +251,22 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/experiment-config/">
+<a class="md-nav__link" href="../experiment-config/">
         Experiment Configuration
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/feature-testing/">
+<a class="md-nav__link" href="../feature-testing/">
         Testing Feature Configuration
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/running/">
+<a class="md-nav__link" href="../running/">
         Running an Experiment
       </a>
 </li>
-<li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1_4" id="__nav_4_1_4" type="checkbox"/>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1_4" id="__nav_4_1_4" type="checkbox"/>
 <label class="md-nav__link" for="__nav_4_1_4">
         Upgrading an Experiment
         <span class="md-nav__icon md-icon"></span>
@@ -277,23 +277,24 @@
           Upgrading an Experiment
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v8/">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<a class="md-nav__link md-nav__link--active" href="./">
         v7 -&gt; v8
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v7/">
+<a class="md-nav__link" href="../upgrade-to-v7/">
         v6 -&gt; v7
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v6/">
+<a class="md-nav__link" href="../upgrade-to-v6/">
         v5 -&gt; v6
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v5/">
+<a class="md-nav__link" href="../upgrade-to-v5/">
         v3/v4 -&gt; v5
       </a>
 </li>
@@ -301,32 +302,32 @@
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/temporal-validation/">
+<a class="md-nav__link" href="../temporal-validation/">
         Temporal Validation Deep Dive
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/cohort-labels/">
+<a class="md-nav__link" href="../cohort-labels/">
         Cohort and Label Deep Dive
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/prediction-ranking/">
+<a class="md-nav__link" href="../prediction-ranking/">
         Prediction Ranking
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/features/">
+<a class="md-nav__link" href="../features/">
         Feature Generation Recipe Book
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/algorithm/">
+<a class="md-nav__link" href="../algorithm/">
         Experiment Algorithm
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/architecture/">
+<a class="md-nav__link" href="../architecture/">
         Experiment Architecture
       </a>
 </li>
@@ -363,8 +364,8 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
 <label class="md-nav__link" for="__nav_4_3">
         Postmodeling
         <span class="md-nav__icon md-icon"></span>
@@ -376,46 +377,14 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../">
+<a class="md-nav__link" href="../../postmodeling/">
         Using Postmodeling
       </a>
 </li>
-<li class="md-nav__item md-nav__item--active">
-<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
-<label class="md-nav__link md-nav__link--active" for="__toc">
-          Postmodeling &amp; Crosstabs Configuration
-          <span class="md-nav__icon md-icon"></span>
-</label>
-<a class="md-nav__link md-nav__link--active" href="./">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../postmodeling/postmodeling-config/">
         Postmodeling &amp; Crosstabs Configuration
       </a>
-<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration">
-    Postmodeling Configuration
-  </a>
-<nav aria-label="Postmodeling Configuration" class="md-nav">
-<ul class="md-nav__list">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration-file">
-    Postmodeling Configuration File
-  </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-crosstabs-configuration-file">
-    Postmodeling Crosstabs Configuration File
-  </a>
-</li>
-</ul>
-</nav>
-</li>
-</ul>
-</nav>
 </li>
 </ul>
 </nav>
@@ -502,75 +471,75 @@
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration">
-    Postmodeling Configuration
-  </a>
-<nav aria-label="Postmodeling Configuration" class="md-nav">
-<ul class="md-nav__list">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration-file">
-    Postmodeling Configuration File
-  </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-crosstabs-configuration-file">
-    Postmodeling Crosstabs Configuration File
-  </a>
-</li>
-</ul>
-</nav>
-</li>
-</ul>
 </nav>
 </div>
 </div>
 </div>
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
-<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/postmodeling/postmodeling-config.md" title="Edit this page">
+<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/experiments/upgrade-to-v8.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
 </a>
-<h1>Postmodeling &amp; Crosstabs Configuration</h1>
-<h2 id="postmodeling-configuration">Postmodeling Configuration<a class="headerlink" href="#postmodeling-configuration" title="Permanent link">#</a></h2>
-<p>The Triage Postmodeling module is controlled by two config files: <code>postmodeling_config.yaml</code> and <code>postmodeling_crosstabs.yaml</code>.</p>
-<h3 id="postmodeling-configuration-file">Postmodeling Configuration File<a class="headerlink" href="#postmodeling-configuration-file" title="Permanent link">#</a></h3>
-<p>Configuration for the Triage Postmodeling module. An example <code>postmodeling_config.yaml</code> file can be found <a href="https://github.com/dssg/triage/blob/master/example/config/postmodeling_config.yaml">here</a>.</p>
-<ul>
-<li><code>project_path</code>: Project path defined in triage with matrices and models</li>
-<li><code>audition_output_path</code>: Audition output path</li>
-<li><code>model_group_id</code>: List of model_id's [optional if a audition_output_path is given]</li>
-<li><code>thresholds</code>: Thresholds for defining positive predictions</li>
-<li><code>baseline_query</code>: SQL query for defining a baseline for comparison in plots. It needs a metric and parameter</li>
-<li><code>max_depth_error_tree</code>: For error trees, how depth the decision trees should go?</li>
-<li><code>n_features_plots</code>: Number of features for importances</li>
-<li><code>figsize</code>: Default size for plots</li>
-<li><code>fontsize</code>: Default fontsize for plots</li>
-</ul>
-<h3 id="postmodeling-crosstabs-configuration-file">Postmodeling Crosstabs Configuration File<a class="headerlink" href="#postmodeling-crosstabs-configuration-file" title="Permanent link">#</a></h3>
-<p>Configuration for crosstabs in Triage's Postmodeling module. An example <code>postmodeling_crosstabs.yaml</code> file can be found <a href="https://github.com/dssg/triage/blob/master/example/config/postmodeling_crosstabs.yaml">here</a>.</p>
-<ul>
-<li><code>output</code>: Define the schema and table for crosstabs</li>
-<li><code>thresholds</code>: Thresholds for defining positive predictions</li>
-<li><code>entity_id_list</code>: (optional) a list of <code>entity_ids</code> to subset on the crosstabs analysis</li>
-<li><code>models_list_query</code>: SQL query for getting <code>model_id</code>s</li>
-<li><code>as_of_dates_query</code>: SQL query for getting <code>as_of_date</code>s</li>
-<li><code>models_dates_join_query</code>: don't change the default query unless strictly necessary. It is just validating pairs of (<code>model_id</code>, <code>as_of_date</code>) in a predictions table</li>
-<li><code>features_query</code>: features_query must join <code>models_dates_join_query</code> with 1 or more features table using <code>as_of_date</code></li>
-<li><code>predictions_query</code>: the predictions query must return <code>model_id</code>, <code>as_of_date</code>, <code>entity_id</code>, <code>score</code>, <code>label_value</code>, <code>rank_abs</code> and <code>rank_pct</code>. It must join <code>models_dates_join_query</code> using both <code>model_id</code> and <code>as_of_date</code>. </li>
-</ul>
+<h1 id="upgrading-your-experiment-configuration-to-v8">Upgrading your experiment configuration to v8<a class="headerlink" href="#upgrading-your-experiment-configuration-to-v8" title="Permanent link">#</a></h1>
+<p>This document details the steps needed to update a triage v6 configuration to
+v8, mimicking the old behavior.</p>
+<p>Experiment configuration v8 includes only one change from v7: the <code>groups</code> key is no longer supported in the feature configuration (all features must be grouped only at the <code>entity_id</code> level).</p>
+<p>Old:
+<div class="highlight"><pre><span></span><code><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="s">'v7'</span><span class="w"></span>
+
+<span class="c1"># FEATURE GENERATION</span><span class="w"></span>
+<span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">aggregates_imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero_noflag'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'count'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">groups</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'entity_id'</span><span class="w"></span>
+</code></pre></div></p>
+<p>New:
+<div class="highlight"><pre><span></span><code><span class="nt">config_version</span><span class="p">:</span><span class="w"> </span><span class="s">'v8'</span><span class="w"></span>
+
+<span class="c1"># FEATURE GENERATION</span><span class="w"></span>
+<span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">aggregates_imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero_noflag'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'count'</span><span class="w"></span>
+
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
+</code></pre></div></p>
 </article>
 </div>
 </div>
 </main>
 <footer class="md-footer">
 <nav aria-label="Footer" class="md-footer__inner md-grid">
-<a class="md-footer__link md-footer__link--prev" href="../" rel="prev">
+<a class="md-footer__link md-footer__link--prev" href="../running/" rel="prev">
 <div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
 </div>
@@ -579,17 +548,17 @@
 <span class="md-footer__direction">
                 Previous
               </span>
-              Using Postmodeling
+              Running an Experiment
             </div>
 </div>
 </a>
-<a class="md-footer__link md-footer__link--next" href="../../dirtyduck/ml_governance/" rel="next">
+<a class="md-footer__link md-footer__link--next" href="../upgrade-to-v7/" rel="next">
 <div class="md-footer__title">
 <div class="md-ellipsis">
 <span class="md-footer__direction">
                 Next
               </span>
-              Model governance
+              v6 -&gt; v7
             </div>
 </div>
 <div class="md-footer__button md-icon">

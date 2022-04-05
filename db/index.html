@@ -6,24 +6,24 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for Triage." name="description"/>
-<link href="http://dssg.github.io/triage/postmodeling/postmodeling-config/" rel="canonical"/>
-<link href="../../assets/images/favicon.ico" rel="icon"/>
+<link href="http://dssg.github.io/triage/db/" rel="canonical"/>
+<link href="../assets/images/favicon.ico" rel="icon"/>
 <meta content="mkdocs-1.3.0, mkdocs-material-7.0.6" name="generator"/>
-<title>Postmodeling &amp; Crosstabs Configuration - Triage Documentation</title>
-<link href="../../assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
-<link href="../../assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
+<title>Database Provisioner - Triage Documentation</title>
+<link href="../assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
+<link href="../assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
 <meta content="#546d78" name="theme-color"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
 <style>:root{--md-text-font-family:"Ubuntu";--md-code-font-family:"Ubuntu Mono"}</style>
-<link href="../../triage_docs.css" rel="stylesheet"/>
+<link href="../triage_docs.css" rel="stylesheet"/>
 </head>
 <body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
 <input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#postmodeling-configuration">
+<a class="md-skip" href="#triage-database-provisioner">
           Skip to content
         </a>
 </div>
@@ -31,7 +31,7 @@
 </div>
 <header class="md-header" data-md-component="header">
 <nav aria-label="Header" class="md-header__inner md-grid">
-<a aria-label="Triage Documentation" class="md-header__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<a aria-label="Triage Documentation" class="md-header__button md-logo" data-md-component="logo" href=".." title="Triage Documentation">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
 <label class="md-header__button md-icon" for="__drawer">
@@ -47,7 +47,7 @@
 <div class="md-header__topic" data-md-component="header-topic">
 <span class="md-ellipsis">
             
-              Postmodeling &amp; Crosstabs Configuration
+              Database Provisioner
             
           </span>
 </div>
@@ -75,7 +75,7 @@
 <div class="md-sidebar__inner">
 <nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
 <label class="md-nav__title" for="__drawer">
-<a aria-label="Triage Documentation" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" data-md-component="logo" href=".." title="Triage Documentation">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
     Triage Documentation
@@ -92,7 +92,7 @@
 </div>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../..">
+<a class="md-nav__link" href="..">
         Home
       </a>
 </li>
@@ -109,12 +109,12 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../quickstart/">
+<a class="md-nav__link" href="../quickstart/">
         Quickstart guide
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../triage_project_workflow/">
+<a class="md-nav__link" href="../triage_project_workflow/">
         Suggested workflow
       </a>
 </li>
@@ -134,12 +134,12 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/">
+<a class="md-nav__link" href="../dirtyduck/">
         Welcome!
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/dirty_duckling/">
+<a class="md-nav__link" href="../dirtyduck/dirty_duckling/">
         Dirty duckling
       </a>
 </li>
@@ -156,17 +156,17 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/problem_description/">
+<a class="md-nav__link" href="../dirtyduck/problem_description/">
         Problem description
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/eis/">
+<a class="md-nav__link" href="../dirtyduck/eis/">
         Early Warning System
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/inspections/">
+<a class="md-nav__link" href="../dirtyduck/inspections/">
         Resource prioritization
       </a>
 </li>
@@ -186,7 +186,7 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/triage_intro/">
+<a class="md-nav__link" href="../dirtyduck/triage_intro/">
         A deeper look into triage
       </a>
 </li>
@@ -206,17 +206,17 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/infrastructure/">
+<a class="md-nav__link" href="../dirtyduck/infrastructure/">
         Infrastructure
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/data_preparation/">
+<a class="md-nav__link" href="../dirtyduck/data_preparation/">
         Data preparation
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/for_the_impatient/">
+<a class="md-nav__link" href="../dirtyduck/for_the_impatient/">
         Quick setup
       </a>
 </li>
@@ -251,17 +251,17 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/experiment-config/">
+<a class="md-nav__link" href="../experiments/experiment-config/">
         Experiment Configuration
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/feature-testing/">
+<a class="md-nav__link" href="../experiments/feature-testing/">
         Testing Feature Configuration
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/running/">
+<a class="md-nav__link" href="../experiments/running/">
         Running an Experiment
       </a>
 </li>
@@ -278,22 +278,22 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v8/">
+<a class="md-nav__link" href="../experiments/upgrade-to-v8/">
         v7 -&gt; v8
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v7/">
+<a class="md-nav__link" href="../experiments/upgrade-to-v7/">
         v6 -&gt; v7
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v6/">
+<a class="md-nav__link" href="../experiments/upgrade-to-v6/">
         v5 -&gt; v6
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v5/">
+<a class="md-nav__link" href="../experiments/upgrade-to-v5/">
         v3/v4 -&gt; v5
       </a>
 </li>
@@ -301,32 +301,32 @@
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/temporal-validation/">
+<a class="md-nav__link" href="../experiments/temporal-validation/">
         Temporal Validation Deep Dive
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/cohort-labels/">
+<a class="md-nav__link" href="../experiments/cohort-labels/">
         Cohort and Label Deep Dive
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/prediction-ranking/">
+<a class="md-nav__link" href="../experiments/prediction-ranking/">
         Prediction Ranking
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/features/">
+<a class="md-nav__link" href="../experiments/features/">
         Feature Generation Recipe Book
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/algorithm/">
+<a class="md-nav__link" href="../experiments/algorithm/">
         Experiment Algorithm
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/architecture/">
+<a class="md-nav__link" href="../experiments/architecture/">
         Experiment Architecture
       </a>
 </li>
@@ -346,25 +346,25 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/audition_intro/">
+<a class="md-nav__link" href="../audition/audition_intro/">
         Intro to Audition
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/model_selection/">
+<a class="md-nav__link" href="../audition/model_selection/">
         Model Selection Concepts
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/">
+<a class="md-nav__link" href="../api/audition/">
         API Reference
       </a>
 </li>
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
 <label class="md-nav__link" for="__nav_4_3">
         Postmodeling
         <span class="md-nav__icon md-icon"></span>
@@ -376,18 +376,41 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../">
+<a class="md-nav__link" href="../postmodeling/">
         Using Postmodeling
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../postmodeling/postmodeling-config/">
+        Postmodeling &amp; Crosstabs Configuration
+      </a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../dirtyduck/ml_governance/">
+        Model governance
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../predictlist/">
+        Predictlist
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../dirtyduck/aws_batch/">
+        Scaling up
       </a>
 </li>
 <li class="md-nav__item md-nav__item--active">
 <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
 <label class="md-nav__link md-nav__link--active" for="__toc">
-          Postmodeling &amp; Crosstabs Configuration
+          Database Provisioner
           <span class="md-nav__icon md-icon"></span>
 </label>
 <a class="md-nav__link md-nav__link--active" href="./">
-        Postmodeling &amp; Crosstabs Configuration
+        Database Provisioner
       </a>
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
@@ -396,19 +419,19 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration">
-    Postmodeling Configuration
+<a class="md-nav__link" href="#troubleshooting">
+    Troubleshooting
   </a>
-<nav aria-label="Postmodeling Configuration" class="md-nav">
+<nav aria-label="Troubleshooting" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration-file">
-    Postmodeling Configuration File
+<a class="md-nav__link" href="#no-docker">
+    No docker
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-crosstabs-configuration-file">
-    Postmodeling Crosstabs Configuration File
+<a class="md-nav__link" href="#cant-log-in">
+    Can't log in
   </a>
 </li>
 </ul>
@@ -416,29 +439,6 @@
 </li>
 </ul>
 </nav>
-</li>
-</ul>
-</nav>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/ml_governance/">
-        Model governance
-      </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../predictlist/">
-        Predictlist
-      </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../dirtyduck/aws_batch/">
-        Scaling up
-      </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../db/">
-        Database Provisioner
-      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8" id="__nav_4_8" type="checkbox"/>
@@ -465,22 +465,22 @@
         </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/auditioner/">
+<a class="md-nav__link" href="../api/audition/auditioner/">
         Auditioner
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/audition-config/">
+<a class="md-nav__link" href="../api/audition/audition-config/">
         Audition Configuration
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/selection_rules/">
+<a class="md-nav__link" href="../api/audition/selection_rules/">
         Selection Rules
       </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/database-dependencies/">
+<a class="md-nav__link" href="../api/audition/database-dependencies/">
         Database Dependencies
       </a>
 </li>
@@ -508,19 +508,19 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration">
-    Postmodeling Configuration
+<a class="md-nav__link" href="#troubleshooting">
+    Troubleshooting
   </a>
-<nav aria-label="Postmodeling Configuration" class="md-nav">
+<nav aria-label="Troubleshooting" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-configuration-file">
-    Postmodeling Configuration File
+<a class="md-nav__link" href="#no-docker">
+    No docker
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#postmodeling-crosstabs-configuration-file">
-    Postmodeling Crosstabs Configuration File
+<a class="md-nav__link" href="#cant-log-in">
+    Can't log in
   </a>
 </li>
 </ul>
@@ -533,44 +533,27 @@
 </div>
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
-<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/postmodeling/postmodeling-config.md" title="Edit this page">
+<a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/db.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
 </a>
-<h1>Postmodeling &amp; Crosstabs Configuration</h1>
-<h2 id="postmodeling-configuration">Postmodeling Configuration<a class="headerlink" href="#postmodeling-configuration" title="Permanent link">#</a></h2>
-<p>The Triage Postmodeling module is controlled by two config files: <code>postmodeling_config.yaml</code> and <code>postmodeling_crosstabs.yaml</code>.</p>
-<h3 id="postmodeling-configuration-file">Postmodeling Configuration File<a class="headerlink" href="#postmodeling-configuration-file" title="Permanent link">#</a></h3>
-<p>Configuration for the Triage Postmodeling module. An example <code>postmodeling_config.yaml</code> file can be found <a href="https://github.com/dssg/triage/blob/master/example/config/postmodeling_config.yaml">here</a>.</p>
-<ul>
-<li><code>project_path</code>: Project path defined in triage with matrices and models</li>
-<li><code>audition_output_path</code>: Audition output path</li>
-<li><code>model_group_id</code>: List of model_id's [optional if a audition_output_path is given]</li>
-<li><code>thresholds</code>: Thresholds for defining positive predictions</li>
-<li><code>baseline_query</code>: SQL query for defining a baseline for comparison in plots. It needs a metric and parameter</li>
-<li><code>max_depth_error_tree</code>: For error trees, how depth the decision trees should go?</li>
-<li><code>n_features_plots</code>: Number of features for importances</li>
-<li><code>figsize</code>: Default size for plots</li>
-<li><code>fontsize</code>: Default fontsize for plots</li>
-</ul>
-<h3 id="postmodeling-crosstabs-configuration-file">Postmodeling Crosstabs Configuration File<a class="headerlink" href="#postmodeling-crosstabs-configuration-file" title="Permanent link">#</a></h3>
-<p>Configuration for crosstabs in Triage's Postmodeling module. An example <code>postmodeling_crosstabs.yaml</code> file can be found <a href="https://github.com/dssg/triage/blob/master/example/config/postmodeling_crosstabs.yaml">here</a>.</p>
-<ul>
-<li><code>output</code>: Define the schema and table for crosstabs</li>
-<li><code>thresholds</code>: Thresholds for defining positive predictions</li>
-<li><code>entity_id_list</code>: (optional) a list of <code>entity_ids</code> to subset on the crosstabs analysis</li>
-<li><code>models_list_query</code>: SQL query for getting <code>model_id</code>s</li>
-<li><code>as_of_dates_query</code>: SQL query for getting <code>as_of_date</code>s</li>
-<li><code>models_dates_join_query</code>: don't change the default query unless strictly necessary. It is just validating pairs of (<code>model_id</code>, <code>as_of_date</code>) in a predictions table</li>
-<li><code>features_query</code>: features_query must join <code>models_dates_join_query</code> with 1 or more features table using <code>as_of_date</code></li>
-<li><code>predictions_query</code>: the predictions query must return <code>model_id</code>, <code>as_of_date</code>, <code>entity_id</code>, <code>score</code>, <code>label_value</code>, <code>rank_abs</code> and <code>rank_pct</code>. It must join <code>models_dates_join_query</code> using both <code>model_id</code> and <code>as_of_date</code>. </li>
-</ul>
+<h1 id="triage-database-provisioner">Triage database provisioner<a class="headerlink" href="#triage-database-provisioner" title="Permanent link">#</a></h1>
+<p>This document explains the purpose and behavior of the Triage database provisioner, accessed from the Triage CLI. It is optional and only intended for use if you don't have an existing Postgres database to use for Triage.</p>
+<p>The Triage database provisioner is just a single command:</p>
+<p><code>triage db up</code></p>
+<p>This command attempts to use docker to spawn a new Postgres 12 database. If successful, it will prompt you for a password to use for a user, and populate the connection information in <code>database.yaml</code> <em>in the directory where you ran it from</em>. The next time you run <code>triage db up</code>, it will look for the existing container and reuse it. </p>
+<p>At this point, you can use the database either from Triage or anything else that can connect to Postgres (eg. <a href="https://www.postgresql.org/docs/13/app-psql.html">psql</a> or <a href="https://dbeaver.io/">dbeaver</a>, using the credentials in the autogenerated <code>database.yaml</code>.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">#</a></h2>
+<h3 id="no-docker">No docker<a class="headerlink" href="#no-docker" title="Permanent link">#</a></h3>
+<p>The command does require some version of Docker. We recommend getting it from the <a href="https://docs.docker.com/get-docker/">official Docker downloads page</a>.</p>
+<h3 id="cant-log-in">Can't log in<a class="headerlink" href="#cant-log-in" title="Permanent link">#</a></h3>
+<p>Because of the way Docker volumes work, if you manually remove the Docker container created by <code>triage db up</code>, the volume will still be around. This is usually fine, but the superuser credential information will persist as well, which means the next time you spawn the database, <em>the Postgres server will not take the new credential information into account</em>. Under normal usage (simply calling <code>triage db up</code> and never removing the container), you will never run into this situation. But if you do, and you would like to use a new username/password, you will have to remove the volume before recreating. This can be done with <code>docker volume rm triage-db-data</code>. This will also remove all of the stored data in Postgres, so beware!</p>
 </article>
 </div>
 </div>
 </main>
 <footer class="md-footer">
 <nav aria-label="Footer" class="md-footer__inner md-grid">
-<a class="md-footer__link md-footer__link--prev" href="../" rel="prev">
+<a class="md-footer__link md-footer__link--prev" href="../dirtyduck/aws_batch/" rel="prev">
 <div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
 </div>
@@ -579,17 +562,17 @@
 <span class="md-footer__direction">
                 Previous
               </span>
-              Using Postmodeling
+              Scaling up
             </div>
 </div>
 </a>
-<a class="md-footer__link md-footer__link--next" href="../../dirtyduck/ml_governance/" rel="next">
+<a class="md-footer__link md-footer__link--next" href="../api/audition/auditioner/" rel="next">
 <div class="md-footer__title">
 <div class="md-ellipsis">
 <span class="md-footer__direction">
                 Next
               </span>
-              Model governance
+              Auditioner
             </div>
 </div>
 <div class="md-footer__button md-icon">
@@ -624,9 +607,9 @@
 <div class="md-dialog" data-md-component="dialog">
 <div class="md-dialog__inner md-typeset"></div>
 </div>
-<script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.fb4a9340.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing"}, "version": null}</script>
-<script src="../../assets/javascripts/bundle.a1c7c35e.min.js"></script>
-<script src="../../js/mermaid.min.js"></script>
+<script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.fb4a9340.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing"}, "version": null}</script>
+<script src="../assets/javascripts/bundle.a1c7c35e.min.js"></script>
+<script src="../js/mermaid.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 </body>
 </html>

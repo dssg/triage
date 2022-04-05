@@ -7,15 +7,15 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for Triage." name="description"/>
 <link href="http://dssg.github.io/triage/dirtyduck/triage_intro/" rel="canonical"/>
-<link href="../../assets/images/favicon.ico" rel="shortcut icon"/>
-<meta content="mkdocs-1.1.2, mkdocs-material-5.4.0" name="generator"/>
+<link href="../../assets/images/favicon.ico" rel="icon"/>
+<meta content="mkdocs-1.3.0, mkdocs-material-7.0.6" name="generator"/>
 <title>A deeper look into triage - Triage Documentation</title>
-<link href="../../assets/stylesheets/main.fe0cca5b.min.css" rel="stylesheet"/>
-<link href="../../assets/stylesheets/palette.a46bcfb3.min.css" rel="stylesheet"/>
-<meta content="#546e7a" name="theme-color"/>
+<link href="../../assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
+<meta content="#546d78" name="theme-color"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
-<style>body,input{font-family:"Ubuntu",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+<style>:root{--md-text-font-family:"Ubuntu";--md-code-font-family:"Ubuntu Mono"}</style>
 <link href="../../triage_docs.css" rel="stylesheet"/>
 </head>
 <body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
@@ -30,29 +30,35 @@
 <div data-md-component="announce">
 </div>
 <header class="md-header" data-md-component="header">
-<nav aria-label="Header" class="md-header-nav md-grid">
-<a aria-label="Triage Documentation" class="md-header-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="Triage Documentation" class="md-header__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
-<label class="md-header-nav__button md-icon" for="__drawer">
+<label class="md-header__button md-icon" for="__drawer">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg>
 </label>
-<div class="md-header-nav__title" data-md-component="header-title">
-<div class="md-header-nav__ellipsis">
-<span class="md-header-nav__topic md-ellipsis">
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
             Triage Documentation
           </span>
-<span class="md-header-nav__topic md-ellipsis">
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
             
               A deeper look into triage
             
           </span>
 </div>
 </div>
-<div class="md-header-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+</div>
+<div class="md-header__options">
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -64,20 +70,20 @@
 <div class="md-container" data-md-component="container">
 <main class="md-main" data-md-component="main">
 <div class="md-main__inner md-grid">
-<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
 <label class="md-nav__title" for="__drawer">
-<a aria-label="Triage Documentation" class="md-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
     Triage Documentation
   </label>
 <div class="md-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -86,134 +92,114 @@
 </div>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../.." title="Home">
-      Home
-    </a>
+<a class="md-nav__link" href="../..">
+        Home
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-2">
-      Get started with your own project
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2">
+        Get started with your own project
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Get started with your own project" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Get started with your own project
-      </label>
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+          Get started with your own project
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../quickstart/" title="Quickstart guide">
-      Quickstart guide
-    </a>
+<a class="md-nav__link" href="../../quickstart/">
+        Quickstart guide
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../triage_project_workflow/" title="Suggested workflow">
-      Suggested workflow
-    </a>
+<a class="md-nav__link" href="../../triage_project_workflow/">
+        Suggested workflow
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3">
-      Dirty Duck Tutorial
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3">
+        Dirty Duck Tutorial
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Dirty Duck Tutorial" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Dirty Duck Tutorial
-      </label>
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+          Dirty Duck Tutorial
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../" title="Welcome!">
-      Welcome!
-    </a>
+<a class="md-nav__link" href="../">
+        Welcome!
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../dirty_duckling/" title="Dirty duckling">
-      Dirty duckling
-    </a>
+<a class="md-nav__link" href="../dirty_duckling/">
+        Dirty duckling
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" id="nav-3-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-3">
-      Case studies
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3">
+        Case studies
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Case studies" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Case studies
-      </label>
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+          Case studies
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../problem_description/" title="Problem description">
-      Problem description
-    </a>
+<a class="md-nav__link" href="../problem_description/">
+        Problem description
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../eis/" title="Early Warning System">
-      Early Warning System
-    </a>
+<a class="md-nav__link" href="../eis/">
+        Early Warning System
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../inspections/" title="Resource prioritization">
-      Resource prioritization
-    </a>
+<a class="md-nav__link" href="../inspections/">
+        Resource prioritization
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" id="nav-3-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-4">
-      Triage
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" id="__nav_3_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_4">
+        Triage
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage
-      </label>
+<label class="md-nav__title" for="__nav_3_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--active">
 <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
 <label class="md-nav__link md-nav__link--active" for="__toc">
-        A deeper look into triage
-        <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"></path></svg>
-</span>
+          A deeper look into triage
+          <span class="md-nav__icon md-icon"></span>
 </label>
-<a class="md-nav__link md-nav__link--active" href="./" title="A deeper look into triage">
-      A deeper look into triage
-    </a>
+<a class="md-nav__link md-nav__link--active" href="./">
+        A deeper look into triage
+      </a>
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
 <a class="md-nav__link" href="#triage-interface">
     Triage interface
@@ -309,35 +295,31 @@
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" id="nav-3-5" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-5">
-      Are you curious about the setup?
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_5" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5">
+        Are you curious about the setup?
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Are you curious about the setup?" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-5">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Are you curious about the setup?
-      </label>
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+          Are you curious about the setup?
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../infrastructure/" title="Infrastructure">
-      Infrastructure
-    </a>
+<a class="md-nav__link" href="../infrastructure/">
+        Infrastructure
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../data_preparation/" title="Data preparation">
-      Data preparation
-    </a>
+<a class="md-nav__link" href="../data_preparation/">
+        Data preparation
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../for_the_impatient/" title="Quick setup">
-      Quick setup
-    </a>
+<a class="md-nav__link" href="../for_the_impatient/">
+        Quick setup
+      </a>
 </li>
 </ul>
 </nav>
@@ -346,243 +328,230 @@
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4">
-      Triage documentation
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4">
+        Triage documentation
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage documentation" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage documentation
-      </label>
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage documentation
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1" id="nav-4-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1">
-      Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" id="__nav_4_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1">
+        Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Experiment" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1">
+<span class="md-nav__icon md-icon"></span>
+          Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/experiment-config/" title="Experiment Configuration">
-      Experiment Configuration
-    </a>
+<a class="md-nav__link" href="../../experiments/experiment-config/">
+        Experiment Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/feature-testing/" title="Testing Feature Configuration">
-      Testing Feature Configuration
-    </a>
+<a class="md-nav__link" href="../../experiments/feature-testing/">
+        Testing Feature Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/running/" title="Running an Experiment">
-      Running an Experiment
-    </a>
+<a class="md-nav__link" href="../../experiments/running/">
+        Running an Experiment
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1-4" id="nav-4-1-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1-4">
-      Upgrading an Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1_4" id="__nav_4_1_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1_4">
+        Upgrading an Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Upgrading an Experiment" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-1-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Upgrading an Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1_4">
+<span class="md-nav__icon md-icon"></span>
+          Upgrading an Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v7/" title="v6 -&gt; v7">
-      v6 -&gt; v7
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v8/">
+        v7 -&gt; v8
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v6/" title="v5 -&gt; v6">
-      v5 -&gt; v6
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v7/">
+        v6 -&gt; v7
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v5/" title="v3/v4 -&gt; v5">
-      v3/v4 -&gt; v5
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v6/">
+        v5 -&gt; v6
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v5/">
+        v3/v4 -&gt; v5
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive">
-      Temporal Validation Deep Dive
-    </a>
+<a class="md-nav__link" href="../../experiments/temporal-validation/">
+        Temporal Validation Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive">
-      Cohort and Label Deep Dive
-    </a>
+<a class="md-nav__link" href="../../experiments/cohort-labels/">
+        Cohort and Label Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/prediction-ranking/" title="Prediction Ranking">
-      Prediction Ranking
-    </a>
+<a class="md-nav__link" href="../../experiments/prediction-ranking/">
+        Prediction Ranking
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/features/" title="Feature Generation Recipe Book">
-      Feature Generation Recipe Book
-    </a>
+<a class="md-nav__link" href="../../experiments/features/">
+        Feature Generation Recipe Book
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/algorithm/" title="Experiment Algorithm">
-      Experiment Algorithm
-    </a>
+<a class="md-nav__link" href="../../experiments/algorithm/">
+        Experiment Algorithm
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/architecture/" title="Experiment Architecture">
-      Experiment Architecture
-    </a>
+<a class="md-nav__link" href="../../experiments/architecture/">
+        Experiment Architecture
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-2" id="nav-4-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-2">
-      Model selection
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_2" id="__nav_4_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_2">
+        Model selection
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Model selection" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Model selection
-      </label>
+<label class="md-nav__title" for="__nav_4_2">
+<span class="md-nav__icon md-icon"></span>
+          Model selection
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/audition_intro/" title="Intro to Audition">
-      Intro to Audition
-    </a>
+<a class="md-nav__link" href="../../audition/audition_intro/">
+        Intro to Audition
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/model_selection/" title="Model Selection Concepts">
-      Model Selection Concepts
-    </a>
+<a class="md-nav__link" href="../../audition/model_selection/">
+        Model Selection Concepts
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../api/audition/" title="API Reference">
-      API Reference
-    </a>
+<a class="md-nav__link" href="../../api/audition/">
+        API Reference
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-3" id="nav-4-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-3">
-      Postmodeling
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_3">
+        Postmodeling
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Postmodeling" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Postmodeling
-      </label>
+<label class="md-nav__title" for="__nav_4_3">
+<span class="md-nav__icon md-icon"></span>
+          Postmodeling
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../postmodeling/" title="Using Postmodeling">
-      Using Postmodeling
-    </a>
+<a class="md-nav__link" href="../../postmodeling/">
+        Using Postmodeling
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../postmodeling/postmodeling-config/" title="Postmodeling &amp; Crosstabs Configuration">
-      Postmodeling &amp; Crosstabs Configuration
-    </a>
+<a class="md-nav__link" href="../../postmodeling/postmodeling-config/">
+        Postmodeling &amp; Crosstabs Configuration
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../ml_governance/" title="Model governance">
-      Model governance
-    </a>
+<a class="md-nav__link" href="../ml_governance/">
+        Model governance
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../aws_batch/" title="Scaling up">
-      Scaling up
-    </a>
+<a class="md-nav__link" href="../../predictlist/">
+        Predictlist
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../aws_batch/">
+        Scaling up
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../db/">
+        Database Provisioner
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6" id="nav-4-6" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6">
-      API Reference
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8" id="__nav_4_8" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8">
+        API Reference
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="API Reference" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-6">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        API Reference
-      </label>
+<label class="md-nav__title" for="__nav_4_8">
+<span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6-1" id="nav-4-6-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6-1">
-      Audition
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8_1" id="__nav_4_8_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8_1">
+        Audition
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Audition" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-6-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Audition
-      </label>
+<label class="md-nav__title" for="__nav_4_8_1">
+<span class="md-nav__icon md-icon"></span>
+          Audition
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/auditioner/" title="Auditioner">
-      Auditioner
-    </a>
+<a class="md-nav__link" href="../../api/audition/auditioner/">
+        Auditioner
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/audition-config/" title="Audition Configuration">
-      Audition Configuration
-    </a>
+<a class="md-nav__link" href="../../api/audition/audition-config/">
+        Audition Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/selection_rules/" title="Selection Rules">
-      Selection Rules
-    </a>
+<a class="md-nav__link" href="../../api/audition/selection_rules/">
+        Selection Rules
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/database-dependencies/" title="Database Dependencies">
-      Database Dependencies
-    </a>
+<a class="md-nav__link" href="../../api/audition/database-dependencies/">
+        Database Dependencies
+      </a>
 </li>
 </ul>
 </nav>
@@ -598,17 +567,15 @@
 </div>
 </div>
 </div>
-<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
 <a class="md-nav__link" href="#triage-interface">
     Triage interface
@@ -702,7 +669,7 @@
 </div>
 </div>
 </div>
-<div class="md-content">
+<div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/triage_intro.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
@@ -803,18 +770,18 @@ triage experiment experiments/simple_test_skeleton.yaml
 <li><strong>How many resources do you have to intervene?:</strong> We only have one inspector, so, one inspection per month</li>
 </ul>
 <p>To exemplify and explain the inner workings of <code>triage</code> in this scenario, we will use a subset of the <code>semantic.events</code> table with the following facilities (i.e. imagine that Chicago only has this three facilities):</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="n">license_num</span><span class="p">,</span>
-    <span class="n">facility_aka</span><span class="p">,</span>
-    <span class="n">facility_type</span><span class="p">,</span>
-    <span class="n">activity_period</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span>
-<span class="k">where</span>
-    <span class="n">license_num</span> <span class="k">in</span> <span class="p">(</span><span class="mi">1596210</span><span class="p">,</span> <span class="mi">1874347</span><span class="p">,</span> <span class="mi">1142451</span><span class="p">)</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="n">entity_id</span> <span class="k">asc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">activity_period</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">1596210</span><span class="p">,</span><span class="w"> </span><span class="mi">1874347</span><span class="p">,</span><span class="w"> </span><span class="mi">1142451</span><span class="p">)</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="w"> </span><span class="k">asc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -855,18 +822,18 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p>For a given entity on a given <em>as of date</em>, <code>triage</code> asks whether there's an outcome in the future time horizon. If so, <code>triage</code> will generate a <em>label</em> for that specific entity on that <em>as of date</em>.</p>
 <p>For this example, the <em>label</em> will be if given an <em>as of date</em> (e.g. January first, 2014), the facility will have a failed inspection in the following year.</p>
 <p>The following example hopefully will clarify the difference between <em>outcome</em> and <em>label</em>. We will focus on events (inspections) that happened in the year of 2014.</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="nb">date</span><span class="p">,</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="p">(</span><span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">)</span> <span class="k">as</span> <span class="n">outcome</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>
-<span class="k">where</span>
-    <span class="s1">'[2014-01-01, 2015-01-01]'</span><span class="p">::</span><span class="n">daterange</span> <span class="o">@&gt;</span> <span class="nb">date</span>
-    <span class="k">and</span>
-    <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="nb">date</span> <span class="k">asc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">(</span><span class="k">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'fail'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">outcome</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'[2014-01-01, 2015-01-01]'</span><span class="p">::</span><span class="n">daterange</span><span class="w"> </span><span class="o">@&gt;</span><span class="w"> </span><span class="nb">date</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="w"> </span><span class="k">asc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -947,18 +914,18 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p>We can observe that the facilities had several inspections, but in that timeframe <code>362</code> y <code>859</code> had failed inspections.</p>
 <p>Continuing the narrative, from the perspective of the day of <code>2014-01-01</code> (<em>as of date</em>), those facilities will have positive <em>label</em>.</p>
 <p>We can express that in a query and getting the <em>labels</em> for that <em>as of date</em> :</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="s1">'2014-01-01'</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="n">bool_or</span><span class="p">(</span><span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">)::</span><span class="nb">integer</span> <span class="k">as</span> <span class="n">label</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>
-<span class="k">where</span>
-    <span class="s1">'2014-01-01'</span><span class="p">::</span><span class="k">timestamp</span> <span class="o">&lt;=</span> <span class="nb">date</span>
-    <span class="k">and</span> <span class="nb">date</span> <span class="o">&lt;</span> <span class="s1">'2014-01-01'</span><span class="p">::</span><span class="k">timestamp</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">'1 year'</span>
-    <span class="k">and</span> <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="n">entity_id</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'2014-01-01'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">as_of_date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">bool_or</span><span class="p">(</span><span class="k">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'fail'</span><span class="p">)::</span><span class="nb">integer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">label</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'2014-01-01'</span><span class="p">::</span><span class="k">timestamp</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="nb">date</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="s1">'2014-01-01'</span><span class="p">::</span><span class="k">timestamp</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="s1">'1 year'</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -989,19 +956,19 @@ triage experiment experiments/simple_test_skeleton.yaml
 <p>Note that ee transform the <em>label</em> to integer, since the machine learning algorithms only work with numeric data.</p>
 <p>We also need a way to store the <em>state</em> of each entity. We can group entities in <em>cohorts</em> defined by the state. The <em>cohort</em> can be used to decide which facilities you want to predict on (i.e. include in the ML train/test matrices). The rationale of this comes from the need to only predict for entities in a particular state: <em>Is the restaurant new?</em> <em>Is this facility on this zip code</em>? <em>Is the facility "active"?</em><sup><a class="footref" href="#fn.4" id="fnr.4">4</a></sup></p>
 <p>We will consider a facility as <strong>active</strong> if a given <em>as of date</em> is in the interval defined by the <code>start_date</code> and <code>end_date</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="s1">'2018-01-01'</span><span class="p">::</span><span class="nb">date</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="n">activity_period</span><span class="p">,</span>
-<span class="k">case</span> <span class="k">when</span>
-<span class="n">activity_period</span> <span class="o">@&gt;</span> <span class="s1">'2018-01-01'</span><span class="p">::</span><span class="nb">date</span> <span class="c1">-- 2018-01-01 is as of date</span>
-<span class="k">then</span> <span class="s1">'active'</span><span class="p">::</span><span class="nb">text</span>
-<span class="k">else</span> <span class="s1">'inactive'</span><span class="p">::</span><span class="nb">text</span>
-<span class="k">end</span> <span class="k">as</span> <span class="k">state</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span>
-<span class="k">where</span>
-    <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'2018-01-01'</span><span class="p">::</span><span class="nb">date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">as_of_date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">activity_period</span><span class="p">,</span><span class="w"></span>
+<span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"></span>
+<span class="n">activity_period</span><span class="w"> </span><span class="o">@&gt;</span><span class="w"> </span><span class="s1">'2018-01-01'</span><span class="p">::</span><span class="nb">date</span><span class="w"> </span><span class="c1">-- 2018-01-01 is as of date</span>
+<span class="k">then</span><span class="w"> </span><span class="s1">'active'</span><span class="p">::</span><span class="nb">text</span><span class="w"></span>
+<span class="k">else</span><span class="w"> </span><span class="s1">'inactive'</span><span class="p">::</span><span class="nb">text</span><span class="w"></span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">state</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1230,42 +1197,42 @@ label using the features calculated for that test set <em>as of
 date</em>. The single line represents the label's time horizon in
 testing.</p>
 <p>This is the temporal configuration that generated the previous image:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'1y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
 </code></pre></div>
 <p>In that configuration the date ranges of features and labels are
 equal, but they can be different (maybe you have more data for
 features that data for labels) as is shown in the following image
 and in their configuration parameters.</p>
 <p><img alt="img" src="../images/timechop/timechop_2.png" title="feature&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt; different different that label&lt;sub&gt;start&lt;/sub&gt;&lt;sub&gt;time&lt;/sub&gt;."/></p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2010-01-01'</span>   <span class="c1"># &lt;------- The change happened here!</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2010-01-01'</span><span class="w">   </span><span class="c1"># &lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'1y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
 </code></pre></div>
 </li>
 <li>
@@ -1274,153 +1241,153 @@ and in their configuration parameters.</p>
 (<a href="#org5f54d1f">102</a>), we will change how often we want a new
 model, which generates more time blocks (if there are
 time-constrained data, obviously).</p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'6month'</span> <span class="c1"># &lt;------- The change happened here!</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'6month'</span><span class="w"> </span><span class="c1"># &lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'1y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_3.png" title="A smaller model&lt;sub&gt;update&lt;/sub&gt;&lt;sub&gt;frequency&lt;/sub&gt; (from 1y to 6month) (The number of blocks grew)"/></p>
 </li>
 <li>
 <p><code>max_training_histories</code></p>
 <p>With this parameter you could get a <em>growing window</em> for training (depicted in <a href="#orgc3fbafd">110</a>) or as in all the other examples, <em>fixed training windows</em>.</p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>  <span class="c1"># &lt;------- The change happened here!</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w">  </span><span class="c1"># &lt;------- The change happened here!</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_4.png" title="The size of the block is bigger now"/></p>
 </li>
 <li>
 <p><code>_as_of_date_frequencies</code> and <code>test_durations</code></p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'3month'</span> <span class="c1"># &lt;------- The change happened here!</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'3month'</span><span class="w"> </span><span class="c1"># &lt;------- The change happened here!</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_5.png" title="Less rows per entity in the training block"/></p>
 <p>Now, change <code>test_as_of_date_frequencies</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'3month'</span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'3month'</span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_6.png" title="We should get more rows per entity in the test matrix, but that didn't happen. Why?"/></p>
 <p>Nothing changed because the test set doesn't have "space" to allow more spans. The "space" is controlled by <code>test_durations</code>, so let's change it to <code>6month</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'6month'</span> <span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'6month'</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_7.png" title='The test duration is bigger now, so we got 6 rows (since the "base" frequency is 1 month)'/></p>
 <p>So, now we will move both parameters: <code>test_durations</code>, <code>test_as_of_date_frequencies</code></p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'6month'</span> <span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'3month'</span> <span class="l l-Scalar l-Scalar-Plain">&lt;------- and also here!</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'6month'</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'3month'</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;------- and also here!</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_8.png" title="With more room in testing, now test&lt;sub&gt;as&lt;/sub&gt;&lt;sub&gt;of&lt;/sub&gt;&lt;sub&gt;date&lt;/sub&gt;&lt;sub&gt;frequencies&lt;/sub&gt; has some effect."/></p>
 </li>
 <li>
 <p><code>_label_timespans</code></p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'3month'</span><span class="p p-Indicator">]</span>  <span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'3month'</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_9.png" title="The label time horizon in the test dataset now is smaller"/></p>
-<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span>
-    <span class="nt">feature_start_time</span><span class="p">:</span> <span class="s">'2014-01-01'</span>
-    <span class="nt">feature_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
-    <span class="nt">label_start_time</span><span class="p">:</span> <span class="s">'2014-01-02'</span>
-    <span class="nt">label_end_time</span><span class="p">:</span> <span class="s">'2018-01-01'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporal_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">feature_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_start_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2014-01-02'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">label_end_time</span><span class="p">:</span><span class="w"> </span><span class="s">'2018-01-01'</span><span class="w"></span>
 
-    <span class="nt">model_update_frequency</span><span class="p">:</span> <span class="s">'1y'</span>
-    <span class="nt">training_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'3month'</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span>
-    <span class="nt">training_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">model_update_frequency</span><span class="p">:</span><span class="w"> </span><span class="s">'1y'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'3month'</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;------- The change happened here!</span><span class="w"></span>
+<span class="w">    </span><span class="nt">training_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">test_durations</span><span class="p">:</span> <span class="s">'0d'</span>
-    <span class="nt">test_label_timespans</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span>
-    <span class="nt">test_as_of_date_frequencies</span><span class="p">:</span> <span class="s">'1month'</span>
+<span class="w">    </span><span class="nt">test_durations</span><span class="p">:</span><span class="w"> </span><span class="s">'0d'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_label_timespans</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1y'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">test_as_of_date_frequencies</span><span class="p">:</span><span class="w"> </span><span class="s">'1month'</span><span class="w"></span>
 
-    <span class="nt">max_training_histories</span><span class="p">:</span> <span class="s">'10y'</span>
+<span class="w">    </span><span class="nt">max_training_histories</span><span class="p">:</span><span class="w"> </span><span class="s">'10y'</span><span class="w"></span>
 </code></pre></div>
 <p><img alt="img" src="../images/timechop/timechop_10.png" title="The label time horizon is smaller in the trainning dataset. One effect is that now we have more room for more rows per entity."/></p>
 <p>That's it! Now you have the power to bend time!<sup><a class="footref" href="#fn.8" id="fnr.8">8</a></sup></p>
@@ -1454,18 +1421,18 @@ has each facility had in the previous 6 months?
 facility had in the previous 6 months?
 </code></pre></div>
 <p>In our data, that date range (between 2016-01-01 and 2015-07-01) looks like:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">event_id</span><span class="p">,</span>
-    <span class="nb">date</span><span class="p">,</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="n">risk</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>
-<span class="k">where</span>
-    <span class="nb">date</span> <span class="o">&lt;@</span> <span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span> <span class="o">-</span> <span class="nb">interval</span> <span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span> <span class="s1">'2016-01-01'</span><span class="p">)</span>
-    <span class="k">and</span> <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="nb">date</span> <span class="k">asc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">event_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">risk</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="w"> </span><span class="o">&lt;@</span><span class="w"> </span><span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="s1">'2016-01-01'</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="w"> </span><span class="k">asc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1552,18 +1519,18 @@ facility had in the previous 6 months?
 </tbody>
 </table>
 <p>We can transform those data to two features: <code>number_of_inspections</code> and <code>flagged_as_high_risk</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="s1">'2016-01-01'</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="k">as</span> <span class="n">inspections</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="n">risk</span><span class="o">=</span><span class="s1">'high'</span><span class="p">)</span> <span class="k">as</span> <span class="n">flagged_as_high_risk</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>
-<span class="k">where</span>
-    <span class="nb">date</span> <span class="o">&lt;@</span> <span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span> <span class="o">-</span> <span class="nb">interval</span> <span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span> <span class="s1">'2016-01-01'</span><span class="p">)</span>
-    <span class="k">and</span> <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">grouping</span> <span class="k">sets</span><span class="p">(</span><span class="n">entity_id</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'2016-01-01'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">as_of_date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">inspections</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="n">risk</span><span class="o">=</span><span class="s1">'high'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">flagged_as_high_risk</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="w"> </span><span class="o">&lt;@</span><span class="w"> </span><span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="s1">'2016-01-01'</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">grouping</span><span class="w"> </span><span class="k">sets</span><span class="p">(</span><span class="n">entity_id</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1604,22 +1571,22 @@ facility had in the previous 6 months?
 <li>The <em>date range</em> (between 2016-01-01 and 6 months before)</li>
 </ul>
 <p>What about if we want to add proportions and totals of failed and passed inspections?</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="s1">'2016-01-01'</span> <span class="k">as</span> <span class="n">as_of_date</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="k">as</span> <span class="n">inspections</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="n">risk</span><span class="o">=</span><span class="s1">'high'</span><span class="p">)</span> <span class="k">as</span> <span class="n">flagged_as_high_risk</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span><span class="o">=</span><span class="s1">'pass'</span><span class="p">)</span> <span class="k">as</span> <span class="n">passed_inspections</span><span class="p">,</span>
-    <span class="n">round</span><span class="p">(</span><span class="k">avg</span><span class="p">((</span><span class="k">result</span><span class="o">=</span><span class="s1">'pass'</span><span class="p">)::</span><span class="nb">int</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="k">as</span> <span class="n">proportion_of_passed_inspections</span><span class="p">,</span>
-    <span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span><span class="o">=</span><span class="s1">'fail'</span><span class="p">)</span> <span class="k">as</span> <span class="n">failed_inspections</span><span class="p">,</span>
-    <span class="n">round</span><span class="p">(</span><span class="k">avg</span><span class="p">((</span><span class="k">result</span><span class="o">=</span><span class="s1">'fail'</span><span class="p">)::</span><span class="nb">int</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="k">as</span> <span class="n">proportion_of_failed_inspections</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>
-<span class="k">where</span>
-    <span class="nb">date</span> <span class="o">&lt;@</span> <span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span> <span class="o">-</span> <span class="nb">interval</span> <span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span> <span class="s1">'2016-01-01'</span><span class="p">)</span>
-    <span class="k">and</span> <span class="n">entity_id</span> <span class="k">in</span> <span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">grouping</span> <span class="k">sets</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="s1">'2016-01-01'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">as_of_date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">inspections</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="n">risk</span><span class="o">=</span><span class="s1">'high'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">flagged_as_high_risk</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="k">result</span><span class="o">=</span><span class="s1">'pass'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">passed_inspections</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="k">avg</span><span class="p">((</span><span class="k">result</span><span class="o">=</span><span class="s1">'pass'</span><span class="p">)::</span><span class="nb">int</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">proportion_of_passed_inspections</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="k">result</span><span class="o">=</span><span class="s1">'fail'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">failed_inspections</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="k">avg</span><span class="p">((</span><span class="k">result</span><span class="o">=</span><span class="s1">'fail'</span><span class="p">)::</span><span class="nb">int</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">proportion_of_failed_inspections</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="w"> </span><span class="o">&lt;@</span><span class="w"> </span><span class="n">daterange</span><span class="p">((</span><span class="s1">'2016-01-01'</span><span class="p">::</span><span class="nb">date</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">interval</span><span class="w"> </span><span class="s1">'6 months'</span><span class="p">)::</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="s1">'2016-01-01'</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">entity_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">229</span><span class="p">,</span><span class="mi">355</span><span class="p">,</span><span class="mi">840</span><span class="p">)</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">grouping</span><span class="w"> </span><span class="k">sets</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1671,38 +1638,34 @@ facility had in the previous 6 months?
 <p>You will realize that even with this simple set of features we will require very complex <code>SQL</code> to be constructed.</p>
 <p>But fear not. <code>triage</code> will automate that for us!</p>
 <p>The following blocks of code represent a snippet of <code>triage</code>'s configuration file related to feature aggregation. It shows the <code>triage</code> syntax for the <code>inspections</code> feature constructed above:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">aggregates</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span>
-        <span class="nt">quantity</span><span class="p">:</span>
-          <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
-        <span class="nt">imputation</span><span class="p">:</span>
-           <span class="nt">count</span><span class="p">:</span>
-              <span class="nt">type</span><span class="p">:</span> <span class="s">'zero_noflag'</span>
-        <span class="nt">metrics</span><span class="p">:</span>
-          <span class="p p-Indicator">-</span> <span class="s">'count'</span>
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
+<span class="w">        </span><span class="nt">imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">           </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">              </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero_noflag'</span><span class="w"></span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'count'</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'6month'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-        <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'6month'</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p><code>feature_aggregations</code> is a <code>yaml</code> list<sup><a class="footref" href="#fn.10" id="fnr.10">10</a></sup> of <em>feature groups
 construction specification</em> or just <em>feature group</em>. A <em>feature group</em>
-is a way of grouping several features that share <code>intervals</code> and
-<code>groups</code>. <code>triage</code> requires the following configuration parameter for
+is a way of grouping several features that share <code>intervals</code> and source data
+(<code>from_obj</code>). <code>triage</code> requires the following configuration parameter for
 every <em>feature group</em>:</p>
 <ul>
 <li><strong><code>prefix</code>:</strong> This will be used for name of the <em>feature</em> created</li>
 <li><strong><code>from_obj</code>:</strong> Represents a <code>TABLE</code> object in <code>PostgreSQL</code>. You can pass a <em>table</em> like in the example above (<code>semantic.events</code>) or a <code>SQL</code> query that returns a table. We will see an example of this later. <code>triage</code> will use it like the <code>FROM</code> clause in the <code>SQL</code> query.</li>
 <li><strong><code>knowlege_date_column</code>:</strong> Column that indicates the date of the event.</li>
 <li><strong><code>intervals</code>:</strong> A <code>yaml</code> list. <code>triage</code> will create one feature per interval listed.</li>
-<li><strong><code>groups</code>:</strong> A <code>yaml</code> list of the attributes that we will use to aggregate. This will be translated to a <code>SQL</code> <code>GROUP BY</code> by <code>triage</code>.</li>
 </ul>
 <p>The last section to discuss is <code>imputation</code>. Imputation is very
 important step in the modeling, and you should carefully think about
@@ -1715,7 +1678,7 @@ will return to this later in this tutorial.</p>
 <p><code>Collate</code> is in charge of creating the <code>SQL</code> agregation
 queries. Another way of thinking about it is that <code>collate</code>
 encapsulates the <code>FROM</code> part of the query (<code>from_obj</code>) as well as the
-<code>GROUP BY</code> columns (<code>groups</code>).</p>
+<code>GROUP BY</code> aggregation at the <code>entity_id</code> level.</p>
 <p><code>triage</code> (<code>collate</code>) supports two types of objects to be aggregated:
 <code>aggregates</code> and <code>categoricals</code> (more on this one later)<sup><a class="footref" href="#fn.11" id="fnr.11">11</a></sup>. The
 <code>aggregates</code> subsection represents a <code>yaml</code> list of <em>features</em> to be
@@ -1723,15 +1686,15 @@ created. Each element on this represents a column (<code>quantity</code>, in the
 example, the whole row <code>*</code>) and an alias (<code>total</code>), defines the
 <code>imputation</code> strategy for <code>NULLs</code>, and the <code>metric</code> refers to the
 <code>aggregation function</code> to be applied to the <code>quantity</code> (<code>count</code>).</p>
-<p><code>triage</code> will generate the following (or a very similar one), one per each combination of <code>interval</code> × <code>groups</code> × <code>quantity</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-  <span class="n">metric</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span> <span class="k">as</span> <span class="k">alias</span>
-<span class="k">from</span>
-  <span class="n">from_obj</span>
-<span class="k">where</span>
-  <span class="n">as_of_date</span> <span class="o">&lt;@</span> <span class="p">(</span><span class="n">as_of_date</span> <span class="o">-</span> <span class="nb">interval</span><span class="p">,</span> <span class="n">as_of_date</span><span class="p">)</span>
-<span class="k">group</span> <span class="k">by</span>
-  <span class="n">groups</span>
+<p><code>triage</code> will generate the following (or a very similar one), one per each combination of <code>interval</code> × <code>quantity</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">  </span><span class="n">metric</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">alias</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">  </span><span class="n">from_obj</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">  </span><span class="n">as_of_date</span><span class="w"> </span><span class="o">&lt;@</span><span class="w"> </span><span class="p">(</span><span class="n">as_of_date</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">interval</span><span class="p">,</span><span class="w"> </span><span class="n">as_of_date</span><span class="p">)</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">  </span><span class="k">grouping</span><span class="w"> </span><span class="k">sets</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span><span class="w"></span>
 </code></pre></div>
 <p>With the previous configuration <code>triage</code> will generate <strong>1</strong> feature with the following name:<sup><a class="footref" href="#fn.12" id="fnr.12">12</a></sup></p>
 <ul>
@@ -1749,71 +1712,63 @@ example, the whole row <code>*</code>) and an alias (<code>total</code>), define
 <div class="highlight"><pre><span></span><code>prefix_group_interval_alias_aggregation_operation
 </code></pre></div>
 <p>If we complicate a little the above configuration adding new intervals:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">aggregates</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="c1"># number of inspections</span>
-        <span class="nt">quantity</span><span class="p">:</span>
-          <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="c1"># number of inspections</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
 
-        <span class="nt">imputation</span><span class="p">:</span>
-          <span class="nt">count</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero_noflag'</span>
+<span class="w">        </span><span class="nt">imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero_noflag'</span><span class="w"></span>
 
-        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-        <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'3month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'6month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'1y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p>You will end with 5 new <em>features</em>, one for each interval (5) × the only aggregate definition we have. Note the weird <code>all</code> in the <code>intervals</code> definition. <code>all</code> is the time interval between the <code>feature_start_time</code> and the <code>as_of_date</code>.</p>
 <p><code>triage</code> also supports <code>categorical</code> objects. The following code adds a <em>feature</em> for the <code>risk</code> flag.</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">aggregates</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="c1"># number of inspections</span>
-        <span class="nt">quantity</span><span class="p">:</span>
-          <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="c1"># number of inspections</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
 
-        <span class="nt">imputation</span><span class="p">:</span>
-          <span class="nt">count</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">'zero_noflag'</span>
+<span class="w">        </span><span class="nt">imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero_noflag'</span><span class="w"></span>
 
-        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'3month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'6month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'1y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-    <span class="nt">groups</span><span class="p">:</span>
-        <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'risks'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'risks'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">categoricals_imputation</span><span class="p">:</span>
-      <span class="nt">sum</span><span class="p">:</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
+<span class="w">    </span><span class="nt">categoricals_imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">sum</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero'</span><span class="w"></span>
 
-    <span class="nt">categoricals</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span>
-        <span class="nt">column</span><span class="p">:</span> <span class="s">'risk'</span>
-        <span class="nt">choice_query</span><span class="p">:</span> <span class="s">'select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">risk</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events'</span>
-          <span class="nt">metrics</span><span class="p">:</span>
-            <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
+<span class="w">    </span><span class="nt">categoricals</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">        </span><span class="nt">column</span><span class="p">:</span><span class="w"> </span><span class="s">'risk'</span><span class="w"></span>
+<span class="w">        </span><span class="nt">choice_query</span><span class="p">:</span><span class="w"> </span><span class="s">'select</span><span class="nv"> </span><span class="s">distinct</span><span class="nv"> </span><span class="s">risk</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">semantic.events'</span><span class="w"></span>
+<span class="w">          </span><span class="nt">metrics</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'sum'</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'3month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'6month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'1y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p>There are several changes. First, the imputation strategy in this new
 <em>feature group</em> is for every categorical features in that feature
@@ -1824,11 +1779,11 @@ aggregated and the query to get all the distinct values.</p>
 <p>With this configuration, <code>triage</code> will generate two tables, one per
 <em>feature group</em>. The new table will be
 <code>features.risks_aggregation_imputed</code>. This table will have more
-columns: <code>intervals</code> (5) × <code>groups</code> (1) × <code>metric</code> (1)
+columns: <code>intervals</code> (5) × <code>metric</code> (1)
 × <em>features</em> (1) × <em>number of choices returned by the
 query</em>.</p>
 <p>The query:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span> <span class="k">distinct</span> <span class="n">risk</span> <span class="k">from</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">risk</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1858,120 +1813,66 @@ possible values of the categorical variable. This could cause problems
 down the road. Triage allows you to specify the possible values
 (<em>choices</em>) of the variable. Instead of using <code>choice_query</code>, you
 could use <code>choices</code> as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">aggregates</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="c1"># number of inspections</span>
-        <span class="nt">quantity</span><span class="p">:</span>
-          <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
+<span class="w">    </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="c1"># number of inspections</span><span class="w"></span>
+<span class="w">        </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
 
-        <span class="nt">imputation</span><span class="p">:</span>
-          <span class="nt">count</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">'mean'</span>
+<span class="w">        </span><span class="nt">imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">count</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'mean'</span><span class="w"></span>
 
-        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">metrics</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'3month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'6month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'1y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 
-    <span class="nt">groups</span><span class="p">:</span>
-        <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'risks'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="s">'risks'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">from_obj</span><span class="p">:</span><span class="w"> </span><span class="s">'semantic.events'</span><span class="w"></span>
+<span class="w">    </span><span class="nt">knowledge_date_column</span><span class="p">:</span><span class="w"> </span><span class="s">'date'</span><span class="w"></span>
 
-    <span class="nt">categoricals_imputation</span><span class="p">:</span>
-      <span class="nt">sum</span><span class="p">:</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
+<span class="w">    </span><span class="nt">categoricals_imputation</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">sum</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">'zero'</span><span class="w"></span>
 
-    <span class="nt">categoricals</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span>
-        <span class="nt">column</span><span class="p">:</span> <span class="s">'risk'</span>
-        <span class="nt">choices</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'low'</span><span class="p p-Indicator">,</span> <span class="s">'medium'</span><span class="p p-Indicator">,</span> <span class="s">'high'</span><span class="p p-Indicator">]</span>
-          <span class="nt">metrics</span><span class="p">:</span>
-            <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
+<span class="w">    </span><span class="nt">categoricals</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">        </span><span class="nt">column</span><span class="p">:</span><span class="w"> </span><span class="s">'risk'</span><span class="w"></span>
+<span class="w">        </span><span class="nt">choices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'low'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'medium'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'high'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">          </span><span class="nt">metrics</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'sum'</span><span class="w"></span>
 
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
+<span class="w">    </span><span class="nt">intervals</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'3month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'6month'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'1y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p>In both cases <code>triage</code> will generate <code>20</code> new features, as expected.</p>
 <p>The features generated from categorical objects will have the following pattern:</p>
 <div class="highlight"><pre><span></span><code>prefix_group_interval_column_choice_aggregation_operation
 </code></pre></div>
 <p>So, <code>risks_entity_id_1month_risk_medium_sum</code> will be among our new features in the last example.</p>
-<p>As a next step, let's investigate the effect of having several elements in the <code>groups</code> list.</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_aggregations</span><span class="p">:</span>
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'inspections'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
-
-    <span class="nt">aggregates</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="c1"># number of inspections</span>
-        <span class="nt">quantity</span><span class="p">:</span>
-          <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
-
-        <span class="nt">imputation</span><span class="p">:</span>
-          <span class="nt">count</span><span class="p">:</span>
-            <span class="nt">type</span><span class="p">:</span> <span class="s">'mean'</span>
-
-        <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-        <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
-
-  <span class="p p-Indicator">-</span>
-    <span class="nt">prefix</span><span class="p">:</span> <span class="s">'risks'</span>
-    <span class="nt">from_obj</span><span class="p">:</span> <span class="s">'semantic.events'</span>
-    <span class="nt">knowledge_date_column</span><span class="p">:</span> <span class="s">'date'</span>
-
-    <span class="nt">categoricals_imputation</span><span class="p">:</span>
-      <span class="nt">sum</span><span class="p">:</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="s">'zero'</span>
-
-    <span class="nt">categoricals</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span>
-        <span class="nt">column</span><span class="p">:</span> <span class="s">'risk'</span>
-        <span class="nt">choices</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'low'</span><span class="p p-Indicator">,</span> <span class="s">'medium'</span><span class="p p-Indicator">,</span> <span class="s">'high'</span><span class="p p-Indicator">]</span>
-          <span class="nt">metrics</span><span class="p">:</span>
-            <span class="p p-Indicator">-</span> <span class="s">'sum'</span>
-
-    <span class="nt">intervals</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'1month'</span><span class="p p-Indicator">,</span> <span class="s">'3month'</span><span class="p p-Indicator">,</span> <span class="s">'6month'</span><span class="p p-Indicator">,</span> <span class="s">'1y'</span><span class="p p-Indicator">,</span> <span class="s">'all'</span><span class="p p-Indicator">]</span>
-
-    <span class="nt">groups</span><span class="p">:</span>
-      <span class="p p-Indicator">-</span> <span class="s">'entity_id'</span>
-      <span class="p p-Indicator">-</span> <span class="s">'zip_code'</span>
-</code></pre></div>
-<p>The number of features created in the table
-<code>features.risks_aggregation_imputed</code> is now 60 (<code>intervals</code> (5)
-× <code>groups</code> (2) × <code>metric</code> (2) × <em>features</em> (1)
-× <em>number  of choices</em> (3).</p>
-<p><code>Triage</code> will add several imputation <em>flag</em> (binary) columns per
+<p><code>Triage</code> will also add several imputation <em>flag</em> (binary) columns per
 feature. Those columns convey information about if that particular
-value was <em>imputed</em> or <em>not</em>. So in the last counting we need to add
-20 more columns to a grand total of 80 columns.</p>
+value was <em>imputed</em> or <em>not</em>. The section below describes how imputation
+can be specified in <code>triage</code> in more detail.</p>
 <h3 id="imputation">Imputation<a class="headerlink" href="#imputation" title="Permanent link">#</a></h3>
 <p><code>Triage</code> currently supports the following imputation strategies:</p>
 <ul>
 <li>
-<p><strong>mean:</strong> The mean value of the feature.</p>
+<p><code>mean</code>: The mean value of the feature.</p>
 </li>
 <li>
-<p><strong>constant:</strong> Fill with a constant (you need to provide the constant value).</p>
+<p><code>constant</code>: Fill with a constant (you need to provide the constant value).</p>
 </li>
 <li>
-<p><strong>zero:</strong> Same that the previous one, but the constant is zero.</p>
+<p><code>zero</code>: Same that the previous one, but the constant is zero.</p>
 </li>
 <li>
-<p><strong>zero<sub>noflag</sub>:</strong> Sometimes, the absence (i.e. a NULL)
+<p><code>zero_noflag</code>: Sometimes, the absence (i.e. a NULL)
     doesn't mean that the value is missing, that actually means that
     the event didn't happen to that entity. For example a <code>NULL</code> in
     the <code>inspections_entity_id_1month_total_count</code> column in
@@ -1983,26 +1884,26 @@ value was <em>imputed</em> or <em>not</em>. So in the last counting we need to a
 </ul>
 <p>Only for aggregates:</p>
 <ul>
-<li><strong>binary<sub>mode</sub>:</strong> Takes the mode of a binary feature</li>
+<li><code>binary_mode</code>: Takes the mode of a binary feature</li>
 </ul>
-<p>Only for categoricals::</p>
+<p>Only for categoricals:</p>
 <ul>
-<li><strong>null<sub>category</sub>:</strong> Just flag null values with the null category column</li>
+<li><code>null_category</code>: Just flag null values with the null category column</li>
 </ul>
 <p>and finally, if you are sure that is not possible to have <em>NULLS:</em></p>
 <ul>
-<li><strong>error:</strong> Raise an exception if ant null values are encountered.</li>
+<li><code>error</code>: Raise an exception if ant null values are encountered.</li>
 </ul>
 <h3 id="feature-groups-strategies">Feature groups strategies<a class="headerlink" href="#feature-groups-strategies" title="Permanent link">#</a></h3>
 <p>Another interesting thing that <code>triage</code> controls is how many feature groups are used in the machine learning grid. This would help you to understand the effect of using different groups in the final performance of the models.</p>
 <p>In <code>simple_test_skeleton.yaml</code> you will find the following blocks:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">feature_group_definition</span><span class="p">:</span>
-  <span class="nt">prefix</span><span class="p">:</span>
-    <span class="p p-Indicator">-</span> <span class="s">'results'</span>
-    <span class="p p-Indicator">-</span> <span class="s">'risks'</span>
-    <span class="p p-Indicator">-</span> <span class="s">'inspections'</span>
+<div class="highlight"><pre><span></span><code><span class="nt">feature_group_definition</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">prefix</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'results'</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'risks'</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'inspections'</span><span class="w"></span>
 
-<span class="nt">feature_group_strategies</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'all'</span><span class="p p-Indicator">]</span>
+<span class="nt">feature_group_strategies</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'all'</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p>This configuration adds to the <em>number</em> of model groups to be created.</p>
 <p>The possible feature group strategies are:</p>
@@ -2042,12 +1943,12 @@ one month? or just a few dozens?).</p>
 <p>If you are facing this difficulty, you can force <code>triage</code> to <em>cast</em>
 the column in the <em>features</em> table. Just add <code>coltype</code> to the
 <code>aggregate/categorical</code> block:</p>
-<div class="highlight"><pre><span></span><code> <span class="nt">aggregates</span><span class="p">:</span>
-   <span class="p p-Indicator">-</span>
-    <span class="nt">quantity</span><span class="p">:</span>
-      <span class="nt">total</span><span class="p">:</span> <span class="s">"*"</span>
-    <span class="nt">metrics</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span>
-    <span class="nt">coltype</span><span class="p">:</span> <span class="s">'smallint'</span>
+<div class="highlight"><pre><span></span><code><span class="w"> </span><span class="nt">aggregates</span><span class="p">:</span><span class="w"></span>
+<span class="w">   </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">    </span><span class="nt">quantity</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span><span class="w"></span>
+<span class="w">    </span><span class="nt">metrics</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'count'</span><span class="p p-Indicator">]</span><span class="w"></span>
+<span class="w">    </span><span class="nt">coltype</span><span class="p">:</span><span class="w"> </span><span class="s">'smallint'</span><span class="w"></span>
 </code></pre></div>
 <p><a id="org91afffc"></a></p>
 <h2 id="the-grid">The Grid<a class="headerlink" href="#the-grid" title="Permanent link">#</a></h2>
@@ -2060,9 +1961,9 @@ get (number of algorithms) <span><span class="MathJax_Preview">\times</span><scr
 number of models trained is (number of model groups) <span><span class="MathJax_Preview">\times</span><script type="math/tex">\times</script></span>
 (number of time splits).</p>
 <p>In our simple experiment the grid is very simple:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">grid_config</span><span class="p">:</span>
-    <span class="s">'sklearn.dummy.DummyClassifier'</span><span class="p p-Indicator">:</span>
-        <span class="nt">strategy</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">most_frequent</span><span class="p p-Indicator">]</span>
+<div class="highlight"><pre><span></span><code><span class="nt">grid_config</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="s">'sklearn.dummy.DummyClassifier'</span><span class="p p-Indicator">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">most_frequent</span><span class="p p-Indicator">]</span><span class="w"></span>
 </code></pre></div>
 <p>Just one algorithm and one hyperparameter (also we have only one
 feature group strategy: <code>all</code>), and two time splits. So we will get 2
@@ -2111,7 +2012,7 @@ will use them after <strong>Inspections</strong> and <strong>EIS modeling</stron
 <h2 id="final-cleaning">Final cleaning<a class="headerlink" href="#final-cleaning" title="Permanent link">#</a></h2>
 <p>In the next section we will start modeling, so it is a good idea to
 clean the <code>{test, train}_results</code> schemas and have a fresh start:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span> <span class="n">nuke_triage</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">nuke_triage</span><span class="p">();</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -2151,36 +2052,34 @@ clean the <code>{test, train}_results</code> schemas and have a fresh start:</p>
 </div>
 </main>
 <footer class="md-footer">
-<div class="md-footer-nav">
-<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
-<a class="md-footer-nav__link md-footer-nav__link--prev" href="../inspections/" rel="prev" title="Resource prioritization">
-<div class="md-footer-nav__button md-icon">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a class="md-footer__link md-footer__link--prev" href="../inspections/" rel="prev">
+<div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
 </div>
-<div class="md-footer-nav__title">
+<div class="md-footer__title">
 <div class="md-ellipsis">
-<span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Resource prioritization
-              </div>
+<span class="md-footer__direction">
+                Previous
+              </span>
+              Resource prioritization
+            </div>
 </div>
 </a>
-<a class="md-footer-nav__link md-footer-nav__link--next" href="../infrastructure/" rel="next" title="Infrastructure">
-<div class="md-footer-nav__title">
+<a class="md-footer__link md-footer__link--next" href="../infrastructure/" rel="next">
+<div class="md-footer__title">
 <div class="md-ellipsis">
-<span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Infrastructure
-              </div>
+<span class="md-footer__direction">
+                Next
+              </span>
+              Infrastructure
+            </div>
 </div>
-<div class="md-footer-nav__button md-icon">
+<div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"></path></svg>
 </div>
 </a>
 </nav>
-</div>
 <div class="md-footer-meta md-typeset">
 <div class="md-footer-meta__inner md-grid">
 <div class="md-footer-copyright">
@@ -2205,17 +2104,11 @@ clean the <code>{test, train}_results</code> schemas and have a fresh start:</p>
 </div>
 </footer>
 </div>
-<script src="../../assets/javascripts/vendor.d710d30a.min.js"></script>
-<script src="../../assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
-<script>
-        app = initialize({
-          base: "../..",
-          features: [],
-          search: Object.assign({
-            worker: "../../assets/javascripts/worker/search.a68abb33.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.fb4a9340.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing"}, "version": null}</script>
+<script src="../../assets/javascripts/bundle.a1c7c35e.min.js"></script>
 <script src="../../js/mermaid.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 </body>

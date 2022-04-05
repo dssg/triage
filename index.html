@@ -7,15 +7,15 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for Triage." name="description"/>
 <link href="http://dssg.github.io/triage/" rel="canonical"/>
-<link href="assets/images/favicon.ico" rel="shortcut icon"/>
-<meta content="mkdocs-1.1.2, mkdocs-material-5.4.0" name="generator"/>
+<link href="assets/images/favicon.ico" rel="icon"/>
+<meta content="mkdocs-1.3.0, mkdocs-material-7.0.6" name="generator"/>
 <title>Triage Documentation</title>
-<link href="assets/stylesheets/main.fe0cca5b.min.css" rel="stylesheet"/>
-<link href="assets/stylesheets/palette.a46bcfb3.min.css" rel="stylesheet"/>
-<meta content="#546e7a" name="theme-color"/>
+<link href="assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
+<link href="assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
+<meta content="#546d78" name="theme-color"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
-<style>body,input{font-family:"Ubuntu",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+<style>:root{--md-text-font-family:"Ubuntu";--md-code-font-family:"Ubuntu Mono"}</style>
 <link href="triage_docs.css" rel="stylesheet"/>
 </head>
 <body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
@@ -30,29 +30,35 @@
 <div data-md-component="announce">
 </div>
 <header class="md-header" data-md-component="header">
-<nav aria-label="Header" class="md-header-nav md-grid">
-<a aria-label="Triage Documentation" class="md-header-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="Triage Documentation" class="md-header__button md-logo" data-md-component="logo" href="." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
-<label class="md-header-nav__button md-icon" for="__drawer">
+<label class="md-header__button md-icon" for="__drawer">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg>
 </label>
-<div class="md-header-nav__title" data-md-component="header-title">
-<div class="md-header-nav__ellipsis">
-<span class="md-header-nav__topic md-ellipsis">
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
             Triage Documentation
           </span>
-<span class="md-header-nav__topic md-ellipsis">
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
             
               Home
             
           </span>
 </div>
 </div>
-<div class="md-header-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+</div>
+<div class="md-header__options">
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -64,20 +70,20 @@
 <div class="md-container" data-md-component="container">
 <main class="md-main" data-md-component="main">
 <div class="md-main__inner md-grid">
-<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
 <label class="md-nav__title" for="__drawer">
-<a aria-label="Triage Documentation" class="md-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" data-md-component="logo" href="." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
     Triage Documentation
   </label>
 <div class="md-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -88,197 +94,193 @@
 <li class="md-nav__item md-nav__item--active">
 <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
 <label class="md-nav__link md-nav__link--active" for="__toc">
-        Home
-        <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"></path></svg>
-</span>
+          Home
+          <span class="md-nav__icon md-icon"></span>
 </label>
-<a class="md-nav__link md-nav__link--active" href="." title="Home">
-      Home
-    </a>
+<a class="md-nav__link md-nav__link--active" href=".">
+        Home
+      </a>
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#what-is-triage">
-    What is Triage?
+<a class="md-nav__link" href="#quick-links">
+    Quick Links
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#how-to-get-started-with-triage">
-    How to get started with Triage?
+<a class="md-nav__link" href="#installation">
+    Installation
   </a>
-<nav aria-label="How to get started with Triage?" class="md-nav">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#data">
+    Data
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#configure-triage-for-your-project">
+    Configure Triage for your project
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-triage">
+    Using Triage
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#development">
+    Development
+  </a>
+<nav aria-label="Development" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#go-through-a-quick-tutorial-with-sample-data">
-    Go through a quick tutorial with sample data
+<a class="md-nav__link" href="#testing">
+    Testing
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#get-started-with-your-own-project-and-data">
-    Get started with your own project and data
+<a class="md-nav__link" href="#development-environment">
+    Development Environment
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#contributing">
+    Contributing
   </a>
 </li>
 </ul>
 </nav>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#background">
-    Background
-  </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-2">
-      Get started with your own project
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2">
+        Get started with your own project
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Get started with your own project" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Get started with your own project
-      </label>
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+          Get started with your own project
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="quickstart/" title="Quickstart guide">
-      Quickstart guide
-    </a>
+<a class="md-nav__link" href="quickstart/">
+        Quickstart guide
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="triage_project_workflow/" title="Suggested workflow">
-      Suggested workflow
-    </a>
+<a class="md-nav__link" href="triage_project_workflow/">
+        Suggested workflow
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3">
-      Dirty Duck Tutorial
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3">
+        Dirty Duck Tutorial
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Dirty Duck Tutorial" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Dirty Duck Tutorial
-      </label>
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+          Dirty Duck Tutorial
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/" title="Welcome!">
-      Welcome!
-    </a>
+<a class="md-nav__link" href="dirtyduck/">
+        Welcome!
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/dirty_duckling/" title="Dirty duckling">
-      Dirty duckling
-    </a>
+<a class="md-nav__link" href="dirtyduck/dirty_duckling/">
+        Dirty duckling
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" id="nav-3-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-3">
-      Case studies
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3">
+        Case studies
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Case studies" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Case studies
-      </label>
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+          Case studies
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/problem_description/" title="Problem description">
-      Problem description
-    </a>
+<a class="md-nav__link" href="dirtyduck/problem_description/">
+        Problem description
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/eis/" title="Early Warning System">
-      Early Warning System
-    </a>
+<a class="md-nav__link" href="dirtyduck/eis/">
+        Early Warning System
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/inspections/" title="Resource prioritization">
-      Resource prioritization
-    </a>
+<a class="md-nav__link" href="dirtyduck/inspections/">
+        Resource prioritization
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" id="nav-3-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-4">
-      Triage
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" id="__nav_3_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_4">
+        Triage
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage
-      </label>
+<label class="md-nav__title" for="__nav_3_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/triage_intro/" title="A deeper look into triage">
-      A deeper look into triage
-    </a>
+<a class="md-nav__link" href="dirtyduck/triage_intro/">
+        A deeper look into triage
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" id="nav-3-5" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-5">
-      Are you curious about the setup?
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_5" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5">
+        Are you curious about the setup?
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Are you curious about the setup?" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-5">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Are you curious about the setup?
-      </label>
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+          Are you curious about the setup?
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/infrastructure/" title="Infrastructure">
-      Infrastructure
-    </a>
+<a class="md-nav__link" href="dirtyduck/infrastructure/">
+        Infrastructure
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/data_preparation/" title="Data preparation">
-      Data preparation
-    </a>
+<a class="md-nav__link" href="dirtyduck/data_preparation/">
+        Data preparation
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/for_the_impatient/" title="Quick setup">
-      Quick setup
-    </a>
+<a class="md-nav__link" href="dirtyduck/for_the_impatient/">
+        Quick setup
+      </a>
 </li>
 </ul>
 </nav>
@@ -287,243 +289,230 @@
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4">
-      Triage documentation
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4">
+        Triage documentation
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage documentation" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage documentation
-      </label>
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage documentation
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1" id="nav-4-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1">
-      Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" id="__nav_4_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1">
+        Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Experiment" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1">
+<span class="md-nav__icon md-icon"></span>
+          Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/experiment-config/" title="Experiment Configuration">
-      Experiment Configuration
-    </a>
+<a class="md-nav__link" href="experiments/experiment-config/">
+        Experiment Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/feature-testing/" title="Testing Feature Configuration">
-      Testing Feature Configuration
-    </a>
+<a class="md-nav__link" href="experiments/feature-testing/">
+        Testing Feature Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/running/" title="Running an Experiment">
-      Running an Experiment
-    </a>
+<a class="md-nav__link" href="experiments/running/">
+        Running an Experiment
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1-4" id="nav-4-1-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1-4">
-      Upgrading an Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1_4" id="__nav_4_1_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1_4">
+        Upgrading an Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Upgrading an Experiment" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-1-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Upgrading an Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1_4">
+<span class="md-nav__icon md-icon"></span>
+          Upgrading an Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/upgrade-to-v7/" title="v6 -&gt; v7">
-      v6 -&gt; v7
-    </a>
+<a class="md-nav__link" href="experiments/upgrade-to-v8/">
+        v7 -&gt; v8
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/upgrade-to-v6/" title="v5 -&gt; v6">
-      v5 -&gt; v6
-    </a>
+<a class="md-nav__link" href="experiments/upgrade-to-v7/">
+        v6 -&gt; v7
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/upgrade-to-v5/" title="v3/v4 -&gt; v5">
-      v3/v4 -&gt; v5
-    </a>
+<a class="md-nav__link" href="experiments/upgrade-to-v6/">
+        v5 -&gt; v6
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="experiments/upgrade-to-v5/">
+        v3/v4 -&gt; v5
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/temporal-validation/" title="Temporal Validation Deep Dive">
-      Temporal Validation Deep Dive
-    </a>
+<a class="md-nav__link" href="experiments/temporal-validation/">
+        Temporal Validation Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/cohort-labels/" title="Cohort and Label Deep Dive">
-      Cohort and Label Deep Dive
-    </a>
+<a class="md-nav__link" href="experiments/cohort-labels/">
+        Cohort and Label Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/prediction-ranking/" title="Prediction Ranking">
-      Prediction Ranking
-    </a>
+<a class="md-nav__link" href="experiments/prediction-ranking/">
+        Prediction Ranking
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/features/" title="Feature Generation Recipe Book">
-      Feature Generation Recipe Book
-    </a>
+<a class="md-nav__link" href="experiments/features/">
+        Feature Generation Recipe Book
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/algorithm/" title="Experiment Algorithm">
-      Experiment Algorithm
-    </a>
+<a class="md-nav__link" href="experiments/algorithm/">
+        Experiment Algorithm
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="experiments/architecture/" title="Experiment Architecture">
-      Experiment Architecture
-    </a>
+<a class="md-nav__link" href="experiments/architecture/">
+        Experiment Architecture
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-2" id="nav-4-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-2">
-      Model selection
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_2" id="__nav_4_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_2">
+        Model selection
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Model selection" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Model selection
-      </label>
+<label class="md-nav__title" for="__nav_4_2">
+<span class="md-nav__icon md-icon"></span>
+          Model selection
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="audition/audition_intro/" title="Intro to Audition">
-      Intro to Audition
-    </a>
+<a class="md-nav__link" href="audition/audition_intro/">
+        Intro to Audition
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="audition/model_selection/" title="Model Selection Concepts">
-      Model Selection Concepts
-    </a>
+<a class="md-nav__link" href="audition/model_selection/">
+        Model Selection Concepts
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../api/audition/" title="API Reference">
-      API Reference
-    </a>
+<a class="md-nav__link" href="api/audition/">
+        API Reference
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-3" id="nav-4-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-3">
-      Postmodeling
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_3">
+        Postmodeling
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Postmodeling" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Postmodeling
-      </label>
+<label class="md-nav__title" for="__nav_4_3">
+<span class="md-nav__icon md-icon"></span>
+          Postmodeling
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="postmodeling/" title="Using Postmodeling">
-      Using Postmodeling
-    </a>
+<a class="md-nav__link" href="postmodeling/">
+        Using Postmodeling
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="postmodeling/postmodeling-config/" title="Postmodeling &amp; Crosstabs Configuration">
-      Postmodeling &amp; Crosstabs Configuration
-    </a>
+<a class="md-nav__link" href="postmodeling/postmodeling-config/">
+        Postmodeling &amp; Crosstabs Configuration
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/ml_governance/" title="Model governance">
-      Model governance
-    </a>
+<a class="md-nav__link" href="dirtyduck/ml_governance/">
+        Model governance
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="dirtyduck/aws_batch/" title="Scaling up">
-      Scaling up
-    </a>
+<a class="md-nav__link" href="predictlist/">
+        Predictlist
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="dirtyduck/aws_batch/">
+        Scaling up
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="db/">
+        Database Provisioner
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6" id="nav-4-6" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6">
-      API Reference
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8" id="__nav_4_8" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8">
+        API Reference
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="API Reference" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-6">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        API Reference
-      </label>
+<label class="md-nav__title" for="__nav_4_8">
+<span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6-1" id="nav-4-6-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6-1">
-      Audition
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8_1" id="__nav_4_8_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8_1">
+        Audition
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Audition" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-6-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Audition
-      </label>
+<label class="md-nav__title" for="__nav_4_8_1">
+<span class="md-nav__icon md-icon"></span>
+          Audition
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="api/audition/auditioner/" title="Auditioner">
-      Auditioner
-    </a>
+<a class="md-nav__link" href="api/audition/auditioner/">
+        Auditioner
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="api/audition/audition-config/" title="Audition Configuration">
-      Audition Configuration
-    </a>
+<a class="md-nav__link" href="api/audition/audition-config/">
+        Audition Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="api/audition/selection_rules/" title="Selection Rules">
-      Selection Rules
-    </a>
+<a class="md-nav__link" href="api/audition/selection_rules/">
+        Selection Rules
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="api/audition/database-dependencies/" title="Database Dependencies">
-      Database Dependencies
-    </a>
+<a class="md-nav__link" href="api/audition/database-dependencies/">
+        Database Dependencies
+      </a>
 </li>
 </ul>
 </nav>
@@ -539,90 +528,190 @@
 </div>
 </div>
 </div>
-<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#what-is-triage">
-    What is Triage?
+<a class="md-nav__link" href="#quick-links">
+    Quick Links
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#how-to-get-started-with-triage">
-    How to get started with Triage?
+<a class="md-nav__link" href="#installation">
+    Installation
   </a>
-<nav aria-label="How to get started with Triage?" class="md-nav">
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#data">
+    Data
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#configure-triage-for-your-project">
+    Configure Triage for your project
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-triage">
+    Using Triage
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#development">
+    Development
+  </a>
+<nav aria-label="Development" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#go-through-a-quick-tutorial-with-sample-data">
-    Go through a quick tutorial with sample data
+<a class="md-nav__link" href="#testing">
+    Testing
   </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#get-started-with-your-own-project-and-data">
-    Get started with your own project and data
+<a class="md-nav__link" href="#development-environment">
+    Development Environment
+  </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#contributing">
+    Contributing
   </a>
 </li>
 </ul>
 </nav>
 </li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#background">
-    Background
-  </a>
-</li>
 </ul>
 </nav>
 </div>
 </div>
 </div>
-<div class="md-content">
+<div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/index.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
 </a>
 <h1 id="triage">Triage<a class="headerlink" href="#triage" title="Permanent link">#</a></h1>
-<p><a href="https://travis-ci.org/dssg/triage"><img alt="Build Status" src="https://travis-ci.org/dssg/triage.svg?branch=master"/></a>
-<a href="https://codecov.io/gh/dssg/triage"><img alt="codecov" src="https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg"/></a>
-<a href="https://codeclimate.com/github/dssg/triage"><img alt="codeclimate" src="https://codeclimate.com/github/dssg/triage.png"/></a></p>
-<h2 id="what-is-triage">What is Triage?<a class="headerlink" href="#what-is-triage" title="Permanent link">#</a></h2>
-<p>Triage is an open source machine learning toolkit to help data scientists, machine learning developers, and analysts quickly prototype, build and evaluate end-to-end predictive risk modeling systems for public policy and social good problem.</p>
-<p>While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an end-to-end project requires a lot more than just building models. Developing data science systems requires making many design decisions that need to match with how the system is going to be used. These choices then get turned into modeling choices and code. Triage lets you focus on the problem you’re solving and guides you through design choices you need to make at each step of the machine learning pipeline.</p>
-<h2 id="how-to-get-started-with-triage">How to get started with Triage?<a class="headerlink" href="#how-to-get-started-with-triage" title="Permanent link">#</a></h2>
-<h3 id="go-through-a-quick-tutorial-with-sample-data"><a href="dirtyduck/">Go through a quick tutorial with sample data</a><a class="headerlink" href="#go-through-a-quick-tutorial-with-sample-data" title="Permanent link">#</a></h3>
-<h3 id="get-started-with-your-own-project-and-data"><a href="quickstart/">Get started with your own project and data</a><a class="headerlink" href="#get-started-with-your-own-project-and-data" title="Permanent link">#</a></h3>
-<h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">#</a></h2>
-<p>Triage was initially developed at the University of Chicago's <a href="http://dsapp.uchicago.edu">Center For Data Science and Public Policy</a> and is now being maintained and enhanced at Carnegie Mellon University.</p>
+<p>Data Science Toolkit for Social Good and Public Policy Problems</p>
+<p><a href="https://travis-ci.org/dssg/triage"><img alt="image" src="https://travis-ci.com/dssg/triage.svg?branch=master"/></a>
+<a href="https://codecov.io/gh/dssg/triage"><img alt="image" src="https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg"/></a>
+<a href="https://codeclimate.com/github/dssg/triage"><img alt="image" src="https://codeclimate.com/github/dssg/triage.png"/></a></p>
+<p>Building data science systems requires answering many design questions, turning them into modeling choices, which in turn run  machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanantory variables) generation, model/classifier training, evaluation, selection, and list generation are often complicated and hard to choose apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.</p>
+<p>Triage is designed to:</p>
+<ul>
+<li>Guide users (data scientists, analysts, researchers) through these design choices by highlighting critical operational use questions.</li>
+<li>Provide an integrated interface to components that are needed throughout a data science project workflow.</li>
+</ul>
+<h2 id="quick-links">Quick Links<a class="headerlink" href="#quick-links" title="Permanent link">#</a></h2>
+<ul>
+<li><a href="https://dssg.github.io/triage/dirtyduck/">Dirty Duck Tutorial</a> - Are you completely new to Triage? Go through the tutorial here with sample data</li>
+<li><a href="https://dssg.github.io/triage/quickstart/">QuickStart Guide</a> - Try Triage out with your own project and data</li>
+<li><a href="https://dssg.github.io/triage/">Triage Documentation Site</a> - Used Triage before and want more reference documentation?</li>
+<li><a href="https://github.com/dssg/triage#development">Development</a> - Contribute to Triage development.</li>
+</ul>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">#</a></h2>
+<p>To install Triage, you need:</p>
+<ul>
+<li>Python 3.7+</li>
+<li>A PostgreSQL 9.6+ database with your source data (events,
+  geographical data, etc) loaded.</li>
+<li><strong>NOTE</strong>: If your database is PostgreSQL 11+ you will get some
+    speed improvements. We recommend to update to a recent
+    version of PostgreSQL.</li>
+<li>Ample space on an available disk, (or for example in Amazon Web
+  Services's S3), to store the needed matrices and models for your
+  experiments</li>
+</ul>
+<p>We recommend starting with a new python virtual environment (with Python 3.6 or greater) and pip installing triage there.
+<div class="highlight"><pre><span></span><code>$ virtualenv triage-env
+$ . triage-env/bin/activate
+<span class="o">(</span>triage-env<span class="o">)</span> $ pip install triage
+</code></pre></div></p>
+<h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">#</a></h2>
+<p>Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in <a href="https://github.com/dssg/triage/blob/master/example/database.yaml">example/database.yaml</a>).</p>
+<p>If you don't want to install Postgres yourself, try <code>triage db up</code> to create a vanilla Postgres 12 database using docker. For more details on this command, check out <a href="db/">Triage Database Provisioner</a></p>
+<h2 id="configure-triage-for-your-project">Configure Triage for your project<a class="headerlink" href="#configure-triage-for-your-project" title="Permanent link">#</a></h2>
+<p>Triage is configured with a config.yaml file that has parameters defined for each component. You can see some <a href="https://github.com/dssg/triage/blob/master/example/config/experiment.yaml">sample configuration with explanations</a> to see what configuration looks like.</p>
+<h2 id="using-triage">Using Triage<a class="headerlink" href="#using-triage" title="Permanent link">#</a></h2>
+<ol>
+<li>Via CLI:
+<div class="highlight"><pre><span></span><code>triage experiment example/config/experiment.yaml
+</code></pre></div></li>
+<li>Import as a python package:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">triage.experiments</span> <span class="kn">import</span> <span class="n">SingleThreadedExperiment</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">SingleThreadedExperiment</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">experiment_config</span><span class="p">,</span> <span class="c1"># a dictionary</span>
+    <span class="n">db_engine</span><span class="o">=</span><span class="n">create_engine</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="c1"># http://docs.sqlalchemy.org/en/latest/core/engines.html</span>
+    <span class="n">project_path</span><span class="o">=</span><span class="s1">'/path/to/directory/to/save/data'</span> <span class="c1"># could be an S3 path too: 's3://mybucket/myprefix/'</span>
+<span class="p">)</span>
+<span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div></li>
+</ol>
+<p>There are a plethora of options available for experiment running, affecting things like parallelization, storage, and more. These options are detailed in the <a href="https://dssg.github.io/triage/experiments/running/">Running an Experiment</a> page.</p>
+<h2 id="development">Development<a class="headerlink" href="#development" title="Permanent link">#</a></h2>
+<p>Triag was initially developed at <a href="http://dsapp.uchicago.edu">University of Chicago's Center For Data Science and Public Policy</a> and is now being maintained at Carnegie Mellon University.</p>
+<p>To build this package (without installation), its dependencies may
+alternatively be installed from the terminal using <code>pip</code>:</p>
+<div class="codehilite"><pre><span></span><code>pip install -r requirement/main.txt
+</code></pre></div>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">#</a></h3>
+<p>To add test (and development) dependencies, use <strong>test.txt</strong>:</p>
+<div class="codehilite"><pre><span></span><code>pip install -r requirement/test.txt [-r requirement/dev.txt]
+</code></pre></div>
+<p>Then, to run tests:</p>
+<div class="codehilite"><pre><span></span><code>pytest
+</code></pre></div>
+<h3 id="development-environment">Development Environment<a class="headerlink" href="#development-environment" title="Permanent link">#</a></h3>
+<p>To quickly bootstrap a development environment, having cloned the
+repository, invoke the executable <code>develop</code> script from your system
+shell:</p>
+<div class="codehilite"><pre><span></span><code>./develop
+</code></pre></div>
+<p>A "wizard" will suggest set-up steps and optionally execute these, for
+example:</p>
+<div class="codehilite"><pre><span></span><code>(install) begin
+
+(pyenv) installed
+
+(python-3.9.10) installed
+
+(virtualenv) installed
+
+(activation) installed
+
+(libs) install?
+1) yes, install {pip install -r requirement/main.txt -r requirement/test.txt -r requirement/dev.txt}
+2) no, ignore
+#? 1
+</code></pre></div>
+<h3 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">#</a></h3>
+<p>If you'd like to contribute to Triage development, see the <a href="https://github.com/dssg/triage/blob/master/CONTRIBUTING.md">CONTRIBUTING.md</a> document.</p>
 </article>
 </div>
 </div>
 </main>
 <footer class="md-footer">
-<div class="md-footer-nav">
-<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
-<a class="md-footer-nav__link md-footer-nav__link--next" href="quickstart/" rel="next" title="Quickstart guide">
-<div class="md-footer-nav__title">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a class="md-footer__link md-footer__link--next" href="quickstart/" rel="next">
+<div class="md-footer__title">
 <div class="md-ellipsis">
-<span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Quickstart guide
-              </div>
+<span class="md-footer__direction">
+                Next
+              </span>
+              Quickstart guide
+            </div>
 </div>
-<div class="md-footer-nav__button md-icon">
+<div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"></path></svg>
 </div>
 </a>
 </nav>
-</div>
 <div class="md-footer-meta md-typeset">
 <div class="md-footer-meta__inner md-grid">
 <div class="md-footer-copyright">
@@ -647,17 +736,11 @@
 </div>
 </footer>
 </div>
-<script src="assets/javascripts/vendor.d710d30a.min.js"></script>
-<script src="assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
-<script>
-        app = initialize({
-          base: ".",
-          features: [],
-          search: Object.assign({
-            worker: "assets/javascripts/worker/search.a68abb33.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.fb4a9340.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing"}, "version": null}</script>
+<script src="assets/javascripts/bundle.a1c7c35e.min.js"></script>
 <script src="js/mermaid.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 </body>

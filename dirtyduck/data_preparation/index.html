@@ -7,15 +7,15 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Documentation for Triage." name="description"/>
 <link href="http://dssg.github.io/triage/dirtyduck/data_preparation/" rel="canonical"/>
-<link href="../../assets/images/favicon.ico" rel="shortcut icon"/>
-<meta content="mkdocs-1.1.2, mkdocs-material-5.4.0" name="generator"/>
+<link href="../../assets/images/favicon.ico" rel="icon"/>
+<meta content="mkdocs-1.3.0, mkdocs-material-7.0.6" name="generator"/>
 <title>Data preparation - Triage Documentation</title>
-<link href="../../assets/stylesheets/main.fe0cca5b.min.css" rel="stylesheet"/>
-<link href="../../assets/stylesheets/palette.a46bcfb3.min.css" rel="stylesheet"/>
-<meta content="#546e7a" name="theme-color"/>
+<link href="../../assets/stylesheets/main.2c0c5eaf.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.7fa14f5b.min.css" rel="stylesheet"/>
+<meta content="#546d78" name="theme-color"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,400i,700%7CUbuntu+Mono&amp;display=fallback" rel="stylesheet"/>
-<style>body,input{font-family:"Ubuntu",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+<style>:root{--md-text-font-family:"Ubuntu";--md-code-font-family:"Ubuntu Mono"}</style>
 <link href="../../triage_docs.css" rel="stylesheet"/>
 </head>
 <body data-md-color-accent="deep-orange" data-md-color-primary="blue-grey" data-md-color-scheme="" dir="ltr">
@@ -30,29 +30,35 @@
 <div data-md-component="announce">
 </div>
 <header class="md-header" data-md-component="header">
-<nav aria-label="Header" class="md-header-nav md-grid">
-<a aria-label="Triage Documentation" class="md-header-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="Triage Documentation" class="md-header__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
-<label class="md-header-nav__button md-icon" for="__drawer">
+<label class="md-header__button md-icon" for="__drawer">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg>
 </label>
-<div class="md-header-nav__title" data-md-component="header-title">
-<div class="md-header-nav__ellipsis">
-<span class="md-header-nav__topic md-ellipsis">
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
             Triage Documentation
           </span>
-<span class="md-header-nav__topic md-ellipsis">
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
             
               Data preparation
             
           </span>
 </div>
 </div>
-<div class="md-header-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+</div>
+<div class="md-header__options">
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -64,20 +70,20 @@
 <div class="md-container" data-md-component="container">
 <main class="md-main" data-md-component="main">
 <div class="md-main__inner md-grid">
-<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Navigation" class="md-nav md-nav--primary" data-md-level="0">
 <label class="md-nav__title" for="__drawer">
-<a aria-label="Triage Documentation" class="md-nav__button md-logo" href="http://dssg.github.io/triage" title="Triage Documentation">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 002-2V4a2 2 0 00-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 00-2 2v16a2 2 0 002 2h12z"></path></svg>
+<a aria-label="Triage Documentation" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="Triage Documentation">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12z"></path></svg>
 </a>
     Triage Documentation
   </label>
 <div class="md-nav__source">
-<a class="md-source" href="http://github.com/dssg/triage/" title="Go to repository">
+<a class="md-source" data-md-component="source" href="http://github.com/dssg/triage" title="Go to repository">
 <div class="md-source__icon md-icon">
-<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"></path></svg>
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"></path></svg>
 </div>
 <div class="md-source__repository">
     dssg/triage
@@ -86,163 +92,139 @@
 </div>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../.." title="Home">
-      Home
-    </a>
+<a class="md-nav__link" href="../..">
+        Home
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-2">
-      Get started with your own project
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2">
+        Get started with your own project
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Get started with your own project" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Get started with your own project
-      </label>
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+          Get started with your own project
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../quickstart/" title="Quickstart guide">
-      Quickstart guide
-    </a>
+<a class="md-nav__link" href="../../quickstart/">
+        Quickstart guide
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../triage_project_workflow/" title="Suggested workflow">
-      Suggested workflow
-    </a>
+<a class="md-nav__link" href="../../triage_project_workflow/">
+        Suggested workflow
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3" id="nav-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3">
-      Dirty Duck Tutorial
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3">
+        Dirty Duck Tutorial
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Dirty Duck Tutorial" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Dirty Duck Tutorial
-      </label>
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+          Dirty Duck Tutorial
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../" title="Welcome!">
-      Welcome!
-    </a>
+<a class="md-nav__link" href="../">
+        Welcome!
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../dirty_duckling/" title="Dirty duckling">
-      Dirty duckling
-    </a>
+<a class="md-nav__link" href="../dirty_duckling/">
+        Dirty duckling
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" id="nav-3-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-3">
-      Case studies
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3">
+        Case studies
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Case studies" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Case studies
-      </label>
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+          Case studies
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../problem_description/" title="Problem description">
-      Problem description
-    </a>
+<a class="md-nav__link" href="../problem_description/">
+        Problem description
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../eis/" title="Early Warning System">
-      Early Warning System
-    </a>
+<a class="md-nav__link" href="../eis/">
+        Early Warning System
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../inspections/" title="Resource prioritization">
-      Resource prioritization
-    </a>
+<a class="md-nav__link" href="../inspections/">
+        Resource prioritization
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" id="nav-3-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-4">
-      Triage
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" id="__nav_3_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_4">
+        Triage
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage
-      </label>
+<label class="md-nav__title" for="__nav_3_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../triage_intro/" title="A deeper look into triage">
-      A deeper look into triage
-    </a>
+<a class="md-nav__link" href="../triage_intro/">
+        A deeper look into triage
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" id="nav-3-5" type="checkbox"/>
-<label class="md-nav__link" for="nav-3-5">
-      Are you curious about the setup?
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_5" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5">
+        Are you curious about the setup?
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Are you curious about the setup?" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-3-5">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Are you curious about the setup?
-      </label>
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+          Are you curious about the setup?
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../infrastructure/" title="Infrastructure">
-      Infrastructure
-    </a>
+<a class="md-nav__link" href="../infrastructure/">
+        Infrastructure
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--active">
 <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
 <label class="md-nav__link md-nav__link--active" for="__toc">
-        Data preparation
-        <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"></path></svg>
-</span>
+          Data preparation
+          <span class="md-nav__icon md-icon"></span>
 </label>
-<a class="md-nav__link md-nav__link--active" href="./" title="Data preparation">
-      Data preparation
-    </a>
+<a class="md-nav__link md-nav__link--active" href="./">
+        Data preparation
+      </a>
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
 <a class="md-nav__link" href="#load-the-data">
     Load the data
@@ -349,9 +331,9 @@
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../for_the_impatient/" title="Quick setup">
-      Quick setup
-    </a>
+<a class="md-nav__link" href="../for_the_impatient/">
+        Quick setup
+      </a>
 </li>
 </ul>
 </nav>
@@ -360,243 +342,230 @@
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" id="nav-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4">
-      Triage documentation
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4">
+        Triage documentation
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Triage documentation" class="md-nav" data-md-level="1">
-<label class="md-nav__title" for="nav-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Triage documentation
-      </label>
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+          Triage documentation
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1" id="nav-4-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1">
-      Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1" id="__nav_4_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1">
+        Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Experiment" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1">
+<span class="md-nav__icon md-icon"></span>
+          Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/experiment-config/" title="Experiment Configuration">
-      Experiment Configuration
-    </a>
+<a class="md-nav__link" href="../../experiments/experiment-config/">
+        Experiment Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/feature-testing/" title="Testing Feature Configuration">
-      Testing Feature Configuration
-    </a>
+<a class="md-nav__link" href="../../experiments/feature-testing/">
+        Testing Feature Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/running/" title="Running an Experiment">
-      Running an Experiment
-    </a>
+<a class="md-nav__link" href="../../experiments/running/">
+        Running an Experiment
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-1-4" id="nav-4-1-4" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-1-4">
-      Upgrading an Experiment
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_1_4" id="__nav_4_1_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_1_4">
+        Upgrading an Experiment
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Upgrading an Experiment" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-1-4">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Upgrading an Experiment
-      </label>
+<label class="md-nav__title" for="__nav_4_1_4">
+<span class="md-nav__icon md-icon"></span>
+          Upgrading an Experiment
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v7/" title="v6 -&gt; v7">
-      v6 -&gt; v7
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v8/">
+        v7 -&gt; v8
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v6/" title="v5 -&gt; v6">
-      v5 -&gt; v6
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v7/">
+        v6 -&gt; v7
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/upgrade-to-v5/" title="v3/v4 -&gt; v5">
-      v3/v4 -&gt; v5
-    </a>
+<a class="md-nav__link" href="../../experiments/upgrade-to-v6/">
+        v5 -&gt; v6
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../experiments/upgrade-to-v5/">
+        v3/v4 -&gt; v5
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/temporal-validation/" title="Temporal Validation Deep Dive">
-      Temporal Validation Deep Dive
-    </a>
+<a class="md-nav__link" href="../../experiments/temporal-validation/">
+        Temporal Validation Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/cohort-labels/" title="Cohort and Label Deep Dive">
-      Cohort and Label Deep Dive
-    </a>
+<a class="md-nav__link" href="../../experiments/cohort-labels/">
+        Cohort and Label Deep Dive
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/prediction-ranking/" title="Prediction Ranking">
-      Prediction Ranking
-    </a>
+<a class="md-nav__link" href="../../experiments/prediction-ranking/">
+        Prediction Ranking
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/features/" title="Feature Generation Recipe Book">
-      Feature Generation Recipe Book
-    </a>
+<a class="md-nav__link" href="../../experiments/features/">
+        Feature Generation Recipe Book
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/algorithm/" title="Experiment Algorithm">
-      Experiment Algorithm
-    </a>
+<a class="md-nav__link" href="../../experiments/algorithm/">
+        Experiment Algorithm
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../experiments/architecture/" title="Experiment Architecture">
-      Experiment Architecture
-    </a>
+<a class="md-nav__link" href="../../experiments/architecture/">
+        Experiment Architecture
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-2" id="nav-4-2" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-2">
-      Model selection
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_2" id="__nav_4_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_2">
+        Model selection
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Model selection" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-2">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Model selection
-      </label>
+<label class="md-nav__title" for="__nav_4_2">
+<span class="md-nav__icon md-icon"></span>
+          Model selection
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/audition_intro/" title="Intro to Audition">
-      Intro to Audition
-    </a>
+<a class="md-nav__link" href="../../audition/audition_intro/">
+        Intro to Audition
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../audition/model_selection/" title="Model Selection Concepts">
-      Model Selection Concepts
-    </a>
+<a class="md-nav__link" href="../../audition/model_selection/">
+        Model Selection Concepts
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../api/audition/" title="API Reference">
-      API Reference
-    </a>
+<a class="md-nav__link" href="../../api/audition/">
+        API Reference
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-3" id="nav-4-3" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-3">
-      Postmodeling
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_3" id="__nav_4_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_3">
+        Postmodeling
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Postmodeling" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-3">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Postmodeling
-      </label>
+<label class="md-nav__title" for="__nav_4_3">
+<span class="md-nav__icon md-icon"></span>
+          Postmodeling
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../postmodeling/" title="Using Postmodeling">
-      Using Postmodeling
-    </a>
+<a class="md-nav__link" href="../../postmodeling/">
+        Using Postmodeling
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../postmodeling/postmodeling-config/" title="Postmodeling &amp; Crosstabs Configuration">
-      Postmodeling &amp; Crosstabs Configuration
-    </a>
+<a class="md-nav__link" href="../../postmodeling/postmodeling-config/">
+        Postmodeling &amp; Crosstabs Configuration
+      </a>
 </li>
 </ul>
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../ml_governance/" title="Model governance">
-      Model governance
-    </a>
+<a class="md-nav__link" href="../ml_governance/">
+        Model governance
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../aws_batch/" title="Scaling up">
-      Scaling up
-    </a>
+<a class="md-nav__link" href="../../predictlist/">
+        Predictlist
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../aws_batch/">
+        Scaling up
+      </a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../db/">
+        Database Provisioner
+      </a>
 </li>
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6" id="nav-4-6" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6">
-      API Reference
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8" id="__nav_4_8" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8">
+        API Reference
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="API Reference" class="md-nav" data-md-level="2">
-<label class="md-nav__title" for="nav-4-6">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        API Reference
-      </label>
+<label class="md-nav__title" for="__nav_4_8">
+<span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-6-1" id="nav-4-6-1" type="checkbox"/>
-<label class="md-nav__link" for="nav-4-6-1">
-      Audition
-      <span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"></path></svg>
-</span>
+<input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4_8_1" id="__nav_4_8_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_8_1">
+        Audition
+        <span class="md-nav__icon md-icon"></span>
 </label>
 <nav aria-label="Audition" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="nav-4-6-1">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
-        Audition
-      </label>
+<label class="md-nav__title" for="__nav_4_8_1">
+<span class="md-nav__icon md-icon"></span>
+          Audition
+        </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/auditioner/" title="Auditioner">
-      Auditioner
-    </a>
+<a class="md-nav__link" href="../../api/audition/auditioner/">
+        Auditioner
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/audition-config/" title="Audition Configuration">
-      Audition Configuration
-    </a>
+<a class="md-nav__link" href="../../api/audition/audition-config/">
+        Audition Configuration
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/selection_rules/" title="Selection Rules">
-      Selection Rules
-    </a>
+<a class="md-nav__link" href="../../api/audition/selection_rules/">
+        Selection Rules
+      </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../api/audition/database-dependencies/" title="Database Dependencies">
-      Database Dependencies
-    </a>
+<a class="md-nav__link" href="../../api/audition/database-dependencies/">
+        Database Dependencies
+      </a>
 </li>
 </ul>
 </nav>
@@ -612,17 +581,15 @@
 </div>
 </div>
 </div>
-<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
 <label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
-</span>
+<span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-<ul class="md-nav__list" data-md-scrollfix="">
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
 <a class="md-nav__link" href="#load-the-data">
     Load the data
@@ -730,7 +697,7 @@
 </div>
 </div>
 </div>
-<div class="md-content">
+<div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <a class="md-content__button md-icon" href="http://github.com/dssg/triage/edit/master/docs/sources/dirtyduck/data_preparation.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"></path></svg>
@@ -741,10 +708,10 @@
 <h2 id="load-the-data">Load the data<a class="headerlink" href="#load-the-data" title="Permanent link">#</a></h2>
 <p>Before loading the data into the database, verify that the database
 table is empty by running the following code:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -762,13 +729,13 @@ table is empty by running the following code:</p>
 database. In particular we will use the powerful
 <a href="https://www.postgresql.org/docs/10/sql-copy.html">copy</a> command and
 the City of Chicago's data API:</p>
-<div class="highlight"><pre><span></span><code><span class="err">\</span><span class="k">copy</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span> <span class="k">from</span> <span class="n">program</span> <span class="s1">'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"'</span> <span class="n">HEADER</span> <span class="n">CSV</span>
+<div class="highlight"><pre><span></span><code><span class="err">\</span><span class="k">copy</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">program</span><span class="w"> </span><span class="s1">'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"'</span><span class="w"> </span><span class="n">HEADER</span><span class="w"> </span><span class="n">CSV</span><span class="w"></span>
 </code></pre></div>
 <p>Now, you should have some data:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"facilities inspected"</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"facilities inspected"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -784,13 +751,13 @@ the City of Chicago's data API:</p>
 </table>
 <p>You'll probably get a different number because the data are updated
 every day. Let's peek inside the table<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">inspection</span><span class="p">,</span>
-    <span class="n">dba_name</span><span class="p">,</span>
-    <span class="n">risk</span><span class="p">,</span>
-    <span class="n">results</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span> <span class="k">limit</span> <span class="mi">1</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">inspection</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">dba_name</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">risk</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">results</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -979,15 +946,15 @@ Foods)</strong>.</p>
 <h3 id="reality-check">Reality check<a class="headerlink" href="#reality-check" title="Permanent link">#</a></h3>
 <p>It is important to verify that the documentation is correct. Let's start by checking that the <code>risk</code> column <strong>only</strong> has three classifications:</p>
 <p><strong>NOTE</strong> Execute this in <code>psql</code> inside the container <code>bastion</code>.</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-      <span class="n">risk</span><span class="p">,</span>
-      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-  <span class="k">from</span>
-      <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-  <span class="k">group</span> <span class="k">by</span>
-      <span class="n">risk</span>
-  <span class="k">order</span> <span class="k">by</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">      </span><span class="n">risk</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">      </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="n">risk</span><span class="w"></span>
+<span class="w">  </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1021,10 +988,10 @@ Foods)</strong>.</p>
 </table>
 <p>Ok, there are two extra <code>risk</code> types, <code>All</code> and <code>NULL</code>, for a grand total of <strong>5</strong>.</p>
 <p>What about <code>types</code> of inspections?</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-      <span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="k">type</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"types of inspections"</span>
-  <span class="k">from</span>
-      <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">      </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">type</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"types of inspections"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">      </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1040,16 +1007,16 @@ Foods)</strong>.</p>
 </table>
 <p>Wow, there are <strong>108</strong> types of inspections instead of the expected <strong>5</strong>!</p>
 <p>What are those types? How bad is it?</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">type</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">type</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
-    <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">type</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">type</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="w"></span>
+<span class="w">    </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1103,15 +1070,15 @@ Foods)</strong>.</p>
 </table>
 <p>This column will require also cleaning.</p>
 <p>Finally, let's look <code>results</code> (should be 3)</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-      <span class="n">results</span><span class="p">,</span>
-      <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-  <span class="k">from</span>
-      <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-  <span class="k">group</span> <span class="k">by</span>
-      <span class="n">results</span>
-  <span class="k">order</span> <span class="k">by</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">      </span><span class="n">results</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">      </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="n">results</span><span class="w"></span>
+<span class="w">  </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1181,13 +1148,13 @@ but it's good enough for this example project.</p>
 <p>Let's review the status of the spatial columns (<code>state, city, zip,
 latitude, longitude</code>). Beginning with <code>state</code>, all the facilities in
 the data should be located in <strong>Illinois</strong>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">state</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">state</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">state</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">state</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1208,16 +1175,16 @@ the data should be located in <strong>Illinois</strong>:</p>
 </tbody>
 </table>
 <p>Ok, almost correct, there are some <code>NULL</code> values. We will assume that the <code>NULL</code> values are actually <code>IL</code> (i.e. we will impute them). Moving to the next spatial column, we expect that all the values in the column <code>city</code> are Chicago<sup id="fnref:7"><a class="footnote-ref" href="#fn:7">7</a></sup>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">lower</span><span class="p">(</span><span class="n">city</span><span class="p">)</span> <span class="k">as</span> <span class="n">city</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">lower</span><span class="p">(</span><span class="n">city</span><span class="p">)</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
-    <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">lower</span><span class="p">(</span><span class="n">city</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">city</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">lower</span><span class="p">(</span><span class="n">city</span><span class="p">)</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="w"></span>
+<span class="w">    </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1275,12 +1242,12 @@ even have <code>chicagochicago</code>. All the values are near Chicago, even if
 they're in different counties, so we will ignore this column (or
 equivalently, we will assume that all the records are from Chicago).</p>
 <p>Zip code has a similar <code>NULL</code> problem:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections w/o zip code"</span>
-<span class="k">from</span>
-    <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">where</span>
-    <span class="n">zip</span> <span class="k">is</span> <span class="k">null</span> <span class="k">or</span> <span class="n">btrim</span><span class="p">(</span><span class="n">zip</span><span class="p">)</span> <span class="o">=</span> <span class="s1">''</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections w/o zip code"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">zip</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">btrim</span><span class="p">(</span><span class="n">zip</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">''</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1321,7 +1288,7 @@ schema is twofold: to keep our raw data <em>as is</em><sup id="fnref:11"><a clas
 assumptions and cleaning decisions separate from the <em>raw</em> data in a
 schema that <em>semantically</em> transmits that "this is our cleaned data."</p>
 <p>The <code>cleaned</code> schema will contain two tables: <code>cleaned.inspections</code> and <code>cleaned.violations</code>.</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">create</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">cleaned</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <p>Then, we will create our mini <strong>ETL</strong> with our cleaning decisions:</p>
 <div class="admonition note">
@@ -1330,48 +1297,48 @@ schema that <em>semantically</em> transmits that "this is our cleaned data."</p>
 <code>zip_codes, historical_wards, wards, community_areas</code> and <code>census_tracts</code>. The most
 recent code reflects those changes.</p>
 </div>
-<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">cleaned</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span> <span class="k">cascade</span><span class="p">;</span>
+<span class="k">drop</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"> </span><span class="k">cascade</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">table</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">with</span> <span class="n">cleaned</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">select</span>
-            <span class="n">inspection</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span>
-            <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">results</span><span class="p">))</span> <span class="k">as</span> <span class="k">result</span><span class="p">,</span>
-            <span class="n">license_num</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span>
-            <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">dba_name</span><span class="p">))</span> <span class="k">as</span> <span class="n">facility</span><span class="p">,</span>
-            <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">aka_name</span><span class="p">))</span> <span class="k">as</span> <span class="n">facility_aka</span><span class="p">,</span>
-            <span class="k">case</span> <span class="k">when</span>
-            <span class="n">facility_type</span> <span class="k">is</span> <span class="k">null</span> <span class="k">then</span> <span class="s1">'unknown'</span>
-            <span class="k">else</span> <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">facility_type</span><span class="p">))</span>
-            <span class="k">end</span> <span class="k">as</span> <span class="n">facility_type</span><span class="p">,</span>
-            <span class="k">lower</span><span class="p">(</span><span class="k">substring</span><span class="p">(</span><span class="n">risk</span> <span class="k">from</span> <span class="s1">'\((.+)\)'</span><span class="p">))</span> <span class="k">as</span> <span class="n">risk</span><span class="p">,</span>
-            <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">address</span><span class="p">))</span> <span class="k">as</span> <span class="n">address</span><span class="p">,</span>
-            <span class="n">zip</span> <span class="k">as</span> <span class="n">zip_code</span><span class="p">,</span>
-            <span class="n">community_areas</span> <span class="k">as</span> <span class="n">community_area</span><span class="p">,</span>
-            <span class="n">census_tracts</span> <span class="k">as</span> <span class="n">census_tracts</span><span class="p">,</span>
-            <span class="n">historical_wards</span> <span class="k">as</span> <span class="n">historical_ward</span><span class="p">,</span>
-            <span class="n">wards</span> <span class="k">as</span> <span class="n">ward</span><span class="p">,</span>
-            <span class="k">substring</span><span class="p">(</span>
-                <span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">type</span><span class="p">,</span> <span class="s1">'liquor'</span><span class="p">,</span> <span class="s1">'task force'</span><span class="p">,</span> <span class="s1">'gi'</span><span class="p">)))</span>
-            <span class="k">from</span> <span class="s1">'canvass|task force|complaint|food poisoning|consultation|license|tag removal'</span><span class="p">)</span> <span class="k">as</span> <span class="k">type</span><span class="p">,</span>
-            <span class="nb">date</span><span class="p">,</span>
-            <span class="c1">-- point(longitude, latitude) as location</span>
-            <span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">),</span> <span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span> <span class="k">as</span> <span class="k">location</span>  <span class="c1">-- We use geography so the measurements are in meters</span>
-        <span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-        <span class="k">where</span> <span class="n">zip</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>  <span class="c1">-- removing NULL zip codes</span>
-        <span class="k">and</span> <span class="nb">date</span> <span class="o">&lt;</span> <span class="s1">'2018-07-01'</span>
-            <span class="p">)</span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">with</span><span class="w"> </span><span class="n">cleaned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">select</span><span class="w"></span>
+<span class="w">            </span><span class="n">inspection</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">results</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">result</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">license_num</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">dba_name</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">aka_name</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"></span>
+<span class="w">            </span><span class="n">facility_type</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'unknown'</span><span class="w"></span>
+<span class="w">            </span><span class="k">else</span><span class="w"> </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">facility_type</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">lower</span><span class="p">(</span><span class="k">substring</span><span class="p">(</span><span class="n">risk</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="s1">'\((.+)\)'</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">risk</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">address</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">zip</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">zip_code</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">community_areas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">community_area</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">census_tracts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">census_tracts</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">historical_wards</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">historical_ward</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">wards</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ward</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">substring</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">btrim</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">type</span><span class="p">,</span><span class="w"> </span><span class="s1">'liquor'</span><span class="p">,</span><span class="w"> </span><span class="s1">'task force'</span><span class="p">,</span><span class="w"> </span><span class="s1">'gi'</span><span class="p">)))</span><span class="w"></span>
+<span class="w">            </span><span class="k">from</span><span class="w"> </span><span class="s1">'canvass|task force|complaint|food poisoning|consultation|license|tag removal'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">type</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="c1">-- point(longitude, latitude) as location</span>
+<span class="w">            </span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">ST_MakePoint</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span><span class="w"> </span><span class="n">latitude</span><span class="p">),</span><span class="w"> </span><span class="mi">4326</span><span class="p">)::</span><span class="n">geography</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">location</span><span class="w">  </span><span class="c1">-- We use geography so the measurements are in meters</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">zip</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w">  </span><span class="c1">-- removing NULL zip codes</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="s1">'2018-07-01'</span><span class="w"></span>
+<span class="w">            </span><span class="p">)</span><span class="w"></span>
 
-    <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">cleaned</span> <span class="k">where</span> <span class="k">type</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>
-        <span class="p">);</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">cleaned</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">type</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="w">        </span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <p>The number of inspections now is:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">inspection</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of</span>
-<span class="ss">    inspections (until 07/01/2018)"</span>
-<span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">inspection</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of</span>
+<span class="ss">    inspections (until 07/01/2018)"</span><span class="w"></span>
+<span class="k">from</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1396,11 +1363,11 @@ the inspector's comments. The comments are free text, which means that
 they can contain line breaks, mispellings, etc. In particular, note
 that pipes (<code>|</code>) seperate multiple violations.</p>
 <p>The following <code>sql</code> code removes line breaks and multiple spaces and creates an array with all the violations for inspection number <code>2145736</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">unnest</span><span class="p">(</span><span class="n">string_to_array</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">'[\n\r]+'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">,</span> <span class="s1">'g'</span> <span class="p">),</span> <span class="s1">'|'</span><span class="p">))</span>  <span class="k">as</span> <span class="n">violations_array</span>
-<span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">where</span>
-    <span class="n">inspection</span> <span class="o">=</span> <span class="s1">'2145736'</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">unnest</span><span class="p">(</span><span class="n">string_to_array</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span><span class="w"> </span><span class="s1">'[\n\r]+'</span><span class="p">,</span><span class="w"> </span><span class="s1">' '</span><span class="p">,</span><span class="w"> </span><span class="s1">'g'</span><span class="w"> </span><span class="p">),</span><span class="w"> </span><span class="s1">'|'</span><span class="p">))</span><span class="w">  </span><span class="k">as</span><span class="w"> </span><span class="n">violations_array</span><span class="w"></span>
+<span class="k">from</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">inspection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2145736'</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1434,51 +1401,51 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
 <li>description</li>
 <li>comments</li>
 </ul>
-<div class="highlight"><pre><span></span><code>   <span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">cascade</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">   </span><span class="k">drop</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span><span class="w"> </span><span class="k">cascade</span><span class="p">;</span><span class="w"></span>
 
-   <span class="k">create</span> <span class="k">table</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">as</span> <span class="p">(</span>
-   <span class="k">select</span>
-       <span class="n">inspection</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span>
-       <span class="n">license_num</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span>
-       <span class="nb">date</span><span class="p">::</span><span class="nb">date</span><span class="p">,</span>
-       <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">as</span> <span class="n">code</span><span class="p">,</span>
-       <span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="k">as</span> <span class="n">description</span><span class="p">,</span>
-       <span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span> <span class="k">as</span> <span class="k">comment</span><span class="p">,</span>
-       <span class="p">(</span><span class="k">case</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">=</span> <span class="s1">''</span> <span class="k">then</span> <span class="k">NULL</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">1</span> <span class="k">and</span> <span class="mi">14</span> <span class="k">then</span> <span class="s1">'critical'</span> <span class="c1">-- From the documentation</span>
-           <span class="k">when</span> <span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span> <span class="k">between</span> <span class="mi">15</span> <span class="k">and</span> <span class="mi">29</span>  <span class="k">then</span> <span class="s1">'serious'</span>
-           <span class="k">else</span> <span class="s1">'minor'</span>
-           <span class="k">end</span>
-           <span class="p">)</span> <span class="k">as</span> <span class="n">severity</span> <span class="k">from</span>
-       <span class="p">(</span>
-       <span class="k">select</span>
-           <span class="n">inspection</span><span class="p">,</span>
-           <span class="n">license_num</span><span class="p">,</span>
-           <span class="nb">date</span><span class="p">,</span>
-           <span class="n">regexp_split_to_array</span><span class="p">(</span>   <span class="c1">-- Create an array we will split the code, description, comment</span>
-               <span class="n">regexp_split_to_table</span><span class="p">(</span> <span class="c1">-- Create a row per each comment we split by |</span>
-                   <span class="n">coalesce</span><span class="p">(</span>            <span class="c1">-- If there isn't a violation add '- Comments:'</span>
-                       <span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="s1">'[\n\r]+'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'g'</span> <span class="p">)</span>  <span class="c1">-- Remove line breaks</span>
-                       <span class="p">,</span> <span class="s1">'- Comments:'</span><span class="p">)</span>
-                   <span class="p">,</span> <span class="s1">'\|'</span><span class="p">)</span>  <span class="c1">-- Split the violations</span>
-               <span class="p">,</span> <span class="s1">'(?&lt;=\d+)\.\s*|\s*-\s*Comments:'</span><span class="p">)</span>  <span class="c1">-- Split each violation in three</span>
-            <span class="c1">-- , '\.\s*|\s*-\s*Comments:')  -- Split each violation in three (Use this if your postgresql is kind off old</span>
-           <span class="k">as</span> <span class="n">tuple</span>
-       <span class="k">from</span> <span class="n">raw</span><span class="p">.</span><span class="n">inspections</span>
-       <span class="k">where</span> <span class="n">results</span> <span class="k">in</span> <span class="p">(</span><span class="s1">'Fail'</span><span class="p">,</span> <span class="s1">'Pass'</span><span class="p">,</span> <span class="s1">'Pass w/ Conditions'</span><span class="p">)</span> <span class="k">and</span> <span class="n">license_num</span> <span class="k">is</span> <span class="k">not</span> <span class="k">null</span>
-           <span class="p">)</span> <span class="k">as</span> <span class="n">t</span>
-       <span class="p">);</span>
+<span class="w">   </span><span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">   </span><span class="k">select</span><span class="w"></span>
+<span class="w">       </span><span class="n">inspection</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="n">license_num</span><span class="p">::</span><span class="nb">integer</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="nb">date</span><span class="p">::</span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">description</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="k">lower</span><span class="p">(</span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">comment</span><span class="p">,</span><span class="w"></span>
+<span class="w">       </span><span class="p">(</span><span class="k">case</span><span class="w"></span>
+<span class="w">           </span><span class="k">when</span><span class="w"> </span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">''</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">NULL</span><span class="w"></span>
+<span class="w">           </span><span class="k">when</span><span class="w"> </span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">14</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'critical'</span><span class="w"> </span><span class="c1">-- From the documentation</span>
+<span class="w">           </span><span class="k">when</span><span class="w"> </span><span class="n">btrim</span><span class="p">(</span><span class="n">tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])::</span><span class="nb">int</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">15</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">29</span><span class="w">  </span><span class="k">then</span><span class="w"> </span><span class="s1">'serious'</span><span class="w"></span>
+<span class="w">           </span><span class="k">else</span><span class="w"> </span><span class="s1">'minor'</span><span class="w"></span>
+<span class="w">           </span><span class="k">end</span><span class="w"></span>
+<span class="w">           </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">severity</span><span class="w"> </span><span class="k">from</span><span class="w"></span>
+<span class="w">       </span><span class="p">(</span><span class="w"></span>
+<span class="w">       </span><span class="k">select</span><span class="w"></span>
+<span class="w">           </span><span class="n">inspection</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">regexp_split_to_array</span><span class="p">(</span><span class="w">   </span><span class="c1">-- Create an array we will split the code, description, comment</span>
+<span class="w">               </span><span class="n">regexp_split_to_table</span><span class="p">(</span><span class="w"> </span><span class="c1">-- Create a row per each comment we split by |</span>
+<span class="w">                   </span><span class="k">coalesce</span><span class="p">(</span><span class="w">            </span><span class="c1">-- If there isn't a violation add '- Comments:'</span>
+<span class="w">                       </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span><span class="w"> </span><span class="s1">'[\n\r]+'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">,</span><span class="w"> </span><span class="s1">'g'</span><span class="w"> </span><span class="p">)</span><span class="w">  </span><span class="c1">-- Remove line breaks</span>
+<span class="w">                       </span><span class="p">,</span><span class="w"> </span><span class="s1">'- Comments:'</span><span class="p">)</span><span class="w"></span>
+<span class="w">                   </span><span class="p">,</span><span class="w"> </span><span class="s1">'\|'</span><span class="p">)</span><span class="w">  </span><span class="c1">-- Split the violations</span>
+<span class="w">               </span><span class="p">,</span><span class="w"> </span><span class="s1">'(?&lt;=\d+)\.\s*|\s*-\s*Comments:'</span><span class="p">)</span><span class="w">  </span><span class="c1">-- Split each violation in three</span>
+<span class="w">            </span><span class="c1">-- , '\.\s*|\s*-\s*Comments:')  -- Split each violation in three (Use this if your postgresql is kind off old</span>
+<span class="w">           </span><span class="k">as</span><span class="w"> </span><span class="n">tuple</span><span class="w"></span>
+<span class="w">       </span><span class="k">from</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">       </span><span class="k">where</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Fail'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Pass'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Pass w/ Conditions'</span><span class="p">)</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">license_num</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"></span>
+<span class="w">           </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="w"></span>
+<span class="w">       </span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <p>This code is in <code>/sql/create_violations_table.sql</code>.</p>
 <p>We can verify the result of the previous script</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">inspection</span><span class="p">,</span> <span class="nb">date</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">description</span>
-<span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span>
-<span class="k">where</span>
-    <span class="n">inspection</span> <span class="o">=</span> <span class="mi">2145736</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="n">code</span> <span class="k">asc</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">inspection</span><span class="p">,</span><span class="w"> </span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="n">description</span><span class="w"></span>
+<span class="k">from</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">inspection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2145736</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">code</span><span class="w"> </span><span class="k">asc</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1512,20 +1479,20 @@ that pipes (<code>|</code>) seperate multiple violations.</p>
 </table>
 <p>If everything worked correctly you should be able to run the following
 code<sup id="fnref:12"><a class="footnote-ref" href="#fn:12">12</a></sup>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="k">case</span>
-    <span class="k">when</span>
-    <span class="k">grouping</span><span class="p">(</span><span class="n">severity</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">then</span> <span class="s1">'TOTAL'</span>
-    <span class="k">else</span>
-    <span class="n">severity</span>
-    <span class="k">end</span> <span class="k">as</span> <span class="n">severity</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-<span class="k">from</span>
-    <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="k">rollup</span> <span class="p">(</span><span class="n">severity</span><span class="p">)</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="n">severity</span> <span class="n">nulls</span> <span class="k">first</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"></span>
+<span class="w">    </span><span class="k">when</span><span class="w"></span>
+<span class="w">    </span><span class="k">grouping</span><span class="p">(</span><span class="n">severity</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'TOTAL'</span><span class="w"></span>
+<span class="w">    </span><span class="k">else</span><span class="w"></span>
+<span class="w">    </span><span class="n">severity</span><span class="w"></span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">severity</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">rollup</span><span class="w"> </span><span class="p">(</span><span class="n">severity</span><span class="p">)</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">severity</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">first</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1567,18 +1534,18 @@ can uniquely identify a facility. Let's hope it's easy<sup id="fnref:13"><a clas
 identifier. Let's confirm our hypothesis with some queries.</p>
 <p>We will begin with the following query: <em>What are 5 licenses with the
 most inspections?</em></p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">license_num</span><span class="p">,</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
-    <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
-<span class="k">from</span>
-    <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="n">license_num</span>
-<span class="k">order</span> <span class="k">by</span>
-     <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span>
-    <span class="k">limit</span> <span class="mi">5</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="k">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'fail'</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of failed inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">     </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="w"></span>
+<span class="w">    </span><span class="k">limit</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1619,19 +1586,19 @@ most inspections?</em></p>
 <p>This looks weird. There are three license numbers, in particular
 license number <code>0</code>, that have many more inspections than the
 rest. Let's investigate <code>license_num</code> = <code>0</code>.</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-      <span class="n">facility_type</span><span class="p">,</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
-      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
-  <span class="k">from</span>
-      <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
-  <span class="k">where</span>
-      <span class="n">license_num</span><span class="o">=</span><span class="mi">0</span>
-  <span class="k">group</span> <span class="k">by</span>
-      <span class="n">facility_type</span>
-  <span class="k">order</span> <span class="k">by</span>
-      <span class="ss">"number of inspections"</span> <span class="k">desc</span>
-  <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">      </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="k">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="k">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'fail'</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of failed inspections"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">      </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">  </span><span class="k">where</span><span class="w"></span>
+<span class="w">      </span><span class="n">license_num</span><span class="o">=</span><span class="mi">0</span><span class="w"></span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="n">facility_type</span><span class="w"></span>
+<span class="w">  </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="ss">"number of inspections"</span><span class="w"> </span><span class="k">desc</span><span class="w"></span>
+<span class="w">  </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1698,24 +1665,24 @@ rest. Let's investigate <code>license_num</code> = <code>0</code>.</p>
 these are related to <em>special events</em>, <em>churches</em>, <em>festivals</em>,
 etc. But what about the <code>restaurants</code> that have <code>license_num</code> = <code>0</code>?
 Are those the same restaurant?</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-      <span class="n">license_num</span><span class="p">,</span>
-      <span class="n">facility</span><span class="p">,</span>
-      <span class="n">address</span><span class="p">,</span>
-      <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span><span class="p">,</span>
-      <span class="n">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="n">filter</span> <span class="p">(</span><span class="k">where</span> <span class="k">result</span> <span class="o">=</span> <span class="s1">'fail'</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-      <span class="k">as</span> <span class="ss">"number of failed inspections"</span>
-  <span class="k">from</span>
-      <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
-  <span class="k">where</span>
-      <span class="n">license_num</span> <span class="o">=</span> <span class="mi">0</span>
-      <span class="k">and</span>
-      <span class="n">facility_type</span> <span class="o">=</span> <span class="s1">'restaurant'</span>
-  <span class="k">group</span> <span class="k">by</span>
-      <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">address</span>
-  <span class="k">order</span> <span class="k">by</span>
-      <span class="ss">"number of inspections"</span> <span class="k">desc</span>
-  <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">      </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="n">address</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="k">coalesce</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="k">where</span><span class="w"> </span><span class="k">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'fail'</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of failed inspections"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"></span>
+<span class="w">      </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">  </span><span class="k">where</span><span class="w"></span>
+<span class="w">      </span><span class="n">license_num</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="w">      </span><span class="k">and</span><span class="w"></span>
+<span class="w">      </span><span class="n">facility_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'restaurant'</span><span class="w"></span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"></span>
+<span class="w">  </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">      </span><span class="ss">"number of inspections"</span><span class="w"> </span><span class="k">desc</span><span class="w"></span>
+<span class="w">  </span><span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1802,11 +1769,11 @@ Are those the same restaurant?</p>
 </table>
 <p>Nope. Unfortunately, <code>license_num</code> is not a unique identifier.</p>
 <p>Perhaps <code>license_num</code> and <code>address</code> are a unique identifier.</p>
-<div class="highlight"><pre><span></span><code>  <span class="k">select</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">license_num</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of licenses"</span><span class="p">,</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">facility</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of facilities"</span><span class="p">,</span>
-  <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span> <span class="n">address</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of addresses"</span>
-  <span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">select</span><span class="w"></span>
+<span class="w">  </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">license_num</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of licenses"</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">facility</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of facilities"</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">address</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of addresses"</span><span class="w"></span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1831,15 +1798,15 @@ perhaps several facilities share the same address, such as facilities
 at the stadium or the airport.</p>
 <p>We will try to use the combination of <code>license_num</code>, <code>facility</code>,
 <code>facility_aka</code>, <code>facility_type</code>, and <code>address</code> to identify a facility:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span> <span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">as</span> <span class="ss">"number of inspections"</span>
-<span class="k">from</span>
-    <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
-<span class="k">group</span> <span class="k">by</span>
-    <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span>
-<span class="k">order</span> <span class="k">by</span>
-    <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">desc</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">license_num</span><span class="p">,</span> <span class="n">facility_type</span>
-<span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="ss">"number of inspections"</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"></span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="w"></span>
+<span class="k">limit</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -1950,63 +1917,63 @@ predictions for inactive entities.</p>
 the date of the facility's first inspection as <code>start_time</code>, and
 either <code>NULL</code> or the date of inspection if the result was <code>out of
 business</code> or <code>business not located</code> as <code>end_time</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">schema</span> <span class="k">if</span> <span class="k">not</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">schema</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">semantic</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="k">cascade</span><span class="p">;</span>
+<span class="k">drop</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="k">cascade</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">table</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">with</span> <span class="n">entities</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">select</span>
-            <span class="k">distinct</span> <span class="k">on</span> <span class="p">(</span>
-                <span class="n">license_num</span><span class="p">,</span>
-                <span class="n">facility</span><span class="p">,</span>
-                <span class="n">facility_aka</span><span class="p">,</span>
-                <span class="n">facility_type</span><span class="p">,</span>
-                <span class="n">address</span>
-                <span class="p">)</span>
-            <span class="n">license_num</span><span class="p">,</span>
-            <span class="n">facility</span><span class="p">,</span>
-            <span class="n">facility_aka</span><span class="p">,</span>
-            <span class="n">facility_type</span><span class="p">,</span>
-            <span class="n">address</span><span class="p">,</span>
-            <span class="n">zip_code</span><span class="p">,</span>
-            <span class="k">location</span><span class="p">,</span>
-            <span class="k">min</span><span class="p">(</span><span class="nb">date</span><span class="p">)</span> <span class="n">over</span> <span class="p">(</span><span class="n">partition</span> <span class="k">by</span> <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="k">as</span> <span class="n">start_time</span><span class="p">,</span>
-            <span class="k">max</span><span class="p">(</span><span class="k">case</span> <span class="k">when</span> <span class="k">result</span> <span class="k">in</span> <span class="p">(</span><span class="s1">'out of business'</span><span class="p">,</span> <span class="s1">'business not located'</span><span class="p">)</span>
-                <span class="k">then</span> <span class="nb">date</span>
-                <span class="k">else</span> <span class="k">NULL</span>
-                <span class="k">end</span><span class="p">)</span>
-            <span class="n">over</span> <span class="p">(</span><span class="n">partition</span> <span class="k">by</span> <span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="k">as</span> <span class="n">end_time</span>
-        <span class="k">from</span> <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span>
-        <span class="k">order</span> <span class="k">by</span>
-            <span class="n">license_num</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility_aka</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility_type</span> <span class="k">asc</span><span class="p">,</span> <span class="n">address</span> <span class="k">asc</span><span class="p">,</span>
-            <span class="nb">date</span> <span class="k">asc</span> <span class="c1">-- IMPORTANT!!</span>
-            <span class="p">)</span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">with</span><span class="w"> </span><span class="n">entities</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">select</span><span class="w"></span>
+<span class="w">            </span><span class="k">distinct</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">address</span><span class="w"></span>
+<span class="w">                </span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">address</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">zip_code</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">location</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">min</span><span class="p">(</span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">start_time</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="k">result</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'out of business'</span><span class="p">,</span><span class="w"> </span><span class="s1">'business not located'</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="nb">date</span><span class="w"></span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="k">NULL</span><span class="w"></span>
+<span class="w">                </span><span class="k">end</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="n">over</span><span class="w"> </span><span class="p">(</span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">end_time</span><span class="w"></span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"></span>
+<span class="w">        </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">            </span><span class="n">license_num</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nb">date</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="c1">-- IMPORTANT!!</span>
+<span class="w">            </span><span class="p">)</span><span class="w"></span>
 
-    <span class="k">select</span>
-        <span class="n">row_number</span><span class="p">()</span> <span class="n">over</span> <span class="p">(</span><span class="k">order</span> <span class="k">by</span> <span class="n">start_time</span> <span class="k">asc</span><span class="p">,</span> <span class="n">license_num</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility_aka</span> <span class="k">asc</span><span class="p">,</span> <span class="n">facility_type</span> <span class="k">asc</span><span class="p">,</span> <span class="n">address</span> <span class="k">asc</span> <span class="p">)</span> <span class="k">as</span> <span class="n">entity_id</span><span class="p">,</span>
-        <span class="n">license_num</span><span class="p">,</span>
-        <span class="n">facility</span><span class="p">,</span>
-        <span class="n">facility_aka</span><span class="p">,</span>
-        <span class="n">facility_type</span><span class="p">,</span>
-        <span class="n">address</span><span class="p">,</span>
-        <span class="n">zip_code</span><span class="p">,</span>
-        <span class="k">location</span><span class="p">,</span>
-        <span class="n">start_time</span><span class="p">,</span>
-        <span class="n">end_time</span><span class="p">,</span>
-        <span class="n">daterange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span> <span class="k">as</span> <span class="n">activity_period</span>
-    <span class="k">from</span> <span class="n">entities</span>
-        <span class="p">);</span>
+<span class="w">    </span><span class="k">select</span><span class="w"></span>
+<span class="w">        </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">start_time</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">license_num</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">license_num</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">address</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">zip_code</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">location</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">start_time</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">end_time</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">daterange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="w"> </span><span class="n">end_time</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">activity_period</span><span class="w"></span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">entities</span><span class="w"></span>
+<span class="w">        </span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <p>Note that we added a <em>unique</em> identifier (<code>entity_id</code>) to this
 table. This identifier was assigned using a PostgreSQL idiom:
 <code>distinct on()</code>. <code>DISTINCT ON</code> keeps the "first" row of each group. If
 you are interested in this powerful technique see this
 <a href="http://www.postgresqltutorial.com/postgresql-select-distinct/">blogpost</a>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">entity_id</span><span class="p">),</span> <span class="s1">'999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="n">entities</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">entity_id</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entities</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -2021,16 +1988,16 @@ you are interested in this powerful technique see this
 </tbody>
 </table>
 <p>We will add some indexes to this table<sup id="fnref:15"><a class="footnote-ref" href="#fn:15">15</a></sup>:</p>
-<div class="highlight"><pre><span></span><code><span class="k">create</span> <span class="k">index</span> <span class="n">entities_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">entity_id</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_license_num_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">license_num</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_facility_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">facility</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_facility_type_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">facility_type</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_zip_code_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">zip_code</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">entity_id</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_license_num_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">license_num</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_facility_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">facility</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_facility_type_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">facility_type</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_zip_code_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">zip_code</span><span class="p">);</span><span class="w"></span>
 
 <span class="c1">-- Spatial index</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_location_gix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="k">using</span> <span class="n">gist</span> <span class="p">(</span><span class="k">location</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_location_gix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">gist</span><span class="w"> </span><span class="p">(</span><span class="k">location</span><span class="p">);</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">index</span> <span class="n">entities_full_key_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span> <span class="p">(</span><span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">address</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">entities_full_key_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"> </span><span class="p">(</span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <h3 id="events-table">Events table<a class="headerlink" href="#events-table" title="Permanent link">#</a></h3>
 <p>We are ready to create the events table. This table will describe the
@@ -2038,80 +2005,80 @@ inspection, like the <em>type</em> of inspection, <em>when</em> and <em>where</e
 inspection happened, and the inspection <em>result</em>. We will add the
 violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-ref" href="#fn:16">16</a></sup>. Finally, we'll rename
 <code>inspection</code> as <code>event_id</code><sup id="fnref:17"><a class="footnote-ref" href="#fn:17">17</a></sup>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">drop</span> <span class="k">table</span> <span class="k">if</span> <span class="k">exists</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">cascade</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">drop</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">cascade</span><span class="p">;</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">table</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">as</span> <span class="p">(</span>
+<span class="k">create</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
 
-        <span class="k">with</span> <span class="n">entities</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">semantic</span><span class="p">.</span><span class="n">entities</span>
-            <span class="p">),</span>
+<span class="w">        </span><span class="k">with</span><span class="w"> </span><span class="n">entities</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">entities</span><span class="w"></span>
+<span class="w">            </span><span class="p">),</span><span class="w"></span>
 
-        <span class="n">inspections</span> <span class="k">as</span> <span class="p">(</span>
-        <span class="k">select</span>
-            <span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">result</span><span class="p">,</span>
-            <span class="n">i</span><span class="p">.</span><span class="n">license_num</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">facility</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">facility_aka</span><span class="p">,</span>
-            <span class="n">i</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">address</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">location</span><span class="p">,</span>
-            <span class="n">jsonb_agg</span><span class="p">(</span>
-                <span class="n">jsonb_build_object</span><span class="p">(</span>
-                    <span class="s1">'code'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">code</span><span class="p">,</span>
-                    <span class="s1">'severity'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">severity</span><span class="p">,</span>
-                <span class="s1">'description'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="s1">'comment'</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="k">comment</span>
-                <span class="p">)</span>
-            <span class="k">order</span>  <span class="k">by</span> <span class="n">code</span>
-                <span class="p">)</span> <span class="k">as</span> <span class="n">violations</span>
-        <span class="k">from</span>
-            <span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span> <span class="k">as</span> <span class="n">i</span>
-            <span class="k">inner</span> <span class="k">join</span>
-            <span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span> <span class="k">as</span> <span class="n">v</span>
-            <span class="k">on</span> <span class="n">i</span><span class="p">.</span><span class="n">inspection</span> <span class="o">=</span> <span class="n">v</span><span class="p">.</span><span class="n">inspection</span>
-        <span class="k">group</span> <span class="k">by</span>
-            <span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">license_num</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">facility</span><span class="p">,</span>
-            <span class="n">i</span><span class="p">.</span><span class="n">facility_aka</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">address</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">location</span><span class="p">,</span>
-            <span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">result</span>
-            <span class="p">)</span>
+<span class="w">        </span><span class="n">inspections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">select</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">result</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">facility_aka</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">location</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">jsonb_agg</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">jsonb_build_object</span><span class="p">(</span><span class="w"></span>
+<span class="w">                    </span><span class="s1">'code'</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">code</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="s1">'severity'</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">severity</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="s1">'description'</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">description</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="s1">'comment'</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="k">comment</span><span class="w"></span>
+<span class="w">                </span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">order</span><span class="w">  </span><span class="k">by</span><span class="w"> </span><span class="n">code</span><span class="w"></span>
+<span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">violations</span><span class="w"></span>
+<span class="w">        </span><span class="k">from</span><span class="w"></span>
+<span class="w">            </span><span class="n">cleaned</span><span class="p">.</span><span class="n">inspections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">i</span><span class="w"></span>
+<span class="w">            </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"></span>
+<span class="w">            </span><span class="n">cleaned</span><span class="p">.</span><span class="n">violations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">v</span><span class="w"></span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">.</span><span class="n">inspection</span><span class="w"></span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">facility</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">location</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">result</span><span class="w"></span>
+<span class="w">            </span><span class="p">)</span><span class="w"></span>
 
-    <span class="k">select</span>
-        <span class="n">i</span><span class="p">.</span><span class="n">inspection</span> <span class="k">as</span> <span class="n">event_id</span><span class="p">,</span>
-        <span class="n">e</span><span class="p">.</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="k">result</span><span class="p">,</span>
-        <span class="n">e</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span> <span class="n">e</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span> <span class="n">e</span><span class="p">.</span><span class="k">location</span><span class="p">,</span>
-        <span class="n">i</span><span class="p">.</span><span class="n">violations</span>
-    <span class="k">from</span>
-        <span class="n">entities</span> <span class="k">as</span> <span class="n">e</span>
-        <span class="k">inner</span> <span class="k">join</span>
-        <span class="n">inspections</span> <span class="k">as</span> <span class="n">i</span>
-        <span class="k">using</span> <span class="p">(</span><span class="n">license_num</span><span class="p">,</span> <span class="n">facility</span><span class="p">,</span> <span class="n">facility_aka</span><span class="p">,</span> <span class="n">facility_type</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">zip_code</span><span class="p">)</span>
-        <span class="p">);</span>
+<span class="w">    </span><span class="k">select</span><span class="w"></span>
+<span class="w">        </span><span class="n">i</span><span class="p">.</span><span class="n">inspection</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">event_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">e</span><span class="p">.</span><span class="n">entity_id</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">type</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="nb">date</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="n">risk</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">.</span><span class="k">result</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">e</span><span class="p">.</span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">zip_code</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="k">location</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">i</span><span class="p">.</span><span class="n">violations</span><span class="w"></span>
+<span class="w">    </span><span class="k">from</span><span class="w"></span>
+<span class="w">        </span><span class="n">entities</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span><span class="w"></span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"></span>
+<span class="w">        </span><span class="n">inspections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">i</span><span class="w"></span>
+<span class="w">        </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">license_num</span><span class="p">,</span><span class="w"> </span><span class="n">facility</span><span class="p">,</span><span class="w"> </span><span class="n">facility_aka</span><span class="p">,</span><span class="w"> </span><span class="n">facility_type</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">zip_code</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">);</span><span class="w"></span>
 
 <span class="c1">-- Add some indices</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_entity_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span><span class="n">entity_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_event_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span><span class="n">event_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_type_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span><span class="k">type</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_date_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">(</span><span class="nb">date</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_facility_type_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>  <span class="p">(</span><span class="n">facility_type</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_zip_code_ix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span>  <span class="p">(</span><span class="n">zip_code</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_entity_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="p">(</span><span class="n">entity_id</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_event_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="p">(</span><span class="n">event_id</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_type_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="p">(</span><span class="k">type</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_date_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">(</span><span class="nb">date</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_facility_type_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w">  </span><span class="p">(</span><span class="n">facility_type</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_zip_code_ix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w">  </span><span class="p">(</span><span class="n">zip_code</span><span class="p">);</span><span class="w"></span>
 
 <span class="c1">-- Spatial index</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_location_gix</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">using</span> <span class="n">gist</span> <span class="p">(</span><span class="k">location</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_location_gix</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">gist</span><span class="w"> </span><span class="p">(</span><span class="k">location</span><span class="p">);</span><span class="w"></span>
 
 <span class="c1">-- JSONB indices</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_violations</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">using</span> <span class="n">gin</span><span class="p">(</span><span class="n">violations</span><span class="p">);</span>
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_violations_json_path</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">using</span> <span class="n">gin</span><span class="p">(</span><span class="n">violations</span> <span class="n">jsonb_path_ops</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_violations</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">gin</span><span class="p">(</span><span class="n">violations</span><span class="p">);</span><span class="w"></span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_violations_json_path</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">gin</span><span class="p">(</span><span class="n">violations</span><span class="w"> </span><span class="n">jsonb_path_ops</span><span class="p">);</span><span class="w"></span>
 
-<span class="k">create</span> <span class="k">index</span> <span class="n">events_event_entity_zip_code_date</span> <span class="k">on</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span><span class="n">event_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">,</span> <span class="n">entity_id</span> <span class="k">asc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">,</span> <span class="n">zip_code</span><span class="p">,</span> <span class="nb">date</span> <span class="k">desc</span> <span class="n">nulls</span> <span class="k">last</span><span class="p">);</span>
+<span class="k">create</span><span class="w"> </span><span class="k">index</span><span class="w"> </span><span class="n">events_event_entity_zip_code_date</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="p">(</span><span class="n">event_id</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">,</span><span class="w"> </span><span class="n">entity_id</span><span class="w"> </span><span class="k">asc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">,</span><span class="w"> </span><span class="n">zip_code</span><span class="p">,</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="k">desc</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">last</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 <p>Success! We have one row per event<sup id="fnref:18"><a class="footnote-ref" href="#fn:18">18</a></sup> Our semantic data looks like:</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">event_id</span><span class="p">,</span>
-    <span class="n">entity_id</span><span class="p">,</span>
-    <span class="k">type</span><span class="p">,</span>
-    <span class="nb">date</span><span class="p">,</span>
-    <span class="n">risk</span><span class="p">,</span>
-    <span class="k">result</span><span class="p">,</span>
-    <span class="n">facility_type</span><span class="p">,</span>
-    <span class="n">zip_code</span>
-<span class="k">from</span>
-    <span class="n">semantic</span><span class="p">.</span><span class="n">events</span> <span class="k">limit</span> <span class="mi">1</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">event_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">entity_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">type</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nb">date</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">risk</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">result</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">facility_type</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">zip_code</span><span class="w"></span>
+<span class="k">from</span><span class="w"></span>
+<span class="w">    </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="w"> </span><span class="k">limit</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -2140,9 +2107,9 @@ violations as a <code>JSONB</code> column<sup id="fnref:16"><a class="footnote-r
 </tbody>
 </table>
 <p>We omitted <code>violations</code> and <code>location</code> for brevity. The total number of inspections is</p>
-<div class="highlight"><pre><span></span><code><span class="k">select</span>
-    <span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">),</span> <span class="s1">'999,999,999'</span><span class="p">)</span> <span class="k">as</span> <span class="n">events</span>
-<span class="k">from</span> <span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"></span>
+<span class="w">    </span><span class="n">to_char</span><span class="p">(</span><span class="k">count</span><span class="p">(</span><span class="n">event_id</span><span class="p">),</span><span class="w"> </span><span class="s1">'999,999,999'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">events</span><span class="w"></span>
+<span class="k">from</span><span class="w"> </span><span class="n">semantic</span><span class="p">.</span><span class="n">events</span><span class="p">;</span><span class="w"></span>
 </code></pre></div>
 <table>
 <thead>
@@ -2296,36 +2263,34 @@ statistics which apply to analyzing data.</em> <a class="footnote-backref" href
 </div>
 </main>
 <footer class="md-footer">
-<div class="md-footer-nav">
-<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
-<a class="md-footer-nav__link md-footer-nav__link--prev" href="../infrastructure/" rel="prev" title="Infrastructure">
-<div class="md-footer-nav__button md-icon">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a class="md-footer__link md-footer__link--prev" href="../infrastructure/" rel="prev">
+<div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"></path></svg>
 </div>
-<div class="md-footer-nav__title">
+<div class="md-footer__title">
 <div class="md-ellipsis">
-<span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Infrastructure
-              </div>
+<span class="md-footer__direction">
+                Previous
+              </span>
+              Infrastructure
+            </div>
 </div>
 </a>
-<a class="md-footer-nav__link md-footer-nav__link--next" href="../for_the_impatient/" rel="next" title="Quick setup">
-<div class="md-footer-nav__title">
+<a class="md-footer__link md-footer__link--next" href="../for_the_impatient/" rel="next">
+<div class="md-footer__title">
 <div class="md-ellipsis">
-<span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Quick setup
-              </div>
+<span class="md-footer__direction">
+                Next
+              </span>
+              Quick setup
+            </div>
 </div>
-<div class="md-footer-nav__button md-icon">
+<div class="md-footer__button md-icon">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"></path></svg>
 </div>
 </a>
 </nav>
-</div>
 <div class="md-footer-meta md-typeset">
 <div class="md-footer-meta__inner md-grid">
 <div class="md-footer-copyright">
@@ -2350,17 +2315,11 @@ statistics which apply to analyzing data.</em> <a class="footnote-backref" href
 </div>
 </footer>
 </div>
-<script src="../../assets/javascripts/vendor.d710d30a.min.js"></script>
-<script src="../../assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
-<script>
-        app = initialize({
-          base: "../..",
-          features: [],
-          search: Object.assign({
-            worker: "../../assets/javascripts/worker/search.a68abb33.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.fb4a9340.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing"}, "version": null}</script>
+<script src="../../assets/javascripts/bundle.a1c7c35e.min.js"></script>
 <script src="../../js/mermaid.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 </body>
