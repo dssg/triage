@@ -46,7 +46,6 @@ feature_config = [{
 			'metrics': ['sum']
 		},
 	],
-	'groups': ['entity_id', 'zip_code'],
 	'intervals': ['all'],
 	'knowledge_date_column': 'knowledge_date',
 	'from_obj': 'data'

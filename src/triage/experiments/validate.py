@@ -139,7 +139,6 @@ class FeatureAggregationsValidator(Validator):
         for key in [
             "from_obj",
             "intervals",
-            "groups",
             "knowledge_date_column",
             "prefix",
         ]:
@@ -153,16 +152,33 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
                 )
-                if not string_is_tablesafe(aggregation_config['prefix']):
-                    raise ValueError(
-                        dedent(
-                            f"""Section: feature_aggregations -
-                            Feature aggregation prefix should only contain
-                            lowercase letters, numbers, and underscores.
-                            Aggregation config: {aggregation_config}
-                            """
-                        )
+        if not string_is_tablesafe(aggregation_config['prefix']):
+            raise ValueError(
+                dedent(
+                    f"""Section: feature_aggregations -
+                    Feature aggregation prefix should only contain
+                    lowercase letters, numbers, and underscores.
+                    Aggregation config: {aggregation_config}
+                    """
+                )
+            )
+        if "groups" in aggregation_config:
+            if aggregation_config["groups"] != [self.entity_id_column]:
+                raise ValueError(
+                    dedent(
+                        """Specifying groupings for feature aggregation is 
+                        not supported. Features can only be grouped at the 
+                        entity_id level."""
                     )
+                )
+            else:
+                logger.warning(
+                    dedent(
+                        """Specifying groupings for feature aggregation is 
+                        not supported. In the future, please exclude this key 
+                        from your feature configuration."""
+                    )
+                )
 
         logger.debug("Validation of feature aggregation keys was successful")
     def _validate_aggregates(self, aggregation_config):
@@ -272,21 +288,6 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
 
-    def _validate_groups(self, groups):
-        logger.spam("Validating groups")
-        if "entity_id" not in groups:
-            raise ValueError(
-                dedent(
-                    """
-            Section: feature_aggregations -
-            List of groups needs to include 'entity_id'.
-            Passed list: {}""".format(
-                        groups
-                    )
-                )
-            )
-        logger.debug("Validation of groups was successful")
-
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
         """Validate the imputation rule for a given aggregation type."""
         logger.spam("Validating imputation rule")
@@ -382,7 +383,6 @@ class FeatureAggregationsValidator(Validator):
         self._validate_categoricals(aggregation_config.get("categoricals", []))
         self._validate_from_obj(aggregation_config["from_obj"])
         self._validate_time_intervals(aggregation_config["intervals"])
-        self._validate_groups(aggregation_config["groups"])
         self._validate_imputations(aggregation_config)
         logger.debug("Validation of aggregation config was successful")
 

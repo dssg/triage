@@ -20,7 +20,7 @@ While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an en
 ### [Get started with your own project and data](quickstart.md)
 
 
-
 ## Background
 
 Triage was initially developed at the University of Chicago's [Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained and enhanced at Carnegie Mellon University.
+

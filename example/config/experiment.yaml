@@ -5,7 +5,7 @@
 # old configuration files are released. Be sure to assign the config version
 # that matches the triage.experiments.CONFIG_VERSION in the triage release
 # you are developing against!
-config_version: 'v7'
+config_version: 'v8'
 
 # EXPERIMENT METADATA
 # model_comment (optional) will end up in the model_comment column of the
@@ -102,13 +102,13 @@ cohort_config:
 # FEATURE GENERATION
 # The aggregate features to generate for each train/test split
 #
-# Implemented by wrapping collate: https://github.com/dssg/collate
+# Implemented using the collate component: 
+# https://github.com/dssg/triage/tree/master/src/triage/component/collate
 # Most terminology here is taken directly from collate
 #
 # Each entry describes a collate.SpacetimeAggregation object, and the
-# arguments needed to create it. Generally, each of these entries controls
-# the features from one source table, though in the case of multiple groups
-# may result in multiple output tables
+# arguments needed to create it. Each of these entries controls
+# the features from one source table.
 #
 # Rules specifying how to handle imputation of null values must be explicitly
 # defined in your config file. These can be specified in two places: either
@@ -226,9 +226,6 @@ feature_aggregations:
             - '1 year'
             - '2 years'
             - 'all'
-        # A list of different columns to separately group by
-        groups:
-            - 'entity_id'
 
 # FEATURE GROUPING
 # define how to group features and generate combinations

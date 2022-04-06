@@ -67,6 +67,9 @@ from triage.experiments.validate import ExperimentValidator
 from triage.tracking import (
     initialize_tracking_and_get_run_id,
     experiment_entrypoint,
+    record_cohort_table_name,
+    record_labels_table_name,
+    record_bias_hash,
     record_matrix_building_started,
     record_model_building_started,
 )
@@ -287,6 +290,7 @@ class ExperimentBase(ABC):
                 "label_config missing or unrecognized. Without labels, "
                 "you will not be able to make matrices."
             )
+        record_labels_table_name(self.run_id, self.db_engine, self.labels_table_name)
 
         cohort_config = self.config.get("cohort_config", {})
         self.cohort_table_generator = None
@@ -317,6 +321,8 @@ class ExperimentBase(ABC):
                 replace=self.replace
             )
 
+        record_cohort_table_name(self.run_id, self.db_engine, self.cohort_table_name)
+
 
         if "bias_audit_config" in self.config:
             bias_config = self.config["bias_audit_config"]
@@ -331,6 +337,7 @@ class ExperimentBase(ABC):
                 protected_groups_table_name=self.protected_groups_table_name,
                 replace=self.replace
             )
+            record_bias_hash(self.run_id, self.db_engine, self.bias_hash)
         else:
             self.protected_groups_generator = ProtectedGroupsGeneratorNoOp()
             logger.notice(

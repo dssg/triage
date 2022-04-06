@@ -219,6 +219,42 @@ def record_matrix_building_started(run_id, db_engine):
         run_obj.matrix_building_started = datetime.datetime.now()
 
 
+def record_cohort_table_name(run_id, db_engine, cohort_table_name):
+    """Mark the current timestamp as the time at which matrix building started
+
+    Args:
+        run_id (int) The identifier/primary key of the run
+        db_engine (sqlalchemy.engine)
+        cohort_table_name (str) Name of the cohort table for this run
+    """
+    with get_run_for_update(db_engine, run_id) as run_obj:
+        run_obj.cohort_table_name = cohort_table_name
+
+
+def record_labels_table_name(run_id, db_engine, labels_table_name):
+    """Mark the current timestamp as the time at which matrix building started
+
+    Args:
+        run_id (int) The identifier/primary key of the run
+        db_engine (sqlalchemy.engine)
+        labels_table_name (str) Name of the labels table for this run
+    """
+    with get_run_for_update(db_engine, run_id) as run_obj:
+        run_obj.labels_table_name = labels_table_name
+
+
+def record_bias_hash(run_id, db_engine, bias_hash):
+    """Mark the current timestamp as the time at which matrix building started
+
+    Args:
+        run_id (int) The identifier/primary key of the run
+        db_engine (sqlalchemy.engine)
+        bias_hash (str) Identifier (hash) for bias audit for this run
+    """
+    with get_run_for_update(db_engine, run_id) as run_obj:
+        run_obj.bias_hash = bias_hash
+
+
 def record_model_building_started(run_id, db_engine):
     """Mark the current timestamp as the time at which model building started
 

@@ -410,7 +410,9 @@ If you would like to test how your cohort and label combine to make matrices, yo
 
 
 ```
-config_version: 'v6'
+config_version: 'v8'
+
+random_seed: 1234
 
 temporal_config:
     feature_start_time: '2010-01-04'
@@ -457,7 +459,6 @@ feature_aggregations:
                 type: 'zero_noflag'
         aggregates: [{quantity: '1', metrics: ['sum']}]
         intervals: ['3month']
-        groups: ['entity_id']
 ```
 
 The above feature aggregation should just create a feature with the value `1` for each entity, but what's important here is that it's a valid feature config that allows us to make complete matrices. To make matrices using all of this configuration, you can run:

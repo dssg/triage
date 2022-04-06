@@ -86,7 +86,6 @@ def test_feature_generation(test_engine):
             "categoricals": [
                 {"column": "cat_one", "choices": ["good", "bad"], "metrics": ["sum"]}
             ],
-            "groups": ["entity_id", "zip_code"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -98,87 +97,52 @@ def test_feature_generation(test_engine):
             {
                 "entity_id": 1,
                 "as_of_date": date(2013, 9, 30),
-                "zip_code": None,
                 "aprefix_entity_id_all_quantity_one_sum": 137,
                 "aprefix_entity_id_all_quantity_one_count": 0,
                 "aprefix_entity_id_all_cat_one_good_sum": 0,
                 "aprefix_entity_id_all_cat_one_bad_sum": 0,
                 "aprefix_entity_id_all_cat_one__NULL_sum": 1,
-                "aprefix_zip_code_all_quantity_one_sum": 137,
-                "aprefix_zip_code_all_quantity_one_count": 0,
-                "aprefix_zip_code_all_cat_one_good_sum": 0,
-                "aprefix_zip_code_all_cat_one_bad_sum": 0,
-                "aprefix_zip_code_all_cat_one__NULL_sum": 1,
                 "aprefix_entity_id_all_quantity_one_imp": 1,
-                "aprefix_zip_code_all_quantity_one_imp": 1,
             },
             {
                 "entity_id": 1,
                 "as_of_date": date(2014, 9, 30),
-                "zip_code": "60120",
                 "aprefix_entity_id_all_quantity_one_sum": 10000,
                 "aprefix_entity_id_all_quantity_one_count": 1,
                 "aprefix_entity_id_all_cat_one_good_sum": 1,
                 "aprefix_entity_id_all_cat_one_bad_sum": 0,
                 "aprefix_entity_id_all_cat_one__NULL_sum": 0,
-                "aprefix_zip_code_all_quantity_one_sum": 10000,
-                "aprefix_zip_code_all_quantity_one_count": 1,
-                "aprefix_zip_code_all_cat_one_good_sum": 1,
-                "aprefix_zip_code_all_cat_one_bad_sum": 0,
-                "aprefix_zip_code_all_cat_one__NULL_sum": 0,
                 "aprefix_entity_id_all_quantity_one_imp": 0,
-                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 3,
                 "as_of_date": date(2013, 9, 30),
-                "zip_code": "60653",
                 "aprefix_entity_id_all_quantity_one_sum": 342,
                 "aprefix_entity_id_all_quantity_one_count": 1,
                 "aprefix_entity_id_all_cat_one_good_sum": 0,
                 "aprefix_entity_id_all_cat_one_bad_sum": 1,
                 "aprefix_entity_id_all_cat_one__NULL_sum": 0,
-                "aprefix_zip_code_all_quantity_one_sum": 342,
-                "aprefix_zip_code_all_quantity_one_count": 1,
-                "aprefix_zip_code_all_cat_one_good_sum": 0,
-                "aprefix_zip_code_all_cat_one_bad_sum": 1,
-                "aprefix_zip_code_all_cat_one__NULL_sum": 0,
                 "aprefix_entity_id_all_quantity_one_imp": 0,
-                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 3,
                 "as_of_date": date(2014, 9, 30),
-                "zip_code": "60653",
                 "aprefix_entity_id_all_quantity_one_sum": 342,
                 "aprefix_entity_id_all_quantity_one_count": 1,
                 "aprefix_entity_id_all_cat_one_good_sum": 0,
                 "aprefix_entity_id_all_cat_one_bad_sum": 1,
                 "aprefix_entity_id_all_cat_one__NULL_sum": 0,
-                "aprefix_zip_code_all_quantity_one_sum": 1578,
-                "aprefix_zip_code_all_quantity_one_count": 2,
-                "aprefix_zip_code_all_cat_one_good_sum": 0,
-                "aprefix_zip_code_all_cat_one_bad_sum": 2,
-                "aprefix_zip_code_all_cat_one__NULL_sum": 0,
                 "aprefix_entity_id_all_quantity_one_imp": 0,
-                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
             {
                 "entity_id": 4,
                 "as_of_date": date(2014, 9, 30),
-                "zip_code": "60653",
                 "aprefix_entity_id_all_quantity_one_sum": 1236,
                 "aprefix_entity_id_all_quantity_one_count": 1,
                 "aprefix_entity_id_all_cat_one_good_sum": 0,
                 "aprefix_entity_id_all_cat_one_bad_sum": 1,
                 "aprefix_entity_id_all_cat_one__NULL_sum": 0,
-                "aprefix_zip_code_all_quantity_one_sum": 1578,
-                "aprefix_zip_code_all_quantity_one_count": 2,
-                "aprefix_zip_code_all_cat_one_good_sum": 0,
-                "aprefix_zip_code_all_cat_one_bad_sum": 2,
-                "aprefix_zip_code_all_cat_one__NULL_sum": 0,
                 "aprefix_entity_id_all_quantity_one_imp": 0,
-                "aprefix_zip_code_all_quantity_one_imp": 0,
             },
         ]
     }
@@ -238,7 +202,7 @@ def test_index_column_lookup(test_engine):
                     impute_rules={"coltype": "aggregate", "all": {"type": "zero"}},
                 )
             ],
-            groups=["entity_id", "zip_code"],
+            groups=["entity_id"],
             intervals=["all"],
             date_column="knowledge_date",
             output_date_column="as_of_date",
@@ -258,7 +222,7 @@ def test_index_column_lookup(test_engine):
     lookup = feature_generator.index_column_lookup(aggregations)
     assert lookup == {
         "prefix1_aggregation_imputed": ["as_of_date", "entity_id"],
-        "prefix2_aggregation_imputed": ["as_of_date", "entity_id", "zip_code"],
+        "prefix2_aggregation_imputed": ["as_of_date", "entity_id"],
     }
 
 
@@ -268,7 +232,6 @@ def test_feature_generation_feature_start_time(test_engine):
             "prefix": "aprefix",
             "aggregates_imputation": {"all": {"type": "constant", "value": 7}},
             "aggregates": [{"quantity": "quantity_one", "metrics": ["sum"]}],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -330,7 +293,6 @@ def test_dynamic_categoricals(test_engine):
                     "imputation": {"all": {"type": "null_category"}},
                 }
             ],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -415,7 +377,6 @@ def test_array_categoricals(db_engine):
                     "imputation": {"all": {"type": "null_category"}},
                 }
             ],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -606,7 +567,6 @@ def test_aggregations(test_engine):
                     "imputation": {"all": {"type": "null_category"}},
                 }
             ],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -615,7 +575,6 @@ def test_aggregations(test_engine):
             "prefix": "prefix2",
             "aggregates_imputation": {"all": {"type": "mean"}},
             "aggregates": [{"quantity": "quantity_one", "metrics": ["count"]}],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -651,7 +610,6 @@ def test_replace(test_engine):
                     "imputation": {"all": {"type": "null_category"}},
                 }
             ],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -726,7 +684,6 @@ def test_aggregations_materialize_off(test_engine):
                 "imputation": {"all": {"type": "null_category"}},
             }
         ],
-        "groups": ["entity_id", "zip_code"],
         "intervals": ["all"],
         "knowledge_date_column": "knowledge_date",
         "from_obj": "data",
@@ -754,7 +711,6 @@ def test_aggregations_materialize_on(test_engine):
                 "imputation": {"all": {"type": "null_category"}},
             }
         ],
-        "groups": ["entity_id", "zip_code"],
         "intervals": ["all"],
         "knowledge_date_column": "knowledge_date",
         "from_obj": "data",
@@ -792,7 +748,6 @@ def test_transaction_error(test_engine):
                     },
                 }
             ],
-            "groups": ["entity_id"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -837,7 +792,6 @@ class TestValidations:
                     "imputation": {"all": {"type": "null_category"}},
                 }
             ],
-            "groups": ["entity_id", "zip_code"],
             "intervals": ["all"],
             "knowledge_date_column": "knowledge_date",
             "from_obj": "data",
@@ -851,9 +805,9 @@ class TestValidations:
         feature_generator.validate([base_config])
 
         with pytest.raises(ValueError):
-            no_group = copy.deepcopy(base_config)
-            del no_group["groups"]
-            feature_generator.validate([no_group])
+            has_groups = copy.deepcopy(base_config)
+            has_groups["groups"] = ["entity_id", "zip_code"]
+            feature_generator.validate([has_groups])
 
         with pytest.raises(ValueError):
             no_intervals = copy.deepcopy(base_config)
@@ -888,11 +842,6 @@ class TestValidations:
 
     def test_bad_interval(self, base_config, feature_generator):
         base_config["intervals"] = ["1y", "1fortnight"]
-        with pytest.raises(ValueError):
-            feature_generator.validate([base_config])
-
-    def test_bad_group(self, base_config, feature_generator):
-        base_config["groups"] = ["zip_code", "otherthing"]
         with pytest.raises(ValueError):
             feature_generator.validate([base_config])
 
