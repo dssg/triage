@@ -13,7 +13,7 @@ class CohortInspectionResults(pydantic.BaseModel):
     distinct_entity_ids: int
     examples: List[str]
 
-def inspect_cohort_query_on_date(query: str, db_engine, as_of_date: datetime.date):
+def inspect_cohort_query_on_date(query: str, db_engine, as_of_date: datetime.date) -> CohortInspectionResults:
     cohort_table_name = 'temp_inspect_cohort'
     generator = EntityDateTableGenerator(
         query=query,
