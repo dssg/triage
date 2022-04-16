@@ -29,8 +29,26 @@ def test_inspect_cohort_query_on_date():
         expected_output = CohortInspectionResults(
             ran_successfully=True,
             num_rows=3,
-            distinct_entity_ids=3,
+            num_distinct_entity_ids=3,
             examples=[1, 2, 3]
+        )
+            
+        assert results == expected_output
+
+def test_inspect_cohort_query_on_date_unsuccessful():
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        results = inspect_cohort_query_on_date(
+            db_engine=engine,
+            query="select entity_id from events2 where outcome_date < '{as_of_date}'::date",
+            as_of_date=datetime(2016, 2, 1)
+        )
+
+        expected_output = CohortInspectionResults(
+            ran_successfully=False,
+            num_rows=0,
+            num_distinct_entity_ids=0,
+            examples=[]
         )
             
         assert results == expected_output
