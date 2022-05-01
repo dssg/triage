@@ -15,7 +15,7 @@ s3fs==2022.3.0
 wrapt==1.14.0
 argcmdr==0.7.0
 sqlparse==0.4.2
-pebble==4.5.3
+pebble==4.6.3
 adjustText==0.7.3
 graphviz==0.14
 requests==2.24.0
