@@ -2,7 +2,7 @@ import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
 import textwrap
-from triage.database_reflection import table_row_count, table_exists
+from triage.database_reflection import table_row_count, table_exists, table_has_duplicates
 
 DEFAULT_LABEL_NAME = "outcome"
 
@@ -86,10 +86,17 @@ class LabelGenerator:
 
         if nrows == 0:
             logger.warning(f"Done creating labels, but no rows in {labels_table} table!")
-            raise ValueError(f"{label_table} is empty!")
-        else:
-            logger.debug(f"Labels table generated at {labels_table}")
-            logger.spam(f"Row count of {labels_table}: {nrows}")
+            raise ValueError(f"{labels_table} is empty!")
+
+        if table_has_duplicates(
+            labels_table,
+            ['entity_id', 'as_of_date', 'label_timespan', 'label_name', 'label_type'],
+            self.db_engine
+            ):
+            raise ValueError(f"Duplicates found in {labels_table}!")
+
+        logger.debug(f"Labels table generated at {labels_table}")
+        logger.spam(f"Row count of {labels_table}: {nrows}")
 
     def generate(self, start_date, label_timespan, labels_table):
         """Generate labels table using a query
