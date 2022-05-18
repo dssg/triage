@@ -66,11 +66,11 @@ experiment. This value is not processed when we generate the labels table, but l
 
 ### Cohort Table
 
-The Experiment keeps track of the which entities are in the cohort on any given date. Similarly to the labels table, the experiment populates a cohort table using the following input:
+The Experiment keeps track of the which entities are in the cohort on any given date. Similarly to the labels table, the experiment populates a cohort table. using one of two options:
 
-1. A query, provided by the user in the configuration file, that generates entity_ids for a given as_of_date.
+1. A query, provided by the user in the configuration file, that generates entity_ids for a given as_of_date. This is run for each as_of_date as generated from the temporal config.
 
-2. Each as_of_date as defined in temporal config
+2. All distinct entity ids and as_of_dates in the labels table, if no query is provided by the user in the configuration file.
 
 This cohort table is scoped to the entire Experiment, so all `as_of_times` (computed in step 1) are present. 
 
@@ -94,8 +94,6 @@ e.g (`where {knowledge_date_column} >= {as_of_time} - interval {interval}`)
 * Each `aggregate`, `categorical`, or `array_categorical` represents a SELECT clause. For aggregates, the `quantity` is
 a column or SQL expression representing a numeric quantity present in the `from_obj`, and the `metrics` are any number
 of aggregate functions we want to use. The aggregate function is applied to the quantity.
-* Each `group` is a column applied to the GROUP BY clause. Generally this is 'entity_id', but higher-level groupings
-(for instance, 'zip_code') can be used as long as they can be rolled up to 'entity_id'.
 * By default the query is joined with the cohort table to remove unnecessary rows. If `features_ignore_cohort` is passed to the Experiment this is not done.
 
 So a simplified version of a typical query would look like:
@@ -107,19 +105,15 @@ JOIN {cohort_table} ON (
     AND {cohort_table.date} = {as_of_time}
 )
 WHERE {knowledge_date_column} >= {as_of_time} - interval {interval}
-GROUP BY {group}
+GROUP BY entity_id
 ```
 
 #### Writing Group-wide Feature Tables
 For each `as_of_time`, the results from the generated query are written to a table whose name is prefixed with the
-`prefix`, and suffixed with the `group`. For instance, if the configuration specifies zipcode-level aggregates and
-entity-level aggregates, there will be a table for each, keyed on its group plus the as_of_date.
+`prefix`, and suffixed with the `group` (always `entity_id` in `triage`). The table is keyed on this grouping column plus the as_of_date.
 
 #### Merging into Aggregation-wide Feature Tables
-Each generated group table is combined into one representing the whole aggregation with a left join. Given that the
-groups originally came from the same table (the `from_obj` of the aggregation) and therefore we know the zipcode for
-each entity, what we do now is create a table that would be keyed on entity and as_of_date, and contain all
-entity-level and zipcode-level aggregates from both tables. This aggregation-level table represents all of the features
+Each generated group table is combined into one representing the whole aggregation with a left join to ensure all valid entity/date pairs are included (allowing for identification of nulls requiring imputation). This aggregation-level table represents all of the features
 in the aggregation, pre-imputation. Its output location is generally `{prefix}_aggregation`
 
 #### Imputing Values

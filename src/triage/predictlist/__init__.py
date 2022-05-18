@@ -26,7 +26,10 @@ from triage.tracking import (
     infer_python_version,
     infer_triage_version,
     infer_log_location,
-
+    record_cohort_table_name,
+    record_labels_table_name,
+    record_matrix_building_started,
+    record_model_building_started,
 )
 from .utils import (
     experiment_config_from_model_id,
@@ -400,10 +403,12 @@ class Retrainer:
 
         # 1. Generate all labels
         self.generate_all_labels(as_of_date)
+        record_labels_table_name(run_id, self.db_engine, self.labels_table_name)
 
         # 2. Generate cohort
         cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
         self.generate_entity_date_table(as_of_date, cohort_table_name)
+        record_cohort_table_name(run_id, self.db_engine, cohort_table_name)
 
         # 3. Generate feature aggregations
         collate_aggregations = self.get_collate_aggregations(as_of_date, cohort_table_name)
@@ -432,6 +437,7 @@ class Retrainer:
             "labels_table_name": self.labels_table_name,
         }
 
+        record_matrix_building_started(run_id, self.db_engine)
         matrix_builder = MatrixBuilder(
             db_config=db_config,
             matrix_storage_engine=self.matrix_storage_engine,
@@ -501,6 +507,7 @@ class Retrainer:
 
         associate_models_with_retrain(self.retrain_hash, (retrain_model_hash, ), self.db_engine)
 
+        record_model_building_started(run_id, self.db_engine)
         retrain_model_id = self.model_trainer.process_train_task(
             matrix_store=self.matrix_storage_engine.get_store(matrix_uuid), 
             class_path=self.model_group_info['model_type'], 

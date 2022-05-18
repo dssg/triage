@@ -36,7 +36,7 @@ You'll need to have the servername, databasename, username, and password and put
 ### 3. Structure your data
 
 The simplest way to start is to structure your data as a series of
-events connected to your entity of interest (people, organization,
+events connected to your entity of interest (person, organization,
 business, etc.) that take place at a certain time. Each row of the
 data will be an **event**. Each event will have some `event_id`, and an
 `entity_id` to link it to the entity it happened to, a date, as well as
@@ -47,16 +47,19 @@ entity (`age`, `gender`, `race`, etc.). A sample row might look like:
 event_id, entity_id, date, event_attribute (type), entity_attribute (age), entity_attribute (gender), ...
 121, 19334, 1/1/2013, Placement, 12, Male, ...
 ```
-
-Triage needs a field named `entity_id` (that needs to be of type
-integer) to refer to the primary *entities* of interest in our
+Triage needs a field named `entity_id` (**that needs to be of type
+integer**) to refer to the primary *entities* of interest in our
 project.
+
+#### Examples
+1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified, a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+
 
 ### 4. Set up Triage configuration files
 
 The Triage configuration file sets up the modeling process to mirror the
 operational scenario the models will be used in. This involves
-defining the cohort to train/predict on, the outcome we're predicting,
+defining the cohort to train/predict on, when the prediction is taking place, the outcome we're predicting,
 how far out we're predicting, how often will the model be updated, how
 often will the predicted list be used for interventions, what are the
 resources available to intervene to define the evaluation metric,
@@ -65,9 +68,10 @@ etc.
 A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simpler configuration file below:
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'quickstart_test_run'
+random_seed: 1234
 
 temporal_config:
     label_timespans: ['<< YOUR_VALUE_HERE >>']
@@ -94,9 +98,6 @@ feature_aggregations:
           - 'count'
 
     intervals: ['all']
-
-    groups:
-      - 'entity_id'
 
 model_grid_preset:  'quickstart'
 

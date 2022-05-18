@@ -133,9 +133,11 @@ If you wish, you can check the content of the file with `cat
 experiments/dirty-ducking.yaml`
 
 ```yaml
-config_version: 'v7'
+config_version: 'v8'
 
 model_comment: 'dirtyduck-quickstart'
+
+random_seed: 1234
 
 temporal_config:
     label_timespans: ['3months']
@@ -169,9 +171,6 @@ feature_aggregations:
           - 'count'
 
     intervals: ['all']
-
-    groups:
-      - 'entity_id'
 
 model_grid_preset:  'quickstart'
 

@@ -206,7 +206,6 @@ for a detailed example of what this looks like in practice):
 - `aggregates` and/or `categoricals`: lists used to define the specific features (you must specify at least one, but may include both). See below for more detail on each.
 - `intervals`: The time intervals (as a SQL interval, such a `'5 year'`, `'6 month'`, or `all` for all time) over which to aggregate features.
     - For instance, if you specified a count of the number of events under `aggregates` and `['5 year', '10 year', 'all']` as `intervals`, `triage` would create features for the number of events related to an entity in the last 5 years, 10 years, and since the `feature_start_time` (that is, three separate features)
-- `groups`: levels at which to aggregate the features, often simply `entity_id`, but can also be used for other levels of analysis, such as spatial aggregations by zip codes, etc.
 - You also need to provide rules for how to handle missing data, which can be provided either overall under `feature_aggregations` to apply to all features or on a feature-by-feature basis. It's worth reading through the [Feature Generation README](dssg.github.io/triage/experiments/experiment-config#feature-generation) to learn about the available options here, including options for when missingness is meaningful (e.g., in a count) or there should be no missing data.
 
 When defining features derived from numerical data, you list them under the `aggregates` key in your feature config, and these should include keys for:

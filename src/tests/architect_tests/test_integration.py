@@ -249,7 +249,6 @@ def basic_integration_test(
                             }
                         ],
                         "intervals": ["1y"],
-                        "groups": ["entity_id"],
                     },
                     {
                         "prefix": "dog",
@@ -265,7 +264,6 @@ def basic_integration_test(
                                 "metrics": ["count", "avg"]}
                         ],
                         "intervals": ["1y"],
-                        "groups": ["entity_id"],
                     },
                 ],
                 feature_dates=all_as_of_times,

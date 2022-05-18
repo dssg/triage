@@ -1,6 +1,6 @@
 # Temporal Validation Deep Dive
 
-A temporal validation deep dive is currently available in the Dirty Duck tutorial. [Dirty Duck - Temporal Cross-validation](https://dssg.github.io/dirtyduck/#sec-4-2-2-1)
+A temporal validation deep dive is currently available in the Dirty Duck tutorial. [Dirty Duck - Temporal Cross-validation](../../dirtyduck/triage_intro/#temporal-crossvalidation)
 
 You can produce the time graphs detailed in the Dirty Duck deep dive using the Triage CLI or through calling Python code directly. The graphs use matplotlib, so you'll need a matplotlib backend to use. Refer to the [matplotlib docs](https://matplotlib.org/faq/usage_faq.html) for more details.
 

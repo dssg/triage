@@ -1,7 +1,7 @@
 import pytest
 
 from triage.component.postmodeling.utils.add_predictions import add_predictions
-from triage.component.architect.database_reflection import table_has_data
+from triage.database_reflection import table_has_data
 
 
 MODEL_IDS_QUERY = """

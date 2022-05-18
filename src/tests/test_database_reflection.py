@@ -4,7 +4,7 @@ from sqlalchemy.types import VARCHAR
 from testing.postgresql import Postgresql
 from unittest import TestCase
 
-from triage.component.architect import database_reflection as dbreflect
+import triage.database_reflection as dbreflect
 
 
 class TestDatabaseReflection(TestCase):
@@ -39,6 +39,16 @@ class TestDatabaseReflection(TestCase):
         self.engine.execute("insert into compliments values ('good job')")
         assert dbreflect.table_has_data("compliments", self.engine)
         assert not dbreflect.table_has_data("incidents", self.engine)
+
+    def test_table_has_duplicates(self):
+        self.engine.execute("create table events (col1 int, col2 int)")
+        assert not dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
+        self.engine.execute("insert into events values (1,2)")
+        self.engine.execute("insert into events values (1,3)")
+        assert dbreflect.table_has_duplicates("events", ['col1'], self.engine)
+        assert not dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
+        self.engine.execute("insert into events values (1,2)")
+        assert dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
 
     def test_table_has_column(self):
         self.engine.execute("create table incidents (col1 varchar)")

@@ -4,8 +4,8 @@
 
 To use a Triage experiment, you first need:
 
-- Python 3.5
-- A PostgreSQL database with your source data (events, geographical data, etc) loaded.
+- Python 3.7+
+- A PostgreSQL (v9.6+) database with your source data (events, geographical data, etc) loaded.
 - Ample space on an available disk (or S3) to store the needed matrices and models for your experiment
 - An experiment definition (see [Experiment configuration](experiment-config.md))
 

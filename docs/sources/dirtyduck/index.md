@@ -1,14 +1,12 @@
-This is a guide to `Triage`, a data science workflow tool initially developed at the [Center for Data Science and Public
+This is a guide to `Triage`, a machine learning / datas science tool initially developed at the [Center for Data Science and Public
 Policy](http://dsapp.uchicago.edu) (DSaPP) at the University of
 Chicago and now being maintained at Carnegie Mellon University.
 
-`Triage` helps build models for two [common applied
+`Triage` helps build ML systems for two [common
 problems](https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/):
 (a) Early warning systems (**EWS** or **EIS**), (b) *resource
-prioritization* (a.k.a "an inspections problem") . These problems are
-difficult to model because their conceptualization and and
-implementation are prone to error, given their multi-dimensional,
-multi-entity, time-series structure.
+prioritization* (a.k.a "an inspections problem"). These problems require careful thought and design and their formulation and
+implementation are  often done incorrectly.
 
 !!! info Triage version
     This tutorial is in sync with the latest version of `triage`. At this moment [v4.2.0](https://github.com/dssg/triage/releases/tag/v4.2.0).
@@ -19,10 +17,9 @@ multi-entity, time-series structure.
     triage’s [github repository](https://github.com/dssg/triage/tree/master/docs/sources/dirtyduck).
 
 
-## What's in a name?
+## Why Dirty Duck??
 
-There is a famous (and delicious) peking duck restaurant in Chicago,
-we love that place, and as every restaurant in Chicago area, it gets
+There is a famous (and delicious) peking duck restaurant in Chicago called Sun Wah. We love that place, and as every restaurant in Chicago area, it gets
 inspected, so the naming is an *homage* to them.
 
 
@@ -30,19 +27,19 @@ inspected, so the naming is an *homage* to them.
 
 We created this tutorial with two roles in mind:
 
-- A data scientist/ML practitioner who wants to focus
-in the problem at his/her hands, not in the nitty-gritty detail about
-how to configure and setup a Machine learning pipeline, Model
-governance, Model selection, etc.
+- Data scientists/ML practitioners who want to focus
+on the problem they are tackling, and not on the nitty-gritty details about
+how to configure and setup a Machine learning pipeline, model
+governance, reproducibility, model selection, etc.
 
-- A policy maker with a little of technical background that wants to
-  learn how to pose his/her policy problem as a Machine Learning
-  problem.
+- analytical policy team without too deep of a technical/engineering background who want to
+  learn how to formulate their policy problems as  Machine Learning
+  problems.
 
 
 ## How to use this tutorial
 
-First, clone this repository on your laptop
+First, clone this repository on your machine
 
     git clone https://github.com/dssg/triage
 

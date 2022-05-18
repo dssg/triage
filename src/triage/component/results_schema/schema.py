@@ -126,6 +126,9 @@ class TriageRun(Base):
     current_status = Column(Enum(TriageRunStatus))
     stacktrace = Column(Text)
     random_seed = Column(Integer)
+    cohort_table_name = Column(String)
+    labels_table_name = Column(String)
+    bias_hash = Column(String)
         
 
 class Subset(Base):
