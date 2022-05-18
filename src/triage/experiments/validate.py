@@ -1,6 +1,7 @@
 import importlib
 
 import verboselogs, logging
+
 logger = verboselogs.VerboseLogger(__name__)
 
 from itertools import permutations
@@ -13,7 +14,7 @@ from triage.component import architect
 from triage.component import catwalk
 from triage.component.timechop import Timechop
 
-from triage.util.conf import convert_str_to_relativedelta
+from triage.util.conf import convert_str_to_relativedelta, load_query_if_needed
 from triage.validation_primitives import string_is_tablesafe
 
 
@@ -38,6 +39,7 @@ class Validator:
 class TemporalValidator(Validator):
     def _run(self, temporal_config):
         logger.spam("Validating temporal configuration")
+
         def dt_from_str(dt_str):
             return datetime.strptime(dt_str, "%Y-%m-%d")
 
@@ -130,8 +132,8 @@ class TemporalValidator(Validator):
                         )
                     )
 
-
         logger.debug("Validation of temporal configuration was successful")
+
 
 class FeatureAggregationsValidator(Validator):
     def _validate_keys(self, aggregation_config):
@@ -152,7 +154,7 @@ class FeatureAggregationsValidator(Validator):
                         )
                     )
                 )
-        if not string_is_tablesafe(aggregation_config['prefix']):
+        if not string_is_tablesafe(aggregation_config["prefix"]):
             raise ValueError(
                 dedent(
                     f"""Section: feature_aggregations -
@@ -181,6 +183,7 @@ class FeatureAggregationsValidator(Validator):
                 )
 
         logger.debug("Validation of feature aggregation keys was successful")
+
     def _validate_aggregates(self, aggregation_config):
         logger.spam("Validating aggregates")
         if (
@@ -246,6 +249,7 @@ class FeatureAggregationsValidator(Validator):
                     )
 
         logger.debug("Validation of categoricals was successful")
+
     def _validate_from_obj(self, from_obj):
         conn = self.db_engine.connect()
         logger.spam("Validating from_obj")
@@ -355,19 +359,19 @@ class FeatureAggregationsValidator(Validator):
         agg_types = ["aggregates", "categoricals", "array_categoricals"]
 
         for agg_type in agg_types:
-            logger.spam('Validating imputation rules for aggregation type %s', agg_type)
+            logger.spam("Validating imputation rules for aggregation type %s", agg_type)
             # base_imp are the top-level rules, `such as aggregates_imputation`
             base_imp = aggregation_config.get(agg_type + "_imputation", {})
 
             # loop through the individual aggregates
             for agg in aggregation_config.get(agg_type, []):
-                logger.spam('Validating imputation rules for aggregation %s', agg)
+                logger.spam("Validating imputation rules for aggregation %s", agg)
                 # combine any aggregate-level imputation rules with top-level ones
                 imp_dict = dict(base_imp, **agg.get("imputation", {}))
 
                 # imputation rules are metric-specific, so check each metric's rule
                 for metric in agg["metrics"]:
-                    logger.spam('Validating imputation rules for metric: %s', metric)
+                    logger.spam("Validating imputation rules for metric: %s", metric)
                     # metric rules may be defined by the metric name (e.g., 'max')
                     # or with the 'all' catch-all, with named metrics taking
                     # precedence. If we fall back to {}, the rule validator will
@@ -489,10 +493,12 @@ class LabelConfigValidator(Validator):
             in the config."""
                 )
             )
-        catwalk.utils.load_query_if_needed(label_config)
-        if 'name' in label_config and not string_is_tablesafe(label_config['name']):
-            raise ValueError("Section: label_config - "
-                             "name should only contain lowercase letters, numbers, and underscores")
+        load_query_if_needed(label_config)
+        if "name" in label_config and not string_is_tablesafe(label_config["name"]):
+            raise ValueError(
+                "Section: label_config - "
+                "name should only contain lowercase letters, numbers, and underscores"
+            )
         self._validate_query(label_config["query"])
         self._validate_include_missing_labels_in_train_as(
             label_config.get("include_missing_labels_in_train_as", None)
@@ -513,7 +519,7 @@ class CohortConfigValidator(Validator):
             in the config."""
                 )
             )
-        catwalk.utils.load_query_if_needed(cohort_config)
+        load_query_if_needed(cohort_config)
         query = cohort_config["query"]
         if "{as_of_date}" not in query:
             raise ValueError(
@@ -524,9 +530,11 @@ class CohortConfigValidator(Validator):
             {as_of_date} must be present"""
                 )
             )
-        if 'name' in cohort_config and not string_is_tablesafe(cohort_config['name']):
-            raise ValueError("Section: cohort_config - "
-                             "name should only contain lowercase letters, numbers, and underscores")
+        if "name" in cohort_config and not string_is_tablesafe(cohort_config["name"]):
+            raise ValueError(
+                "Section: cohort_config - "
+                "name should only contain lowercase letters, numbers, and underscores"
+            )
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logger.spam("Validating cohort query via SQL EXPLAIN")
         try:
@@ -805,7 +813,10 @@ class PredictionConfigValidator(Validator):
         logger.spam("Validating prediction configuration")
         rank_tiebreaker = prediction_config.get("rank_tiebreaker", None)
         # the tiebreaker is optional, so only try and validate if it's there
-        if rank_tiebreaker and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS:
+        if (
+            rank_tiebreaker
+            and rank_tiebreaker not in catwalk.utils.AVAILABLE_TIEBREAKERS
+        ):
             raise ValueError(
                 "Section: prediction - "
                 f"given tiebreaker must be in {catwalk.utils.AVAILABLE_TIEBREAKERS}"
@@ -885,7 +896,7 @@ class ScoringConfigValidator(Validator):
                                 """
                             )
                         )
-                    if not string_is_tablesafe(subset['name']):
+                    if not string_is_tablesafe(subset["name"]):
                         raise ValueError(
                             dedent(
                                 f"""Section: subsets -
@@ -914,8 +925,8 @@ class ScoringConfigValidator(Validator):
                             )
                         )
 
-
         logger.debug("Validation of scoring configuration was successful")
+
 
 class BiasAuditConfigValidator(Validator):
     def _run(self, bias_audit_config):
@@ -923,7 +934,10 @@ class BiasAuditConfigValidator(Validator):
         if not bias_audit_config:
             # if empty, that's fine, shortcut out
             return
-        if 'from_obj_query' in bias_audit_config and 'from_obj_table' in bias_audit_config:
+        if (
+            "from_obj_query" in bias_audit_config
+            and "from_obj_table" in bias_audit_config
+        ):
             raise ValueError(
                 dedent(
                     """
@@ -932,7 +946,10 @@ class BiasAuditConfigValidator(Validator):
                     Please only specify one."""
                 )
             )
-        if 'from_obj_query' not in bias_audit_config and 'from_obj_table' not in bias_audit_config:
+        if (
+            "from_obj_query" not in bias_audit_config
+            and "from_obj_table" not in bias_audit_config
+        ):
             raise ValueError(
                 dedent(
                     """
@@ -942,10 +959,10 @@ class BiasAuditConfigValidator(Validator):
                 )
             )
         for key in [
-                "attribute_columns",
-                "knowledge_date_column",
-                "entity_id_column",
-                "ref_groups_method",
+            "attribute_columns",
+            "knowledge_date_column",
+            "entity_id_column",
+            "ref_groups_method",
         ]:
             if key not in bias_audit_config:
                 raise ValueError(
@@ -953,10 +970,15 @@ class BiasAuditConfigValidator(Validator):
                         f"""Section: bias_audit_config - '{key} required as key: bias_audit_config config: {bias_audit_config}"""
                     )
                 )
-        percentile_thresholds = bias_audit_config.get('thresholds', {}).get('percentiles', [])
+        percentile_thresholds = bias_audit_config.get("thresholds", {}).get(
+            "percentiles", []
+        )
         if any(threshold < 0 or threshold > 100 for threshold in percentile_thresholds):
-            raise ValueError("Section: bias_audit_config - All percentile thresholds must be between 0 and 100")
+            raise ValueError(
+                "Section: bias_audit_config - All percentile thresholds must be between 0 and 100"
+            )
         logger.debug("Validation of bias audit configuration was successful")
+
 
 class ExperimentValidator(Validator):
     def run(self, experiment_config):
@@ -1003,4 +1025,6 @@ class ExperimentValidator(Validator):
         if self.strict:
             logger.success("Experiment validation ran to completion with no errors")
         else:
-            logger.warning("Experiment validation complete. All configuration problems have been displayed as warnings")
+            logger.warning(
+                "Experiment validation complete. All configuration problems have been displayed as warnings"
+            )

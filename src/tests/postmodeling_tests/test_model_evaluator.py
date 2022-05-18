@@ -28,7 +28,7 @@ def model_evaluator(shared_db_engine, shared_project_storage):
             "min_samples_split": [2],
         }
     }
-    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
         SingleThreadedExperiment(
             base_config,
             db_engine=shared_db_engine,

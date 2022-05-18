@@ -7,6 +7,7 @@ import pandas as pd
 import json
 
 import verboselogs, logging
+
 logger = verboselogs.VerboseLogger(__name__)
 
 import random
@@ -63,30 +64,6 @@ DEFAULT_RETRY_KWARGS = {
 db_retry = retry(**DEFAULT_RETRY_KWARGS)
 
 
-def load_query_if_needed(config_component):
-    """ Load the cohort or label query from a file
-
-    Args:
-        config_component (dict) A cohort or label config
-
-    Returns: None
-    """
-    if "filepath" in config_component:
-        if "query" in config_component:
-            raise ValueError(
-                "Both filepath and query are present. Please provide only one."
-            )
-
-        query_filename = os.path.join(
-            os.curdir, config_component["filepath"]
-        )
-
-        with open(query_filename) as f:
-            config_component["query"] = f.read()
-
-        config_component.pop("filepath")
-
-
 @db_retry
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
@@ -101,7 +78,9 @@ def save_experiment_and_get_hash(config, db_engine):
 def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
     session = sessionmaker(bind=db_engine)()
     for matrix_uuid in matrix_uuids:
-        session.merge(ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid))
+        session.merge(
+            ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
+        )
     session.commit()
     session.close()
     logger.spam("Associated matrices with experiment in database")
@@ -111,7 +90,9 @@ def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine)
 def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
     session = sessionmaker(bind=db_engine)()
     for model_hash in model_hashes:
-        session.merge(ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash))
+        session.merge(
+            ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
+        )
     session.commit()
     session.close()
     logger.spam("Associated models with experiment in database")
@@ -180,9 +161,12 @@ class Batch:
             yield self.group()
 
 
-AVAILABLE_TIEBREAKERS = {'random', 'best', 'worst'}
+AVAILABLE_TIEBREAKERS = {"random", "best", "worst"}
 
-def sort_predictions_and_labels(predictions_proba, labels, df_index, tiebreaker='random', sort_seed=None):
+
+def sort_predictions_and_labels(
+    predictions_proba, labels, df_index, tiebreaker="random", sort_seed=None
+):
     """Sort predictions and labels with a configured tiebreaking rule
 
     Args:
@@ -200,30 +184,35 @@ def sort_predictions_and_labels(predictions_proba, labels, df_index, tiebreaker=
         return (predictions_proba, labels, df_index)
 
     df = pd.DataFrame(predictions_proba, columns=["score"])
-    df['label_value'] = labels
+    df["label_value"] = labels
     df.set_index(df_index, inplace=True)
 
-
-    if tiebreaker == 'random':
+    if tiebreaker == "random":
         if not sort_seed:
             raise ValueError("If random tiebreaker is used, a sort seed must be given")
         random.seed(sort_seed)
         np.random.seed(sort_seed)
-        df['random'] = np.random.rand(len(df))
-        df.sort_values(by=['score', 'random'], inplace=True, ascending=[False, False])
-        df.drop('random', axis=1)
-    elif tiebreaker == 'worst':
-        df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,True], na_position='first')
-    elif tiebreaker == 'best':
-         df.sort_values(by=["score", "label_value"], inplace=True, ascending=[False,False], na_position='last')
+        df["random"] = np.random.rand(len(df))
+        df.sort_values(by=["score", "random"], inplace=True, ascending=[False, False])
+        df.drop("random", axis=1)
+    elif tiebreaker == "worst":
+        df.sort_values(
+            by=["score", "label_value"],
+            inplace=True,
+            ascending=[False, True],
+            na_position="first",
+        )
+    elif tiebreaker == "best":
+        df.sort_values(
+            by=["score", "label_value"],
+            inplace=True,
+            ascending=[False, False],
+            na_position="last",
+        )
     else:
         raise ValueError(f"Unknown tiebreaker: {tiebreaker}")
 
-    return  [
-        df['score'].to_numpy(),
-        df['label_value'].to_numpy(),
-        df.index
-    ]
+    return [df["score"].to_numpy(), df["label_value"].to_numpy(), df.index]
 
 
 @db_retry
@@ -261,7 +250,14 @@ def retrieve_model_hash_from_id(db_engine, model_id):
 
 
 @db_retry
-def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed):
+def retrieve_existing_model_random_seeds(
+    db_engine,
+    model_group_id,
+    train_end_time,
+    train_matrix_uuid,
+    training_label_timespan,
+    experiment_random_seed,
+):
     """Retrieve existing model random seeds matching the model parameters and
     experiment-level random seed to allow for reusing seeds before creating a
     new one.
@@ -280,7 +276,17 @@ def retrieve_existing_model_random_seeds(db_engine, model_group_id, train_end_ti
         and triage_runs.random_seed = %s
         order by models.run_time DESC, random()
     """
-    return [row[0] for row in db_engine.execute(query, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, experiment_random_seed)]
+    return [
+        row[0]
+        for row in db_engine.execute(
+            query,
+            model_group_id,
+            train_end_time,
+            train_matrix_uuid,
+            training_label_timespan,
+            experiment_random_seed,
+        )
+    ]
 
 
 @db_retry
@@ -300,12 +306,14 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
 
 
 def _write_csv(file_like, db_objects, type_of_object):
-    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+    writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
     for db_object in db_objects:
         if type(db_object) != type_of_object:
-            raise TypeError("Cannot copy collection of objects to db as they are not all "
-                            f"of the same type. First object was {type_of_object} "
-                            f"and later encountered a {type(db_object)}")
+            raise TypeError(
+                "Cannot copy collection of objects to db as they are not all "
+                f"of the same type. First object was {type_of_object} "
+                f"and later encountered a {type(db_object)}"
+            )
         writer.writerow(
             [getattr(db_object, col.name) for col in db_object.__table__.columns]
         )
@@ -324,12 +332,17 @@ def save_db_objects(db_engine, db_objects):
     type_of_object = type(first_object)
     columns = [col.name for col in first_object.__table__.columns]
 
-    with PipeTextIO(partial(
+    with PipeTextIO(
+        partial(
             _write_csv,
             db_objects=chain((first_object,), db_objects),
-            type_of_object=type_of_object
-    )) as pipe:
-        postgres_copy.copy_from(source=pipe, dest=type_of_object,
-                                engine_or_conn=db_engine,
-                                columns=columns,
-                                format="csv")
+            type_of_object=type_of_object,
+        )
+    ) as pipe:
+        postgres_copy.copy_from(
+            source=pipe,
+            dest=type_of_object,
+            engine_or_conn=db_engine,
+            columns=columns,
+            format="csv",
+        )

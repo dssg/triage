@@ -13,6 +13,8 @@ def test_experiment_validator():
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
         populate_source_data(db_engine)
-        with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+        with mock.patch(
+            "triage.util.conf.open", side_effect=open_side_effect
+        ) as mock_file:
             ExperimentValidator(db_engine).run(sample_config("query"))
             ExperimentValidator(db_engine).run(sample_config("filepath"))

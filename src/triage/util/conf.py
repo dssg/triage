@@ -1,11 +1,12 @@
 import verboselogs, logging
+
 logger = verboselogs.VerboseLogger(__name__)
 
+import os
 import re
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-
 
 
 def parse_from_obj(config, alias):
@@ -24,6 +25,7 @@ def parse_from_obj(config, alias):
         from_obj = config.get("from_obj_query", None)
         return " ({}) {} ".format(from_obj, alias) if from_obj else None
     return from_obj
+
 
 def dt_from_str(dt_str):
     if isinstance(dt_str, datetime):
@@ -64,6 +66,30 @@ def parse_delta_string(delta_string):
 parse_delta_string.pattern = re.compile(r"^(\d+) *([^ ]+)$")
 
 
+def load_query_if_needed(config_component):
+    """Load the cohort or label query from a file
+
+    Args:
+        config_component (dict) A cohort or label config
+
+    Returns: None
+    """
+    if "filepath" in config_component:
+        if "query" in config_component:
+            raise ValueError(
+                "Both filepath and query are present. Please provide only one."
+            )
+
+        query_filename = os.path.join(
+            os.path.abspath(os.getcwd()), config_component["filepath"]
+        )
+
+        with open(query_filename) as f:
+            config_component["query"] = f.read()
+
+        config_component.pop("filepath")
+
+
 def convert_str_to_relativedelta(delta_string):
     """Given a string in a postgres interval format (e.g., '1 month'),
     convert it to a dateutil.relativedelta.relativedelta.
@@ -97,9 +123,7 @@ def convert_str_to_relativedelta(delta_string):
         pass
     else:
         if unit_type == "minutes":
-            logger.warning(
-                f'Time delta units "{units}" converted to minutes.'
-            )
+            logger.warning(f'Time delta units "{units}" converted to minutes.')
         return relativedelta(**{unit_type: value})
 
     raise ValueError("Could not handle units. Units: {} Value: {}".format(units, value))

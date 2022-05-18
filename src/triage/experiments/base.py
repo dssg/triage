@@ -56,7 +56,6 @@ from triage.component.catwalk.utils import (
     missing_matrix_uuids,
     missing_model_hashes,
     filename_friendly_hash,
-    load_query_if_needed,
 )
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
@@ -85,7 +84,7 @@ from triage.experiments.defaults import (
 )
 
 from triage.database_reflection import table_has_data
-from triage.util.conf import dt_from_str, parse_from_obj
+from triage.util.conf import dt_from_str, parse_from_obj, load_query_if_needed
 from triage.util.db import get_for_update
 from triage.util.introspection import bind_kwargs, classpath
 

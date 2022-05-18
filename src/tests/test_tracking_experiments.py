@@ -6,12 +6,16 @@ from unittest import mock
 from triage.tracking import (
     initialize_tracking_and_get_run_id,
     get_run_for_update,
-    increment_field
+    increment_field,
 )
 from triage.util.db import scoped_session
 from triage.experiments import MultiCoreExperiment, SingleThreadedExperiment
 from triage.component.results_schema import TriageRun, TriageRunStatus
-from tests.results_tests.factories import ExperimentFactory, TriageRunFactory, session as factory_session
+from tests.results_tests.factories import (
+    ExperimentFactory,
+    TriageRunFactory,
+    session as factory_session,
+)
 from tests.utils import sample_config, populate_source_data, open_side_effect
 
 
@@ -26,7 +30,7 @@ def shared_db_engine_with_source_data(shared_db_engine):
 
 
 def test_experiment_tracker(test_engine, project_path):
-    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
         experiment = MultiCoreExperiment(
             config=sample_config(),
             db_engine=test_engine,
@@ -36,8 +40,11 @@ def test_experiment_tracker(test_engine, project_path):
     experiment_run = Session(bind=test_engine).query(TriageRun).get(experiment.run_id)
     assert experiment_run.current_status == TriageRunStatus.started
     assert experiment_run.run_hash == experiment.experiment_hash
-    assert experiment_run.run_type == 'experiment'
-    assert experiment_run.experiment_class_path == 'triage.experiments.multicore.MultiCoreExperiment'
+    assert experiment_run.run_type == "experiment"
+    assert (
+        experiment_run.experiment_class_path
+        == "triage.experiments.multicore.MultiCoreExperiment"
+    )
     assert experiment_run.platform
     assert experiment_run.os_user
     assert experiment_run.installed_libraries
@@ -56,7 +63,13 @@ def test_experiment_tracker(test_engine, project_path):
     assert experiment_run.matrices_errored == 0
     assert experiment_run.models_skipped == 0
     assert experiment_run.models_errored == 0
-    assert experiment_run.models_made == len(list(task['train_kwargs']['model_hash'] for batch in experiment._all_train_test_batches() for task in batch.tasks))
+    assert experiment_run.models_made == len(
+        list(
+            task["train_kwargs"]["model_hash"]
+            for batch in experiment._all_train_test_batches()
+            for task in batch.tasks
+        )
+    )
     assert isinstance(experiment_run.matrix_building_started, datetime.datetime)
     assert isinstance(experiment_run.model_building_started, datetime.datetime)
     assert isinstance(experiment_run.last_updated_time, datetime.datetime)
@@ -65,7 +78,7 @@ def test_experiment_tracker(test_engine, project_path):
 
 
 def test_experiment_tracker_exception(db_engine, project_path):
-    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
         experiment = SingleThreadedExperiment(
             config=sample_config(),
             db_engine=db_engine,
@@ -83,7 +96,7 @@ def test_experiment_tracker_exception(db_engine, project_path):
 
 
 def test_experiment_tracker_in_parts(test_engine, project_path):
-    with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
         experiment = SingleThreadedExperiment(
             config=sample_config(),
             db_engine=test_engine,
@@ -102,24 +115,24 @@ def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
     experiment_hash = experiment.experiment_hash
     run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
-        experiment_class_path='mymodule.MyClassName',
+        experiment_class_path="mymodule.MyClassName",
         random_seed=1234,
-        experiment_kwargs={'key': 'value'},
-        db_engine=db_engine_with_results_schema
+        experiment_kwargs={"key": "value"},
+        db_engine=db_engine_with_results_schema,
     )
     assert run_id
     with scoped_session(db_engine_with_results_schema) as session:
         experiment_run = session.query(TriageRun).get(run_id)
         assert experiment_run.run_hash == experiment_hash
-        assert experiment_run.experiment_class_path == 'mymodule.MyClassName'
+        assert experiment_run.experiment_class_path == "mymodule.MyClassName"
         assert experiment_run.random_seed == 1234
-        assert experiment_run.experiment_kwargs == {'key': 'value'}
+        assert experiment_run.experiment_kwargs == {"key": "value"}
     new_run_id = initialize_tracking_and_get_run_id(
         experiment_hash=experiment_hash,
-        experiment_class_path='mymodule.MyClassName',
+        experiment_class_path="mymodule.MyClassName",
         random_seed=5432,
-        experiment_kwargs={'key': 'value'},
-        db_engine=db_engine_with_results_schema
+        experiment_kwargs={"key": "value"},
+        db_engine=db_engine_with_results_schema,
     )
     assert new_run_id > run_id
 
@@ -128,8 +141,7 @@ def test_get_run_for_update(db_engine_with_results_schema):
     experiment_run = TriageRunFactory()
     factory_session.commit()
     with get_run_for_update(
-        db_engine=db_engine_with_results_schema,
-        run_id=experiment_run.run_id
+        db_engine=db_engine_with_results_schema, run_id=experiment_run.run_id
     ) as run_obj:
         run_obj.stacktrace = "My stacktrace"
 
@@ -141,8 +153,12 @@ def test_get_run_for_update(db_engine_with_results_schema):
 def test_increment_field(db_engine_with_results_schema):
     experiment_run = TriageRunFactory()
     factory_session.commit()
-    increment_field('matrices_made', experiment_run.run_id, db_engine_with_results_schema)
-    increment_field('matrices_made', experiment_run.run_id, db_engine_with_results_schema)
+    increment_field(
+        "matrices_made", experiment_run.run_id, db_engine_with_results_schema
+    )
+    increment_field(
+        "matrices_made", experiment_run.run_id, db_engine_with_results_schema
+    )
 
     with scoped_session(db_engine_with_results_schema) as session:
         experiment_run_from_db = session.query(TriageRun).get(experiment_run.run_id)

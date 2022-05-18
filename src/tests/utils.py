@@ -1,6 +1,7 @@
 import datetime
 import functools
 import importlib
+import os
 import random
 import tempfile
 from contextlib import contextmanager
@@ -35,7 +36,7 @@ CONFIG_QUERY_DATA = {
             from events
             where '{as_of_date}'::date >= outcome_date
         """,
-        "filepath": "cohorts/file.sql"
+        "filepath": "cohorts/file.sql",
     },
     "label": {
         "query": """
@@ -47,13 +48,17 @@ CONFIG_QUERY_DATA = {
                 and outcome_date < '{as_of_date}'::date + interval '{label_timespan}'
             group by entity_id
         """,
-        "filepath": "labels/file.sql"
-    }
+        "filepath": "labels/file.sql",
+    },
 }
 
 MOCK_FILES = {
-    f"./{CONFIG_QUERY_DATA['label']['filepath']}": CONFIG_QUERY_DATA["label"]["query"],
-    f"./{CONFIG_QUERY_DATA['cohort']['filepath']}": CONFIG_QUERY_DATA["cohort"]["query"],
+    os.path.join(
+        os.path.abspath(os.getcwd()), f"{CONFIG_QUERY_DATA['label']['filepath']}"
+    ): CONFIG_QUERY_DATA["label"]["query"],
+    os.path.join(
+        os.path.abspath(os.getcwd()), f"{CONFIG_QUERY_DATA['cohort']['filepath']}"
+    ): CONFIG_QUERY_DATA["cohort"]["query"],
 }
 
 
@@ -111,7 +116,7 @@ class MockMatrixStore(MatrixStore):
         self.matrix_label_tuple = matrix, labels
         self.metadata = base_metadata
         self.label_count = label_count
-        self.init_labels = pd.Series(init_labels, dtype='float64')
+        self.init_labels = pd.Series(init_labels, dtype="float64")
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
 
@@ -133,9 +138,7 @@ class MockMatrixStore(MatrixStore):
 
 
 def fake_trained_model(
-    db_engine,
-    train_matrix_uuid="efgh",
-    train_end_time=datetime.datetime(2016, 1, 1)
+    db_engine, train_matrix_uuid="efgh", train_end_time=datetime.datetime(2016, 1, 1)
 ):
     """Creates and stores a trivial trained model and training matrix
 
@@ -222,8 +225,9 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
         metadata = matrix_metadata_creator()
     matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
-    matrix_store = (project_storage.matrix_storage_engine()
-                    .get_store(filename_friendly_hash(metadata)))
+    matrix_store = project_storage.matrix_storage_engine().get_store(
+        filename_friendly_hash(metadata)
+    )
     matrix_store.metadata = metadata
     new_matrix = matrix.copy()
     labels = new_matrix.pop(matrix_store.label_column_name)
@@ -232,8 +236,9 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     matrix_store.clear_cache()
     if write_to_db:
         if (
-            session.query(Matrix).filter(
-                Matrix.matrix_uuid == matrix_store.uuid).count()
+            session.query(Matrix)
+            .filter(Matrix.matrix_uuid == matrix_store.uuid)
+            .count()
             == 0
         ):
             MatrixFactory(matrix_uuid=matrix_store.uuid)
@@ -332,10 +337,12 @@ def populate_source_data(db_engine):
     )
 
     db_engine.execute(
-        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
+    )
     for demographic_row in zip_code_demographics:
         db_engine.execute(
-            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row)
+            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row
+        )
 
     for entity_zip_code in entity_zip_codes:
         db_engine.execute(
@@ -355,8 +362,7 @@ def populate_source_data(db_engine):
         )
 
     for complaint in complaints:
-        db_engine.execute(
-            "insert into cat_complaints values (%s, %s, %s)", complaint)
+        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
 
     db_engine.execute(
         """create table events (
@@ -409,7 +415,7 @@ def sample_config(query_source="filepath"):
                     and outcome_date < '{as_of_date}'::date
                 """,
             },
-        ]
+        ],
     }
 
     grid_config = {
@@ -448,16 +454,13 @@ def sample_config(query_source="filepath"):
     }
 
     bias_audit_config = {
-        'from_obj_query': 'select * from zip_code_demographics join entity_zip_codes using (zip_code)',
-        'attribute_columns': ['ethnicity'],
-        'knowledge_date_column': 'as_of_date',
-        'entity_id_column': 'entity_id',
-        'ref_groups_method': 'predefined',
-        'ref_groups': {'ethnicity': 'white'},
-        'thresholds': {
-            'percentiles': [],
-            'top_n': [2]
-        }
+        "from_obj_query": "select * from zip_code_demographics join entity_zip_codes using (zip_code)",
+        "attribute_columns": ["ethnicity"],
+        "knowledge_date_column": "as_of_date",
+        "entity_id_column": "entity_id",
+        "ref_groups_method": "predefined",
+        "ref_groups": {"ethnicity": "white"},
+        "thresholds": {"percentiles": [], "top_n": [2]},
     }
 
     return {
@@ -466,7 +469,13 @@ def sample_config(query_source="filepath"):
         "label_config": label_config,
         "entity_column_name": "entity_id",
         "model_comment": "test2-final-final",
-        "model_group_keys": ["label_name", "label_type", "custom_key", "class_path", "parameters"],
+        "model_group_keys": [
+            "label_name",
+            "label_type",
+            "custom_key",
+            "class_path",
+            "parameters",
+        ],
         "feature_aggregations": feature_config,
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
@@ -511,7 +520,7 @@ class CallSpy:
 
     @cachedproperty
     def target_path(self):
-        return self.signature.split('.')
+        return self.signature.split(".")
 
     @cachedproperty
     def target_name(self):
@@ -521,8 +530,8 @@ class CallSpy:
     def target_base(self):
         # walk target path until can no longer import it as a module path
         for index in range(len(self.target_path)):
-            path_parts = self.target_path[:(index + 1)]
-            import_path = '.'.join(path_parts)
+            path_parts = self.target_path[: (index + 1)]
+            import_path = ".".join(path_parts)
 
             try:
                 base = importlib.import_module(import_path)
@@ -549,8 +558,7 @@ class CallSpy:
         if not callable(self.target_object):
             # 1. ensure target_object set before patching
             # 2. check that it's sane (needn't be done here but reasonable)
-            raise TypeError(
-                f"signature target not callable {self.target_object!r}")
+            raise TypeError(f"signature target not callable {self.target_object!r}")
 
         self.patch.start()
 

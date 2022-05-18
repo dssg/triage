@@ -20,7 +20,9 @@ def prepare_experiment(config):
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
-            with mock.patch("triage.component.catwalk.utils.open", side_effect=open_side_effect) as mock_file:
+            with mock.patch(
+                "triage.util.conf.open", side_effect=open_side_effect
+            ) as mock_file:
                 experiment = SingleThreadedExperiment(
                     config=config,
                     db_engine=db_engine,
@@ -64,9 +66,7 @@ class Cohort(TestCase):
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            table_should_have_data(
-                experiment.cohort_table_name, experiment.db_engine
-            )
+            table_should_have_data(experiment.cohort_table_name, experiment.db_engine)
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:
