@@ -1,7 +1,7 @@
 from datetime import datetime
 import tempfile
 import os
-import mock
+from unittest import mock
 
 import factory
 import testing.postgresql
@@ -112,9 +112,11 @@ def test_Audition():
         session.commit()
 
         with tempfile.TemporaryDirectory() as td:
-            with mock.patch('os.getcwd') as mock_getcwd:
+            with mock.patch("os.getcwd") as mock_getcwd:
                 mock_getcwd.return_value = td
-                AuditionRunner(config_dict=config, db_engine=db_engine, directory=td).run()
+                AuditionRunner(
+                    config_dict=config, db_engine=db_engine, directory=td
+                ).run()
                 assert len(os.listdir(os.getcwd())) == 6
 
 

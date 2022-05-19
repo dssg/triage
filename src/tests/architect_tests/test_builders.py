@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 import testing.postgresql
-from mock import Mock
+from unittest.mock import Mock
 from triage import create_engine
 from contextlib import contextmanager
 
@@ -246,7 +246,7 @@ def get_matrix_storage_engine():
 
 
 def test_query_to_df():
-    """ Test the write_to_csv function by checking whether the csv contains the
+    """Test the write_to_csv function by checking whether the csv contains the
     correct number of lines.
     """
     with testing.postgresql.Postgresql() as postgresql:
@@ -278,7 +278,7 @@ def test_query_to_df():
 
 
 def test_make_entity_date_table():
-    """ Test that the make_entity_date_table function contains the correct
+    """Test that the make_entity_date_table function contains the correct
     values.
     """
     dates = [
@@ -336,7 +336,7 @@ def test_make_entity_date_table():
 
 
 def test_make_entity_date_table_include_missing_labels():
-    """ Test that the make_entity_date_table function contains the correct
+    """Test that the make_entity_date_table function contains the correct
     values.
     """
     dates = [
@@ -473,7 +473,7 @@ def test_load_features_data():
 
 
 def test_load_labels_data():
-    """ Test the load_labels_data function by checking whether the query
+    """Test the load_labels_data function by checking whether the query
     produces the correct labels
     """
     # set up labeling config variables
@@ -538,7 +538,7 @@ def test_load_labels_data():
 
 
 def test_load_labels_data_include_missing_labels_as_false():
-    """ Test the load_labels_data function by checking whether the query
+    """Test the load_labels_data function by checking whether the query
     produces the correct labels
     """
     # set up labeling config variables
@@ -705,7 +705,10 @@ class TestBuildMatrix(TestCase):
                     matrix_type="train",
                 )
                 assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-                assert builder.sessionmaker().query(Matrix).get(uuid).feature_dictionary ==self.good_feature_dictionary
+                assert (
+                    builder.sessionmaker().query(Matrix).get(uuid).feature_dictionary
+                    == self.good_feature_dictionary
+                )
 
     def test_test_matrix(self):
         with testing.postgresql.Postgresql() as postgresql:
