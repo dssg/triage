@@ -144,8 +144,7 @@ class FeatureTest(Command):
         db_engine = create_engine(self.root.db_url)
         full_config = yaml.full_load(args.feature_config_file)
         feature_config = full_config["feature_aggregations"]
-        cohort_config = full_config.get("cohort_config", None)
-        load_query_if_needed(cohort_config)
+        cohort_config = load_query_if_needed(full_config.get("cohort_config", None))
         if cohort_config:
             EntityDateTableGenerator(
                 entity_date_table_name="features_test.test_cohort",

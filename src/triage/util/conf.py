@@ -2,6 +2,7 @@ import verboselogs, logging
 
 logger = verboselogs.VerboseLogger(__name__)
 
+import copy
 import os
 import re
 
@@ -74,20 +75,22 @@ def load_query_if_needed(config_component):
 
     Returns: None
     """
-    if "filepath" in config_component:
-        if "query" in config_component:
-            raise ValueError(
-                "Both filepath and query are present. Please provide only one."
-            )
+    config_component_copy = copy.copy(config_component)
+    if "filepath" in config_component_copy:
+        logger.warn(
+            "Loading query from file; if there is a query in the config, it will be overwritten"
+        )
 
         query_filename = os.path.join(
-            os.path.abspath(os.getcwd()), config_component["filepath"]
+            os.path.abspath(os.getcwd()), config_component_copy["filepath"]
         )
 
         with open(query_filename) as f:
-            config_component["query"] = f.read()
+            config_component_copy["query"] = f.read()
 
-        config_component.pop("filepath")
+        config_component_copy.pop("filepath")
+
+    return config_component_copy
 
 
 def convert_str_to_relativedelta(delta_string):

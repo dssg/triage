@@ -151,9 +151,14 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
-        load_query_if_needed(self.config.get("cohort_config", {}))
-        load_query_if_needed(self.config.get("label_config", {}))
-        logger.info(self.config.get("cohort_config", {}))
+        if self.config.get("cohort_config") is not None:
+            self.config["cohort_config"] = load_query_if_needed(
+                self.config["cohort_config"]
+            )
+        if self.config.get("label_config") is not None:
+            self.config["label_config"] = load_query_if_needed(
+                self.config["label_config"]
+            )
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)

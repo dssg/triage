@@ -9,8 +9,6 @@ from triage.component.catwalk.utils import (
 )
 from triage.component.results_schema.schema import Matrix, Model
 from triage.component.catwalk.db import ensure_db
-from triage.util.conf import load_query_if_needed
-from tests.utils import sample_cohort_config, open_side_effect
 from sqlalchemy import create_engine
 import testing.postgresql
 import datetime
@@ -18,36 +16,6 @@ import re
 import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
-from unittest import TestCase, mock
-
-
-class TestLoadQuery(TestCase):
-    def test_update_in_place_if_filepath(self):
-        with mock.patch(
-            "triage.util.conf.open", side_effect=open_side_effect
-        ) as mock_file:
-            file_cohort_config = sample_cohort_config("filepath")
-            query_cohort_config = sample_cohort_config("query")
-            load_query_if_needed(file_cohort_config)
-            assert file_cohort_config == query_cohort_config
-
-    def test_no_update_if_no_filepath(self):
-        with mock.patch(
-            "triage.util.conf.open", side_effect=open_side_effect
-        ) as mock_file:
-            query_cohort_config = sample_cohort_config("query")
-            query_cohort_config_copy = sample_cohort_config("query")
-            load_query_if_needed(query_cohort_config)
-            assert query_cohort_config == query_cohort_config_copy
-
-    def test_both_keys_not_allowed(self):
-        with self.assertRaises(Exception):
-            with mock.patch(
-                "triage.util.conf.open", side_effect=open_side_effect
-            ) as mock_file:
-                cohort_config = sample_cohort_config("filepath")
-                cohort_config["query"] = True
-                load_query_if_needed(file_cohort_config)
 
 
 def test_filename_friendly_hash():

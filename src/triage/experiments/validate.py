@@ -493,7 +493,7 @@ class LabelConfigValidator(Validator):
             in the config."""
                 )
             )
-        load_query_if_needed(label_config)
+        label_config = load_query_if_needed(label_config)
         if "name" in label_config and not string_is_tablesafe(label_config["name"]):
             raise ValueError(
                 "Section: label_config - "
@@ -519,7 +519,7 @@ class CohortConfigValidator(Validator):
             in the config."""
                 )
             )
-        load_query_if_needed(cohort_config)
+        cohort_config = load_query_if_needed(cohort_config)
         query = cohort_config["query"]
         if "{as_of_date}" not in query:
             raise ValueError(
