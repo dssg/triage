@@ -164,7 +164,7 @@ def populate_crosstabs_table(
             # split dataframe into high/low risk
             df_pred_pos = df.loc[df[thres_type] <= thres, feat_cols]
             df_pred_neg = df.loc[df[thres_type] > thres, feat_cols]
-            logger.debug("len of hr and lr", len(df_pred_pos), len(df_pred_neg))
+            logger.debug(f"len of hr: {len(df_pred_pos)} and lr: {len(df_pred_neg)}")
             for name, func in crosstab_functions:
                 logger.debug(name)
                 this_result = pd.DataFrame(func(df_pred_pos, df_pred_neg))
