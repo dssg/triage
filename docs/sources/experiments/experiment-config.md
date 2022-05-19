@@ -70,7 +70,7 @@ temporal_config:
 Cohorts are configured by passing a query with placeholders for the **as_of_date**.
 
 - `cohort_conifg`:
-    - `filepath`: The `filepath` key should have a relative link to a file containing a sql query parameterized with an `'{as_of_date}'`, to select the entity_ids that should be included for a given date. The `{as_of_date}` will be replaced with each `as_of_date` that the experiment needs. The returned `entity_id` must be an integer.
+    - `filepath`: The `filepath` key should have a relative link (to the working directory where you're running triage) to a file containing a sql query parameterized with an `'{as_of_date}'`, to select the entity_ids that should be included for a given date. The `{as_of_date}` will be replaced with each `as_of_date` that the experiment needs. The returned `entity_id` must be an integer.
     - `query`: Instead of passing a file with your cohort query, you can include the query directly in the configuration file; this is not recommended as it required more maintanence to ensure that cohorts are consistent across experiments vs. storing cohort queries in their own files. It is retained for backwards compatibility with existing triage projects. **Only one of `filepath` or `query` is permitted.**
     - `name`: You may enter a `name` for your configuration. This will be included in the metadata for each matrix and used to group models. If you don't pass one, the string `default` will be used.
 

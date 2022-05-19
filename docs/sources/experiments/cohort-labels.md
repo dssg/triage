@@ -308,7 +308,7 @@ And should be referenced in your config file like so:
 
 ```yaml
 label_config:
-    file: 'labels/booking.sql'
+    filepath: 'labels/booking.sql'
     include_missing_labels_in_train_as: False
     name: 'booking'
 ```
