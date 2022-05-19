@@ -91,8 +91,7 @@ def populate_subset_data(db_engine, subset, entity_ids, as_of_date=TRAIN_END_TIM
             from unfiltered_row
             {query_where_clause}
             """
-        db_engine.execute(
-            text(insert_query).execution_options(autocommit=True))
+        db_engine.execute(text(insert_query).execution_options(autocommit=True))
 
 
 def test_all_same_labels(db_engine_with_results_schema):
@@ -128,13 +127,14 @@ def test_all_same_labels(db_engine_with_results_schema):
                     "entity_id": list(range(num_entities)),
                     "as_of_date": [TRAIN_END_TIME] * num_entities,
                 }
-            ).set_index(["entity_id", "as_of_date"]).label_value,
+            )
+            .set_index(["entity_id", "as_of_date"])
+            .label_value,
             init_as_of_dates=[TRAIN_END_TIME],
         )
 
         model_evaluator.evaluate(
-            trained_model.predict_proba(
-                labels)[:, 1], fake_matrix_store, model_id
+            trained_model.predict_proba(labels)[:, 1], fake_matrix_store, model_id
         )
 
         for metric, best, worst, stochastic in db_engine_with_results_schema.execute(
@@ -143,10 +143,7 @@ def test_all_same_labels(db_engine_with_results_schema):
             where model_id = %s and
             evaluation_start_time = %s
             order by 1""",
-            (
-                model_id,
-                fake_matrix_store.as_of_dates[0]
-            ),
+            (model_id, fake_matrix_store.as_of_dates[0]),
         ):
             if metric == "accuracy":
                 assert best is not None
@@ -174,7 +171,9 @@ def test_subset_labels_and_predictions(db_engine_with_results_schema):
                 "entity_id": list(range(num_entities)),
                 "as_of_date": [TRAIN_END_TIME] * num_entities,
             }
-        ).set_index(["entity_id", "as_of_date"]).label_value,
+        )
+        .set_index(["entity_id", "as_of_date"])
+        .label_value,
         init_as_of_dates=[TRAIN_END_TIME],
     )
 
@@ -186,9 +185,14 @@ def test_subset_labels_and_predictions(db_engine_with_results_schema):
         elif subset["name"] == "empty":
             expected_result = 0
 
-        populate_subset_data(db_engine_with_results_schema,
-                             subset, list(range(num_entities)))
-        subset_labels, subset_predictions, subset_protected_df = subset_labels_and_predictions(
+        populate_subset_data(
+            db_engine_with_results_schema, subset, list(range(num_entities))
+        )
+        (
+            subset_labels,
+            subset_predictions,
+            subset_protected_df,
+        ) = subset_labels_and_predictions(
             subset_df=query_subset_table(
                 db_engine_with_results_schema,
                 fake_matrix_store.as_of_dates,
@@ -229,8 +233,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 "average precision score",
             ]
         },
-        {"metrics": ["fbeta@"],
-            "parameters": [{"beta": 0.75}, {"beta": 1.25}]},
+        {"metrics": ["fbeta@"], "parameters": [{"beta": 0.75}, {"beta": 1.25}]},
     ]
 
     training_metric_groups = [{"metrics": ["accuracy", "roc_auc"]}]
@@ -256,7 +259,9 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 "entity_id": list(range(num_entities)),
                 "as_of_date": [TRAIN_END_TIME] * num_entities,
             }
-        ).set_index(["entity_id", "as_of_date"]).label_value,
+        )
+        .set_index(["entity_id", "as_of_date"])
+        .label_value,
         init_as_of_dates=[TRAIN_END_TIME],
     )
     fake_train_matrix_store = MockMatrixStore(
@@ -270,7 +275,9 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 "entity_id": list(range(num_entities)),
                 "as_of_date": [TRAIN_END_TIME] * num_entities,
             }
-        ).set_index(["entity_id", "as_of_date"]).label_value,
+        )
+        .set_index(["entity_id", "as_of_date"])
+        .label_value,
         init_as_of_dates=[TRAIN_END_TIME],
     )
 
@@ -282,14 +289,15 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
     # ensure that the matrix uuid is present
     matrix_uuids = [
         row[0]
-        for row in db_engine_with_results_schema.execute("select matrix_uuid from test_results.evaluations")
+        for row in db_engine_with_results_schema.execute(
+            "select matrix_uuid from test_results.evaluations"
+        )
     ]
     assert all(matrix_uuid == "efgh" for matrix_uuid in matrix_uuids)
 
     # Evaluate the training metrics and test
     model_evaluator.evaluate(
-        trained_model.predict_proba(
-            labels)[:, 1], fake_train_matrix_store, model_id
+        trained_model.predict_proba(labels)[:, 1], fake_train_matrix_store, model_id
     )
     records = [
         row[0]
@@ -309,19 +317,19 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
         if subset is None:
             where_hash = ""
         else:
-            populate_subset_data(db_engine_with_results_schema,
-                                 subset, list(range(num_entities)))
+            populate_subset_data(
+                db_engine_with_results_schema, subset, list(range(num_entities))
+            )
             SubsetFactory(subset_hash=filename_friendly_hash(subset))
             session.commit()
             where_hash = f"and subset_hash = '{filename_friendly_hash(subset)}'"
-
+        print(subset)
         # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
             fake_test_matrix_store,
             model_id,
             subset=subset,
-
         )
 
         records = [
@@ -335,10 +343,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 {where_hash}
                 order by 1
                 """,
-                (
-                    model_id,
-                    fake_test_matrix_store.as_of_dates[0]
-                ),
+                (model_id, fake_test_matrix_store.as_of_dates[0]),
             )
         ]
         assert records == [
@@ -392,10 +397,7 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
                 evaluation_start_time = %s
                 {where_hash}
                 order by 1""",
-                (
-                    model_id,
-                    fake_train_matrix_store.as_of_dates[0]
-                ),
+                (model_id, fake_train_matrix_store.as_of_dates[0]),
             )
         ]
         assert records == ["accuracy", "roc_auc"]
@@ -403,7 +405,9 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
     # ensure that the matrix uuid is present
     matrix_uuids = [
         row[0]
-        for row in db_engine_with_results_schema.execute("select matrix_uuid from train_results.evaluations")
+        for row in db_engine_with_results_schema.execute(
+            "select matrix_uuid from train_results.evaluations"
+        )
     ]
     assert all(matrix_uuid == "1234" for matrix_uuid in matrix_uuids)
 
@@ -432,12 +436,8 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
     testing_labels = np.array([1, 0, np.nan, 1, 0])
     testing_prediction_probas = np.array([0.56, 0.4, 0.55, 0.5, 0.3])
 
-    training_labels = np.array(
-        [0, 0, 1, 1, 1, 0, 1, 1]
-    )
-    training_prediction_probas = np.array(
-        [0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6]
-    )
+    training_labels = np.array([0, 0, 1, 1, 1, 0, 1, 1])
+    training_prediction_probas = np.array([0.6, 0.4, 0.55, 0.70, 0.3, 0.2, 0.8, 0.6])
 
     fake_train_matrix_store = MockMatrixStore(
         "train", "efgh", 5, db_engine_with_results_schema, training_labels
@@ -556,14 +556,22 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
 
     # make a test matrix to pass in
     metadata_overrides = {
-        'as_of_date_frequency': as_of_date_frequency,
-        'as_of_times': [eval_time],
+        "as_of_date_frequency": as_of_date_frequency,
+        "as_of_times": [eval_time],
     }
     test_matrix_store = MockMatrixStore(
-        "test", "1234", 5, db_engine_with_results_schema, metadata_overrides=metadata_overrides
+        "test",
+        "1234",
+        5,
+        db_engine_with_results_schema,
+        metadata_overrides=metadata_overrides,
     )
     train_matrix_store = MockMatrixStore(
-        "train", "2345", 5, db_engine_with_results_schema, metadata_overrides=metadata_overrides
+        "train",
+        "2345",
+        5,
+        db_engine_with_results_schema,
+        metadata_overrides=metadata_overrides,
     )
 
     # the evaluated model has test evaluations for precision, but not recall,
@@ -575,10 +583,12 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = filename_friendly_hash(subset)
 
         assert ModelEvaluator(
-            testing_metric_groups=[{
-                "metrics": ["precision@", "recall@"],
-                "thresholds": {"top_n": [100]},
-            }],
+            testing_metric_groups=[
+                {
+                    "metrics": ["precision@", "recall@"],
+                    "thresholds": {"top_n": [100]},
+                }
+            ],
             training_metric_groups=[],
             db_engine=db_engine_with_results_schema,
         ).needs_evaluations(
@@ -596,10 +606,12 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = filename_friendly_hash(subset)
 
         assert not ModelEvaluator(
-            testing_metric_groups=[{
-                "metrics": ["precision@"],
-                "thresholds": {"top_n": [100]},
-            }],
+            testing_metric_groups=[
+                {
+                    "metrics": ["precision@"],
+                    "thresholds": {"top_n": [100]},
+                }
+            ],
             training_metric_groups=[],
             db_engine=db_engine_with_results_schema,
         ).needs_evaluations(
@@ -617,10 +629,12 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = filename_friendly_hash(subset)
 
         assert ModelEvaluator(
-            testing_metric_groups=[{
-                "metrics": ["precision@"],
-                "thresholds": {"top_n": [100]},
-            }],
+            testing_metric_groups=[
+                {
+                    "metrics": ["precision@"],
+                    "thresholds": {"top_n": [100]},
+                }
+            ],
             training_metric_groups=[],
             db_engine=db_engine_with_results_schema,
         ).needs_evaluations(
@@ -638,14 +652,18 @@ def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_sc
             subset_hash = filename_friendly_hash(subset)
 
         assert ModelEvaluator(
-            testing_metric_groups=[{
-                "metrics": ["precision@"],
-                "thresholds": {"top_n": [100]},
-            }],
-            training_metric_groups=[{
-                "metrics": ["precision@"],
-                "thresholds": {"top_n": [100]},
-            }],
+            testing_metric_groups=[
+                {
+                    "metrics": ["precision@"],
+                    "thresholds": {"top_n": [100]},
+                }
+            ],
+            training_metric_groups=[
+                {
+                    "metrics": ["precision@"],
+                    "thresholds": {"top_n": [100]},
+                }
+            ],
             db_engine=db_engine_with_results_schema,
         ).needs_evaluations(
             matrix_store=train_matrix_store,
@@ -668,9 +686,7 @@ def test_ModelEvaluator_needs_evaluation_with_bias_audit(db_engine_with_results_
             },
         ],
         training_metric_groups=[],
-        bias_config={
-            'thresholds': {'top_n': [2]}
-        },
+        bias_config={"thresholds": {"top_n": [2]}},
         db_engine=db_engine_with_results_schema,
     )
     model_with_evaluations = ModelFactory()
@@ -691,11 +707,15 @@ def test_ModelEvaluator_needs_evaluation_with_bias_audit(db_engine_with_results_
 
     # make a test matrix to pass in
     metadata_overrides = {
-        'as_of_date_frequency': as_of_date_frequency,
-        'as_of_times': [eval_time],
+        "as_of_date_frequency": as_of_date_frequency,
+        "as_of_times": [eval_time],
     }
     test_matrix_store = MockMatrixStore(
-        "test", "1234", 5, db_engine_with_results_schema, metadata_overrides=metadata_overrides
+        "test",
+        "1234",
+        5,
+        db_engine_with_results_schema,
+        metadata_overrides=metadata_overrides,
     )
     assert model_evaluator.needs_evaluations(
         matrix_store=test_matrix_store,
@@ -715,9 +735,7 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
             },
         ],
         training_metric_groups=[],
-        bias_config={
-            'thresholds': {'top_n': [2]}
-        },
+        bias_config={"thresholds": {"top_n": [2]}},
         db_engine=db_engine_with_results_schema,
     )
     testing_labels = np.array([1, 0])
@@ -732,10 +750,12 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         train_end_time=TRAIN_END_TIME,
     )
 
-    protected_df = pd.DataFrame({
-        "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
-        "protectedattribute1": "value1"
-    })
+    protected_df = pd.DataFrame(
+        {
+            "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
+            "protectedattribute1": "value1",
+        }
+    )
 
     model_evaluator.evaluate(
         testing_prediction_probas, fake_test_matrix_store, model_id, protected_df
@@ -746,10 +766,10 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         order by 1""",
         (model_id, fake_test_matrix_store.as_of_dates[0]),
     ):
-        assert record['model_id'] == model_id
-        assert record['parameter'] == '2_abs'
-        assert record['attribute_name'] == 'protectedattribute1'
-        assert record['attribute_value'] == 'value1'
+        assert record["model_id"] == model_id
+        assert record["parameter"] == "2_abs"
+        assert record["attribute_name"] == "protectedattribute1"
+        assert record["attribute_value"] == "value1"
 
 
 def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
@@ -763,34 +783,37 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
             },
         ],
         training_metric_groups=[],
-        bias_config={
-            'thresholds': {'top_n': [2]}
-        },
+        bias_config={"thresholds": {"top_n": [2]}},
         db_engine=db_engine_with_results_schema,
     )
     testing_labels = np.array([1, 1, 1, 0, 1])
     testing_prediction_probas = np.array([0.56, 0.55, 0.92, 0.85, 0.24])
 
     fake_test_matrix_store = MockMatrixStore(
-        "test", "1234", 5, db_engine_with_results_schema,
-        metadata_overrides={'as_of_times': [TRAIN_END_TIME]},
+        "test",
+        "1234",
+        5,
+        db_engine_with_results_schema,
+        metadata_overrides={"as_of_times": [TRAIN_END_TIME]},
         matrix=pd.DataFrame.from_dict(
-                {
-                    "entity_id": [1, 2, 3, 4, 5],
-                    "as_of_date": [pd.Timestamp(2016, 1, 1)]*5,
-                    "feature_one": [3, 4, 3, 4, 3],
-                    "feature_two": [5, 6, 5, 6, 5],
-                    "label": testing_labels,
-                }
-            ).set_index(MatrixStore.indices),
+            {
+                "entity_id": [1, 2, 3, 4, 5],
+                "as_of_date": [pd.Timestamp(2016, 1, 1)] * 5,
+                "feature_one": [3, 4, 3, 4, 3],
+                "feature_two": [5, 6, 5, 6, 5],
+                "label": testing_labels,
+            }
+        ).set_index(MatrixStore.indices),
         init_labels=pd.DataFrame(
             {
                 "label_value": testing_labels,
                 "entity_id": [1, 2, 3, 4, 5],
-                "as_of_date": [pd.Timestamp(2016, 1, 1)]*5,
+                "as_of_date": [pd.Timestamp(2016, 1, 1)] * 5,
             }
-        ).set_index(["entity_id", "as_of_date"]).label_value,
-        init_as_of_dates=[TRAIN_END_TIME]
+        )
+        .set_index(["entity_id", "as_of_date"])
+        .label_value,
+        init_as_of_dates=[TRAIN_END_TIME],
     )
 
     trained_model, model_id = fake_trained_model(
@@ -798,16 +821,19 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
         train_end_time=TRAIN_END_TIME,
     )
 
-    protected_df = pd.DataFrame({
-        # "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
-        # "as_of_date": fake_test_matrix_store.design_matrix.index.levels[1].tolist(),
-        "protectedattribute1": ["low", "low", "low", "high", "high"]
-    }, index=fake_test_matrix_store.design_matrix.index)
+    protected_df = pd.DataFrame(
+        {
+            # "entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist(),
+            # "as_of_date": fake_test_matrix_store.design_matrix.index.levels[1].tolist(),
+            "protectedattribute1": ["low", "low", "low", "high", "high"]
+        },
+        index=fake_test_matrix_store.design_matrix.index,
+    )
     # should be low has 3 records, all 1's; high has 2 records, one 1
 
     expected = {
         "low": {"group_size": 3, "group_label_neg": 0, "group_label_pos": 3},
-        "high": {"group_size": 2, "group_label_neg": 1, "group_label_pos": 1}
+        "high": {"group_size": 2, "group_label_neg": 1, "group_label_pos": 1},
     }
 
     model_evaluator.evaluate(
@@ -820,30 +846,24 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
         order by 1""",
         (model_id, fake_test_matrix_store.as_of_dates[0]),
     ):
-        assert record['model_id'] == model_id
-        assert record['parameter'] == '2_abs'
-        assert record['attribute_name'] == 'protectedattribute1'
-        for col, value in expected[record['attribute_value']].items():
+        assert record["model_id"] == model_id
+        assert record["parameter"] == "2_abs"
+        assert record["attribute_name"] == "protectedattribute1"
+        for col, value in expected[record["attribute_value"]].items():
             assert record[col] == value
 
 
-
 def test_generate_binary_at_x():
-    input_array = np.array(
-        [0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
+    input_array = np.array([0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6])
 
     # bug can arise when the same value spans both sides of threshold
     assert_array_equal(
         generate_binary_at_x(input_array, 50, "percentile"),
-        np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+        np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0]),
     )
 
     assert_array_equal(
-        generate_binary_at_x(input_array, 2),
-        np.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+        generate_binary_at_x(input_array, 2), np.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
     )
 
-    assert_array_equal(
-        generate_binary_at_x(np.array([]), 2),
-        np.array([])
-    )
+    assert_array_equal(generate_binary_at_x(np.array([]), 2), np.array([]))
