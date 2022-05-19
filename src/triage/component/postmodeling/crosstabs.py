@@ -1,3 +1,4 @@
+import ohio.ext.pandas
 import pandas as pd
 import verboselogs, logging
 
@@ -117,10 +118,7 @@ def populate_crosstabs_table(
         Returns: A DataFrame, corresponding to results.crosstabs
     """
     logger.info(
-        "\n\n****************\nRUNNING populate_crosstabs_table for model_id ",
-        model_id,
-        "and as_of_date ",
-        as_of_date,
+        f"RUNNING populate_crosstabs_table for model_id {model_id} and as_of_date {as_of_date}",
     )
     if len(df) == 0:
         raise ValueError("No data could be fetched.")
@@ -194,7 +192,7 @@ def populate_crosstabs_table(
     df = pd.concat(dfs)
     if push_to_db:
         logger.debug("Pushing results to database...")
-        df.reset_index().set_index(["model_id", "as_of_date", "metric"]).to_sql(
+        df.reset_index().set_index(["model_id", "as_of_date", "metric"]).pg_copy_to(
             schema=schema, name=table, con=engine, if_exists="append"
         )
     if return_df:
