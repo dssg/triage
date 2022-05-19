@@ -25,31 +25,38 @@ from tests.utils import CallSpy
 
 
 class SomeClass:
-
     def __init__(self, val):
         self.val = val
 
 
+@mock_s3
 def test_S3Store():
-    with mock_s3():
-        client = boto3.client("s3")
-        client.create_bucket(Bucket="test_bucket", ACL="public-read-write")
-        store = S3Store(f"s3://test_bucket/a_path")
-        assert not store.exists()
-        store.write("val".encode("utf-8"))
-        assert store.exists()
-        newVal = store.load()
-        assert newVal.decode("utf-8") == "val"
-        store.delete()
-        assert not store.exists()
+    client = boto3.client("s3")
+    client.create_bucket(
+        Bucket="test_bucket",
+        ACL="public-read-write",
+        CreateBucketConfiguration={"LocationConstraint": "us-east-2"},
+    )
+    store = S3Store(f"s3://test_bucket/a_path")
+    assert not store.exists()
+    store.write("val".encode("utf-8"))
+    assert store.exists()
+    newVal = store.load()
+    assert newVal.decode("utf-8") == "val"
+    store.delete()
+    assert not store.exists()
 
 
 @mock_s3
 def test_S3Store_large():
-    client = boto3.client('s3')
-    client.create_bucket(Bucket='test_bucket', ACL='public-read-write')
+    client = boto3.client("s3")
+    client.create_bucket(
+        Bucket="test_bucket",
+        ACL="public-read-write",
+        CreateBucketConfiguration={"LocationConstraint": "us-east-2"},
+    )
 
-    store = S3Store('s3://test_bucket/a_path')
+    store = S3Store("s3://test_bucket/a_path")
     assert not store.exists()
 
     # NOTE: The issue under test (currently) arises when too large a "part"
@@ -77,24 +84,24 @@ def test_S3Store_large():
     # NOTE: to the point of self-invalidation. (But, this should do the
     # NOTE: trick; and, we can always increase the payload size here, or
     # NOTE: otherwise tweak configuration, as necessary.)
-    one_mb = 2 ** 20
+    one_mb = 2**20
     payload = b"0" * (10 * one_mb)  # 10MiB text of all zeros
 
-    with CallSpy('botocore.client.BaseClient._make_api_call') as spy:
+    with CallSpy("botocore.client.BaseClient._make_api_call") as spy:
         store.write(payload)
 
     call_args = [call[0] for call in spy.calls]
     call_methods = [args[1] for args in call_args]
 
     assert call_methods == [
-        'CreateMultipartUpload',
-        'UploadPart',
-        'UploadPart',
-        'CompleteMultipartUpload',
+        "CreateMultipartUpload",
+        "UploadPart",
+        "UploadPart",
+        "CompleteMultipartUpload",
     ]
 
     upload_args = call_args[1]
-    upload_body = upload_args[2]['Body']
+    upload_body = upload_args[2]["Body"]
 
     # NOTE: Why is this a BufferIO rather than the underlying buffer?!
     # NOTE: (Would have expected the result of BufferIO.read() -- str.)
@@ -123,22 +130,22 @@ def test_FSStore():
 
 def test_ModelStorageEngine_nocaching(project_storage):
     mse = ModelStorageEngine(project_storage)
-    mse.write('testobject', 'myhash')
-    assert mse.exists('myhash')
-    assert mse.load('myhash') == 'testobject'
-    assert 'myhash' not in mse.cache
+    mse.write("testobject", "myhash")
+    assert mse.exists("myhash")
+    assert mse.load("myhash") == "testobject"
+    assert "myhash" not in mse.cache
 
 
 def test_ModelStorageEngine_caching(project_storage):
     mse = ModelStorageEngine(project_storage)
     with mse.cache_models():
-        mse.write('testobject', 'myhash')
+        mse.write("testobject", "myhash")
         with mock.patch.object(mse, "_get_store") as get_store_mock:
-            assert mse.load('myhash') == 'testobject'
+            assert mse.load("myhash") == "testobject"
             assert not get_store_mock.called
-        assert 'myhash' in mse.cache
+        assert "myhash" in mse.cache
     # when cache_models goes out of scope the cache should be empty
-    assert 'myhash' not in mse.cache
+    assert "myhash" not in mse.cache
 
 
 DATA_DICT = OrderedDict(
@@ -240,7 +247,7 @@ def test_MatrixStore_save():
         "as_of_date": [pd.Timestamp(2017, 1, 1), pd.Timestamp(2017, 1, 1)],
         "feature_one": [0.5, 0.6],
         "feature_two": [0.5, 0.6],
-        "label": [1, 0]
+        "label": [1, 0],
     }
     df = pd.DataFrame.from_dict(data)
     labels = df.pop("label")
@@ -250,10 +257,7 @@ def test_MatrixStore_save():
 
         matrix_store.matrix_label_tuple = df, labels
         matrix_store.save()
-        assert_frame_equal(
-            matrix_store.design_matrix,
-            df
-        )
+        assert_frame_equal(matrix_store.design_matrix, df)
 
 
 def test_MatrixStore_caching():
@@ -276,7 +280,7 @@ def test_as_of_dates(project_storage):
             pd.Timestamp(2017, 1, 1),
             pd.Timestamp(2017, 1, 1),
         ],
-        "label": [1, 0, 1, 0]
+        "label": [1, 0, 1, 0],
     }
     df = pd.DataFrame.from_dict(data)
     matrix_store = CSVMatrixStore(
@@ -284,25 +288,32 @@ def test_as_of_dates(project_storage):
         [],
         "test",
         matrix=df,
-        metadata={"indices": ["entity_id", "as_of_date"], "label_name": "label"}
+        metadata={"indices": ["entity_id", "as_of_date"], "label_name": "label"},
     )
-    assert matrix_store.as_of_dates == [datetime.date(2016, 1, 1), datetime.date(2017, 1, 1)]
+    assert matrix_store.as_of_dates == [
+        datetime.date(2016, 1, 1),
+        datetime.date(2017, 1, 1),
+    ]
 
 
+@mock_s3
 def test_s3_save():
-    with mock_s3():
-        client = boto3.client("s3")
-        client.create_bucket(Bucket="fake-matrix-bucket", ACL="public-read-write")
-        for example in matrix_stores():
-            if not isinstance(example, CSVMatrixStore):
-                continue
-            project_storage = ProjectStorage("s3://fake-matrix-bucket")
+    client = boto3.client("s3")
+    client.create_bucket(
+        Bucket="fake-matrix-bucket",
+        ACL="public-read-write",
+        CreateBucketConfiguration={"LocationConstraint": "us-east-2"},
+    )
+    for example in matrix_stores():
+        if not isinstance(example, CSVMatrixStore):
+            continue
+        project_storage = ProjectStorage("s3://fake-matrix-bucket")
 
-            tosave = CSVMatrixStore(project_storage, [], "test")
-            tosave.metadata = example.metadata
-            tosave.matrix_label_tuple = example.matrix_label_tuple
-            tosave.save()
+        tosave = CSVMatrixStore(project_storage, [], "test")
+        tosave.metadata = example.metadata
+        tosave.matrix_label_tuple = example.matrix_label_tuple
+        tosave.save()
 
-            tocheck = CSVMatrixStore(project_storage, [], "test")
-            assert tocheck.metadata == example.metadata
-            assert tocheck.design_matrix.to_dict() == example.design_matrix.to_dict()
+        tocheck = CSVMatrixStore(project_storage, [], "test")
+        assert tocheck.metadata == example.metadata
+        assert tocheck.design_matrix.to_dict() == example.design_matrix.to_dict()
