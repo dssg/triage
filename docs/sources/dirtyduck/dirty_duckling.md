@@ -242,7 +242,7 @@ triage experiment experiments/dirty-duckling.yaml
 ```
 That's it! If you see this message in your screen:
 
-     2020-08-20 16:56:56 - SUCCESS Training, testing and evaluatiog models completed
+     2020-08-20 16:56:56 - SUCCESS Training, testing and evaluating models completed
      2020-08-20 16:56:56 - SUCCESS All matrices that were supposed to be build were built. Awesome!
      2020-08-20 16:56:56 - SUCCESS All models that were supposed to be trained were trained. Awesome!
      2020-08-20 16:56:56 - SUCCESS Experiment (a336de4800cec8964569d051dc56f85d) ran through completion
