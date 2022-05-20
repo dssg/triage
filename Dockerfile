@@ -1,4 +1,4 @@
-FROM python:3.7-slim AS development
+FROM python:3.8-slim AS development
 
 LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
         maintainer="Adolfo De Unánue <adolfo@cmu.edu>" \
@@ -60,7 +60,7 @@ RUN pip install -e .
 
 ENTRYPOINT [ "bash" ]
 
-FROM python:3.7-slim AS master
+FROM python:3.8-slim AS master
 
 LABEL triage.version="master"
 

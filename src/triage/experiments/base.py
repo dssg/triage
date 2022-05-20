@@ -151,6 +151,7 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
+
         if self.config.get("cohort_config") is not None:
             self.config["cohort_config"] = load_query_if_needed(
                 self.config["cohort_config"]
@@ -897,7 +898,7 @@ class ExperimentBase(ABC):
             experiment.models_needed = len(model_hashes)
         record_model_building_started(self.run_id, self.db_engine)
         self.process_train_test_batches(batches)
-        logger.success("Training, testing and evaluatiog models completed")
+        logger.success("Training, testing and evaluating models completed")
 
     def validate(self, strict=True):
         ExperimentValidator(self.db_engine, strict=strict).run(self.config)

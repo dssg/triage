@@ -3,6 +3,8 @@ from unittest import TestCase, mock
 
 import pandas as pd
 import testing.postgresql
+from unittest.mock import Mock
+
 from triage import create_engine
 from contextlib import contextmanager
 
@@ -421,11 +423,11 @@ def test_load_features_data():
         cols = ["entity_id", "as_of_date"] + features[i]
         temp_df = pd.DataFrame(table, columns=cols)
         temp_df["as_of_date"] = convert_string_column_to_date(temp_df["as_of_date"])
-        features_dfs.append(
-            ids_dates.merge(
-                right=temp_df, how="left", on=["entity_id", "as_of_date"]
-            ).set_index(["entity_id", "as_of_date"])
+        merged_df = ids_dates.merge(
+            right=temp_df, how="left", on=["entity_id", "as_of_date"]
         )
+        merged_df["as_of_date"] = pd.to_datetime(merged_df["as_of_date"])
+        features_dfs.append(merged_df.set_index(["entity_id", "as_of_date"]))
 
     # create an engine and generate a table with fake feature data
     with testing.postgresql.Postgresql() as postgresql:
