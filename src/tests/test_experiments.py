@@ -12,7 +12,7 @@ from triage import create_engine
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
-from tests.utils import sample_config, populate_source_data
+from tests.utils import sample_config, populate_source_data, open_side_effect
 from triage.component.catwalk.storage import CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
 
@@ -56,17 +56,54 @@ parametrize_experiment_classes = pytest.mark.parametrize(
 
 
 @parametrize_experiment_classes
-def test_simple_experiment(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+def test_filepaths_and_queries_give_same_hashes(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        with TemporaryDirectory() as temp_dir:
-            experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-            ).run()
+        query_config = sample_config(query_source="query")
+        file_config = sample_config(query_source="filepath")
+
+        experiment_with_queries = experiment_class(
+            config=query_config,
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+        )
+        experiment_with_filepaths = experiment_class(
+            config=file_config,
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+        )
+        assert (
+            experiment_with_queries.experiment_hash
+            == experiment_with_filepaths.experiment_hash
+        )
+        assert (
+            experiment_with_queries.cohort_table_name
+            == experiment_with_filepaths.cohort_table_name
+        )
+        assert (
+            experiment_with_queries.labels_table_name
+            == experiment_with_filepaths.labels_table_name
+        )
+
+
+@parametrize_experiment_classes
+def test_simple_experiment(experiment_class):
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
+        db_engine = create_engine(postgresql.url())
+        populate_source_data(db_engine)
+        experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+        ).run()
 
         # assert
         # 1. that model groups entries are present
@@ -166,7 +203,9 @@ def test_simple_experiment(experiment_class):
         num_experiments = len(
             [
                 row
-                for row in db_engine.execute("select * from triage_metadata.experiments")
+                for row in db_engine.execute(
+                    "select * from triage_metadata.experiments"
+                )
             ]
         )
         assert num_experiments == 1
@@ -225,94 +264,105 @@ def test_simple_experiment(experiment_class):
         assert len(matrices) == 4
 
         # 11. Checking that all matrices are associated with the experiment
-        linked_matrices = list(db_engine.execute(
-            """select * from triage_metadata.matrices
+        linked_matrices = list(
+            db_engine.execute(
+                """select * from triage_metadata.matrices
             join triage_metadata.experiment_matrices using (matrix_uuid)
             join triage_metadata.experiments using (experiment_hash)"""
-        ))
+            )
+        )
         assert len(linked_matrices) == len(matrices)
+
 
 @parametrize_experiment_classes
 def test_validate_default(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-            )
-            experiment.validate = mock.MagicMock()
-            experiment.run()
-            experiment.validate.assert_called_once()
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+        )
+        experiment.validate = mock.MagicMock()
+        experiment.run()
+        experiment.validate.assert_called_once()
+
 
 @parametrize_experiment_classes
 def test_skip_validation(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-                skip_validation=True,
-            )
-            experiment.validate = mock.MagicMock()
-            experiment.run()
-            experiment.validate.assert_not_called()
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+            skip_validation=True,
+        )
+        experiment.validate = mock.MagicMock()
+        experiment.run()
+        experiment.validate.assert_not_called()
+
 
 @parametrize_experiment_classes
 def test_restart_experiment(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-            )
-            experiment.run()
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+        )
+        experiment.run()
 
-            evaluations = num_linked_evaluations(db_engine)
-            assert evaluations > 0
+        evaluations = num_linked_evaluations(db_engine)
+        assert evaluations > 0
 
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-                replace=False,
-            )
-            experiment.make_entity_date_table = mock.Mock()
-            experiment.run()
-            assert not experiment.make_entity_date_table.called
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+            replace=False,
+        )
+        experiment.make_entity_date_table = mock.Mock()
+        experiment.run()
+        assert not experiment.make_entity_date_table.called
 
 
 class TestConfigVersion(TestCase):
     def test_load_if_right_version(self):
         experiment_config = sample_config()
         experiment_config["config_version"] = CONFIG_VERSION
-        with testing.postgresql.Postgresql() as postgresql:
+        with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+            "triage.util.conf.open", side_effect=open_side_effect
+        ) as mock_file:
             db_engine = create_engine(postgresql.url())
-            with TemporaryDirectory() as temp_dir:
-                experiment = SingleThreadedExperiment(
-                    config=experiment_config,
-                    db_engine=db_engine,
-                    project_path=os.path.join(temp_dir, "inspections"),
-                )
+            experiment = SingleThreadedExperiment(
+                config=experiment_config,
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+            )
 
         assert isinstance(experiment, SingleThreadedExperiment)
 
     def test_noload_if_wrong_version(self):
         experiment_config = sample_config()
         experiment_config["config_version"] = "v0"
-        with TemporaryDirectory() as temp_dir:
+        with TemporaryDirectory() as temp_dir, mock.patch(
+            "triage.util.conf.open", side_effect=open_side_effect
+        ) as mock_file:
             with self.assertRaises(ValueError):
                 SingleThreadedExperiment(
                     config=experiment_config,
@@ -328,40 +378,41 @@ class TestConfigVersion(TestCase):
     side_effect=lambda: time.sleep(1),
 )
 def test_cleanup_timeout(_clean_up_mock, experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-                cleanup_timeout=0.02,  # Set short timeout
-            )
-            with pytest.raises(TimeoutError):
-                experiment()
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+            cleanup_timeout=0.02,  # Set short timeout
+        )
+        with pytest.raises(TimeoutError):
+            experiment()
 
 
 @parametrize_experiment_classes
 def test_build_error(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+            skip_validation=True,  # avoid catching the missing data at validation stage
+        )
 
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-                skip_validation=True,   # avoid catching the missing data at validation stage
-            )
+        with mock.patch.object(experiment, "generate_matrices") as build_mock:
+            build_mock.side_effect = RuntimeError("boom!")
 
-            with mock.patch.object(experiment, "generate_matrices") as build_mock:
-                build_mock.side_effect = RuntimeError("boom!")
-
-                with pytest.raises(RuntimeError):
-                    experiment()
+            with pytest.raises(RuntimeError):
+                experiment()
 
 
 @parametrize_experiment_classes
@@ -371,24 +422,24 @@ def test_build_error(experiment_class):
     side_effect=lambda: time.sleep(1),
 )
 def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
+        experiment = experiment_class(
+            config=sample_config(),
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+            cleanup=True,
+            cleanup_timeout=0.02,  # Set short timeout
+            skip_validation=True,  # avoid catching the missing data at validation stage
+        )
 
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=sample_config(),
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=True,
-                cleanup_timeout=0.02,  # Set short timeout
-                skip_validation=True,  # avoid catching the missing data at validation stage
-            )
+        with mock.patch.object(experiment, "generate_matrices") as build_mock:
+            build_mock.side_effect = RuntimeError("boom!")
 
-            with mock.patch.object(experiment, "generate_matrices") as build_mock:
-                build_mock.side_effect = RuntimeError("boom!")
-
-                with pytest.raises(TimeoutError) as exc_info:
-                    experiment()
+            with pytest.raises(TimeoutError) as exc_info:
+                experiment()
 
     # Last exception is TimeoutError, but earlier error is preserved in
     # __context__, and will be noted as well in any standard traceback:
@@ -397,23 +448,26 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
 
 @parametrize_experiment_classes
 def test_custom_label_name(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         config = sample_config()
         config["label_config"]["name"] = "custom_label_name"
-        with TemporaryDirectory() as temp_dir:
-            experiment = experiment_class(
-                config=config,
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-            )
-            assert experiment.label_generator.label_name == "custom_label_name"
-            assert experiment.planner.label_names == ["custom_label_name"]
+        experiment = experiment_class(
+            config=config,
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+        )
+        assert experiment.label_generator.label_name == "custom_label_name"
+        assert experiment.planner.label_names == ["custom_label_name"]
 
 
 def test_profiling(db_engine):
     populate_source_data(db_engine)
-    with TemporaryDirectory() as temp_dir:
+    with TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         project_path = os.path.join(temp_dir, "inspections")
         SingleThreadedExperiment(
             config=sample_config(),
@@ -426,7 +480,9 @@ def test_profiling(db_engine):
 
 @parametrize_experiment_classes
 def test_baselines_with_missing_features(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
 
@@ -444,12 +500,11 @@ def test_baselines_with_missing_features(experiment_class):
             ]
         }
         config["feature_group_strategies"] = ["leave-one-in"]
-        with TemporaryDirectory() as temp_dir:
-            experiment_class(
-                config=config,
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-            ).run()
+        experiment_class(
+            config=config,
+            db_engine=db_engine,
+            project_path=os.path.join(temp_dir, "inspections"),
+        ).run()
 
         # assert
         # 1. that model groups entries are present
@@ -513,7 +568,9 @@ def test_baselines_with_missing_features(experiment_class):
         num_experiments = len(
             [
                 row
-                for row in db_engine.execute("select * from triage_metadata.experiments")
+                for row in db_engine.execute(
+                    "select * from triage_metadata.experiments"
+                )
             ]
         )
         assert num_experiments == 1
@@ -558,15 +615,16 @@ def test_baselines_with_missing_features(experiment_class):
 
 def test_serializable_engine_check_sqlalchemy_fail():
     """If we pass a vanilla sqlalchemy engine to the experiment we should blow up"""
-    with testing.postgresql.Postgresql() as postgresql:
+    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        "triage.util.conf.open", side_effect=open_side_effect
+    ) as mock_file:
         db_engine = sqlalchemy.create_engine(postgresql.url())
-        with TemporaryDirectory() as temp_dir:
-            with pytest.raises(TypeError):
-                MultiCoreExperiment(
-                    config=sample_config(),
-                    db_engine=db_engine,
-                    project_path=os.path.join(temp_dir, "inspections"),
-                )
+        with pytest.raises(TypeError):
+            MultiCoreExperiment(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=os.path.join(temp_dir, "inspections"),
+            )
 
 
 def test_experiment_metadata(finished_experiment):
@@ -576,7 +634,13 @@ def test_experiment_metadata(finished_experiment):
     assert experiment_row.as_of_times == 369
     assert experiment_row.feature_blocks == 2
     assert experiment_row.feature_group_combinations == 1
-    assert experiment_row.matrices_needed == experiment_row.time_splits * 2 * experiment_row.feature_group_combinations # x2 for train and test
+    assert (
+        experiment_row.matrices_needed
+        == experiment_row.time_splits * 2 * experiment_row.feature_group_combinations
+    )  # x2 for train and test
     assert experiment_row.grid_size == 4
-    assert experiment_row.models_needed == (experiment_row.matrices_needed/2) * experiment_row.grid_size # /2 because we only need models per train matrix
+    assert (
+        experiment_row.models_needed
+        == (experiment_row.matrices_needed / 2) * experiment_row.grid_size
+    )  # /2 because we only need models per train matrix
     session.close()

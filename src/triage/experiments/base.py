@@ -5,6 +5,7 @@ logger = verboselogs.VerboseLogger(__name__)
 from abc import ABC, abstractmethod
 import cProfile
 import marshal
+import os
 import random
 import time
 import itertools
@@ -83,7 +84,7 @@ from triage.experiments.defaults import (
 )
 
 from triage.database_reflection import table_has_data
-from triage.util.conf import dt_from_str, parse_from_obj
+from triage.util.conf import dt_from_str, parse_from_obj, load_query_if_needed
 from triage.util.db import get_for_update
 from triage.util.introspection import bind_kwargs, classpath
 
@@ -150,6 +151,15 @@ class ExperimentBase(ABC):
 
         self._check_config_version(config)
         self.config = config
+
+        if self.config.get("cohort_config") is not None:
+            self.config["cohort_config"] = load_query_if_needed(
+                self.config["cohort_config"]
+            )
+        if self.config.get("label_config") is not None:
+            self.config["label_config"] = load_query_if_needed(
+                self.config["label_config"]
+            )
 
         self.project_storage = ProjectStorage(project_path)
         self.model_storage_engine = ModelStorageEngine(self.project_storage)

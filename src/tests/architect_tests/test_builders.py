@@ -1,9 +1,10 @@
 import datetime
-from unittest import TestCase
+from unittest import TestCase, mock
 
 import pandas as pd
 import testing.postgresql
 from unittest.mock import Mock
+
 from triage import create_engine
 from contextlib import contextmanager
 
@@ -856,7 +857,7 @@ class TestBuildMatrix(TestCase):
 
                 assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
                 # rerun
-                builder.make_entity_date_table = Mock()
+                builder.make_entity_date_table = mock.Mock()
                 builder.build_matrix(
                     as_of_times=dates,
                     label_name="booking",

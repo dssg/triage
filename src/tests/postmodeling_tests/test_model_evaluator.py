@@ -1,9 +1,15 @@
 from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
 from triage.component.postmodeling.crosstabs import run_crosstabs
-from tests.utils import sample_config, populate_source_data, assert_plot_figures_added
+from tests.utils import (
+    sample_config,
+    populate_source_data,
+    assert_plot_figures_added,
+    open_side_effect,
+)
 from triage.experiments import SingleThreadedExperiment
 import pandas as pd
 import pytest
+from unittest import mock
 
 
 @pytest.fixture(scope="module")
@@ -22,11 +28,12 @@ def model_evaluator(shared_db_engine, shared_project_storage):
             "min_samples_split": [2],
         }
     }
-    SingleThreadedExperiment(
-        base_config,
-        db_engine=shared_db_engine,
-        project_path=shared_project_storage.project_path,
-    ).run()
+    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
+        SingleThreadedExperiment(
+            base_config,
+            db_engine=shared_db_engine,
+            project_path=shared_project_storage.project_path,
+        ).run()
     return ModelEvaluator(1, 1, shared_db_engine)
 
 
