@@ -323,7 +323,6 @@ def test_evaluating_early_warning(db_engine_with_results_schema):
             SubsetFactory(subset_hash=filename_friendly_hash(subset))
             session.commit()
             where_hash = f"and subset_hash = '{filename_friendly_hash(subset)}'"
-        print(subset)
         # Evaluate the testing metrics and test for all of them.
         model_evaluator.evaluate(
             trained_model.predict_proba(labels)[:, 1],
