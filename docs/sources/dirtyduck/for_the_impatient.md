@@ -1,6 +1,6 @@
 # For the impatient
 
-If you want to skip all the cleansing and transformation and deep directly into `triage` you can execute the following *inside bastion*:
+If you want to skip all the cleaning and transformations and dive  directly into `triage` you can execute the following *inside bastion*:
 
 ```sh
      psql ${DATABASE_URL} -c "\copy raw.inspections from program 'curl "https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD"' HEADER CSV"
