@@ -52,7 +52,9 @@ integer**) to refer to the primary *entities* of interest in our
 project.
 
 #### Examples
-1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified, a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified (through the entity_id column), a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+
+2. education: the entity_id will typically be the student_id and the events include things like a grade in a class in a given year, a test score n a test at a given time, graduation, etc.
 
 
 ### 4. Set up Triage configuration files
