@@ -1,5 +1,5 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table
+from sqlalchemy import MetaData, Table, inspect
 
 
 def split_table(table_name):
@@ -62,8 +62,16 @@ def table_exists(table_name, db_engine):
 
     Returns: (boolean) Whether or not the table exists in the database
     """
-    return table_object(table_name, db_engine).exists()
 
+    schema, table = split_table(table_name)
+    exists=False
+
+    with db_engine.begin() as conn:
+        insp = inspect(conn, raiseerr=True)
+        exists = insp.has_table(table, schema=schema)
+
+    return exists
+     
 
 def table_has_data(table_name, db_engine):
     """Check whether the table contains any data
