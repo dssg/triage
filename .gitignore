@@ -22,3 +22,5 @@ dirtyduck/triage/**
 *~
 **/trained_models/**
 **/matrices
+
+*.swp

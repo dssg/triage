@@ -52,7 +52,9 @@ integer**) to refer to the primary *entities* of interest in our
 project.
 
 #### Examples
-1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified, a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified (through the entity_id column), a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+
+2. education: the entity_id will typically be the student_id and the events include things like a grade in a class in a given year, a test score n a test at a given time, graduation, etc.
 
 
 ### 4. Set up Triage configuration files
@@ -77,8 +79,7 @@ temporal_config:
     label_timespans: ['<< YOUR_VALUE_HERE >>']
 
 label_config:
-  query: |
-    << YOUR_VALUE_HERE >>
+  filepath: '<< YOUR_VALUE_HERE >>'
   name: 'quickstart_label'
 
 feature_aggregations:
@@ -138,7 +139,7 @@ defaults for others. The primary parameters to specify (for now) are:
    - `entity_id`: each `entity_id` affected by an event within the amount of time specified by `label_timespan` after a given `as_of_date`
    - `outcome`: a binary variable representing the events that happened to each entity, within the period specified by that `as_of_date` and `label_timespan`
 
-   The query is parameterized over `as_of_date`, and `label_timespan`. These parameters are passed to your query as named keywords using the Python's [`str.format()`](https://docs.python.org/3.7/library/stdtypes.html#str.format) method. You can use them in your query by surrounding their keywords with curly braces (as in the example below).
+   The query is parameterized over `as_of_date`, and `label_timespan`. These parameters are passed to your query as named keywords using the Python's [`str.format()`](https://docs.python.org/3.8/library/stdtypes.html#str.format) method. You can use them in your query by surrounding their keywords with curly braces (as in the example below).
    
    See our
    [guide to Labels](https://dssg.github.io/triage/experiments/cohort-labels/) for a more in-depth discussion of this topic.

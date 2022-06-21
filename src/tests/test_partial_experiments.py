@@ -5,13 +5,12 @@ from tempfile import TemporaryDirectory
 import testing.postgresql
 from triage import create_engine
 
-
-from tests.utils import sample_config, populate_source_data
+from tests.utils import sample_config, populate_source_data, open_side_effect
 
 from triage.experiments import SingleThreadedExperiment
 from triage.database_reflection import schema_tables
 from triage.validation_primitives import table_should_have_data
-from unittest import TestCase
+from unittest import TestCase, mock
 from contextlib import contextmanager
 
 
@@ -21,14 +20,17 @@ def prepare_experiment(config):
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
-            experiment = SingleThreadedExperiment(
-                config=config,
-                db_engine=db_engine,
-                project_path=os.path.join(temp_dir, "inspections"),
-                cleanup=False,
-                partial_run=True,
-            )
-            yield experiment
+            with mock.patch(
+                "triage.util.conf.open", side_effect=open_side_effect
+            ) as mock_file:
+                experiment = SingleThreadedExperiment(
+                    config=config,
+                    db_engine=db_engine,
+                    project_path=os.path.join(temp_dir, "inspections"),
+                    cleanup=False,
+                    partial_run=True,
+                )
+                yield experiment
 
 
 class GetSplits(TestCase):
@@ -64,9 +66,7 @@ class Cohort(TestCase):
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
-            table_should_have_data(
-                experiment.cohort_table_name, experiment.db_engine
-            )
+            table_should_have_data(experiment.cohort_table_name, experiment.db_engine)
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:

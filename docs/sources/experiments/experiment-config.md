@@ -69,8 +69,9 @@ temporal_config:
 ### Cohort Config
 Cohorts are configured by passing a query with placeholders for the **as_of_date**.
 
-- `cohort_conifg`: 
-    - `qurey`: The `query` key should have a query, parameterized with an `'{as_of_date}'`, to select the entity_ids that should be included for a given date. The `{as_of_date}` will be replaced with each `as_of_date` that the experiment needs. The returned `entity_id` must be an integer.
+- `cohort_conifg`:
+    - `filepath`: The `filepath` key should have a relative link (to the working directory where you're running triage) to a file containing a sql query parameterized with an `'{as_of_date}'`, to select the entity_ids that should be included for a given date. The `{as_of_date}` will be replaced with each `as_of_date` that the experiment needs. The returned `entity_id` must be an integer.
+    - `query`: Instead of passing a file with your cohort query, you can include the query directly in the configuration file; this is not recommended as it required more maintanence to ensure that cohorts are consistent across experiments vs. storing cohort queries in their own files. It is retained for backwards compatibility with existing triage projects. **Only one of `filepath` or `query` is permitted.**
     - `name`: You may enter a `name` for your configuration. This will be included in the metadata for each matrix and used to group models. If you don't pass one, the string `default` will be used.
 
 The cohort config section of your experiment config can optionally be omitted. If you don't specify it, it will default to all the entities in your event's tables  (from_obj in feature_aggregations). The name by default in this case will be 'all_entities'. As with the time splitting defaults, this may be a good starting point, but you will likely want to refine your cohort definition as you iterate on your project.
@@ -79,7 +80,8 @@ The cohort config section of your experiment config can optionally be omitted. I
 Labels are configured by passing a query with placeholders for the `as_of_date` and `label_timespan`.
 
 - `label_config`:
-    - `query`: The query must return two columns: `entity_id` and `outcome`, based on a given `as_of_date` and `label_timespan`. The `as_of_date` and `label_timespan` must be represented by placeholders marked by curly brackets. The example in `experiment.yaml` reproduces the inspection outcome boolean-or logic. In addition, you can configure what label is given to entities that are in the matrix (see **cohort_config** section) but that do not show up in this label query.
+    - `filepath`: A relative link to a file containing a query returning two columns: `entity_id` and `outcome`, based on a given `as_of_date` and `label_timespan`. The `as_of_date` and `label_timespan` must be represented by placeholders marked by curly brackets. The example in `experiment.yaml` reproduces the inspection outcome boolean-or logic. In addition, you can configure what label is given to entities that are in the matrix (see **cohort_config** section) but that do not show up in this label query.
+    - `query`: Instead of passing a file with your  query, you can include the query directly in the configuration file; this is not recommended as it required more maintanence to ensure that labels are consistent across experiments vs. storing label queries in their own files. It is retained for backwards compatibility with existing triage projects. **Only one of `filepath` or `query` is permitted.**
     - `include_missing_labels_in_train_as`: However, passing the key `include_missing_labels_in_train_as` allows you to pick True or False. By default, these will show up as missing/null.
     - `name`: In addition to these configuration options, you can pass a name to apply to the label configuration that will be present in matrix metadata for each matrix created by this experiment, under the `label_name` key. The default label_name is `outcome`.
 
@@ -91,7 +93,7 @@ Each entry describes a collate.SpacetimeAggregation object, and the arguments ne
 
 Rules specifying how to handle imputation of null values must be explicitly defined in your config file. These can be specified in two places: either within each feature or overall for each type of feature (`aggregates_imputation`, `categoricals_imputation`, `array_categoricals_imputation`). In either case, a rule must be given for each aggregation function/metric (e.g., `sum`, `max`, `avg`, etc) used, or a catch-all can be specified with `all`. Aggregation function-specific rules will take precedence over the `all` rule and feature-specific rules will take precedence over the higher-level rules. Several examples are provided below. The supported aggregation functions/metrics are subject to the aggreagtion functions of the version of postgres being used.
 
-Available Imputation Rules: 
+Available Imputation Rules:
 - `mean`: The average value of the feature (for SpacetimeAggregation the mean is taken within-date).
 - `constant`: Fill with a constant value from a required `value` parameter.
 - `zero`: Fill with zero.

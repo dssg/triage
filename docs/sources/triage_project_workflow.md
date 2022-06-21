@@ -68,12 +68,18 @@ For `triage`, the `cohort` represents the universe of relevant entities for a mo
 
 - In a recidivism prediction project, you might want to exclude individuals who are incarcerated as of the modeling date
 
-You can specify a cohort in your config file with a `SQL` query that returns a set of integer `entity_id`s for a given modeling date (parameterized as `{as_of_date}` in your query). For instance:
+You can specify a cohort in your config file with a filepath to a SQL query that returns a set of integer `entity_id`s for a given modeling date (parameterized as `{as_of_date}` in your query). For instance:
 
-```
+```yaml
 cohort_config:
-    query: "select entity_id from events where outcome_date < '{as_of_date}'"
+    filepath: 'cohorts/past_events.sql'
     name: 'past_events'
+```
+
+```sql
+select entity_id
+from events
+where outcome_date < '{as_of_date}'
 ```
 
 ### Configure your temporal settings
