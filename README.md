@@ -16,7 +16,8 @@ Triage is designed to:
 
 ## Quick Links
 
-- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Are you completely new to Triage? Go through the tutorial here with sample data
+- [Tutorial on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) - Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!
+- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial here with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation?
 - [Development](https://github.com/dssg/triage#development) - Contribute to Triage development.

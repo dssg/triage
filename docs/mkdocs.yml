@@ -81,6 +81,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - Online Tutorial (Google Colab): https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb
   - Get started with your own project:
     - Quickstart guide: quickstart.md
     - Suggested workflow: triage_project_workflow.md
