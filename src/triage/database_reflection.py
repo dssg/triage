@@ -169,6 +169,7 @@ def column_type(table_name, column, db_engine):
 
 
 def schema_tables(schema_name, db_engine):
-    meta = MetaData(schema=schema_name, bind=db_engine)
-    meta.reflect()
-    return meta.tables
+    with db_engine.begin() as conn:
+        meta = MetaData(schema=schema_name, bind=conn)
+        meta.reflect()
+        return meta.tables
