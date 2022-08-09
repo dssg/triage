@@ -19,9 +19,10 @@ from triage.validation_primitives import string_is_tablesafe
 
 
 class Validator:
-    def __init__(self, db_engine=None, strict=True):
+    def __init__(self, db_engine=None, strict=True, entity_id_column="entity_id"):
         self.db_engine = db_engine
         self.strict = strict
+        self.entity_id_column = entity_id_column
 
     def run(self, *args, **kwargs):
         try:
