@@ -23,7 +23,7 @@ The `<config_file>` is a required argument. If the `<database_credentials_file>`
 
 The function can be imported into a python script to add predictions of selected model groups as shown below. 
 
-    from src.triage.postmodeling.utils.add_predictions import add_predictions
+    from triage.component.postmodeling.utils.add_predictions import add_predictions
 
     add_predictions(
         db_engine=conn, # The database connection
