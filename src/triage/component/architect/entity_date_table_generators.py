@@ -130,7 +130,7 @@ class EntityDateTableGenerator:
             return
 
         self.db_engine.execute(f"""insert into {self.entity_date_table_name}
-            select distinct entity_id, as_of_date
+            select distinct entity_id, as_of_date, true
             from {self.labels_table_name}
             """)
 
