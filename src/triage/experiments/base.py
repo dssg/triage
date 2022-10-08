@@ -78,7 +78,6 @@ from triage.tracking import (
 
 from triage.experiments.defaults import (
     fill_timechop_config_missing,
-    fill_cohort_config_missing,
     fill_feature_group_definition,
     fill_model_grid_presets,
 )
@@ -225,8 +224,6 @@ class ExperimentBase(ABC):
             self.config["temporal_config"] = fill_timechop_config_missing(
                 self.config, self.db_engine
             )
-            ## Defaults to all the entities found in the features_aggregation's from_obj
-            self.config["cohort_config"] = fill_cohort_config_missing(self.config)
             ## Defaults to all the feature_aggregation's prefixes
             self.config["feature_group_definition"] = fill_feature_group_definition(
                 self.config

@@ -56,33 +56,6 @@ def fill_timechop_config_missing(config, db_engine):
     return default_config
 
 
-def fill_cohort_config_missing(config):
-    """
-    If none cohort_config section is provided, include all the entities by default
-
-    Args:
-        config (dict) a triage experiment configuration
-
-    Returns: (dict) a triage cohort config
-    """
-    from_query = "(select entity_id, {knowledge_date} as knowledge_date from (select * from {from_obj}) as t)"
-
-    feature_aggregations = config['feature_aggregations']
-
-    from_queries = [from_query.format(knowledge_date = agg['knowledge_date_column'], from_obj=agg['from_obj']) for agg in feature_aggregations]
-
-    unions = "\n union \n".join(from_queries)
-
-    query = f"select distinct entity_id from ({unions}) as e" +" where knowledge_date < '{as_of_date}'"
-
-    cohort_config = config.get('cohort_config', {})
-    default_config = {'query': query, 'name': 'all_entities'}
-
-    default_config.update(cohort_config)
-
-    return default_config
-
-
 def fill_feature_group_definition(config):
     """
     If feature_group_definition is not presents, this function sets it to all
