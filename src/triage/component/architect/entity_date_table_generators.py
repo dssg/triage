@@ -108,7 +108,7 @@ class EntityDateTableGenerator:
                 """
             ))
             if len(any_existing) == 1:
-                logger.spam(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
@@ -129,9 +129,36 @@ class EntityDateTableGenerator:
             logger.warning("Labels table does not exist, cannot populate entity-dates")
             return
 
-        self.db_engine.execute(f"""insert into {self.entity_date_table_name}
+        # If any rows exist in the entity_date table, don't insert any for dates
+        # already in the table. This replicates the logic used above by
+        # _create_and_populate_entity_date_table_from_query
+        logger.spam(f"Looking for existing entity_date rows for label as of dates")
+        existing_dates = list(self.db_engine.execute(
+            f"""
+            with label_dates as (
+                select distinct as_of_date::DATE AS as_of_date FROM {self.labels_table_name}
+            )
+            , cohort_dates as (
+                select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
+            )
+            select distinct l.as_of_date
+            from label_dates
+            join cohort_dates using(as_of_date)
+            """
+        ))
+        if len(existing_dates) > 0:
+            existing_dates = ', '.join(existing_dates)
+            logger.notice(f'Existing entity_dates records found for the following dates, '
+                'so new records will not be inserted for these dates {existing_dates}')
+
+        self.db_engine.execute(f"""
+            with cohort_dates as (
+                select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
+            )
+            insert into {self.entity_date_table_name}
             select distinct entity_id, as_of_date, true
             from {self.labels_table_name}
+            where as_of_date::DATE NOT IN (select as_of_date FROM cohort_dates)
             """)
 
     def _empty_table_message(self, as_of_dates):
