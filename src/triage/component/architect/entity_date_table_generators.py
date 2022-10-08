@@ -142,8 +142,8 @@ class EntityDateTableGenerator:
                 select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
             )
             select distinct l.as_of_date
-            from label_dates
-            join cohort_dates using(as_of_date)
+            from label_dates l
+            join cohort_dates c using(as_of_date)
             """
         ))
         if len(existing_dates) > 0:
