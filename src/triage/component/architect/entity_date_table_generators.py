@@ -149,7 +149,7 @@ class EntityDateTableGenerator:
         if len(existing_dates) > 0:
             existing_dates = ', '.join(existing_dates)
             logger.notice(f'Existing entity_dates records found for the following dates, '
-                'so new records will not be inserted for these dates {existing_dates}')
+                f'so new records will not be inserted for these dates {existing_dates}')
 
         self.db_engine.execute(f"""
             with cohort_dates as (
