@@ -156,16 +156,18 @@ class EntityDateTableGenerator:
                 select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
             )
             insert into {self.entity_date_table_name}
-            select distinct entity_id, as_of_date, true
-            from {self.labels_table_name}
-            where as_of_date::DATE NOT IN (select as_of_date FROM cohort_dates)
+            select distinct l.entity_id, l.as_of_date, true
+            from {self.labels_table_name} as l
+            left join cohort_dates as c
+            on l.as_of_date::DATE = c.as_of_date::DATE
+            where c.as_of_date IS NULL
             """)
 
     def _empty_table_message(self, as_of_dates):
         return """Query does not return any rows for the given as_of_dates:
             {as_of_dates}
             '{query}'""".format(
-            query=self.query,
+            query=self.query or "labels table",
             as_of_dates=", ".join(
                 str(as_of_date)
                 for as_of_date in (
