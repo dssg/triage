@@ -7,26 +7,10 @@ from triage.component.catwalk.db import ensure_db
 from tests.utils import sample_config, populate_source_data
 from triage.experiments.defaults import (
     fill_timechop_config_missing,
-    fill_cohort_config_missing,
     fill_feature_group_definition,
     fill_model_grid_presets,
     model_grid_preset,
 )
-
-
-def test_fill_cohort_config_missing():
-    config = sample_config()
-    config.pop('cohort_config')
-    cohort_config = fill_cohort_config_missing(config)
-    assert cohort_config == {
-        'query': "select distinct entity_id from "
-                "((select entity_id, as_of_date as knowledge_date from "
-                "(select * from cat_complaints) as t)\n union \n(select entity_id, "
-                "as_of_date as knowledge_date from (select * from entity_zip_codes "
-                "join zip_code_events using (zip_code)) as t)) as e "
-                "where knowledge_date < '{as_of_date}'",
-        'name': 'all_entities'
-        }
 
 
 def test_fill_feature_group_definition():

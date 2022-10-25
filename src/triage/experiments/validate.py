@@ -510,6 +510,9 @@ class LabelConfigValidator(Validator):
 class CohortConfigValidator(Validator):
     def _run(self, cohort_config):
         logger.spam("Validating of cohort configuration")
+        if not cohort_config:
+            logger.debug("No cohort config specified, label config will be used instead")
+            return
         if len(set(cohort_config.keys()).intersection({"query", "filepath"})) != 1:
             raise ValueError(
                 dedent(

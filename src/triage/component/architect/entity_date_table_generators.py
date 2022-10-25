@@ -108,7 +108,7 @@ class EntityDateTableGenerator:
                 """
             ))
             if len(any_existing) == 1:
-                logger.spam(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
@@ -129,16 +129,47 @@ class EntityDateTableGenerator:
             logger.warning("Labels table does not exist, cannot populate entity-dates")
             return
 
-        self.db_engine.execute(f"""insert into {self.entity_date_table_name}
-            select distinct entity_id, as_of_date
-            from {self.labels_table_name}
-            """)
+        # If any rows exist in the entity_date table, don't insert any for dates
+        # already in the table. This replicates the logic used above by
+        # _create_and_populate_entity_date_table_from_query
+        logger.spam(f"Looking for existing entity_date rows for label as of dates")
+        existing_dates = list(self.db_engine.execute(
+            f"""
+            with label_dates as (
+                select distinct as_of_date::DATE AS as_of_date FROM {self.labels_table_name}
+            )
+            , cohort_dates as (
+                select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
+            )
+            select distinct l.as_of_date
+            from label_dates l
+            join cohort_dates c using(as_of_date)
+            """
+        ))
+        if len(existing_dates) > 0:
+            existing_dates = ', '.join(existing_dates)
+            logger.notice(f'Existing entity_dates records found for the following dates, '
+                f'so new records will not be inserted for these dates {existing_dates}')
+
+        insert_query = f"""
+            insert into {self.entity_date_table_name}
+            select distinct entity_id, as_of_date, true
+            from (
+                select distinct l.entity_id, l.as_of_date
+                from {self.labels_table_name} as l
+                left join (select distinct as_of_date from {self.entity_date_table_name}) as c
+                    on l.as_of_date::DATE = c.as_of_date::DATE
+                where c.as_of_date IS NULL
+            ) as sub
+        """
+        logger.spam(f"Running entity_date query from labels table: {insert_query}")
+        self.db_engine.execute(insert_query)
 
     def _empty_table_message(self, as_of_dates):
         return """Query does not return any rows for the given as_of_dates:
             {as_of_dates}
             '{query}'""".format(
-            query=self.query,
+            query=self.query or "labels table",
             as_of_dates=", ".join(
                 str(as_of_date)
                 for as_of_date in (
