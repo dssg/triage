@@ -8,4 +8,4 @@ pytest==6.2.5 #<4.0.0 # pyup: ignore
 pytest-cov==4.0.0
 moto==4.0.8
 fakeredis==1.10.0
-hypothesis==6.46.1
+hypothesis==6.56.4
