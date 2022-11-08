@@ -147,7 +147,7 @@ class EntityDateTableGenerator:
             """
         ))
         if len(existing_dates) > 0:
-            existing_dates = ', '.join([rec[0] for rec in existing_dates])
+            existing_dates = ', '.join([rec[0].isoformat() for rec in existing_dates])
             logger.notice(f'Existing entity_dates records found for the following dates, '
                 f'so new records will not be inserted for these dates {existing_dates}')
 
