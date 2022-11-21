@@ -235,7 +235,7 @@ class ModelTrainTester:
                 else:
                     logger.notice(
                         f"The evaluations needed for {store.matrix_type.string_name} matrix {store.uuid} and "
-                        f"model {model_id} are all present"
+                        f"model {model_id} are all present "
                         f"in db from a previous run (or none needed at all), so skipping!",
                     )
 
@@ -264,7 +264,7 @@ class ModelTrainTester:
                     else:
                         logger.notice(
                             f"The evaluations needed for {store.matrix_type.string_name} matrix {store.uuid}, subset {filename_friendly_hash(subset)}, and "
-                            f"model {model_id} are all present"
+                            f"model {model_id} are all present "
                             f"in db from a previous run (or none needed at all), so skipping!",
                         )
 
