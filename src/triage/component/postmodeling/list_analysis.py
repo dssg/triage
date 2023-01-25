@@ -5,18 +5,56 @@
 import pandas as pd
 
 
-def get_highest_risk_k_entities(db_engine, model_id, k):
+def get_highest_risk_k_entities(db_engine, model_id, k, fetch_all_ties=False):
     """ Fetch the entities with the highest risk for a particular model
         
         args:
-            db_engine (sqlalchemy.engine): Database connection engine
-            model_id (int): Model ID we are interested in
+            db_engine (sqlalchemy.engine)   : Database connection engine
+            model_id (int)  : Model ID we are interested in
             k (Union[int, float]): If int, an absolute threshold will be considered. 
-                If float, the number has to be (0, 1] and a percentage threshold will be considered   
-    """
-    # TODO -- Specify tie breaking
+                                If float, the number has to be (0, 1] and a percentage threshold will be considered  
 
-    pass
+            fetch_all_ties (bool): Whether to include ties (can include more than k elements if k is int) 
+                                    or randomly break ties
+
+        return:
+            a pd.DataFrame object that contains the entity_id, as_of_date, the hash of the text matrix, model score, 
+            and all rank columns 
+            
+    """
+    
+    # Determining which rank column to filter by
+    ties_suffix = 'no_ties'
+    col = 'rank_pct'
+    
+    if fetch_all_ties:
+        ties_suffix='with_ties'
+
+    if isinstance(k, int):
+        col = 'rank_abs'      
+
+    col_name = f'{col}_{ties_suffix}'
+
+    q = f"""
+        select 
+            entity_id, 
+            as_of_date,
+            score,
+            label_value,
+            rank_abs_no_ties,
+            rank_abs_with_ties,
+            rank_pct_no_ties,
+            rank_pct_with_ties,
+            matrix_uuid
+        from test_results.predictions
+        where model_id={model_id}
+        and {col_name} <= {k}
+    """
+
+    top_k = pd.read_sql(q, db_engine)
+
+    return top_k
+   
 
 
 
