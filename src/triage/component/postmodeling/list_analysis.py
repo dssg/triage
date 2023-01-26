@@ -2,7 +2,10 @@
     while others are working on other components. Eventually these files will be merged
 """
 
+import logging
 import pandas as pd
+
+from scipy.stats import spearmanr
 
 
 def get_highest_risk_k_entities(db_engine, model_id, k, fetch_all_ties=False):
@@ -57,16 +60,47 @@ def get_highest_risk_k_entities(db_engine, model_id, k, fetch_all_ties=False):
    
 
 
-
-def compare_two_lists(list1, list2):
+def compare_two_lists(list_df1, list_df2):
     """ Given two lists compare their similarities
-        args:
-            list1:
-            list2:
 
+        args:
+            list_df1 (pd.DataFrame): A dataframe containing the top-k list for a model
+            list_df2 (pd.DataFrame): A dataframe containing the top-k list for a model 
+ 
         return:
             similarities (dict): Dictionary that contains 'overlap', 'jaccard_similarity', 'rank_correlation'
     """
+
+    if list_df1.as_of_date.at[0] != list_df2.as_of_date.at[0]:
+        logging.warning('You are comparing two lists generated on different as_of_dates!')
+
+    # calculating jaccard similarity and overlap
+    entities_1 = set(list_df1.entity_id)
+    entities_2 = set(list_df2.entity_id)
+
+    inter = entities_1.intersection(entities_2)
+    un = entities_1.union(entities_2)
+
+    results = dict()
+    
+    results['jaccard'] = len(inter)/len(un)
+
+    # If the list sizes are not equal, using the smallest list size to calculate simple overlap
+    results['overlap'] = len(inter)/ min(len(entities_1), len(entities_2))
+
+
+    # calculating rank correlation
+    list_df1.sort_values('score', ascending=False, inplace=True)
+    list_df2.sort_values('score', ascending=False, inplace=True)
+
+    # only returning the corr coefficient, not the p-value
+    results['rank_corr'] = spearmanr(list_df1.entity_id.iloc[:, 0], list_df2.entity_id.iloc[:, 1])[0]
+
+    return results
+
+
+def _get_crosstabs_highest_risk_vs_rest(model_id, matrix):
+    """ generate crosstabs for the top_k vs the rest"""
 
     pass
 
@@ -80,10 +114,4 @@ def _get_descriptives(entities, columns_of_interest):
     """
 
     # TODO -- Not entirely sure how we can write this as a general function
-    pass
-
-
-def _get_crosstabs_highest_risk_vs_rest(predictions, matrix):
-    """ generate crosstabs for the top_k vs the rest"""
-
     pass
