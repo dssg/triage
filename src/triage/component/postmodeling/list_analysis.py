@@ -6,9 +6,15 @@ import logging
 import itertools
 import pandas as pd
 
+# remove this
+import psycopg2
+
 from scipy.stats import spearmanr
 
+from triage.component.catwalk.storage import ProjectStorage
 
+
+# TODO: Modify how the threshold is specified
 def get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entities=False):
     """ Fetch the entities with the highest risk for a particular model
         
@@ -59,7 +65,6 @@ def get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entitie
 
     return top_k
    
-
 
 def pairwise_comparison_model_lists(db_engine, models, k, include_all_tied_entities=False):
     """ Given two lists compare their similarities
@@ -123,10 +128,133 @@ def pairwise_comparison_model_lists(db_engine, models, k, include_all_tied_entit
         return results
 
 
-def _get_crosstabs_highest_risk_vs_rest(model_id, matrix):
-    """ generate crosstabs for the top_k vs the rest"""
+def _fetch_relevant_matrix_hashes(db_engine, model_id):
+    """"""
 
-    pass
+    q = f"""
+        select 
+            train.matrix_uuid as train_matrix_uuid,
+            test.matrix_uuid as test_matrix_uuid
+        from train_results.prediction_metadata train join test_results.prediction_metadata test
+        using(model_id) 
+        where model_id={model_id};
+    """
+
+    matrices = pd.read_sql(q, db_engine).to_dict(orient='records')
+
+    return matrices
+
+
+# Currently this function only calculates the mean ratio
+def get_crosstabs_postive_vs_negative(
+    db_engine, 
+    model_id, 
+    project_path, 
+    thresholds,  
+    return_df=True, 
+    matrix_uuid=None, 
+    table_name='crosstabs'
+):
+    """ For a given model_id, generate crosstabs for the top_k vs the rest
+    
+        args:
+            model_id (int): The model_id we are intetereted in
+            project_path (str): Path where the experiment artifacts (models and matrices) are stored
+            thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
+                                                    The threshold type can be one of the rank columns in the test_results.predictions_table
+            return_df (bool, optional): Whether to return the constructed df or just to store in the database
+                                        Defaults to False (only writing to the db)
+            table_name (str, optional): Table name to use in the db's `test_results` schema. Defaults to crosstabs
+            matrix_uuid (str, optional): If we want to run crosstabs for a different matrix than the validation matrix from the experiment
+    """
+
+    # Table structure
+    # model_id, matrix_uuid, 
+    # threshold_type, threshold, feature, metric, value
+    
+
+    if matrix_uuid is None:
+        matrix_uuid = _fetch_relevant_matrix_hashes(db_engine, model_id)[0]['test_matrix_uuid']
+
+    logging.info('Fetching predictions for the model')
+    
+    # NOTE/TODO If we use a Model object here, we can avoid these repeated db calls
+    q = f"""
+        select 
+            entity_id, 
+            as_of_date,
+            score,
+            label_value,
+            rank_abs_no_ties,
+            rank_abs_with_ties,
+            rank_pct_no_ties,
+            rank_pct_with_ties,
+            matrix_uuid
+        from test_results.predictions
+        where model_id={model_id} and matrix_uuid = '{matrix_uuid}'
+    """
+
+    predictions = pd.read_sql(q, db_engine)
+    predictions.set_index(['entity_id', 'as_of_date'], inplace=True)
+
+    if predictions.empty:
+        logging.error(f'No predictions found for {model_id} and matrix {matrix_uuid}. Exiting!')
+        raise ValueError(f'No predictions found {model_id} and matrix {matrix_uuid}')
+
+
+    # initializing the storage engines
+    project_storage = ProjectStorage(project_path)
+    matrix_storage_engine = project_storage.matrix_storage_engine()
+
+    matrix_store = matrix_storage_engine.get_store(matrix_uuid=matrix_uuid)
+    matrix = matrix_store.design_matrix
+    labels = matrix_store.labels
+    features = matrix.columns
+
+    # joining the predictions to the model
+    matrix = predictions.join(matrix, how='left')
+
+    for threshold_name, threshold in thresholds.items():
+        logging.debug('')
+        msk = matrix[threshold_name] <= threshold
+        postive_preds = matrix[msk]
+        negative_preds = matrix[~msk]
+
+
+        # TODO: Take a list of metrics to calculate and iterate (as it's done in crosstabs)
+
+        # Calculates the mean ratio for each feature and produces a series indexed by the feature n,e
+        mean_ratios = (postive_preds[features].mean() / negative_preds[features].mean()).reset_index()
+        mean_ratios['metric'] = 'mean_ratio_pos_over_neg'
+        
+        non_zero_rows_count_pos_pred = (postive_preds[features] > 0).sum().reset_index()
+        non_zero_rows_count_pos_pred['metric'] = 'non_zero_rows_pos_pred_count'
+
+        non_zero_rows_frac_pos_pred = (postive_preds[features] > 0).mean().reset_index()
+        non_zero_rows_frac_pos_pred['metric'] = 'non_zero_rows_pos_pred_pct'
+        
+        non_zero_rows_count_neg_pred = (negative_preds[features] > 0).sum().reset_index()
+        non_zero_rows_count_neg_pred['metric'] = 'non_zero_rows_neg_pred_count'
+
+        non_zero_rows_frac_neg_pred = (negative_preds[features] > 0).mean().reset_index()
+        non_zero_rows_frac_neg_pred['metric'] = 'non_zero_rows_pos_pred_pct'
+
+        crosstabs_df = pd.concat([
+            mean_ratios, 
+            non_zero_rows_count_pos_pred, 
+            non_zero_rows_count_neg_pred, 
+            non_zero_rows_frac_pos_pred,
+            non_zero_rows_frac_neg_pred
+        ])
+
+        crosstabs_df.rename(columns={'index': 'feature', 0: 'value'}, inplace=True)
+        crosstabs_df['model_id'] = model_id
+        crosstabs_df['matrix_uuid'] = matrix_uuid
+        crosstabs_df['threshold_type'] = threshold_name
+        crosstabs_df['threshold'] = threshold
+
+        if return_df:
+            return crosstabs_df
 
 
 def _get_descriptives(entities, columns_of_interest):
@@ -139,3 +267,18 @@ def _get_descriptives(entities, columns_of_interest):
 
     # TODO -- Not entirely sure how we can write this as a general function
     pass
+
+
+if __name__ == '__main__':
+
+    conn = psycopg2.connect(service='acdhs_housing')
+
+    df = get_crosstabs_postive_vs_negative(
+        conn,
+        model_id=1533,
+        project_path='s3://dsapp-social-services-migrated/acdhs_housing/triage_experiments/',
+        thresholds={'rank_abs_no_ties': 100},
+        table_name='crosstabs_test_kasun'
+    )
+
+    print(df.sample(n=10))
