@@ -6,10 +6,12 @@ def retrieve_scores_labels(model_id, db_conn):
     
     Args: 
         model_id (int): The model id from which scores and labels are going to be retrieved from. 
+        db_conn (sqlalchemy.engine.connect): Simple connection to the database.
     
     Returns: 
         DataFrame with scores and labels for a specific model_id.
     """
+
     q = """
         --select
         --    model_id,
@@ -20,14 +22,14 @@ def retrieve_scores_labels(model_id, db_conn):
         --from train_results.predictions
         --where model_id = {model_id}
         --union all
-        select 
+        SELECT 
            model_id,
            entity_id, 
            as_of_date,
            score,
            label_value
-        from test_results.predictions
-        where model_id = {model_id}
+        FROM test_results.predictions
+        WHERE model_id = {model_id}
     """.format(model_id=model_id)
     
     df = pd.read_sql(q, db_conn)
@@ -46,8 +48,8 @@ def generate_error_labels(predictions, k):
     Returns: 
         DataFrame with three new columns associated to the labels for general error analysis, 
         error analysis for recall and error analysis for precison.
-        
     """
+
     # sort the scores desc 
     sorted_scores = predictions.sort_values(by="score", ascending=False)
     # add prediction column
@@ -71,5 +73,29 @@ def generate_error_labels(predictions, k):
     return sorted_scores
 
 
-def retrieve_features_matrix(model_id, path, storage="s3"):
-    pass
+def retrieve_features_matrix(model_id, db_conn, path, storage="s3"):
+    """
+    Retrieves the features matrix form an specific model id (train or test). 
+    
+    Args: 
+        model_id (int): The model id from which the train features matrix is going to be retrieved.
+        db_conn (sqlalchemy.engine.connect): Simple connection to database.
+        storage (str): If the matrix is persisted in a S3 bucket or on disk. Possible values: s3, disk.
+        path (str): Specific path where the matrix is located. In case of S3 it requires to start 
+                    from the name of the bucket without the prefix s3://. 
+    """
+    
+    q = """
+        SELECT 
+          model_id,
+          model_hash,
+          model_group_id,
+          train_matrix_uuid as train_mat,
+          matrix_uuid as test_mat
+        FROM test_results.prediction_metadata
+        JOIN triage_metadata.models using(model_id)
+        WHERE model_id = {model_id}
+    """.format(model_id=model_id)
+    
+    matrices_info = pd.read_sql(q, db_conn)
+    test_feature_matrix = matrices_info.test_mat.values
