@@ -5,6 +5,7 @@ logger = verboselogs.VerboseLogger(__name__)
 import copy
 import os
 import re
+import yaml
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
@@ -145,3 +146,23 @@ convert_str_to_relativedelta.brief_units = {
     "s": "seconds",
     "ms": "microseconds",
 }
+
+
+def read_yaml_file(yaml_file):
+    """ load yaml cofigurations """
+
+    config = None
+    try: 
+        with open(yaml_file, 'r') as f:
+            config = yaml.safe_load(f)
+    except:
+        raise FileNotFoundError('Couldnt load the file')
+    
+    return config
+
+
+def get_error_analysis_configuration():
+    postmodeling_config_path = "../component/postmodeling/config.yaml"
+    error_analysis_config = read_yaml_file(postmodeling_config_path)['error_analysis']
+
+    return error_analysis_config
