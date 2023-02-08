@@ -1,5 +1,6 @@
 
 import pandas as pd
+import logging
 
 
 from descriptors import cachedproperty
@@ -48,7 +49,6 @@ class ModelAnalyzer:
             )
         )
     
-
     @property
     def model_group_id(self):
         return self.metadata['model_group_id']
@@ -126,8 +126,58 @@ class ModelAnalyzer:
         return preds
 
 
-    def get_evaluations(parameter, threshold, tiebreaker_ordering):
-        pass
+    def get_evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None):
+        ''' 
+        Get evaluations for the model from the DB
+
+        Args:
+            metrics Dict[str:List]): Optional. The metrics and parameters for evaluations. 
+                                    A dictionary of type {metric:[thresholds]}
+                                    If not specified, all the evaluations will be returned
+
+            matrix_uuid (str): Optional. If model was evaluated using multiple matrices
+                            one could get evaluations of a specific matrix. Defaults to fetching everything
+
+            subset_hash (str): Optional. For fetching evaluations of a specific subset.    
+        '''
+
+        where_clause = f'WHERE model_id={self.model_id}'
+
+        if matrix_uuid is not None:
+            where_clause += f" AND matrix_uuid={matrix_uuid}"
+
+        if subset_hash is not None:
+            where_clause += f" AND subset_hash={subset_hash}"
+
+        if metrics is not None:
+            where_clause += " AND ("
+            for i, metric in enumerate(metrics):
+                parameters = metrics[metric]
+                where_clause += f""" metric={metric} AND paramter in ('{"','".join(parameters)}')"""
+
+                if i < len(metrics) - 1:
+                    where_clause += "OR"
+
+            where_clause += ") "
+
+        q = f"""
+            select
+                model_id,
+                matix_uuid,
+                subset_hash,
+                metric, 
+                parameter,
+                stochastic_value,
+                num_labeled_above_threshold,               
+                num_positive_labels
+            from test_results.evaluations
+            {where_clause}
+        """
+
+        evaluations = pd.read_csv(q, self.engine)
+
+        return evaluations
+
 
     def get_crosstabs(threshold_type, tiebreaker_ordering, matix_uuid=None):
         pass
