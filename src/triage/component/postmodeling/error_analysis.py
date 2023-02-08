@@ -1,30 +1,39 @@
 import pandas as pd
 import numpy as np
+import yaml
+import os
+import psycopg2
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
 
 from triage.component.catwalk.storage import ProjectStorage
-from triage.util.conf import get_error_analysis_configuration
 
 
-def _get_model_ids(model_group, db_conn):
-    q = """
-        SELECT 
-            distinct on (model_id) model_id, 
-            model_group_id
-        FROM triage_metadata.experiment_models a
-        JOIN triage_metadata.models b using(model_hash)
-            JOIN test_results.prediction_metadata c using(model_id)
-        WHERE model_group_id in ({model_group})
-    """.format(model_group=model_group)
+def _get_error_analysis_configuration():
+    """
+        Return:
+            Dictionary of error analysis configuration
+    """
+    filename_yaml = os.path.join(
+        os.path.abspath(os.getcwd()), 
+        "src/triage/component/postmodeling/config.yaml")
+    with open(filename_yaml, 'r') as f:
+        config = yaml.full_load(f)
+    error_analysis_config = config['error_analysis']
 
-    model_ids = pd.read_sql(q, db_conn)
-
-    return list(model_ids.model_id)
+    return error_analysis_config
 
 
 def _get_random_seed(model_id, db_conn):
+    """
+        Args: 
+            model_id (int): The model id from to retrieve the random seed for.
+            db_conn (sqlalchemy.engine.connect): Simple connection to the database.
+
+        Returns:
+            Integer of the random seed associated to this model_id.
+    """
     q = """
         SELECT 
             random_seed
@@ -34,7 +43,7 @@ def _get_random_seed(model_id, db_conn):
 
     random_seed = pd.read_sql(q, db_conn)
 
-    return random_seed
+    return random_seed.random_seed.values[0]
 
 
 def fetch_scores_labels(model_id, db_conn):
@@ -154,7 +163,7 @@ def generate_error_labels(matrix, k):
     return sorted_scores
 
 
-def error_analysis_model(model_id, matrix, grid, k):
+def error_analysis_model(model_id, matrix, grid, k, random_seed):
     """
 
         Args: 
@@ -171,7 +180,6 @@ def error_analysis_model(model_id, matrix, grid, k):
 
     error_analysis_results = []
     for error_type in error_analysis_types:
-        # TODO we are missing k in the results!
         results = {'model_id': model_id, 'error_type': error_type, 'k': k}
 
         # first 5 columns of matrix aren't features
@@ -183,7 +191,8 @@ def error_analysis_model(model_id, matrix, grid, k):
        
         parameter_grid = list(ParameterGrid(grid))
         for config in parameter_grid: 
-            dt = DecisionTreeClassifier(max_depth=config['max_depth'])
+            dt = DecisionTreeClassifier(max_depth=config['max_depth'], 
+                random_state=random_seed)
             error_model = dt.fit(X, y)
             feature_importances_ = error_model.feature_importances_
             # TODO top n of feature importances should be a parameter 
@@ -204,23 +213,28 @@ def error_analysis_model(model_id, matrix, grid, k):
     return error_analysis_results
 
 
-def error_analysis(model_group_ids, db_conn):
+def error_analysis(model_id, db_conn):
     """
     
         Args: 
             model_group_ids (list): List of model groups ids 
             db_conn (): Database engine connection
     """
-    error_analysis_config = get_error_analysis_configuration()
+    error_analysis_config = _get_error_analysis_configuration()
     project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
+    
+    matrix_data = fetch_matrices(model_id, project_path, db_conn)
+    for k in k_set:
+        print("k", k)
+        new_matrix = generate_error_labels(matrix_data, k)
+        random_seed = _get_random_seed(model_id, db_conn)
+        error_analysis_model(model_id, new_matrix, grid, k, random_seed)
 
-    for group_id in model_group_ids:
-        model_ids = _get_model_ids(group_id, db_conn)
-        for model_id in model_ids:
-            matrix_data = fetch_matrices(model_id, project_path, db_conn)
-            for k in k_set:
-                print("k", k)
-                new_matrix = generate_error_labels(matrix_data, k)
-                error_analysis_model(model_id, new_matrix, grid, k)
+
+if __name__ == "__main__":
+    model_id = 236
+    db_conn = psycopg2.connect(service='acdhs_housing')
+    
+    error_analysis(model_id, db_conn)
