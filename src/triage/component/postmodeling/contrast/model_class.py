@@ -2,11 +2,7 @@ import ohio.ext.pandas
 import pandas as pd
 import logging
 
-# remove this
-import psycopg2
-
 from descriptors import cachedproperty
-
 from sqlalchemy import create_engine
 
 from triage.component.catwalk.storage import ProjectStorage
@@ -206,22 +202,17 @@ class ModelAnalyzer:
             return_df (bool, optional): Whether to return the crosstabs as a dataframe. Defaults to True
         """
 
-
-        positive_n = lambda hr, lr: pd.Series(index=hr.columns, data=hr.shape[0])
-        negative_n = lambda hr, lr: pd.Series(index=lr.columns, data=lr.shape[0])
-        positive_mean = lambda hr, lr: hr.mean(axis=0)
-        negative_mean = lambda hr, lr: lr.mean(axis=0)
-        positive_std = lambda hr, lr: hr.std(axis=0)
-        negative_std = lambda hr, lr: lr.std(axis=0)
-        ratio_positive_negative = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
-        positive_support = lambda hr, lr: (hr > 0).sum(axis=0)
-        negative_support = lambda hr, lr: (lr > 0).sum(axis=0)
+        # metrics we calculate for positive and negative predictions
+        positive_mean = lambda pos, neg: pos.mean(axis=0)
+        negative_mean = lambda pos, neg: neg.mean(axis=0)
+        positive_std = lambda pos, neg: pos.std(axis=0)
+        negative_std = lambda pos, neg: neg.std(axis=0)
+        ratio_positive_negative = lambda pos, neg: pos.mean(axis=0) / neg.mean(axis=0)
+        positive_support = lambda pos, neg: (pos > 0).sum(axis=0)
+        negative_support = lambda pos, neg: (neg > 0).sum(axis=0)
 
 
         crosstab_functions = [
-            # The count features seem redundant, and is present in the evaluations table if needed
-            # ("count_predicted_positive", positive_n),
-            # ("count_predicted_negative", negative_n),
             ("mean_predicted_positive", positive_mean),
             ("mean_predicted_negative", negative_mean),
             ("std_predicted_positive", positive_std),
