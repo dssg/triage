@@ -124,25 +124,15 @@ def generate_error_labels(matrix, k):
     sorted_scores['prediction'] = '0'
     sorted_scores.loc[sorted_scores.rank_abs_no_ties <= k, 'prediction'] = '1'
     # add type of label: TP, TN, FP, FN
-    sorted_scores['type_label'] = 'TP'
-    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '1'), 'FP', sorted_scores.type_label)
+    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '1'), 'FP', 'TP')
     sorted_scores['type_label'] = np.where((sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'FN', sorted_scores.type_label)
     sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'TN', sorted_scores.type_label)
     
     # add three new columns with error analysis labels
-    sorted_scores['error_negative_label'] = None
-    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'FN', '1', sorted_scores.error_negative_label)
-    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'TN', '0', sorted_scores.error_negative_label)
-    #sorted_scores.error_negative_label.mask(sorted_scores.type_label == 'FN', '1', inplace=True)
-    sorted_scores['error_positive_label'] = None
-    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'FP', '1', sorted_scores.error_positive_label)
-    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'TP', '0', sorted_scores.error_positive_label)
-    #sorted_scores.error_positive_label.mask(sorted_scores.type_label == 'FP', '1', inplace=True)
-    #sorted_scores['error_general'] = '0'
+    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'FN', '1', '0')
+    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'FP', '1', '0')
     sorted_scores['error_general'] = np.where((sorted_scores.type_label == 'FP') | 
                                        (sorted_scores.type_label == 'FN'), '1', '0')
-    #sorted_scores.error_general.mask((sorted_scores.type_label == 'FP') | 
-    #                                   (sorted_scores.type_label == 'FN'), '1', inplace=True)
     
     # melt columns to create error_type feature to use in DT
     #feature_names = list(matrix.columns.values)
@@ -166,8 +156,8 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
             grid (ParamGrid): 
 
         Returns:
-            Dictionary with results from all decision trees generated for 
-            each configuration and each error type analysis
+            List of dictionaries with results from all decision trees generated for 
+            each configuration on each error type analysis
     """
     error_analysis_types = [element for element in list(matrix.columns) 
                                 if element.startswith('error')]
@@ -177,21 +167,27 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
         results = {'model_id': model_id, 'error_type': error_type, 'k': k}
 
         # first 5 columns of matrix aren't features
-        no_features = list(matrix.columns)[:5] + ['prediction', 'type_label'] + \
-            [error_type]
+        predictions_cols = ['model_id', 'score', 'label_value', 
+                            'rank_abs_no_ties', 'matrix_uuid', 'prediction']
+        no_features = predictions_cols + ['type_label'] + error_analysis_types
 
-        if (error_type == 'error_negative_label') | \
-            (error_type == 'eror_positive_label'):
-            X = matrix[(matrix[error_type] == '1') |
-                        (matrix[error_type] == '0')].drop(no_features, axis=1)
-            y = matrix[(matrix[error_type] == '1') |
-                        (matrix[error_type] == '0')].filter([error_type], axis=1)
+        if error_type == 'error_negative_label':
+            X = matrix[matrix.type_label.isin(['TN', 'FN'])]\
+                .drop(no_features, axis=1)
+            y = matrix[matrix.type_label.isin(['TN', 'FN'])]\
+                .filter([error_type], axis=1)
+        elif error_type == 'error_positive_label':
+            X = matrix[matrix.type_label.isin(['TP', 'FP'])]\
+                .drop(no_features, axis=1)
+            y = matrix[matrix.type_label.isin(['TP', 'FP'])]\
+                .filter([error_type], axis=1)
         else:
             X = matrix.drop(no_features, axis=1)
             y = matrix.filter([error_type], axis=1)
        
         parameter_grid = ParameterGrid(grid)
         for config in parameter_grid: 
+            config_params = {}
             max_depth = config['max_depth']
             # TODO why None is being converted to string!?
             if max_depth == 'None': 
@@ -201,16 +197,16 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
             error_model = dt.fit(X, y)
             feature_importances_ = error_model.feature_importances_
             # TODO top n of feature importances should be a parameter 
-            importances_idx = list(np.argsort(feature_importances_)[-10:])
+            importances_idx = list(np.argsort(-feature_importances_)[:10])
             feature_ = list(X.columns)
             feature_names_importance_sorted = [feature_[element] for element in importances_idx]
 
-            results['max_depth'] = config['max_depth']
-            results['feature_importance'] = error_model.feature_importances_
-            results['feature_names'] = feature_names_importance_sorted
-            results['tree_text'] = export_text(error_model, feature_names=X.columns)
+            config_params['max_depth'] = max_depth
+            config_params['feature_importance'] = feature_importances_[list(np.argsort(-feature_importances_)[:10])]
+            config_params['feature_names'] = feature_names_importance_sorted
+            config_params['tree_text'] = export_text(error_model, feature_names=feature_)
 
-            error_analysis_results.append(results)
+            error_analysis_results.append(results | config_params)
 
     return error_analysis_results
 
@@ -228,11 +224,12 @@ def error_analysis(model_id, db_conn):
     grid = error_analysis_config['model_params']
     
     matrix_data = fetch_matrices(model_id, project_path, db_conn)
+    error_analysis_results = []
     for k in k_set:
         new_matrix = generate_error_labels(matrix_data, k)
         random_seed = _get_random_seed(model_id, db_conn)
         error_analysis_result = error_analysis_model(model_id, new_matrix, grid, k, random_seed)
-
+        error_analysis_results.append(error_analysis_result)
 
 if __name__ == "__main__":
     model_id = 236
