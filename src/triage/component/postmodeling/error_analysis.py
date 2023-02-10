@@ -6,6 +6,7 @@ import psycopg2
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
+from sklearn.tree import export_text
 
 from triage.component.catwalk.storage import ProjectStorage
 
@@ -73,8 +74,7 @@ def fetch_scores_labels(model_id, db_conn):
     
     df = pd.read_sql(q, db_conn)
     df.set_index(['entity_id', 'as_of_date'], inplace=True)
-    print(df.head())
-    print("...scores and labels done")
+
     return df
 
 
@@ -100,13 +100,8 @@ def fetch_matrices(model_id, project_path, db_conn):
     #features = list(matrix.columns)
 
     # joining the predictions and labels for error analysis
-    print("...glimpse predictions")
-    print(predictions.head())
-    print("...glimpse features matrix")
-    print(matrix.head())
     matrix_w_preds = predictions.join(matrix, how='left')
 
-    print("...matrix joined with predictions done")
     return matrix_w_preds
 
 
@@ -124,29 +119,31 @@ def generate_error_labels(matrix, k):
     """
 
     # sort the scores desc
-    print(matrix.shape)
     sorted_scores = matrix.sort_values(by="rank_abs_no_ties")
-    print("...glimpse os sorted df")
-    print(sorted_scores.head())
-    print("...sorted scores done")
     # add prediction column
     sorted_scores['prediction'] = '0'
     sorted_scores.loc[sorted_scores.rank_abs_no_ties <= k, 'prediction'] = '1'
-    print("...prediction done")
     # add type of label: TP, TN, FP, FN
     sorted_scores['type_label'] = 'TP'
-    sorted_scores.type_label.mask(~(sorted_scores.label_value) & (sorted_scores.prediction == '1'), 'FP', inplace=True)
-    sorted_scores.type_label.mask((sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'FN', inplace=True)
-    sorted_scores.type_label.mask(~(sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'TN', inplace=True)
+    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '1'), 'FP', sorted_scores.type_label)
+    sorted_scores['type_label'] = np.where((sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'FN', sorted_scores.type_label)
+    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'TN', sorted_scores.type_label)
     
     # add three new columns with error analysis labels
-    sorted_scores['error_negative_label'] = '0'
-    sorted_scores.error_negative_label.mask(sorted_scores.type_label == 'FN', '1', inplace=True)
-    sorted_scores['error_positive_label'] = '0'
-    sorted_scores.error_positive_label.mask(sorted_scores.type_label == 'FP', '1', inplace=True)
-    sorted_scores['error_general'] = '0'
-    sorted_scores.error_general.mask((sorted_scores.type_label == 'FP') | 
-                                       (sorted_scores.type_label == 'FN'), '1', inplace=True)
+    sorted_scores['error_negative_label'] = None
+    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'FN', '1', sorted_scores.error_negative_label)
+    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'TN', '0', sorted_scores.error_negative_label)
+    #sorted_scores.error_negative_label.mask(sorted_scores.type_label == 'FN', '1', inplace=True)
+    sorted_scores['error_positive_label'] = None
+    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'FP', '1', sorted_scores.error_positive_label)
+    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'TP', '0', sorted_scores.error_positive_label)
+    #sorted_scores.error_positive_label.mask(sorted_scores.type_label == 'FP', '1', inplace=True)
+    #sorted_scores['error_general'] = '0'
+    sorted_scores['error_general'] = np.where((sorted_scores.type_label == 'FP') | 
+                                       (sorted_scores.type_label == 'FN'), '1', '0')
+    #sorted_scores.error_general.mask((sorted_scores.type_label == 'FP') | 
+    #                                   (sorted_scores.type_label == 'FN'), '1', inplace=True)
+    
     # melt columns to create error_type feature to use in DT
     #feature_names = list(matrix.columns.values)
     # first five names are from predictions matrix, not features
@@ -157,9 +154,6 @@ def generate_error_labels(matrix, k):
     #df = sorted_scores.melt(id_vars=id_variables, value_vars=value_vars, 
     #var_name="error_type", value_name="error_label")
 
-    print("...glimpse error labels")
-    print(sorted_scores.head())
-    print("...error labels generated done")
     return sorted_scores
 
 
@@ -185,31 +179,39 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
         # first 5 columns of matrix aren't features
         no_features = list(matrix.columns)[:5] + ['prediction', 'type_label'] + \
             [error_type]
+
+        if (error_type == 'error_negative_label') | \
+            (error_type == 'eror_positive_label'):
+            X = matrix[(matrix[error_type] == '1') |
+                        (matrix[error_type] == '0')].drop(no_features, axis=1)
+            y = matrix[(matrix[error_type] == '1') |
+                        (matrix[error_type] == '0')].filter([error_type], axis=1)
+        else:
+            X = matrix.drop(no_features, axis=1)
+            y = matrix.filter([error_type], axis=1)
        
-        X = matrix.drop(no_features, axis=1)
-        y = matrix.filter([error_type], axis=1)
-       
-        parameter_grid = list(ParameterGrid(grid))
+        parameter_grid = ParameterGrid(grid)
         for config in parameter_grid: 
-            dt = DecisionTreeClassifier(max_depth=config['max_depth'], 
+            max_depth = config['max_depth']
+            # TODO why None is being converted to string!?
+            if max_depth == 'None': 
+                max_depth = None
+            dt = DecisionTreeClassifier(max_depth=max_depth, 
                 random_state=random_seed)
             error_model = dt.fit(X, y)
             feature_importances_ = error_model.feature_importances_
             # TODO top n of feature importances should be a parameter 
             importances_idx = list(np.argsort(feature_importances_)[-10:])
-            feature_ = list(matrix.columns)
+            feature_ = list(X.columns)
             feature_names_importance_sorted = [feature_[element] for element in importances_idx]
 
             results['max_depth'] = config['max_depth']
             results['feature_importance'] = error_model.feature_importances_
             results['feature_names'] = feature_names_importance_sorted
-            results['rules'] = error_model.tree_
+            results['tree_text'] = export_text(error_model, feature_names=X.columns)
 
             error_analysis_results.append(results)
-    
-    print("...glimpse error analysis results")
-    print(error_analysis_results)
-    print("...error analysis done")
+
     return error_analysis_results
 
 
@@ -227,10 +229,9 @@ def error_analysis(model_id, db_conn):
     
     matrix_data = fetch_matrices(model_id, project_path, db_conn)
     for k in k_set:
-        print("k", k)
         new_matrix = generate_error_labels(matrix_data, k)
         random_seed = _get_random_seed(model_id, db_conn)
-        error_analysis_model(model_id, new_matrix, grid, k, random_seed)
+        error_analysis_result = error_analysis_model(model_id, new_matrix, grid, k, random_seed)
 
 
 if __name__ == "__main__":
