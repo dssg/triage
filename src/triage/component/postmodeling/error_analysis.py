@@ -16,6 +16,7 @@ def _get_error_analysis_configuration():
         Return:
             Dictionary of error analysis configuration
     """
+    # TODO need to change it as in 
     filename_yaml = os.path.join(
         os.path.abspath(os.getcwd()), 
         "src/triage/component/postmodeling/config.yaml")
@@ -133,16 +134,6 @@ def generate_error_labels(matrix, k):
     sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'FP', '1', '0')
     sorted_scores['error_general'] = np.where((sorted_scores.type_label == 'FP') | 
                                        (sorted_scores.type_label == 'FN'), '1', '0')
-    
-    # melt columns to create error_type feature to use in DT
-    #feature_names = list(matrix.columns.values)
-    # first five names are from predictions matrix, not features
-    #value_vars = ['error_negative_label', 
-    #'error_positive_label', 'error_general']
-    #id_variables = [element for element in feature_names if element not in value_vars]
-
-    #df = sorted_scores.melt(id_vars=id_variables, value_vars=value_vars, 
-    #var_name="error_type", value_name="error_label")
 
     return sorted_scores
 
@@ -185,13 +176,9 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
             X = matrix.drop(no_features, axis=1)
             y = matrix.filter([error_type], axis=1)
        
-        parameter_grid = ParameterGrid(grid)
-        for config in parameter_grid: 
+        for config in ParameterGrid(grid): 
             config_params = {}
             max_depth = config['max_depth']
-            # TODO why None is being converted to string!?
-            if max_depth == 'None': 
-                max_depth = None
             dt = DecisionTreeClassifier(max_depth=max_depth, 
                 random_state=random_seed)
             error_model = dt.fit(X, y)
