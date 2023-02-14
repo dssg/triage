@@ -108,8 +108,8 @@ def fetch_matrices(model_id, project_path, db_conn):
 
 def generate_error_labels(matrix, k):
     """
-    Adds columns that identify the different errors the model made by looking only into FPs, FNs or both; 
-    
+    Add columns to the original DataFrmae to define labels for the error model analysis.
+
     Args:
         matrix (DataFrame): DataFrame with the scores and labels.
         k (int): Number of resources to use
@@ -118,24 +118,44 @@ def generate_error_labels(matrix, k):
         DataFrame with two new columns associated to the labels generated for each type of error: general error, 
         errors in positive label, errors in negative labels.
     """
+    # extra df to create additional columns to the existing DF efficiently  
+    # since the DF is "highly fragmentated" according to pandas.  
+    prediction_col = ['0' for element in range(matrix.shape[0])]
+    type_label_col = ['TP' for element in range(matrix.shape[0])]
+    error_negative_label = ['0' for element in range(matrix.shape[0])]
+    error_positive_label = ['0' for element in range(matrix.shape[0])]
+    error_general_label = ['0' for element in range(matrix.shape[0])]
 
     # sort the scores desc
     sorted_scores = matrix.sort_values(by="rank_abs_no_ties")
+    
+    indexes = sorted_scores.index
+    extra_df = pd.DataFrame({'prediction': prediction_col,
+                            'type_label': type_label_col, 
+                            'error_negative_label': error_negative_label,
+                            'error_positive_label': error_positive_label,
+                            'error_general_label': error_general_label 
+                            }, index=indexes)
+    
+    data_df = pd.concat([sorted_scores, extra_df], axis=1)
     # add prediction column
-    sorted_scores['prediction'] = '0'
-    sorted_scores.loc[sorted_scores.rank_abs_no_ties <= k, 'prediction'] = '1'
+    #sorted_scores['prediction'] = '0'
+    data_df.loc[data_df.rank_abs_no_ties <= k, 'prediction'] = '1'
     # add type of label: TP, TN, FP, FN
-    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '1'), 'FP', 'TP')
-    sorted_scores['type_label'] = np.where((sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'FN', sorted_scores.type_label)
-    sorted_scores['type_label'] = np.where(~(sorted_scores.label_value) & (sorted_scores.prediction == '0'), 'TN', sorted_scores.type_label)
+    data_df['type_label'] = np.where(~(data_df.label_value) & 
+                                    (data_df.prediction == '1'), 'FP', 'TP')
+    data_df['type_label'] = np.where((data_df.label_value) & 
+                                    (data_df.prediction == '0'), 'FN', 
+                                    data_df.type_label)
+    data_df['type_label'] = np.where(~(data_df.label_value) & (data_df.prediction == '0'), 'TN', data_df.type_label)
     
     # add three new columns with error analysis labels
-    sorted_scores['error_negative_label'] = np.where(sorted_scores.type_label == 'FN', '1', '0')
-    sorted_scores['error_positive_label'] = np.where(sorted_scores.type_label == 'FP', '1', '0')
-    sorted_scores['error_general'] = np.where((sorted_scores.type_label == 'FP') | 
-                                       (sorted_scores.type_label == 'FN'), '1', '0')
+    data_df['error_negative_label'] = np.where(data_df.type_label == 'FN', '1', '0')
+    data_df['error_positive_label'] = np.where(data_df.type_label == 'FP', '1', '0')
+    data_df['error_general_label'] = np.where((data_df.type_label == 'FP') | 
+                                       (data_df.type_label == 'FN'), '1', '0')
 
-    return sorted_scores
+    return data_df
 
 
 def error_analysis_model(model_id, matrix, grid, k, random_seed):
