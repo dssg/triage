@@ -3,6 +3,7 @@ import numpy as np
 import yaml
 import os
 import psycopg2
+import verboselogs, logging
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
@@ -10,13 +11,15 @@ from sklearn.tree import export_text
 
 from triage.component.catwalk.storage import ProjectStorage
 
+logger = verboselogs.VerboseLogger(__name__)
+
 
 def _get_error_analysis_configuration():
     """
         Return:
             Dictionary of error analysis configuration
     """
-    # TODO need to change it as in 
+    # TODO need to change it as in the rest of triage
     filename_yaml = os.path.join(
         os.path.abspath(os.getcwd()), 
         "src/triage/component/postmodeling/config.yaml")
@@ -44,6 +47,7 @@ def _get_random_seed(model_id, db_conn):
     """.format(model_id=model_id)
 
     random_seed = pd.read_sql(q, db_conn)
+    logger.debug("obtained random seed associated to model_id: {model_id} for generating decision trees in error analysis")
 
     return random_seed.random_seed.values[0]
 
@@ -102,6 +106,7 @@ def fetch_matrices(model_id, project_path, db_conn):
 
     # joining the predictions and labels for error analysis
     matrix_w_preds = predictions.join(matrix, how='left')
+    logger.debug(f"predictions and labels joined for error analysis of model_id {model_id}")
 
     return matrix_w_preds
 
@@ -154,6 +159,7 @@ def generate_error_labels(matrix, k):
     data_df['error_positive_label'] = np.where(data_df.type_label == 'FP', '1', '0')
     data_df['error_general_label'] = np.where((data_df.type_label == 'FP') | 
                                        (data_df.type_label == 'FN'), '1', '0')
+    logger.debug(f"error labels generated for k {k}")
 
     return data_df
 
@@ -214,16 +220,20 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
             config_params['tree_text'] = export_text(error_model, feature_names=feature_)
 
             error_analysis_results.append(results | config_params)
+            logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
 
     return error_analysis_results
 
 
-def error_analysis(model_id, db_conn):
+def generate_error_analysis(model_id, db_conn):
     """
     
         Args: 
             model_group_ids (list): List of model groups ids 
             db_conn (): Database engine connection
+        
+        Returns: 
+            List of list of dictionaries 
     """
     error_analysis_config = _get_error_analysis_configuration()
     project_path = error_analysis_config['project_path']
@@ -237,9 +247,13 @@ def error_analysis(model_id, db_conn):
         random_seed = _get_random_seed(model_id, db_conn)
         error_analysis_result = error_analysis_model(model_id, new_matrix, grid, k, random_seed)
         error_analysis_results.append(error_analysis_result)
+    #TODO where and how to save the outputs of the errror analysis (list of dicts)
+    logger.debug(f"error analysis finished for model id {model_id}")
+
+    return error_analysis_results
 
 if __name__ == "__main__":
-    model_id = 236
+    model_id = 1630
     db_conn = psycopg2.connect(service='acdhs_housing')
     
-    error_analysis(model_id, db_conn)
+    generate_error_analysis(model_id, db_conn)
