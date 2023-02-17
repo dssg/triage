@@ -65,7 +65,7 @@ def _summary_of_models(models_df):
     time_cts.name = 'num_models'
     msk = time_cts > 1
 
-    if len(time_cts[msk]) > 1:
+    if len(time_cts[msk]) > 0:
         logging.warning('There are model groups with more than one model per train_end_time. See below: \n {}'.format(time_cts[msk].reset_index()))
         
     
