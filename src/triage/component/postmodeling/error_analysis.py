@@ -3,7 +3,9 @@ import numpy as np
 import yaml
 import os
 import psycopg2
-import verboselogs, logging
+import verboselogs, logging, coloredlogs
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
@@ -13,16 +15,16 @@ from triage.component.catwalk.storage import ProjectStorage
 
 logger = verboselogs.VerboseLogger(__name__)
 
+CONFIG_PATH = os.path.join(os.getcwd(),
+'/mnt/data/users/lily/triage/src/triage/component/postmodeling/config.yaml')
 
-def _get_error_analysis_configuration():
+def _get_error_analysis_configuration(path):
     """
         Return:
             Dictionary of error analysis configuration
     """
     # TODO need to change it as in the rest of triage
-    filename_yaml = os.path.join(
-        os.path.abspath(os.getcwd()), 
-        "src/triage/component/postmodeling/config.yaml")
+    filename_yaml = path
     with open(filename_yaml, 'r') as f:
         config = yaml.full_load(f)
     error_analysis_config = config['error_analysis']
@@ -47,7 +49,8 @@ def _get_random_seed(model_id, db_conn):
     """.format(model_id=model_id)
 
     random_seed = pd.read_sql(q, db_conn)
-    logger.debug("obtained random seed associated to model_id: {model_id} for generating decision trees in error analysis")
+    logger.debug("""obtained random seed associated to model_id: {model_id} 
+    for generating decision trees in error analysis""")
 
     return random_seed.random_seed.values[0]
 
@@ -235,7 +238,7 @@ def generate_error_analysis(model_id, db_conn):
         Returns: 
             List of list of dictionaries 
     """
-    error_analysis_config = _get_error_analysis_configuration()
+    error_analysis_config = _get_error_analysis_configuration(CONFIG_PATH)
     project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
@@ -252,8 +255,124 @@ def generate_error_analysis(model_id, db_conn):
 
     return error_analysis_results
 
+
+def plot_feature_importance(importances, features):
+    """
+    Plots a seborn barplot with the most important features associated to the 
+    error in the label analyzed.
+
+        Args: 
+            importances (list): List with the importance value of the top n 
+                                important features
+            features (list): List with the name of the n most important features 
+    """
+    plt.clf()
+    df_viz = pd.DataFrame({'importance': importances, 'feature': features})
+    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), x="importance", y="feature",
+               color="grey")
+    plt.show()
+
+
+def _output_config_text(element, error_label):    
+    config_text = f"""
+
+    Error analysis type: {error_label}, size of the list: {element['k']}
+
+    Decision Tree with max_depth of, {element['max_depth']}
+
+    Top 10 features associated with error in label type {error_label}
+    """
+    
+    return config_text
+
+
+def _output_dt_text(error_label):
+    dt_text = f"""
+    Rules made with the top 10 features associated with errors in label type {error_label}
+    """
+    return dt_text
+  
+
+def _get_error_label(element):
+    if element['error_type'] == 'error_negative_label': 
+        error_label = 'Negative (FN)'
+    elif element['error_type'] == 'error_positive_label':
+        error_label = 'Positive (FP)'
+    else: 
+        error_label = 'Positive and Negative (FP & FN)'
+
+    return error_label
+
+
+def output_all_analysis(error_analysis_results):
+    print("Error Analysis")
+    print("--------------")
+
+    for analysis in error_analysis_results:
+        for element in analysis:
+            error_label = _get_error_label(element)
+            config_text = _output_config_text(element, error_label)
+            print(config_text)
+            
+            plot_feature_importance(element['feature_importance'], 
+                                    element['feature_names'])
+
+            dt_text = _output_dt_text(error_label)
+           
+            print(element['tree_text'])
+            print("             ######            ")
+        
+        print("*******************************************")
+
+
+def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
+                                    error_type="error_negative_label"):
+    """
+    """
+    for analysis in error_analysis_resutls:
+        for element in analysis:
+            if ((element['error_type'] == error_type) &
+            (element['k'] == k) & 
+            (element['max_depth'] == max_depth)):
+                error_label = _get_error_label(element)
+                config_text = _output_config_text(element, error_label)
+                print(config_text)
+                
+                plot_feature_importance(element['feature_importance'], 
+                                        element['feature_names'])
+
+                dt_text = _output_dt_text(error_label)
+            
+                print(element['tree_text'])
+                print("             ######            ")
+
+
+
+def output_specific_error_analysis(error_analysis_results, 
+                                      error_type='error_negative_label'):
+    """
+    """
+    for analysis in error_analysis_results:
+        for element in analysis:
+            if element['error_type'] == error_type:
+                error_label = _get_error_label(element)
+                config_text = _output_config_text(element, error_label)
+                print(config_text)
+                
+                plot_feature_importance(element['feature_importance'], 
+                                        element['feature_names'])
+
+                dt_text = _output_dt_text(error_label)
+            
+                print(element['tree_text'])
+                print("             ######            ")
+        
+        print("*******************************************")
+
+
+
 if __name__ == "__main__":
     model_id = 1630
     db_conn = psycopg2.connect(service='acdhs_housing')
-    
+
     generate_error_analysis(model_id, db_conn)
