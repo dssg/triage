@@ -1,9 +1,11 @@
 import ohio.ext.pandas
 import pandas as pd
 import logging
+import seaborn as sns
 
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
+from sklearn.calibration import calibration_curve
 
 from triage.component.catwalk.storage import ProjectStorage
 
@@ -168,7 +170,7 @@ class ModelAnalyzer:
         q = f"""
             select
                 model_id,
-                matix_uuid,
+                matrix_uuid,
                 subset_hash,
                 metric, 
                 parameter,
@@ -179,9 +181,70 @@ class ModelAnalyzer:
             {where_clause}
         """
 
-        evaluations = pd.read_csv(q, self.engine)
+        evaluations = pd.read_sql(q, self.engine)
 
         return evaluations
+
+    def get_feature_importances(self):
+        features = pd.read_sql(
+           f'''
+           select
+                feature,
+                feature_importance,
+                rank_abs
+           FROM train_results.feature_importances
+           WHERE model_id = {self.model_id}
+           ''', con=self.engine)
+        return features
+    
+    def get_feature_group_importances(self):
+        """
+        Get the top most important feature groups as identified by the maximum importance of any feature in the group
+
+        """
+        # TODO this assumes any experiment linked to this model has the same feature aggregations, is this valid?
+        q = f"""
+            select distinct experiment_hash from triage_metadata.models m 
+            left join triage_metadata.experiment_models em on m.model_hash=em.model_hash 
+            where model_group_id={self.model_group_id}
+            """
+        experiment_hashes = pd.read_sql(q, self.engine)
+        experiment_hash = experiment_hashes['experiment_hash'].iloc[0]
+
+        # get feature group names
+        q = f"""
+            select 
+                config->'feature_aggregations' as feature_groups
+            from triage_metadata.experiments where experiment_hash = '{experiment_hash}'
+        """
+
+        feature_groups = [i['prefix'] for i in pd.read_sql(q, self.engine)['feature_groups'].iloc[0]]
+        feature_groups
+        case_part = ''
+        for fg in feature_groups:
+            case_part = case_part + "\nWHEN feature like '{fg}%%' THEN '{fg}'".format(fg=fg)
+
+        # get feature group importances
+        feature_group_importance = pd.read_sql(f"""
+            with raw_importances as (
+                select 
+                    model_id,
+                    feature,
+                    feature_importance,
+                    CASE {case_part}
+                    ELSE 'No feature group'
+                    END as feature_group
+                FROM train_results.feature_importances
+                WHERE model_id = {self.model_id}
+            )
+            SELECT
+            model_id,
+            feature_group,
+                max(abs(feature_importance)) as importance_aggregate
+            FROM raw_importances
+            GROUP BY feature_group, model_id
+        """, con=self.engine)
+        return feature_group_importance
 
     def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True):
         """ Generate crosstabs for the predicted positives (top-k) vs the rest
@@ -289,3 +352,228 @@ class ModelAnalyzer:
 
         if return_df:
             return crosstabs_df
+
+    def plot_score_distribution(self, ax, nbins=10, top_k=None, matrix_uuid=None):
+        """
+        Plot the distribution of predicted scores for all entities across model groups and train_end_time
+        Optionally, show only the top k predicted scores.
+
+        Args:
+            ax: matplotlib Axes object to plot on
+            nbins (optional, int): the number of bins to apply to the score histogram
+            top_k (optional, int): if not None, displays only the top_k scores.
+            matrix_uuid (optional): get model scores for a particular matrix
+        """
+
+        predictions = self.get_predictions(matrix_uuid)
+        # keep only top_k if specified
+        if top_k:
+            predictions = predictions.loc[predictions['rank_abs_no_ties'] <= top_k]
+        ax.hist(predictions.score,
+                 bins=nbins,
+                 alpha=0.5,
+                 color='blue')
+        ax.axvline(predictions.score.mean(),
+                    color='black',
+                    linestyle='dashed')
+        ax.set_ylabel('Frequency')
+        ax.set_xlabel('Score')
+        ax.set_title('Score Distribution')
+        return ax
+
+    def plot_score_label_distribution(self, ax,
+                                      nbins=10,
+                                      top_k=None,
+                                      matrix_uuid=None, 
+                                      label_names = ('Label = 0', 'Label = 1')):
+        """
+        Plot the distribution of predicted scores for all entities across model groups and train_end_time
+        Optionally, show only the top k predicted scores.
+        NOTE: this function only handles 0/1 labels, ignores null labels
+
+        Args:
+            ax: matplotlib Axes object to plot on
+            nbins (int): the number of bins to define the calibration curve
+            top_k (optional, int): if not None, displays only the top_k scores.
+            matrix_uuid (optional): specify a matrix to get predictions for
+            label_names (tuple[String]): specify the two label names to display on the plot
+
+        Return:
+            ax: the modified Axes object
+        """
+
+        df_predictions = self.get_predictions(matrix_uuid)
+        # keep only top_k if specified
+        if top_k:
+            df_predictions = df_predictions.loc[df_predictions['rank_abs_no_ties'] <= top_k]
+        df__0 = df_predictions[df_predictions.label_value == 0]
+        df__1 = df_predictions[df_predictions.label_value == 1]
+
+        ax.hist(df__0.score,
+                 bins=nbins,
+                 alpha=0.5,
+                 color='skyblue',
+                 label=label_names[0])
+        ax.hist(list(df__1.score),
+                 bins=nbins,
+                 alpha=0.5,
+                 color='orange',
+                 label=label_names[1])
+        ax.axvline(df__0.score.mean(),
+                    color='skyblue',
+                    linestyle='dashed')
+        ax.axvline(df__1.score.mean(),
+                    color='orange',
+                    linestyle='dashed')
+        ax.legend(bbox_to_anchor=(0., 1.005, 1., .102),
+                   loc=8,
+                   ncol=2,
+                   borderaxespad=0.)
+        ax.set_ylabel('Frequency')
+        ax.set_xlabel('Score')
+        ax.set_title('Score Distribution across Labels')
+        return ax
+
+    def plot_precision_recall_curve(self, ax, matrix_uuid=None):
+        """
+        Plots precision-recall curves at each train_end_time for all model groups
+        
+        Args:
+            ax: matplotlib Axes object to plot on
+            matrix_uuid (optional): specify a matrix to get predictions for
+            
+        Return:
+            ax: the modified Axes object
+        """
+
+        eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+        
+        eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
+        eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
+        
+        msk_prec = eval_df['metric']=='precision@'
+        msk_recall = eval_df['metric']=='recall@'
+        msk_pct = eval_df['parameter'].str.contains('pct')
+
+        # plot precision
+        sns.lineplot(
+            x='perc_points',
+            y='stochastic_value', 
+            data=eval_df[msk_pct & msk_prec], 
+            label='precision@k',
+            ax=ax, 
+            estimator='mean', ci='sd'
+        )
+        # plot recall
+        sns.lineplot(
+            x='perc_points', 
+            y='stochastic_value', 
+            data=eval_df[msk_pct & msk_recall], 
+            label='recall@k', 
+            ax=ax, 
+            estimator='mean', 
+            ci='sd'
+        )
+        ax.set_xlabel('List size percentage (k%)')
+        ax.set_ylabel('Metric Value')
+        ax.set_title('Precision-Recall Curve')
+        return ax
+
+    def plot_feature_importance(self, ax, n_top_features=20):
+        """
+        Plot the top most important individual features across model groups and train end times
+
+        Args:
+            ax: matplotlib Axes object to plot on
+            n_top_features (int): the number of features to display
+            
+        Return:
+            ax: the modified Axes object
+        """
+
+        feature_importance_scores = self.get_feature_importances()
+        # keep only top n_top_features
+        feature_importance_scores.sort_values(by=['rank_abs'], ascending=True, inplace=True)
+        feature_importance_scores = feature_importance_scores.loc[feature_importance_scores['rank_abs'] <= n_top_features]
+        # plot
+        sns.barplot(
+            data=feature_importance_scores,
+            x='feature_importance', 
+            y='feature',
+            color='royalblue',
+            ax=ax
+        )
+        ax.set_ylabel('Feature')
+        ax.set_title('Feature Importance')
+        return ax
+
+    def plot_feature_group_importance(self, ax):
+        """
+        Plot the top most important feature groups as identified by the maximum importance of any feature in the group
+
+        Args:
+            ax: matplotlib Axes object to plot on
+
+        Return: 
+            ax: modified matplotlib Axes object
+        """
+        feature_group_importance = self.get_feature_group_importances()
+        feature_group_importance.sort_values(by=['importance_aggregate'], ascending=False, inplace=True)
+        sns.barplot(
+            data=feature_group_importance,
+            x='importance_aggregate', 
+            y='feature_group',
+            color='royalblue',
+            ax=ax
+        )
+        ax.set_ylabel('Feature Group')
+        ax.set_title('Feature Importance')
+        return ax
+
+    def plot_calibration_curve(self, ax, nbins=20, min_score=0, max_score=1, matrix_uuid=None):
+
+        """
+        Plot the calibration curve of predicted probability scores across model groups
+
+        Args:
+            ax: matplotlib Axes object to plot on
+            nbins (int): the number of bins to define the calibration curve
+            min_score (optional, float between 0 and 1): zoom in on the plot, set x and y min axis value
+            max_score (optional, float between 0 and 1): zoom in on the plot, set x and y max axis value
+            matrix_uuid (optional): specify a matrix to get predictions for
+
+        Return: 
+            ax: modified matplotlib Axes object
+        """
+        # TODO can the bins be adjusted when zooming in on the plot?
+        scores = self.get_predictions(matrix_uuid) # TODO what about null labels?
+        scores = scores.dropna()
+        # TODO do we want to restrict to label=1 only?
+        cal_x, cal_y = calibration_curve(scores['label_value'], scores['score'], n_bins=nbins)
+        sns.lineplot(
+            x=cal_x,
+            y=cal_y, 
+            marker='o', 
+            ax=ax
+        )
+        # plot perfectly calibrated line y = x for comparison
+        probabilities = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        # filter out probabilities
+        probabilities_plot = []
+        for p in probabilities:
+            probabilities_plot.append(p)
+        sns.lineplot(
+            data = pd.DataFrame(list(zip(probabilities, probabilities)), columns=['x', 'y']),
+            x = 'x', 
+            y = 'y', 
+            color = 'gray',
+            linestyle='dashed',
+            ax=ax
+        )
+        ax.set_xlabel('Mean predicted probability')
+        ax.set_ylabel('Fraction of data')
+        ax.set_title('Calibration curve')
+        ax.set_xlim([min_score, max_score])
+        ax.set_ylim([min_score, max_score])
+        return ax
+
