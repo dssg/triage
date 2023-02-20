@@ -88,10 +88,12 @@ def fetch_scores_labels(model_id, db_conn):
 
 def fetch_matrices(model_id, project_path, db_conn):
     """
+    Joins the matrix of features, predictions and labels for a particular model_id
+    
     Args: 
-        model_id ():
-        project_path ():
-        db_conn ():
+        model_id (int): Specific model id
+        project_path (string): Where does the output of the model is stored (s3, file system)
+        db_conn (sqlalchemy.engine.connect): Database engine connection 
 
     Returns:
         A DataFrame with features, predictions, and labels
@@ -169,9 +171,12 @@ def generate_error_labels(matrix, k):
 
 def error_analysis_model(model_id, matrix, grid, k, random_seed):
     """
+    Generates the error analysis for a particular model_id by training Decision 
+    Trees where the positive label is either: the false negatives, the 
+    false positives, or both errors, false negatives and false positives. 
 
         Args: 
-            model_id (int):
+            model_id (int): 
             matrix (DataFrame):
             grid (ParamGrid): 
 
@@ -204,23 +209,30 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
         else:
             X = matrix.drop(no_features, axis=1)
             y = matrix.filter([error_type], axis=1)
+        logger.info(f"{error_type} k: {k} matrix size {X.shape}")
        
-        for config in ParameterGrid(grid): 
+        for config in ParameterGrid(grid):
+            error_model = None
             config_params = {}
             max_depth = config['max_depth']
-            dt = DecisionTreeClassifier(max_depth=max_depth, 
-                random_state=random_seed)
+            dt = DecisionTreeClassifier(max_depth=max_depth,
+                                    random_state=random_seed)
             error_model = dt.fit(X, y)
-            feature_importances_ = error_model.feature_importances_
-            # TODO top n of feature importances should be a parameter 
-            importances_idx = list(np.argsort(-feature_importances_)[:10])
-            feature_ = list(X.columns)
-            feature_names_importance_sorted = [feature_[element] for element in importances_idx]
 
+            feature_importances_ = error_model.feature_importances_
+            importances_idx = np.argsort(-feature_importances_)
+            # retrieving all features with importance > 0
+            top_n = [i for i, element in enumerate(importances_idx) if feature_importances_[element] == 0][0]
+            logger.info(f"feature importance indices {importances_idx[:top_n]}")
+            feature_ = error_model.feature_names_in_
+            feature_names_importance_sorted = feature_[importances_idx[:top_n]]
+            
             config_params['max_depth'] = max_depth
-            config_params['feature_importance'] = feature_importances_[list(np.argsort(-feature_importances_)[:10])]
+            config_params['feature_importance'] = feature_importances_[importances_idx[:top_n]]
             config_params['feature_names'] = feature_names_importance_sorted
-            config_params['tree_text'] = export_text(error_model, feature_names=feature_)
+            config_params['tree_text'] = export_text(error_model, 
+                                                    feature_names=list(feature_),
+                                                    show_weights=True)
 
             error_analysis_results.append(results | config_params)
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
@@ -230,7 +242,8 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
 
 def generate_error_analysis(model_id, db_conn):
     """
-    
+    Main function that runs the error analysis on a particular model_id.
+
         Args: 
             model_group_ids (list): List of model groups ids 
             db_conn (): Database engine connection
@@ -256,7 +269,7 @@ def generate_error_analysis(model_id, db_conn):
     return error_analysis_results
 
 
-def plot_feature_importance(importances, features):
+def plot_feature_importance(importances, features, error_label):
     """
     Plots a seborn barplot with the most important features associated to the 
     error in the label analyzed.
@@ -268,32 +281,66 @@ def plot_feature_importance(importances, features):
     """
     plt.clf()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), x="importance", y="feature",
-               color="grey")
+    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
+                x="importance", y="feature", color="grey")
+    plt.title("Top feature importance in " + error_label + " analysis.")
     plt.show()
 
 
 def _output_config_text(element, error_label):    
+    """
+    First paragraph of text associated to the output of a particular analysis.
+
+        Args: 
+            element (dict): Dictinoary with outputs of the error analysis.
+            error_label (string): Type of error analysis that is being generated.
+
+        Returns: 
+            dt_text (string): Text associated to the output of the error 
+            analysis generated.
+    """
     config_text = f"""
 
     Error analysis type: {error_label}, size of the list: {element['k']}
 
     Decision Tree with max_depth of, {element['max_depth']}
 
-    Top 10 features associated with error in label type {error_label}
+    Top feature importance associated with error in label type {error_label}
     """
     
     return config_text
 
 
 def _output_dt_text(error_label):
+    """
+    Text associated to the output of the decission trees from a particular anlaysis. 
+
+        Args: 
+            error_label (string): Type of error analysis that is being generated.
+
+        Returns: 
+            dt_text (string): Text associated to the output of the error analysis 
+            generated. 
+    """
+
     dt_text = f"""
     Rules made with the top 10 features associated with errors in label type {error_label}
     """
+
     return dt_text
   
 
 def _get_error_label(element):
+    """
+    Given the type of error analysis, returns a descriptive name. 
+
+        Args: 
+            element (dict): Dictionary with output of error analysis. 
+        
+        Returns:
+            error_label (string): Human readable output related to the type 
+            of error analysis.  
+    """
     if element['error_type'] == 'error_negative_label': 
         error_label = 'Negative (FN)'
     elif element['error_type'] == 'error_positive_label':
@@ -305,6 +352,15 @@ def _get_error_label(element):
 
 
 def output_all_analysis(error_analysis_results):
+    """
+    Prints as text the output of all the error analysis made. 
+
+        Args: 
+            error_anlaysis_resulst (list): List of dictionaries with the output 
+            of every single error anlaysis made. 
+        
+    """
+    
     print("Error Analysis")
     print("--------------")
 
@@ -315,10 +371,11 @@ def output_all_analysis(error_analysis_results):
             print(config_text)
             
             plot_feature_importance(element['feature_importance'], 
-                                    element['feature_names'])
+                                    element['feature_names'],
+                                    error_label)
 
             dt_text = _output_dt_text(error_label)
-           
+            print(dt_text)
             print(element['tree_text'])
             print("             ######            ")
         
@@ -328,6 +385,14 @@ def output_all_analysis(error_analysis_results):
 def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
                                     error_type="error_negative_label"):
     """
+    Prints as text the output of a specific configuration of error analysis made.
+
+        Args: 
+            error_analysis_results (list): List of dictionaries with all the 
+            output of the error analysis. 
+            k (int): A specific size of the list. Default `100`
+            max_depth (int): A specific depth of decision trees. Default `10`
+            error_type (string): Type of error analysis. Default `error_negative_label` 
     """
     for analysis in error_analysis_resutls:
         for element in analysis:
@@ -339,10 +404,11 @@ def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
                 print(config_text)
                 
                 plot_feature_importance(element['feature_importance'], 
-                                        element['feature_names'])
+                                        element['feature_names'], 
+                                        error_label)
 
                 dt_text = _output_dt_text(error_label)
-            
+                print(dt_text)
                 print(element['tree_text'])
                 print("             ######            ")
 
@@ -351,6 +417,13 @@ def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
 def output_specific_error_analysis(error_analysis_results, 
                                       error_type='error_negative_label'):
     """
+    Prints all the outputs associated to a specific type of error analysis made: 
+    negative label, positive label, or both. 
+
+        Args: 
+            error_analysis_results (list): List of dictionaries with the outputs
+            of the error analysis. 
+            error_type (string): Type of error analysis.
     """
     for analysis in error_analysis_results:
         for element in analysis:
@@ -360,10 +433,11 @@ def output_specific_error_analysis(error_analysis_results,
                 print(config_text)
                 
                 plot_feature_importance(element['feature_importance'], 
-                                        element['feature_names'])
+                                        element['feature_names'], 
+                                        error_label)
 
                 dt_text = _output_dt_text(error_label)
-            
+                print(dt_text)
                 print(element['tree_text'])
                 print("             ######            ")
         
