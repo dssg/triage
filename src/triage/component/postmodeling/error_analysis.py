@@ -9,14 +9,16 @@ import seaborn as sns
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
-from sklearn.tree import export_text
+from sklearn.tree import export_text, plot_tree
 
 from triage.component.catwalk.storage import ProjectStorage
+from triage.component.postmodeling.contrast.parameters import PostmodelParameters
 
 logger = verboselogs.VerboseLogger(__name__)
 
-CONFIG_PATH = os.path.join(os.getcwd(),
-'/mnt/data/users/lily/triage/src/triage/component/postmodeling/config.yaml')
+POSTMODELING_CONFIG_PATH = os.path.join(os.getcwd(),
+'/mnt/data/users/lily/triage/src/triage/component/postmodeling/postmodeling_config.yaml')
+
 
 def _get_error_analysis_configuration(path):
     """
@@ -24,6 +26,9 @@ def _get_error_analysis_configuration(path):
             Dictionary of error analysis configuration
     """
     # TODO need to change it as in the rest of triage
+    #params = PostmodelParameters('postmodeling_config.yaml')
+    #logger.info(f"{params.__dict__}")
+    #error_analysis_config = params['error_analysis']
     filename_yaml = path
     with open(filename_yaml, 'r') as f:
         config = yaml.full_load(f)
@@ -34,7 +39,7 @@ def _get_error_analysis_configuration(path):
 
 def _get_random_seed(model_id, db_conn):
     """
-        Args: 
+        Args:
             model_id (int): The model id from to retrieve the random seed for.
             db_conn (sqlalchemy.engine.connect): Simple connection to the database.
 
@@ -42,7 +47,7 @@ def _get_random_seed(model_id, db_conn):
             Integer of the random seed associated to this model_id.
     """
     q = """
-        SELECT 
+        SELECT
             random_seed
         FROM triage_metadata.models
         WHERE model_id = {model_id}
@@ -58,17 +63,17 @@ def _get_random_seed(model_id, db_conn):
 def _fetch_scores_labels(model_id, db_conn):
     """
     Given a model id, it retrieves its scores and labels.
-    
-    Args: 
-        model_id (int): The model id from which scores and labels are going to be retrieved from. 
+
+    Args:
+        model_id (int): The model id from which scores and labels are going to 
+        be retrieved from. 
         db_conn (sqlalchemy.engine.connect): Simple connection to the database.
     
-    Returns: 
+    Returns:
         DataFrame with scores and labels for a specific model_id.
     """
-
     q = """
-        SELECT 
+        SELECT
            model_id,
            entity_id,
            as_of_date,
@@ -76,7 +81,7 @@ def _fetch_scores_labels(model_id, db_conn):
            label_value,
            rank_abs_no_ties,
            matrix_uuid
-        FROM test_results.predictions 
+        FROM test_results.predictions
         WHERE model_id = {model_id}
     """.format(model_id=model_id)
     
@@ -88,12 +93,14 @@ def _fetch_scores_labels(model_id, db_conn):
 
 def _fetch_matrices(model_id, project_path, db_conn):
     """
-    Joins the matrix of features, predictions and labels for a particular model_id
+    Joins the matrix of features, predictions and labels for a particular 
+    model_id
     
-    Args: 
+    Args:
         model_id (int): Specific model id
-        project_path (string): Where does the output of the model is stored (s3, file system)
-        db_conn (sqlalchemy.engine.connect): Database engine connection 
+        project_path (string): Where does the output of the model is stored
+        (s3, file system)
+        db_conn (sqlalchemy.engine.connect): Database engine connection
 
     Returns:
         A DataFrame with features, predictions, and labels
@@ -107,7 +114,6 @@ def _fetch_matrices(model_id, project_path, db_conn):
 
     matrix_store = matrix_storage_engine.get_store(matrix_uuid=matrix_uuid)
     matrix = matrix_store.design_matrix
-    #features = list(matrix.columns)
 
     # joining the predictions and labels for error analysis
     matrix_w_preds = predictions.join(matrix, how='left')
@@ -153,13 +159,13 @@ def _generate_error_labels(matrix, k):
     data_df.loc[data_df.rank_abs_no_ties <= k, 'prediction'] = '1'
     # add type of label: TP, TN, FP, FN
     data_df['type_label'] = np.where(~(data_df.label_value) & 
-                                    (data_df.prediction == '1'), 'FP', 'TP')
+                                     (data_df.prediction == '1'), 'FP', 'TP')
     data_df['type_label'] = np.where((data_df.label_value) & 
-                                    (data_df.prediction == '0'), 'FN', 
-                                    data_df.type_label)
+                                     (data_df.prediction == '0'), 'FN', 
+                                     data_df.type_label)
     data_df['type_label'] = np.where(~(data_df.label_value) & 
-                                    (data_df.prediction == '0'), 'TN', 
-                                    data_df.type_label)
+                                     (data_df.prediction == '0'), 'TN', 
+                                     data_df.type_label)
     
     # add three new columns with error analysis labels
     data_df['error_negative_label'] = np.where(data_df.type_label == 'FN', '1', '0')
@@ -230,13 +236,15 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed):
             feature_ = error_model.feature_names_in_
             feature_names_importance_sorted = feature_[importances_idx[:top_n]]
             
+            config_params['tree'] = error_model
             config_params['max_depth'] = max_depth
-            config_params['feature_importance'] = feature_importances_[importances_idx[:top_n]]
+            config_params['feature_importance'] = feature_importances_[
+                                                    importances_idx[:top_n]]
             config_params['feature_names'] = feature_names_importance_sorted
-            config_params['tree_text'] = export_text(error_model, 
-                                                    feature_names=list(feature_),
-                                                    show_weights=True)
-
+            config_params['tree_text'] = export_text(error_model,
+                                                     feature_names=list(feature_),
+                                                     show_weights=True)
+            
             error_analysis_results.append(results | config_params)
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
 
@@ -254,7 +262,7 @@ def generate_error_analysis(model_id, db_conn):
         Returns: 
             List of list of dictionaries 
     """
-    error_analysis_config = _get_error_analysis_configuration(CONFIG_PATH)
+    error_analysis_config = _get_error_analysis_configuration(POSTMODELING_CONFIG_PATH)
     project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
@@ -264,7 +272,11 @@ def generate_error_analysis(model_id, db_conn):
     for k in k_set:
         new_matrix = _generate_error_labels(matrix_data, k)
         random_seed = _get_random_seed(model_id, db_conn)
-        error_analysis_result = _error_analysis_model(model_id, new_matrix, grid, k, random_seed)
+        error_analysis_result = _error_analysis_model(model_id,
+                                                      new_matrix,
+                                                      grid,
+                                                      k,
+                                                      random_seed)
         error_analysis_results.append(error_analysis_result)
     #TODO where and how to save the outputs of the errror analysis (list of dicts)
     logger.debug(f"error analysis finished for model id {model_id}")
@@ -277,7 +289,7 @@ def _plot_feature_importance(importances, features, error_label):
     Plots a seborn barplot with the most important features associated to the 
     error in the label analyzed.
 
-        Args: 
+        Args:
             importances (list): List with the importance value of the top n 
                                 important features
             features (list): List with the name of the n most important features 
@@ -294,11 +306,11 @@ def _output_config_text(element, error_label):
     """
     First paragraph of text associated to the output of a particular analysis.
 
-        Args: 
+        Args:
             element (dict): Dictinoary with outputs of the error analysis.
             error_label (string): Type of error analysis that is being generated.
 
-        Returns: 
+        Returns:
             dt_text (string): Text associated to the output of the error 
             analysis generated.
     """
@@ -310,7 +322,6 @@ def _output_config_text(element, error_label):
 
     Top feature importance associated with error in label type {error_label}
     """
-    
     return config_text
 
 
@@ -325,7 +336,6 @@ def _output_dt_text(error_label):
             dt_text (string): Text associated to the output of the error analysis 
             generated. 
     """
-
     dt_text = f"""
     Rules made with the top features associated with {error_label}
     """
@@ -356,14 +366,12 @@ def _get_error_label(element):
 
 def output_all_analysis(error_analysis_results):
     """
-    Prints as text the output of all the error analysis made. 
+    Prints as text the output of all the error analysis made.
 
         Args: 
             error_anlaysis_resulst (list): List of dictionaries with the output 
-            of every single error anlaysis made. 
-        
+            of every single error anlaysis made.
     """
-    
     print("Error Analysis")
     print("--------------")
 
@@ -373,9 +381,9 @@ def output_all_analysis(error_analysis_results):
             config_text = _output_config_text(element, error_label)
             print(config_text)
             
-            _plot_feature_importance(element['feature_importance'], 
-                                    element['feature_names'],
-                                    error_label)
+            _plot_feature_importance(element['feature_importance'],
+                                     element['feature_names'],
+                                     error_label)
 
             dt_text = _output_dt_text(error_label)
             print(dt_text)
@@ -385,8 +393,10 @@ def output_all_analysis(error_analysis_results):
         print("*******************************************")
 
 
-def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
-                                    error_type="error_negative_label"):
+def output_specific_configuration(error_analysis_resutls, 
+                                  k=100, 
+                                  max_depth=10,
+                                  error_type="error_negative_label"):
     """
     Prints as text the output of a specific configuration of error analysis made.
 
@@ -400,21 +410,20 @@ def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
     for analysis in error_analysis_resutls:
         for element in analysis:
             if ((element['error_type'] == error_type) &
-            (element['k'] == k) & 
-            (element['max_depth'] == max_depth)):
+                (element['k'] == k) & 
+                (element['max_depth'] == max_depth)):
                 error_label = _get_error_label(element)
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
-                _plot_feature_importance(element['feature_importance'], 
-                                        element['feature_names'], 
-                                        error_label)
+                _plot_feature_importance(element['feature_importance'],
+                                         element['feature_names'],
+                                         error_label)
 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
                 print(element['tree_text'])
                 print("             ######            ")
-
 
 
 def output_specific_error_analysis(error_analysis_results, 
@@ -436,8 +445,8 @@ def output_specific_error_analysis(error_analysis_results,
                 print(config_text)
                 
                 _plot_feature_importance(element['feature_importance'], 
-                                        element['feature_names'], 
-                                        error_label)
+                                         element['feature_names'], 
+                                         error_label)
 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
@@ -445,7 +454,6 @@ def output_specific_error_analysis(error_analysis_results,
                 print("             ######            ")
         
         print("*******************************************")
-
 
 
 if __name__ == "__main__":
