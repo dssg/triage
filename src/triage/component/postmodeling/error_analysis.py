@@ -55,7 +55,7 @@ def _get_random_seed(model_id, db_conn):
     return random_seed.random_seed.values[0]
 
 
-def fetch_scores_labels(model_id, db_conn):
+def _fetch_scores_labels(model_id, db_conn):
     """
     Given a model id, it retrieves its scores and labels.
     
@@ -86,7 +86,7 @@ def fetch_scores_labels(model_id, db_conn):
     return df
 
 
-def fetch_matrices(model_id, project_path, db_conn):
+def _fetch_matrices(model_id, project_path, db_conn):
     """
     Joins the matrix of features, predictions and labels for a particular model_id
     
@@ -99,7 +99,7 @@ def fetch_matrices(model_id, project_path, db_conn):
         A DataFrame with features, predictions, and labels
     """
     # getting predictions with label and matrix_uuid 
-    predictions = fetch_scores_labels(model_id, db_conn)
+    predictions = _fetch_scores_labels(model_id, db_conn)
     matrix_uuid = predictions.matrix_uuid.unique()[0]
 
     project_storage = ProjectStorage(project_path)
@@ -116,7 +116,7 @@ def fetch_matrices(model_id, project_path, db_conn):
     return matrix_w_preds
 
 
-def generate_error_labels(matrix, k):
+def _generate_error_labels(matrix, k):
     """
     Add columns to the original DataFrmae to define labels for the error model analysis.
 
@@ -157,7 +157,9 @@ def generate_error_labels(matrix, k):
     data_df['type_label'] = np.where((data_df.label_value) & 
                                     (data_df.prediction == '0'), 'FN', 
                                     data_df.type_label)
-    data_df['type_label'] = np.where(~(data_df.label_value) & (data_df.prediction == '0'), 'TN', data_df.type_label)
+    data_df['type_label'] = np.where(~(data_df.label_value) & 
+                                    (data_df.prediction == '0'), 'TN', 
+                                    data_df.type_label)
     
     # add three new columns with error analysis labels
     data_df['error_negative_label'] = np.where(data_df.type_label == 'FN', '1', '0')
@@ -169,7 +171,7 @@ def generate_error_labels(matrix, k):
     return data_df
 
 
-def error_analysis_model(model_id, matrix, grid, k, random_seed):
+def _error_analysis_model(model_id, matrix, grid, k, random_seed):
     """
     Generates the error analysis for a particular model_id by training Decision 
     Trees where the positive label is either: the false negatives, the 
@@ -209,7 +211,7 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
         else:
             X = matrix.drop(no_features, axis=1)
             y = matrix.filter([error_type], axis=1)
-        logger.info(f"{error_type} k: {k} matrix size {X.shape}")
+        logger.debug(f"{error_type} k: {k} matrix size {X.shape}")
        
         for config in ParameterGrid(grid):
             error_model = None
@@ -222,8 +224,9 @@ def error_analysis_model(model_id, matrix, grid, k, random_seed):
             feature_importances_ = error_model.feature_importances_
             importances_idx = np.argsort(-feature_importances_)
             # retrieving all features with importance > 0
-            top_n = [i for i, element in enumerate(importances_idx) if feature_importances_[element] == 0][0]
-            logger.info(f"feature importance indices {importances_idx[:top_n]}")
+            top_n = [i for i, element in enumerate(importances_idx) 
+                            if feature_importances_[element] == 0][0]
+            logger.debug(f"feature importance indices {importances_idx[:top_n]}")
             feature_ = error_model.feature_names_in_
             feature_names_importance_sorted = feature_[importances_idx[:top_n]]
             
@@ -256,12 +259,12 @@ def generate_error_analysis(model_id, db_conn):
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
     
-    matrix_data = fetch_matrices(model_id, project_path, db_conn)
+    matrix_data = _fetch_matrices(model_id, project_path, db_conn)
     error_analysis_results = []
     for k in k_set:
-        new_matrix = generate_error_labels(matrix_data, k)
+        new_matrix = _generate_error_labels(matrix_data, k)
         random_seed = _get_random_seed(model_id, db_conn)
-        error_analysis_result = error_analysis_model(model_id, new_matrix, grid, k, random_seed)
+        error_analysis_result = _error_analysis_model(model_id, new_matrix, grid, k, random_seed)
         error_analysis_results.append(error_analysis_result)
     #TODO where and how to save the outputs of the errror analysis (list of dicts)
     logger.debug(f"error analysis finished for model id {model_id}")
@@ -269,7 +272,7 @@ def generate_error_analysis(model_id, db_conn):
     return error_analysis_results
 
 
-def plot_feature_importance(importances, features, error_label):
+def _plot_feature_importance(importances, features, error_label):
     """
     Plots a seborn barplot with the most important features associated to the 
     error in the label analyzed.
@@ -301,8 +304,8 @@ def _output_config_text(element, error_label):
     """
     config_text = f"""
 
-    Error analysis type: {error_label}, size of the list: {element['k']}
-
+    Error analysis type: {error_label}
+    Size of the list: {element['k']}
     Decision Tree with max_depth of, {element['max_depth']}
 
     Top feature importance associated with error in label type {error_label}
@@ -324,7 +327,7 @@ def _output_dt_text(error_label):
     """
 
     dt_text = f"""
-    Rules made with the top 10 features associated with errors in label type {error_label}
+    Rules made with the top features associated with {error_label}
     """
 
     return dt_text
@@ -342,11 +345,11 @@ def _get_error_label(element):
             of error analysis.  
     """
     if element['error_type'] == 'error_negative_label': 
-        error_label = 'Negative (FN)'
+        error_label = 'Mistakes assigning Negative labels (FN)'
     elif element['error_type'] == 'error_positive_label':
-        error_label = 'Positive (FP)'
+        error_label = 'Mistakes assigning Positive labels (FP)'
     else: 
-        error_label = 'Positive and Negative (FP & FN)'
+        error_label = 'Mistakes assigning Positive and Negative (FP & FN)'
 
     return error_label
 
@@ -370,7 +373,7 @@ def output_all_analysis(error_analysis_results):
             config_text = _output_config_text(element, error_label)
             print(config_text)
             
-            plot_feature_importance(element['feature_importance'], 
+            _plot_feature_importance(element['feature_importance'], 
                                     element['feature_names'],
                                     error_label)
 
@@ -403,7 +406,7 @@ def output_specific_configuration(error_analysis_resutls, k=100, max_depth=10,
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
-                plot_feature_importance(element['feature_importance'], 
+                _plot_feature_importance(element['feature_importance'], 
                                         element['feature_names'], 
                                         error_label)
 
@@ -432,7 +435,7 @@ def output_specific_error_analysis(error_analysis_results,
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
-                plot_feature_importance(element['feature_importance'], 
+                _plot_feature_importance(element['feature_importance'], 
                                         element['feature_names'], 
                                         error_label)
 
