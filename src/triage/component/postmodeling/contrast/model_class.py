@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
 
 from triage.component.catwalk.storage import ProjectStorage
-from ..error_analysis import generate_error_analysis
+from triage.component.postmodeling.error_analysis import generate_error_analysis
 
 
 class ModelAnalyzer:
