@@ -6,30 +6,29 @@ import psycopg2
 import verboselogs, logging, coloredlogs
 import matplotlib.pyplot as plt
 import seaborn as sns
+import graphviz
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import ParameterGrid
-from sklearn.tree import export_text, plot_tree
+from sklearn.tree import export_text, export_graphviz
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.contrast.parameters import PostmodelParameters
 
 logger = verboselogs.VerboseLogger(__name__)
 
-POSTMODELING_CONFIG_PATH = os.path.join(os.getcwd(),
-'/mnt/data/users/lily/triage/src/triage/component/postmodeling/postmodeling_config.yaml')
 
-
-def _get_error_analysis_configuration(path):
+def _get_error_analysis_configuration():
     """
+        Args:
+            path (string): Path for the postmodeling_config.yaml file.
+
         Return:
             Dictionary of error analysis configuration
     """
     # TODO need to change it as in the rest of triage
-    #params = PostmodelParameters('postmodeling_config.yaml')
-    #logger.info(f"{params.__dict__}")
-    #error_analysis_config = params['error_analysis']
-    filename_yaml = path
+    filename_yaml = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                    "postmodeling_config.yaml") 
     with open(filename_yaml, 'r') as f:
         config = yaml.full_load(f)
     error_analysis_config = config['error_analysis']
@@ -177,16 +176,20 @@ def _generate_error_labels(matrix, k):
     return data_df
 
 
-def _error_analysis_model(model_id, matrix, grid, k, random_seed):
+def _error_analysis_model(model_id, matrix, grid, k, random_seed,
+                          project_path, view_plots=False):
     """
     Generates the error analysis for a particular model_id by training Decision 
     Trees where the positive label is either: the false negatives, the 
     false positives, or both errors, false negatives and false positives. 
 
         Args: 
-            model_id (int): 
-            matrix (DataFrame):
-            grid (ParamGrid): 
+            model_id (int): Model id.
+            matrix (DataFrame): Matrix of features.
+            grid (ParamGrid): Grid of parameters for the Decision Trees
+            project_path (string): Project path for storing output.
+            view_plots (boolean): True if the plots are going to be plotted. 
+            Default is False.
 
         Returns:
             List of dictionaries with results from all decision trees generated for 
@@ -245,6 +248,23 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed):
                                                      feature_names=list(feature_),
                                                      show_weights=True)
             
+            #TODO store the output in the project_path /error_analysis path
+            project_storage = ProjectStorage(project_path)
+            
+            dot_path = "_".join([error_type, str(k), str(max_depth), ".png"])
+            tree_viz = export_graphviz(error_model,
+                                        out_file=None,
+                                        feature_names=list(feature_),
+                                        filled=True,
+                                        rounded=True,
+                                        special_characters=True)
+            graph = graphviz.Source(tree_viz)
+            graph.render(filename=dot_path,
+                        directory='error_analysis',
+                        view=True)
+
+            #print(dot_path)
+
             error_analysis_results.append(results | config_params)
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
 
@@ -262,7 +282,7 @@ def generate_error_analysis(model_id, db_conn):
         Returns: 
             List of list of dictionaries 
     """
-    error_analysis_config = _get_error_analysis_configuration(POSTMODELING_CONFIG_PATH)
+    error_analysis_config = _get_error_analysis_configuration()
     project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
@@ -276,7 +296,8 @@ def generate_error_analysis(model_id, db_conn):
                                                       new_matrix,
                                                       grid,
                                                       k,
-                                                      random_seed)
+                                                      random_seed,
+                                                      project_path)
         error_analysis_results.append(error_analysis_result)
     #TODO where and how to save the outputs of the errror analysis (list of dicts)
     logger.debug(f"error analysis finished for model id {model_id}")
