@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import yaml
 import os
+import io
 import psycopg2
 import verboselogs, logging, coloredlogs
 import matplotlib.pyplot as plt
@@ -13,8 +14,6 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.tree import export_text, export_graphviz
 
 from triage.component.catwalk.storage import ProjectStorage
-from triage.component.postmodeling.storage import ErrorAnalysisStore
-from triage.component.postmodeling.contrast.parameters import PostmodelParameters
 
 logger = verboselogs.VerboseLogger(__name__)
 
@@ -178,7 +177,7 @@ def _generate_error_labels(matrix, k):
 
 
 def _error_analysis_model(model_id, matrix, grid, k, random_seed,
-                          project_path, view_plots=False):
+                          project_path):
     """
     Generates the error analysis for a particular model_id by training Decision 
     Trees where the positive label is either: the false negatives, the 
@@ -249,22 +248,18 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
                                                      feature_names=list(feature_),
                                                      show_weights=True)
             
-            #TODO store the output in the project_path /error_analysis path
-            project_storage = ProjectStorage(project_path)
-            
-            dot_path = "_".join([error_type, str(k), str(max_depth), ".png"])
-            tree_viz = export_graphviz(error_model,
-                                        out_file=None,
-                                        feature_names=list(feature_),
-                                        filled=True,
-                                        rounded=True,
-                                        special_characters=True)
-            # graph = graphviz.Source(tree_viz)
-            # graph.render(filename=dot_path,
-            #             directory='error_analysis',
-            #             view=False)
-
-            #print(dot_path)
+            # TODO generate feature importance plot 
+            _plot_feature_importance(config_params['feature_importance'], 
+                                     config_params['feature_names'],
+                                     error_type, 
+                                     project_path,
+                                     k,
+                                     max_depth)
+            # TODO generate tree graphviz
+            # graphviz requires to have all the features
+            _generate_tree_graphviz(error_model, error_type,
+                                    list(X.columns.values), k,
+                                    max_depth, project_path)
 
             error_analysis_results.append(results | config_params)
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
@@ -306,7 +301,8 @@ def generate_error_analysis(model_id, db_conn):
     return error_analysis_results
 
 
-def _plot_feature_importance(importances, features, error_label):
+def _plot_feature_importance(importances, features, error_type, 
+                             project_path, k, max_depth):
     """
     Plots a seborn barplot with the most important features associated to the 
     error in the label analyzed.
@@ -314,14 +310,77 @@ def _plot_feature_importance(importances, features, error_label):
         Args:
             importances (list): List with the importance value of the top n 
                                 important features
-            features (list): List with the name of the n most important features 
+            features (list): List with the name of the n most important features
+            error_label (string): Type of error analysis 
+            project_path (string): Project path for store output
+            k: Size of list
+            max_depht: Max depth of tree
+    """
+    error_label = _get_error_label(error_type)
+    
+    plt.figure()
+    df_viz = pd.DataFrame({'importance': importances, 'feature': features})
+    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False),
+                    x="importance", y="feature", color="grey")
+    plt.title("Top feature importance in " + error_label + " analysis.")
+
+    # save plot 
+    feature_importance_filename = "_".join(['feature_importance',
+                                            str(k), 
+                                            str(max_depth)])
+    feature_importance_filename += ".png"
+    # stream of plot
+    img_data = io.BytesIO()
+    plt.savefig(img_data, format="png", dpi=300, bbox_inches="tight")
+    img_data.seek(0)
+
+    project_storage = ProjectStorage(project_path)
+    storage = project_storage.get_store(["error_analysis/feature_importance"], 
+                                        feature_importance_filename)
+    storage.write(img_data.read())
+    plt.close()
+
+
+def _plot_feature_importance_local(importances, features, error_label):
+    """
+    Plots a seborn barplot with the most important features associated to the 
+    error in the label analyzed.
+
+        Args:
+            importances (list): List with the importance value of the top n 
+                                important features
+            features (list): List with the name of the n most important features
+            error_label (string): Type of error analysis 
+            project_path (string): Project path for store output 
     """
     plt.clf()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
-                x="importance", y="feature", color="grey")
-    plt.title("Top feature importance in " + error_label + " analysis.")
+    a = sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
+                    x="importance", y="feature", color="grey")
+    a.set_title("Top feature importance in " + error_label + " analysis.")
     plt.show()
+
+
+def _generate_tree_graphviz(error_model, error_type, feature_names, k, 
+                            max_depth, project_path):
+    """
+    """
+    dot_path = "_".join(["tree", error_type, str(k), str(max_depth)])
+    dot_path += ".png"
+    tree_viz = export_graphviz(error_model,
+                               out_file=None,
+                               feature_names=feature_names,
+                               filled=True,
+                               special_characters=True)
+    graph = graphviz.Source(tree_viz)
+    img_data = io.BytesIO()
+    img_data.write(graph.pipe('dot', format="png"))
+    img_data.seek(0)
+
+    project_storage = ProjectStorage(project_path)
+    storage = project_storage.get_store(["error_analysis/tree"],
+                                        dot_path)
+    storage.write(img_data.read())
 
 
 def _output_config_text(element, error_label):    
@@ -365,22 +424,22 @@ def _output_dt_text(error_label):
     return dt_text
   
 
-def _get_error_label(element):
+def _get_error_label(error_type):
     """
     Given the type of error analysis, returns a descriptive name. 
 
         Args: 
-            element (dict): Dictionary with output of error analysis. 
+            error_type (string): Type of error analysis. 
         
         Returns:
             error_label (string): Human readable output related to the type 
             of error analysis.  
     """
-    if element['error_type'] == 'error_negative_label': 
+    if error_type == 'error_negative_label':
         error_label = 'Mistakes assigning Negative labels (FN)'
-    elif element['error_type'] == 'error_positive_label':
+    elif error_type == 'error_positive_label':
         error_label = 'Mistakes assigning Positive labels (FP)'
-    else: 
+    else:
         error_label = 'Mistakes assigning Positive and Negative (FP & FN)'
 
     return error_label
@@ -403,7 +462,7 @@ def output_all_analysis(error_analysis_results):
             config_text = _output_config_text(element, error_label)
             print(config_text)
             
-            _plot_feature_importance(element['feature_importance'],
+            _plot_feature_importance_local(element['feature_importance'],
                                      element['feature_names'],
                                      error_label)
 
@@ -438,7 +497,7 @@ def output_specific_configuration(error_analysis_resutls,
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
-                _plot_feature_importance(element['feature_importance'],
+                _plot_feature_importance_local(element['feature_importance'],
                                          element['feature_names'],
                                          error_label)
 
@@ -466,7 +525,7 @@ def output_specific_error_analysis(error_analysis_results,
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
-                _plot_feature_importance(element['feature_importance'], 
+                _plot_feature_importance_local(element['feature_importance'], 
                                          element['feature_names'], 
                                          error_label)
 
