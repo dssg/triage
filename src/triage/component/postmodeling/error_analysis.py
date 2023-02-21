@@ -366,7 +366,7 @@ def _generate_tree_graphviz(error_model, error_type, feature_names, k,
     """
     """
     dot_path = "_".join(["tree", error_type, str(k), str(max_depth)])
-    dot_path += ".png"
+    #dot_path += ".png"
     tree_viz = export_graphviz(error_model,
                                out_file=None,
                                feature_names=feature_names,
@@ -374,7 +374,7 @@ def _generate_tree_graphviz(error_model, error_type, feature_names, k,
                                special_characters=True)
     graph = graphviz.Source(tree_viz)
     img_data = io.BytesIO()
-    img_data.write(graph.pipe('dot', format="png"))
+    img_data.write(graph.pipe('dot'))
     img_data.seek(0)
 
     project_storage = ProjectStorage(project_path)
@@ -463,8 +463,8 @@ def output_all_analysis(error_analysis_results):
             print(config_text)
             
             _plot_feature_importance_local(element['feature_importance'],
-                                     element['feature_names'],
-                                     error_label)
+                                           element['feature_names'],
+                                           error_label)
 
             dt_text = _output_dt_text(error_label)
             print(dt_text)
@@ -498,8 +498,8 @@ def output_specific_configuration(error_analysis_resutls,
                 print(config_text)
                 
                 _plot_feature_importance_local(element['feature_importance'],
-                                         element['feature_names'],
-                                         error_label)
+                                               element['feature_names'],
+                                               error_label)
 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
@@ -508,7 +508,7 @@ def output_specific_configuration(error_analysis_resutls,
 
 
 def output_specific_error_analysis(error_analysis_results, 
-                                      error_type='error_negative_label'):
+                                   error_type='error_negative_label'):
     """
     Prints all the outputs associated to a specific type of error analysis made: 
     negative label, positive label, or both. 
