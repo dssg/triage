@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
 
 from triage.component.catwalk.storage import ProjectStorage
+from ..error_analysis import generate_error_analysis
 
 
 class ModelAnalyzer:
@@ -352,6 +353,27 @@ class ModelAnalyzer:
 
         if return_df:
             return crosstabs_df
+
+    def error_analysis(self, project_path):
+        """
+        Generates three main error anlaysis with Decision Trees in order to identity 
+        what are the features with most importance when the model make mistakes 
+        in negative labels (FN), positive labels (FP) and both, negative and 
+        positive label errors (FN & FP).
+
+        Args:
+            project_path (string): Path for the output of the project 
+
+        Returns: 
+            error_analysis_results (list): List of dictionaries with all the error
+            analysis made.
+        """
+        model_id = self.model_id
+        connection = self.engine
+        error_analysis_results = generate_error_analysis(model_id, connection)
+        #TODO do we want to 
+        return error_analysis_results
+
 
     def plot_score_distribution(self, ax, nbins=10, top_k=None, matrix_uuid=None):
         """
