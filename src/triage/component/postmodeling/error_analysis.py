@@ -13,6 +13,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.tree import export_text, export_graphviz
 
 from triage.component.catwalk.storage import ProjectStorage
+from triage.component.postmodeling.storage import ErrorAnalysisStore
 from triage.component.postmodeling.contrast.parameters import PostmodelParameters
 
 logger = verboselogs.VerboseLogger(__name__)
@@ -258,10 +259,10 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
                                         filled=True,
                                         rounded=True,
                                         special_characters=True)
-            graph = graphviz.Source(tree_viz)
-            graph.render(filename=dot_path,
-                        directory='error_analysis',
-                        view=True)
+            # graph = graphviz.Source(tree_viz)
+            # graph.render(filename=dot_path,
+            #             directory='error_analysis',
+            #             view=False)
 
             #print(dot_path)
 
