@@ -53,8 +53,7 @@ def _get_random_seed(model_id, db_conn):
     """.format(model_id=model_id)
 
     random_seed = pd.read_sql(q, db_conn)
-    logger.debug("""obtained random seed associated to model_id: {model_id} 
-    for generating decision trees in error analysis""")
+    logger.debug("""obtained random seed associated to model_id: {model_id} for generating decision trees in error analysis""")
 
     return random_seed.random_seed.values[0]
 
@@ -169,8 +168,7 @@ def _generate_error_labels(matrix, k):
     # add three new columns with error analysis labels
     data_df['error_negative_label'] = np.where(data_df.type_label == 'FN', '1', '0')
     data_df['error_positive_label'] = np.where(data_df.type_label == 'FP', '1', '0')
-    data_df['error_general_label'] = np.where((data_df.type_label == 'FP') | 
-                                       (data_df.type_label == 'FN'), '1', '0')
+    data_df['error_general_label'] = np.where((data_df.type_label == 'FP') | (data_df.type_label == 'FN'), '1', '0')
     logger.debug(f"error labels generated for k {k}")
 
     return data_df
@@ -195,16 +193,14 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
             List of dictionaries with results from all decision trees generated for 
             each configuration on each error type analysis
     """
-    error_analysis_types = [element for element in list(matrix.columns) 
-                                if element.startswith('error')]
+    error_analysis_types = [element for element in list(matrix.columns) if element.startswith('error')]
 
     error_analysis_results = []
     for error_type in error_analysis_types:
         results = {'model_id': model_id, 'error_type': error_type, 'k': k}
 
         # first 5 columns of matrix aren't features
-        predictions_cols = ['model_id', 'score', 'label_value', 
-                            'rank_abs_no_ties', 'matrix_uuid', 'prediction']
+        predictions_cols = ['model_id', 'score', 'label_value', 'rank_abs_no_ties', 'matrix_uuid', 'prediction']
         no_features = predictions_cols + ['type_label'] + error_analysis_types
 
         if error_type == 'error_negative_label':
@@ -233,8 +229,7 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
             feature_importances_ = error_model.feature_importances_
             importances_idx = np.argsort(-feature_importances_)
             # retrieving all features with importance > 0
-            top_n = [i for i, element in enumerate(importances_idx) 
-                            if feature_importances_[element] == 0][0]
+            top_n = [i for i, element in enumerate(importances_idx) if feature_importances_[element] == 0][0]
             logger.debug(f"feature importance indices {importances_idx[:top_n]}")
             feature_ = error_model.feature_names_in_
             feature_names_importance_sorted = feature_[importances_idx[:top_n]]
@@ -254,12 +249,17 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
                                      error_type, 
                                      project_path,
                                      k,
-                                     max_depth)
+                                     max_depth, 
+                                     model_id)
             # TODO generate tree graphviz
             # graphviz requires to have all the features
-            _generate_tree_graphviz(error_model, error_type,
-                                    list(X.columns.values), k,
-                                    max_depth, project_path)
+            _generate_tree_graphviz(error_model,
+                                    error_type,
+                                    list(X.columns.values), 
+                                    k, 
+                                    max_depth, 
+                                    project_path,
+                                    model_id)
 
             error_analysis_results.append(results | config_params)
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
@@ -301,8 +301,8 @@ def generate_error_analysis(model_id, db_conn):
     return error_analysis_results
 
 
-def _plot_feature_importance(importances, features, error_type, 
-                             project_path, k, max_depth):
+def _plot_feature_importance(importances, features, error_type, project_path, 
+                                k, max_depth, model_id):
     """
     Plots a seborn barplot with the most important features associated to the 
     error in the label analyzed.
@@ -315,19 +315,21 @@ def _plot_feature_importance(importances, features, error_type,
             project_path (string): Project path for store output
             k: Size of list
             max_depht: Max depth of tree
+            model_id: Model id associated to this error analysis
     """
     error_label = _get_error_label(error_type)
     
     plt.figure()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False),
-                    x="importance", y="feature", color="grey")
+    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
+                                         x="importance", y="feature", color="grey")
     plt.title("Top feature importance in " + error_label + " analysis.")
 
     # save plot 
     feature_importance_filename = "_".join(['feature_importance',
                                             str(k), 
-                                            str(max_depth)])
+                                            str(max_depth), 
+                                            str(model_id)])
     feature_importance_filename += ".png"
     # stream of plot
     img_data = io.BytesIO()
@@ -335,8 +337,9 @@ def _plot_feature_importance(importances, features, error_type,
     img_data.seek(0)
 
     project_storage = ProjectStorage(project_path)
-    storage = project_storage.get_store(["error_analysis/feature_importance"], 
-                                        feature_importance_filename)
+    storage = project_storage.get_store(["error_analysis/feature_importance/" +
+                                           str(model_id)], 
+                                         feature_importance_filename)
     storage.write(img_data.read())
     plt.close()
 
@@ -355,15 +358,27 @@ def _plot_feature_importance_local(importances, features, error_label):
     """
     plt.clf()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    a = sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
-                    x="importance", y="feature", color="grey")
+    a = sns.barplot(data=df_viz.sort_values(by="importance", ascending=False),
+                        x="importance", y="feature", color="grey")
     a.set_title("Top feature importance in " + error_label + " analysis.")
     plt.show()
 
 
 def _generate_tree_graphviz(error_model, error_type, feature_names, k, 
-                            max_depth, project_path):
+                            max_depth, project_path, model_id):
     """
+    Generates a png with the tree rules generated for the error analysis by 
+    using graphviz. The output is stored in the storage associated to the project.
+
+        Args: 
+            error_model (DecisionTreeClasifier): The Decission Tree classifier 
+             trained error_type (string): Type or error analysis made 
+            feature_names (List): List of all the feature names in the train 
+             matrix
+            k (int): Size of the list
+            max_depth (int): Max depth of the decision tree classifier trained
+            project_path (string): General project path
+            model_id (int): Model id associated to the error analysis
     """
     dot_path = "_".join(["tree", error_type, str(k), str(max_depth)])
     dot_path += ".png"
@@ -378,7 +393,8 @@ def _generate_tree_graphviz(error_model, error_type, feature_names, k,
     img_data.seek(0)
 
     project_storage = ProjectStorage(project_path)
-    storage = project_storage.get_store(["error_analysis/tree"],
+    storage = project_storage.get_store(["error_analysis/tree/" + 
+                                            str(model_id)],
                                         dot_path)
     storage.write(img_data.read())
 
@@ -526,8 +542,8 @@ def output_specific_error_analysis(error_analysis_results,
                 print(config_text)
                 
                 _plot_feature_importance_local(element['feature_importance'], 
-                                         element['feature_names'], 
-                                         error_label)
+                                               element['feature_names'], 
+                                               error_label)
 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
