@@ -327,9 +327,9 @@ def _plot_feature_importance(importances, features, error_type, project_path,
 
     # save plot 
     feature_importance_filename = "_".join(['feature_importance',
+                                            error_type,
                                             str(k), 
-                                            str(max_depth), 
-                                            str(model_id)])
+                                            str(max_depth)])
     feature_importance_filename += ".png"
     # stream of plot
     img_data = io.BytesIO()
