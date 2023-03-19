@@ -2,14 +2,14 @@
 
 A temporal validation deep dive is currently available in the Dirty Duck tutorial. [Dirty Duck - Temporal Cross-validation](../../dirtyduck/triage_intro/#temporal-crossvalidation)
 
-You can produce the time graphs detailed in the Dirty Duck deep dive using the Triage CLI or through calling Python code directly. The graphs use matplotlib, so you'll need a matplotlib backend to use. Refer to the [matplotlib docs](https://matplotlib.org/faq/usage_faq.html) for more details.
+You can produce time graphs using the Triage CLI or through calling Python code directly. There are two options for graphing; static plots using matplotlib (as shown in the Dirty Duck), and an interactive plot using Plotly. Refer to the [matplotlib docs](https://matplotlib.org/faq/usage_faq.html) or [Plotly docs](https://plotly.com/python/) for more details.
 
 ## Python Code
 
-Plotting is supported through the `visualize_chops` function, which takes a fully configured Timechop object. You may store the configuration for this object in a YAML file if you wish and load from a file, but in this example we directly set the parameters as arguments to the Timechop object. This would enable faster iteration of time config in a notebook setting.
+Plotting is supported through the `visualize_chops` or `visualize_chops_plotly` functions, which take a fully configured Timechop object. You may store the configuration for this object in a YAML file if you wish and load from a file, but in this example we directly set the parameters as arguments to the Timechop object. This would enable faster iteration of time config in a notebook setting.
 
 ```
-from triage.component.timechop.plotting import visualize_chops
+from triage.component.timechop.plotting import visualize_chops, visualize_chops_plotly
 from triage.component.timechop import Timechop
 
 chopper = Timechop(
@@ -26,17 +26,22 @@ chopper = Timechop(
     test_label_timespans=['7day'] # time period across which outcomes are labeled in test matrices
 )
 
+visualize_chops_plotly(chopper)
 visualize_chops(chopper)
 ```
 
 ## Triage CLI
 
-The Triage CLI exposes the `showtimechops` command which just takes a YAML file as input. This YAML file is expected to have a `temporal_config` section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) from the Triage repository root as an example.
+The Triage CLI exposes the `showtimechops` command which just takes a YAML file as input. Note that this only works for the static, Matplotib, version. This YAML file is expected to have a `temporal_config` section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) from the Triage repository root as an example.
 
 `triage experiment example_experiment_config.yaml --show-timechops`
 
 ## Result
 
-Using either method, you should see output similar to this:
+For the interactive version, you should see output similar to [this notebook](https://colab.research.google.com/drive/1BjWZLEynQK-7DOSEP5zhT_-RefIb8gGS?usp=sharing)
+
+For the static graph, you should ee output similar to this:
 
 ![time chop visualization](timechops.png)
+
+
