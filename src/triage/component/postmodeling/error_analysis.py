@@ -326,7 +326,13 @@ def _plot_feature_importance(importances, features, error_type, project_path,
     
     plt.figure()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    sns.barplot(data=df_viz.sort_values(by="importance", ascending=False), 
+    df_viz.sort_values(by="importance", ascending=False, inplace=True)
+    if df_viz.shape[0] > 10: 
+        df_viz_ = df_viz.head(10)
+    else: 
+        df_viz_ = df_viz 
+
+    sns.barplot(data=df_viz_, 
                 x="importance", y="feature", color="grey")
     plt.title("Top feature importance in " + error_label + " analysis.")
 
@@ -366,7 +372,13 @@ def _plot_feature_importance_local(importances, features, error_label):
     """
     plt.clf()
     df_viz = pd.DataFrame({'importance': importances, 'feature': features})
-    a = sns.barplot(data=df_viz.sort_values(by="importance", ascending=False),
+    df_viz.sort_values(by="importance", ascending=False, inplace=True)
+    if df_viz.shape[0] > 10: 
+        df_viz_ = df_viz.head(10)
+    else: 
+        df_viz_ = df_viz 
+    
+    a = sns.barplot(data=df_viz_,
                         x="importance", y="feature", color="grey")
     a.set_title("Top feature importance in " + error_label + " analysis.")
     plt.show()
@@ -487,7 +499,7 @@ def output_all_analysis(error_analysis_results):
 
     for analysis in error_analysis_results:
         for element in analysis:
-            error_label = _get_error_label(element)
+            error_label = _get_error_label(element['error_type'])
             config_text = _output_config_text(element, error_label)
             print(config_text)
             
@@ -497,7 +509,8 @@ def output_all_analysis(error_analysis_results):
 
             dt_text = _output_dt_text(error_label)
             print(dt_text)
-            plot_tree(element['tree'], filled=True)
+            plot_tree(element['tree'], filled=True, feature_names=
+                      element['feature_names_graphviz'])
             plt.show()
             #print(element['tree_text'])
             print("             ######            ")
@@ -524,7 +537,7 @@ def output_specific_configuration(error_analysis_resutls,
             if ((element['error_type'] == error_type) &
                 (element['k'] == k) & 
                 (element['max_depth'] == max_depth)):
-                error_label = _get_error_label(element)
+                error_label = _get_error_label(error_type)
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
@@ -534,7 +547,8 @@ def output_specific_configuration(error_analysis_resutls,
                 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
-                plot_tree(element['tree'], filled=True)
+                plot_tree(element['tree'], filled=True,
+                          feature_names=element['feature_names_graphviz'])
                 plt.show()
                 #print(element['tree_text'])
                 print("             ######            ")
@@ -554,7 +568,7 @@ def output_specific_error_analysis(error_analysis_results,
     for analysis in error_analysis_results:
         for element in analysis:
             if element['error_type'] == error_type:
-                error_label = _get_error_label(element)
+                error_label = _get_error_label(error_type)
                 config_text = _output_config_text(element, error_label)
                 print(config_text)
                 
@@ -564,7 +578,8 @@ def output_specific_error_analysis(error_analysis_results,
 
                 dt_text = _output_dt_text(error_label)
                 print(dt_text)
-                plot_tree(element['tree'], filled=True)
+                plot_tree(element['tree'], filled=True,
+                          feature_names=element['feature_names_graphviz'])
                 plt.show()
                 #print(element['tree_text'])
                 print("             ######            ")
