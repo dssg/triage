@@ -566,6 +566,9 @@ class ModelEvaluator:
 
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
+            if (protected_df.index.shape != labels.index.shape):
+                # temp: assuming this happened because there were some null labels in the original cohort 
+                protected_df = protected_df[protected_df.index.isin(labels.index)]
             if (protected_df.index.shape != labels.index.shape) or (
                 not protected_df.index.symmetric_difference(labels.index).empty
             ):

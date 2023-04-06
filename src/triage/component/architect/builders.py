@@ -485,7 +485,7 @@ class MatrixBuilder(BuilderBase):
                 ]
                 if len(columns_with_nulls) > 0:
                     raise ValueError(
-                        "Imputation failed for the following features: {columns_with_nulls}"
+                        f"Imputation failed for the following features: {columns_with_nulls}"
                     )
             i += 1
 
