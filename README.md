@@ -42,6 +42,19 @@ $ virtualenv triage-env
 $ . triage-env/bin/activate
 (triage-env) $ pip install triage
 ```
+If you get an error related to pg_config executable, run the following command (make sure you have sudo access):
+```bash
+(triage-env) $ sudo apt-get install libpq-dev python3.9-dev
+```
+Then rerun pip install triage
+```bash
+(triage-env) $ pip install triage
+```
+To test if triage was installed correctly, type:
+```bash
+(triage-env) $ triage -h
+```
+
 
 ## Data
 Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example/database.yaml](https://github.com/dssg/triage/blob/master/example/database.yaml)).
