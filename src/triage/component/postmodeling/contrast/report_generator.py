@@ -8,16 +8,18 @@ from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
 
 class PostmodelingReport: 
 
-    def __init__(self, engine, model_groups, experiment_hash) -> None:
+    def __init__(self, engine, model_groups, experiment_hash, project_path=None) -> None:
         self.model_groups = model_groups
         self.experiment_hash = experiment_hash
         self.engine = engine
+        self.project_path = project_path
         self.models = self.get_model_ids()
-
-    @cachedproperty
+        
+    @property
     def model_ids(self):
         pass
 
+    @property
     def model_types(self):
         pass
 
@@ -64,7 +66,7 @@ class PostmodelingReport:
 
         return fig, axes
 
-    def score_distributions(self):
+    def plot_score_distributions(self):
         """for the model group ids plot score grid"""
         fig, axes = self._get_subplots()
 
@@ -90,7 +92,7 @@ class PostmodelingReport:
         fig.tight_layout()
         
 
-    def prk_curves(self):
+    def plot_prk_curves(self):
         fig, axes = self._get_subplots()
 
         for i, mg in enumerate(self.models):
@@ -113,6 +115,36 @@ class PostmodelingReport:
 
         fig.suptitle('Precision-Recall with Positive Prediction %')
         fig.tight_layout()
+
+
+    def plot_feature_importance(self, n_top_features=20):
+        """ plot all feature importance  """
+
+        fig, axes = self._get_subplots(subplot_width=7)
+
+        for i, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                mode_analyzer = self.models[mg][train_end_time]
+
+                mode_analyzer.plot_feature_importance(
+                    ax=axes[i, j]
+                )
+
+                if j==0:
+                    axes[i, j].set_ylabel(f'Mod Grp: {mg}')
+                else:
+                    axes[i, j].set_ylabel('')
+                
+                if i == 0:
+                    axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                else:
+                    axes[i, j].set_title('')
+
+        fig.suptitle(f'{n_top_features} Features with highest importance (magnitude)')
+        fig.tight_layout()
+
+    def plot_crosstabs(self, thresholds, crosstabs_table='crosstabs'):
+        pass
 
 
     
