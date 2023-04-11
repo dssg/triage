@@ -274,7 +274,8 @@ class ModelAnalyzer:
         ratio_positive_negative = lambda pos, neg: pos.mean(axis=0) / neg.mean(axis=0)
         positive_support = lambda pos, neg: (pos > 0).sum(axis=0)
         negative_support = lambda pos, neg: (neg > 0).sum(axis=0)
-
+        positive_support_pct = lambda pos, neg: round(float((pos > 0).sum(axis=0)) / len(pos), 3)
+        negative_support_pct = lambda pos, neg: round(float((neg > 0).sum(axis=0)) / len(neg), 3)
 
         crosstab_functions = [
             ("mean_predicted_positive", positive_mean),
@@ -284,6 +285,8 @@ class ModelAnalyzer:
             ("mean_ratio_predicted_positive_to_predicted_negative", ratio_positive_negative),
             ("support_predicted_positive", positive_support),
             ("support_predicted_negative", negative_support),
+            ("support_pct_predicted_positive", positive_support_pct),
+            ("support_pct_predicted_negative", negative_support_pct)
         ]
 
 
