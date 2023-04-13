@@ -2,6 +2,8 @@ import ohio.ext.pandas
 import pandas as pd
 import logging
 import seaborn as sns
+import matplotlib.table as tab
+import matplotlib.pyplot as plt
 
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
@@ -274,8 +276,8 @@ class ModelAnalyzer:
         ratio_positive_negative = lambda pos, neg: pos.mean(axis=0) / neg.mean(axis=0)
         positive_support = lambda pos, neg: (pos > 0).sum(axis=0)
         negative_support = lambda pos, neg: (neg > 0).sum(axis=0)
-        positive_support_pct = lambda pos, neg: round(float((pos > 0).sum(axis=0)) / len(pos), 3)
-        negative_support_pct = lambda pos, neg: round(float((neg > 0).sum(axis=0)) / len(neg), 3)
+        positive_support_pct = lambda pos, neg: round((pos > 0).sum(axis=0).astype(float) / len(pos), 3)
+        negative_support_pct = lambda pos, neg: round((neg > 0).sum(axis=0).astype(float) / len(neg), 3)
 
         crosstab_functions = [
             ("mean_predicted_positive", positive_mean),
@@ -356,6 +358,112 @@ class ModelAnalyzer:
 
         if return_df:
             return crosstabs_df
+        
+
+    def display_crosstabs_pos_vs_neg(
+            self, 
+            threshold_type, threshold, table_name='crosstabs',
+            display_n_features=40,
+            filter_features=None,
+            positive_support_threshold=0.1,
+            return_df=True,
+            ax=None):
+        """ Display the crosstabs for the model
+
+        Args:
+            threshold_type (str): Type of rank threshold to use in splitting predicted positives from negatives. 
+                                Has to be one of the rank columns in the test_results.predictions_table
+
+            threshold (Union[int, float]): The rank threshold of the specified type. If the threshold type is an absolute, integer. 
+                                        If percentage, should be a float between 0 and 1
+        
+            table_name (str, optional): Table name to fetch crosstabs from (`test_results` schema). Defaults to 'crosstabs'.
+        """
+
+        q = f"""
+            select 
+                model_id, 
+                feature, 
+                metric, 
+                value 
+            from test_results.{table_name} 
+            where threshold_type = '{threshold_type}'
+            and threshold = {threshold}
+            and metric in (
+                'mean_ratio_predicted_positive_to_predicted_negative',
+                'support_pct_predicted_positive',
+                'support_pct_predicted_negative'
+            )
+            and model_id = {self.model_id}            
+        """
+
+        ct = pd.read_sql(q, self.engine)
+
+        if ct.empty:
+            logging.error(
+                f'''Crosstabs not found for model {self.model_id} in table test_results.{table_name}. 
+                Please use crosstabs_pos_vs_neg function to generate crosstabs'''
+            )
+            raise ValueError('Crosstabs not found!')
+
+        # Creating the pivot table to convert to wide format indexed by the column
+        pivot_table = pd.pivot(
+            ct, 
+            index='feature', 
+            columns='metric', 
+            values='value'
+        )
+
+        # Shortening the names, and removing the index names to plot more cleanly
+        pivot_table.rename(
+            columns={
+                'mean_ratio_predicted_positive_to_predicted_negative': 'mean_ratio',
+                'support_pct_predicted_negative': 'support_neg',
+                'support_pct_predicted_positive': 'support_pos'
+            }, 
+            inplace=True
+        )
+        pivot_table.index.name=''
+        pivot_table.columns.name=''
+
+        if filter_features is not None:
+            return pivot_table.loc[filter_features]
+
+        # Filtering by the support threshold
+        msk = pivot_table['support_pos'] > positive_support_threshold
+
+        df = pivot_table[msk].sort_values(
+            'mean_ratio', 
+             ascending = False
+        ).head(display_n_features)
+
+        if ax is None: 
+            fig, ax = plt.subplots(figsize=(4, 1 + display_n_features / 5), dpi=200)
+
+        t = tab.table(
+            ax, 
+            cellText=df.values.round(2), 
+            colLabels=df.columns, 
+            rowLoc='right',
+            rowLabels=df.index, 
+            bbox=[0, 0, 1, 1]
+        )
+        
+        ax.set_title(f'Crosstabs ({self.model_id}), {display_n_features} features with highest absolte mean ratio', x = -0.1)
+        ax.axis('off')
+
+        # Table formatting
+        t.auto_set_column_width([0, 1, 2])
+        for key, cell in t.get_celld().items():
+            cell.set_fontsize(9)
+            cell.set_linewidth(0.1)
+            cell.PAD = 0.02
+            
+
+
+        if return_df:
+            return df    
+        
 
     def error_analysis(self, project_path):
         """
