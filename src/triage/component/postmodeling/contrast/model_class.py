@@ -449,7 +449,7 @@ class ModelAnalyzer:
             bbox=[0, 0, 1, 1]
         )
         
-        ax.set_title(f'Crosstabs ({self.model_id}), {display_n_features} features with highest absolte mean ratio', x = -0.1)
+        ax.set_title(f'Crosstabs ({self.model_id}), {display_n_features} features with highest absolute mean ratio', x = -0.1)
         ax.axis('off')
 
         # Table formatting
