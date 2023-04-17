@@ -447,8 +447,8 @@ class ModelAnalyzer:
         msk = pivot_table['(-)supp'] > support_threshold
         # Features with the highest negative : positive ratio
         df2 = pivot_table[msk].sort_values(
-            ['ratio'], 
-             ascending = True
+            ['ratio', '(-)supp'], 
+             ascending = [True, False]
         ).head(display_n_features)
 
         df = pd.concat([df1, df2])
