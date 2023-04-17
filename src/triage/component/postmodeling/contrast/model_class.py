@@ -4,6 +4,7 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
@@ -30,7 +31,7 @@ class ModelAnalyzer:
                            m.model_group_id,
                            m.hyperparameters,
                            m.model_hash,
-                           m.train_end_time,
+                           m.train_end_time::date,
                            m.train_matrix_uuid,
                            m.training_label_timespan,
                            m.model_type,
@@ -365,7 +366,7 @@ class ModelAnalyzer:
             threshold_type, threshold, table_name='crosstabs',
             display_n_features=40,
             filter_features=None,
-            positive_support_threshold=0.1,
+            support_threshold=0.1,
             return_df=True,
             ax=None):
         """ Display the crosstabs for the model
@@ -385,12 +386,14 @@ class ModelAnalyzer:
                 model_id, 
                 feature, 
                 metric, 
-                value 
+                abs(value) as value 
             from test_results.{table_name} 
             where threshold_type = '{threshold_type}'
             and threshold = {threshold}
             and metric in (
                 'mean_ratio_predicted_positive_to_predicted_negative',
+                'mean_predicted_positive',
+                'mean_predicted_negative',
                 'support_pct_predicted_positive',
                 'support_pct_predicted_negative'
             )
@@ -417,51 +420,77 @@ class ModelAnalyzer:
         # Shortening the names, and removing the index names to plot more cleanly
         pivot_table.rename(
             columns={
-                'mean_ratio_predicted_positive_to_predicted_negative': 'mean_ratio',
-                'support_pct_predicted_negative': 'support_neg',
-                'support_pct_predicted_positive': 'support_pos'
+                'mean_ratio_predicted_positive_to_predicted_negative': 'ratio',
+                'mean_predicted_positive': '(+)mean',
+                'mean_predicted_negative': '(-)mean',
+                'support_pct_predicted_negative': '(-)supp',
+                'support_pct_predicted_positive': '(+)supp'
             }, 
             inplace=True
         )
-        pivot_table.index.name=''
+        pivot_table.index.name='feature_name'
         pivot_table.columns.name=''
 
         if filter_features is not None:
             return pivot_table.loc[filter_features]
 
+        
         # Filtering by the support threshold
-        msk = pivot_table['support_pos'] > positive_support_threshold
-
-        df = pivot_table[msk].sort_values(
-            'mean_ratio', 
+        msk = pivot_table['(+)supp'] > support_threshold
+        # Features with highest postive : negative ratio
+        df1 = pivot_table[msk].sort_values(
+            'ratio', 
              ascending = False
         ).head(display_n_features)
 
+
+        msk = pivot_table['(-)supp'] > support_threshold
+        # Features with the highest negative : positive ratio
+        df2 = pivot_table[msk].sort_values(
+            ['ratio'], 
+             ascending = True
+        ).head(display_n_features)
+
+        df = pd.concat([df1, df2])
+
         if ax is None: 
-            fig, ax = plt.subplots(figsize=(4, 1 + display_n_features / 5), dpi=200)
+            fig, ax = plt.subplots(figsize=(4, 1 + (display_n_features *2) / 5), dpi=100)
 
         t = tab.table(
             ax, 
-            cellText=df.values.round(2), 
+            cellText=df.values.round(1), 
             colLabels=df.columns, 
             rowLoc='right',
             rowLabels=df.index, 
             bbox=[0, 0, 1, 1]
         )
         
-        ax.set_title(f'Crosstabs ({self.model_id}), {display_n_features} features with highest absolute mean ratio', x = -0.1)
+        ax.set_title(
+            f'Model Group: {self.model_group_id} | Train end: {self.train_end_time} | Model: {self.model_id}\n',
+            fontdict={
+                'fontsize': 10,
+                'verticalalignment': 'center',
+                'horizontalalignment': 'center'
+            },
+            x=-0.1
+        )
         ax.axis('off')
 
         # Table formatting
-        t.auto_set_column_width([0, 1, 2])
+        t.auto_set_column_width([0, 1, 2, 3, 4])
         for key, cell in t.get_celld().items():
             cell.set_fontsize(9)
             cell.set_linewidth(0.1)
-            cell.PAD = 0.02
+            # cell.PAD = 0.01
             
+    
+        title_str = f'model_group: {self.model_group_id} | train_end_time: {self.train_end_time} | model_id: {self.model_id}'
+        # print(title_str)
+        # print(tabulate(df.round(1), headers='keys', tablefmt='RST'))
 
 
         if return_df:
+            df.style.set_caption(title_str)
             return df    
         
 

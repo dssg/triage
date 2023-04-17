@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -50,18 +51,24 @@ class PostmodelingReport:
 
         return d 
             
-    def _get_subplots(self, subplot_width=3, subplot_len=None):
+    def _get_subplots(self, subplot_width=3, subplot_len=None, n_rows=None, n_cols=None):
         """"""
 
         if subplot_len is None:
             subplot_len = subplot_width
 
-        row = len(self.model_groups)
-        col = len(self.models[self.model_groups[0]])
+        if n_rows is None: 
+            n_rows = len(self.model_groups)
+        
+        if n_cols is None: 
+            n_cols = len(self.models[self.model_groups[0]])
+        
+        
         fig, axes = plt.subplots(
-            row,
-            col,
-            figsize = (subplot_width*col, subplot_len*row)
+            n_rows,
+            n_cols,
+            figsize = (subplot_width*n_cols, subplot_len*n_rows),
+            dpi=100
         )
 
         return fig, axes
@@ -143,8 +150,98 @@ class PostmodelingReport:
         fig.suptitle(f'{n_top_features} Features with highest importance (magnitude)')
         fig.tight_layout()
 
-    def plot_crosstabs(self, thresholds, crosstabs_table='crosstabs'):
-        pass
+
+    def calculate_crosstabs_pos_vs_neg(self, project_path, thresholds, table_name='crosstabs', **kwargs):
+        """ Generate crosstabs for the predicted positives (top-k) vs the rest
+
+        args:
+            project_path (str): Path where the experiment artifacts (models and matrices) are stored
+            thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
+                                                    The threshold type can be one of the rank columns in the test_results.predictions_table
+            table_name (str, optional): Table name to use in the db's `test_results` schema. Defaults to crosstabs.
+                                        If the table exists, results are appended
+            **kwargs: This method can take other arguments sent to ModelAnalyzer.crosstabs_pos_vs_ng function
+        """
+
+        for i, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                model_analyzer = self.models[mg][train_end_time]
+
+                df = model_analyzer.crosstabs_pos_vs_neg(
+                    project_path=project_path,
+                    thresholds=thresholds,
+                    table_name=table_name,
+                    **kwargs
+                )
+
+        
+    def display_crosstab_pos_vs_neg(
+        self, 
+        threshold_type,
+        threshold, 
+        table_name='crosstabs', 
+        project_path=None,
+        display_n_features=40,
+        filter_features=None,
+        support_threshold=0.1,
+        return_dfs=True):
+
+        """ display crosstabs for one threshold for all the models in the model groups
+            
+        Args:
+            threshold_type (str): Type of rank threshold to use in splitting predicted positives from negatives. 
+                                Has to be one of the rank columns in the test_results.predictions_table
+
+            threshold (Union[int, float]): The rank threshold of the specified type. If the threshold type is an absolute, integer. If percentage, should be a float between 0 and 1
+                        
+            table_name (str, optional): Table name to fetch from/write to in the db's `test_results` schema. Defaults to crosstabs.
+            
+            project_path (str, optional): Path where the experiment artifacts are stored. Optional if the crosstabs are already calculated,
+                required if the crosstab need to be calculated
+            
+            display_n_features (int, optional): Number of features to return. defaults to 40 (sorted by mean ratio desc). This is ignored if `filter_features` is specified
+
+            filter_features (List[str], optional): The list of features that we are interested in. If not specified, `display_n_features` features are returned
+
+            positive_support_threshold (float, optional): The threshold of pct support for the feature (instances with non-zero values) among predicted positives 
+        """
+        
+        fig, axes = self._get_subplots(
+            subplot_width=4,
+            subplot_len=1 + (display_n_features*2) / 5,
+            n_rows=len(self.models[self.model_groups[0]]) * len(self.model_groups),
+            n_cols=1
+        )
+
+        for i, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                model_analyzer = self.models[mg][train_end_time]
+
+                idx = i * len(self.models[self.model_groups[0]]) + j 
+                try:
+                    df = model_analyzer.display_crosstabs_pos_vs_neg(
+                        threshold_type=threshold_type,
+                        threshold=threshold,
+                        display_n_features=display_n_features,
+                        filter_features=filter_features,
+                        support_threshold=support_threshold,
+                        table_name=table_name,
+                        ax=axes[idx]
+                    )
+                except ValueError as e:
+                    logging.error('Please run calculate_crosstabs_pos_vs_neg function to calculate crosstabs first for all models!')
+                    break
+
+
+        fig.suptitle(
+            f'{display_n_features} Features with highest & lowest pos:neg mean ratio',
+            x=-0.1,
+            fontsize=11
+        )
+
+        
+
+
 
 
     
