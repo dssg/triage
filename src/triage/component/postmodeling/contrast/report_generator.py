@@ -213,6 +213,8 @@ class PostmodelingReport:
             n_cols=1
         )
 
+        dfs = dict()
+
         for i, mg in enumerate(self.models):
             for j, train_end_time in enumerate(self.models[mg]):
                 model_analyzer = self.models[mg][train_end_time]
@@ -226,11 +228,14 @@ class PostmodelingReport:
                         filter_features=filter_features,
                         support_threshold=support_threshold,
                         table_name=table_name,
-                        ax=axes[idx]
+                        ax=axes[idx],
+                        return_df=True
                     )
+
+                    dfs[model_analyzer.model_id] = df
                 except ValueError as e:
                     logging.error('Please run calculate_crosstabs_pos_vs_neg function to calculate crosstabs first for all models!')
-                    break
+                    raise e
 
 
         fig.suptitle(
@@ -238,6 +243,9 @@ class PostmodelingReport:
             x=-0.1,
             fontsize=11
         )
+
+        if return_dfs:
+            return dfs
 
         
 
