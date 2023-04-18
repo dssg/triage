@@ -9,9 +9,9 @@ from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
 
 class PostmodelingReport: 
 
-    def __init__(self, engine, model_groups, experiment_hash, project_path=None) -> None:
+    def __init__(self, engine, model_groups, experiment_hashes, project_path=None) -> None:
         self.model_groups = model_groups
-        self.experiment_hash = experiment_hash
+        self.experiment_hashes = experiment_hashes
         self.engine = engine
         self.project_path = project_path
         self.models = self.get_model_ids()
@@ -24,30 +24,41 @@ class PostmodelingReport:
     def model_types(self):
         pass
 
+    def display_model_groups(self):
+        data_dict = []
+        for mg in self.model_groups:
+            for train_end_time in self.models[mg]:
+                model_analyzer = self.models[mg][train_end_time]
+                data_dict.append([mg, train_end_time, model_analyzer.model_id, model_analyzer.model_type, model_analyzer.hyperparameters])
+        data_df = pd.DataFrame(data_dict, columns=['model_group_id', 'train_end_time', 'model_id', 'model_type', 'hyperparameters'])
+        return data_df
+
+
     def get_model_ids(self):
         """for the model group ids, fetch the model_ids and initialize the datastructure"""
 
         model_groups = "', '".join([str(x) for x in self.model_groups])
-        q = f"""
-            select distinct on (model_group_id, train_end_time)
-                model_id, 
-                train_end_time::date,
-                model_group_id
-            from triage_metadata.models 
-                join triage_metadata.experiment_models using(model_hash)
-            where experiment_hash='{self.experiment_hash}'
-            and model_group_id in ('{model_groups}')        
-            """  
-
-        # TODO: modify to remove pandas
-        models = pd.read_sql(q, self.engine).to_dict(orient='records')
-
         d = dict()
-        for m in models:
-            if m['model_group_id'] in d:
-                d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
-            else:
-                d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
+        for experiment_hash in self.experiment_hashes: # iterate over experiment hash and search for all models
+            q = f"""
+                select distinct on (model_group_id, train_end_time)
+                    model_id, 
+                    train_end_time::date,
+                    model_group_id
+                from triage_metadata.models 
+                    join triage_metadata.experiment_models using(model_hash)
+                where experiment_hash='{experiment_hash}'
+                and model_group_id in ('{model_groups}')        
+                """  
+
+            # TODO: modify to remove pandas
+            models = pd.read_sql(q, self.engine).to_dict(orient='records')
+
+            for m in models:
+                if m['model_group_id'] in d:
+                    d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
+                else:
+                    d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
 
         return d 
             
@@ -73,7 +84,7 @@ class PostmodelingReport:
 
         return fig, axes
 
-    def plot_score_distributions(self):
+    def plot_score_distributions(self, use_labels):
         """for the model group ids plot score grid"""
         fig, axes = self._get_subplots()
 
@@ -81,9 +92,12 @@ class PostmodelingReport:
             for j, train_end_time in enumerate(self.models[mg]):
                 mode_analyzer = self.models[mg][train_end_time]
 
-                mode_analyzer.plot_score_distribution(
-                    ax=axes[i, j]
-                )
+                if use_labels:
+                    mode_analyzer.plot_score_label_distribution(ax=axes[i, j])
+                else:
+                    mode_analyzer.plot_score_distribution(
+                        ax=axes[i, j]
+                    )
 
                 if j==0:
                     axes[i, j].set_ylabel(f'Mod Grp: {mg}')
@@ -122,6 +136,19 @@ class PostmodelingReport:
 
         fig.suptitle('Precision-Recall with Positive Prediction %')
         fig.tight_layout()
+
+    """ param is pct or cnt """
+    def plot_precision_vs_param(self):
+        fig, axes = self._get_subplots(subplot_width=6, n_rows=1)
+        for _, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                mode_analyzer = self.models[mg][train_end_time]
+
+                mode_analyzer.plot_precision_param_curve(
+                    ax=axes[j]
+                )
+            # label lines somehow
+            
 
 
     def plot_feature_importance(self, n_top_features=20):

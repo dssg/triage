@@ -164,7 +164,7 @@ class ModelAnalyzer:
             where_clause += " AND ("
             for i, metric in enumerate(metrics):
                 parameters = metrics[metric]
-                where_clause += f""" metric={metric} AND paramter in ('{"','".join(parameters)}')"""
+                where_clause += f""" metric={metric} AND parameter in ('{"','".join(parameters)}')"""
 
                 if i < len(metrics) - 1:
                     where_clause += "OR"
@@ -188,6 +188,19 @@ class ModelAnalyzer:
         evaluations = pd.read_sql(q, self.engine)
 
         return evaluations
+
+    def get_eval_labeling_window(self):
+        # TODO right now this assumes all evaluations for this model are for the same test_label_timespan (won't be true when we can specify matrix_uuid)
+        q = f"""
+            select 
+                distinct labeling_window
+            from triage_metadata.models join test_results.evaluations e using(model_id)
+            join triage_metadata.matrices using (matrix_uuid)
+            where model_id = {self.model_id}
+            """
+        labeling_windows = pd.read_sql(q, self.engine)
+        return labeling_windows.iloc[0]['labeling_window']
+
 
     def get_feature_importances(self):
         features = pd.read_sql(
@@ -488,7 +501,6 @@ class ModelAnalyzer:
         # print(title_str)
         # print(tabulate(df.round(1), headers='keys', tablefmt='RST'))
 
-
         if return_df:
             df.style.set_caption(title_str)
             return df    
@@ -542,7 +554,7 @@ class ModelAnalyzer:
         ax.set_xlabel('Score')
         ax.set_title('Score Distribution')
         return ax
-
+    
     def plot_score_label_distribution(self, ax,
                                       nbins=10,
                                       top_k=None,
@@ -555,7 +567,7 @@ class ModelAnalyzer:
 
         Args:
             ax: matplotlib Axes object to plot on
-            nbins (int): the number of bins to define the calibration curve
+            nbins (int): the number of bins to define score distribution
             top_k (optional, int): if not None, displays only the top_k scores.
             matrix_uuid (optional): specify a matrix to get predictions for
             label_names (tuple[String]): specify the two label names to display on the plot
@@ -568,6 +580,8 @@ class ModelAnalyzer:
         # keep only top_k if specified
         if top_k:
             df_predictions = df_predictions.loc[df_predictions['rank_abs_no_ties'] <= top_k]
+        # TODO for now assumes all predictions are for the same test_label_timespan
+        test_label_timespan = df_predictions.iloc[0]['test_label_timespan']
         df__0 = df_predictions[df_predictions.label_value == 0]
         df__1 = df_predictions[df_predictions.label_value == 1]
 
@@ -594,6 +608,26 @@ class ModelAnalyzer:
         ax.set_ylabel('Frequency')
         ax.set_xlabel('Score')
         ax.set_title('Score Distribution across Labels')
+        return ax, test_label_timespan
+
+    def plot_precision_param_curve(self, ax, matrix_uuid=None):
+        eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+
+        eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
+        eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
+
+        msk_prec = eval_df['metric']=='precision@'
+        msk_pct = eval_df['parameter'].str.contains('pct')
+
+        # plot precision
+        sns.lineplot(
+            x='perc_points',
+            y='stochastic_value', 
+            data=eval_df[msk_pct & msk_prec], 
+            label=self.model_group_id,
+            ax=ax, 
+            estimator='mean', ci='sd'
+        )
         return ax
 
     def plot_precision_recall_curve(self, ax, matrix_uuid=None):
@@ -609,6 +643,8 @@ class ModelAnalyzer:
         """
 
         eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+        # TODO for now assumes all evaluations are for the same test_label_timespan
+        labeling_window = self.get_eval_labeling_window()
         
         eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
         eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
@@ -639,7 +675,7 @@ class ModelAnalyzer:
         ax.set_xlabel('List size percentage (k%)')
         ax.set_ylabel('Metric Value')
         ax.set_title('Precision-Recall Curve')
-        return ax
+        return ax, labeling_window
 
     def plot_feature_importance(self, ax, n_top_features=20):
         """
@@ -709,6 +745,8 @@ class ModelAnalyzer:
         """
         # TODO can the bins be adjusted when zooming in on the plot?
         scores = self.get_predictions(matrix_uuid) # TODO what about null labels?
+        # TODO for now assumes all predictions are for the same test_label_timespan
+        test_label_timespan = scores.iloc[0]['test_label_timespan']
         scores = scores.dropna()
         # TODO do we want to restrict to label=1 only?
         cal_x, cal_y = calibration_curve(scores['label_value'], scores['score'], n_bins=nbins)
@@ -737,5 +775,5 @@ class ModelAnalyzer:
         ax.set_title('Calibration curve')
         ax.set_xlim([min_score, max_score])
         ax.set_ylim([min_score, max_score])
-        return ax
+        return ax, test_label_timespan
 
