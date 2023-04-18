@@ -250,7 +250,7 @@ class ModelAnalyzer:
         """, con=self.engine)
         return feature_group_importance
 
-    def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True):
+    def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True):
         """ Generate crosstabs for the predicted positives (top-k) vs the rest
     
         args:
@@ -303,6 +303,21 @@ class ModelAnalyzer:
             logging.error(f'No predictions found for {self.model_id} and {matrix_uuid}. Exiting!')
             raise ValueError(f'No predictions found {self.model_id} and {matrix_uuid}')
 
+        # checking whether the crosstabs already exist for the model
+        logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id}')
+        q = f"select * from test_results.{table_name} where model_id={self.model_id};"
+        df = pd.read_sql(q, self.engine)
+        if not df.empty:
+            logging.warning(f'Crosstabs aleady exist for model {self.model_id}')
+            
+            if replace:
+                logging.warning('Deleting the existing crosstabs!')
+                with self.engine.connect() as conn:
+                    conn.execute(f'delete from test_results.{table_name} where model_id={self.model_id}')
+            else:
+                logging.info(f'Replace set to False. Not calculating crosstabs for model {self.model_id}')
+                if return_df: return df 
+                else: return 
 
         # initializing the storage engines
         project_storage = ProjectStorage(project_path)
