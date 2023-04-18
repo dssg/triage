@@ -127,10 +127,15 @@ class PostmodelingReport:
     def plot_feature_importance(self, n_top_features=20):
         """ plot all feature importance  """
 
-        fig, axes = self._get_subplots(subplot_width=7)
+        # For readability, we will plot the feature importance with time advancing on the vertical
+        fig, axes = self._get_subplots(
+            subplot_width=7,
+            n_rows = len(self.models[self.model_groups[0]]), # train end tomes
+            n_cols = len(self.model_groups) # mdoel groups
+        )
 
-        for i, mg in enumerate(self.models):
-            for j, train_end_time in enumerate(self.models[mg]):
+        for j, mg in enumerate(self.models):
+            for i, train_end_time in enumerate(self.models[mg]):
                 mode_analyzer = self.models[mg][train_end_time]
 
                 mode_analyzer.plot_feature_importance(
@@ -138,12 +143,14 @@ class PostmodelingReport:
                 )
 
                 if j==0:
-                    axes[i, j].set_ylabel(f'Mod Grp: {mg}')
+                    axes[i, j].set_ylabel(f'{train_end_time} ({mode_analyzer.model_id})') # first column
                 else:
                     axes[i, j].set_ylabel('')
                 
                 if i == 0:
-                    axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                    # axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                    axes[i, j].set_title(f'Mod Grp: {mg}') # Top row
+
                 else:
                     axes[i, j].set_title('')
 
