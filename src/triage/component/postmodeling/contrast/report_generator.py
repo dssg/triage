@@ -1,6 +1,8 @@
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 from descriptors import cachedproperty
 
@@ -9,9 +11,9 @@ from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
 
 class PostmodelingReport: 
 
-    def __init__(self, engine, model_groups, experiment_hash, project_path=None) -> None:
+    def __init__(self, engine, model_groups, experiment_hashes, project_path=None) -> None:
         self.model_groups = model_groups
-        self.experiment_hash = experiment_hash
+        self.experiment_hashes = experiment_hashes # TODO made experiment hashes into a list to plot models from different experiments for MVESC, there's probably a better way to generalize this
         self.engine = engine
         self.project_path = project_path
         self.models = self.get_model_ids()
@@ -24,30 +26,40 @@ class PostmodelingReport:
     def model_types(self):
         pass
 
+    def display_model_groups(self):
+        data_dict = []
+        for mg in self.model_groups:
+            for train_end_time in self.models[mg]:
+                model_analyzer = self.models[mg][train_end_time]
+                data_dict.append([mg, train_end_time, model_analyzer.model_id, model_analyzer.model_type, model_analyzer.hyperparameters])
+        data_df = pd.DataFrame(data_dict, columns=['model_group_id', 'train_end_time', 'model_id', 'model_type', 'hyperparameters'])
+        return data_df
+
     def get_model_ids(self):
         """for the model group ids, fetch the model_ids and initialize the datastructure"""
 
         model_groups = "', '".join([str(x) for x in self.model_groups])
-        q = f"""
-            select distinct on (model_group_id, train_end_time)
-                model_id, 
-                train_end_time::date,
-                model_group_id
-            from triage_metadata.models 
-                join triage_metadata.experiment_models using(model_hash)
-            where experiment_hash='{self.experiment_hash}'
-            and model_group_id in ('{model_groups}')        
-            """  
-
-        # TODO: modify to remove pandas
-        models = pd.read_sql(q, self.engine).to_dict(orient='records')
-
         d = dict()
-        for m in models:
-            if m['model_group_id'] in d:
-                d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
-            else:
-                d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
+        for experiment_hash in self.experiment_hashes:
+            q = f"""
+                select distinct on (model_group_id, train_end_time)
+                    model_id, 
+                    train_end_time::date,
+                    model_group_id
+                from triage_metadata.models 
+                    join triage_metadata.experiment_models using(model_hash)
+                where experiment_hash='{experiment_hash}'
+                and model_group_id in ('{model_groups}')        
+                """  
+
+            # TODO: modify to remove pandas
+            models = pd.read_sql(q, self.engine).to_dict(orient='records')
+
+            for m in models:
+                if m['model_group_id'] in d:
+                    d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
+                else:
+                    d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
 
         return d 
             
@@ -73,7 +85,7 @@ class PostmodelingReport:
 
         return fig, axes
 
-    def plot_score_distributions(self):
+    def plot_score_distributions(self, use_labels):
         """for the model group ids plot score grid"""
         fig, axes = self._get_subplots()
 
@@ -81,9 +93,12 @@ class PostmodelingReport:
             for j, train_end_time in enumerate(self.models[mg]):
                 mode_analyzer = self.models[mg][train_end_time]
 
-                mode_analyzer.plot_score_distribution(
-                    ax=axes[i, j]
-                )
+                if use_labels:
+                    mode_analyzer.plot_score_label_distribution(ax=axes[i, j])
+                else:
+                    mode_analyzer.plot_score_distribution(
+                        ax=axes[i, j]
+                    )
 
                 if j==0:
                     axes[i, j].set_ylabel(f'Mod Grp: {mg}')
@@ -98,6 +113,30 @@ class PostmodelingReport:
         fig.suptitle('Score Distributions')
         fig.tight_layout()
         
+
+    def plot_calibration_curves(self):
+        fig, axes = self._get_subplots()
+
+        for i, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                mode_analyzer = self.models[mg][train_end_time]
+
+                mode_analyzer.plot_calibration_curve(
+                    ax=axes[i, j]
+                )
+
+                if j==0:
+                    axes[i, j].set_ylabel(f'Mod Grp: {mg}')
+                else:
+                    axes[i, j].set_ylabel('')
+                
+                if i == 0:
+                    axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                else:
+                    axes[i, j].set_title('')
+
+        fig.suptitle('Calibration Curves')
+        fig.tight_layout()
 
     def plot_prk_curves(self):
         fig, axes = self._get_subplots()
@@ -123,6 +162,48 @@ class PostmodelingReport:
         fig.suptitle('Precision-Recall with Positive Prediction %')
         fig.tight_layout()
 
+    def plot_bias_threshold(self, attribute_name, attribute_values, bias_metric):
+        """
+            Plot bias_metric for the specified list of attribute_values for a particular attribute_name across different thresholds (list %)
+        """
+        fig, axes = self._get_subplots(subplot_width=6, n_rows=len(attribute_values))
+        for _, mg in enumerate(self.models):
+            for i, attribute_value in enumerate(attribute_values):
+                for j, train_end_time in enumerate(self.models[mg]):
+                    mode_analyzer = self.models[mg][train_end_time]
+
+                    mode_analyzer.plot_bias_threshold_curve(
+                        attribute_name=attribute_name,
+                        attribute_value=attribute_value,
+                        bias_metric=bias_metric,
+                        ax=axes[i, j]
+                    )
+                    if j==0:
+                        axes[i, j].set_ylabel(f'{attribute_name}:{attribute_value}')
+                    else:
+                        axes[i, j].set_ylabel('')
+                    if i == 0:
+                        axes[i, j].set_title(f'{train_end_time}')
+                    else:
+                        axes[i, j].set_title('')
+        fig.suptitle(f"{bias_metric} Threshold Curve for {attribute_name}")
+        fig.tight_layout()
+
+    def plot_precision_threshold(self):
+        """
+            Plot precision against threshold (list %)
+        """
+        fig, axes = self._get_subplots(subplot_width=6, n_rows=1)
+        for _, mg in enumerate(self.models):
+            for j, train_end_time in enumerate(self.models[mg]):
+                mode_analyzer = self.models[mg][train_end_time]
+
+                mode_analyzer.plot_precision_threshold_curve(
+                    ax=axes[j]
+                )
+                axes[j].set_title(f'{train_end_time}')
+        fig.suptitle("Precision Threshold Curve")
+        fig.tight_layout()
 
     def plot_feature_importance(self, n_top_features=20):
         """ plot all feature importance  """
@@ -139,7 +220,8 @@ class PostmodelingReport:
                 mode_analyzer = self.models[mg][train_end_time]
 
                 mode_analyzer.plot_feature_importance(
-                    ax=axes[i, j]
+                    ax=axes[i, j],
+                    n_top_features=n_top_features
                 )
 
                 if j==0:
@@ -156,6 +238,108 @@ class PostmodelingReport:
 
         fig.suptitle(f'{n_top_features} Features with highest importance (magnitude)')
         fig.tight_layout()
+
+    def plot_feature_group_importance(self, n_top_groups=20):
+        """ plot all feature group importance  """
+
+        # For readability, we will plot the feature importance with time advancing on the vertical
+        fig, axes = self._get_subplots(
+            subplot_width=7,
+            n_rows = len(self.models[self.model_groups[0]]), # train end tomes
+            n_cols = len(self.model_groups) # mdoel groups
+        )
+
+        for j, mg in enumerate(self.models):
+            for i, train_end_time in enumerate(self.models[mg]):
+                mode_analyzer = self.models[mg][train_end_time]
+
+                mode_analyzer.plot_feature_group_importance(
+                    ax=axes[i, j],
+                    n_top_groups=n_top_groups
+                )
+
+                if j==0:
+                    axes[i, j].set_ylabel(f'{train_end_time} ({mode_analyzer.model_id})') # first column
+                else:
+                    axes[i, j].set_ylabel('')
+                
+                if i == 0:
+                    # axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                    axes[i, j].set_title(f'Mod Grp: {mg}') # Top row
+
+                else:
+                    axes[i, j].set_title('')
+
+        fig.suptitle(f'Feature groups with highest importance (magnitude)')
+        fig.tight_layout()
+
+
+
+    def create_scatter_disparity_performance(self, metric, parameter, aeq_parameter, attr_col, attribute_values, 
+                                         performance_col='stochastic_value', bias_metric='tpr', tiebreaker='worst', flip_disparity=False, 
+                                         mitigated_tags=[], mitigated_bdfs=[], mitigated_performances=[], ylim=None):
+        """
+            Create scatterplot of one bias metric (e.g. tpr disparity) vs an evaluation metric (e.g. precision at some threshold) for a particular list of attribute value (must be from the same attribute)
+            A simplified version of the scatterplot function here: https://github.com/dssg/fairness_tutorial/blob/master/notebooks/bias_reduction_with_outputs.ipynb 
+        """
+        # TODO add legend for model identification?
+        evals_df_list = {}
+        aequitas_df_list = {}
+        fig, axes = self._get_subplots(subplot_width=6, n_rows=len(attribute_values))
+        
+        for k, attribute_value in enumerate(attribute_values):
+            for i, mg in enumerate(self.models):
+                for j, train_end_time in enumerate(self.models[mg]):
+                    mode_analyzer = self.models[mg][train_end_time]
+                    if i == 0:
+                        evals_df_list[train_end_time] = []
+                        aequitas_df_list[train_end_time] = []
+                    evals_df_list[train_end_time].append(mode_analyzer.get_evaluations(metrics={metric: [parameter]})) # TODO only allow one eval metric here?
+                    aequitas_df_list[train_end_time].append(mode_analyzer.get_aequitas())
+
+            for j, train_end_time in enumerate(self.models[self.model_groups[0]]):
+
+                evals_df = pd.concat(evals_df_list[train_end_time])
+                aequitas_df = pd.concat(aequitas_df_list[train_end_time])
+                # filter aequitas by eval metric
+                aequitas_df = aequitas_df.loc[(aequitas_df['parameter']==aeq_parameter) * (aequitas_df['tie_breaker']==tiebreaker)]
+                disparity_df = aequitas_df.loc[(aequitas_df['attribute_name']==attr_col) & (aequitas_df['attribute_value']==attribute_value)].copy()
+                disparity_metric = bias_metric + '_disparity'
+                scatter_schema = ['model_id', performance_col, 'attribute_name', 'attribute_value', bias_metric, disparity_metric, 'model_tag']
+                if flip_disparity:
+                    disparity_df[disparity_metric]= disparity_df.apply(lambda x: 1/x[disparity_metric] , axis=1)
+                scatter = pd.merge(evals_df, disparity_df, how='left', on=['model_id'], sort=True, copy=True)
+                scatter = scatter[['model_id', performance_col, 'attribute_name', 'attribute_value', bias_metric, disparity_metric]].copy()
+                scatter['model_tag'] = 'Other Models'
+                scatter.sort_values('stochastic_value', ascending = False, inplace=True, ignore_index=True)
+                scatter_final = pd.DataFrame()
+
+                ax = axes[k,j]
+                ax.scatter(
+                    x='stochastic_value', y=disparity_metric,
+                    data=scatter
+
+                )
+                if not scatter_final.empty:
+                    ax.scatter(
+                        x='stochastic_value', y=disparity_metric,
+                        data=scatter_final
+                    )
+                
+                if j==0:
+                    axes[k, j].set_ylabel(f'{attr_col}:{attribute_value}')
+                else:
+                    axes[k, j].set_ylabel('')
+                if k == 0:
+                    axes[k, j].set_title(f'{train_end_time}')
+                else:
+                    axes[k, j].set_title('')
+                axes[k, j].set_xlabel(f'{metric}{parameter}')
+
+                if ylim:
+                    plt.ylim(0, 10)
+        flip_placeholder = 'Flipped' if flip_disparity else ''
+        fig.suptitle(f'{flip_placeholder} {disparity_metric} vs. {metric}{parameter} for {attr_col}')
 
 
     def calculate_crosstabs_pos_vs_neg(self, project_path, thresholds, table_name='crosstabs', **kwargs):

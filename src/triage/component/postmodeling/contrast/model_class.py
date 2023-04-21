@@ -136,6 +136,44 @@ class ModelAnalyzer:
 
         return preds.set_index(self.id_columns)
 
+    # TODO generalize this function
+    # TODO do we want to allow specifying a dictionary of attributes + values? 
+    def get_aequitas(self, parameter=None, attribute_name=None, subset_hash=None):
+        '''
+        Get aequitas evaluations from the DB
+
+        Args:
+            parameter (str): Optional. The threshold to apply when returning the aequitas evaluations.
+                                  If not specified, all aequitas evaluations will be returned.
+
+            attribute_name (str): Optional. Fetch aequitas evaluations related to a particular attribute.
+
+            subset_hash (str): Optional. For fetching evaluations of a specific subset.    
+        '''
+
+        where_clause = f'WHERE model_id={self.model_id}'
+
+        if subset_hash is not None:
+            where_clause += f" AND subset_hash={subset_hash}"
+
+        if parameter is not None:
+            where_clause += f" AND parameter={parameter}"
+
+        if attribute_name:
+            where_clause += f" AND attribute_name={attribute_name}"
+        
+        # TODO don't return all columns ?
+        q = f"""
+            select
+                * 
+            from test_results.aequitas
+            {where_clause}
+        """
+
+        evaluations = pd.read_sql(q, self.engine)
+
+        return evaluations
+    
 
     def get_evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None):
         ''' 
@@ -164,7 +202,7 @@ class ModelAnalyzer:
             where_clause += " AND ("
             for i, metric in enumerate(metrics):
                 parameters = metrics[metric]
-                where_clause += f""" metric={metric} AND paramter in ('{"','".join(parameters)}')"""
+                where_clause += f""" metric='{metric}' AND parameter in ('{"','".join(parameters)}')"""
 
                 if i < len(metrics) - 1:
                     where_clause += "OR"
@@ -570,7 +608,7 @@ class ModelAnalyzer:
 
         Args:
             ax: matplotlib Axes object to plot on
-            nbins (int): the number of bins to define the calibration curve
+            nbins (int): the number of bins to define the score distribution
             top_k (optional, int): if not None, displays only the top_k scores.
             matrix_uuid (optional): specify a matrix to get predictions for
             label_names (tuple[String]): specify the two label names to display on the plot
@@ -609,6 +647,52 @@ class ModelAnalyzer:
         ax.set_ylabel('Frequency')
         ax.set_xlabel('Score')
         ax.set_title('Score Distribution across Labels')
+        return ax
+    
+    # TODO make this more general purpose
+    def plot_bias_threshold_curve(self, attribute_name, attribute_value, bias_metric, ax):
+        bias_df = self.get_aequitas()
+        # limit to specific attribute+value
+        bias_df = bias_df.loc[(bias_df['attribute_name']==attribute_name) & (bias_df['attribute_value']==attribute_value)]
+
+        bias_df['perc_points'] = [x.split('_')[0] for x in bias_df['parameter'].tolist()]
+        bias_df['perc_points'] = pd.to_numeric(bias_df['perc_points'])
+
+        msk_pct = bias_df['parameter'].str.contains('pct')
+
+        # plot precision
+        sns.lineplot(
+            x='perc_points',
+            y=bias_metric, 
+            data=bias_df[msk_pct], 
+            label=self.model_group_id,
+            ax=ax, 
+            estimator='mean', ci='sd'
+        )
+        ax.set_xlabel('List size percentage (k%)')
+        #ax.set_ylabel(f'{bias_metric} for {attribute_name}:{attribute_value}')
+        return ax
+
+    def plot_precision_threshold_curve(self, ax, matrix_uuid=None):
+        eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+
+        eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
+        eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
+
+        msk_prec = eval_df['metric']=='precision@'
+        msk_pct = eval_df['parameter'].str.contains('pct')
+
+        # plot precision
+        sns.lineplot(
+            x='perc_points',
+            y='stochastic_value', 
+            data=eval_df[msk_pct & msk_prec], 
+            label=self.model_group_id,
+            ax=ax, 
+            estimator='mean', ci='sd'
+        )
+        ax.set_xlabel('List size percentage (k%)')
+        ax.set_ylabel('Precision')
         return ax
 
     def plot_precision_recall_curve(self, ax, matrix_uuid=None):
@@ -684,7 +768,7 @@ class ModelAnalyzer:
         ax.set_title('Feature Importance')
         return ax
 
-    def plot_feature_group_importance(self, ax):
+    def plot_feature_group_importance(self, ax, n_top_groups=20):
         """
         Plot the top most important feature groups as identified by the maximum importance of any feature in the group
 
@@ -696,6 +780,8 @@ class ModelAnalyzer:
         """
         feature_group_importance = self.get_feature_group_importances()
         feature_group_importance.sort_values(by=['importance_aggregate'], ascending=False, inplace=True)
+        feature_group_importance = feature_group_importance.reset_index(drop=True)
+        feature_group_importance = feature_group_importance[feature_group_importance.index < n_top_groups] 
         sns.barplot(
             data=feature_group_importance,
             x='importance_aggregate', 
