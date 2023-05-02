@@ -17,6 +17,7 @@ import s3fs
 import wrapt
 import yaml
 import joblib
+import shutil
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -599,6 +600,19 @@ class CSVMatrixStore(MatrixStore):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
+
+
+    def save_(self, from_fileobj, metadata):
+        """Compress and save the matrix from a CSV bytestream file object
+        Args:
+            from_fileobj (file-like): A readable file object containing a CSV bytestream to save
+        """
+        with self.matrix_base_store.open('wb') as fdesc:
+            with gzip.GzipFile(fileobj=fdesc, mode='w') as compressor:
+                shutil.copyfileobj(from_fileobj, compressor)
+
+        with self.metadata_base_store.open('wb') as fd:
+            yaml.dump(metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType:
