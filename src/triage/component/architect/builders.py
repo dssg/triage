@@ -344,12 +344,12 @@ class MatrixBuilder(BuilderBase):
         )
         logger.debug(f"*** loger query {label_query}")
 
+        matrix_store.metadata = matrix_metadata
         # stitch together the csvs
         logging.info("Building and saving matrix %s by querying and joining tables", matrix_uuid)
         self._save_matrix(
             queries=feature_queries + [label_query],
-            matrix_store=matrix_store,
-            matrix_metadata=matrix_metadata
+            matrix_store=matrix_store
         )
 
 
@@ -638,7 +638,7 @@ class MatrixBuilder(BuilderBase):
         while True:
             yield self.db_engine.raw_connection()
 
-    def _save_matrix(self, queries, matrix_store, matrix_metadata):
+    def _save_matrix(self, queries, matrix_store):
         """Construct and save a matrix CSV from a list of queries
         The results of each query are expected to return the same number of rows in the same order.
         The columns will be placed alongside each other in the CSV much as a SQL join would.
@@ -670,4 +670,4 @@ class MatrixBuilder(BuilderBase):
                 for join in zip(*pipes)
             )
             logger.debug("*** before matrix being saved")
-            matrix_store.save_(from_fileobj=IteratorBytesIO(iterable), metadata=matrix_metadata)
+            matrix_store.save_(from_fileobj=IteratorBytesIO(iterable))
