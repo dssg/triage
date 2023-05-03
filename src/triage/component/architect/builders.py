@@ -680,10 +680,13 @@ class MatrixBuilder(BuilderBase):
         Returns:
             _type_: _description_
         """
+        logger.debug(f"*** stitching csvs for matrix {matrix_uuid}")
         connection = self.db_engine.raw_connection()
         cursor = connection.cursor()
         header = "HEADER"
 
+        logger.debug(f"*** about to start writing csvs for features")
+        logger.debug(f"*** path to store {matrix_store.matrix_base_store.path}")
         # starting with features 
         filenames = []
         for i, query_string in enumerate(features_queries):
@@ -699,6 +702,7 @@ class MatrixBuilder(BuilderBase):
                       matrix_uuid + f"_{i}.csv","wb") as fd: 
                 fd.write(output_)
 
+        logger.debug(f"*** about to write csv for label")
         # label
         copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
         bio = io.BytesIO()
@@ -721,19 +725,38 @@ class MatrixBuilder(BuilderBase):
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + \
             matrix_store.matrix_base_store.path + matrix_uuid + ".csv"
+        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} cmd line to paste {cmd_line}")
         subprocess.run(cmd_line, shell=True)
 
         # save compressed as gzip
         cmd_line = 'gzip ' + matrix_store.matrix_base_store_path + matrix_uuid +\
               '.csv > ' + matrix_store.matrix_base_store.path + matrix_uuid + ".csv.gz"
+        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} cnd kube to gzip {cmd_line}")
         subprocess.run(cmd_line, shell=True)
 
+        # TODO: delete files created while generating the joined matrix 
+        self.remove_unnecessary_files(filenames, matrix_store, matrix_uuid)
+
+        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} loading DF")
         # load as DF
-        with open("../triage_output/test_lily_all.csv","rb") as fd:
+        with open(matrix_store.matrix_base_store_path + matrix_uuid + ".csv","rb") as fd:
             out = io.StringIO(str(fd.read(), 'utf-8'))
         
         out.seek(0)
         df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
-        
+        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
+
         return downcast_matrix(df)
+
+
+    def remove_unnecessary_files(self, filenames, matrix_store, matrix_uuid):
+        """_summary_
+
+        Args:
+            filenames (_type_): _description_
+        """
+        cmd_line = 'cd ' + matrix_store.matrix_base_stroe_path + matrix_uuid + " | rm *.csv"
+        logger.debug(f"*** deleting csvs from matrix {matrix_uuid} cmd line {cmd_line}")
+        subprocess.run(cmd_line, shell=True)
+        
