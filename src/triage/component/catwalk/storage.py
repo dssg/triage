@@ -602,7 +602,7 @@ class CSVMatrixStore(MatrixStore):
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
 
-    def save_(self, from_fileobj):
+    def save_(self, from_fileobj, metadata):
         """Compress and save the matrix from a CSV bytestream file object
         Args:
             from_fileobj (file-like): A readable file object containing a CSV bytestream to save
@@ -614,7 +614,7 @@ class CSVMatrixStore(MatrixStore):
 
         logger.debug("*** in save_ dumping metadata")
         with self.metadata_base_store.open('wb') as fd:
-            yaml.dump(self.metadata, fd, encoding="utf-8")
+            yaml.dump(metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType:
