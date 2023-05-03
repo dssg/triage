@@ -11,6 +11,7 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 from ohio import PipeTextIO
 from functools import partial
+from pathlib import Path
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
@@ -712,6 +713,10 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"*** about to start writing csvs for features")
         logger.debug(f"*** path to store {matrix_store.matrix_base_store.path}")
         # starting with features 
+        fixed_path = self._fix_path(matrix_store)
+        logger.debug(f"*** fixed path to store {fixed_path}")
+        path_ = str(fixed_path)
+
         filenames = []
         for i, query_string in enumerate(features_queries):
             copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV {header}"
@@ -719,11 +724,13 @@ class MatrixBuilder(BuilderBase):
             cursor.copy_expert(copy_sql, bio)
             bio.seek(0)
             output_ = bio.read()
-            filenames.append(matrix_store.matrix_base_store.path + 
-                            matrix_uuid + "_" + str(i) + ".csv")
             
-            with open(matrix_store.matrix_base_store.path + 
-                      matrix_uuid + f"_{i}.csv","wb") as fd: 
+            logger.debug(f"""*** filename to append {path_ +
+                          '/' + matrix_uuid + '_' + str(i) + '.csv'}""")
+            filenames.append(str(fixed_path) + "/" + matrix_uuid + "_" +\
+                              str(i) + ".csv")
+            
+            with open(path_ + "/" + matrix_uuid + f"_{i}.csv","wb") as fd: 
                 fd.write(output_)
 
         logger.debug(f"*** about to write csv for label")
@@ -734,36 +741,29 @@ class MatrixBuilder(BuilderBase):
         bio.seek(0)
         output_ = bio.read()
 
-        with open(matrix_store.matrix_base_store.path + matrix_uuid +
-                  "_label.csv", "wb") as fd:  
+        with open(path_ + "/" + matrix_uuid + "_label.csv", "wb") as fd:  
             fd.write(output_)
 
         # add label file to filenames
-        filenames.append(matrix_store.matrix_base_store.path + matrix_uuid + 
-                         "_label.csv")
+        filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
         
         # join all files starting with features and ending with label
         files = " ".join(filenames)
         logger.debug(f"*** filenames {files}")
 
         # save joined csvs
-        cmd_line = 'paste ' + files + ' -d "," > ' + \
-            matrix_store.matrix_base_store.path + matrix_uuid + ".csv"
+        cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
         logger.debug(f"*** stitching csvs for matrix {matrix_uuid} cmd line to paste {cmd_line}")
         subprocess.run(cmd_line, shell=True)
 
         # save compressed as gzip
-        cmd_line = 'gzip ' + matrix_store.matrix_base_store_path + matrix_uuid +\
-              '.csv > ' + matrix_store.matrix_base_store.path + matrix_uuid + ".csv.gz"
-        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} cnd kube to gzip {cmd_line}")
+        cmd_line = 'gzip ' + path_ + "/" + matrix_uuid + '.csv > ' + path_ + "csv.gz"
+        logger.debug(f"*** gzip design matrix {matrix_uuid} cmd line to gzip {cmd_line}")
         subprocess.run(cmd_line, shell=True)
 
-        # TODO: delete files created while generating the joined matrix 
-        self.remove_unnecessary_files(filenames, matrix_store, matrix_uuid)
-
-        logger.debug(f"*** stitching csvs for matrix {matrix_uuid} loading DF")
+        logger.debug(f"*** DF design matrix {matrix_uuid} loading DF")
         # load as DF
-        with open(matrix_store.matrix_base_store_path + matrix_uuid + ".csv","rb") as fd:
+        with open(path_ + "/" + matrix_uuid + ".csv","rb") as fd:
             out = io.StringIO(str(fd.read(), 'utf-8'))
         
         out.seek(0)
@@ -771,17 +771,34 @@ class MatrixBuilder(BuilderBase):
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"*** stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
 
+        logger.debug(f"*** removing csvs files for matrix {matrix_uuid}")
+        self.remove_unnecessary_files(filenames, path_, matrix_uuid)
+
         return downcast_matrix(df)
 
 
-    def remove_unnecessary_files(self, filenames, matrix_store, matrix_uuid):
+    def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
         """
-        Removes the csvs generated for each feature as well as the label csv file. 
+        Removes the csvs generated for each feature, the label csv file,
+        and the csv with all the features and label stitched togheter. 
 
         Args:
             filenames (list): list of 
         """
-        cmd_line = 'cd ' + matrix_store.matrix_base_stroe_path + " | rm " + matrix_uuid + " *.csv"
-        logger.debug(f"*** deleting csvs from matrix {matrix_uuid} cmd line {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
+        # deleting features and label csvs
+        for filename_ in filenames:
+            cmd_line = 'rm ' + filename_ + ".csv"
+            logger.debug(f"*** deleting csvs from matrix {matrix_uuid} cmd line {cmd_line}")
+            subprocess.run(cmd_line, shell=True)
         
+        # deleting whole merged csv matrix
+        cmd_line = "rm " + path_ + matrix_uuid + ".csv"
+        logger.debug(f"*** deleting merged csv from matrix {matrix_uuid} cmd line {cmd_line}")
+        subprocess.run(cmd_line, shell=True)
+    
+
+    def _fix_path(self, matrix_store):
+        parts_path = list(matrix_store.matrix_base_store.path.parts[1:-1])
+        path_ = Path("/" + "/".join(parts_path))
+
+        return path_
