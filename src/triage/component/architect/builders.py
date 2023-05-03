@@ -71,6 +71,8 @@ class BuilderBase:
         right_column_selections,
         entity_date_table_name,
         additional_conditions="",
+        include_index=True,
+        column_override=None,
     ):
         """ Given a (features or labels) table, a list of times, columns to
         select, and (optionally) a set of join conditions, perform an outer
@@ -91,17 +93,34 @@ class BuilderBase:
         """
 
         # put everything into the query
-        query = f"""
-            SELECT ed.entity_id,
-                ed.as_of_date{"".join(right_column_selections)}
-            FROM {entity_date_table_name} ed
-            LEFT OUTER JOIN {right_table_name} r
-            ON ed.entity_id = r.entity_id AND
-            ed.as_of_date = r.as_of_date
-            {additional_conditions}
-            ORDER BY ed.entity_id,
-                    ed.as_of_date
-        """
+        if include_index:
+            query = f"""
+                SELECT ed.entity_id,
+                    ed.as_of_date{"".join(right_column_selections)}
+                FROM {entity_date_table_name} ed
+                LEFT OUTER JOIN {right_table_name} r
+                ON ed.entity_id = r.entity_id AND
+                ed.as_of_date = r.as_of_date
+                {additional_conditions}
+                ORDER BY ed.entity_id,
+                        ed.as_of_date
+            """
+        else:
+            query = f"""
+                with r as (
+                    SELECT ed.entity_id,
+                           ed.as_of_date, {"".join(right_column_selections)[2:]}
+                    FROM {entity_date_table_name} ed
+                    LEFT OUTER JOIN {right_table_name} r
+                    ON ed.entity_id = r.entity_id AND
+                       ed.as_of_date = r.as_of_date
+                       {additional_conditions}
+                    ORDER BY ed.entity_id,
+                             ed.as_of_date
+                ) 
+                select {"".join(right_column_selections)[2:] if not column_override else column_override} 
+                from r
+            """
         
         return query
     
@@ -669,16 +688,21 @@ class MatrixBuilder(BuilderBase):
 
 
     def stitch_csvs(self, features_queries, label_query, matrix_store, matrix_uuid):
-        """_summary_
+        """
+        Get all features related to a design matrix as CSV files and join
+        them columnwise to add it as columns to create the final design matrix. 
+        The last column is the label. 
 
         Args:
-            features_queries (_type_): _description_
-            label_query (_type_): _description_
-            matrix_store (_type_): _description_
+            features_queries (list): List of the requried queries to execute 
+            to get all the features from this design matrix. 
+            label_query (string): The query required to get the label associated 
+            to this design matrix. 
+            matrix_store (MatrixSto): _description_
             matrix_uuid (_type_): _description_
 
         Returns:
-            _type_: _description_
+            DataFrame: Design downcast matrix
         """
         logger.debug(f"*** stitching csvs for matrix {matrix_uuid}")
         connection = self.db_engine.raw_connection()
