@@ -751,12 +751,13 @@ class MatrixBuilder(BuilderBase):
 
 
     def remove_unnecessary_files(self, filenames, matrix_store, matrix_uuid):
-        """_summary_
+        """
+        Removes the csvs generated for each feature as well as the label csv file. 
 
         Args:
-            filenames (_type_): _description_
+            filenames (list): list of 
         """
-        cmd_line = 'cd ' + matrix_store.matrix_base_stroe_path + matrix_uuid + " | rm *.csv"
+        cmd_line = 'cd ' + matrix_store.matrix_base_stroe_path + " | rm " + matrix_uuid + " *.csv"
         logger.debug(f"*** deleting csvs from matrix {matrix_uuid} cmd line {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         
