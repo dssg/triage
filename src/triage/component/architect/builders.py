@@ -1,6 +1,7 @@
 import io
 import contextlib
 import itertools
+import subprocess
 
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
@@ -70,8 +71,6 @@ class BuilderBase:
         right_column_selections,
         entity_date_table_name,
         additional_conditions="",
-        include_index=False,
-        column_override=None,
     ):
         """ Given a (features or labels) table, a list of times, columns to
         select, and (optionally) a set of join conditions, perform an outer
@@ -92,35 +91,18 @@ class BuilderBase:
         """
 
         # put everything into the query
-        if include_index:
-            query = f"""
-                SELECT ed.entity_id,
-                    ed.as_of_date{"".join(right_column_selections)}
-                FROM {entity_date_table_name} ed
-                LEFT OUTER JOIN {right_table_name} r
-                ON ed.entity_id = r.entity_id AND
-                ed.as_of_date = r.as_of_date
-                {additional_conditions}
-                ORDER BY ed.entity_id,
-                        ed.as_of_date
-            """
-        else:
-            query = f"""
-                with r as (
-                    SELECT ed.entity_id,
-                           ed.as_of_date, {"".join(right_column_selections)[2:]}
-                    FROM {entity_date_table_name} ed
-                    LEFT OUTER JOIN {right_table_name} r
-                    ON ed.entity_id = r.entity_id AND
-                       ed.as_of_date = r.as_of_date
-                       {additional_conditions}
-                    ORDER BY ed.entity_id,
-                             ed.as_of_date
-                ) 
-                select {"".join(right_column_selections)[2:] if not column_override else column_override} 
-                from r
-            """
-
+        query = f"""
+            SELECT ed.entity_id,
+                ed.as_of_date{"".join(right_column_selections)}
+            FROM {entity_date_table_name} ed
+            LEFT OUTER JOIN {right_table_name} r
+            ON ed.entity_id = r.entity_id AND
+            ed.as_of_date = r.as_of_date
+            {additional_conditions}
+            ORDER BY ed.entity_id,
+                    ed.as_of_date
+        """
+        
         return query
     
 
@@ -330,29 +312,42 @@ class MatrixBuilder(BuilderBase):
         # logger.debug(f"Features data merged for matrix {matrix_uuid}")
 
         # matrix_store.metadata = matrix_metadata
-        # # store the matrix
-        # labels = output.pop(matrix_store.label_column_name)
-        # matrix_store.matrix_label_tuple = output, labels
-        # matrix_store.save()
+        # store the matrix
+        #labels = output.pop(matrix_store.label_column_name)
+        #matrix_store.matrix_label_tuple = output, labels
+        #matrix_store.save()
         # logger.info(f"Matrix {matrix_uuid} saved in {matrix_store.matrix_base_store.path}")
+        # feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
+        # label_query = self.label_load_query(
+        #     label_name,
+        #     label_type,
+        #     entity_date_table_name,
+        #     matrix_metadata["label_timespan"],
+        # )
+        # logger.debug(f"*** loger query {label_query}")
+
+        # #matrix_store.metadata = matrix_metadata
+        # # stitch together the csvs
+        # logging.info("Building and saving matrix %s by querying and joining tables", matrix_uuid)
+        # self._save_matrix(
+        #     queries=feature_queries + [label_query],
+        #     matrix_store=matrix_store,
+        #     matrix_meatada=matrix_metadata
+        # )
         feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
+        logger.debug(f"*** feature queries, number of queries: {len(feature_queries)}")
+        
         label_query = self.label_load_query(
             label_name,
             label_type,
             entity_date_table_name,
             matrix_metadata["label_timespan"],
         )
-        logger.debug(f"*** loger query {label_query}")
+        logger.debug(f"*** label query {label_query}")
 
         matrix_store.metadata = matrix_metadata
-        # stitch together the csvs
-        logging.info("Building and saving matrix %s by querying and joining tables", matrix_uuid)
-        self._save_matrix(
-            queries=feature_queries + [label_query],
-            matrix_store=matrix_store
-        )
 
-
+        self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
 
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
@@ -638,7 +633,7 @@ class MatrixBuilder(BuilderBase):
         while True:
             yield self.db_engine.raw_connection()
 
-    def _save_matrix(self, queries, matrix_store):
+    def _save_matrix(self, queries, matrix_store, matrix_metadata):
         """Construct and save a matrix CSV from a list of queries
         The results of each query are expected to return the same number of rows in the same order.
         The columns will be placed alongside each other in the CSV much as a SQL join would.
@@ -670,4 +665,75 @@ class MatrixBuilder(BuilderBase):
                 for join in zip(*pipes)
             )
             logger.debug("*** before matrix being saved")
-            matrix_store.save_(from_fileobj=IteratorBytesIO(iterable))
+            matrix_store.save_(from_fileobj=IteratorBytesIO(iterable), metadata=matrix_metadata)
+
+
+    def stitch_csvs(self, features_queries, label_query, matrix_store, matrix_uuid):
+        """_summary_
+
+        Args:
+            features_queries (_type_): _description_
+            label_query (_type_): _description_
+            matrix_store (_type_): _description_
+            matrix_uuid (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        connection = self.db_engine.raw_connection()
+        cursor = connection.cursor()
+        header = "HEADER"
+
+        # starting with features 
+        filenames = []
+        for i, query_string in enumerate(features_queries):
+            copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV {header}"
+            bio = io.BytesIO()
+            cursor.copy_expert(copy_sql, bio)
+            bio.seek(0)
+            output_ = bio.read()
+            filenames.append(matrix_store.matrix_base_store.path + 
+                            matrix_uuid + "_" + str(i) + ".csv")
+            
+            with open(matrix_store.matrix_base_store.path + 
+                      matrix_uuid + f"_{i}.csv","wb") as fd: 
+                fd.write(output_)
+
+        # label
+        copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
+        bio = io.BytesIO()
+        cursor.copy_expert(copy_sql, bio)
+        bio.seek(0)
+        output_ = bio.read()
+
+        with open(matrix_store.matrix_base_store.path + matrix_uuid +
+                  "_label.csv", "wb") as fd:  
+            fd.write(output_)
+
+        # add label file to filenames
+        filenames.append(matrix_store.matrix_base_store.path + matrix_uuid + 
+                         "_label.csv")
+        
+        # join all files starting with features and ending with label
+        files = " ".join(filenames)
+        logger.debug(f"*** filenames {files}")
+
+        # save joined csvs
+        cmd_line = 'paste ' + files + ' -d "," > ' + \
+            matrix_store.matrix_base_store.path + matrix_uuid + ".csv"
+        subprocess.run(cmd_line, shell=True)
+
+        # save compressed as gzip
+        cmd_line = 'gzip ' + matrix_store.matrix_base_store_path + matrix_uuid +\
+              '.csv > ' + matrix_store.matrix_base_store.path + matrix_uuid + ".csv.gz"
+        subprocess.run(cmd_line, shell=True)
+
+        # load as DF
+        with open("../triage_output/test_lily_all.csv","rb") as fd:
+            out = io.StringIO(str(fd.read(), 'utf-8'))
+        
+        out.seek(0)
+        df = pd.read_csv(out, parse_dates=["as_of_date"])
+        df.set_index(["entity_id", "as_of_date"], inplace=True)
+        
+        return downcast_matrix(df)
