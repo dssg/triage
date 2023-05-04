@@ -7,7 +7,6 @@ logger = verboselogs.VerboseLogger(__name__)
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
-from pathlib import Path
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
