@@ -18,12 +18,12 @@ def downcast_matrix(df):
     and save memory on the index storage.
     """
     logger.spam("Downcasting matrix.")
-    logger.spam(f"Starting memory usage: {df.memory_usage(deep=True).sum()} bytes")
+    logger.spam(f"Starting memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
     logger.spam(f"Initial types: \n {df.dtypes}")
     new_df = df.apply(lambda x: x.astype(np.float32))
 
     logger.spam("Downcasting matrix completed.")
-    logger.spam(f"Final memory usage: {new_df.memory_usage(deep=True).sum()} bytes")
+    logger.spam(f"Final memory usage: {new_df.memory_usage(deep=True).sum()/1000000} MB")
     logger.spam(f"Final data types: \n {new_df.dtypes}")
 
     return new_df
