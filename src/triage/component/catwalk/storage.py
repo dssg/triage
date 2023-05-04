@@ -10,6 +10,7 @@ import pathlib
 from contextlib import contextmanager
 from os.path import dirname
 from urllib.parse import urlparse
+from pathlib import Path
 
 import gzip
 import pandas as pd
@@ -19,6 +20,7 @@ import yaml
 import joblib
 import shutil
 import subprocess
+import io
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -593,17 +595,34 @@ class CSVMatrixStore(MatrixStore):
 
         return head_of_matrix
 
+    def get_storage_directory(self):
+        """Gets only the directory part of the storage path of the project"""
+        logger.debug(f"*** {type(self)}")
+        parts_path = list(self.matrix_base_store.path.parts[1:-1])
+        path_ = Path("/" + "/".join(parts_path))
+
+        return path_
+
+
     def _load(self):
         with self.matrix_base_store.open("rb") as fd:
             return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+    
+    def load_csv(self, path_, matrix_uuid, suffix):
+        with open(path_ + "/" + matrix_uuid + suffix, "rb") as fd:
+            return io.StringIO(str(fd.read(), 'utf-8'))
 
     def save(self):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
+
+    def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
+        with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
+            return fd.write(output)
     
     def save_w_cmdline(self, cmd_line):
-        logger.debug(f"*** gzip design matrix {self.matrix_uuid} with cmd line: {cmd_line}")
+        logger.debug(f"gzip design matrix {self.matrix_uuid} with cmd line: {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")

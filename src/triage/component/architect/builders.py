@@ -1,6 +1,4 @@
 import io
-import contextlib
-import itertools
 import subprocess
 
 import verboselogs, logging
@@ -9,15 +7,12 @@ logger = verboselogs.VerboseLogger(__name__)
 import pandas as pd
 
 from sqlalchemy.orm import sessionmaker
-from ohio import PipeTextIO
-from functools import partial
 from pathlib import Path
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
-from triage.util.io import IteratorBytesIO
 
 
 class BuilderBase:
@@ -442,8 +437,8 @@ class MatrixBuilder(BuilderBase):
 
     def stitch_csvs(self, features_queries, label_query, matrix_store, matrix_uuid):
         """
-        Get all features related this matrix_uuid as CSV files, as well as  the labels. 
-        Join all the elements columnwise to add it as columns and create the final design matrix. 
+        Get all features related this matrix_uuid as CSV files, as well as the labels. 
+        Join all the csv elements columnwise and create the final matrix. 
         The last column is the label. 
 
         Args:
@@ -477,8 +472,8 @@ class MatrixBuilder(BuilderBase):
             
             filenames.append(path_ + "/" + matrix_uuid + "_" + str(i) + ".csv")
             
-            with open(path_ + "/" + matrix_uuid + f"_{i}.csv","wb") as fd: 
-                fd.write(output_)
+            matrix_store.save_tmp_csv(output_, path_, matrix_uuid, f"_{str(i)}.csv")
+
         logger.debug(f"number of feature files to paste for matrix {matrix_uuid}: {len(filenames)}")
 
         # label
@@ -488,8 +483,7 @@ class MatrixBuilder(BuilderBase):
         bio.seek(0)
         output_ = bio.read()
 
-        with open(path_ + "/" + matrix_uuid + "_label.csv", "wb") as fd:  
-            fd.write(output_)
+        matrix_store.save_tmp_csv(output_, path_, matrix_uuid, "_label.csv")
 
         # add label file to filenames
         filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
@@ -503,9 +497,9 @@ class MatrixBuilder(BuilderBase):
         subprocess.run(cmd_line, shell=True)
 
         # load as DF
-        with open(path_ + "/" + matrix_uuid + ".csv","rb") as fd:
-            out = io.StringIO(str(fd.read(), 'utf-8'))
-        
+        out = matrix_store.load_csv(path_, matrix_uuid, ".csv")
+        # with open(path_ + "/" + matrix_uuid + ".csv","rb") as fd:
+        #     out = io.StringIO(str(fd.read(), 'utf-8'))
         out.seek(0)
         df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
@@ -525,6 +519,7 @@ class MatrixBuilder(BuilderBase):
         """
         Removes the csvs generated for each feature, the label csv file,
         and the csv with all the features and label stitched togheter. 
+        The csv with all merged is being deleted while generating the gzip.
 
         Args:
             filenames (list): list of filenames to remove from disk
