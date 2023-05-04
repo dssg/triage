@@ -597,7 +597,6 @@ class CSVMatrixStore(MatrixStore):
 
     def get_storage_directory(self):
         """Gets only the directory part of the storage path of the project"""
-        logger.debug(f"*** {type(self)}")
         parts_path = list(self.matrix_base_store.path.parts[1:-1])
         path_ = Path("/" + "/".join(parts_path))
 
