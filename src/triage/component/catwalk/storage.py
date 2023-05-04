@@ -18,6 +18,7 @@ import wrapt
 import yaml
 import joblib
 import shutil
+import subprocess
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -598,6 +599,12 @@ class CSVMatrixStore(MatrixStore):
 
     def save(self):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        with self.metadata_base_store.open("wb") as fd:
+            yaml.dump(self.metadata, fd, encoding="utf-8")
+    
+    def save_w_cmdline(self, cmd_line):
+        logger.debug(f"*** gzip design matrix {self.matrix_uuid} with cmd line: {cmd_line}")
+        subprocess.run(cmd_line, shell=True)
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
