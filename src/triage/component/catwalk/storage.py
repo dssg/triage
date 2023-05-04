@@ -603,7 +603,6 @@ class CSVMatrixStore(MatrixStore):
 
         return path_
 
-
     def _load(self):
         with self.matrix_base_store.open("rb") as fd:
             return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])

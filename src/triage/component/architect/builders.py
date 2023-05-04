@@ -458,8 +458,7 @@ class MatrixBuilder(BuilderBase):
         header = "HEADER"
 
         # starting with features 
-        fixed_path = self._fix_path(matrix_store)
-        path_ = str(fixed_path)
+        path_ = str(matrix_store.get_storage_directory())
         logger.debug(f"path to store csvs {path_}")
 
         filenames = []
@@ -531,18 +530,3 @@ class MatrixBuilder(BuilderBase):
             cmd_line = 'rm ' + filename_ 
             subprocess.run(cmd_line, shell=True)
 
-
-    def _fix_path(self, matrix_store):
-        """
-        Returns the directory on where to save the CSVs files.
-
-        Args:
-            matrix_store (MatrixStore): 
-
-        Returns:
-            string: path to store CSVs without matrix name and file type 
-        """
-        parts_path = list(matrix_store.matrix_base_store.path.parts[1:-1])
-        path_ = Path("/" + "/".join(parts_path))
-
-        return path_
