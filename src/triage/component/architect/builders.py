@@ -307,9 +307,10 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata["label_timespan"],
         )
 
-        matrix_store.metadata = matrix_metadata
-
         output = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
+        matrix_store.metadata = matrix_metadata
+        labels = output.pop(matrix_store.label_column_name)
+        matrix_store.matrix_label_tuple = output, labels
 
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
