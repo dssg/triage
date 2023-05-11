@@ -102,6 +102,8 @@ class PostmodelingReport:
 
     def plot_score_distributions(self, use_labels):
         """for the model group ids plot score grid"""
+
+        # FIXME -- This breaks if only one model group is given to the report generator
         fig, axes = self._get_subplots()
 
         for i, mg in enumerate(self.models):
@@ -243,18 +245,18 @@ class PostmodelingReport:
                 )
 
                 if j==0:
-                    axes[i, j].set_ylabel(f'{train_end_time} ({mode_analyzer.model_id})') # first column
+                    axes[i, j].set_ylabel(f'{train_end_time}') # first column
                 else:
                     axes[i, j].set_ylabel('')
                 
-                if i == 0:
-                    # axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
-                    axes[i, j].set_title(f'Mod Grp: {mg}') # Top row
+                # if i == 0:
+                #     # axes[i, j].set_title(f'{train_end_time} ({mode_analyzer.model_id})')
+                #     axes[i, j].set_title(f'Mod Grp: {mg}') # Top row
 
-                else:
-                    axes[i, j].set_title('')
+                # # else:
+                #     # axes[i, j].set_title('')
 
-        fig.suptitle(f'{n_top_features} Features with highest importance (magnitude)')
+        # fig.suptitle(f'{n_top_features} Features with highest importance (magnitude)')
         fig.tight_layout()
 
     def plot_feature_group_importance(self, n_top_groups=20):
