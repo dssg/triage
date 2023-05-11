@@ -756,6 +756,11 @@ class ModelAnalyzer:
         # keep only top n_top_features
         feature_importance_scores.sort_values(by=['rank_abs'], ascending=True, inplace=True)
         feature_importance_scores = feature_importance_scores.loc[feature_importance_scores['rank_abs'] <= n_top_features]
+        
+        if 'Algorithm does not support' in feature_importance_scores.feature.iloc[0]:
+            # For models without featue importance score support
+            return ax 
+        
         # plot
         sns.barplot(
             data=feature_importance_scores,
@@ -765,7 +770,7 @@ class ModelAnalyzer:
             ax=ax
         )
         ax.set_ylabel('Feature')
-        ax.set_title('Feature Importance')
+        ax.set_title(f'Model {self.model_id}, group: {self.model_group_id}')
         return ax
 
     def plot_feature_group_importance(self, ax, n_top_groups=20):
