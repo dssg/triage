@@ -1,5 +1,6 @@
 import ohio.ext.pandas
 import pandas as pd
+import numpy as np
 import logging
 import seaborn as sns
 import matplotlib.table as tab
@@ -9,9 +10,11 @@ from tabulate import tabulate
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
+from sklearn import metrics
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis
+from triage.database_reflection import table_exists
 
 
 class ModelAnalyzer:
@@ -341,12 +344,14 @@ class ModelAnalyzer:
             logging.error(f'No predictions found for {self.model_id} and {matrix_uuid}. Exiting!')
             raise ValueError(f'No predictions found {self.model_id} and {matrix_uuid}')
 
-        # checking whether the crosstabs already exist for the model
-        logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id}')
-        q = f"select * from test_results.{table_name} where model_id={self.model_id};"
-        df = pd.read_sql(q, self.engine)
-        if not df.empty:
-            logging.warning(f'Crosstabs aleady exist for model {self.model_id}')
+        # Check whether the table exists
+        if table_exists(f'test_results.{table_name}', self.engine):
+            # checking whether the crosstabs already exist for the model
+            logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id}')
+            q = f"select * from test_results.{table_name} where model_id={self.model_id};"
+            df = pd.read_sql(q, self.engine)
+            if not df.empty:
+                logging.warning(f'Crosstabs aleady exist for model {self.model_id}')
             
             if replace:
                 logging.warning('Deleting the existing crosstabs!')
@@ -356,7 +361,7 @@ class ModelAnalyzer:
                 logging.info(f'Replace set to False. Not calculating crosstabs for model {self.model_id}')
                 if return_df: return df 
                 else: return 
-
+        
         # initializing the storage engines
         project_storage = ProjectStorage(project_path)
         matrix_storage_engine = project_storage.matrix_storage_engine()
@@ -593,7 +598,8 @@ class ModelAnalyzer:
                     linestyle='dashed')
         ax.set_ylabel('Frequency')
         ax.set_xlabel('Score')
-        ax.set_title('Score Distribution')
+        ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
+
         return ax
 
     def plot_score_label_distribution(self, ax,
@@ -695,7 +701,8 @@ class ModelAnalyzer:
         ax.set_ylabel('Precision')
         return ax
 
-    def plot_precision_recall_curve(self, ax, matrix_uuid=None):
+    # TODO: Facilitate plotting pr-k with absolute thresholds
+    def plot_precision_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01):
         """
         Plots precision-recall curves at each train_end_time for all model groups
         
@@ -707,37 +714,71 @@ class ModelAnalyzer:
             ax: the modified Axes object
         """
 
-        eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
-        
-        eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
-        eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
-        
-        msk_prec = eval_df['metric']=='precision@'
-        msk_recall = eval_df['metric']=='recall@'
-        msk_pct = eval_df['parameter'].str.contains('pct')
+        pred_df = self.get_predictions(matrix_uuid=matrix_uuid).filter(
+            items=['label_value', 'score']
+        ).sort_values('score', ascending=False)
 
-        # plot precision
-        sns.lineplot(
-            x='perc_points',
-            y='stochastic_value', 
-            data=eval_df[msk_pct & msk_prec], 
-            label='precision@k',
-            ax=ax, 
-            estimator='mean', ci='sd'
-        )
-        # plot recall
-        sns.lineplot(
-            x='perc_points', 
-            y='stochastic_value', 
-            data=eval_df[msk_pct & msk_recall], 
-            label='recall@k', 
-            ax=ax, 
-            estimator='mean', 
-            ci='sd'
-        )
-        ax.set_xlabel('List size percentage (k%)')
+        if ax is None:
+            fig, ax = plt.sunplots()
+
+
+        if pred_df.empty:
+            logging.warning('No predictions were found. Using the evaluations to generate the plot. Zoomed PR-K not supported!')
+            eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+            
+            eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
+            eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
+            
+            msk_prec = eval_df['metric']=='precision@'
+            msk_recall = eval_df['metric']=='recall@'
+            msk_pct = eval_df['parameter'].str.contains('pct')
+
+            # plot precision
+            sns.lineplot(
+                x='perc_points',
+                y='stochastic_value', 
+                data=eval_df[msk_pct & msk_prec], 
+                label='precision@k',
+                ax=ax, 
+                estimator='mean', ci='sd'
+            )
+            # plot recall
+            sns.lineplot(
+                x='perc_points', 
+                y='stochastic_value', 
+                data=eval_df[msk_pct & msk_recall], 
+                label='recall@k', 
+                ax=ax, 
+                estimator='mean', 
+                ci='sd'
+            )
+
+        else:
+            k_values = np.arange(0 + pct_step_size, list_size_upper_bound_pct + pct_step_size, pct_step_size)
+
+            precisions = list()
+            recalls = list()
+            num_scored = len(pred_df)
+
+            for k in k_values:
+                num_above_thresh = round(k * num_scored)
+
+                pred_pos = pred_df.iloc[:num_above_thresh]
+                
+                precision = pred_pos.label_value.sum() / len(pred_pos)
+                recall = float(pred_pos.label_value.sum() / pred_df.label_value.sum())
+
+                precisions.append(precision)
+                recalls.append(recall)
+
+            sns.lineplot(x=k_values * 100, y=precisions, ax=ax, label='Precision@k')
+            sns.lineplot(x=k_values * 100, y=recalls, ax=ax, label='Recall@k')
+            
+
+        ax.set_xlabel('Population percentage (k %)')
         ax.set_ylabel('Metric Value')
         ax.set_title('Precision-Recall Curve')
+
         return ax
 
     def plot_feature_importance(self, ax, n_top_features=20):
