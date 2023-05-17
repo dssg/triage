@@ -597,10 +597,19 @@ class CSVMatrixStore(MatrixStore):
 
     def get_storage_directory(self):
         """Gets only the directory part of the storage path of the project"""
-        parts_path = list(self.matrix_base_store.path.parts[1:-1])
-        path_ = Path("/" + "/".join(parts_path))
-
+        logger.debug(f"original path: {self.matrix_base_store.path}")
+        # if is is File system storage type
+        if isinstance(self.matrix_base_store.path, Path):
+            parts_path = list(self.matrix_base_store.path.parts[1:-1])
+            path_ = Path("/" + "/".join(parts_path))
+        # if it is a S3 storage type
+        else:
+            path_ = Path("/tmp/triage_output/matrices")
+        
+        logger.debug(f"get storage directory path: {path_}")
+        
         return path_
+    
 
     def _load(self):
         with self.matrix_base_store.open("rb") as fd:
