@@ -5,8 +5,10 @@ import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
 import pandas as pd
+import numpy as np
 
 from sqlalchemy.orm import sessionmaker
+from pympler import tracker
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
@@ -311,6 +313,7 @@ class MatrixBuilder(BuilderBase):
         matrix_store.metadata = matrix_metadata
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
+        matrix_store.save()
 
         # If completely archived, save its information to matrices table
         # At this point, existence of matrix already tested, so no need to delete from db
@@ -497,16 +500,13 @@ class MatrixBuilder(BuilderBase):
 
         # load as DF
         out = matrix_store.load_csv(path_, matrix_uuid, ".csv")
-        # with open(path_ + "/" + matrix_uuid + ".csv","rb") as fd:
-        #     out = io.StringIO(str(fd.read(), 'utf-8'))
         out.seek(0)
+        tr = tracker.SummaryTracker()
+        #df = np.genfromtxt(out, names=True, delimiter=",")
+        logger.info(tr.print_diff())
         df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
-
-        # save compressed as gzip
-        cmd_line = 'gzip ' + path_ + "/" + matrix_uuid + '.csv'
-        matrix_store.save_w_cmdline(cmd_line)
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         self.remove_unnecessary_files(filenames, path_, matrix_uuid)
@@ -530,3 +530,6 @@ class MatrixBuilder(BuilderBase):
             cmd_line = 'rm ' + filename_ 
             subprocess.run(cmd_line, shell=True)
 
+        # deleting the merged csv
+        cmd_line = 'rm' + path_ + matrix_uuid + '.csv'
+        subprocess.run(cmd_line, shell=True)
