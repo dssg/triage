@@ -605,6 +605,7 @@ class CSVMatrixStore(MatrixStore):
         # if it is a S3 storage type
         else:
             path_ = Path("/tmp/triage_output/matrices")
+            os.makedirs(path_, exist_ok=True)
         
         logger.debug(f"get storage directory path: {path_}")
         
@@ -625,6 +626,7 @@ class CSVMatrixStore(MatrixStore):
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
     def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
+        logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
         with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
             return fd.write(output)
     
