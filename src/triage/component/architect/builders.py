@@ -501,12 +501,8 @@ class MatrixBuilder(BuilderBase):
         
 
         # load as DF
-        out = matrix_store.load_csv(path_, matrix_uuid, ".csv")
-        out.seek(0)
-        #tr2 = tracker.SummaryTracker()
-        #df = np.genfromtxt(out, delimiter=",", names=True, dtype='float32')
-        #logger.info(tr2.print_diff())
-        df = pd.read_csv(out, parse_dates=["as_of_date"])
+        filename_ = path_ + '/' + matrix_uuid + '.csv'
+        df = pd.read_csv(filename_, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         #logger.debug(f"stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
 
