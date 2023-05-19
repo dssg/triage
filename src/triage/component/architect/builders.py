@@ -455,6 +455,7 @@ class MatrixBuilder(BuilderBase):
         Returns:
             DataFrame: Design downcasted matrix
         """
+        tr = tracker.SummaryTracker()
         logger.debug(f"stitching csvs for matrix {matrix_uuid}")
         connection = self.db_engine.raw_connection()
         cursor = connection.cursor()
@@ -497,21 +498,23 @@ class MatrixBuilder(BuilderBase):
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
         logger.debug(f"paste CSVs columnwise for matrix {matrix_uuid} cmd line: {cmd_line}")
         subprocess.run(cmd_line, shell=True)
+        
 
         # load as DF
         out = matrix_store.load_csv(path_, matrix_uuid, ".csv")
         out.seek(0)
-        tr = tracker.SummaryTracker()
-        #df = np.genfromtxt(out, names=True, delimiter=",")
-        logger.info(tr.print_diff())
+        #tr2 = tracker.SummaryTracker()
+        #df = np.genfromtxt(out, delimiter=",", names=True, dtype='float32')
+        #logger.info(tr2.print_diff())
         df = pd.read_csv(out, parse_dates=["as_of_date"])
         df.set_index(["entity_id", "as_of_date"], inplace=True)
-        logger.debug(f"stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
+        #logger.debug(f"stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         self.remove_unnecessary_files(filenames, path_, matrix_uuid)
 
         return downcast_matrix(df)
+        #return df
 
 
     def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
