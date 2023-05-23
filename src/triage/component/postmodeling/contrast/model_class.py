@@ -139,6 +139,41 @@ class ModelAnalyzer:
 
         return preds.set_index(self.id_columns)
 
+    
+    def get_top_k(self, threshold_type, threshold, matrix_uuid=None):
+        """ Fetch the k intities with highest model score for a given model
+        
+            Args:
+                threshold_type (str): Type of the ranking to use. Has to be one of the four ranking types used in triage
+                    - rank_pct_no_ties 
+                    - rank_pct_with_ties
+                    - rank_abs_no_ties
+                    - rank_abs_with_ties
+                threshold (Union[float, int]): The threshold rank for creating the list. Int for 'rank_abs_*' and Float for 'rank_pct_*'
+                matrix_uuid (optional, str): If a list should be generated out of a matrix that were not used to validate the model during the experiment
+        """
+
+        q = f"""
+            select 
+                entity_id, 
+                as_of_date,
+                score,
+                label_value,
+                rank_abs_no_ties,
+                rank_abs_with_ties,
+                rank_pct_no_ties,
+                rank_pct_with_ties,
+                matrix_uuid
+            from test_results.predictions
+            where model_id={self.model_id}
+            and {threshold_type} <= {threshold}
+        """
+
+        top_k = pd.read_sql(q, self.engine)
+
+        return top_k
+
+
     # TODO generalize this function
     # TODO do we want to allow specifying a dictionary of attributes + values? 
     def get_aequitas(self, parameter=None, attribute_name=None, subset_hash=None):
@@ -230,7 +265,9 @@ class ModelAnalyzer:
 
         return evaluations
 
-    def get_feature_importances(self):
+    def get_feature_importances(self, n_top_features=20):
+
+        logging.debug(f'Fetching feature importance from db for model id: {self.model_id}')
         features = pd.read_sql(
            f'''
            select
@@ -239,6 +276,9 @@ class ModelAnalyzer:
                 rank_abs
            FROM train_results.feature_importances
            WHERE model_id = {self.model_id}
+           and rank_abs <= {n_top_features}
+           and abs(feature_importance) > 0 
+           order by rank_abs
            ''', con=self.engine)
         return features
     
@@ -350,18 +390,19 @@ class ModelAnalyzer:
             logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id}')
             q = f"select * from test_results.{table_name} where model_id={self.model_id};"
             df = pd.read_sql(q, self.engine)
+            
             if not df.empty:
                 logging.warning(f'Crosstabs aleady exist for model {self.model_id}')
+
+                if replace:
+                    logging.warning('Deleting the existing crosstabs!')
+                    with self.engine.connect() as conn:
+                        conn.execute(f'delete from test_results.{table_name} where model_id={self.model_id}')
+                else:
+                    logging.info(f'Replace set to False. Not calculating crosstabs for model {self.model_id}')
+                    if return_df: return df 
+                    else: return 
             
-            if replace:
-                logging.warning('Deleting the existing crosstabs!')
-                with self.engine.connect() as conn:
-                    conn.execute(f'delete from test_results.{table_name} where model_id={self.model_id}')
-            else:
-                logging.info(f'Replace set to False. Not calculating crosstabs for model {self.model_id}')
-                if return_df: return df 
-                else: return 
-        
         # initializing the storage engines
         project_storage = ProjectStorage(project_path)
         matrix_storage_engine = project_storage.matrix_storage_engine()
@@ -719,7 +760,7 @@ class ModelAnalyzer:
         ).sort_values('score', ascending=False)
 
         if ax is None:
-            fig, ax = plt.sunplots()
+            fig, ax = plt.subplots()
 
 
         if pred_df.empty:
@@ -777,7 +818,7 @@ class ModelAnalyzer:
 
         ax.set_xlabel('Population percentage (k %)')
         ax.set_ylabel('Metric Value')
-        ax.set_title('Precision-Recall Curve')
+        # ax.set_title('Precision-Recall Curve')
 
         return ax
 
@@ -793,10 +834,10 @@ class ModelAnalyzer:
             ax: the modified Axes object
         """
 
-        feature_importance_scores = self.get_feature_importances()
+        feature_importance_scores = self.get_feature_importances(n_top_features=n_top_features)
         # keep only top n_top_features
-        feature_importance_scores.sort_values(by=['rank_abs'], ascending=True, inplace=True)
-        feature_importance_scores = feature_importance_scores.loc[feature_importance_scores['rank_abs'] <= n_top_features]
+        # feature_importance_scores.sort_values(by=['rank_abs'], ascending=True, inplace=True)
+        # feature_importance_scores = feature_importance_scores.loc[feature_importance_scores['rank_abs'] <= n_top_features]
         
         if 'Algorithm does not support' in feature_importance_scores.feature.iloc[0]:
             # For models without featue importance score support
@@ -881,7 +922,7 @@ class ModelAnalyzer:
         )
         ax.set_xlabel('Mean predicted probability')
         ax.set_ylabel('Fraction of data')
-        ax.set_title('Calibration curve')
+        ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
         ax.set_xlim([min_score, max_score])
         ax.set_ylim([min_score, max_score])
         return ax
