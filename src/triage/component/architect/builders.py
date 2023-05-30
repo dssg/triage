@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 
 from sqlalchemy.orm import sessionmaker
-from pympler import tracker
 
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
@@ -407,19 +406,16 @@ class MatrixBuilder(BuilderBase):
         return labels_query
 
     def feature_load_queries(self, feature_dictionary, entity_date_table_name):
-        """ Loop over tables in features schema, writing the data from each to a
-        csv. Return the full list of feature csv names and the list of all
-        features.
-        :param feature_dictionary: a dictionary of feature tables and features
-            to be included in the matrix
-        :param entity_date_table_name: the name of the entity date table
-            for the matrix
+        """ Loop over tables in features schema, writing the data from each to a csv. Return the full list of feature 
+        csv names and the list of all features.
+        :param feature_dictionary: a dictionary of feature tables and features to be included in the matrix
+        :param entity_date_table_name: the name of the entity date table for the matrix
         :type feature_dictionary: dict
         :type entity_date_table_name: str
         :return: list of csvs containing feature data
-        :rtype: tuple
+        :rtype: list
         """
-        # iterate! for each table, make query, write csv, save feature & file names
+        # iterate! for each table, make query
         queries = []
         for num, (feature_table_name, feature_names) in enumerate(feature_dictionary.items()):
             logging.info("Generating feature query for %s", feature_table_name)
@@ -455,7 +451,6 @@ class MatrixBuilder(BuilderBase):
         Returns:
             DataFrame: Design downcasted matrix
         """
-        tr = tracker.SummaryTracker()
         logger.debug(f"stitching csvs for matrix {matrix_uuid}")
         connection = self.db_engine.raw_connection()
         cursor = connection.cursor()
@@ -510,7 +505,6 @@ class MatrixBuilder(BuilderBase):
         self.remove_unnecessary_files(filenames, path_, matrix_uuid)
 
         return downcast_matrix(df)
-        #return df
 
 
     def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
