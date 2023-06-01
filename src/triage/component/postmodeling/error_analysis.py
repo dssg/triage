@@ -430,7 +430,7 @@ def _output_config_text(element, error_label):
     First paragraph of text associated to the output of a particular analysis.
 
         Args:
-            element (dict): Dictinoary with outputs of the error analysis.
+            element (dict): Dictionary with outputs of the error analysis.
             error_label (string): Type of error analysis that is being generated.
 
         Returns:
@@ -438,7 +438,8 @@ def _output_config_text(element, error_label):
             analysis generated.
     """
     config_text = f"""
-
+        
+    Model id: {element['model_id']}
     Error analysis type: {error_label}
     Size of the list: {element['k']}
     Decision Tree with max_depth of, {element['max_depth']}
