@@ -17,7 +17,7 @@ sqlparse==0.4.4
 pebble==5.0.3
 adjustText==0.8
 graphviz==0.20.1
-requests==2.27.1
+requests==2.31.0
 coloredlogs==15.0.1
 verboselogs==1.7
 s3fs==0.4.2 # pyup: ignore
