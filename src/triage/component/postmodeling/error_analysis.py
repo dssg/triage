@@ -104,6 +104,7 @@ def _fetch_matrices(model_id, project_path, db_conn):
         A DataFrame with features, predictions, and labels
     """
     # getting predictions with label and matrix_uuid 
+    logging.info(f"extracting predictions from model id: {model_id}")
     predictions = _fetch_scores_labels(model_id, db_conn)
     matrix_uuid = predictions.matrix_uuid.unique()[0]
 
@@ -588,7 +589,9 @@ def output_specific_error_analysis(error_analysis_results,
 
 
 if __name__ == "__main__":
-    model_id = 1630
+    model_id = 1417
     db_conn = psycopg2.connect(service='acdhs_housing')
+    # its given by the repor generator 
+    project_path = 's3://dsapp-social-services-migrated/acdhs_housing/triage_experiments/' 
 
-    generate_error_analysis(model_id, db_conn)
+    generate_error_analysis(model_id, db_conn, project_path)
