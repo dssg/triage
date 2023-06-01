@@ -267,7 +267,7 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
     return error_analysis_results
 
 
-def generate_error_analysis(model_id, db_conn):
+def generate_error_analysis(model_id, db_conn, project_path):
     """
     Main function that runs the error analysis on a particular model_id.
 
@@ -280,7 +280,7 @@ def generate_error_analysis(model_id, db_conn):
             List of list of dictionaries
     """
     error_analysis_config = _get_error_analysis_configuration()
-    project_path = error_analysis_config['project_path']
+    #project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
     view_plots = error_analysis_config['view_plots']
