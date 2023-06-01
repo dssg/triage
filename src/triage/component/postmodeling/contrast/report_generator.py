@@ -10,7 +10,7 @@ from descriptors import cachedproperty
 from scipy.stats import spearmanr
 
 from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
-from triage.component.postmodeling.error_analysis import generate_error_analysis
+from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
 
 
 class PostmodelingReport: 
@@ -454,12 +454,32 @@ class PostmodelingReport:
             fig.tight_layout()
         return results
 
+    def _get_individual_model_ids(self):
+        """Get individual model ids associated with the given model groups
+        """
+        model_groups = ", ".join([str(x) for x in self.model_groups])
+
+        q = f"""
+            select
+                model_id 
+            from triage_metadata.models
+            where model_group_id in({model_groups})
+        """
+        df_model_ids = pd.read_sql(q, self.engine)
+
+        return df_model_ids.model_id.to_list()
+
+
+
     def execute_error_analysis(self):
         """Generates the error analysis of a model
         """
-        model_ids = self.models
-        db_conn = self.engine.connection()
+        model_ids = self._get_individual_model_ids()
+        db_conn = self.engine
         for model_id in model_ids:
-            generate_error_analysis(model_id, db_conn, self.project_path)
+            logging.info(f"generating error analysis for model id {model_id}")
+            results = generate_error_analysis(model_id, db_conn, self.project_path)
+            output_all_analysis(results)
+            
 
     
