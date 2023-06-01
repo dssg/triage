@@ -10,6 +10,7 @@ from descriptors import cachedproperty
 from scipy.stats import spearmanr
 
 from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
+from triage.component.postmodeling.error_analysis import generate_error_analysis
 
 
 class PostmodelingReport: 
@@ -453,6 +454,12 @@ class PostmodelingReport:
             fig.tight_layout()
         return results
 
-
+    def execute_error_analysis(self):
+        """Generates the error analysis of a model
+        """
+        model_ids = self.models
+        db_conn = self.engine.connection()
+        for model_id in model_ids:
+            generate_error_analysis(model_id, db_conn, self.project_path)
 
     
