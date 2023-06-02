@@ -17,6 +17,7 @@ docs/site/
 venv/
 my_db_config.yaml
 database.yaml
+database*.yaml
 dirtyduck/triage/**
 
 *~
@@ -24,3 +25,7 @@ dirtyduck/triage/**
 **/matrices
 
 *.swp
+src/triage/component/postmodeling/postmodeling_tmp.ipynb
+src/triage/component/postmodeling/model_class_testing.py
+src/triage/component/postmodeling/model_class_testing.ipynb
+src/triage/component/postmodeling/model_groups_testing.ipynb

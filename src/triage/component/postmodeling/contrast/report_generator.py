@@ -11,11 +11,13 @@ from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
 
 class PostmodelingReport: 
 
-    def __init__(self, engine, model_groups, experiment_hashes, project_path=None) -> None:
+    def __init__(self, engine, model_groups, experiment_hashes, project_path=None, use_all_model_groups=False) -> None:
         self.model_groups = model_groups
         self.experiment_hashes = experiment_hashes # TODO made experiment hashes into a list to plot models from different experiments for MVESC, there's probably a better way to generalize this
         self.engine = engine
         self.project_path = project_path
+        if use_all_model_groups: # shortcut to listing out all model groups for an experiment
+            self.use_all_model_groups()
         self.models = self.get_model_ids()
         
     @property
@@ -25,6 +27,17 @@ class PostmodelingReport:
     @property
     def model_types(self):
         pass
+
+    def use_all_model_groups(self):
+        experiment_hashes = "','".join(self.experiment_hashes)
+        q = f"""
+                select model_group_id 
+                from triage_metadata.models
+                    join triage_metadata.experiment_models using (model_hash)
+                where experiment_hash in ('{experiment_hashes}')
+            """
+        model_groups = pd.read_sql(q, self.engine)
+        self.model_groups = model_groups['model_group_id'].to_list()
 
     def display_model_groups(self):
         data_dict = []
@@ -39,27 +52,28 @@ class PostmodelingReport:
         """for the model group ids, fetch the model_ids and initialize the datastructure"""
 
         model_groups = "', '".join([str(x) for x in self.model_groups])
+        experiment_hashes = "', '".join(self.experiment_hashes)
+        q = f"""
+            select distinct on (model_group_id, train_end_time)
+                model_id, 
+                train_end_time::date,
+                model_group_id
+            from triage_metadata.models 
+                join triage_metadata.experiment_models using(model_hash)
+            where experiment_hash in ('{experiment_hashes}')
+            and model_group_id in ('{model_groups}')        
+            """  
+        # TODO do we really need experiment_hashes here? can we query with only model_group_ids?
+
+        # TODO: modify to remove pandas
+        models = pd.read_sql(q, self.engine).to_dict(orient='records')
+
         d = dict()
-        for experiment_hash in self.experiment_hashes:
-            q = f"""
-                select distinct on (model_group_id, train_end_time)
-                    model_id, 
-                    train_end_time::date,
-                    model_group_id
-                from triage_metadata.models 
-                    join triage_metadata.experiment_models using(model_hash)
-                where experiment_hash='{experiment_hash}'
-                and model_group_id in ('{model_groups}')        
-                """  
-
-            # TODO: modify to remove pandas
-            models = pd.read_sql(q, self.engine).to_dict(orient='records')
-
-            for m in models:
-                if m['model_group_id'] in d:
-                    d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
-                else:
-                    d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
+        for m in models:
+            if m['model_group_id'] in d:
+                d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
+            else:
+                d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
 
         return d 
             
@@ -80,7 +94,8 @@ class PostmodelingReport:
             n_rows,
             n_cols,
             figsize = (subplot_width*n_cols, subplot_len*n_rows),
-            dpi=100
+            dpi=100,
+            squeeze=False # to handle only one model group
         )
 
         return fig, axes
@@ -193,6 +208,9 @@ class PostmodelingReport:
         """
             Plot precision against threshold (list %)
         """
+        if len(self.models) <= 1:
+            print("Not available when there is only one model group (look at plot_prk_curves instead)")
+            return
         fig, axes = self._get_subplots(subplot_width=6, n_rows=1)
         for _, mg in enumerate(self.models):
             for j, train_end_time in enumerate(self.models[mg]):
