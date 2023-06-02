@@ -104,6 +104,7 @@ def _fetch_matrices(model_id, project_path, db_conn):
         A DataFrame with features, predictions, and labels
     """
     # getting predictions with label and matrix_uuid 
+    logging.info(f"extracting predictions from model id: {model_id}")
     predictions = _fetch_scores_labels(model_id, db_conn)
     matrix_uuid = predictions.matrix_uuid.unique()[0]
 
@@ -267,7 +268,7 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
     return error_analysis_results
 
 
-def generate_error_analysis(model_id, db_conn):
+def generate_error_analysis(model_id, db_conn, project_path):
     """
     Main function that runs the error analysis on a particular model_id.
 
@@ -280,7 +281,7 @@ def generate_error_analysis(model_id, db_conn):
             List of list of dictionaries
     """
     error_analysis_config = _get_error_analysis_configuration()
-    project_path = error_analysis_config['project_path']
+    #project_path = error_analysis_config['project_path']
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
     view_plots = error_analysis_config['view_plots']
@@ -429,7 +430,7 @@ def _output_config_text(element, error_label):
     First paragraph of text associated to the output of a particular analysis.
 
         Args:
-            element (dict): Dictinoary with outputs of the error analysis.
+            element (dict): Dictionary with outputs of the error analysis.
             error_label (string): Type of error analysis that is being generated.
 
         Returns:
@@ -437,7 +438,8 @@ def _output_config_text(element, error_label):
             analysis generated.
     """
     config_text = f"""
-
+        
+    Model id: {element['model_id']}
     Error analysis type: {error_label}
     Size of the list: {element['k']}
     Decision Tree with max_depth of, {element['max_depth']}
@@ -588,7 +590,9 @@ def output_specific_error_analysis(error_analysis_results,
 
 
 if __name__ == "__main__":
-    model_id = 1630
+    model_id = 1417
     db_conn = psycopg2.connect(service='acdhs_housing')
+    # its given by the repor generator 
+    project_path = 's3://dsapp-social-services-migrated/acdhs_housing/triage_experiments/' 
 
-    generate_error_analysis(model_id, db_conn)
+    generate_error_analysis(model_id, db_conn, project_path)
