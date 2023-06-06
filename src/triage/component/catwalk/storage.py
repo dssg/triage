@@ -614,8 +614,7 @@ class CSVMatrixStore(MatrixStore):
 
     def _load(self):
         with self.matrix_base_store.open("rb") as fd:
-            dfs = pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"], chunksize=1000)
-            return pd.concat(dfs)
+            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
     
     def load_csv(self, path_, matrix_uuid, suffix):
         with open(path_ + "/" + matrix_uuid + suffix, "rb") as fd:
