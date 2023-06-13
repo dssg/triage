@@ -21,6 +21,9 @@ import joblib
 import shutil
 import subprocess
 import io
+import time
+import polars as pl
+import pyarrow
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -613,12 +616,48 @@ class CSVMatrixStore(MatrixStore):
     
 
     def _load(self):
-        with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
-    
-    def load_csv(self, path_, matrix_uuid, suffix):
-        with open(path_ + "/" + matrix_uuid + suffix, "rb") as fd:
-            return io.StringIO(str(fd.read(), 'utf-8'))
+        #with self.matrix_base_store.open("rb") as fd:
+        #    return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+        logger.debug(f"unziping matrix with uuid {self.matrix_uuid} via command line")
+        start = time.time()
+        cmd_line = f'gzip -dk {self.matrix_base_store}'
+        return_code = subprocess.run(cmd_line, shell=True)
+        end = time.time()
+        logger.debug(f"output of command line execution (returncode=0, means success) {return_code}")
+        logger.debug(f"time spent unziping via command line {(end-start)/60}")
+
+        start = time.time()
+        filename_ = self.matrix_uuid + ".csv"
+        df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
+            ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
+        end = time.time()
+        logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
+
+        # casting entity_id and as_of_date 
+        logger.debug(f"casting entity_id and as_of_date")
+        start = time.time()
+        # define if as_of_date is date or datetime for correct cast
+        if len(df_pl.get_column('as_of_date').head(1)[0].split()) > 1: 
+            format = "%Y-%m-%d %H:%M:%S"
+        else: 
+            format = "%Y-%m-%d"
+
+        df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
+        df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
+        end = time.time()
+        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
+        # converting from polars to pandas
+        logger.debug(f"about to convert polars df into pandas df")
+        start = time.time()
+        df = df_pl.to_pandas()
+        end = time.time()
+        logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
+        df.set_index(["entity_id", "as_of_date"], inplace=True)
+        logger.debug(f"df data types: {df.dtypes}")
+        logger.spam(f"Panas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+
+        return df
+
 
     def save(self):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
@@ -629,27 +668,6 @@ class CSVMatrixStore(MatrixStore):
         logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
         with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
             return fd.write(output)
-    
-    def save_w_cmdline(self, cmd_line):
-        logger.debug(f"gzip design matrix {self.matrix_uuid} with cmd line: {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
-        with self.metadata_base_store.open("wb") as fd:
-            yaml.dump(self.metadata, fd, encoding="utf-8")
-
-
-    def save_(self, from_fileobj, metadata):
-        """Compress and save the matrix from a CSV bytestream file object
-        Args:
-            from_fileobj (file-like): A readable file object containing a CSV bytestream to save
-        """
-        logger.debug("*** in matrix_storage save_")
-        with self.matrix_base_store.open('wb') as fdesc:
-            with gzip.GzipFile(fileobj=fdesc, mode='w') as compressor:
-                shutil.copyfileobj(from_fileobj, compressor)
-
-        logger.debug("*** in save_ dumping metadata")
-        with self.metadata_base_store.open('wb') as fd:
-            yaml.dump(metadata, fd, encoding="utf-8")
 
 
 class TestMatrixType:

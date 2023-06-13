@@ -6,6 +6,9 @@ logger = verboselogs.VerboseLogger(__name__)
 
 import pandas as pd
 import numpy as np
+import polars as pl
+import pyarrow
+import time
 
 from sqlalchemy.orm import sessionmaker
 
@@ -309,6 +312,7 @@ class MatrixBuilder(BuilderBase):
         )
 
         output = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
+        logger.debug(f"matrix stitched, pandas DF returned")
         matrix_store.metadata = matrix_metadata
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
@@ -494,18 +498,44 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"paste CSVs columnwise for matrix {matrix_uuid} cmd line: {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         
-
-        # load as DF
+        logger.debug(f"about to load csvmatrix with uuid {matrix_uuid} as polars df")
+        start = time.time()
+        # load as DF with polars
         filename_ = path_ + '/' + matrix_uuid + '.csv'
-        df = pd.read_csv(filename_, parse_dates=["as_of_date"])
+        #df = pd.read_csv(filename_, parse_dates=["as_of_date"])
+        df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
+            ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
+        end = time.time()
+        logger.debug(f"time to read csv of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
+        
+        # casting entity_id and as_of_date 
+        logger.debug(f"casting entity_id and as_of_date")
+        start = time.time()
+        # define if as_of_date is date or datetime for correct cast
+        if len(df_pl.get_column('as_of_date').head(1)[0].split()) > 1: 
+            format = "%Y-%m-%d %H:%M:%S"
+        else: 
+            format = "%Y-%m-%d"
+
+        df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
+        df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
+        end = time.time()
+        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
+        # converting from polars to pandas
+        logger.debug(f"about to convert polars df into pandas df")
+        start = time.time()
+        df = df_pl.to_pandas()
+        end = time.time()
+        logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
-        #logger.debug(f"stitching csvs for matrix {matrix_uuid} DF shape: {df.shape}")
+        logger.debug(f"df data types: {df.dtypes}")
+        logger.spam(f"Panas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         self.remove_unnecessary_files(filenames, path_, matrix_uuid)
 
-        return downcast_matrix(df)
-
+        #return downcast_matrix(df)
+        return df
 
     def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
         """
@@ -524,5 +554,5 @@ class MatrixBuilder(BuilderBase):
             subprocess.run(cmd_line, shell=True)
 
         # deleting the merged csv
-        cmd_line = 'rm' + path_ + matrix_uuid + '.csv'
+        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
         subprocess.run(cmd_line, shell=True)
