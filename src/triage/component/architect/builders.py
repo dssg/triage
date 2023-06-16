@@ -529,7 +529,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
-        logger.spam(f"Panas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+        logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         self.remove_unnecessary_files(filenames, path_, matrix_uuid)
