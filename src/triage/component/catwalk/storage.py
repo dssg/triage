@@ -618,16 +618,9 @@ class CSVMatrixStore(MatrixStore):
     def _load(self):
         #with self.matrix_base_store.open("rb") as fd:
         #    return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
-        logger.debug(f"unziping matrix with uuid {self.matrix_uuid} via command line")
         start = time.time()
-        cmd_line = f'gzip -dk {self.matrix_base_store}'
-        return_code = subprocess.run(cmd_line, shell=True)
-        end = time.time()
-        logger.debug(f"output of command line execution (returncode=0, means success) {return_code}")
-        logger.debug(f"time spent unziping via command line {(end-start)/60}")
-
-        start = time.time()
-        filename_ = self.matrix_uuid + ".csv"
+        filename_ = str(self.matrix_base_store.path) 
+        logger.debug(f"load matrix with polars {filename_}")
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
         end = time.time()
