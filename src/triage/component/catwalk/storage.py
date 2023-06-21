@@ -616,8 +616,7 @@ class CSVMatrixStore(MatrixStore):
     
 
     def _load(self):
-        #with self.matrix_base_store.open("rb") as fd:
-        #    return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+        """Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame"""
         start = time.time()
         filename_ = str(self.matrix_base_store.path) 
         logger.debug(f"load matrix with polars {filename_}")
@@ -638,7 +637,7 @@ class CSVMatrixStore(MatrixStore):
         df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
         df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
         end = time.time()
-        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
+        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {self.matrix_uuid} (sec): {(end-start)/60}")
         # converting from polars to pandas
         logger.debug(f"about to convert polars df into pandas df")
         start = time.time()
@@ -651,6 +650,9 @@ class CSVMatrixStore(MatrixStore):
 
         return df
 
+    def _load_as_df(self):
+        with self.matrix_base_store.open("rb") as fd:
+           return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
 
     def save(self):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
