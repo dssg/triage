@@ -2,8 +2,10 @@ name: Build Docs and Serve to Github Pages
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - master
+    paths:
+      - 'docs/'
   
 jobs:
   docs:
