@@ -49,12 +49,13 @@ event_id, entity_id, date, event_attribute (type), entity_attribute (age), entit
 ```
 Triage needs a field named `entity_id` (**that needs to be of type
 integer**) to refer to the primary *entities* of interest in our
-project.
+project. It also needs a **date field** to specify the date each event occurred in order to use it appropriately in building and validating models.
 
 #### Examples
 1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified (through the entity_id column), a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
 
 2. education: the entity_id will typically be the student_id and the events include things like a grade in a class in a given year, a test score n a test at a given time, graduation, etc.
+
 
 
 ### 4. Set up Triage configuration files
@@ -118,7 +119,7 @@ scoring:
             percentiles: [1]
 ```
 
-Copy that code block into your text editor of choice and save it as something like `quickstart-config.yaml` in your working directory for your project. You'll need to fill out the sections marked `<< YOUR_VALUE_HERE >>` with values appropriate to your project.
+Copy that code block into your text editor of choice and save it as something like `quickstart-config.yaml` in your working directory for your project. You must fill out the sections marked `<< YOUR_VALUE_HERE >>` with values appropriate to your project.
 
 The configuration file has a lot of sections. As a first pass, we will
 infer a lot of the parameters that are needed in there and use
@@ -324,6 +325,7 @@ In a more complete modeling run, you could `audition` with jupyter notebooks to 
 select the best-performing model specifications from a wide variety of options (see the [overview of
 model selection](https://dssg.github.io/triage/audition/audition_intro/) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
 
+You can also look at the directory you specified in the triage run as the project-path (--project-path '/project_directory') for matrices (stored as gzipped csvs) and model objects (stored as pickles).
 
 ### 7. Iterate and Explore
 
