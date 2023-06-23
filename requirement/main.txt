@@ -13,11 +13,11 @@ Dickens==1.0.1
 signalled-timeout==1.0.0
 wrapt==1.14.0
 argcmdr==0.7.0
-sqlparse==0.4.2
+sqlparse==0.4.4
 pebble==4.6.3
 adjustText==0.7.3
 graphviz==0.20
-requests==2.27.1
+requests==2.31.1
 coloredlogs==15.0.1
 verboselogs==1.7
 s3fs==0.4.2 # pyup: ignore
