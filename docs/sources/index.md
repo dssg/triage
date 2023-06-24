@@ -7,9 +7,9 @@
 
 ## What is Triage?
 
-Triage is an open source machine learning toolkit to help data scientists, machine learning developers, and analysts quickly prototype, build and evaluate end-to-end predictive risk modeling systems for public policy and social good problem.
+Triage is an open source machine learning toolkit to help data scientists, machine learning developers, and analysts quickly prototype, build and evaluate end-to-end predictive risk modeling systems for public policy and social good problems.
 
-While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an end-to-end project requires a lot more than just building models. Developing data science systems requires making many design decisions that need to match with how the system is going to be used. These choices then get turned into modeling choices and code. Triage lets you focus on the problem you’re solving and guides you through design choices you need to make at each step of the machine learning pipeline.
+While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an end-to-end project requires a lot more than just building models. Developing AI/ML/data science systems requires making many design decisions that need to match how the system is going to be deployed and used. These choices then get turned into modeling choices and code. Triage lets you focus on the problem you’re solving and guides you through design choices you need to make at each step of the machine learning pipeline.
 
 ## How to get started with Triage?
 
@@ -22,5 +22,5 @@ While many tools (sklearn, keras, pytorch, etc.) exist to build ML models, an en
 
 ## Background
 
-Triage was initially developed at the University of Chicago's [Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained and enhanced at Carnegie Mellon University.
+Triage was initially developed at the University of Chicago's [Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained and extended at Carnegie Mellon University.
 
