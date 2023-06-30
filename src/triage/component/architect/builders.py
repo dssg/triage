@@ -155,7 +155,7 @@ class BuilderBase:
         logger.debug(
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
-        logger.spam(f"with query {query}")
+        logger.debug(f"with query {query}")
         self.db_engine.execute(query)
 
         return table_name
@@ -307,6 +307,7 @@ class MatrixBuilder(BuilderBase):
         # store the matrix
         labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
+        logging.debug(f'About to save the matrix {matrix_uuid} in {matrix_store.matrix_base_store.path}')
         matrix_store.save()
         logger.info(f"Matrix {matrix_uuid} saved in {matrix_store.matrix_base_store.path}")
         # If completely archived, save its information to matrices table
@@ -437,7 +438,7 @@ class MatrixBuilder(BuilderBase):
         :return: none
         :rtype: none
         """
-        logger.spam(f"Copying to CSV query {query_string}")
+        logger.debug(f"Copying to CSV query {query_string}")
         copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV {header}"
         conn = self.db_engine.raw_connection()
         cur = conn.cursor()

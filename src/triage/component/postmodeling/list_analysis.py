@@ -15,16 +15,14 @@ from triage.component.catwalk.storage import ProjectStorage
 
 
 # TODO: Modify how the threshold is specified
-def get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entities=False):
+def get_highest_risk_entities(db_engine, model_id, threshold, include_all_ties=False):
     """ Fetch the entities with the highest risk for a particular model
         
         args:
             db_engine (sqlalchemy.engine)   : Database connection engine
             model_id (int)  : Model ID we are interested in
-            k (Union[int, float]): If int, an absolute threshold will be considered. 
-                                If float, the number has to be (0, 1] and a percentage threshold will be considered  
-
-            include_all_tied_entities (bool): Whether to include all entities with the same score in the list (can include more than k elements if k is int) 
+            threshold (Union[int, float]): value of the threshold (k)
+            include_all_ties (bool): Whether to include all entities with the same score in the list (can include more than k elements) 
                                     Defaults to False where ties are broken randomly
 
         return:
@@ -37,10 +35,10 @@ def get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entitie
     ties_suffix = 'no_ties'
     col = 'rank_pct'
     
-    if include_all_tied_entities:
+    if include_all_ties:
         ties_suffix='with_ties'
 
-    if isinstance(k, int):
+    if isinstance(threshold, int):
         col = 'rank_abs'      
 
     col_name = f'{col}_{ties_suffix}'
@@ -58,7 +56,7 @@ def get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entitie
             matrix_uuid
         from test_results.predictions
         where model_id={model_id}
-        and {col_name} <= {k}
+        and {col_name} <= {threshold}
     """
 
     top_k = pd.read_sql(q, db_engine)
@@ -85,7 +83,7 @@ def pairwise_comparison_model_lists(db_engine, models, k, include_all_tied_entit
     logging.info('Fetching the top-k lists for all models')
     risk_lists = dict()
     for model_id in models:
-        risk_lists[model_id] = get_highest_risk_k_entities(db_engine, model_id, k, include_all_tied_entities)
+        risk_lists[model_id] = get_highest_risk_entities(db_engine, model_id, k, include_all_tied_entities)
 
     pairs = list(itertools.combinations(risk_lists.keys(), 2))
 
@@ -146,6 +144,7 @@ def _fetch_relevant_matrix_hashes(db_engine, model_id):
 
 
 # Currently this function only calculates the mean ratio
+# NOTE This code was incorported to the ModelAnalyzer
 def get_crosstabs_postive_vs_negative(
     db_engine, 
     model_id, 
@@ -220,8 +219,7 @@ def get_crosstabs_postive_vs_negative(
         postive_preds = matrix[msk]
         negative_preds = matrix[~msk]
 
-
-        # TODO: Take a list of metrics to calculate and iterate (as it's done in crosstabs)
+        # TODO: Take a list of metrics to calculate and iterate (as it's done in crosstabs.py)
 
         # Calculates the mean ratio for each feature and produces a series indexed by the feature n,e
         mean_ratios = (postive_preds[features].mean() / negative_preds[features].mean()).reset_index()
@@ -253,11 +251,14 @@ def get_crosstabs_postive_vs_negative(
         crosstabs_df['threshold_type'] = threshold_name
         crosstabs_df['threshold'] = threshold
 
+        crosstabs_df.to_csv('temp_crosstabs.csv', index=False)
+
         if return_df:
             return crosstabs_df
+        
 
 
-def _get_descriptives(entities, columns_of_interest):
+def _get_descriptives(db_engine, model_id, columns_of_interest, feature_groups):
     """ Given a list of entities, generated descriptives
 
         args:
@@ -265,8 +266,7 @@ def _get_descriptives(entities, columns_of_interest):
             columns_of_interest (List[str]): The list of column names we are interested in describing
     """
 
-    # TODO -- Not entirely sure how we can write this as a general function
-    pass
+    # NOTE: As the first pass, we'll calculate descriptives of 
 
 
 if __name__ == '__main__':

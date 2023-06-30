@@ -59,7 +59,7 @@ logger = verboselogs.VerboseLogger(__name__)
 
 
 
-def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_date):
+def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_date, cohort_query=None):
     """Predict forward given model_id and as_of_date and store the prediction in database
 
     Args:
@@ -72,15 +72,17 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     upgrade_db(db_engine=db_engine)
     project_storage = ProjectStorage(project_path)
     matrix_storage_engine = project_storage.matrix_storage_engine()
+    
     # 1. Get feature and cohort config from database
     (train_matrix_uuid, matrix_metadata) = train_matrix_info_from_model_id(db_engine, model_id)
     experiment_config = experiment_config_from_model_id(db_engine, model_id)
  
     # 2. Generate cohort
-    cohort_table_name = f"triage_production.cohort_{experiment_config['cohort_config']['name']}"
+    cohort_table_name = f"triage_production.cohort_{experiment_config.get('cohort_config', {}).get('name', 'default')}"
+
     cohort_table_generator = EntityDateTableGenerator(
         db_engine=db_engine,
-        query=experiment_config['cohort_config']['query'],
+        query=experiment_config.get('cohort_config', {}).get('query'),
         entity_date_table_name=cohort_table_name
     )
     cohort_table_generator.generate_entity_date_table(as_of_dates=[dt_from_str(as_of_date)])
@@ -235,13 +237,18 @@ class Retrainer:
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
 
         self.label_name = self.experiment_config['label_config']['name']
-        self.cohort_name = self.experiment_config['cohort_config']['name']
-        self.user_metadata = self.experiment_config['user_metadata']
+
+        # In case only the label config is created
+        self.cohort_name = self.experiment_config.get('cohort_config', {}).get('name', 'default')
+        
+        # User metadata is optional
+        self.user_metadata = self.experiment_config.get('user_metadata', {})
 
         
         self.feature_dictionary_creator = FeatureDictionaryCreator(
             features_schema_name='triage_production', db_engine=self.db_engine
         )
+
         self.label_generator = LabelGenerator(
             label_name=self.experiment_config['label_config'].get("name", None),
             query=self.experiment_config['label_config']["query"],
@@ -293,7 +300,8 @@ class Retrainer:
     def generate_entity_date_table(self, as_of_date, entity_date_table_name):
         cohort_table_generator = EntityDateTableGenerator(
             db_engine=self.db_engine,
-            query=self.experiment_config['cohort_config']['query'],
+            query=self.experiment_config.get('cohort_config', {}).get('query'),
+            labels_table_name=self.labels_table_name,
             entity_date_table_name=entity_date_table_name
         )
         cohort_table_generator.generate_entity_date_table(as_of_dates=[dt_from_str(as_of_date)])
@@ -406,7 +414,7 @@ class Retrainer:
         record_labels_table_name(run_id, self.db_engine, self.labels_table_name)
 
         # 2. Generate cohort
-        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_retrain"
+        cohort_table_name = f"triage_production.cohort_{self.cohort_name}_retrain"
         self.generate_entity_date_table(as_of_date, cohort_table_name)
         record_cohort_table_name(run_id, self.db_engine, cohort_table_name)
 
@@ -530,7 +538,7 @@ class Retrainer:
         Args:
             prediction_date(str)
         """
-        cohort_table_name = f"triage_production.cohort_{self.experiment_config['cohort_config']['name']}_predict"
+        cohort_table_name = f"triage_production.cohort_{self.cohort_name}_predict"
 
         # 1. Generate cohort
         self.generate_entity_date_table(prediction_date, cohort_table_name)

@@ -30,6 +30,9 @@ from triage.component.results_schema import (
     TestAequitas,
     TrainAequitas
 )
+import polars as pl
+import pyarrow
+import time
 from triage.util.pandas import downcast_matrix
 
 
@@ -591,12 +594,64 @@ class CSVMatrixStore(MatrixStore):
 
         return head_of_matrix
 
+    # def _load(self):
+    #     df = pl.read_csv(self.matrix_base_store, infer_schema_length=0).with_columns(pl.all().exclude(['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
+    #     df = df.with_columns(pl.col("as_of_date").str.to_datetime("%Y-%m-%d"))
+    #     df = df.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
+
+    #     with self.matrix_base_store.open("rb") as fd:
+    #         # dfs = pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"], chunksize=1000)
+    #         # return pd.concat(dfs)
+
+    #         df = pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+    #         return df
+
     def _load(self):
-        with self.matrix_base_store.open("rb") as fd:
-            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+        """Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame"""
+        start = time.time()
+        filename_ = str(self.matrix_base_store.path) 
+        
+        logger.debug(f"load matrix with polars {filename_}")
+        df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
+            ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
+        
+        end = time.time()
+        
+        logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
+
+        # casting entity_id and as_of_date 
+        logger.debug(f"casting entity_id and as_of_date")
+        start = time.time()
+        # define if as_of_date is date or datetime for correct cast
+        if len(df_pl.get_column('as_of_date').head(1)[0].split()) > 1: 
+            format = "%Y-%m-%d %H:%M:%S"
+        else: 
+            format = "%Y-%m-%d"
+
+        df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
+        df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
+        
+        end = time.time()
+        
+        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {self.matrix_uuid} (sec): {(end-start)/60}")
+        # converting from polars to pandas
+        logger.debug(f"about to convert polars df into pandas df")
+        start = time.time()
+        df = df_pl.to_pandas()
+        end = time.time()
+        logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
+        df.set_index(["entity_id", "as_of_date"], inplace=True)
+        logger.debug(f"df data types: {df.dtypes}")
+        logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+
+        return df
+            
 
     def save(self):
+        logging.debug('About to compress')
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        logging.debug(f'Compression done! Matrix written')
+        
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

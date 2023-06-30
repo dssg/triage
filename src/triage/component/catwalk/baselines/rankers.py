@@ -180,8 +180,11 @@ class BaselineRankMultiFeature:
             ranks.append(curr_rank)
             prev = rec
 
+        # The maximum rank in the 
+        max_rank = ranks[-1]
+
         # normalize to 0 to 1 range
-        x['score'] = [r/max(ranks) for r in ranks]
+        x['score'] = [r/max_rank for r in ranks]
 
         # reset back to original sort order, calculate "score" for "0 class"
         scores_1 = x.sort_index()['score'].values
