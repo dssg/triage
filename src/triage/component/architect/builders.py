@@ -188,7 +188,7 @@ class BuilderBase:
         logger.debug(
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
-        logger.spam(f"with query {query}")
+        logger.debug(f"with query {query}")
         self.db_engine.execute(query)
 
         return table_name

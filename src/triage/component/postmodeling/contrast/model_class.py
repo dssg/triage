@@ -356,17 +356,26 @@ class ModelAnalyzer:
         positive_std = lambda pos, neg: pos.std(axis=0)
         negative_std = lambda pos, neg: neg.std(axis=0)
         ratio_positive_negative = lambda pos, neg: pos.mean(axis=0) / neg.mean(axis=0)
+        # mean_ratio = lambda pos, neg: max(ratio_positive_negative(pos, neg).at[0], (float(1) / ratio_positive_negative(pos, neg)).at[0])
         positive_support = lambda pos, neg: (pos > 0).sum(axis=0)
         negative_support = lambda pos, neg: (neg > 0).sum(axis=0)
         positive_support_pct = lambda pos, neg: round((pos > 0).sum(axis=0).astype(float) / len(pos), 3)
         negative_support_pct = lambda pos, neg: round((neg > 0).sum(axis=0).astype(float) / len(neg), 3)
+
+        def mean_ratio(pos, neg):
+            pos_over_neg = ratio_positive_negative(pos, neg)
+            neg_over_pos = float(1) / pos_over_neg
+
+            df = pd.DataFrame([pos_over_neg, neg_over_pos])
+
+            return df.max()
 
         crosstab_functions = [
             ("mean_predicted_positive", positive_mean),
             ("mean_predicted_negative", negative_mean),
             ("std_predicted_positive", positive_std),
             ("std_predicted_negative", negative_std),
-            ("mean_ratio_predicted_positive_to_predicted_negative", ratio_positive_negative),
+            ("mean_ratio", mean_ratio),
             ("support_predicted_positive", positive_support),
             ("support_predicted_negative", negative_support),
             ("support_pct_predicted_positive", positive_support_pct),
@@ -467,6 +476,7 @@ class ModelAnalyzer:
             filter_features=None,
             support_threshold=0.1,
             return_df=True,
+            show_plot=True,
             ax=None):
         """ Display the crosstabs for the model
 
@@ -490,7 +500,7 @@ class ModelAnalyzer:
             where threshold_type = '{threshold_type}'
             and threshold = {threshold}
             and metric in (
-                'mean_ratio_predicted_positive_to_predicted_negative',
+                'mean_ratio',
                 'mean_predicted_positive',
                 'mean_predicted_negative',
                 'support_pct_predicted_positive',
@@ -519,7 +529,7 @@ class ModelAnalyzer:
         # Shortening the names, and removing the index names to plot more cleanly
         pivot_table.rename(
             columns={
-                'mean_ratio_predicted_positive_to_predicted_negative': 'ratio',
+                'mean_ratio': 'ratio',
                 'mean_predicted_positive': '(+)mean',
                 'mean_predicted_negative': '(-)mean',
                 'support_pct_predicted_negative': '(-)supp',
@@ -535,54 +545,58 @@ class ModelAnalyzer:
 
         
         # Filtering by the support threshold
-        msk = pivot_table['(+)supp'] > support_threshold
+        msk1 = pivot_table['(+)supp'] > support_threshold
         # Features with highest postive : negative ratio
-        df1 = pivot_table[msk].sort_values(
+        # df1 = pivot_table[msk].sort_values(
+        #     'ratio', 
+        #      ascending = False
+        # ).head(display_n_features)
+
+
+        msk2 = pivot_table['(-)supp'] > support_threshold
+        # Features with the highest negative : positive ratio
+        # df2 = pivot_table[msk].sort_values(
+        #     ['ratio', '(-)supp'], 
+        #      ascending = [True, False]
+        # ).head(display_n_features)
+
+        df = pivot_table[msk1 | msk2].sort_values(
             'ratio', 
              ascending = False
         ).head(display_n_features)
 
+        if show_plot:
+            if ax is None: 
+                fig, ax = plt.subplots(figsize=(4, 1 + (display_n_features *2) / 5), dpi=100)
 
-        msk = pivot_table['(-)supp'] > support_threshold
-        # Features with the highest negative : positive ratio
-        df2 = pivot_table[msk].sort_values(
-            ['ratio', '(-)supp'], 
-             ascending = [True, False]
-        ).head(display_n_features)
-
-        df = pd.concat([df1, df2])
-
-        if ax is None: 
-            fig, ax = plt.subplots(figsize=(4, 1 + (display_n_features *2) / 5), dpi=100)
-
-        t = tab.table(
-            ax, 
-            cellText=df.values.round(1), 
-            colLabels=df.columns, 
-            rowLoc='right',
-            rowLabels=df.index, 
-            bbox=[0, 0, 1, 1]
-        )
+            t = tab.table(
+                ax, 
+                cellText=df.values.round(1), 
+                colLabels=df.columns, 
+                rowLoc='right',
+                rowLabels=df.index, 
+                bbox=[0, 0, 1, 1]
+            )
         
-        ax.set_title(
-            f'Model Group: {self.model_group_id} | Train end: {self.train_end_time} | Model: {self.model_id}\n',
-            fontdict={
-                'fontsize': 10,
-                'verticalalignment': 'center',
-                'horizontalalignment': 'center'
-            },
-            x=-0.1
-        )
-        ax.axis('off')
+            ax.set_title(
+                f'Model Group: {self.model_group_id} | Train end: {self.train_end_time} | Model: {self.model_id}\n',
+                fontdict={
+                    'fontsize': 10,
+                    'verticalalignment': 'center',
+                    'horizontalalignment': 'center'
+                },
+                x=-0.1
+            )
+            ax.axis('off')
 
-        # Table formatting
-        t.auto_set_column_width([0, 1, 2, 3, 4])
-        for key, cell in t.get_celld().items():
-            cell.set_fontsize(9)
-            cell.set_linewidth(0.1)
-            # cell.PAD = 0.01
-            
-    
+            # Table formatting
+            t.auto_set_column_width([0, 1, 2, 3, 4])
+            for key, cell in t.get_celld().items():
+                cell.set_fontsize(9)
+                cell.set_linewidth(0.1)
+                # cell.PAD = 0.01
+                
+        
         title_str = f'model_group: {self.model_group_id} | train_end_time: {self.train_end_time} | model_id: {self.model_id}'
         # print(title_str)
         # print(tabulate(df.round(1), headers='keys', tablefmt='RST'))

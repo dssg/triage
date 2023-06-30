@@ -181,6 +181,9 @@ class BaselineRankMultiFeature:
             ranks.append(curr_rank)
             prev = rec
 
+        # The maximum rank in the 
+        max_rank = ranks[-1]
+
         # normalize to 0 to 1 range
         max_rank = ranks[-1]
         x['score'] = [r/max_rank for r in ranks]

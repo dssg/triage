@@ -152,12 +152,13 @@ def add_predictions(db_engine, model_groups, project_path, experiment_hashes=Non
             len(df_grp), train_uuid, test_uuid
         ))
 
-        train_matrix_store = matrix_storage_engine.get_store(matrix_uuid=train_uuid)
+        # train_matrix_store = matrix_storage_engine.get_store(matrix_uuid=train_uuid)
 
         # To ensure that the column order we use for predictions match the order we used in model training
-        train_matrix_columns = list(train_matrix_store.design_matrix.columns)
+        # train_matrix_columns = list(train_matrix_store.design_matrix.columns)
         
         test_matrix_store = matrix_storage_engine.get_store(matrix_uuid=test_uuid)
+        train_matrix_columns = list(test_matrix_store.design_matrix.columns)
 
         for model_id in df_grp['model_id'].tolist():
             logging.info('Writing predictions for model_id {}'.format(model_id))
