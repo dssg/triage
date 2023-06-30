@@ -72,15 +72,41 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     upgrade_db(db_engine=db_engine)
     project_storage = ProjectStorage(project_path)
     matrix_storage_engine = project_storage.matrix_storage_engine()
+    
     # 1. Get feature and cohort config from database
     (train_matrix_uuid, matrix_metadata) = train_matrix_info_from_model_id(db_engine, model_id)
     experiment_config = experiment_config_from_model_id(db_engine, model_id)
  
     # 2. Generate cohort
-    cohort_table_name = f"triage_production.cohort_{experiment_config['cohort_config']['name']}"
+    cohort_config = experiment_config.get('cohort_config')
+
+
+    if cohort_config is None:
+        logger.info('Experiment config does not contain a cohort config. Using the label query')
+        label_query = experiment_config['label_config']['query']
+
+        # We need to remove the '{label_timespan} param' with some default
+        # It doesn't matter since we are not using the labels
+        # label_query = label_query.format(label_timespan='1week')
+        label_query = label_query.replace('{label_timespan}', '1week')
+
+        # Just selecting the entity id from the labels query
+        cohort_query = f"""
+            select 
+                entity_id
+            from ({label_query}) as lq
+        """
+        print(cohort_query)
+
+        cohort_config = dict()
+        cohort_config['query'] = cohort_query
+        cohort_config['name'] = 'default'
+
+
+    cohort_table_name = f"triage_production.cohort_{cohort_config['name']}"
     cohort_table_generator = EntityDateTableGenerator(
         db_engine=db_engine,
-        query=experiment_config['cohort_config']['query'],
+        query=cohort_config['query'],
         entity_date_table_name=cohort_table_name
     )
     cohort_table_generator.generate_entity_date_table(as_of_dates=[dt_from_str(as_of_date)])
