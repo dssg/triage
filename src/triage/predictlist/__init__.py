@@ -79,10 +79,8 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     experiment_config = experiment_config_from_model_id(db_engine, model_id)
  
     # 2. Generate cohort
-    # cohort_config = experiment_config.get('cohort_config')
-
-
     if experiment_config.get('cohort_config') is None:
+        # If a separate cohort_config is not defined in the config
         logger.info('Experiment config does not contain a cohort config. Using the label query')
         experiment_config['cohort_config'] = cohort_config_from_label_config(experiment_config['label_config'])
 
@@ -171,8 +169,16 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
             test_label_timespan=temporal_config['test_label_timespans'][0]
     )
 
+    last_split_definition = prod_definitions[-1]
+
+    # formating the datetimes as strings to be saved as JSON
+    last_split_definition['first_as_of_time'] = str(last_split_definition['first_as_of_time'])
+    last_split_definition['last_as_of_time'] = str(last_split_definition['last_as_of_time'])
+    last_split_definition['matrix_info_end_time'] = str(last_split_definition['matrix_info_end_time'])
+    last_split_definition['as_of_times'] = [str(last_split_definition['as_of_times'][0])]
+
     matrix_metadata = Planner.make_metadata(
-            prod_definitions[-1],
+            last_split_definition,
             reconstructed_feature_dict,
             label_name,
             label_type,
