@@ -43,6 +43,7 @@ from .utils import (
     save_retrain_and_get_hash,
     get_retrain_config_from_model_id,
     temporal_params_from_matrix_metadata,
+    cohort_config_from_label_config
 )
 
 
@@ -78,35 +79,17 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     experiment_config = experiment_config_from_model_id(db_engine, model_id)
  
     # 2. Generate cohort
-    cohort_config = experiment_config.get('cohort_config')
+    # cohort_config = experiment_config.get('cohort_config')
 
 
-    if cohort_config is None:
+    if experiment_config.get('cohort_config') is None:
         logger.info('Experiment config does not contain a cohort config. Using the label query')
-        label_query = experiment_config['label_config']['query']
+        experiment_config['cohort_config'] = cohort_config_from_label_config(experiment_config['label_config'])
 
-        # We need to remove the '{label_timespan} param' with some default
-        # It doesn't matter since we are not using the labels
-        # label_query = label_query.format(label_timespan='1week')
-        label_query = label_query.replace('{label_timespan}', '1week')
-
-        # Just selecting the entity id from the labels query
-        cohort_query = f"""
-            select 
-                entity_id
-            from ({label_query}) as lq
-        """
-        print(cohort_query)
-
-        cohort_config = dict()
-        cohort_config['query'] = cohort_query
-        cohort_config['name'] = 'default'
-
-
-    cohort_table_name = f"triage_production.cohort_{cohort_config['name']}"
+    cohort_table_name = f"triage_production.cohort_{experiment_config['cohort_config']['name']}"
     cohort_table_generator = EntityDateTableGenerator(
         db_engine=db_engine,
-        query=cohort_config['query'],
+        query=experiment_config['cohort_config']['query'],
         entity_date_table_name=cohort_table_name
     )
     cohort_table_generator.generate_entity_date_table(as_of_dates=[dt_from_str(as_of_date)])
@@ -176,7 +159,7 @@ def predict_forward_with_existed_model(db_engine, project_path, model_id, as_of_
     label_name = experiment_config['label_config']['name']
     label_type = 'binary'
     cohort_name = experiment_config['cohort_config']['name']
-    user_metadata = experiment_config['user_metadata']
+    user_metadata = experiment_config.get('user_metadata', {})
     
     # Use timechop to get the time definition for production
     temporal_config = experiment_config["temporal_config"]
@@ -259,6 +242,10 @@ class Retrainer:
         self.test_label_timespan = self.experiment_config['temporal_config']['test_label_timespans'][0]
         self.test_duration = self.experiment_config['temporal_config']['test_durations'][0]
         self.feature_start_time=self.experiment_config['temporal_config']['feature_start_time']
+
+        # Handling the case where a separate cohort_config is not defined
+        if self.experiment_config.get('cohort_config') is None:
+            self.experiment_config['cohort_config'] = cohort_config_from_label_config(self.experiment_config['label_config'])
 
         self.label_name = self.experiment_config['label_config']['name']
         self.cohort_name = self.experiment_config['cohort_config']['name']
@@ -387,9 +374,9 @@ class Retrainer:
         chops_train_matrix = chops[0]['train_matrix']
         as_of_date = datetime.strftime(chops_train_matrix['last_as_of_time'], "%Y-%m-%d")
         retrain_definition = {
-            'first_as_of_time': chops_train_matrix['first_as_of_time'],
-            'last_as_of_time': chops_train_matrix['last_as_of_time'],
-            'matrix_info_end_time': chops_train_matrix['matrix_info_end_time'],
+            'first_as_of_time': str(chops_train_matrix['first_as_of_time']),
+            'last_as_of_time': str(chops_train_matrix['last_as_of_time']),
+            'matrix_info_end_time': str(chops_train_matrix['matrix_info_end_time']),
             'as_of_times': [as_of_date],
             'training_label_timespan': chops_train_matrix['training_label_timespan'],
             'max_training_history': chops_train_matrix['max_training_history'],
