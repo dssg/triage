@@ -62,6 +62,26 @@ class PostmodelingReport:
 
         return all_models
 
+    def cohort_summary(self):
+        q = f"""
+            select distinct on(train_end_time)
+                -- matrix_uuid,
+                evaluation_start_time as train_end_time,
+                num_labeled_examples as cohort_size,
+                num_positive_labels,
+                num_positive_labels::float/num_labeled_examples as label_base_rate
+            from triage_metadata.experiment_matrices join test_results.evaluations using(matrix_uuid)
+            where experiment_hash in ('{"','".join(self.experiment_hashes)}')
+            order by 1
+        """
+
+        matrices = pd.read_sql(q, self.engine)
+
+        print(matrices)
+
+    def plot_model_group_performance(self, metric, parameter):
+        pass
+
     def get_model_ids(self):
         """ For the model group ids, fetch the model_ids and initialize the datastructure
 
