@@ -189,3 +189,33 @@ class BaselineRankMultiFeature:
         scores_0 = np.array([1-s for s in scores_1])
 
         return np.array([scores_0, scores_1]).transpose()
+
+    def predict_proba_deprecated(self, x):
+            """ Generate the rank scores and return these.
+            """
+            # reduce x to the selected set of features
+            x = x[self.all_feature_names].reset_index(drop=True)
+
+            x = x.sort_values(self.all_feature_names, ascending=self.all_sort_directions)
+
+            # initialize curr_rank to -1 so the first record will have rank 0 (hence "score"
+            # will range from 0 to 1)
+            ranks = []
+            curr_rank = -1
+            prev = []
+
+            # calculate ranks over sorted records, giving ties the same rank
+            for rec in x.values:
+                if not np.array_equal(prev, rec):
+                    curr_rank += 1
+                ranks.append(curr_rank)
+                prev = rec
+
+            # normalize to 0 to 1 range
+            x['score'] = [r/max(ranks) for r in ranks]
+
+            # reset back to original sort order, calculate "score" for "0 class"
+            scores_1 = x.sort_index()['score'].values
+            scores_0 = np.array([1-s for s in scores_1])
+
+            return np.array([scores_0, scores_1]).transpose()
