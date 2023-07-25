@@ -50,6 +50,35 @@ def data(request):
 def rules(request):
     request.cls.rules = ["x1 > 0", "x2 <= 1"]
 
+def predict_proba_deprecated(ranker, x):
+        """ Generate the rank scores and return these.
+        """
+        # reduce x to the selected set of features
+        x = x[ranker.all_feature_names].reset_index(drop=True)
+
+        x = x.sort_values(ranker.all_feature_names, ascending=ranker.all_sort_directions)
+
+        # initialize curr_rank to -1 so the first record will have rank 0 (hence "score"
+        # will range from 0 to 1)
+        ranks = []
+        curr_rank = -1
+        prev = []
+
+        # calculate ranks over sorted records, giving ties the same rank
+        for rec in x.values:
+            if not np.array_equal(prev, rec):
+                curr_rank += 1
+            ranks.append(curr_rank)
+            prev = rec
+
+        # normalize to 0 to 1 range
+        x['score'] = [r/max(ranks) for r in ranks]
+
+        # reset back to original sort order, calculate "score" for "0 class"
+        scores_1 = x.sort_index()['score'].values
+        scores_0 = np.array([1-s for s in scores_1])
+
+        return np.array([scores_0, scores_1]).transpose()
 
 def scores_align_with_ranks(expected_ranks, returned_scores):
     '''
@@ -178,7 +207,7 @@ class TestRankMultiFeature(TestCase):
             ranker = BaselineRankMultiFeature(rules=rules)
             ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
             results_new = ranker.predict_proba(self.data["X_test"])
-            results_deprecated = ranker.predict_proba_deprecated(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
             
             assert_array_equal(results_new, results_deprecated)
 
@@ -190,7 +219,7 @@ class TestRankMultiFeature(TestCase):
             ranker = BaselineRankMultiFeature(rules=rules)
             ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
             results_new = ranker.predict_proba(self.data["X_test"])
-            results_deprecated = ranker.predict_proba_deprecated(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
 
             assert_array_equal(results_new, results_deprecated)
 
@@ -202,7 +231,7 @@ class TestRankMultiFeature(TestCase):
             ranker = BaselineRankMultiFeature(rules=rules)
             ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
             results_new = ranker.predict_proba(self.data["X_test"])
-            results_deprecated = ranker.predict_proba_deprecated(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
 
             assert_array_equal(results_new, results_deprecated)
 
