@@ -247,6 +247,129 @@ def get_matrix_storage_engine():
         yield ProjectStorage(temp_dir).matrix_storage_engine()
 
 
+def test_make_entity_date_table():
+    """Test that the make_entity_date_table function contains the correct
+    values.
+    """
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
+
+    # make a dataframe of entity ids and dates to test against
+    ids_dates = create_entity_date_df(
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        label_name="booking",
+        label_type="binary",
+        label_timespan="1 month",
+    )
+
+    with testing.postgresql.Postgresql() as postgresql:
+        # create an engine and generate a table with fake feature data
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine=engine, features_tables=features_tables, labels=labels, states=states
+        )
+
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
+                db_config=db_config,
+                matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
+                engine=engine,
+            )
+            engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
+            # call the function to test the creation of the table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type="binary",
+                label_name="booking",
+                state="active",
+                matrix_uuid="my_uuid",
+                matrix_type="train",
+                label_timespan="1 month",
+            )
+
+            # read in the table
+            result = pd.read_sql(
+                "select * from features.{} order by entity_id, as_of_date".format(
+                    entity_date_table_name
+                ),
+                engine,
+            )
+            # compare the table to the test dataframe
+            test = result == ids_dates
+            assert test.all().all()
+
+def test_make_entity_date_table_include_missing_labels():
+    """Test that the make_entity_date_table function contains the correct
+    values.
+    """
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+        datetime.datetime(2016, 6, 1, 0, 0),
+    ]
+
+    # same as the other make_entity_date_label test except there is an extra date, 2016-06-01
+    # entity 0 is included in this date via the states table, but has no label
+
+    # make a dataframe of entity ids and dates to test against
+    ids_dates = create_entity_date_df(
+        labels=labels,
+        states=states,
+        as_of_dates=dates,
+        label_name="booking",
+        label_type="binary",
+        label_timespan="1 month",
+    )
+    # this line adds the new entity-date combo as an expected one
+    ids_dates = ids_dates.append(
+        {"entity_id": 0, "as_of_date": datetime.date(2016, 6, 1)}, ignore_index=True
+    )
+
+    with testing.postgresql.Postgresql() as postgresql:
+        # create an engine and generate a table with fake feature data
+        engine = create_engine(postgresql.url())
+        create_schemas(
+            engine=engine, features_tables=features_tables, labels=labels, states=states
+        )
+
+        with get_matrix_storage_engine() as matrix_storage_engine:
+            builder = MatrixBuilder(
+                db_config=db_config,
+                matrix_storage_engine=matrix_storage_engine,
+                experiment_hash=experiment_hash,
+                include_missing_labels_in_train_as=False,
+                engine=engine,
+            )
+            engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
+            # call the function to test the creation of the table
+            entity_date_table_name = builder.make_entity_date_table(
+                as_of_times=dates,
+                label_type="binary",
+                label_name="booking",
+                state="active",
+                matrix_uuid="my_uuid",
+                matrix_type="train",
+                label_timespan="1 month",
+            )
+
+            # read in the table
+            result = pd.read_sql(
+                "select * from features.{} order by entity_id, as_of_date".format(
+                    entity_date_table_name
+                ),
+                engine,
+            )
+
+            # compare the table to the test dataframe
+            assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
+
 class TestMergeFeatureCSVs(TestCase):
     def test_feature_load_queries(self):
         """Tests if the number of queries for getting the features are the same as the number of feature tables in
