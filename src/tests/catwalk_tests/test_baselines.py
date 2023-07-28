@@ -4,6 +4,7 @@ import pandas.api.types as ptypes
 
 import pytest
 from unittest import TestCase
+from numpy.testing import assert_array_equal
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
 from triage.component.catwalk.baselines.rankers import BaselineRankMultiFeature
@@ -15,12 +16,14 @@ from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 @pytest.fixture(scope="class")
 def data(request):
-    X_train = pd.DataFrame(
+    X_train = pd.DataFrame( 
         {
             "x1": [0, 1, 2, 56, 25, 8, -3, 89],
             "x2": [0, 23, 1, 6, 5, 3, 18, 7],
             "x3": [1, 12, 5, -6, 2, 5, 3, -3],
             "x4": [6, 13, 4, 5, 35, 6, 43, 74],
+            "x6": [400, 400, 400, 300, 300, 300, 300, 300],
+            "x7": [1, 12, 12, -6, -6, 5, 5, -3],
         }
     )
     y_train = [0, 1, 0, 1, 1, 1, 3, 0]
@@ -30,6 +33,8 @@ def data(request):
             "x2": [6, -1, 1, 24, 5, 3, 18, 39],
             "x3": [1, 7, 4, 57, 2, 5, 3, 2],
             "x4": [7, 3, 6, 39, 35, 6, 43, -6],
+            "x6": [305, 305, 305, 305, 401, 401, 401, 401],
+            "x7": [1, 7, 7, 57, 2, 5, 3, 2],
         }
     )
     y_test = [1, 3, 0, 0, 0, 0, 0, 1]
@@ -41,11 +46,39 @@ def data(request):
         "y_test": y_test,
     }
 
-
 @pytest.fixture(scope="class")
 def rules(request):
     request.cls.rules = ["x1 > 0", "x2 <= 1"]
 
+def predict_proba_deprecated(ranker, x):
+        """ Generate the rank scores and return these.
+        """
+        # reduce x to the selected set of features
+        x = x[ranker.all_feature_names].reset_index(drop=True)
+
+        x = x.sort_values(ranker.all_feature_names, ascending=ranker.all_sort_directions)
+
+        # initialize curr_rank to -1 so the first record will have rank 0 (hence "score"
+        # will range from 0 to 1)
+        ranks = []
+        curr_rank = -1
+        prev = []
+
+        # calculate ranks over sorted records, giving ties the same rank
+        for rec in x.values:
+            if not np.array_equal(prev, rec):
+                curr_rank += 1
+            ranks.append(curr_rank)
+            prev = rec
+
+        # normalize to 0 to 1 range
+        x['score'] = [r/max(ranks) for r in ranks]
+
+        # reset back to original sort order, calculate "score" for "0 class"
+        scores_1 = x.sort_index()['score'].values
+        scores_0 = np.array([1-s for s in scores_1])
+
+        return np.array([scores_0, scores_1]).transpose()
 
 def scores_align_with_ranks(expected_ranks, returned_scores):
     '''
@@ -93,14 +126,16 @@ def test_scores_align_with_ranks():
     assert not scores_align_with_ranks([1,2,2,3], [0,0.5,0.7,1.0])
 
 
+
 @pytest.mark.usefixtures("data")
 class TestRankOneFeature(TestCase):
+
     def test_fit(self):
         ranker = PercentileRankOneFeature(feature="x3")
         assert ranker.feature_importances_ is None
         ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
         np.testing.assert_array_equal(
-            ranker.feature_importances_, np.array([0, 0, 1, 0])
+            ranker.feature_importances_, np.array([0, 0, 1, 0, 0, 0])
         )
 
     def test_ranking_on_unavailable_feature_raises_error(self):
@@ -129,7 +164,7 @@ class TestRankMultiFeature(TestCase):
         assert ranker.feature_importances_ is None
         ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
         np.testing.assert_array_equal(
-            ranker.feature_importances_, np.array([0, 0, 1, 0])
+            ranker.feature_importances_, np.array([0, 0, 1, 0, 0, 0])
         )
 
     def test_ranking_on_unavailable_feature_raises_error(self):
@@ -165,6 +200,41 @@ class TestRankMultiFeature(TestCase):
 
         assert scores_align_with_ranks(expected_ranks, results[:,1])
 
+    def test_predict_proba_no_ties(self):
+        for direction_value in [True, False]:
+            rules = [{'feature': 'x2', 'low_value_high_score': direction_value}]
+
+            ranker = BaselineRankMultiFeature(rules=rules)
+            ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+            results_new = ranker.predict_proba(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
+            
+            assert_array_equal(results_new, results_deprecated)
+
+    
+    def test_predict_proba_half_ties(self):
+        for direction_value in [True, False]: 
+            rules = [{'feature': 'x6', 'low_value_high_score': direction_value}]
+
+            ranker = BaselineRankMultiFeature(rules=rules)
+            ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+            results_new = ranker.predict_proba(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
+
+            assert_array_equal(results_new, results_deprecated)
+
+
+    def test_predict_proba_some_ties(self):
+        for direction_value in [True, False]: 
+            rules = [{'feature': 'x7', 'low_value_high_score': direction_value}]
+
+            ranker = BaselineRankMultiFeature(rules=rules)
+            ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+            results_new = ranker.predict_proba(self.data["X_test"])
+            results_deprecated = predict_proba_deprecated(ranker, self.data["X_test"])
+
+            assert_array_equal(results_new, results_deprecated)
+
 
 @pytest.mark.parametrize('operator', OPERATOR_METHODS.keys())
 def test_get_operator_method(operator):
@@ -191,7 +261,7 @@ class TestSimpleThresholder(TestCase):
         assert thresholder.feature_importances_ is None
         thresholder.fit(x=self.data["X_train"], y=self.data["y_train"])
         np.testing.assert_array_equal(
-            thresholder.feature_importances_, np.array([1, 1, 0, 0])
+            thresholder.feature_importances_, np.array([1, 1, 0, 0, 0, 0])
         )
 
     def test_rule_with_unavailable_feature_raises_error(self):
