@@ -2,13 +2,15 @@ name: Build Docs and Serve to Github Pages
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - master
+    paths:
+      - 'docs/'
   
 jobs:
   docs:
     name: Build Docs and Serve to Github Pages
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
         with:
