@@ -137,7 +137,7 @@ def get_feature_names(aggregation, matrix_metadata):
     logger.spam("Feature prefix = %s", feature_prefix)
     feature_group = aggregation.get_table_name(imputed=True).split('.')[1].replace('"', '')
     logger.spam("Feature group = %s", feature_group)
-    feature_names_in_group = [f for f in matrix_metadata['feature_names'] if re.match(f'\\A{feature_prefix}_', f)]
+    feature_names_in_group = [f for f in matrix_metadata['feature_names'] if re.match(f'\\A{feature_prefix}_entity_id', f)]
     logger.spam("Feature names in group = %s", feature_names_in_group)
     
     return feature_group, feature_names_in_group
@@ -206,3 +206,22 @@ def save_retrain_and_get_hash(config, db_engine):
     return retrain_hash
 
 
+def cohort_config_from_label_config(label_config):
+    """Hande the cases where the cohort query is not specified""" 
+    
+    label_query = label_config['query']
+    
+    cohort_config = dict()
+    cohort_config['name'] = 'default'
+
+    # We can't have the label_timespan in the cohort query
+    label_query = label_query.replace('{label_timespan}', '1week')
+
+    # We use the label query as a subquery and extract the entity ids
+    cohort_config['query'] = f"""
+        select 
+            entity_id
+        from ({label_query}) as lq
+    """
+
+    return cohort_config

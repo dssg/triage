@@ -184,6 +184,7 @@ class BaselineRankMultiFeature:
         max_rank = ranks[-1]
 
         # normalize to 0 to 1 range
+        max_rank = ranks[-1]
         x['score'] = [r/max_rank for r in ranks]
 
         # reset back to original sort order, calculate "score" for "0 class"
