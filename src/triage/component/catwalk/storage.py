@@ -17,6 +17,7 @@ import s3fs
 import wrapt
 import yaml
 import joblib
+import subprocess
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -143,6 +144,10 @@ class S3Store(Store):
         # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
         s3file = self.client.open(self.path, *args, **kwargs)
         return self.S3FileWrapper(s3file)
+
+    def download(self, *args, **kwargs):
+        self.client.download(self.path, "/tmp/")
+        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
 
 class FSStore(Store):
@@ -607,15 +612,33 @@ class CSVMatrixStore(MatrixStore):
     #         return df
 
     def _load(self):
-        """Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame"""
-        start = time.time()
-        filename_ = str(self.matrix_base_store.path) 
+        """
+            Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame.
+            If the CSV file is stored on S3 we downloaded to /tmp and then read it with polars (as a gzip),
+            after reading it we delete the file. 
+            If the CSV file is stored on FSystem we read it directly with polars (as a gzip).
+        """
+        # if S3FileSystem then download the CSV.gzip to FileSystem
+        file_in_tmp = False
+        if isinstance(self.matrix_base_store, S3Store):
+            logging.info("file in S3")
+            self.matrix_base_store.download()
+            file_in_tmp = True
+            filename = self.matrix_base_store.path.split("/")[-1]
+            filename_ = f"/tmp/{filename}"
+        else:
+            logging.info("file in FS")
+            filename_ = str(self.matrix_base_store.path) 
         
+        start = time.time()
         logger.debug(f"load matrix with polars {filename_}")
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
-        
         end = time.time()
+
+        # delete downlowded file from S3 
+        if file_in_tmp:
+            subprocess.run(f"rm {filename_}", shell=True)
         
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
@@ -645,7 +668,9 @@ class CSVMatrixStore(MatrixStore):
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         return df
-            
+            def download(self, *args, **kwargs):
+        self.client.download(self.path, "/tmp/")
+        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
     def save(self):
         logging.debug('About to compress')
