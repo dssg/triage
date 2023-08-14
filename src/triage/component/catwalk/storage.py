@@ -155,6 +155,10 @@ class S3Store(Store):
         self.client.download(self.path, "/tmp/")
         logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
+    def download(self, *args, **kwargs):
+        self.client.download(self.path, "/tmp/")
+        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+
 
 class FSStore(Store):
     """Store an object on the local filesystem.
