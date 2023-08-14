@@ -147,6 +147,10 @@ class S3Store(Store):
         # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
         s3file = self.client.open(self.path, *args, **kwargs)
         return self.S3FileWrapper(s3file)
+    
+    def download(self, *args, **kwargs):
+        self.client.download(self.path, "/tmp/")
+        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
 
 class FSStore(Store):
@@ -616,13 +620,34 @@ class CSVMatrixStore(MatrixStore):
     
 
     def _load(self):
-        """Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame"""
+        """
+            Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame.
+            If the CSV file is stored on S3 we downloaded to /tmp and then read it with polars (as a gzip),
+            after reading it we delete the file. 
+            If the CSV file is stored on FSystem we read it directly with polars (as a gzip).
+        """
+        # if S3FileSystem then download the CSV.gzip to FileSystem, then ser 
+        file_in_tmp = False
+        if isinstance(self.matrix_base_store, S3Store):
+            logging.info("file in S3")
+            self.matrix_base_store.download()
+            file_in_tmp = True
+            filename = self.matrix_base_store.path.split("/")[-1]
+            filename_ = f"/tmp/{filename}"
+        else:
+            logging.info("file in FS")
+            filename_ = str(self.matrix_base_store.path) 
+        
         start = time.time()
-        filename_ = str(self.matrix_base_store.path) 
         logger.debug(f"load matrix with polars {filename_}")
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
         end = time.time()
+
+        # delete downlowded file from S3 
+        if file_in_tmp:
+            subprocess.run(f"rm {filename_}", shell=True)
+
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
         # casting entity_id and as_of_date 
