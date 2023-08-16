@@ -16,7 +16,7 @@ from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
-
+from triage.component.architect.utils import change_datetimes_on_metadata
 
 class BuilderBase:
     def __init__(
@@ -345,6 +345,8 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata=matrix_metadata,
             built_by_experiment=self.experiment_hash
         )
+        # before saving the matrix metadata we need to cast datetimes to str 
+        matrix_metadata = change_datetimes_on_metadata(matrix_metadata)
         session = self.sessionmaker()
         session.merge(matrix)
         session.commit()

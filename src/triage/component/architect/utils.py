@@ -114,6 +114,14 @@ def create_entity_date_df(
     return ids_dates.reset_index(drop=True)
 
 
+def change_datetimes_on_metadata(metadata):
+    variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
+    for variable in variables:
+        metadata[variable] = str(metadata[variable])
+
+    return metadata
+
+
 def NamedTempFile():
     if sys.version_info >= (3, 0, 0):
         return tempfile.NamedTemporaryFile(mode="w+", newline="")
