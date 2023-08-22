@@ -115,7 +115,6 @@ class PostmodelingReport:
             n_cols,
             figsize = (subplot_width*n_cols, subplot_len*n_rows),
             dpi=100,
-            # squeeze=False, # to handle only one model group
             sharey=sharey, 
             sharex=sharex
         )
