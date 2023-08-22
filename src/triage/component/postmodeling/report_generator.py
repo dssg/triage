@@ -9,7 +9,7 @@ import itertools
 from descriptors import cachedproperty
 from scipy.stats import spearmanr
 
-from triage.component.postmodeling.contrast.model_class import ModelAnalyzer
+from triage.component.postmodeling.model_analyzer import ModelAnalyzer
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
 
 
@@ -96,7 +96,7 @@ class PostmodelingReport:
 
         return d 
     
-    def _get_subplots(self, subplot_width=3, subplot_len=None, n_rows=None, n_cols=None):
+    def _get_subplots(self, subplot_width=3, subplot_len=None, n_rows=None, n_cols=None, sharey=False, sharex=False):
         """"""
 
         if subplot_len is None:
@@ -115,18 +115,20 @@ class PostmodelingReport:
             n_cols,
             figsize = (subplot_width*n_cols, subplot_len*n_rows),
             dpi=100,
-            squeeze=False # to handle only one model group
+            # squeeze=False, # to handle only one model group
+            sharey=sharey, 
+            sharex=sharex
         )
 
         return fig, axes
 
 
-    def _make_plot_grid(self, plot_type, subplot_width=3, subplot_len=None, **kw):
+    def _make_plot_grid(self, plot_type, subplot_width=3, subplot_len=None, sharey=False, sharex=False, **kw):
         """
             Abstracts out generating the plot grid (time x model group) for comparing
             model_scores,  
         """
-        fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len)
+        fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):
@@ -174,7 +176,7 @@ class PostmodelingReport:
         """
             Plot bias_metric for the specified list of attribute_values for a particular attribute_name across different thresholds (list %)
         """
-        fig, axes = self._get_subplots(subplot_width=6, n_rows=len(attribute_values))
+        fig, axes = self._get_subplots(subplot_width=6, n_rows=len(attribute_values), n_cols=len(self.models[self.model_groups[0]]))
         for _, mg in enumerate(self.models):
             for i, attribute_value in enumerate(attribute_values):
                 for j, train_end_time in enumerate(self.models[mg]):
@@ -204,11 +206,10 @@ class PostmodelingReport:
         if len(self.models) <= 1:
             print("Not available when there is only one model group (look at plot_prk_curves instead)")
             return
-        fig, axes = self._get_subplots(subplot_width=6, n_rows=1)
+        fig, axes = self._get_subplots(subplot_width=6, n_cols=1, sharey=True)
         for _, mg in enumerate(self.models):
             for j, train_end_time in enumerate(self.models[mg]):
                 mode_analyzer = self.models[mg][train_end_time]
-
                 mode_analyzer.plot_precision_threshold_curve(
                     ax=axes[j]
                 )

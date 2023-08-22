@@ -36,10 +36,7 @@ from triage.component.results_schema import (
     ListPredictionMetadata,
     TestAequitas,
     TrainAequitas
-)
-import polars as pl
-import pyarrow
-import time
+)   
 from triage.util.pandas import downcast_matrix
 
 
@@ -151,10 +148,6 @@ class S3Store(Store):
         s3file = self.client.open(self.path, *args, **kwargs)
         return self.S3FileWrapper(s3file)
     
-    def download(self, *args, **kwargs):
-        self.client.download(self.path, "/tmp/")
-        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
-
     def download(self, *args, **kwargs):
         self.client.download(self.path, "/tmp/")
         logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
