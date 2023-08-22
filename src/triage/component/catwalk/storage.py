@@ -668,9 +668,10 @@ class CSVMatrixStore(MatrixStore):
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         return df
-            def download(self, *args, **kwargs):
-        self.client.download(self.path, "/tmp/")
-        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+    
+    # def download(self, *args, **kwargs):
+    #     self.client.download(self.path, "/tmp/")
+    #     logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
     def save(self):
         logging.debug('About to compress')
