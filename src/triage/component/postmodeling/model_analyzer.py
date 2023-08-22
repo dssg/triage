@@ -99,7 +99,7 @@ class ModelAnalyzer:
     def train_label_timespan(self):
         return self.metadata['training_label_timespan']
 
-    def get_predictions(self, matrix_uuid=None, fetch_null_labels=True):
+    def get_predictions(self, matrix_uuid=None, fetch_null_labels=True, predictions_table='test_results.predictions'):
         """Fetch the predictions from the DB for a given matrix
         
             args:
@@ -125,7 +125,7 @@ class ModelAnalyzer:
                    rank_abs_no_ties,
                    rank_pct_no_ties, 
                    test_label_timespan
-            FROM test_results.predictions
+            FROM {predictions_table}
             {where_clause}        
         """
 
@@ -331,7 +331,7 @@ class ModelAnalyzer:
         """, con=self.engine)
         return feature_group_importance
 
-    def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True):
+    def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True, predictions_table='test_results.predictions'):
         """ Generate crosstabs for the predicted positives (top-k) vs the rest
     
         args:
@@ -385,8 +385,9 @@ class ModelAnalyzer:
 
         if matrix_uuid is None:
             matrix_uuid = self.pred_matrix_uuid
+            logging.debug(f'Matrix uuid set to: {matrix_uuid}')
 
-        predictions = self.get_predictions(matrix_uuid=matrix_uuid)
+        predictions = self.get_predictions(matrix_uuid=matrix_uuid, predictions_table=predictions_table)
 
     
         if predictions.empty:
@@ -396,19 +397,19 @@ class ModelAnalyzer:
         # Check whether the table exists
         if table_exists(f'test_results.{table_name}', self.engine):
             # checking whether the crosstabs already exist for the model
-            logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id}')
-            q = f"select * from test_results.{table_name} where model_id={self.model_id};"
+            logging.debug(f'Checking whether crosstabs already exist for the model {self.model_id} and {matrix_uuid}')
+            q = f"select * from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';"
             df = pd.read_sql(q, self.engine)
             
             if not df.empty:
-                logging.warning(f'Crosstabs aleady exist for model {self.model_id}')
+                logging.warning(f'Crosstabs aleady exist for model {self.model_id} and matrix_uuid={matrix_uuid}')
 
                 if replace:
                     logging.warning('Deleting the existing crosstabs!')
                     with self.engine.connect() as conn:
-                        conn.execute(f'delete from test_results.{table_name} where model_id={self.model_id}')
+                        conn.execute(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';")
                 else:
-                    logging.info(f'Replace set to False. Not calculating crosstabs for model {self.model_id}')
+                    logging.info(f"Replace set to False. Not calculating crosstabs for model {self.model_id} and matrix_uuid='{matrix_uuid}';")
                     if return_df: return df 
                     else: return 
             
@@ -477,6 +478,7 @@ class ModelAnalyzer:
             support_threshold=0.1,
             return_df=True,
             show_plot=True,
+            matrix_uuid=None,
             ax=None):
         """ Display the crosstabs for the model
 
@@ -509,11 +511,16 @@ class ModelAnalyzer:
             and model_id = {self.model_id}            
         """
 
+        if matrix_uuid is not None:
+            q = q + f"\n and matrix_uuid='{matrix_uuid}'"
+        else:
+            matrix_uuid=self.pred_matrix_uuid
+
         ct = pd.read_sql(q, self.engine)
 
         if ct.empty:
             logging.error(
-                f'''Crosstabs not found for model {self.model_id} in table test_results.{table_name}. 
+                f'''Crosstabs not found for model {self.model_id} and matrix={matrix_uuid} in table test_results.{table_name}. 
                 Please use crosstabs_pos_vs_neg function to generate crosstabs'''
             )
             raise ValueError('Crosstabs not found!')
