@@ -29,6 +29,24 @@ chopper = Timechop(
 visualize_chops(chopper)
 ```
 
+If you'd like to view the `as_of_dates` created in each of the training-validation sets, you can use the `chop_time` method on the `chopper` object. This may be useful if the dates in the visualization are hard to read. The code below walks through the output of `chop_time`.
+
+```
+train_val_sets = chopper.chop_time() # outputs a list
+
+# How many distinct train-validation sets were created?
+len(train_val_sets) 
+
+# Get the most recent train-val set (last element)
+most_recent_set = train_val_sets[-1] 
+
+# Info about the training and test data for the most recent set
+# including earliest/latest as_of_dates, all the included as_of_dates
+most_recent_set['train_matrix'] 
+most_recent_set['test_matrices'] 
+
+```
+
 ## Triage CLI
 
 The Triage CLI exposes the `showtimechops` command which just takes a YAML file as input. This YAML file is expected to have a `temporal_config` section with Timechop parameters. You can use a full experiment config, or just create a YAML file with only temporal config parameters; the temporal config just has to be present. Here, we use the [example_experiment_config.yaml](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml) from the Triage repository root as an example.

@@ -669,9 +669,9 @@ class CSVMatrixStore(MatrixStore):
 
         return df
     
-    def download(self, *args, **kwargs):
-        self.client.download(self.path, "/tmp/")
-        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+    # def download(self, *args, **kwargs):
+    #     self.client.download(self.path, "/tmp/")
+    #     logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
     def save(self):
         logging.debug('About to compress')
