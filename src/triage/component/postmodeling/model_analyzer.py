@@ -15,7 +15,7 @@ from sklearn import metrics
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis
 from triage.database_reflection import table_exists
-
+from triage.component.catwalk.utils import sort_predictions_and_labels
 
 class ModelAnalyzer:
 
@@ -754,6 +754,7 @@ class ModelAnalyzer:
         )
         ax.set_xlabel('List size percentage (k%)')
         ax.set_ylabel('Precision')
+        ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
         return ax
 
     # TODO: Facilitate plotting pr-k with absolute thresholds
@@ -769,10 +770,13 @@ class ModelAnalyzer:
             ax: the modified Axes object
         """
 
-        pred_df = self.get_predictions(matrix_uuid=matrix_uuid).filter(
-            items=['label_value', 'score']
-        ).sort_values('score', ascending=False)
-
+        pred_df = self.get_predictions(matrix_uuid=matrix_uuid)
+        # remove null labels
+        pred_df.dropna(axis=0, subset=['label_value'], inplace=True) 
+        # handle ties
+        pred_df_score, pred_df_label, pred_df_index = sort_predictions_and_labels(pred_df['score'], pred_df['label_value'], pred_df.index, tiebreaker="random", sort_seed=15321)
+        pred_df = pd.DataFrame(list(zip(pred_df_score, pred_df_label)), columns=['score', 'label_value'])
+        
         if ax is None:
             fig, ax = plt.subplots()
 
@@ -825,7 +829,6 @@ class ModelAnalyzer:
 
                 precisions.append(precision)
                 recalls.append(recall)
-
             sns.lineplot(x=k_values * 100, y=precisions, ax=ax, label='Precision@k')
             sns.lineplot(x=k_values * 100, y=recalls, ax=ax, label='Recall@k')
             
@@ -833,6 +836,7 @@ class ModelAnalyzer:
         ax.set_xlabel('Population percentage (k %)')
         ax.set_ylabel('Metric Value')
         # ax.set_title('Precision-Recall Curve')
+        ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
 
         return ax
 
