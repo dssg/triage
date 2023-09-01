@@ -15,7 +15,7 @@ wrapt==1.15.0
 argcmdr==1.0.1
 sqlparse==0.4.4
 pebble==5.0.3
-adjustText==0.7.3
+adjustText==0.8
 graphviz==0.20
 requests==2.27.1
 coloredlogs==15.0.1
