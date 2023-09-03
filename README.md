@@ -14,7 +14,7 @@ Triage is designed to:
 - Guide users (data scientists, analysts, researchers) through these design choices by highlighting critical operational use questions.
 - Provide an integrated interface to components that are needed throughout a ML/data science project workflow.
 
-## Quick Links
+## Getting Started with Triage
 
 - Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!  [Tutorial hosted on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) 
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial that you can install on your local machine  with sample data
