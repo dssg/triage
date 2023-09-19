@@ -3,7 +3,7 @@ name: Publish python distributions to PyPI
 on: push
 
 jobs:
-  build-n-publish:
+  build:
     name: Build and publish python distributions to PyPI
     runs-on: ubuntu-latest
     steps:
@@ -20,14 +20,18 @@ jobs:
         --user
     - name: Build a binary wheel and a source tarball
       run: python -m build
-    - name: Publish python distribution to PyPI
-      if: startsWith(github.ref, 'refs/tags/')
-      environment:
-        name: pypi
-        url: https://pypi.org/p/triage
-      permissions:
-        id_token: write
-      steps:
+  publish-to-pypi:
+    name: Publish python distribution to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: 
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/triage
+    permissions:
+      id_token: write
+    steps:
       - name: Publish distribution to PyPI 
         uses: pypa/gh-action-pypi-publish@release/v1
 
