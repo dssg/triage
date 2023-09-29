@@ -513,7 +513,15 @@ class MatrixBuilder(BuilderBase):
             raise
     
         # check if the entities_id and knowledge_dates are the same among all the features and label files
-        check_entity_ids_in_files(filenames, matrix_uuid)
+        try:
+            check_entity_ids_in_files(filenames, matrix_uuid)
+        except AssertionError as e:
+            logger.exception(
+                f"Not the same order of entity id and knowledge date in all features and label files for matrix uuid {matrix_uuid}"
+            )
+            if self.run_id:
+                errored_matrix(self.run_id, self.db_engine)
+            raise
 
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
