@@ -263,8 +263,9 @@ def check_entity_ids_in_files(filenames, matrix_uuid):
     # get first 2 columns on each file (entity_id, knowledge_date)
     for element in filenames: 
         logging.debug(f"getting entity id and knowledge date from features {element}")
+        prefix = element.split(".")[0]
         if (element.endswith(".csv")) and (element.startswith(matrix_uuid)):
-            cmd_line = f"cut -d ',' -f 1,2 {element}.csv | sort -k 1,2 > {element}_sorted.csv"
+            cmd_line = f"cut -d ',' -f 1,2 {element} | sort -k 1,2 > {prefix}_sorted.csv"
             subprocess.run(cmd_line, shell=True)
     
     
