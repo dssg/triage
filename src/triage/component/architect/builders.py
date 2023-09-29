@@ -409,7 +409,8 @@ class MatrixBuilder(BuilderBase):
             """.format(
                 name=label_name, type=label_type, timespan=label_timespan
             ),
-            include_index=False,
+            #include_index=False,
+            include_index=True,
             column_override=label_name
         )
 
@@ -502,17 +503,17 @@ class MatrixBuilder(BuilderBase):
 
         # check if the number of rows among all features and label files are the same
         try: 
-            assert check_rows_in_files(files)
+            assert check_rows_in_files(filenames, matrix_uuid)
         except AssertionError as e: 
             logger.exception(
                 f"Different number of rows among features and label files for matrix uuid {matrix_uuid} ",
             )
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
-            return
+            raise
     
         # check if the entities_id and knowledge_dates are the same among all the features and label files
-        check_entity_ids_in_files(files)
+        check_entity_ids_in_files(filenames, matrix_uuid)
 
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
