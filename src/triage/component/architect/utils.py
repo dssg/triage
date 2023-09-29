@@ -245,7 +245,8 @@ def check_rows_in_files(filenames, matrix_uuid):
     outputs = []
     for element in filenames:
         logging.debug(f"filename: {element}")
-        if (element.endswith(".csv")) and (element.startswith(matrix_uuid)):
+        just_filename = element.split("/")[-1]
+        if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
             cmd_line = "wc -l " + element
             outputs.append(subprocess.run(cmd_line, shell=True, capture_output=True))
 
@@ -260,12 +261,27 @@ def check_rows_in_files(filenames, matrix_uuid):
         return False
 
 def check_entity_ids_in_files(filenames, matrix_uuid):
+    """Verifies if all the files in features and label have the same exact entity ids and knowledge dates"""
     # get first 2 columns on each file (entity_id, knowledge_date)
     for element in filenames: 
         logging.debug(f"getting entity id and knowledge date from features {element}")
+        just_filename = element.split("/")[-1]
         prefix = element.split(".")[0]
-        if (element.endswith(".csv")) and (element.startswith(matrix_uuid)):
+        if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
             cmd_line = f"cut -d ',' -f 1,2 {element} | sort -k 1,2 > {prefix}_sorted.csv"
             subprocess.run(cmd_line, shell=True)
+    
+    base_file = filenames[0]
+    comparisons = []
+    for i in range(1, len(filenames)):
+        if (filenames[i].endswith(".csv")) and (filenames[i].startswith(matrix_uuid)):
+            cmd_line = f"diff {base_file} {filenames[i]}"
+            comparisons.append(subprocess.run(cmd_line, shell=True, capture_output=True))
+    
+    if len(comparisons) == 0:
+        return True
+    else:
+        return False
+
     
     
