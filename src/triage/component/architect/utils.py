@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import functools
 import operator
 import tempfile
+import subprocess
 
 import sqlalchemy
 
@@ -226,3 +227,40 @@ def create_binary_outcome_events(db_engine, table_name, events_data):
 
 def retry_if_db_error(exception):
     return isinstance(exception, sqlalchemy.exc.OperationalError)
+
+
+def _num_elements(x):
+    """Extract the number of rows from the subprocess output"""
+    return int(str(x.stdout, encoding="utf-8").split(" ")[0])
+
+
+def check_rows_in_files(filenames):
+    """Checks if the number of rows among all the CSV files for features and 
+    and label for a matrix uuid are the same. 
+
+    Args:
+        filenames (List): List of CSV files to check the number of rows
+        path_ (string): Path to get the temporal csv files
+    """
+    outputs = []
+    for element in filenames:
+        if element.endswith(".csv"):
+            cmd_line = "wc -l " + element
+            outputs.append(subprocess.run(cmd_line, shell=True, capture_output=True))
+
+    # get the number of rows from the subprocess
+    rows = [_num_elements(output) for output in outputs]
+    rows_set = set(rows)
+
+    if len(rows_set) == 1: 
+        return True
+    else:
+        return False
+
+def check_entity_ids_in_files(filenames):
+    # get first 2 columns on each file (entity_id, knowledge_date)
+    for element in filenames: 
+        cmd_line = f"cut -d ',' -f 1,2 {element}.csv | sort -k 1,2 > {element}_sorted.csv"
+        subprocess.run(cmd_line, shell=True)
+    
+    

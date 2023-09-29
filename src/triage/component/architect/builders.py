@@ -16,7 +16,11 @@ from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
 from triage.util.pandas import downcast_matrix
-from triage.component.architect.utils import change_datetimes_on_metadata
+from triage.component.architect.utils import (
+    change_datetimes_on_metadata, 
+    check_rows_in_files,
+    check_entity_ids_in_files
+)
 
 class BuilderBase:
     def __init__(
@@ -435,7 +439,8 @@ class MatrixBuilder(BuilderBase):
                     table=entity_date_table_name,
                 ),
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
-                include_index=True if num==0 else False,
+                include_index=True
+                #include_index=True if num==0 else False,
             ))
         return queries
 
@@ -494,7 +499,21 @@ class MatrixBuilder(BuilderBase):
         
         # join all files starting with features and ending with label
         files = " ".join(filenames)
-        
+
+        # check if the number of rows among all features and label files are the same
+        try: 
+            assert check_rows_in_files(files)
+        except AssertionError as e: 
+            logger.exception(
+                f"Different number of rows among features and label files for matrix uuid {matrix_uuid} ",
+            )
+            if self.run_id:
+                errored_matrix(self.run_id, self.db_engine)
+            return
+    
+        # check if the entities_id and knowledge_dates are the same among all the features and label files
+        check_entity_ids_in_files(files)
+
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
         logger.debug(f"paste CSVs columnwise for matrix {matrix_uuid} cmd line: {cmd_line}")
@@ -551,10 +570,11 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid (string): ID of the matrix
         """
         # deleting features and label csvs
-        for filename_ in filenames:
-            cmd_line = 'rm ' + filename_ 
-            subprocess.run(cmd_line, shell=True)
+        #for filename_ in filenames:
+        #    cmd_line = 'rm ' + filename_ 
+        #    subprocess.run(cmd_line, shell=True)
 
         # deleting the merged csv
-        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
-        subprocess.run(cmd_line, shell=True)
+        #cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        #subprocess.run(cmd_line, shell=True)
+        pass
