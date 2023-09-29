@@ -19,7 +19,9 @@ from triage.util.pandas import downcast_matrix
 from triage.component.architect.utils import (
     change_datetimes_on_metadata, 
     check_rows_in_files,
-    check_entity_ids_in_files
+    check_entity_ids_in_files,
+    remove_entity_id_and_knowledge_dates,
+    generate_list_of_files_to_remove
 )
 
 class BuilderBase:
@@ -498,9 +500,6 @@ class MatrixBuilder(BuilderBase):
         # add label file to filenames
         filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
         
-        # join all files starting with features and ending with label
-        files = " ".join(filenames)
-
         # check if the number of rows among all features and label files are the same
         try: 
             assert check_rows_in_files(filenames, matrix_uuid)
@@ -522,6 +521,12 @@ class MatrixBuilder(BuilderBase):
             if self.run_id:
                 errored_matrix(self.run_id, self.db_engine)
             raise
+
+        # remove first 2 columns on each features and label files -except the first one- 
+        verified_filenames = remove_entity_id_and_knowledge_dates(filenames, matrix_uuid)
+
+        # join all files starting with features and ending with label
+        files = " ".join(verified_filenames)
 
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
@@ -562,7 +567,9 @@ class MatrixBuilder(BuilderBase):
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
-        self.remove_unnecessary_files(filenames, path_, matrix_uuid)
+        # addinig _sorted and _fixed files to list of files to rm 
+        rm_filenames = generate_list_of_files_to_remove(filenames, matrix_uuid)
+        self.remove_unnecessary_files(rm_filenames, path_, matrix_uuid)
 
         #return downcast_matrix(df)
         return df
@@ -579,11 +586,11 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid (string): ID of the matrix
         """
         # deleting features and label csvs
-        #for filename_ in filenames:
-        #    cmd_line = 'rm ' + filename_ 
-        #    subprocess.run(cmd_line, shell=True)
+        for filename_ in filenames:
+           cmd_line = 'rm ' + filename_ 
+           subprocess.run(cmd_line, shell=True)
 
         # deleting the merged csv
-        #cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
-        #subprocess.run(cmd_line, shell=True)
-        pass
+        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        subprocess.run(cmd_line, shell=True)
+        

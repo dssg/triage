@@ -283,5 +283,41 @@ def check_entity_ids_in_files(filenames, matrix_uuid):
     else:
         return False
 
+
+def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
+    """drop entity id and knowledge date from all features and label files but one""" 
+    verified_filenames = []
+
+    base_file = filenames[0]
+    # copy the base file as _fixed for easy handeling afterwards 
+    prefix_base_file = base_file.split(".")[0]
+    cmd_line = f"cp {base_file} {prefix_base_file}_fixed.csv"
+    subprocess.run(cmd_line, shell=True)
+    verified_filenames.append(prefix_base_file + "_fixed.csv")
     
+    for i in range(1, len(filenames)):
+        just_filename = filenames[i].split("/")[-1]
+        prefix = filenames[i].split(".")[0]
+        if not (just_filename.endswith("_sorted.csv")) and (just_filename.startswith(matrix_uuid)) and (filenames[i] != base_file):
+            cmd_line = f"sort -k 1,2 {filenames[i]} | cut -d ',' -f 3- > {prefix}_fixed.csv"
+            subprocess.run(cmd_line, shell=True)
+            verified_filenames.append(prefix + "_fixed.csv")
     
+    return verified_filenames
+
+    
+def generate_list_of_files_to_remove(filenames, matrix_uuid):
+    """Generate the list of all files that need to be removed"""
+    # adding _sorted
+    rm_files = filenames 
+
+    for element in filenames:
+        if (element.split("/")[-1].starts_with(matrix_uuid)):
+            prefix = element.split(".")[0]
+            # adding sorted files 
+            rm_files.append(prefix + "_sorted.csv")
+            # adding fixed files
+            rm_files.append(prefix + "_fixed.csv")
+
+    return rm_files
+
