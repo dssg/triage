@@ -244,7 +244,7 @@ def check_rows_in_files(filenames, matrix_uuid):
     """
     outputs = []
     for element in filenames:
-        logging.debug(f"filename: {element}")
+        # logging.debug(f"filename: {element}")
         just_filename = element.split("/")[-1]
         if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
             cmd_line = "wc -l " + element
@@ -314,7 +314,7 @@ def generate_list_of_files_to_remove(filenames, matrix_uuid):
     rm_files = filenames 
 
     for element in filenames:
-        if (element.split("/")[-1].starts_with(matrix_uuid)):
+        if (element.split("/")[-1].startswith(matrix_uuid)):
             prefix = element.split(".")[0]
             # adding sorted files 
             rm_files.append(prefix + "_sorted.csv")
