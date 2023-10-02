@@ -244,7 +244,7 @@ def check_rows_in_files(filenames, matrix_uuid):
     """
     outputs = []
     for element in filenames:
-        # logging.debug(f"filename: {element}")
+        logging.debug(f"filename: {element}")
         just_filename = element.split("/")[-1]
         if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
             cmd_line = "wc -l " + element
