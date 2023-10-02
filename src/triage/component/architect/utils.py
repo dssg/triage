@@ -286,24 +286,26 @@ def check_entity_ids_in_files(filenames, matrix_uuid):
 
 def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
     """drop entity id and knowledge date from all features and label files but one""" 
-    verified_filenames = []
+    correct_filenames = []
 
-    base_file = filenames[0]
-    # copy the base file as _fixed for easy handeling afterwards 
-    prefix_base_file = base_file.split(".")[0]
-    cmd_line = f"cp {base_file} {prefix_base_file}_fixed.csv"
-    subprocess.run(cmd_line, shell=True)
-    verified_filenames.append(prefix_base_file + "_fixed.csv")
-    
-    for i in range(1, len(filenames)):
+    for i in range(len(filenames)):
         just_filename = filenames[i].split("/")[-1]
         prefix = filenames[i].split(".")[0]
-        if not (just_filename.endswith("_sorted.csv")) and (just_filename.startswith(matrix_uuid)) and (filenames[i] != base_file):
-            cmd_line = f"sort -k 1,2 {filenames[i]} | cut -d ',' -f 3- > {prefix}_fixed.csv"
+        if not (just_filename.endswith("_sorted.csv")) and (just_filename.startswith(matrix_uuid)):
+            if prefix.endswith("_0"): 
+                # only the first file will have entity_id and knowledge data but needs to also be sorted
+                cmd_line = f"sort -k 1,2 {filenames[i]} > {prefix}_fixed.csv"
+            else:
+                cmd_line = f"sort -k 1,2 {filenames[i]} | cut -d ',' -f 3- > {prefix}_fixed.csv"
             subprocess.run(cmd_line, shell=True)
-            verified_filenames.append(prefix + "_fixed.csv")
-    
-    return verified_filenames
+            # all files now the header in the last row (after being sorted)
+            # from https://www.unix.com/shell-programming-and-scripting/128416-use-sed-move-last-line-top.html
+            # move last line to first line
+            cmd_line = f"sed -i '1h;1d;$!H;$!d;G' {prefix}_fixed.csv"
+            subprocess.run(cmd_line, shell=True)
+            correct_filenames.append(f"{prefix}_fixed.csv")
+
+    return correct_filenames
 
     
 def generate_list_of_files_to_remove(filenames, matrix_uuid):
