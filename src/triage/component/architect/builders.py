@@ -586,12 +586,12 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid (string): ID of the matrix
         """
         # deleting features and label csvs
-        # for filename_ in filenames:
-        #    cmd_line = 'rm ' + filename_ 
-        #    subprocess.run(cmd_line, shell=True)
+        for filename_ in filenames:
+           cmd_line = 'rm ' + filename_ 
+           subprocess.run(cmd_line, shell=True)
 
-        # # deleting the merged csv
-        # cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
-        # subprocess.run(cmd_line, shell=True)
-        pass
+        # deleting the merged csv
+        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        subprocess.run(cmd_line, shell=True)
+        
         
