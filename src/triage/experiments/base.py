@@ -532,7 +532,7 @@ class ExperimentBase(ABC):
         logger.verbose(f"Computed and stored temporal split definitions")
         logger.debug(f"Temporal split definitions: {split_definitions}")
         logger.spam("\n----TIME SPLIT SUMMARY----\n")
-        logger.spam("Number of time splits: {len(split_definitions)}")
+        logger.spam(f"Number of time splits: {len(split_definitions)}")
         for split_index, split in enumerate(split_definitions):
             train_times = split["train_matrix"]["as_of_times"]
             test_times = [
