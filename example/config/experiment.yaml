@@ -12,15 +12,15 @@ config_version: 'v8'
 # models table for each model created in this experiment
 model_comment: 'test'
 # random_seed will be set in Python at the beginning of the experiment and
-# affect the generation of all model seeds
-# If you don't specify this block it will be set for you and stored in the database
+# sets all random seeds for all models
+# If you don't specify a value in this block, it will be set for you and stored in the database
 random_seed: 23895478
 
 # TIME SPLITTING
 # The time window to look at, and how to divide the window into
 # train/test splits
 #
-# Most of this values are optional. The following shows the
+# Most of these values are optional. The following are the
 # default values that you will get if they are not set
 # mode_update_frequency = 100y
 # training_as_of_date_frequencies = 100y
@@ -30,9 +30,9 @@ random_seed: 23895478
 # feature_start_time = label_start_time = min(date) in your event's tables (from_obj in feature_aggregations)
 # feature_end_time = label_end_time = max(date) in your event's tables  (from_obj in feature_aggregations)
 #
-# Be mindful that this values were selected in order to
-# simplify the beginnings of your project, and by not means
-# they are the *suggested* values for all projects.
+# ***NOTE*** These values were selected in order to
+# simplify things when you start a new project.
+# ****Please change them as appropriate for your project*****
 #
 # Another change is that if your label span is the same in
 # testing and training, instead of using training_label_timespans
@@ -50,10 +50,16 @@ temporal_config:
     test_durations: ['0day', '1month', '2month'] # length of time included in a test matrix (0 days will give a single prediction immediately after training end)
     training_label_timespans: ['1month'] # time period across which outcomes are labeled in train matrices
     test_label_timespans: ['7day'] # time period across which outcomes are labeled in test matrices
+   #label_timespans: ['7day']   # you can use this if your train and test label timespans are the same (which is typical)
 
 
-# COHORT CONFIG
-# Cohorts are configured by passing a query with placeholders for the 'as_of_date'.
+# COHORT CONFIG 
+# [OPTIONAL: You can define cohorts and labels separately or you can have a combined cohorts and labels query
+# in the LABEL GENERATION section below]
+#
+# Cohorts are configured by passing a query with a para for the 'as_of_date'.
+# The SQL query you specify here takes one parameter {as_of_date} and returns one column named entity_id 
+# which is the set of all entity_ids that make up the cohort as of {as_of_date}
 #
 # You may pass a relative filepath to a cohort query to the 'filepath' key (preferred) or use the 'query' key to include the a cohort query directly in the config
 # Cohort queries should return a column named 'entity_id' and be parameterized with an '{as_of_date}', to select the entity_ids that should be included for a given date. The {as_of_date} will be replaced with each as_of_date that the experiment needs. The returned 'entity_id' must be an integer.
@@ -71,10 +77,11 @@ cohort_config:
 
 
 # LABEL GENERATION
-# Labels are configured with a query with placeholders for the 'as_of_date' and 'label_timespan'. You can include a local path to a sql file containing the label query to the 'filepath' key (preferred) or include the query in the 'query' key
+# Labels are configured with a query with placeholders for the 'as_of_date' and 'label_timespan'. 
+# You can include a local path to a sql file containing the label query to the 'filepath' key (preferred) or include the query in the 'query' key
 #
 # The query must return two columns: entity_id and outcome, based on a given as_of_date and label_timespan.
-# The as_of_date and label_timespan must be represented by placeholders marked by curly brackets. The example below
+# The as_of_date and label_timespan must be represented by parameters marked by curly brackets. The example below
 # reproduces the inspection outcome boolean-or logic:
 #
 # In addition, you can configure what label is given to entities that are in the matrix
@@ -116,6 +123,7 @@ label_config:
 #           mean is taken within-date).
 #   * constant: Fill with a constant value from a required `value` parameter.
 #   * zero: Fill with zero.
+#   * zero_noflag: Fill with zero and don't create a missing flag 
 #   * null_category: Only available for categorical features. Just flag null
 #                    values with the null category column.
 #   * binary_mode: Only available for aggregate column types. Takes the modal
@@ -124,7 +132,7 @@ label_config:
 #            feature.
 feature_aggregations:
     -
-        # prefix given to the resultant tables
+        # prefix given to the feature tables created
         prefix: 'prefix'
         # from_obj is usually a source table but can be an expression, such as
         # a join (ie 'cool_stuff join other_stuff using (stuff_id)')
@@ -183,7 +191,7 @@ feature_aggregations:
                     - 'max'
                     - 'sum'
         # Categorical features. The column given can be of any type, but the
-        # choices must comparable to that type for equality within SQL
+        # choices must be compatible with that type for equality within SQL
         # The result will be one feature for each choice/metric combination
         categoricals:
             -
@@ -227,7 +235,7 @@ feature_aggregations:
 # - 'tables' allows you to send a list of collate feature tables (collate builds these by appending 'aggregation_imputed' to the prefix)
 # - 'prefix' allows you to specify a list of feature name prefixes
 #
-# This block is optional. If you don't specify it, it will be defaulted
+# This block is optional. If you don't specify it, it will default
 # to all the 'prefix' in the 'features_aggregation' block.
 feature_group_definition:
     tables: ['prefix_aggregation_imputed']
@@ -278,7 +286,7 @@ user_metadata:
 
 
 
-# BIAS AUDIT (optional, please comment the bias_audit_config section if not interested in knowing the biases and equity of the models)
+# BIAS AUDIT (optional)
 # Every evaluation will include a bias audit (using the Aequitas toolkit).
 # To run the bias audit it is necessary to define the protected groups by defining attributes (e.g. race) for every entity
 # from_obj parameter: it can be a table name or a query (such as with features generators)
