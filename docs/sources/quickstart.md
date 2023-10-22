@@ -3,17 +3,28 @@
 ### 1. Install Triage
 
 Triage can be installed using pip or through python setup.py. It
-requires Python 3+ and access to a postgresql database. Ideally you
-have full access to a database so triage can create additional schemas
+requires Python 3.8+ and access to a postgresql database (for now). *If you're interested in helping port the queries to support other databases, let us know*. Ideally you have full access to a database so triage can create additional schemas
 inside that it needs to store metadata, predictions, and evaluation
 metrics.
 
+To install Triage locally, you need:
+- Ubuntu/RedHat
+- Python 3.8+
+- A PostgreSQL 9.6+ database with your source data (events,
+  geographical data, etc) loaded.
+  - **NOTE**: If your database is PostgreSQL 11+ you will get some
+    speed improvements. We recommend updating to a recent
+    version of PostgreSQL.
+- Ample space on an available disk, (or for example in Amazon Web
+  Services's S3), to store the matrices and models that will be created for your
+  experiments
+  
 We also recommend installing triage inside a python virtual
 environment for your project so you don't have any conflicts with
 other packages installed on the machine. You can use [virutalenv](https://virtualenv.pypa.io/en/latest/) or
 [pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) to do that.
 
-If you use [pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) (be sure your default python is 3+):
+If you use [pyenv](https://github.com/pyenv/pyenv-installer/blob/master/README.rst) (be sure your default python is 3.8+):
 ```bash
 $ pyenv virtualenv triage-env
 $ pyenv activate triage-env
@@ -26,20 +37,32 @@ $ virtualenv triage-env
 $ . triage-env/bin/activate
 (triage-env) $ pip install triage
 ```
+If you get an error related to pg_config executable, run the following command (make sure you have sudo access):
+```bash
+(triage-env) $ sudo apt-get install libpq-dev python3.9-dev
+```
+Then rerun pip install triage
+```bash
+(triage-env) $ pip install triage
+```
+To test if triage was installed correctly, type:
+```bash
+(triage-env) $ triage -h
+```
 
 ![workflow](dirtyduck/images/quickstart.png "Triage Workflow")
 
-### 2. Make sure your have access to a Postgres database
+### 2. Make sure you have access to a Postgres database
 
 You'll need to have the servername, databasename, username, and password and put it in a credentials file in Step 5 below.
 
 ### 3. Structure your data
 
 The simplest way to start is to structure your data as a series of
-events connected to your entity of interest (person, organization,
+events that are connected to your entity of interest (person, organization,
 business, etc.) that take place at a certain time. Each row of the
-data will be an **event**. Each event will have some `event_id`, and an
-`entity_id` to link it to the entity it happened to, a date, as well as
+data will be an **event**. Each event can have some `event_id`, and an
+`entity_id` to link it to the entity it happened to, a date field, as well as
 additional attributes about the event (`type`, for example) and the
 entity (`age`, `gender`, `race`, etc.). A sample row might look like:
 
@@ -52,23 +75,23 @@ integer**) to refer to the primary *entities* of interest in our
 project. It also needs a **date field** to specify the date each event occurred in order to use it appropriately in building and validating models.
 
 #### Examples
-1. healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified (through the entity_id column), a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
+1. Healthcare: Typical data from EHR systems will have a table about the demographics of each patient. The `entity_id` will be the patient id (typically MRN) here. Then there are tables that have a row for each `encounter`, or `diagnosis`, or `procedure` with a patient identified (through the entity_id column), a timestamp, and additional information/columns about that `encounter`, or `diagnosis`, or `procedure`. All of these tables are provided as input to triage in a postgresql database.
 
-2. education: the entity_id will typically be the student_id and the events include things like a grade in a class in a given year, a test score n a test at a given time, graduation, etc.
+2. Education: the entity_id will typically be the student_id and the events include things like a grade in a class in a given year, a test score n a test at a given time, graduation, etc.
 
 
 
 ### 4. Set up Triage configuration files
 
-The Triage configuration file sets up the modeling process to mirror the
-operational scenario the models will be used in. This involves
+The Triage configuration file sets up the modeling process to match the
+deployment scenario the models will be used in. This involves
 defining the cohort to train/predict on, when the prediction is taking place, the outcome we're predicting,
 how far out we're predicting, how often will the model be updated, how
-often will the predicted list be used for interventions, what are the
-resources available to intervene to define the evaluation metric,
+often will the predicted list be used for interventions, the
+quantity of resources available to intervene to define the evaluation metric,
 etc.
 
-A lot of details about each section of the configration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simpler configuration file below:
+A lot of details about each section of the configuration file can be found [here](https://github.com/dssg/triage/blob/master/example/config/experiment.yaml), but for the moment we'll start with the much simpler configuration file below:
 
 ```yaml
 config_version: 'v8'
@@ -321,7 +344,7 @@ Feel free to explore some of the other tables in these schemas (note that
 there's also a `train_results` schema with performance on the training
 set as well as feature importances, where defined).
 
-In a more complete modeling run, you could `audition` with jupyter notebooks to help you
+In a more complete modeling run, you could `audition` the mdoels created using jupyter notebooks to help you
 select the best-performing model specifications from a wide variety of options (see the [overview of
 model selection](https://dssg.github.io/triage/audition/audition_intro/) and [tutorial audition notebook](https://github.com/dssg/triage/blob/master/src/triage/component/audition/Audition_Tutorial.ipynb)) and `postmodeling` to delve deeper into understanding these models (see the [README](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/README.md) and [tutorial postmodeling notebook](https://github.com/dssg/triage/blob/master/src/triage/component/postmodeling/contrast/postmodeling_tutorial.ipynb)).
 
@@ -331,4 +354,4 @@ You can also look at the directory you specified in the triage run as the projec
 
 Now that you have triage running, [continue onto the suggested project workflow](https://dssg.github.io/triage/triage_project_workflow/) for some tips about how to iterate and tune the pipeline for your project.
 
-Alternatively, if you'd like more of a guided tour with sample data, check out our [dirty duck tutorial](https://dssg.github.io/triage/dirtyduck/).
+Alternatively, if you'd like more of a guided tour with sample data, *check out our [colab tutorial]*(https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) that is hosted so you don't need to install anything or the [dirty duck tutorial](https://dssg.github.io/triage/dirtyduck/).
