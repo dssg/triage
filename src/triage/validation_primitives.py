@@ -155,3 +155,9 @@ def string_is_tablesafe(string):
     if not string:
         return False
     return all((c.isalpha() and c.islower()) or c.isdigit() or c == '_' for c in string)
+
+
+def table_should_have_entity_date_columns(table_name, db_engine):
+    table_should_have_column(table_name, "entity_id", db_engine)
+    table_should_have_column(table_name, "as_of_date", db_engine)
+    

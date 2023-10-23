@@ -10,6 +10,7 @@ import pathlib
 from contextlib import contextmanager
 from os.path import dirname
 from urllib.parse import urlparse
+from pathlib import Path
 
 import gzip
 import pandas as pd
@@ -17,7 +18,12 @@ import s3fs
 import wrapt
 import yaml
 import joblib
+import shutil
 import subprocess
+import io
+import time
+import polars as pl
+import pyarrow
 
 from triage.component.results_schema import (
     TestEvaluation,
@@ -144,6 +150,10 @@ class S3Store(Store):
         # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
         s3file = self.client.open(self.path, *args, **kwargs)
         return self.S3FileWrapper(s3file)
+    
+    def download(self, *args, **kwargs):
+        self.client.download(self.path, "/tmp/")
+        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
 
     def download(self, *args, **kwargs):
         self.client.download(self.path, "/tmp/")
@@ -599,17 +609,22 @@ class CSVMatrixStore(MatrixStore):
 
         return head_of_matrix
 
-    # def _load(self):
-    #     df = pl.read_csv(self.matrix_base_store, infer_schema_length=0).with_columns(pl.all().exclude(['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
-    #     df = df.with_columns(pl.col("as_of_date").str.to_datetime("%Y-%m-%d"))
-    #     df = df.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
-
-    #     with self.matrix_base_store.open("rb") as fd:
-    #         # dfs = pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"], chunksize=1000)
-    #         # return pd.concat(dfs)
-
-    #         df = pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
-    #         return df
+    def get_storage_directory(self):
+        """Gets only the directory part of the storage path of the project"""
+        logger.debug(f"original path: {self.matrix_base_store.path}")
+        # if is is File system storage type
+        if isinstance(self.matrix_base_store.path, Path):
+            parts_path = list(self.matrix_base_store.path.parts[1:-1])
+            path_ = Path("/" + "/".join(parts_path))
+        # if it is a S3 storage type
+        else:
+            path_ = Path("/tmp/triage_output/matrices")
+            os.makedirs(path_, exist_ok=True)
+        
+        logger.debug(f"get storage directory path: {path_}")
+        
+        return path_
+    
 
     def _load(self):
         """
@@ -618,7 +633,7 @@ class CSVMatrixStore(MatrixStore):
             after reading it we delete the file. 
             If the CSV file is stored on FSystem we read it directly with polars (as a gzip).
         """
-        # if S3FileSystem then download the CSV.gzip to FileSystem
+        # if S3FileSystem then download the CSV.gzip to FileSystem, then ser 
         file_in_tmp = False
         if isinstance(self.matrix_base_store, S3Store):
             logging.info("file in S3")
@@ -639,7 +654,6 @@ class CSVMatrixStore(MatrixStore):
         # delete downlowded file from S3 
         if file_in_tmp:
             subprocess.run(f"rm {filename_}", shell=True)
-        
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
         # casting entity_id and as_of_date 
@@ -653,9 +667,7 @@ class CSVMatrixStore(MatrixStore):
 
         df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
         df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
-        
         end = time.time()
-        
         logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {self.matrix_uuid} (sec): {(end-start)/60}")
         # converting from polars to pandas
         logger.debug(f"about to convert polars df into pandas df")
@@ -668,10 +680,10 @@ class CSVMatrixStore(MatrixStore):
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         return df
-    
-    # def download(self, *args, **kwargs):
-    #     self.client.download(self.path, "/tmp/")
-    #     logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+
+    def _load_as_df(self):
+        with self.matrix_base_store.open("rb") as fd:
+           return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
 
     def save(self):
         logging.debug('About to compress')
@@ -680,6 +692,11 @@ class CSVMatrixStore(MatrixStore):
         
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
+
+    def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
+        logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
+        with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
+            return fd.write(output)
 
 
 class TestMatrixType:

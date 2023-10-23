@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import functools
 import operator
 import tempfile
+import subprocess
 
 import sqlalchemy
 
@@ -112,6 +113,14 @@ def create_entity_date_df(
     logger.spam(ids_dates)
 
     return ids_dates.reset_index(drop=True)
+
+
+def change_datetimes_on_metadata(metadata):
+    variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
+    for variable in variables:
+        metadata[variable] = str(metadata[variable])
+
+    return metadata
 
 
 def NamedTempFile():
@@ -218,3 +227,99 @@ def create_binary_outcome_events(db_engine, table_name, events_data):
 
 def retry_if_db_error(exception):
     return isinstance(exception, sqlalchemy.exc.OperationalError)
+
+
+def _num_elements(x):
+    """Extract the number of rows from the subprocess output"""
+    return int(str(x.stdout, encoding="utf-8").split(" ")[0])
+
+
+def check_rows_in_files(filenames, matrix_uuid):
+    """Checks if the number of rows among all the CSV files for features and 
+    and label for a matrix uuid are the same. 
+
+    Args:
+        filenames (List): List of CSV files to check the number of rows
+        path_ (string): Path to get the temporal csv files
+    """
+    outputs = []
+    for element in filenames:
+        logging.debug(f"filename: {element}")
+        just_filename = element.split("/")[-1]
+        if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
+            cmd_line = "wc -l " + element
+            outputs.append(subprocess.run(cmd_line, shell=True, capture_output=True))
+
+    # get the number of rows from the subprocess
+    rows = [_num_elements(output) for output in outputs]
+    rows_set = set(rows)
+    logging.debug(f"number of rows in files {rows_set}")
+
+    if len(rows_set) == 1: 
+        return True
+    else:
+        return False
+
+def check_entity_ids_in_files(filenames, matrix_uuid):
+    """Verifies if all the files in features and label have the same exact entity ids and knowledge dates"""
+    # get first 2 columns on each file (entity_id, knowledge_date)
+    for element in filenames: 
+        logging.debug(f"getting entity id and knowledge date from features {element}")
+        just_filename = element.split("/")[-1]
+        prefix = element.split(".")[0]
+        if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
+            cmd_line = f"cut -d ',' -f 1,2 {element} | sort -k 1,2 > {prefix}_sorted.csv"
+            subprocess.run(cmd_line, shell=True)
+    
+    base_file = filenames[0]
+    comparisons = []
+    for i in range(1, len(filenames)):
+        if (filenames[i].endswith(".csv")) and (filenames[i].startswith(matrix_uuid)):
+            cmd_line = f"diff {base_file} {filenames[i]}"
+            comparisons.append(subprocess.run(cmd_line, shell=True, capture_output=True))
+    
+    if len(comparisons) == 0:
+        return True
+    else:
+        return False
+
+
+def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
+    """drop entity id and knowledge date from all features and label files but one""" 
+    correct_filenames = []
+
+    for i in range(len(filenames)):
+        just_filename = filenames[i].split("/")[-1]
+        prefix = filenames[i].split(".")[0]
+        if not (just_filename.endswith("_sorted.csv")) and (just_filename.startswith(matrix_uuid)):
+            if prefix.endswith("_0"): 
+                # only the first file will have entity_id and knowledge data but needs to also be sorted
+                cmd_line = f"sort -k 1,2 {filenames[i]} > {prefix}_fixed.csv"
+            else:
+                cmd_line = f"sort -k 1,2 {filenames[i]} | cut -d ',' -f 3- > {prefix}_fixed.csv"
+            subprocess.run(cmd_line, shell=True)
+            # all files now the header in the last row (after being sorted)
+            # from https://www.unix.com/shell-programming-and-scripting/128416-use-sed-move-last-line-top.html
+            # move last line to first line
+            cmd_line = f"sed -i '1h;1d;$!H;$!d;G' {prefix}_fixed.csv"
+            subprocess.run(cmd_line, shell=True)
+            correct_filenames.append(f"{prefix}_fixed.csv")
+
+    return correct_filenames
+
+    
+def generate_list_of_files_to_remove(filenames, matrix_uuid):
+    """Generate the list of all files that need to be removed"""
+    # adding _sorted
+    rm_files = filenames 
+
+    for element in filenames:
+        if (element.split("/")[-1].startswith(matrix_uuid)):
+            prefix = element.split(".")[0]
+            # adding sorted files 
+            rm_files.append(prefix + "_sorted.csv")
+            # adding fixed files
+            rm_files.append(prefix + "_fixed.csv")
+
+    return rm_files
+
