@@ -1,39 +1,40 @@
 Triage
 ======
 
-Data Science Toolkit for Social Good and Public Policy Problems
+ML/Data Science Toolkit for Social Good and Public Policy Problems
 
 [![image](https://travis-ci.com/dssg/triage.svg?branch=master)](https://travis-ci.org/dssg/triage)
 [![image](https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/triage)
 [![image](https://codeclimate.com/github/dssg/triage.png)](https://codeclimate.com/github/dssg/triage)
 
-Building data science systems requires answering many design questions, turning them into modeling choices, which in turn run  machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanantory variables) generation, model/classifier training, evaluation, selection, and list generation are often complicated and hard to choose apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
+Building ML/Data Science systems requires answering many design questions, turning them into modeling choices, which in turn define and machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanatory variables or predictors) generation, model/classifier training, evaluation, selection, bias audits, interpretation, and list generation are often complicated and hard to make design choices around apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
 
 Triage is designed to:
 
 - Guide users (data scientists, analysts, researchers) through these design choices by highlighting critical operational use questions.
-- Provide an integrated interface to components that are needed throughout a data science project workflow.
+- Provide an integrated interface to components that are needed throughout a ML/data science project workflow.
 
-## Quick Links
+## Getting Started with Triage
 
-- [Tutorial on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) - Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!
-- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial here with sample data
+- Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!  [Tutorial hosted on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) 
+- [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial that you can install on your local machine  with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation?
 - [Development](https://github.com/dssg/triage#development) - Contribute to Triage development.
 
 ## Installation
 
-To install Triage, you need:
+To install Triage locally, you need:
 
+- Ubuntu/RedHat
 - Python 3.8+
 - A PostgreSQL 9.6+ database with your source data (events,
   geographical data, etc) loaded.
   - **NOTE**: If your database is PostgreSQL 11+ you will get some
-    speed improvements. We recommend to update to a recent
+    speed improvements. We recommend updating to a recent
     version of PostgreSQL.
 - Ample space on an available disk, (or for example in Amazon Web
-  Services's S3), to store the needed matrices and models for your
+  Services's S3), to store the matrices and models that will be created for your
   experiments
 
 We recommend starting with a new python virtual environment and pip installing triage there.

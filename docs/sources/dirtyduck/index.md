@@ -2,6 +2,7 @@ This is a guide to `Triage`, a machine learning / data science tool initially de
 Policy](http://dsapp.uchicago.edu) (DSaPP) at the University of
 Chicago and now being maintained at Carnegie Mellon University.
 
+
 `Triage` helps build ML systems for two [common
 problems](https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/):
 (a) Early warning systems (**EWS** or **EIS**), (b) *resource
@@ -9,7 +10,7 @@ prioritization* (a.k.a "an inspections problem"). These problems require careful
 implementation are often done incorrectly.
 
 !!! info Triage version
-    This tutorial is in sync with the latest version of `triage`. At this moment [v4.2.0](https://github.com/dssg/triage/releases/tag/v4.2.0).
+    This tutorial may not be compatible  with the latest version of `triage` and was written for [v4.2.0](https://github.com/dssg/triage/releases/tag/v4.2.0). *We recommend starting with the [tutorial hosted at colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb)*
 
 !!! info "How you can help to improve this tutorial"
 
