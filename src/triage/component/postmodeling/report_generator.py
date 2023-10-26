@@ -29,7 +29,10 @@ class PostmodelingReport:
         
     @property
     def model_ids(self):
-        pass
+        model_ids = list()
+        for mg, d in self.models.items():
+            for t, mod_obj in d.items():
+                model_ids.append(mod_obj.model_id)
 
     @property
     def model_types(self):
@@ -80,7 +83,12 @@ class PostmodelingReport:
         print(matrices)
 
     def plot_model_group_performance(self, metric, parameter):
-        pass
+        pass        
+
+        # q = """
+        #     select
+        
+        # """
 
     def get_model_ids(self):
         """ For the model group ids, fetch the model_ids and initialize the datastructure
