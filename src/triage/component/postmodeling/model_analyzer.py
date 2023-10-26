@@ -828,14 +828,15 @@ class ModelAnalyzer:
             precisions = list()
             recalls = list()
             num_scored = len(pred_df)
+            num_positives = pred_df.label_value.sum()
 
             for k in k_values:
                 num_above_thresh = round(k * num_scored)
 
                 pred_pos = pred_df.iloc[:num_above_thresh]
                 
-                precision = pred_pos.label_value.sum() / k
-                recall = float(pred_pos.label_value.sum() / pred_df.label_value.sum())
+                precision = pred_pos.label_value.sum() / num_above_thresh
+                recall = pred_pos.label_value.sum() / num_positives
 
                 precisions.append(precision)
                 recalls.append(recall)
@@ -868,6 +869,10 @@ class ModelAnalyzer:
         # feature_importance_scores.sort_values(by=['rank_abs'], ascending=True, inplace=True)
         # feature_importance_scores = feature_importance_scores.loc[feature_importance_scores['rank_abs'] <= n_top_features]
         
+        if feature_importance_scores.empty:
+            return ax
+
+
         if 'Algorithm does not support' in feature_importance_scores.feature.iloc[0]:
             # For models without featue importance score support
             return ax 
