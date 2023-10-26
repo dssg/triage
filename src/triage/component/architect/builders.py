@@ -588,10 +588,12 @@ class MatrixBuilder(BuilderBase):
         # deleting features and label csvs
         for filename_ in filenames:
            cmd_line = 'rm ' + filename_ 
+           logger.debug(f"removing files with command {cmd_line}")
            subprocess.run(cmd_line, shell=True)
 
         # deleting the merged csv
         cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        logger.debug(f"removing stitched csv with command {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         
         
