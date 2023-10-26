@@ -133,9 +133,12 @@ class ModelAnalyzer:
 
         #TODO: Maybe we should call the script to save predictions here?
         if preds.empty:
-            raise RuntimeError(
-                "No predictions were found in the database. Please run the add_predictions module to add predictions for the model"
-            )
+            logging.warning(f'No predictions were found in {predictions_table} for model_id {self.model_id}. Returning empty dataframe!')
+            # raise RuntimeError(
+                # "No predictions were found in the database. Please run the add_predictions module to add predictions for the model"
+            # )
+            return preds 
+        
 
         return preds.set_index(self.id_columns)
 
@@ -831,7 +834,7 @@ class ModelAnalyzer:
 
                 pred_pos = pred_df.iloc[:num_above_thresh]
                 
-                precision = pred_pos.label_value.sum() / len(pred_pos)
+                precision = pred_pos.label_value.sum() / k
                 recall = float(pred_pos.label_value.sum() / pred_df.label_value.sum())
 
                 precisions.append(precision)
@@ -842,6 +845,7 @@ class ModelAnalyzer:
 
         ax.set_xlabel('Population percentage (k %)')
         ax.set_ylabel('Metric Value')
+        # ax.set_title(f'Model {self.model_id}, group: {self.model_group_id}')
         # ax.set_title('Precision-Recall Curve')
         ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
 
