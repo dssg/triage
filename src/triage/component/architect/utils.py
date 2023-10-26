@@ -321,6 +321,6 @@ def generate_list_of_files_to_remove(filenames, matrix_uuid):
             # adding fixed files
             rm_files.append(prefix + "_fixed.csv")
 
-    logger.debug(f"Files to be removed {rm_files}")
+    logging.debug(f"Files to be removed {rm_files}")
     return rm_files
 
