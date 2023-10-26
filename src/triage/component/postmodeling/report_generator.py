@@ -517,16 +517,20 @@ class PostmodelingReport:
         return df_model_ids.model_id.to_list()
 
 
-    def execute_error_analysis(self):
+    def execute_error_analysis(self, model_ids=None):
         """Generates the error analysis of a model
+            args:
+                model_ids (int, optional): A list of model_ids we are interested in analyzing. If not provided, all models are considered.
         """
-        model_ids = self._get_individual_model_ids()
-        db_conn = self.engine
+        if model_ids is None:
+            model_ids = self.model_ids
+
         for model_id in model_ids:
             logging.info(f"generating error analysis for model id {model_id}")
-            results = generate_error_analysis(model_id, db_conn, self.project_path)
+            results = generate_error_analysis(model_id, self.engine, self.project_path)
             output_all_analysis(results)
-            
+    
+    
     def pairwise_top_k_list_comparison(self, threshold_type, threshold, train_end_times=None, matrix_uuid=None, plot=True):
         """
             Compare the top-k lists for the given train_end_times for all model groups considered (pairwise)
