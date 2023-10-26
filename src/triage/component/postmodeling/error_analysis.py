@@ -262,7 +262,7 @@ def _error_analysis_model(model_id, matrix, grid, k, random_seed,
                                     model_id,
                                     view_plots)
 
-            error_analysis_results.append(results | config_params)
+            error_analysis_results.append({**results, **config_params})
             logger.debug(f"error analysis generated for model_id {model_id}, with k {k}")
 
     return error_analysis_results
