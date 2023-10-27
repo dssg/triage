@@ -311,9 +311,10 @@ def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
 def generate_list_of_files_to_remove(filenames, matrix_uuid):
     """Generate the list of all files that need to be removed"""
     # adding _sorted
-    rm_files = filenames 
+    rm_files = []
 
     for element in filenames:
+        rm_files.append(element)
         if (element.split("/")[-1].startswith(matrix_uuid)):
             prefix = element.split(".")[0]
             # adding sorted files 
