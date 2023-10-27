@@ -116,9 +116,15 @@ def create_entity_date_df(
 
 
 def change_datetimes_on_metadata(metadata):
-    variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
-    for variable in variables:
-        metadata[variable] = str(metadata[variable])
+    metadata_keys = list(metadata.keys())
+    
+    for element in metadata_keys: 
+        if element.endswith("_time"): 
+            metadata[element] = str(metadata[element])
+
+    #variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
+    #for variable in variables:
+    #    metadata[variable] = str(metadata[variable])
 
     return metadata
 
@@ -311,9 +317,10 @@ def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
 def generate_list_of_files_to_remove(filenames, matrix_uuid):
     """Generate the list of all files that need to be removed"""
     # adding _sorted
-    rm_files = filenames 
+    rm_files = []
 
     for element in filenames:
+        rm_files.append(element)
         if (element.split("/")[-1].startswith(matrix_uuid)):
             prefix = element.split(".")[0]
             # adding sorted files 
@@ -321,5 +328,6 @@ def generate_list_of_files_to_remove(filenames, matrix_uuid):
             # adding fixed files
             rm_files.append(prefix + "_fixed.csv")
 
+    logging.debug(f"Files to be removed {rm_files}")
     return rm_files
 

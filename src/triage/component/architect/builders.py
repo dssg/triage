@@ -443,8 +443,6 @@ class MatrixBuilder(BuilderBase):
                     table=entity_date_table_name,
                 ),
                 right_column_selections=[', "{0}"'.format(fn) for fn in feature_names],
-                include_index=True
-                #include_index=True if num==0 else False,
             ))
         return queries
 
@@ -589,10 +587,12 @@ class MatrixBuilder(BuilderBase):
         # deleting features and label csvs
         for filename_ in filenames:
            cmd_line = 'rm ' + filename_ 
+           logger.debug(f"removing files with command {cmd_line}")
            subprocess.run(cmd_line, shell=True)
 
         # deleting the merged csv
         cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        logger.debug(f"removing stitched csv with command {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         
         
