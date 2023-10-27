@@ -116,9 +116,15 @@ def create_entity_date_df(
 
 
 def change_datetimes_on_metadata(metadata):
-    variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
-    for variable in variables:
-        metadata[variable] = str(metadata[variable])
+    metadata_keys = list(metadata.keys())
+    
+    for element in metadata_keys: 
+        if element.endswith("_time"): 
+            metadata[element] = str(metadata[element])
+
+    #variables = ['end_time', 'feature_start_time', 'first_as_of_time', 'last_of_time', 'matrix_info_end_time']
+    #for variable in variables:
+    #    metadata[variable] = str(metadata[variable])
 
     return metadata
 
