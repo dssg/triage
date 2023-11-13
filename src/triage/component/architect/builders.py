@@ -317,10 +317,10 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata["label_timespan"],
         )
 
-        output = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
+        output, labels = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
         logger.debug(f"matrix stitched, pandas DF returned")
         matrix_store.metadata = matrix_metadata
-        labels = output.pop(matrix_store.label_column_name)
+        #labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
         matrix_store.save()
 
@@ -554,10 +554,22 @@ class MatrixBuilder(BuilderBase):
         df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
         end = time.time()
         logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
+        
+        logger.debug(f"getting labels pandas series from polars data frame")
+        # getting label series
+        labels_pl = df_pl.select(pl.columns[-1])
+        # convert into pandas series 
+        labels_df = labels_pl.to_pandas()
+        labels_series = labels_df.squeeze()
+
+        # remove labels from features and return as df
+        logger.debug(f"removing labels from main polars df")
+        df_pl_aux = df_pl.drop(df_pl.columns[-1])
+
         # converting from polars to pandas
         logger.debug(f"about to convert polars df into pandas df")
         start = time.time()
-        df = df_pl.to_pandas()
+        df = df_pl_aux.to_pandas()
         end = time.time()
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
@@ -569,8 +581,8 @@ class MatrixBuilder(BuilderBase):
         rm_filenames = generate_list_of_files_to_remove(filenames, matrix_uuid)
         self.remove_unnecessary_files(rm_filenames, path_, matrix_uuid)
 
-        #return downcast_matrix(df)
-        return df
+        return df, labels_series
+    
 
     def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
         """
