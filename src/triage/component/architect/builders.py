@@ -599,7 +599,7 @@ class MatrixBuilder(BuilderBase):
             path (string): _description_
             matrix_uuid (string): _description_
         """
-        cmd_line = "gzip -k" + path + "/" + matrix_uuid + ".csv"
+        cmd_line = "gzip -k " + path + "/" + matrix_uuid + ".csv"
         logger.debug(f"Generating gzip of full matrix on cmd line with command: {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         logger.debug(f"Full matrix {matrix_uuid} compressed and saved!")
