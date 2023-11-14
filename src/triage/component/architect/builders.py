@@ -557,7 +557,7 @@ class MatrixBuilder(BuilderBase):
         
         logger.debug(f"getting labels pandas series from polars data frame")
         # getting label series
-        labels_pl = df_pl.select(pl.columns[-1])
+        labels_pl = df_pl.select(df_pl.columns[-1])
         # convert into pandas series 
         labels_df = labels_pl.to_pandas()
         labels_series = labels_df.squeeze()
