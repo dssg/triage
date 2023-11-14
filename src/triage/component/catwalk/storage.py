@@ -685,6 +685,10 @@ class CSVMatrixStore(MatrixStore):
         with self.matrix_base_store.open("rb") as fd:
            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
 
+    def save_matrix_metadata(self):
+        with self.metadata_base_store.open("wb") as fd:
+            yaml.dump(self.metadata, fd, encoding="utf-8")
+
     def save(self):
         logging.debug('About to compress')
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
