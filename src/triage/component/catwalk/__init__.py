@@ -47,6 +47,7 @@ class ModelTrainTester:
         self.replace = replace
         self.protected_groups_generator = protected_groups_generator
         self.bigtrain_classnames = [
+            'imblearn.ensemble.BalancedRandomForestClassifier',
             'sklearn.ensemble.RandomForestClassifier',
             'sklearn.ensemble.ExtraTreesClassifier',
             'sklearn.ensemble.AdaBoostClassifier',
