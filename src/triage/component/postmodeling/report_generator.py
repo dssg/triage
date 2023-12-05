@@ -171,7 +171,7 @@ class PostmodelingReport:
                 else:
                     ax = axes[i, j]
 
-                plot_func(ax=ax, **kw)
+                ax = plot_func(ax=ax, **kw)
 
                 if j==0:
                     ax.set_ylabel(f'{train_end_time}')
@@ -196,8 +196,8 @@ class PostmodelingReport:
         """calibration curves for all models"""
         self._make_plot_grid(plot_type='plot_calibration_curve')
 
-    def plot_prk_curves(self):
-        self._make_plot_grid(plot_type='plot_precision_recall_curve')
+    def plot_prk_curves(self, **kw):
+        self._make_plot_grid(plot_type='plot_precision_recall_curve', **kw)
   
     def plot_bias_threshold(self, attribute_name, attribute_values, bias_metric):
         """
