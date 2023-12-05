@@ -792,8 +792,12 @@ class ModelAnalyzer:
 
 
         if pred_df.empty:
-            logging.warning('No predictions were found. Using the evaluations to generate the plot. Zoomed PR-K not supported!')
+            logging.warning(f'No predictions were found for model id {self.model_id} (group: {self.model_group_id}). Using the evaluations to generate the plot. Zoomed PR-K not supported!')
             eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+            
+            if eval_df.empty: 
+                logging.error('No evaluations were found! Returning empty axes!')
+                return ax
             
             eval_df['perc_points'] = [x.split('_')[0] for x in eval_df['parameter'].tolist()]
             eval_df['perc_points'] = pd.to_numeric(eval_df['perc_points'])
@@ -823,6 +827,7 @@ class ModelAnalyzer:
             )
 
         else:
+            logging.debug(f'Found saved predictions for model id {self.model_id}.(group: {self.model_group_id})')
             k_values = np.arange(0 + pct_step_size, list_size_upper_bound_pct + pct_step_size, pct_step_size)
 
             precisions = list()
