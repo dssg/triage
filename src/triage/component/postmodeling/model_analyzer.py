@@ -916,7 +916,7 @@ class ModelAnalyzer:
             ax=ax
         )
         ax.set_ylabel('Feature Group')
-        ax.set_title('Feature Importance')
+        ax.set_title(f'Model {self.model_id}, group: {self.model_group_id}')
         return ax
 
     def plot_calibration_curve(self, ax, nbins=20, min_score=0, max_score=1, matrix_uuid=None):
