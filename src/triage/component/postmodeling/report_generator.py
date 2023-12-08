@@ -467,6 +467,9 @@ class PostmodelingReport:
             entities_1 = set(df1.entity_id)
             entities_2 = set(df2.entity_id)
 
+            if (len(entities_1) == 0 or len(entities_2)) == 0:
+                logging.error('No prediction saved for the models!') 
+
             inter = entities_1.intersection(entities_2)
             un = entities_1.union(entities_2)    
             results['jaccard'].loc[model_group_pair[1], model_group_pair[0]] = len(inter)/len(un)
