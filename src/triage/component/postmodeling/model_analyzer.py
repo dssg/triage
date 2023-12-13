@@ -237,7 +237,7 @@ class ModelAnalyzer:
             where_clause += f" AND matrix_uuid='{matrix_uuid}'"
 
         if subset_hash is not None:
-            where_clause += f" AND subset_hash={subset_hash}"
+            where_clause += f" AND subset_hash='{subset_hash}'"
         else:
             where_clause += f" AND subset_hash=''"
 
@@ -770,7 +770,7 @@ class ModelAnalyzer:
         return ax
 
     # TODO: Facilitate plotting pr-k with absolute thresholds
-    def plot_precision_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01):
+    def plot_precision_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01, subset_hash=None):
         """
         Plots precision-recall curves at each train_end_time for all model groups
         
@@ -793,9 +793,12 @@ class ModelAnalyzer:
             fig, ax = plt.subplots()
 
 
-        if pred_df.empty:
-            logging.warning(f'No predictions were found for model id {self.model_id} (group: {self.model_group_id}). Using the evaluations to generate the plot. Zoomed PR-K not supported!')
-            eval_df = self.get_evaluations(matrix_uuid=matrix_uuid)
+        if pred_df.empty or subset_hash is not None:
+            logging.warning(f'''
+                            No predictions were found for model id {self.model_id} (group: {self.model_group_id}) 
+                            or a subset_hash was provided. Using the evaluations to generate the plot. Zoomed PR-K not supported!'''
+                            )
+            eval_df = self.get_evaluations(matrix_uuid=matrix_uuid, subset_hash=subset_hash)
             
             if eval_df.empty: 
                 logging.error('No evaluations were found! Returning empty axes!')
