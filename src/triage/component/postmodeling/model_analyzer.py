@@ -238,6 +238,8 @@ class ModelAnalyzer:
 
         if subset_hash is not None:
             where_clause += f" AND subset_hash={subset_hash}"
+        else:
+            where_clause += f" AND subset_hash=''"
 
         if metrics is not None:
             where_clause += " AND ("
