@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import itertools
+from IPython.display import display
 
 
 from descriptors import cachedproperty
@@ -376,17 +377,6 @@ class PostmodelingReport:
 
             support_threshold (float, optional): The threshold of pct support for the feature (instances with non-zero values) among predicted positives 
         """
-        
-        if show_plots:
-            fig, axes = self._get_subplots(
-                subplot_width=4,
-                subplot_len=1 + (display_n_features*2) / 5,
-                n_rows=len(self.models[self.model_groups[0]]) * len(self.model_groups),
-                n_cols=1
-            )
-        else:
-
-            axes=None
 
         dfs = dict()
 
@@ -407,8 +397,8 @@ class PostmodelingReport:
                         filter_features=filter_features,
                         support_threshold=support_threshold,
                         table_name=table_name,
-                        ax=(axes if show_plots else None),
-                        show_plot=show_plots,
+                        # ax=(axes if show_plots else None),
+                        show_plot=False, #TODO -- remove this parameter from 
                         return_df=True
                     )
 
@@ -416,13 +406,9 @@ class PostmodelingReport:
                 except ValueError as e:
                     logging.error('Please run calculate_crosstabs_pos_vs_neg function to calculate crosstabs first for all models!')
                     raise e
-
-        if show_plots:
-            fig.suptitle(
-                f'{display_n_features} Features with highest & lowest pos:neg mean ratio',
-                x=-0.1,
-                fontsize=11
-            )
+                
+                print(f'\nModel Group: {mg}, Validation date: {train_end_time}'.center(30, ' '))
+                display(df)
 
         if return_dfs:
             return dfs
