@@ -463,11 +463,12 @@ class PostmodelingReport:
         results = dict()
         
         for m in metrics:
-            results[m] = pd.DataFrame(index=model_group_ids, columns=model_group_ids)
+            results[m] = pd.DataFrame(index=sorted(model_group_ids), columns=sorted(model_group_ids))
             # filling the diagonal with 1
             results[m].values[[np.arange(results[m].shape[0])]*2] = 1
             
         for model_group_pair in pairs:
+            model_group_pair = sorted(model_group_pair)
             logging.info(f'Comparing {model_group_pair[0]} and {model_group_pair[1]}')
 
             df1 = feature_lists[model_group_pair[0]]
@@ -545,7 +546,7 @@ class PostmodelingReport:
 
         # Initializing three data frames to hold pairwise metrics
         for m in metrics:
-            results[m] = pd.DataFrame(index=self.model_groups, columns=self.model_groups)
+            results[m] = pd.DataFrame(index=sorted(self.model_groups), columns=sorted(self.model_groups))
 
 
         for model_group_pair in pairs:
