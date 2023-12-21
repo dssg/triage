@@ -65,6 +65,20 @@ class PostmodelingReport:
             print(m)
 
         return all_models
+    
+    def print_model_summary(self):
+        ''' This is mostly to be used as a key for modeling report plots (just as a model group number to model group mapping)'''
+        data_dict = []
+        for mg in self.model_groups:
+            for train_end_time in self.models[mg]:
+                model_analyzer = self.models[mg][train_end_time]
+                data_dict.append([mg, train_end_time, model_analyzer.model_id, model_analyzer.model_type, model_analyzer.hyperparameters])
+        
+        all_models = pd.DataFrame(data_dict, columns=['model_group_id', 'train_end_time', 'model_id', 'model_type', 'hyperparameters'])
+        # to_print = all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().to_dict(orient='records')
+
+        for i, model in all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().iterrows():
+            print(f"{model['model_group_id']} - {model['model_type']} with ({model['hyperparameters']}) ")
 
     def cohort_summary(self):
         q = f"""
@@ -533,11 +547,13 @@ class PostmodelingReport:
         # Initializing three data frames to hold pairwise metrics
         for m in metrics:
             results[m] = pd.DataFrame(index=sorted(self.model_groups), columns=sorted(self.model_groups))
-
+            results[m].values[[np.arange(results[m].shape[0])]*2] = 1
 
         for model_group_pair in pairs:
             logging.info(f'Comparing {model_group_pair[0]} and {model_group_pair[1]}')
 
+            model_group_pair = sorted(model_group_pair)
+            
             df1 = lists[model_group_pair[0]]
             df2 = lists[model_group_pair[1]]
 
