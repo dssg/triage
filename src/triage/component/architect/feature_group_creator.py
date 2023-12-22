@@ -41,7 +41,7 @@ def prefix_subsetter(config_item, table, features):
 def metric_subsetter(config_item, table, features):
     "Return features that implements the given metric"
     # The metric is represented at the end of the feature name
-    return [feature for feature in features if feature.endwith("_"+config_item)] 
+    return [feature for feature in features if feature.endswith("_"+config_item)] 
 
 
 def interval_subsetter(config_item, table, features):
