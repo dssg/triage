@@ -50,6 +50,35 @@ def interval_subsetter(config_item, table, features):
     search_str = f"_{config_item}_"
     return [feature for feature in features if search_str in feature]
 
+def combination_subsetter(config_item, table, features):
+    " Return features that has all the specified conditions"
+    
+    # we start with the full feature set 
+    feature_set = features 
+    
+    for key, values in config_item.items():
+        temp_f = []
+        if key == 'prefix':
+            for v in values: 
+                temp_f += prefix_subsetter(v, table, feature_set)
+            feature_set = temp_f # This contains the filtered feature set
+            
+        elif key == 'metrics':
+            for v in values:
+                temp_f += metric_subsetter(v, table, feature_set)
+            feature_set = temp_f
+        elif key == 'intervals':
+            for v in values:
+                search_str = f"_{v}_"
+                temp_f +=  [feature for feature in feature_set if search_str in feature] 
+            feature_set = temp_f
+        else:
+            logger.warning('key has to be one of prefix, metric, or interval')
+        
+        logger.info(f'Filtered features -- {table}: {", ".join(feature_set)}')
+        
+    return feature_set
+        
 
 def all_subsetter(config_item, table, features):
     return features
@@ -61,8 +90,9 @@ class FeatureGroupCreator:
     subsetters = {
         "tables": table_subsetter,
         "prefix": prefix_subsetter,
-        "metric": metric_subsetter,
-        "interval": interval_subsetter,
+        "metrics": metric_subsetter,
+        "intervals": interval_subsetter,
+        "combinations": combination_subsetter,
         "all": all_subsetter
     }
 
@@ -111,6 +141,7 @@ class FeatureGroupCreator:
             f"Creating feature groups, using: {self.definition}, Master feature dictionary: {feature_dictionary}",
         )
         subsets = []
+        logger.info(self.definition)
         for name, config in sorted(self.definition.items()):
             logger.spam(f"Parsing config grouping method {name}, items {config}")
             for config_item in config:
@@ -138,3 +169,22 @@ class FeatureGroupCreator:
             )
         logger.verbose(f"Found {len(subsets)} total feature subsets")
         return subsets
+    
+    # def subsets_new(self, feature_dictionary):
+        
+    #     subsets = []
+    #     for table, features in feature_dictionary.items():
+            
+    #         feature_set = features
+    #         # looping through each filter
+    #         for name, config in sorted(self.definition.items()):
+    #             # looping through each item in the filter
+    #             for config_item in config:
+    #                 subset = FeatureGroup(name=f"{name}: {config_item}")
+    #                 matching_features = self.subsetters[name](
+    #                     config_item, table, feature_set
+    #                 )
+    #                 if len(matching_features) > 0:
+    #                     subset[table] = FeatureNameList(matching_features)
+            
+        
