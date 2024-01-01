@@ -7,5 +7,5 @@ testing.postgresql==1.3.0
 pytest==6.2.5 #<4.0.0 # pyup: ignore
 pytest-cov==4.1.0
 moto==4.2.12
-fakeredis==1.7.1
+fakeredis==2.20.1
 hypothesis==6.46.1
