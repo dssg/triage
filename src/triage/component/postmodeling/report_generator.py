@@ -576,7 +576,10 @@ class PostmodelingReport:
             df2.sort_values('score', ascending=False, inplace=True)
 
             # only returning the corr coefficient, not the p-value
-            results['rank_corr'].loc[model_group_pair[0], model_group_pair[1]] = spearmanr(df1.entity_id.iloc[:], df2.entity_id.iloc[:])[0]
+            if len(df1) == len(df2):
+                results['rank_corr'].loc[model_group_pair[0], model_group_pair[1]] = spearmanr(df1.entity_id.iloc[:], df2.entity_id.iloc[:])[0]
+            else:
+                logging.warning(f'Not calculating rank correlation. List sizes are not equal ({len(df1)}, {len(df2)})')
 
         if plot:
             fig, axes = plt.subplots(1, len(metrics), figsize=(10, 3))            
