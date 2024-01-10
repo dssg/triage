@@ -99,7 +99,7 @@ class ModelAnalyzer:
     def train_label_timespan(self):
         return self.metadata['training_label_timespan']
 
-    def get_predictions(self, matrix_uuid=None, fetch_null_labels=True, predictions_table='test_results.predictions'):
+    def get_predictions(self, matrix_uuid=None, fetch_null_labels=True, predictions_table='test_results.predictions', subset_hash=None):
         """Fetch the predictions from the DB for a given matrix
         
             args:
@@ -113,6 +113,13 @@ class ModelAnalyzer:
 
         if not fetch_null_labels:
             where_clause += f" AND label_value IS NOT NULL"
+
+        if subset_hash:
+            # get subset table name
+            q = f"select config from triage_metadata.subsets where subset_hash='{subset_hash}'"
+            config_df = pd.read_sql(q, self.engine)
+            table_name = f"subset_{config_df.iloc[0]['config']['name']}_{subset_hash}"
+            predictions_table += f" preds join {table_name} subset on preds.entity_id = subset.entity_id and preds.as_of_date = subset.as_of_date"
 
         query = f"""
             SELECT model_id,
@@ -195,13 +202,15 @@ class ModelAnalyzer:
         where_clause = f'WHERE model_id={self.model_id}'
 
         if subset_hash is not None:
-            where_clause += f" AND subset_hash={subset_hash}"
+            where_clause += f" AND 'subset_hash='{subset_hash}'"
+        else:
+            where_clause += f" AND subset_hash=''"
 
         if parameter is not None:
-            where_clause += f" AND parameter={parameter}"
+            where_clause += f" AND parameter='{parameter}'"
 
         if attribute_name:
-            where_clause += f" AND attribute_name={attribute_name}"
+            where_clause += f" AND attribute_name='{attribute_name}'"
         
         # TODO don't return all columns ?
         q = f"""
