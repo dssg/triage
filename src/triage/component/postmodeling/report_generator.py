@@ -87,9 +87,28 @@ class PostmodelingReport:
                 evaluation_start_time as train_end_time,
                 num_labeled_examples as cohort_size,
                 num_positive_labels,
-                num_positive_labels::float/num_labeled_examples as label_base_rate
+                case when num_labeled_examples > 0 then num_positive_labels::float/num_labeled_examples else 0 end as label_base_rate
             from triage_metadata.experiment_matrices join test_results.evaluations using(matrix_uuid)
-            where experiment_hash in ('{"','".join(self.experiment_hashes)}')
+            where experiment_hash in ('{"','".join(self.experiment_hashes)}') and subset_hash = ''
+            order by 1
+        """
+
+        matrices = pd.read_sql(q, self.engine)
+
+        print(matrices)
+    
+
+    def subset_summary(self, subset_hash):
+        q = f"""
+            select distinct on(train_end_time)
+                -- matrix_uuid,
+                evaluation_start_time as train_end_time,
+                num_labeled_examples as cohort_size,
+                num_positive_labels,
+                case when num_labeled_examples > 0 then num_positive_labels::float/num_labeled_examples else 0 end as label_base_rate
+            from triage_metadata.experiment_matrices join test_results.evaluations using(matrix_uuid)
+            where experiment_hash in ('{"','".join(self.experiment_hashes)}') 
+                and subset_hash = '{subset_hash}'
             order by 1
         """
 
