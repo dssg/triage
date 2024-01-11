@@ -125,6 +125,7 @@ class ModelGrouper:
         )
         condition = cur.fetchone()
 
+        logging.info('')
         if condition:
             query = (
                 "SELECT get_model_group_id( "
@@ -140,7 +141,8 @@ class ModelGrouper:
                     ),
                 )
             )
-            logger.spam(f"Getting model group from query {query}")
+            logger.info(f"Getting model group from query {query}")
+            
             cur.execute(query)
             db_conn.commit()
             model_group_id = cur.fetchone()
