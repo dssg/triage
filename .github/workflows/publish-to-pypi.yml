@@ -1,6 +1,6 @@
 name: Publish python distributions to PyPI
 
-on: push
+on:
   push:
     tags:
       - '*'
