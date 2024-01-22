@@ -37,6 +37,20 @@ def prefix_subsetter(config_item, table, features):
     "Return features matching a given prefix"
     return [feature for feature in features if feature.startswith(config_item)]
 
+
+def metric_subsetter(config_item, table, features):
+    "Return features that implements the given metric"
+    # The metric is represented at the end of the feature name
+    return [feature for feature in features if feature.endswith("_"+config_item)] 
+
+
+def interval_subsetter(config_item, table, features):
+    "Return features that use data from a specific time interval"
+    
+    search_str = f"_{config_item}_"
+    return [feature for feature in features if search_str in feature]
+
+
 def all_subsetter(config_item, table, features):
     return features
 
@@ -47,6 +61,8 @@ class FeatureGroupCreator:
     subsetters = {
         "tables": table_subsetter,
         "prefix": prefix_subsetter,
+        "metric": metric_subsetter,
+        "interval": interval_subsetter,
         "all": all_subsetter
     }
 
