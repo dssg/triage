@@ -308,7 +308,7 @@ class MatrixBuilder(BuilderBase):
         )
         
         feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
-        logger.spam(f"feature queries, number of queries: {len(feature_queries)}")
+        logger.debug(f"feature queries, number of queries: {len(feature_queries)}")
         
         label_query = self.label_load_query(
             label_name,
@@ -322,7 +322,7 @@ class MatrixBuilder(BuilderBase):
         matrix_store.metadata = matrix_metadata
         #labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
-        #matrix_store.save()
+        matrix_store.save()
         logger.info(f"Saving matrix metadata (yaml) for matrix {matrix_uuid}")
         matrix_store.save_matrix_metadata()
 
@@ -578,7 +578,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
-        logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+        logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         logger.debug(f"Generating gzip from full matrix csv")
         self.generate_gzip(path_, matrix_uuid)
