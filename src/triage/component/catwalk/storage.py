@@ -682,6 +682,11 @@ class CSVMatrixStore(MatrixStore):
     def save_matrix_metadata(self):
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
+    
+    def _save(self, local_path, remote_path):
+        local_path += "/" + remote_path.split("/")[-1]
+        logger.debug(f"_save file {local_path} on S3 bucket path {remote_path}")
+        self.matrix_base_store.client.put_file(lpath=local_path , rpath=remote_path)
 
     def save(self):
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
