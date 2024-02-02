@@ -645,8 +645,8 @@ class CSVMatrixStore(MatrixStore):
         end = time.time()
 
         # delete downlowded file from S3 
-        if file_in_tmp:
-            subprocess.run(f"rm {filename_}", shell=True)
+        # if file_in_tmp:
+        #     subprocess.run(f"rm {filename_}", shell=True)
 
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
