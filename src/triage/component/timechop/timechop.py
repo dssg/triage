@@ -395,7 +395,7 @@ class Timechop:
             dict: dictionary containing the temporal parameters and as of times
                   for a train matrix
         """
-        logger.debug(f"Generating train matrix definitions for trin/test split {train_test_split_time}")
+        logger.debug(f"Generating train matrix definitions for train/test split {train_test_split_time}")
         # for our example, this will be called with:
         #   train_test_split_time = 2016-10-01
         #   training_label_timespan = 6month
