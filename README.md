@@ -16,7 +16,8 @@ Triage is designed to:
 
 ## Getting Started with Triage
 
-- Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!  [Tutorial hosted on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb) 
+- Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!  [Tutorial hosted on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb)
+- Runj it locally on an [example problem and data set from Donors Choose](https://github.com/dssg/donors-choose)
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial that you can install on your local machine  with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation?

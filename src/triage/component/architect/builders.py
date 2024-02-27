@@ -23,6 +23,7 @@ from triage.component.architect.utils import (
     remove_entity_id_and_knowledge_dates,
     generate_list_of_files_to_remove
 )
+from triage.component.catwalk.storage import S3Store
 
 class BuilderBase:
     def __init__(
@@ -308,7 +309,7 @@ class MatrixBuilder(BuilderBase):
         )
         
         feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
-        logger.spam(f"feature queries, number of queries: {len(feature_queries)}")
+        logger.debug(f"feature queries, number of queries: {len(feature_queries)}")
         
         label_query = self.label_load_query(
             label_name,
@@ -320,9 +321,7 @@ class MatrixBuilder(BuilderBase):
         output, labels = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
         logger.info(f"matrix stitched, pandas DF returned")
         matrix_store.metadata = matrix_metadata
-        #labels = output.pop(matrix_store.label_column_name)
         matrix_store.matrix_label_tuple = output, labels
-        #matrix_store.save()
         logger.info(f"Saving matrix metadata (yaml) for matrix {matrix_uuid}")
         matrix_store.save_matrix_metadata()
 
@@ -354,7 +353,7 @@ class MatrixBuilder(BuilderBase):
             matrix_metadata=matrix_metadata,
             built_by_experiment=self.experiment_hash
         )
-        logger.info(f"About to save all metrix metadata on DB for matrix {matrix_uuid}")
+        logger.info(f"About to save all matrix metadata on DB for matrix {matrix_uuid}")
         # before saving the matrix metadata we need to cast datetimes to str 
         matrix_metadata = change_datetimes_on_metadata(matrix_metadata)
         session = self.sessionmaker()
@@ -578,10 +577,15 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
-        logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+        logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         logger.debug(f"Generating gzip from full matrix csv")
         self.generate_gzip(path_, matrix_uuid)
+
+        # if matrix store is S3 
+        if isinstance(matrix_store.matrix_base_store, S3Store):
+            logger.debug(f"storing {matrix_uuid}.csv.gz on S3")
+            matrix_store._save(path_, matrix_store.matrix_base_store.path)
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         # addinig _sorted and _fixed files to list of files to rm 
