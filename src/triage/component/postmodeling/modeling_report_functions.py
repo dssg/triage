@@ -60,39 +60,54 @@ def visualize_validation_splits(engine, experiment_hash):
     )
     
 
-def summarize_cohorts(engine, experiment_hashes):
+def summarize_cohorts(engine, experiment_hash):
     """Generate a summary of cohorts (size, baserate)
 
     Args:
         engine (SQLAlchemy): Database engine
-        experiment_hashes (List[str]): a list of experiment hashes
+        experiment_hash (str): a list of experiment hashes
     """
     
-    get_labels_table_query = """
+    get_labels_table_query = f"""
     select distinct labels_table_name from triage_metadata.triage_runs 
-    where run_hash in ('{}')
+    where run_hash = '{experiment_hash}'
     """
 
-    labels_tables = pd.read_sql(get_labels_table_query.format("','".join(experiment_hashes)), engine)
+    labels_table = pd.read_sql(get_labels_table_query, engine).labels_table_name.iloc[0]
+    print(labels_table)
+    cohort_query = f"""
+        select 
+        label_name, 
+        label_timespan, 
+        as_of_date, 
+        count(distinct entity_id) as cohort_size, 
+        avg(label) as baserate 
+        from public.{labels_table}
+        group by 1,2,3 order by 1,2,3
+    """
 
-    dfs = list()
-    for table in labels_tables:
-        cohort_query = """
-            select 
-            label_name, 
-            label_timespan, 
-            as_of_date, 
-            count(distinct entity_id) as cohort_size, 
-            avg(label) as baserate 
-            from public.{}
-            group by 1,2,3 order by 1,2,3
-        """
+    df = pd.read_sql(cohort_query, engine)
+    
+    return df
+
+    # dfs = list()
+    # for table in labels_tables:
+    #     cohort_query = """
+    #         select 
+    #         label_name, 
+    #         label_timespan, 
+    #         as_of_date, 
+    #         count(distinct entity_id) as cohort_size, 
+    #         avg(label) as baserate 
+    #         from public.{}
+    #         group by 1,2,3 order by 1,2,3
+    #     """
         
-        df = pd.read_sql(cohort_query.format(table), engine)
+    #     df = pd.read_sql(cohort_query.format(table), engine)
         
-        dfs.append(df)
+    #     dfs.append(df)
         
-    return dfs[0].append(dfs[1:], ignore_index=True)
+    # return dfs[0].append(dfs[1:], ignore_index=True)
 
 
 def summarize_model_groups(engine, experiment_hashes):
