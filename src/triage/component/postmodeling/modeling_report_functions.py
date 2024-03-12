@@ -218,7 +218,7 @@ def list_all_models(engine, experiment_hashes):
     return pd.read_sql(q, engine)
 
 
-def plot_performance_all_models(engine, experiment_hashes, metric, parameter):
+def plot_performance_all_models(engine, experiment_hashes, metric, parameter, ax=None):
     """ Generate an Audition type plot to display predictive performance over time for all model groups
     
     Args:
@@ -237,7 +237,7 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter):
             where experiment_hash in ('{"','".join(experiment_hashes)}')   
         )
         select 
-            model_id, 
+            m.model_id, 
             train_end_time,
             model_type, 
             stochastic_value as metric_value
@@ -250,7 +250,8 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter):
     
     df = pd.read_sql(q, engine)
     
-    fig, ax = plt.subplots(figsize=(6,3), dpi=150)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6,3), dpi=150)
     
     sns.lineplot(
         data=df,
@@ -258,14 +259,18 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter):
         y='metric_value',
         hue='model_type',
         alpha=0.7,
-        ax=ax
+        ax=ax,
+        estimator=None
     )
     
     ax.set_xlabel('Time')
     ax.set_ylabel('Metric Value')
-    ax.set_title(f'Model Performance Over Time - {metric}{parameter}')    
+    ax.set_title(f'Model Performance Over Time - {metric}{parameter}')
+    ax.legend(loc='upper center', fontsize='medium', ncol=3, bbox_to_anchor=[0.5, 1.2], frameon=False)    
     
     sns.despine()
+    
+    return ax
     
 def summarize_all_model_performance():
     pass
