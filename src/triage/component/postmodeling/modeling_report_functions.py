@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
+import logging
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
@@ -276,9 +277,92 @@ def summarize_all_model_performance():
     pass
     
     
-def model_selection():
-    pass
+def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
+    """ Return the model groups with the best mean performance """
+    
+    q = f'''
+        with models as (
+            select 
+                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
+            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+            where experiment_hash in ('{"','".join(experiment_hashes)}')   
+        )
+        select 
+            m.model_group_id, 
+            model_type, 
+            hyperparameters,
+            avg(stochastic_value) as mean_metric_value
+        from models m left join test_results.evaluations e 
+            on m.model_id = e.model_id
+            and e.metric = '{metric}'
+            and e.parameter = '{parameter}'
+            and e.subset_hash = ''
+        group by 1, 2, 3
+        limit {n_model_groups};
+    '''
+    
+    df = pd.read_sql(q, engine)
+    
+    return df.model_group_id.tolist(), df
+    
+    
 
 
-def plot_performance_against_bias(engine, experiment_hashes, performance_metric):
-    pass
+
+def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups, model_group_ids=None, selected_models=None):
+    ''' Plot the performanc metric against the bias metric for all or selected models.
+        Args:
+            engine: DB connection
+            experiment_hashes ([])
+    '''
+    
+    if model_group_ids is None: 
+        logging.warning('No model groups specified. Usign all model group ids')
+        model_group_ids = summarize_model_groups(engine, experiment_hashes).model_group_id.tolist()
+    
+    if 'pct' in parameter:
+        t = round(float(parameter.split('_')[0]) / 100, 2)
+        parameter_ae =  f'{t}_pct'
+        
+    attributes = groups.keys()
+    attribute_values = [v for v_list in groups.values() for v in v_list]
+    
+    q = f'''
+            select 
+                m.model_id,
+                m.model_group_id,
+                m.model_type,
+                m.hyperparameters,
+                m.train_end_time::date,
+                e.metric,
+                e."parameter",
+                e.num_labeled_examples,
+                e.num_positive_labels,
+                e.stochastic_value as "{metric}{parameter}",
+                a.tpr,
+                a.{bias_metric},
+                a.attribute_name,
+                a.attribute_value
+            from triage_metadata.experiment_models em join triage_metadata.models m 
+                on em.model_hash = m.model_hash
+                and m.model_group_id in ({", ".join([str(x) for x in model_group_ids])})
+                left join test_results.evaluations e 
+                    on m.model_id = e.model_id 
+                    and e.metric = '{metric}'
+                    and e."parameter" = '{parameter}'
+                    and e.subset_hash = ''
+                        left join test_results.aequitas a 
+                            on m.model_id = a.model_id 
+                            and a."parameter" = '{parameter_ae}'
+                            and a.attribute_name in ('{', '.join(attributes)}')
+                            and a.attribute_value in ('{', '.join(attribute_values)}')
+                            and a.tie_breaker= 'worst' 
+            where experiment_hash in  ('{"','".join(experiment_hashes)}')
+            
+    '''
+    
+    metrics = pd.read_sql(q, engine)
+    
+    metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
+    
+    
