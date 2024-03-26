@@ -580,6 +580,7 @@ class Retrainer:
             "features_schema_name": "triage_production",
             "labels_schema_name": "public",
             "cohort_table_name": cohort_table_name,
+            "labels_table_name": self.label_name
         }
 
         matrix_builder = MatrixBuilder(
