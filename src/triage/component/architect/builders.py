@@ -566,6 +566,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"getting labels pandas series from polars data frame")
         
         # getting label series
+        df_pl_aux = None
         if self.includes_labels:
             labels_pl = df_pl.select(df_pl.columns[-1])
             # convert into pandas series 
