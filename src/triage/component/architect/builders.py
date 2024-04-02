@@ -312,6 +312,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"feature queries, number of queries: {len(feature_queries)}")
         
         # when predict forwarding we don't have labels
+        logger.info(f"Includes labels?: {self.includes_labels}")
         if self.includes_labels:
             label_query = self.label_load_query(
                 label_name,
@@ -495,6 +496,7 @@ class MatrixBuilder(BuilderBase):
 
         # label
         if self.includes_labels:
+            logger.info("CSV file for labels")
             copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
             bio = io.BytesIO()
             cursor.copy_expert(copy_sql, bio)
