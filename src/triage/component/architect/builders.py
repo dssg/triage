@@ -311,12 +311,16 @@ class MatrixBuilder(BuilderBase):
         feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
         logger.debug(f"feature queries, number of queries: {len(feature_queries)}")
         
-        label_query = self.label_load_query(
-            label_name,
-            label_type,
-            entity_date_table_name,
-            matrix_metadata["label_timespan"],
-        )
+        # when predict forwarding we don't have labels
+        if self.includes_labels:
+            label_query = self.label_load_query(
+                label_name,
+                label_type,
+                entity_date_table_name,
+                matrix_metadata["label_timespan"],
+            )
+        else:
+            label_query = None
 
         output, labels = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
         logger.info(f"matrix stitched, pandas DF returned")
@@ -490,18 +494,19 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"number of feature files to paste for matrix {matrix_uuid}: {len(filenames)}")
 
         # label
-        copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
-        bio = io.BytesIO()
-        cursor.copy_expert(copy_sql, bio)
-        bio.seek(0)
-        output_ = bio.read()
+        if self.includes_labels:
+            copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
+            bio = io.BytesIO()
+            cursor.copy_expert(copy_sql, bio)
+            bio.seek(0)
+            output_ = bio.read()
 
-        matrix_store.save_tmp_csv(output_, path_, matrix_uuid, "_label.csv")
+            matrix_store.save_tmp_csv(output_, path_, matrix_uuid, "_label.csv")
 
-        # add label file to filenames
-        filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
+            # add label file to filenames
+            filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
         
-        # check if the number of rows among all features and label files are the same
+        # check if the number of rows among all features and label -if any- files are the same
         try: 
             assert check_rows_in_files(filenames, matrix_uuid)
         except AssertionError as e: 
@@ -559,20 +564,25 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
         
         logger.debug(f"getting labels pandas series from polars data frame")
+        
         # getting label series
-        labels_pl = df_pl.select(df_pl.columns[-1])
-        # convert into pandas series 
-        labels_df = labels_pl.to_pandas()
-        labels_series = labels_df.squeeze()
+        if self.includes_labels:
+            labels_pl = df_pl.select(df_pl.columns[-1])
+            # convert into pandas series 
+            labels_df = labels_pl.to_pandas()
+            labels_series = labels_df.squeeze()
 
-        # remove labels from features and return as df
-        logger.debug(f"removing labels from main polars df")
-        df_pl_aux = df_pl.drop(df_pl.columns[-1])
+            # remove labels from features and return as df
+            logger.debug(f"removing labels from main polars df")
+            df_pl_aux = df_pl.drop(df_pl.columns[-1])
 
         # converting from polars to pandas
         logger.debug(f"about to convert polars df into pandas df")
         start = time.time()
-        df = df_pl_aux.to_pandas()
+        if df_pl_aux is not None: 
+            df = df_pl_aux.to_pandas()
+        else: 
+            df = df_pl.to_pandas()
         end = time.time()
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
