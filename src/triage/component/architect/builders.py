@@ -631,4 +631,15 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"removing stitched csv with command {cmd_line}")
         subprocess.run(cmd_line, shell=True)
         
+        # deleting the compressed CSV when the project path is S3
+        if path_.startswith('/tmp'):
+            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv.gz'
+            logger.debug(f"removing compressed csv with command {cmd_line}")
+            subprocess.run(cmd_line, shell=True)
+            
+            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.yaml'
+            logger.debug(f"removing matrix metadata file with command {cmd_line}")
+            subprocess.run(cmd_line, shell=True)
+            
+        
         
