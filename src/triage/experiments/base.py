@@ -427,6 +427,7 @@ class ExperimentBase(ABC):
                 db_engine=self.db_engine,
                 replace=self.replace,
                 as_of_times=self.all_as_of_times,
+                cohort_table_name=self.cohort_table_name
             )
         else:
             self.subsetter = SubsetterNoOp()
