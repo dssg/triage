@@ -6,6 +6,7 @@ import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
+from matplotlib.lines import Line2D
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
@@ -34,7 +35,6 @@ def list_all_experiments(engine):
     '''
     
     return pd.read_sql(q, engine)
-
 
 def visualize_validation_splits(engine, experiment_hash):
     """Generate an interactive plot of the time splits used for cross validation
@@ -255,7 +255,8 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, **
         and e.parameter = '{parameter}'
         and e.subset_hash = ''
     '''
-    
+
+
     df = pd.read_sql(q, engine)
     df['train_end_time'] = pd.to_datetime(df.train_end_time, format='%Y-%m-%d')
     
