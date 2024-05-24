@@ -6,6 +6,7 @@ import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
+from matplotlib.lines import Line2D
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
@@ -33,7 +34,6 @@ def list_all_experiments(engine):
     '''
     
     return pd.read_sql(q, engine)
-
 
 def visualize_validation_splits(engine, experiment_hash):
     """Generate an interactive plot of the time splits used for cross validation
@@ -231,45 +231,60 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, ax
     
     # fetch model groups
     q = f'''
-        with models as (
-            select 
-                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
-            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            where experiment_hash in ('{"','".join(experiment_hashes)}')   
-        )
+    with models as (
         select 
-            m.model_id, 
-            train_end_time,
-            model_type, 
-            stochastic_value as metric_value
-        from models m left join test_results.evaluations e 
-        on m.model_id = e.model_id
-        and e.metric = '{metric}'
-        and e.parameter = '{parameter}'
-        and e.subset_hash = ''
-    '''
-    
-    df = pd.read_sql(q, engine)
-    
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6,3), dpi=150)
-    
-    sns.lineplot(
-        data=df,
-        x='train_end_time',
-        y='metric_value',
-        hue='model_type',
-        alpha=0.7,
-        ax=ax,
-        estimator=None
+            distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
+        from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+        where experiment_hash in ('{"','".join(experiment_hashes)}')   
     )
-    
+    select 
+        m.model_id, 
+        model_group_id,
+        train_end_time,
+        model_type, 
+        hyperparameters::text,
+        stochastic_value as metric_value
+    from models m left join test_results.evaluations e 
+    on m.model_id = e.model_id
+    and e.metric = '{metric}'
+    and e.parameter = '{parameter}'
+    and e.subset_hash = ''
+    '''
+
+
+    df = pd.read_sql(q, engine)
+    df['model_type_trimmed'] = df.model_type.str.split('.').apply(lambda x: x[-1])
+
+    # if ax is None:
+    fig, ax = plt.subplots(figsize=(8,3), dpi=350)
+
+    # Assigning colors to each model group and defining lines to be used for the legend
+    colors = {}
+    lines = []
+    for i, model_type in enumerate(df.model_type_trimmed.unique()):
+        colors[model_type] = sns.color_palette()[i]
+        lines.append(Line2D([0], [0], color=sns.color_palette()[i]))
+
+    for group in df.groupby('model_group_id'):
+        g = group[0]
+        gdf = group[1]
+        model_type = gdf.model_type_trimmed.iloc[0]
+        sns.lineplot(
+            data=gdf,
+            x='train_end_time',
+            y='metric_value',
+            label=model_type,
+            color=colors[model_type],
+            alpha=0.4,
+            ax=ax,
+        )
+
     ax.set_xlabel('Time')
     ax.set_ylabel('Metric Value')
     ax.set_title(f'Model Performance Over Time - {metric}{parameter}')
-    ax.legend(loc='upper center', fontsize='medium', ncol=3, bbox_to_anchor=[0.5, 1.2], frameon=False)    
-    
-    sns.despine()
+    ax.legend(lines, colors.keys(), loc='upper left', fontsize='medium', ncol=3, bbox_to_anchor=[0, -0.20], frameon=False)    
+
+    sns.despine()    
     
     return ax
     
