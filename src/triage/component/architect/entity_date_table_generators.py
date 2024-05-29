@@ -96,6 +96,9 @@ class EntityDateTableGenerator:
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
+        
+        print('Using the parent entity-table generator')
+        
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
         for as_of_date in as_of_dates:
@@ -204,16 +207,19 @@ class CohortTableGeneratorNoOp(EntityDateTableGenerator):
 class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
     def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True, cohort_table=None):
         super().__init__(query, db_engine, entity_date_table_name, labels_table_name, replace)
-
+        print('Initializing the new child class Subset entity date generator')
         self.cohort_table = cohort_table
         
-    def __create_and_populate_entity_date_table_from_query(self, as_of_dates):
+    def create_and_populate_entity_date_table_from_query(self, as_of_dates):
         """Create an entity_date table by sequentially running a
             given date-parameterized query for all known dates.
 
         Args:
             as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
+        
+        print('Using the overridden entity-table generator')
+        
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
         
@@ -244,4 +250,12 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
             """
             logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
             self.db_engine.execute(full_query)
+            
+            
+    def generate_entity_date_table(self, as_of_dates):
+        if self.query:
+            logger.spam(f"Query is present, so running query on as_of_dates: {as_of_dates}")
+            self.create_and_populate_entity_date_table_from_query(as_of_dates)
+        else:
+            logger.warning('Query not working, subset table not created!')
     
