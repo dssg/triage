@@ -242,7 +242,7 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
                     with subset as ({dated_query})
                     select 
                         c. entity_id
-                    subset s inner join {self.cohort_table} c
+                    from subset s inner join {self.cohort_table} c
                     on s.entity_id = c.entity_id
                     and c.as_of_date = '{formatted_date}'::date
                 ) q 
