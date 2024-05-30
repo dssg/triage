@@ -49,13 +49,10 @@ class Subsetter:
         subset_tasks = []
         for subset_config in subset_configs:
             if subset_config:
+                # adding the cohort_table name to the subset_config so the hash reflects the config table name
+                subset_config['cohort_table_name'] = self.cohort_table_name
                 subset_hash = filename_friendly_hash(subset_config)
-                # subset_table_generator = EntityDateTableGenerator(
-                #     entity_date_table_name=get_subset_table_name(subset_config),
-                #     db_engine=self.db_engine,
-                #     query=subset_config["query"],
-                #     replace=self.replace
-                # )
+
                 subset_table_generator = SubsetEntityDateTableGenerator(
                     entity_date_table_name=get_subset_table_name(subset_config),
                     db_engine=self.db_engine,
