@@ -97,8 +97,6 @@ class EntityDateTableGenerator:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
         
-        print('Using the parent entity-table generator')
-        
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
         for as_of_date in as_of_dates:
@@ -218,8 +216,6 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
             as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
         
-        print('Using the overridden entity-table generator')
-        
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
         
@@ -259,3 +255,13 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
         else:
             logger.warning('Query not working, subset table not created!')
     
+        if table_has_duplicates(
+            self.entity_date_table_name,
+            ['entity_id', 'as_of_date'],
+            self.db_engine
+            ):
+            raise ValueError(f"Duplicates found in {self.entity_date_table_name}!")
+
+        logger.debug(f"Entity-date table generated at {self.entity_date_table_name}")
+        logger.spam(f"Generating stats on {self.entity_date_table_name}")
+        logger.spam(f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}")
