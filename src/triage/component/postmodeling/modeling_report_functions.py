@@ -9,6 +9,7 @@ import logging
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
+from triage.component.audition.plotting import plot_cats
 
 
 def list_all_experiments(engine):
@@ -219,7 +220,7 @@ def list_all_models(engine, experiment_hashes):
     return pd.read_sql(q, engine)
 
 
-def plot_performance_all_models(engine, experiment_hashes, metric, parameter, ax=None):
+def plot_performance_all_models(engine, experiment_hashes, metric, parameter, **kw):
     """ Generate an Audition type plot to display predictive performance over time for all model groups
     
     Args:
@@ -233,14 +234,20 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, ax
     q = f'''
         with models as (
             select 
-                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
+                distinct model_id, 
+                train_end_time, 
+                model_group_id, 
+                model_type, 
+                hyperparameters
             from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
             where experiment_hash in ('{"','".join(experiment_hashes)}')   
         )
         select 
             m.model_id, 
-            train_end_time,
+            train_end_time::date as train_end_time_dt,
+            to_char(train_end_time, 'YYYY-MM-DD') as train_end_time,
             model_type, 
+            model_group_id,
             stochastic_value as metric_value
         from models m left join test_results.evaluations e 
         on m.model_id = e.model_id
@@ -250,28 +257,38 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, ax
     '''
     
     df = pd.read_sql(q, engine)
+    df['train_end_time'] = pd.to_datetime(df.train_end_time, format='%Y-%m-%d')
     
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6,3), dpi=150)
-    
-    sns.lineplot(
-        data=df,
-        x='train_end_time',
-        y='metric_value',
-        hue='model_type',
-        alpha=0.7,
-        ax=ax,
-        estimator=None
+    # using the audition plotting base here
+    plot_cats(
+        frame=df,
+        x_col='train_end_time',
+        y_col='metric_value',
+        cat_col='model_type',
+        grp_col='model_group_id',
+        highlight_grp=None,
+        title=f'Model Performance Over Time - {metric}{parameter}',
+        x_label='Time',
+        y_label=f'Value - {metric}{parameter}',
+        cmap_name="tab10",
+        figsize=[12, 4],
+        dpi=150,
+        x_ticks=list(df.train_end_time.unique()),
+        y_ticks=None,
+        x_lim=None,
+        y_lim=(0, 1.1),
+        legend_loc=None,
+        legend_fontsize=12,
+        label_fontsize=12,
+        title_fontsize=12,
+        label_fcn=None,
+        path_to_save=None,
+        alpha=0.4,
+        colordict=None,
+        styledict=None
     )
-    
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Metric Value')
-    ax.set_title(f'Model Performance Over Time - {metric}{parameter}')
-    ax.legend(loc='upper center', fontsize='medium', ncol=3, bbox_to_anchor=[0.5, 1.2], frameon=False)    
-    
     sns.despine()
     
-    return ax
     
 def summarize_all_model_performance():
     pass
