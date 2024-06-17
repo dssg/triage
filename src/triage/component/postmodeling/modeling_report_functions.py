@@ -293,6 +293,76 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, **
 def summarize_all_model_performance():
     pass
     
+
+def list_all_subsets(engine, experiment_hashes):
+    
+    q = f'''
+        select 
+            distinct s.subset_hash, s.config, s.config ->> 'name' as subset_name,
+            s.config ->> 'name'::text||'_'||s.subset_hash as table_name
+        from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+            left join test_results.evaluations e using(model_id)
+                inner join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
+        where experiment_hash in ('{"','".join(experiment_hashes)}')
+    '''
+    
+    df = pd.read_sql(q, engine)
+    df['table_name'] = df.table_name.apply(lambda x: f'subet_{x}')
+
+    # TODO - add code to plot subset size relative to the cohort size
+        
+    return df
+        
+    
+
+def plot_subset_performance(engine, experiment_hashes, parameter, metric):
+
+    q = f'''
+        select 
+            case when e.subset_hash is null then 'full_cohort' 
+            else s.config ->> 'name' 
+            end as "subset",
+            e.subset_hash,
+            m.model_id,
+            m.model_group_id,
+            m.model_type,
+            m.train_end_time,
+            e.stochastic_value as metric_value
+        from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
+            left join test_results.evaluations e
+            on m.model_id = e.model_id
+            and e.parameter = '{parameter}'
+            and e.metric = '{metric}'
+                left join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
+        where experiment_hash in ('{"','".join(experiment_hashes)}')
+    '''
+    
+    df = pd.read_sql(q, engine)
+    df['model_type_child'] = df.model_type.apply(lambda x: x['model_type'].split('.')[-1] + ': ' + str(x['model_group_id']), axis=1) 
+    
+    
+    grpobj = df.groupby('subset')
+
+    for grp, gdf in grpobj:
+        fig, ax = plt.subplots(figsize=(8,3), dpi=100)
+        sns.lineplot(
+            data=gdf,
+            x='train_end_time',
+            y='metric_value',
+            hue='model_type_child',
+            # style='model_type_child',
+            ax=ax,
+            alpha=0.7
+        )
+        
+        l = ax.legend(bbox_to_anchor=(1,1), loc='upper left', frameon=True)
+        ax.set_ylabel(f'{metric}{parameter}')
+        ax.set_xlabel('Time')
+        ax.set_ylim(0, 0.3)
+        ax.set_title(f'Model performance over cohort subset: {grp}')
+        sns.despine()
+
+
     
 def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
     """ Return the model groups with the best mean performance """
