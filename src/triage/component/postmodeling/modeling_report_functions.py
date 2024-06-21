@@ -62,6 +62,19 @@ def visualize_validation_splits(engine, experiment_hash):
     )
     
 
+def load_config(engine, experiment_hash):
+    "return the experiment config"
+    
+    q = f'''
+        select 
+        config 
+        from triage_metadata.experiments
+        where experiment_hash = '{experiment_hash}'
+    '''
+    
+    return pd.read_sql(q, engine).config.at[0]
+    
+
 def summarize_cohorts(engine, experiment_hash):
     """Generate a summary of cohorts (size, baserate)
 
@@ -339,7 +352,7 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
     '''
     
     df = pd.read_sql(q, engine)
-    df['model_type_child'] = df.model_type.apply(lambda x: x['model_type'].split('.')[-1] + ': ' + str(x['model_group_id']), axis=1) 
+    df['model_type_child'] = df.apply(lambda x: x['model_type'].split('.')[-1] + ': ' + str(x['model_group_id']), axis=1) 
     
     
     grpobj = df.groupby('subset')
@@ -397,7 +410,7 @@ def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, para
 
 
 
-def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups, model_group_ids=None, selected_models=None):
+def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2):
     ''' Plot the performanc metric against the bias metric for all or selected models.
         Args:
             engine: DB connection
@@ -451,6 +464,28 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     
     metrics = pd.read_sql(q, engine)
     
-    metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
+    # metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
+    metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
+    
+    msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
+
+    g = sns.FacetGrid(metrics[msk].sort_values('train_end_time'), row='attribute_value', col="train_end_time", hue='model_label', height=2.5)
+    g.map(sns.scatterplot, f'{metric}{parameter}', f"{bias_metric}")
+    g.add_legend(title='')
+
+    # drawing the parity reference line
+    g.map(plt.axhline, y=1, color='gray', linestyle='--', alpha=0.1)
+
+    # Drawing the tolerance bounds set
+    g.map(plt.axhline, y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+    g.map(plt.axhline, y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+
+    g.figure.set_dpi(300)
+    g.set_titles(template='{row_name}\n{col_name}')
+    g.set_axis_labels(f"{metric}{parameter}", 'TPR Ratio')
+
+    g.tight_layout()
+    g.set(ylim=(0, 1.8))
+
     
     
