@@ -11,6 +11,7 @@ from matplotlib.lines import Line2D
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
 from triage.component.audition.plotting import plot_cats
+from triage.component.postmodeling.report_generator import PostmodelingReport
 
 
 def list_all_experiments(engine):
@@ -35,6 +36,23 @@ def list_all_experiments(engine):
     '''
     
     return pd.read_sql(q, engine)
+
+
+
+def get_most_recent_experiment_hash(engine):
+    q = '''
+        select 
+            run_hash as experiment_hash
+        from triage_metadata.triage_runs tr join triage_metadata.experiments e on
+        tr.run_hash = e.experiment_hash
+        where current_status = 'completed'
+        group by 1 order by 1 desc
+        limit 1        
+    '''
+    experiment_hash = pd.read_sql(q, engine)['experiment_hash'].iloc[0]
+    logging.info(f'Using the experiment hash: {experiment_hash}')
+    
+    return experiment_hash
 
 def visualize_validation_splits(engine, experiment_hash):
     """Generate an interactive plot of the time splits used for cross validation
@@ -75,7 +93,7 @@ def load_config(engine, experiment_hash):
     return pd.read_sql(q, engine).config.at[0]
     
 
-def summarize_cohorts(engine, experiment_hash):
+def summarize_cohorts(engine, experiment_hash, generate_plots=True):
     """Generate a summary of cohorts (size, baserate)
 
     Args:
@@ -102,6 +120,35 @@ def summarize_cohorts(engine, experiment_hash):
     """
 
     df = pd.read_sql(cohort_query, engine)
+    
+    if generate_plots:
+        fig, ax = plt.subplots(figsize=(6, 3), dpi=100)
+        sns.lineplot(
+            data=df,
+            x='as_of_date',
+            y='cohort_size',
+        )
+
+        ax.axhline(y=df.cohort_size.mean(), color='k', alpha=0.4, linestyle='--')
+        ax.set_title('Cohort Size Over Time')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Cohort Size')
+        sns.despine()
+
+
+        fig, ax = plt.subplots(figsize=(8, 3), dpi=100)
+        sns.lineplot(
+            data=df,
+            x='as_of_date',
+            y='baserate'
+        )
+        ax.axhline(y=df.baserate.mean(), color='k', alpha=0.4, linestyle='--')
+        ax.set_title('Baserate Over Time')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Prevelance of the Positive Class')
+        sns.despine()
+                
+
     
     return df
 
@@ -352,6 +399,10 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
     '''
     
     df = pd.read_sql(q, engine)
+    
+    if df.empty:
+        return None
+    
     df['model_type_child'] = df.apply(lambda x: x['model_type'].split('.')[-1] + ': ' + str(x['model_group_id']), axis=1) 
     
     
@@ -405,9 +456,35 @@ def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, para
     df = pd.read_sql(q, engine)
     
     return df.model_group_id.tolist(), df
-    
-    
 
+
+def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, parameter):
+        
+    q = f'''
+        with avg_perf as (
+            select 
+                model_group_id, model_type, hyperparameters, avg(stochastic_value) as mean_performance
+            from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
+                left join test_results.evaluations e
+                on m.model_id = e.model_id
+                and e.metric = '{metric}'
+                and e.parameter = '{parameter}'
+                and e.subset_hash = ''
+            where experiment_hash in ('{"','".join(experiment_hashes)}') 
+            and model_type not like '%%Dummy%%'
+            group by 1, 2, 3    
+        )
+        select distinct on(model_type)
+        model_group_id, model_type, hyperparameters, mean_performance
+        from avg_perf
+        order by model_type, mean_performance desc
+    '''
+
+    best_models = pd.read_sql(q, engine).set_index('model_group_id').sort_values(by='mean_performance', ascending=False)
+    best_models['model_type'] = best_models['model_type'].str.split('.').apply(lambda x: x[-1])
+        
+    return best_models
+    
 
 
 def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2):
@@ -420,6 +497,13 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     if model_group_ids is None: 
         logging.warning('No model groups specified. Usign all model group ids')
         model_group_ids = summarize_model_groups(engine, experiment_hashes).model_group_id.tolist()
+        
+        if not model_group_ids:
+            logging.warning('No model groups belong to the experiment! Returning None')
+            return None
+            
+    
+    parameter_ae = parameter
     
     if 'pct' in parameter:
         t = round(float(parameter.split('_')[0]) / 100, 2)
@@ -427,7 +511,7 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
         
     attributes = groups.keys()
     attribute_values = [v for v_list in groups.values() for v in v_list]
-    
+        
     q = f'''
             select 
                 m.model_id,
@@ -455,15 +539,18 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
                         left join test_results.aequitas a 
                             on m.model_id = a.model_id 
                             and a."parameter" = '{parameter_ae}'
-                            and a.attribute_name in ('{', '.join(attributes)}')
-                            and a.attribute_value in ('{', '.join(attribute_values)}')
+                            and a.attribute_name in ('{"','".join(attributes)}')
+                            and a.attribute_value in ('{"','".join(attribute_values)}')
                             and a.tie_breaker= 'worst' 
             where experiment_hash in  ('{"','".join(experiment_hashes)}')
             
     '''
     
-    metrics = pd.read_sql(q, engine)
+    #and a.attribute_value in ('{', '.join(attribute_values)}')
+
     
+    metrics = pd.read_sql(q, engine)
+
     # metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
     metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
     
@@ -488,4 +575,30 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     g.set(ylim=(0, 1.8))
 
     
+def plot_prk_curves(engine, experiment_hashes, model_groups=None, step_size=0.01):
     
+    if model_groups is None:
+        q = f'''
+            select 
+            distinct model_group_id
+            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+            where experiment_hash in  ('{"','".join(experiment_hashes)}')        
+        '''
+        
+        model_groups = pd.read_sql(q, engine)['model_group_id'].tolist()
+        
+        if not model_groups:
+            logging.warning('No model groups belong to the experiment! Returning None')
+            return None
+            
+    
+    
+    rep = PostmodelingReport(
+        engine=engine,
+        experiment_hashes=experiment_hashes,
+        model_groups=model_groups
+    )
+    
+    rep.plot_prk_curves(
+        pct_step_size=step_size
+    )
