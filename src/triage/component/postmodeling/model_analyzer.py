@@ -644,7 +644,7 @@ class ModelAnalyzer:
         """
         model_id = self.model_id
         connection = self.engine
-        error_analysis_results = generate_error_analysis(model_id, connection)
+        error_analysis_results = generate_error_analysis(model_id, connection, project_path=project_path)
         #TODO do we want to 
         return error_analysis_results
 
@@ -989,4 +989,7 @@ class ModelAnalyzer:
         ax.set_xlim([min_score, max_score])
         ax.set_ylim([min_score, max_score])
         return ax
+    
+
+        
 
