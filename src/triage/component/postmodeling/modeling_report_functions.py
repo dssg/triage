@@ -520,6 +520,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
         
         rg = pd.read_sql(q, engine)
         
+        if rg.empty:
+            logging.warning('No bias audit config or aequitas calculation was not completed! check the test_results.aequitas table. No plots generated')
+            return
+        
         groups = dict()
         for attr, gdf in rg.groupby('attribute_name'):
             groups[attr] = list(gdf['attribute_value'].unique())
