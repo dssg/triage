@@ -43,11 +43,9 @@ def get_most_recent_experiment_hash(engine):
     q = '''
         select 
             run_hash as experiment_hash
-        from triage_metadata.triage_runs tr join triage_metadata.experiments e on
-        tr.run_hash = e.experiment_hash
+        from triage_metadata.triage_runs
         where current_status = 'completed'
-        group by 1 order by 1 desc
-        limit 1        
+        order by start_time desc       
     '''
     experiment_hash = pd.read_sql(q, engine)['experiment_hash'].iloc[0]
     logging.info(f'Using the experiment hash: {experiment_hash}')
@@ -487,7 +485,7 @@ def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, pa
     
 
 
-def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2):
+def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups=None, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2):
     ''' Plot the performanc metric against the bias metric for all or selected models.
         Args:
             engine: DB connection
@@ -501,7 +499,33 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
         if not model_group_ids:
             logging.warning('No model groups belong to the experiment! Returning None')
             return None
+        
+    # If no groups are specified, we show results for all groups    
+    if groups is None:
+        
+        logging.info('No groups are specified. Showing results for all attributes and their values')
+        groups = dict()
+        
+        q = f'''
+        select 
+            distinct attribute_name, attribute_value  
+        from test_results.aequitas a
+        where attribute_name::varchar in (
+            select replace(jsonb_array_elements(config -> 'bias_audit_config' -> 'attribute_columns')::varchar, '"', '')   as attr
+            from triage_metadata.experiments e 
+            where experiment_hash = '{experiment_hashes[0]}'
+        ) 
+        order by 1, 2
+        '''
+        
+        rg = pd.read_sql(q, engine)
+        
+        groups = dict()
+        for attr, gdf in rg.groupby('attribute_name'):
+            groups[attr] = list(gdf['attribute_value'].unique())
             
+        logging.debug(f'Plotting bias for following groups and values {rg}')
+        
     
     parameter_ae = parameter
     
