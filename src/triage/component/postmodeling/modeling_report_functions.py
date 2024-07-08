@@ -120,34 +120,38 @@ def summarize_cohorts(engine, experiment_hash, generate_plots=True):
     df = pd.read_sql(cohort_query, engine)
     
     if generate_plots:
-        fig, ax = plt.subplots(figsize=(6, 3), dpi=100)
+        fig, ax1 = plt.subplots(figsize=(7, 3), dpi=100)
+
+        color='darkblue'
         sns.lineplot(
             data=df,
             x='as_of_date',
             y='cohort_size',
+            ax=ax1,
+            label='',
+            color=color
         )
 
-        ax.axhline(y=df.cohort_size.mean(), color='k', alpha=0.4, linestyle='--')
-        ax.set_title('Cohort Size Over Time')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Cohort Size')
-        sns.despine()
+        ax1.axhline(y=df.cohort_size.mean(), color=color, alpha=0.4, linestyle='--', label='mean cohort size')
+        ax1.set_title('Cohort Size and Baserate Over Time')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Cohort Size', color=color)
+        ax1.tick_params(axis='y', labelcolor=color)
 
+        ax2 = ax1.twinx()
+        color='firebrick'
 
-        fig, ax = plt.subplots(figsize=(8, 3), dpi=100)
         sns.lineplot(
             data=df,
             x='as_of_date',
-            y='baserate'
+            y='baserate',
+            ax=ax2,
+            color=color
         )
-        ax.axhline(y=df.baserate.mean(), color='k', alpha=0.4, linestyle='--')
-        ax.set_title('Baserate Over Time')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Prevelance of the Positive Class')
-        sns.despine()
+        ax2.set_ylabel('Baserate (%)', color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+        ax2.axhline(y=df.baserate.mean(), color=color, alpha=0.4, linestyle='--')
                 
-
-    
     return df
 
     # dfs = list()
