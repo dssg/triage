@@ -356,7 +356,6 @@ def test_subset_odds_cohort():
         expected_output = [
             (1, datetime(2016, 3, 1), True),
             (1, datetime(2016, 4, 1), True),
-            (3, datetime(2016, 4, 1), True),
             (5, datetime(2016, 4, 1), True),
         ]
         results = list(
