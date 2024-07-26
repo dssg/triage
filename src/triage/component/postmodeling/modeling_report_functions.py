@@ -638,7 +638,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
                 a.tpr,
                 a.{bias_metric},
                 a.attribute_name,
-                a.attribute_value
+                a.attribute_value,
+                a.group_size,
+                a.prev as baserate,
+                total_entities
             from triage_metadata.experiment_models em join triage_metadata.models m 
                 on em.model_hash = m.model_hash
                 and m.model_group_id in ({", ".join([str(x) for x in model_group_ids])})
@@ -699,6 +702,60 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
             ax_cntr += 1
         axes[-1].legend(bbox_to_anchor=(1,1), loc='upper left', frameon=False)
         sns.despine()
+    
+    # Plotting the Group sizes and baserates
+    fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharex=True, sharey=True, dpi=100)
+    ax_cntr=0
+    for group, attrs in groups.items():
+        for attr in attrs:
+            msk = metrics['attribute_value'] == attr
+
+            grouped = metrics[msk].groupby('train_end_time').mean()[['baserate', 'group_size', 'total_entities']].reset_index()
+            color='tab:blue'
+            sns.barplot(
+                data=grouped,
+                x='train_end_time',
+                y='group_size',
+                ax=axes[ax_cntr],
+                alpha=0.8,
+                color=color,
+                label='Group Size'
+            )
+
+            sns.barplot(
+                data=grouped,
+                x='train_end_time',
+                y='total_entities',
+                ax=axes[ax_cntr],
+                alpha=0.2,
+                color='gray',
+                label='Cohort Size'
+            )
+
+            axes[ax_cntr].tick_params(axis='x', rotation=90)
+            axes[ax_cntr].set(xlabel='Time', title=f'{group} | {attr}')
+            axes[ax_cntr].set_ylabel('Entities', color=color)
+            axes[ax_cntr].tick_params(axis='y', labelcolor=color)
+
+            ax2 = axes[ax_cntr].twinx()
+            color='tab:red'
+
+            sns.lineplot(
+                data=grouped,
+                x=axes[ax_cntr].get_xticks(),
+                y='baserate',
+                ax=ax2,
+                alpha=0.6,
+                marker='o',
+                markersize=5,
+                color=color,
+                # label='Baserate'
+            )
+            ax2.set_ylabel('Baserate (%)', color=color)
+            ax2.tick_params(axis='y', labelcolor=color)
+            ax_cntr += 1
+    axes[-1].legend(bbox_to_anchor=(1.1,1.1), loc='upper left', frameon=False)
+    plt.tight_layout()
     
     
     # msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
