@@ -24,15 +24,15 @@ model_name_abbrev = {
     'LightGBMClassifier':'LGBM'
 }
 
-def _format_model_name(long_name):
+def _format_model_name(long_name, model_group_id):
     
     # Get the child name fromt he import path
     child_name = long_name.split('.')[-1] 
     
     if child_name in model_name_abbrev:
-        return model_name_abbrev[child_name]
+        return str(model_group_id) + ': ' + model_name_abbrev[child_name]
     else:
-        return child_name
+        return str(model_group_id) + ': ' + child_name
 
 
 def list_all_experiments(engine):
@@ -426,7 +426,8 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
     if df.empty:
         return None
     
-    df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type']) + ': ' + str(x['model_group_id']), axis=1) 
+    df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
+    # df.apply(lambda x: _format_model_name(x['model_type']) + ': ' + str(x['model_group_id']), axis=1) 
     
     
     get_labels_table_query = f"""
@@ -657,32 +658,68 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     '''
     
     #and a.attribute_value in ('{', '.join(attribute_values)}')
-
-    
     metrics = pd.read_sql(q, engine)
 
     # metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
-    metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
+    # metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
+    metrics['model_label'] = metrics.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
+        
+        # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
+    # Metric means
+    mean = metrics.groupby(['model_label', 'attribute_value']).mean()[['precision@100_abs', 'tpr_disparity']].reset_index().sort_values('model_label')
     
-    msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
+    # Metric standard errors
+    sem = metrics.groupby(['model_label', 'attribute_value']).sem()[['precision@100_abs', 'tpr_disparity']].reset_index().sort_values('model_label')
+    labels = sorted(mean.model_label.unique())
+    
+    # n_attrs = sum([len(x) for x in groups.values()])
+    n_attrs = len(attribute_values)
+    ax_cntr = 0
+    # bias_tolerance = 0.2
+    fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharey=True, sharex=True, dpi=100)
+    colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
+    
+    for group, attrs in groups.items():
+        for attr in attrs:
+            msk = mean['attribute_value'] == attr
+            x = mean[msk]['precision@100_abs'].tolist()
+            y = mean[msk]['tpr_disparity'].tolist()
 
-    g = sns.FacetGrid(metrics[msk].sort_values('train_end_time'), row='attribute_value', col="train_end_time", hue='model_label', height=2.5)
-    g.map(sns.scatterplot, f'{metric}{parameter}', f"{bias_metric}")
-    g.add_legend(title='')
+            msk = sem['attribute_value'] == attr
+            yerr = sem[msk]['tpr_disparity'].tolist()
+            xerr = sem[msk]['precision@100_abs'].tolist()
+            
+            for i in range(len(x)):
+                axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[i], alpha=0.5)
+                axes[ax_cntr].scatter(x[i], y[i], c=colors[i], label=labels[i])
+                axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
+                axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
+                axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+                axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+            ax_cntr += 1
+        axes[-1].legend(bbox_to_anchor=(1,1), loc='upper left', frameon=False)
+        sns.despine()
+    
+    
+    # msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
 
-    # drawing the parity reference line
-    g.map(plt.axhline, y=1, color='gray', linestyle='--', alpha=0.1)
+    # g = sns.FacetGrid(metrics[msk].sort_values('train_end_time'), row='attribute_value', col="train_end_time", hue='model_label', height=2.5)
+    # g.map(sns.scatterplot, f'{metric}{parameter}', f"{bias_metric}")
+    # g.add_legend(title='')
 
-    # Drawing the tolerance bounds set
-    g.map(plt.axhline, y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-    g.map(plt.axhline, y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+    # # drawing the parity reference line
+    # g.map(plt.axhline, y=1, color='gray', linestyle='--', alpha=0.1)
 
-    g.figure.set_dpi(300)
-    g.set_titles(template='{row_name}\n{col_name}')
-    g.set_axis_labels(f"{metric}{parameter}", 'TPR Ratio')
+    # # Drawing the tolerance bounds set
+    # g.map(plt.axhline, y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+    # g.map(plt.axhline, y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
 
-    g.tight_layout()
-    g.set(ylim=(0, 1.8))
+    # g.figure.set_dpi(300)
+    # g.set_titles(template='{row_name}\n{col_name}')
+    # g.set_axis_labels(f"{metric}{parameter}", 'TPR Ratio')
+
+    # g.tight_layout()
+    # g.set(ylim=(0, 1.8))
 
     
 def plot_prk_curves(engine, experiment_hashes, model_groups=None, step_size=0.01):
