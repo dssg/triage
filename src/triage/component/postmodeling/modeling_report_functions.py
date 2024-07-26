@@ -14,6 +14,27 @@ from triage.component.audition.plotting import plot_cats
 from triage.component.postmodeling.report_generator import PostmodelingReport
 
 
+model_name_abbrev = {
+    'DummyClassifier': 'Dummy',
+    'RandomForestClassifier': 'RF',
+    'DecisionTreeClassifier': 'DT',
+    'BaselineRankMultiFeature': 'Ranker',
+    'ScaledLogisticRegression': 'LR',
+    'XGBClassifier': 'XGB',
+    'LightGBMClassifier':'LGBM'
+}
+
+def _format_model_name(long_name):
+    
+    # Get the child name fromt he import path
+    child_name = long_name.split('.')[-1] 
+    
+    if child_name in model_name_abbrev:
+        return model_name_abbrev[child_name]
+    else:
+        return child_name
+
+
 def list_all_experiments(engine):
     """Generates a dataframe that lists the 
         experiment hash, last experiment run time, model comment
@@ -405,30 +426,87 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
     if df.empty:
         return None
     
-    df['model_type_child'] = df.apply(lambda x: x['model_type'].split('.')[-1] + ': ' + str(x['model_group_id']), axis=1) 
+    df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type']) + ': ' + str(x['model_group_id']), axis=1) 
     
+    
+    get_labels_table_query = f"""
+    select distinct labels_table_name from triage_metadata.triage_runs 
+    where run_hash = '{experiment_hashes[0]}'
+    """
+
+    labels_table = pd.read_sql(get_labels_table_query, engine).labels_table_name.iloc[0]
     
     grpobj = df.groupby('subset')
 
     for grp, gdf in grpobj:
-        fig, ax = plt.subplots(figsize=(8,3), dpi=100)
-        sns.lineplot(
-            data=gdf,
-            x='train_end_time',
-            y='metric_value',
-            hue='model_type_child',
-            # style='model_type_child',
-            ax=ax,
-            alpha=0.7
-        )
+        fig, axes = plt.subplots(1, 2, figsize=(10,4), dpi=100)
+        fig.suptitle(f'Subset Name: {grp}')
         
-        l = ax.legend(bbox_to_anchor=(1,1), loc='upper left', frameon=True)
-        ax.set_ylabel(f'{metric}{parameter}')
-        ax.set_xlabel('Time')
-        ax.set_ylim(0, 0.3)
-        ax.set_title(f'Model performance over cohort subset: {grp}')
-        sns.despine()
+        # Plotting the subsetsize and the baserate
+        subset_table_name = 'subset_' + gdf['subset'].iloc[0] + '_' + gdf['subset_hash'].iloc[0]
+        q = f'''
+            select 
+            as_of_date::date, count(entity_id) as subset_size, avg(label)*100 as baserate
+            from {labels_table} inner join {subset_table_name} using(entity_id, as_of_date)
+            group by 1
+            order by 1
+        '''
+        subset_size = pd.read_sql(q, engine)
+        
+        # Subset sizes over time
+        color='tab:blue'
+        sns.barplot(
+            data=subset_size,
+            x='as_of_date',
+            y='subset_size',
+            ax=axes[0],
+            alpha=0.5,
+            color=color
+        )
+        axes[0].tick_params(axis='x', rotation=90)
+        axes[0].set_title(f'Subset Size & Baserate')
+        axes[0].set_xlabel('Time')
+        axes[0].set_ylabel('Subset size', color=color)
+        axes[0].tick_params(axis='y', labelcolor=color)
+        axes[0].axhline(y=subset_size.subset_size.mean(), color=color, alpha=0.4, linestyle='--')
+    
+    
+        ax2 = axes[0].twinx()
+        color='tab:red'
 
+        sns.lineplot(
+            data=subset_size,
+            x=axes[0].get_xticks(),
+            y='baserate',
+            ax=ax2,
+            alpha=0.6,
+            marker='o',
+            markersize=5,
+            color=color
+        )
+        ax2.set_ylabel('Baserate (%)', color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+        ax2.axhline(y=subset_size.baserate.mean(), color=color, alpha=0.4, linestyle='--')
+
+        sns.lineplot(
+        data=gdf,
+        x='train_end_time',
+        y='metric_value',
+        hue='model_type_child',
+        ax=axes[1],
+        alpha=0.7,
+        # marker=''
+        )
+        # ticklabels = list(gdf.train_end_time.unique())
+        # axes[1].set_xticklabels(ticklabels, rotation=45)
+        axes[1].legend(loc='upper left', frameon=False, ncol=3, fontsize='small')
+        axes[1].tick_params(axis='x', rotation=90)
+        axes[1].set_ylabel(f'{metric}{parameter}')
+        axes[1].set_xlabel('Time')
+        axes[1].set_ylim(0, 0.3)
+        axes[1].set_title(f'Model Performance')    
+        
+        plt.tight_layout()
 
     
 def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
@@ -634,3 +712,70 @@ def plot_prk_curves(engine, experiment_hashes, model_groups=None, step_size=0.01
     rep.plot_prk_curves(
         pct_step_size=step_size
     )
+    
+
+def feature_missingness_stats(engine):
+    """
+    Generates the mean, min, max missingness degree for each feature. 
+    Assumes that the current "features" schema holds the relevant features for the experiment
+    """
+    
+    q = '''
+    select 
+    table_name 
+    from information_schema.tables
+    where table_schema = 'features'
+    and table_name like '%%aggregation_imputed'
+    '''
+
+    feature_tables = pd.read_sql(q, engine)['table_name'].tolist()
+    
+    logging.info(f'{len(feature_tables)} Tables')
+    
+    column_names = dict()
+    for table in feature_tables:
+        q = f'''
+            select 
+            column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'features'
+            AND table_name   = '{table}'
+            and (column_name like '%%_imp')   
+        '''
+
+        column_names[table] = pd.read_sql(q, engine).column_name.tolist()
+        
+    results = pd.DataFrame()
+
+    for table_name, columns in column_names.items():
+        # print(table_name)
+        select_clause = '''
+            select 
+            as_of_date,
+            count(distinct entity_id) as cohort_size
+        '''
+        imputation_counts = ''
+        for col in columns:
+            imputation_counts += f'''
+                ,(sum("{col}")::float / count(distinct entity_id)) * 100  as "{col[:-4]}"
+            '''
+        
+        from_clause = f'''
+            from features.{table_name}
+            group by 1
+        '''
+        
+        query = select_clause + imputation_counts + from_clause
+        df = pd.read_sql(query, engine).set_index(['as_of_date', 'cohort_size'])
+
+        if results.empty:
+            results = df
+        else:
+            results = results.join(df)
+            
+    df = pd.concat([results.mean(), results.min(), results.max()], axis=1).fillna(0)
+    df.columns = ['mean (%)', 'min (%)', 'max (%)']
+
+    # df.style.applymap(lambda x: 'background-color : pink' if x>80 else '')
+    
+    return df 
