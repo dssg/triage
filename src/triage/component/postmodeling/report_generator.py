@@ -232,6 +232,43 @@ class PostmodelingReport:
 
     def plot_prk_curves(self, **kw):
         self._make_plot_grid(plot_type='plot_precision_recall_curve', **kw)
+        
+    def plot_recall_curves_overlaid(self, n_splits=None, **kw,):
+        # Number of columns    
+        if n_splits is None:
+            n_cols = len(self.models[self.model_groups[0]])
+        else:
+            n_cols = n_splits
+            
+        fig, axes = self._get_subplots(
+            subplot_width=3, 
+            subplot_len=3, 
+            sharey=True, 
+            sharex=True, 
+            n_cols=n_cols, 
+            n_rows=1
+        )
+        
+        as_of_dates = list(sorted(self.models[self.model_groups[0]].keys()))[-n_cols:]
+        
+        for i, aod in enumerate(as_of_dates):
+            for model_group in sorted(self.model_groups):
+                mod = self.models[model_group].get(aod)
+                if mod is None:
+                    continue
+
+                mod.plot_precision_recall_curve(only_recall=True,ax = axes[i], title_string=aod)
+                axes[i].set(alpha=0.1)
+                axes[i].legend().remove()
+                axes[i].set_xlabel('Population pct (k%)')
+                axes[i].set_ylabel('recall@k')
+                sns.despine()
+        plt.tight_layout()
+        axes[-1].legend(sorted(self.model_groups))
+        
+        
+        
+
   
     def plot_bias_threshold(self, attribute_name, attribute_values, bias_metric):
         """
