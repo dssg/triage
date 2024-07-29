@@ -778,8 +778,12 @@ class ModelAnalyzer:
         ax.set_title(f'Model: {self.model_id}, Group: {self.model_group_id}')
         return ax
 
+    # def plot_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01, subset_hash=None, title_string=None):
+    #     pred_df = self.get_predictions(matrix_uuid=matrix_uuid)
+        
+        
     # TODO: Facilitate plotting pr-k with absolute thresholds
-    def plot_precision_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01, subset_hash=None, title_string=None):
+    def plot_precision_recall_curve(self, ax=None, matrix_uuid=None, list_size_upper_bound_pct=1, pct_step_size=0.01, subset_hash=None, title_string=None, only_recall=False):
         """
         Plots precision-recall curves at each train_end_time for all model groups
         
@@ -821,14 +825,15 @@ class ModelAnalyzer:
             msk_pct = eval_df['parameter'].str.contains('pct')
 
             # plot precision
-            sns.lineplot(
-                x='perc_points',
-                y='stochastic_value', 
-                data=eval_df[msk_pct & msk_prec], 
-                label='precision@k',
-                ax=ax, 
-                estimator='mean', ci='sd'
-            )
+            if not only_recall:
+                sns.lineplot(
+                    x='perc_points',
+                    y='stochastic_value', 
+                    data=eval_df[msk_pct & msk_prec], 
+                    label='precision@k',
+                    ax=ax, 
+                    estimator='mean', ci='sd'
+                )
             # plot recall
             sns.lineplot(
                 x='perc_points', 
@@ -862,7 +867,8 @@ class ModelAnalyzer:
                 recalls.append(recall)
                 
             with sns.axes_style("darkgrid"): 
-                sns.lineplot(x=k_values * 100, y=precisions, ax=ax, label='Precision@k')
+                if not only_recall:
+                    sns.lineplot(x=k_values * 100, y=precisions, ax=ax, label='Precision@k')
                 sns.lineplot(x=k_values * 100, y=recalls, ax=ax, label='Recall@k')
             
 
