@@ -96,6 +96,7 @@ class EntityDateTableGenerator:
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
+        
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
         for as_of_date in as_of_dates:
@@ -199,3 +200,68 @@ class CohortTableGeneratorNoOp(EntityDateTableGenerator):
     @property
     def entity_date_table_name(self):
         return None
+
+
+class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
+    def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True, cohort_table=None):
+        super().__init__(query, db_engine, entity_date_table_name, labels_table_name, replace)
+        print('Initializing the new child class Subset entity date generator')
+        self.cohort_table = cohort_table
+        
+    def create_and_populate_entity_date_table_from_query(self, as_of_dates):
+        """Create an entity_date table by sequentially running a
+            given date-parameterized query for all known dates.
+
+        Args:
+            as_of_dates (list of datetime.date): Dates to calculate entity states as of
+        """
+        
+        self._maybe_create_entity_date_table()
+        logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
+        
+        for as_of_date in as_of_dates:
+            formatted_date = f"{as_of_date.isoformat()}"
+            logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
+            any_existing = list(self.db_engine.execute(
+                f"""select 1 from {self.entity_date_table_name}
+                where as_of_date = '{formatted_date}'
+                limit 1
+                """
+            ))
+            if len(any_existing) == 1:
+                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                continue
+            dated_query = self.query.format(as_of_date=formatted_date)
+            full_query = f"""insert into {self.entity_date_table_name}
+                select q.entity_id, '{formatted_date}'::timestamp, true
+                from (
+                    with subset as ({dated_query})
+                    select 
+                        c. entity_id
+                    from subset s inner join {self.cohort_table} c
+                    on s.entity_id = c.entity_id
+                    and c.as_of_date = '{formatted_date}'::date
+                ) q 
+                group by 1, 2, 3
+            """
+            logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
+            self.db_engine.execute(full_query)
+            
+            
+    def generate_entity_date_table(self, as_of_dates):
+        if self.query:
+            logger.spam(f"Query is present, so running query on as_of_dates: {as_of_dates}")
+            self.create_and_populate_entity_date_table_from_query(as_of_dates)
+        else:
+            logger.warning('Query not working, subset table not created!')
+    
+        if table_has_duplicates(
+            self.entity_date_table_name,
+            ['entity_id', 'as_of_date'],
+            self.db_engine
+            ):
+            raise ValueError(f"Duplicates found in {self.entity_date_table_name}!")
+
+        logger.debug(f"Entity-date table generated at {self.entity_date_table_name}")
+        logger.spam(f"Generating stats on {self.entity_date_table_name}")
+        logger.spam(f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}")
