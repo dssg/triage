@@ -73,6 +73,7 @@ def get_most_recent_experiment_hash(engine):
     
     return experiment_hash
 
+
 def visualize_validation_splits(engine, experiment_hash):
     """Generate an interactive plot of the time splits used for cross validation
 
@@ -112,6 +113,23 @@ def load_config(engine, experiment_hash):
     return pd.read_sql(q, engine).config.at[0]
     
 
+def load_report_parameters_from_config(engine, experiment_hash):
+    config = load_config(engine, experiment_hash=experiment_hash)
+    
+    d = dict()
+    d['performance_metric'] = config['scoring'].get('priority_metric')
+    d['threshold'] = config['scoring'].get('priority_parameter')
+    
+    bias_audit = config.get('bias_audit')
+    d['bias_metric'] = None
+    d['priority_groups'] = None 
+    
+    if bias_audit is not None:
+        d['bias_metric'] = bias_audit.get('priority_metric')
+        d['priority_groups'] = bias_audit.get('priority_groups')
+    
+    return d 
+    
 def summarize_cohorts(engine, experiment_hash, generate_plots=True):
     """Generate a summary of cohorts (size, baserate)
 
