@@ -522,7 +522,7 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
         axes[1].tick_params(axis='x', rotation=90)
         axes[1].set_ylabel(f'{metric}{parameter}')
         axes[1].set_xlabel('Time')
-        axes[1].set_ylim(0, 0.3)
+        # axes[1].set_ylim(0, 0.3)
         axes[1].set_title(f'Model Performance')    
         
         plt.tight_layout()
@@ -686,10 +686,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
         
         # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
     # Metric means
-    mean = metrics.groupby(['model_label', 'attribute_value']).mean()[['precision@100_abs', 'tpr_disparity']].reset_index().sort_values('model_label')
+    mean = metrics.groupby(['model_label', 'attribute_value']).mean()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
     
     # Metric standard errors
-    sem = metrics.groupby(['model_label', 'attribute_value']).sem()[['precision@100_abs', 'tpr_disparity']].reset_index().sort_values('model_label')
+    sem = metrics.groupby(['model_label', 'attribute_value']).sem()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
     labels = sorted(mean.model_label.unique())
     
     # n_attrs = sum([len(x) for x in groups.values()])
@@ -702,12 +702,12 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     for group, attrs in groups.items():
         for attr in attrs:
             msk = mean['attribute_value'] == attr
-            x = mean[msk]['precision@100_abs'].tolist()
-            y = mean[msk]['tpr_disparity'].tolist()
+            x = mean[msk][f'{metric}{parameter}'].tolist()
+            y = mean[msk][f'{bias_metric}'].tolist()
 
             msk = sem['attribute_value'] == attr
-            yerr = sem[msk]['tpr_disparity'].tolist()
-            xerr = sem[msk]['precision@100_abs'].tolist()
+            yerr = sem[msk][f'{bias_metric}'].tolist()
+            xerr = sem[msk][f'{metric}{parameter}'].tolist()
             
             for i in range(len(x)):
                 axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[i], alpha=0.5)
