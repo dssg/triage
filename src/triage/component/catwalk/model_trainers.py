@@ -495,6 +495,9 @@ class ModelTrainer:
             random_seed = self.get_or_generate_random_seed(
                 model_group_id, matrix_store.metadata, matrix_store.uuid
             )
+            # add random_state 
+            unique_parameters['random_state'] = random_seed
+            parameters['random_state'] = random_seed
 
             model_hash = self._model_hash(
                 matrix_store.metadata,
