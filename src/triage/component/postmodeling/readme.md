@@ -46,8 +46,8 @@ To specify these metrics, you can add the following keys to the experiment confi
 ```
 scoring:
     # Append these key-value pairs to the scoring section
-    priority_metric: 'precision@'
-    priority_parameter: '100_pct' 
+    priority_metric: 'recall@'
+    priority_parameter: '1_pct' 
   
 bias_audit:
     ## Append these key-value pairs to the bias_audit section (if a bias audit is performed)
@@ -57,7 +57,7 @@ bias_audit:
     'race':
       - 'Black/African American'
     'gender':
-      - '2~Female'
+      - 'Female'
 ```
 
 In addition, for the best model of each model type (e.g., best Random Forest, best Decision Tree) based on the prioritized performance metric, it shows feature importance values, recall curve comparisons, feature importance comparisons across model pairs. 
@@ -80,11 +80,14 @@ threshold = '1_pct'
 
 # Bias metric defaults to tpr_disparity and bias metric values for all groups generated (if bias audit specified in the experiment config)
 bias_metric = 'tpr_disparity'
+bias_priority_groups = None
 
 """If you want to specify priority groups you have to add a dictionary in the following form
+
 bias_priority_groups = {
-    'protected_attribute1': ['protected_value11', 'protected_value12'],
-    'protected_attribute2': ['protected_value21', 'protected_value22'],
+    'race': ['black/african_american', 'hispanic'],
+    'gender': ['women'],
+    'locale': ['rural']
 }
 """
 ```
