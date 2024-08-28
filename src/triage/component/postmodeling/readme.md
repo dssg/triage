@@ -4,10 +4,10 @@ This module deals with the analyses we perform once the model building is finish
 
 ## Postmodeling Report
 
-### Generating a Experiment Summary Report Automatically
+### Static Summary of a Triage Experiment - Generating the report with the Triage experiment run
 This part of the modeling processes is often interactive. As a starting point to this, a "postmodeling report" can be automatically generated right after the completion of the triage experiment, by performing the following step.  
 
-1. Copy the triage_experiment_report_template.ipynb to your project repo
+1. Copy the `triage_experiment_report_template.ipynb` to your project repo
 
 2. Install `nbcovert` to the same virtual envrionment where triage is installed for your project
 ```
@@ -64,22 +64,29 @@ In addition, for the best model of each model type (e.g., best Random Forest, be
 
 5. Once the code is run, the notebook will be generated as an `.html` and an `.ipynb`. The `html` can serve as a report, and the `.ipynb` can serve as a starting point to the further postmodeling analysis.  
 
-### Interactive Notebook
+### Interactive version - Generating the report independent of the experiment 
 
 If you choose not to run the modeling report automatically with the triage experiment or you need to generate the report for an older experiment, you can update the following parameters at the top of the notebook. 
 
 ```
-# The most recent completed experiment hash
-experiment_hashes = [get_most_recent_experiment_hash(db_engine)]
+# Triage created hash(es) of the experiment(s) you are interested in. 
+# It has to be a list (even if single element)
+experiment_hashes = [list, of, hashes]
 
-# Model Performance metric and threshold defaulting to reacll@1_pct
+# Model Performance metric and threshold
+# These default to 'recall@' and '1_pct'
 performance_metric = 'recall@'
 threshold = '1_pct'
 
 # Bias metric defaults to tpr_disparity and bias metric values for all groups generated (if bias audit specified in the experiment config)
 bias_metric = 'tpr_disparity'
-bias_priority_groups=None
 
+"""If you want to specify priority groups you have to add a dictionary in the following form
+bias_priority_groups = {
+    'protected_attribute1': ['protected_value11', 'protected_value12'],
+    'protected_attribute2': ['protected_value21', 'protected_value22'],
+}
+"""
 ```
 
 
