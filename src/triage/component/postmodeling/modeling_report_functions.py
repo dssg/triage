@@ -687,10 +687,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     
         # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
     # Metric means
-    mean = metrics.groupby(['model_label', 'attribute_value']).mean()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
+    mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).mean()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
     
     # Metric standard errors
-    sem = metrics.groupby(['model_label', 'attribute_value']).sem()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
+    sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).sem()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
     labels = sorted(mean.model_label.unique())
     
     # n_attrs = sum([len(x) for x in groups.values()])
