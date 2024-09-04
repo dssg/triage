@@ -683,7 +683,8 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     # metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
     # metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
     metrics['model_label'] = metrics.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
-        
+    metrics['model_type_short'] = metrics.apply(lambda x: x['model_type'].split('.')[-1], axis=1)
+    
         # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
     # Metric means
     mean = metrics.groupby(['model_label', 'attribute_value']).mean()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
@@ -697,7 +698,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
     ax_cntr = 0
     # bias_tolerance = 0.2
     fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharey=True, sharex=True, dpi=100)
-    colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
+    # colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
+    colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(metrics.model_type_short.unique()))}
+    legend_handles=[ Line2D([0], [0], label=k, marker='o', color=v) for k, v in colors.items() ]
+
     
     for group, attrs in groups.items():
         for attr in attrs:
@@ -705,19 +709,24 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
             x = mean[msk][f'{metric}{parameter}'].tolist()
             y = mean[msk][f'{bias_metric}'].tolist()
 
+            # mean[msk]['model_type'].tolist()
+
             msk = sem['attribute_value'] == attr
             yerr = sem[msk][f'{bias_metric}'].tolist()
             xerr = sem[msk][f'{metric}{parameter}'].tolist()
+
+            # print(x)
             
             for i in range(len(x)):
-                axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[i], alpha=0.5)
-                axes[ax_cntr].scatter(x[i], y[i], c=colors[i], label=labels[i])
-                axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
+                axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[mean[msk]['model_type_short'].iloc[i]], alpha=0.3)
+                axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
+                # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
+                axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
                 axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
                 axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
                 axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
             ax_cntr += 1
-        axes[-1].legend(bbox_to_anchor=(1,1), loc='upper left', frameon=False)
+        axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
         sns.despine()
     
     # Plotting the Group sizes and baserates
