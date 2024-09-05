@@ -428,7 +428,7 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
             m.model_id,
             m.model_group_id,
             m.model_type,
-            m.train_end_time,
+            m.train_end_time::date,
             e.stochastic_value as metric_value
         from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
             left join test_results.evaluations e
@@ -445,6 +445,7 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
         return None
     
     df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
+    df['model_type_short'] = df.apply(lambda x: x['model_type'].split('.')[-1], axis=1)
     # df.apply(lambda x: _format_model_name(x['model_type']) + ': ' + str(x['model_group_id']), axis=1) 
     
     
@@ -488,11 +489,11 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
         axes[0].set_ylabel('Subset size', color=color)
         axes[0].tick_params(axis='y', labelcolor=color)
         axes[0].axhline(y=subset_size.subset_size.mean(), color=color, alpha=0.4, linestyle='--')
-    
-    
+        
+        
         ax2 = axes[0].twinx()
         color='tab:red'
-
+        
         sns.lineplot(
             data=subset_size,
             x=axes[0].get_xticks(),
@@ -506,26 +507,31 @@ def plot_subset_performance(engine, experiment_hashes, parameter, metric):
         ax2.set_ylabel('Baserate (%)', color=color)
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.axhline(y=subset_size.baserate.mean(), color=color, alpha=0.4, linestyle='--')
-
-        sns.lineplot(
-        data=gdf,
-        x='train_end_time',
-        y='metric_value',
-        hue='model_type_child',
-        ax=axes[1],
-        alpha=0.7,
-        # marker=''
-        )
-        # ticklabels = list(gdf.train_end_time.unique())
-        # axes[1].set_xticklabels(ticklabels, rotation=45)
-        axes[1].legend(loc='upper left', frameon=False, ncol=3, fontsize='small')
-        axes[1].tick_params(axis='x', rotation=90)
-        axes[1].set_ylabel(f'{metric}{parameter}')
-        axes[1].set_xlabel('Time')
-        # axes[1].set_ylim(0, 0.3)
-        axes[1].set_title(f'Model Performance')    
         
-        plt.tight_layout()
+        colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(df.model_type_short.unique()))}
+        legend_handles=[ Line2D([0], [0], label=k, color=v) for k, v in colors.items() ]
+
+        model_groups = gdf.groupby('model_group_id')
+        
+        for mod_type, model_grp_df in model_groups:
+            model_grp_df = model_grp_df.sort_values('train_end_time')
+
+            # print(model_grp_df.head())
+            model_type = model_grp_df.model_type_short.iloc[0]
+            
+            model_grp_df.plot(x='train_end_time', y='metric_value', color=colors[model_type], ax=axes[1], alpha=0.4)
+            
+            # ticklabels = list(gdf.train_end_time.unique())
+            # axes[1].set_xticklabels(ticklabels, rotation=45)
+            axes[1].legend(handles=legend_handles, loc='upper left', frameon=False, ncol=1, fontsize='small', bbox_to_anchor=[1, 1])
+            axes[1].tick_params(axis='x', rotation=90)
+            axes[1].set_ylabel(f'{metric}{parameter}')
+            axes[1].set_xlabel('Time')
+            # axes[1].set_ylim(0, 0.3)
+            axes[1].set_title(f'Model Performance')    
+        
+        plt.tight_layout()        
+
 
     
 def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
