@@ -107,13 +107,14 @@ class ModelTrainer:
         logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
 
-    def _train(self, matrix_store, class_path, parameters):
+    def _train(self, matrix_store, class_path, parameters, random_seed):
         """Fit a model to a training set. Works on any modeling class that
         is available in this package's environment and implements .fit
 
         Args:
             class_path (string) A full classpath to the model class
             parameters (dict) hyperparameters to give to the model constructor
+            random_seed (int) The random seed to use on the model training
 
         Returns:
             tuple of (fitted model, list of column names without label)
@@ -121,7 +122,8 @@ class ModelTrainer:
         module_name, class_name = class_path.rsplit(".", 1)
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
-        instance = cls(**parameters)
+        instance = cls(random_state=random_seed, **parameters)
+        logging.debug("Before fitting the model, model instance {instance}")
 
         # using a threading backend because the default loky backend doesn't
         # allow for nested parallelization (e.g., multiprocessing at triage level)
@@ -287,7 +289,7 @@ class ModelTrainer:
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logger.debug(f"Training and storing model for matrix uuid {matrix_store.uuid}")
-        trained_model = self._train(matrix_store, class_path, parameters)
+        trained_model = self._train(matrix_store, class_path, parameters, random_seed)
 
         unique_parameters = self.unique_parameters(parameters)
 
