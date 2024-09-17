@@ -106,6 +106,7 @@ class ModelTrainer:
         }
         logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
+    
 
     def _train(self, matrix_store, class_path, parameters, random_seed):
         """Fit a model to a training set. Works on any modeling class that
@@ -286,6 +287,7 @@ class ModelTrainer:
         Returns: (int) a database id for the model
         """
         random.seed(random_seed)
+        logging.debug(f"***O.o**Random seed set {random.getstate()}***")
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logger.debug(f"Training and storing model for matrix uuid {matrix_store.uuid}")
@@ -456,10 +458,15 @@ class ModelTrainer:
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
         existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
+        logging.debug(f"Existing random seeds -> {existing_seeds}")
         if existing_seeds:
+            logging.debug(f"Existing random seeds found")
             return existing_seeds[0]
         else:
-            return generate_python_random_seed()
+            logging.debug(f"No existing random seeds found")
+            generated_random_seed = generate_python_random_seed()
+            logging.debug(f"Generated random seed: {generated_random_seed}")
+            return generated_random_seed
 
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
