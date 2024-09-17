@@ -456,10 +456,16 @@ class ModelTrainer:
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
         existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
+        logging.debug(f"Existing seeds found -> {existing_seeds}")
         if existing_seeds:
+            logging.debug(f"Existing random seeds found")
             return existing_seeds[0]
         else:
-            return generate_python_random_seed()
+            logging.debug(f"No existing random seeds found")
+            generated_random_seed = generate_python_random_seed()
+            logging.debug(f"Generated random seed: {generated_random_seed}")
+            return generated_random_seed
+        
 
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
