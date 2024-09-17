@@ -106,6 +106,7 @@ class ModelTrainer:
         }
         logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
+    
 
     def _train(self, matrix_store, class_path, parameters, random_seed):
         """Fit a model to a training set. Works on any modeling class that
@@ -286,6 +287,7 @@ class ModelTrainer:
         Returns: (int) a database id for the model
         """
         random.seed(random_seed)
+        logging.debug(f"***O.o**Random seed set {random.getstate()}***")
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logger.debug(f"Training and storing model for matrix uuid {matrix_store.uuid}")
