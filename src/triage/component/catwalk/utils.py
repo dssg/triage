@@ -268,24 +268,22 @@ def retrieve_existing_model_random_seeds(
         join {Model.__table__.fullname} models
         on (experiment_models.model_hash = models.model_hash)
         join {TriageRun.__table__.fullname} triage_runs
-        on (experiment_models.experiment_hash = triage_runs.run_hash)
-        where models.model_group_id = %s
-        and models.train_end_time = %s
-        and models.train_matrix_uuid = %s
-        and models.training_label_timespan = %s
-        and triage_runs.random_seed = %s
+        on (
+            experiment_models.experiment_hash = triage_runs.run_hash
+            --makes sure that the model has been created before, and not being created in this run
+            and models.built_in_triage_run = triage_runs.id
+        )
+        where models.model_group_id = {model_group_id}
+        and models.train_end_time = '{train_end_time}'
+        and models.train_matrix_uuid = '{train_matrix_uuid}'
+        and models.training_label_timespan = '{training_label_timespan}'
+        and triage_runs.random_seed = {experiment_random_seed}
         order by models.run_time DESC, random()
     """
+    logging.debug(f"Query that will retrieve random seeds for the model: {query}")
     return [
         row[0]
-        for row in db_engine.execute(
-            query,
-            model_group_id,
-            train_end_time,
-            train_matrix_uuid,
-            training_label_timespan,
-            experiment_random_seed,
-        )
+        for row in db_engine.execute(query)
     ]
 
 
