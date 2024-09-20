@@ -273,11 +273,11 @@ def retrieve_existing_model_random_seeds(
             --makes sure that the model has been created before, and not being created in this run
             and models.built_in_triage_run = triage_runs.id
         )   
-        where models.model_group_id = %s
-        and models.train_end_time = %s
-        and models.train_matrix_uuid = %s
-        and models.training_label_timespan = %s
-        and triage_runs.random_seed = %s
+        where models.model_group_id = {model_group_id}
+        and models.train_end_time = '{train_end_time}'
+        and models.train_matrix_uuid = '{train_matrix_uuid}'
+        and models.training_label_timespan = '{training_label_timespan}'
+        and triage_runs.random_seed = {experiment_random_seed}
         order by models.run_time DESC, random()
     """
     logging.debug(f"Query that will retrieve random seeds for the model: {query}")
