@@ -51,7 +51,8 @@ class SimpleThresholder:
     where rules and operators that combine them can be nested).
     """
 
-    def __init__(self, rules, logical_operator="or"):
+    def __init__(self, rules, logical_operator="or", random_state=42):
+        self.random_state = random_state
         self.rules = rules
         self.logical_operator = logical_operator
         self.feature_importances_ = None
