@@ -112,7 +112,7 @@ class PercentileRankOneFeature:
 
 
 class BaselineRankMultiFeature:
-    def __init__(self, rules):
+    def __init__(self, rules, random_state=42):
         if not isinstance(rules, list):
             rules = [rules]
 
