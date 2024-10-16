@@ -9,7 +9,7 @@ REQUIRED_KEYS = frozenset(["feature", "low_value_high_score"])
 
 
 class PercentileRankOneFeature:
-    def __init__(self, feature, low_value_high_score=None, descend=None):
+    def __init__(self, feature, low_value_high_score=None, descend=None, random_state=42):
         logger.warning("DEPRECATION WARNING: PercentileRankOneFeature is being replaced by "
             "BaselineRankMultiFeature. Note, however, that the scores returned by the new "
             "ranker cannot be interpreted as percentiles."
@@ -31,6 +31,7 @@ class PercentileRankOneFeature:
         if low_value_high_score is None:
             low_value_high_score = False
 
+        self.random_state = random_state
         self.feature = feature  # which feature to rank on
         self.low_value_high_score = (
             low_value_high_score
@@ -111,7 +112,7 @@ class PercentileRankOneFeature:
 
 
 class BaselineRankMultiFeature:
-    def __init__(self, rules):
+    def __init__(self, rules, random_state=42):
         if not isinstance(rules, list):
             rules = [rules]
 
