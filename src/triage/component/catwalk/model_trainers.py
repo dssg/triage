@@ -124,7 +124,7 @@ class ModelTrainer:
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls(random_state=random_seed, **parameters)
-        logging.debug(f"Before fitting the model, model instance {instance}")
+        logging.debug("Before fitting the model, model instance {instance}")
 
         # using a threading backend because the default loky backend doesn't
         # allow for nested parallelization (e.g., multiprocessing at triage level)
@@ -287,6 +287,7 @@ class ModelTrainer:
         Returns: (int) a database id for the model
         """
         random.seed(random_seed)
+        logging.debug(f"***O.o**Random seed set {random.getstate()}***")
         logging.debug(f"***O.o**Random seed set {random.getstate()}***")
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
@@ -462,7 +463,7 @@ class ModelTrainer:
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
         existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
-        logging.debug(f"Existing seeds found -> {existing_seeds}")
+        logging.debug(f"Existing random seeds -> {existing_seeds}")
         if existing_seeds:
             logging.debug(f"Existing random seeds found")
             return existing_seeds[0]
@@ -471,7 +472,6 @@ class ModelTrainer:
             generated_random_seed = generate_python_random_seed()
             logging.debug(f"Generated random seed: {generated_random_seed}")
             return generated_random_seed
-        
 
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):

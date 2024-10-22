@@ -16,7 +16,7 @@ from triage.component.postmodeling.error_analysis import generate_error_analysis
 
 class PostmodelingReport: 
 
-    def __init__(self, engine, model_groups, experiment_hashes, project_path=None, use_all_model_groups=False) -> None:
+    def __init__(self, engine, model_groups, experiment_hashes, project_path=None, train_end_times=None, use_all_model_groups=False) -> None:
         self.model_groups = model_groups
         self.experiment_hashes = experiment_hashes # TODO made experiment hashes into a list to plot models from different experiments for MVESC, there's probably a better way to generalize this
         self.engine = engine
@@ -50,6 +50,7 @@ class PostmodelingReport:
         model_groups = pd.read_sql(q, self.engine)
         self.model_groups = model_groups['model_group_id'].to_list()
 
+    # TODO: revise this to show the only the model_group_id, list of model ids, model type, and hyperparameters
     def display_model_groups(self):
         data_dict = []
         for mg in self.model_groups:
@@ -150,11 +151,26 @@ class PostmodelingReport:
         models = pd.read_sql(q, self.engine).to_dict(orient='records')
 
         d = dict()
-        for m in models:
-            if m['model_group_id'] in d:
-                d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
-            else:
-                d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
+        for experiment_hash in self.experiment_hashes:
+            q = f"""
+                select distinct on (model_group_id, train_end_time)
+                    model_id, 
+                    to_char(train_end_time::date, 'YYYY-MM-DD') as train_end_time,
+                    model_group_id
+                from triage_metadata.models 
+                    join triage_metadata.experiment_models using(model_hash)
+                where experiment_hash='{experiment_hash}'
+                and model_group_id in ('{model_groups}')        
+                """  
+
+            # TODO: modify to remove pandas
+            models = pd.read_sql(q, self.engine).to_dict(orient='records')
+
+            for m in models:
+                if m['model_group_id'] in d:
+                    d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
+                else:
+                    d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
 
         return d 
     
