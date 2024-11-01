@@ -3,7 +3,7 @@ pyarrow>=12.0.1
 pandas==2.2.3
 alembic==1.13.3
 SQLAlchemy==1.3.18 # pyup: ignore
-PyYAML==6.0
+PyYAML==6.0.2
 psycopg2-binary==2.9.3
 #python-dateutil==2.8.2 # pandas install this
 boto3==1.22.4
