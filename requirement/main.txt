@@ -17,7 +17,7 @@ signalled-timeout==1.0.0
 wrapt==1.17.0
 argcmdr==1.1.0
 sqlparse==0.5.2
-pebble==4.6.3
+pebble==5.1.0
 adjustText==0.7.3
 graphviz==0.20
 requests==2.31.0
