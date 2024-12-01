@@ -1,7 +1,7 @@
 polars==1.16.0
 pyarrow>=12.0.1
 pandas==2.2.3
-alembic==1.7.7
+alembic==1.14.0
 SQLAlchemy==1.3.18 # pyup: ignore
 PyYAML==6.0
 psycopg2-binary==2.9.3
