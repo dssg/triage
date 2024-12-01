@@ -16,7 +16,7 @@ Dickens==2.1.1
 signalled-timeout==1.0.0
 wrapt==1.17.0
 argcmdr==1.1.0
-sqlparse==0.4.4
+sqlparse==0.5.2
 pebble==4.6.3
 adjustText==0.7.3
 graphviz==0.20
