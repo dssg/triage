@@ -223,13 +223,17 @@ def summarize_model_groups(engine, experiment_hashes):
             
     mg_query_selected_exp = ''' 
         select 
-            distinct model_group_id, model_type, hyperparameters
+            model_group_id, model_type, hyperparameters, count(distinct model_id) as n_models_built, count(distinct train_end_time) as n_time_splits
         from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
         where experiment_hash in ('{}')
+        group by 1, 2, 3
         order by 2
     '''
 
     model_groups = pd.read_sql(mg_query_selected_exp.format("','".join(experiment_hashes)), engine)
+    
+    #TODO - highlight model groups that don't have the "correct" number of models built. 
+    # Some model objects can be missing, and some train_end_times can have multiple models
     
     return model_groups
 
@@ -591,7 +595,7 @@ def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, pa
     return best_models
     
 
-def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups=None, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2):
+def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups=None, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2, save_target=None):
     ''' Plot the performanc metric against the bias metric for all or selected models.
         Args:
             engine: DB connection
@@ -734,6 +738,10 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
             ax_cntr += 1
         axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
         sns.despine()
+        
+    # plt.tight_layout()
+    if save_target is not None: 
+        plt.savefig(save_target, dpi=300, bbox_inces='tight')
     
     # Plotting the Group sizes and baserates
     fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharex=True, sharey=True, dpi=100)
@@ -788,6 +796,8 @@ def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, 
             ax_cntr += 1
     axes[-1].legend(bbox_to_anchor=(1.1,1.1), loc='upper left', frameon=False)
     plt.tight_layout()
+    
+    
     
     
     # msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
