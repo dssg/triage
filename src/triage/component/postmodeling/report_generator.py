@@ -14,7 +14,7 @@ from triage.component.postmodeling.model_analyzer import ModelAnalyzer
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
 
 
-class PostmodelingReport: 
+class PostmodelingAnalyzer: 
 
     def __init__(self, engine, model_groups, experiment_hashes, project_path=None, train_end_times=None, use_all_model_groups=False) -> None:
         self.model_groups = model_groups
@@ -206,6 +206,8 @@ class PostmodelingReport:
             model_scores,  
         """
         fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
+        
+        print(len(axes), len(axes[0]))
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):
@@ -220,7 +222,6 @@ class PostmodelingReport:
                         ax = axes[i]
                 else:
                     ax = axes[i, j]
-
                 ax = plot_func(ax=ax, **kw)
 
                 if j==0:
