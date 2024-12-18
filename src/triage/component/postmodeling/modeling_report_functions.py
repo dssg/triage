@@ -365,6 +365,13 @@ def plot_performance_all_models(engine, experiment_hashes, metric, parameter, **
     df = pd.read_sql(q, engine)
     df['train_end_time'] = pd.to_datetime(df.train_end_time, format='%Y-%m-%d')
     
+    models_per_train_end_time = df.groupby(['model_group_id', 'train_end_time']).count()['model_id']
+    
+    if models_per_train_end_time[models_per_train_end_time > 1].empty:
+        pass 
+    else: 
+        print(f'model groups with morel than one modelid per train end time: \n{models_per_train_end_time[models_per_train_end_time > 1]}' )
+    
     # using the audition plotting base here
     plot_cats(
         frame=df,
