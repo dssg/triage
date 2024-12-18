@@ -873,7 +873,7 @@ def feature_missingness_stats(engine):
 
     feature_tables = pd.read_sql(q, engine)['table_name'].tolist()
     
-    logging.info(f'{len(feature_tables)} Tables')
+    logging.info(f'Printing only features with missing values')
     
     column_names = dict()
     for table in feature_tables:
@@ -921,4 +921,4 @@ def feature_missingness_stats(engine):
 
     # df.style.applymap(lambda x: 'background-color : pink' if x>80 else '')
     
-    return df 
+    return df[df['mean (%)'] > 0] 
