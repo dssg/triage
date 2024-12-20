@@ -863,7 +863,7 @@ class ExperimentSummary:
         performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
         best_performance = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max()
         best_model_group = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
-        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
+        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[1]
             
         print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
         
