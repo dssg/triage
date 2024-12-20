@@ -381,7 +381,7 @@ class ExperimentSummary:
         
         return df[df['mean (%)'] > 0]
     
-    def model_performance(self, metric, parameter):
+    def model_performance(self, metric, parameter, generate_plot=True):
         """ Generate an Audition type plot to display predictive performance over time for all model groups
         
         Args:
@@ -426,39 +426,40 @@ class ExperimentSummary:
         else: 
             print(f'model groups with morel than one model id per train end time: \n{models_per_train_end_time[models_per_train_end_time > 1]}' )
         
-        # using the audition plotting base here
-        plot_cats(
-            frame=df,
-            x_col='train_end_time',
-            y_col='metric_value',
-            cat_col='model_type',
-            grp_col='model_group_id',
-            highlight_grp=None,
-            title=f'Model Performance Over Time - {metric}{parameter}',
-            x_label='Time',
-            y_label=f'Value - {metric}{parameter}',
-            cmap_name="tab10",
-            figsize=[12, 4],
-            dpi=150,
-            x_ticks=list(df.train_end_time.unique()),
-            y_ticks=None,
-            x_lim=None,
-            y_lim=(0, 1.1),
-            legend_loc=None,
-            legend_fontsize=12,
-            label_fontsize=12,
-            title_fontsize=12,
-            label_fcn=None,
-            path_to_save=None,
-            alpha=0.4,
-            colordict=None,
-            styledict=None
-        )
-        sns.despine()     
+        if generate_plot:
+            # using the audition plotting base here
+            plot_cats(
+                frame=df,
+                x_col='train_end_time',
+                y_col='metric_value',
+                cat_col='model_type',
+                grp_col='model_group_id',
+                highlight_grp=None,
+                title=f'Model Performance Over Time - {metric}{parameter}',
+                x_label='Time',
+                y_label=f'Value - {metric}{parameter}',
+                cmap_name="tab10",
+                figsize=[12, 4],
+                dpi=150,
+                x_ticks=list(df.train_end_time.unique()),
+                y_ticks=None,
+                x_lim=None,
+                y_lim=(0, 1.1),
+                legend_loc=None,
+                legend_fontsize=12,
+                label_fontsize=12,
+                title_fontsize=12,
+                label_fcn=None,
+                path_to_save=None,
+                alpha=0.4,
+                colordict=None,
+                styledict=None
+            )
+            sns.despine()     
         
         return df
     
-    def model_performance_subsets(self, parameter, metric):
+    def model_performance_subsets(self, parameter, metric, generate_plot=True):
         q = f'''
             select 
                 case when e.subset_hash is null then 'full_cohort' 
@@ -495,91 +496,94 @@ class ExperimentSummary:
         """
 
         labels_table = pd.read_sql(get_labels_table_query, self.engine).labels_table_name.iloc[0]
-        
-        grpobj = df.groupby('subset')
 
-        for grp, gdf in grpobj:
-            fig, axes = plt.subplots(1, 2, figsize=(10,4), dpi=100)
-            fig.suptitle(f'Subset Name: {grp}')
-            
-            # Plotting the subsetsize and the baserate
-            subset_table_name = 'subset_' + gdf['subset'].iloc[0] + '_' + gdf['subset_hash'].iloc[0]
-            q = f'''
-                select 
-                as_of_date::date, count(entity_id) as subset_size, avg(label)*100 as baserate
-                from {labels_table} inner join {subset_table_name} using(entity_id, as_of_date)
-                group by 1
-                order by 1
-            '''
-            subset_size = pd.read_sql(q, self.engine)
-            
-            # Subset sizes over time
-            color='tab:blue'
-            sns.barplot(
-                data=subset_size,
-                x='as_of_date',
-                y='subset_size',
-                ax=axes[0],
-                alpha=0.5,
-                color=color
-            )
-            axes[0].tick_params(axis='x', rotation=90)
-            axes[0].set_title(f'Subset Size & Baserate')
-            axes[0].set_xlabel('Time')
-            axes[0].set_ylabel('Subset size', color=color)
-            axes[0].tick_params(axis='y', labelcolor=color)
-            axes[0].axhline(y=subset_size.subset_size.mean(), color=color, alpha=0.4, linestyle='--')
-            
-            
-            ax2 = axes[0].twinx()
-            color='tab:red'
-            
-            sns.lineplot(
-                data=subset_size,
-                x=axes[0].get_xticks(),
-                y='baserate',
-                ax=ax2,
-                alpha=0.6,
-                marker='o',
-                markersize=5,
-                color=color
-            )
-            ax2.set_ylabel('Baserate (%)', color=color)
-            ax2.tick_params(axis='y', labelcolor=color)
-            ax2.axhline(y=subset_size.baserate.mean(), color=color, alpha=0.4, linestyle='--')
-            
-            colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(df.model_type_short.unique()))}
-            legend_handles=[ Line2D([0], [0], label=k, color=v) for k, v in colors.items() ]
+        if generate_plot:        
+            grpobj = df.groupby('subset')
 
-            model_groups = gdf.groupby('model_group_id')
-            
-            for mod_type, model_grp_df in model_groups:
-                model_grp_df = model_grp_df.sort_values('train_end_time')
-
-                # print(model_grp_df.head())
-                model_type = model_grp_df.model_type_short.iloc[0]
+            for grp, gdf in grpobj:
+                fig, axes = plt.subplots(1, 2, figsize=(10,4), dpi=100)
+                fig.suptitle(f'Subset Name: {grp}')
                 
-                model_grp_df.plot(x='train_end_time', y='metric_value', color=colors[model_type], ax=axes[1], alpha=0.4)
+                # Plotting the subsetsize and the baserate
+                subset_table_name = 'subset_' + gdf['subset'].iloc[0] + '_' + gdf['subset_hash'].iloc[0]
+                q = f'''
+                    select 
+                    as_of_date::date, count(entity_id) as subset_size, avg(label)*100 as baserate
+                    from {labels_table} inner join {subset_table_name} using(entity_id, as_of_date)
+                    group by 1
+                    order by 1
+                '''
+                subset_size = pd.read_sql(q, self.engine)
                 
-                # ticklabels = list(gdf.train_end_time.unique())
-                # axes[1].set_xticklabels(ticklabels, rotation=45)
-                axes[1].legend(handles=legend_handles, loc='upper left', frameon=False, ncol=1, fontsize='small', bbox_to_anchor=[1, 1])
-                axes[1].tick_params(axis='x', rotation=90)
-                axes[1].set_ylabel(f'{metric}{parameter}')
-                axes[1].set_xlabel('Time')
-                # axes[1].set_ylim(0, 0.3)
-                axes[1].set_title(f'Model Performance')    
+                # Subset sizes over time
+                color='tab:blue'
+                sns.barplot(
+                    data=subset_size,
+                    x='as_of_date',
+                    y='subset_size',
+                    ax=axes[0],
+                    alpha=0.5,
+                    color=color
+                )
+                axes[0].tick_params(axis='x', rotation=90)
+                axes[0].set_title(f'Subset Size & Baserate')
+                axes[0].set_xlabel('Time')
+                axes[0].set_ylabel('Subset size', color=color)
+                axes[0].tick_params(axis='y', labelcolor=color)
+                axes[0].axhline(y=subset_size.subset_size.mean(), color=color, alpha=0.4, linestyle='--')
+                
+                
+                ax2 = axes[0].twinx()
+                color='tab:red'
+                
+                sns.lineplot(
+                    data=subset_size,
+                    x=axes[0].get_xticks(),
+                    y='baserate',
+                    ax=ax2,
+                    alpha=0.6,
+                    marker='o',
+                    markersize=5,
+                    color=color
+                )
+                ax2.set_ylabel('Baserate (%)', color=color)
+                ax2.tick_params(axis='y', labelcolor=color)
+                ax2.axhline(y=subset_size.baserate.mean(), color=color, alpha=0.4, linestyle='--')
+                
+                colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(df.model_type_short.unique()))}
+                legend_handles=[ Line2D([0], [0], label=k, color=v) for k, v in colors.items() ]
+
+                model_groups = gdf.groupby('model_group_id')
+                
+                for mod_type, model_grp_df in model_groups:
+                    model_grp_df = model_grp_df.sort_values('train_end_time')
+
+                    # print(model_grp_df.head())
+                    model_type = model_grp_df.model_type_short.iloc[0]
+                    
+                    model_grp_df.plot(x='train_end_time', y='metric_value', color=colors[model_type], ax=axes[1], alpha=0.4)
+                    
+                    # ticklabels = list(gdf.train_end_time.unique())
+                    # axes[1].set_xticklabels(ticklabels, rotation=45)
+                    axes[1].legend(handles=legend_handles, loc='upper left', frameon=False, ncol=1, fontsize='small', bbox_to_anchor=[1, 1])
+                    axes[1].tick_params(axis='x', rotation=90)
+                    axes[1].set_ylabel(f'{metric}{parameter}')
+                    axes[1].set_xlabel('Time')
+                    # axes[1].set_ylim(0, 0.3)
+                    axes[1].set_title(f'Model Performance')    
+                
+                plt.tight_layout()
             
-            plt.tight_layout()
+        return df
                        
-    def efficiency_and_equity(self, efficiency_metric, equity_metric, parameter, groups=None, model_group_ids=None, bias_metric_tolerance=0.2):
+    def efficiency_and_equity(self, efficiency_metric, equity_metric, parameter, groups=None, model_group_ids=None, bias_metric_tolerance=0.2, generate_plot=True):
         ''' Plot the performanc metric against the bias metric for all or selected models.
             Args:
                 
         '''
         
         if model_group_ids is None: 
-            logging.warning('No model groups specified. Usign all model group ids')
+            # logging.warning('No model groups specified. Usign all model group ids')
             model_group_ids = summarize_model_groups(self.engine, self.experiment_hashes).model_group_id.tolist()
             
             if not model_group_ids:
@@ -589,7 +593,7 @@ class ExperimentSummary:
         # If no groups are specified, we show results for all groups    
         if groups is None:
             
-            logging.info('No groups are specified. Showing results for all attributes and their values')
+            # logging.info('No groups are specified. Showing results for all attributes and their values')
             groups = dict()
             
             q = f'''
@@ -671,103 +675,105 @@ class ExperimentSummary:
         metrics['model_label'] = metrics.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
         metrics['model_type_short'] = metrics.apply(lambda x: x['model_type'].split('.')[-1], axis=1)
         
-            # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
-        # Metric means
-        mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).mean()[[f'{metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
+        if generate_plot: 
+            # Metric means
+            mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).mean()[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
+            
+            # Metric standard errors
+            sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).sem()[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
+            labels = sorted(mean.model_label.unique())
+            
+            # n_attrs = sum([len(x) for x in groups.values()])
+            n_attrs = len(attribute_values)
+            ax_cntr = 0
+            # bias_tolerance = 0.2
+            fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharey=True, sharex=True, dpi=100)
+            # colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
+            colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(metrics.model_type_short.unique()))}
+            legend_handles=[ Line2D([0], [0], label=k, marker='o', color=v) for k, v in colors.items() ]
+
+            
+            for group, attrs in groups.items():
+                for attr in attrs:
+                    msk = mean['attribute_value'] == attr
+                    x = mean[msk][f'{efficiency_metric}{parameter}'].tolist()
+                    y = mean[msk][f'{equity_metric}'].tolist()
+
+                    # mean[msk]['model_type'].tolist()
+
+                    msk = sem['attribute_value'] == attr
+                    yerr = sem[msk][f'{equity_metric}'].tolist()
+                    xerr = sem[msk][f'{efficiency_metric}{parameter}'].tolist()
+
+                    # print(x)
+                    
+                    for i in range(len(x)):
+                        axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[mean[msk]['model_type_short'].iloc[i]], alpha=0.3)
+                        axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
+                        # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
+                        axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
+                        axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
+                        axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+                        axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+                    ax_cntr += 1
+                axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
+                sns.despine()
+            
+            # Plotting the Group sizes and baserates
+            fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharex=True, sharey=True, dpi=100)
+            ax_cntr=0
+            for group, attrs in groups.items():
+                for attr in attrs:
+                    msk = metrics['attribute_value'] == attr
+
+                    grouped = metrics[msk].groupby('train_end_time').mean()[['baserate', 'group_size', 'total_entities']].reset_index()
+                    color='tab:blue'
+                    sns.barplot(
+                        data=grouped,
+                        x='train_end_time',
+                        y='group_size',
+                        ax=axes[ax_cntr],
+                        alpha=0.8,
+                        color=color,
+                        label='Group Size'
+                    )
+
+                    sns.barplot(
+                        data=grouped,
+                        x='train_end_time',
+                        y='total_entities',
+                        ax=axes[ax_cntr],
+                        alpha=0.2,
+                        color='gray',
+                        label='Cohort Size'
+                    )
+
+                    axes[ax_cntr].tick_params(axis='x', rotation=90)
+                    axes[ax_cntr].set(xlabel='Time', title=f'{group} | {attr}')
+                    axes[ax_cntr].set_ylabel('Entities', color=color)
+                    axes[ax_cntr].tick_params(axis='y', labelcolor=color)
+
+                    ax2 = axes[ax_cntr].twinx()
+                    color='tab:red'
+
+                    sns.lineplot(
+                        data=grouped,
+                        x=axes[ax_cntr].get_xticks(),
+                        y='baserate',
+                        ax=ax2,
+                        alpha=0.6,
+                        marker='o',
+                        markersize=5,
+                        color=color,
+                        # label='Baserate'
+                    )
+                    ax2.set_ylabel('Baserate (%)', color=color)
+                    ax2.tick_params(axis='y', labelcolor=color)
+                    ax_cntr += 1
+            axes[-1].legend(bbox_to_anchor=(1.1,1.1), loc='upper left', frameon=False)
+            plt.tight_layout()
         
-        # Metric standard errors
-        sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).sem()[[f'{metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
-        labels = sorted(mean.model_label.unique())
-        
-        # n_attrs = sum([len(x) for x in groups.values()])
-        n_attrs = len(attribute_values)
-        ax_cntr = 0
-        # bias_tolerance = 0.2
-        fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharey=True, sharex=True, dpi=100)
-        # colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
-        colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(metrics.model_type_short.unique()))}
-        legend_handles=[ Line2D([0], [0], label=k, marker='o', color=v) for k, v in colors.items() ]
-
-        
-        for group, attrs in groups.items():
-            for attr in attrs:
-                msk = mean['attribute_value'] == attr
-                x = mean[msk][f'{efficiency_metric}{parameter}'].tolist()
-                y = mean[msk][f'{equity_metric}'].tolist()
-
-                # mean[msk]['model_type'].tolist()
-
-                msk = sem['attribute_value'] == attr
-                yerr = sem[msk][f'{equity_metric}'].tolist()
-                xerr = sem[msk][f'{efficiency_metric}{parameter}'].tolist()
-
-                # print(x)
-                
-                for i in range(len(x)):
-                    axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[mean[msk]['model_type_short'].iloc[i]], alpha=0.3)
-                    axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
-                    # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
-                    axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
-                    axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
-                    axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-                    axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-                ax_cntr += 1
-            axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
-            sns.despine()
-        
-        # Plotting the Group sizes and baserates
-        fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharex=True, sharey=True, dpi=100)
-        ax_cntr=0
-        for group, attrs in groups.items():
-            for attr in attrs:
-                msk = metrics['attribute_value'] == attr
-
-                grouped = metrics[msk].groupby('train_end_time').mean()[['baserate', 'group_size', 'total_entities']].reset_index()
-                color='tab:blue'
-                sns.barplot(
-                    data=grouped,
-                    x='train_end_time',
-                    y='group_size',
-                    ax=axes[ax_cntr],
-                    alpha=0.8,
-                    color=color,
-                    label='Group Size'
-                )
-
-                sns.barplot(
-                    data=grouped,
-                    x='train_end_time',
-                    y='total_entities',
-                    ax=axes[ax_cntr],
-                    alpha=0.2,
-                    color='gray',
-                    label='Cohort Size'
-                )
-
-                axes[ax_cntr].tick_params(axis='x', rotation=90)
-                axes[ax_cntr].set(xlabel='Time', title=f'{group} | {attr}')
-                axes[ax_cntr].set_ylabel('Entities', color=color)
-                axes[ax_cntr].tick_params(axis='y', labelcolor=color)
-
-                ax2 = axes[ax_cntr].twinx()
-                color='tab:red'
-
-                sns.lineplot(
-                    data=grouped,
-                    x=axes[ax_cntr].get_xticks(),
-                    y='baserate',
-                    ax=ax2,
-                    alpha=0.6,
-                    marker='o',
-                    markersize=5,
-                    color=color,
-                    # label='Baserate'
-                )
-                ax2.set_ylabel('Baserate (%)', color=color)
-                ax2.tick_params(axis='y', labelcolor=color)
-                ax_cntr += 1
-        axes[-1].legend(bbox_to_anchor=(1.1,1.1), loc='upper left', frameon=False)
-        plt.tight_layout()
+        return metrics
       
     def experiment_stats(self):
         q = f'''
@@ -787,7 +793,7 @@ class ExperimentSummary:
         
         return pd.read_sql(q, self.engine).to_dict(orient='records')[0]
           
-    def generate_summary(self):
+    def generate_summary(self, metric=None, parameter=None, equity_metric=None):
         '''
         Summarize:
          - Number of time splits
@@ -811,7 +817,7 @@ class ExperimentSummary:
             
         
         print(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
-        
+    
         cohorts = self.cohorts(generate_plots=False)
         print(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
     
@@ -819,14 +825,52 @@ class ExperimentSummary:
         
         print(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
         
+        ## Models
         num_models = len(self.models())
         if num_models < stats['models_needed']:
-            print(f"However, the experiment only built {num_models} models. Check the list below to identify the {stats['models_needed'] - num_models} missing models")
+            print(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
             
         else:
             print(f"You successfully built all the {num_models} models")
+        
+        # Model Performance
+        performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
+        best_performance = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max()
+        best_model_group = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
+        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
             
+        print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
+        
+        ## Subsets
+        subset_performance = self.model_performance_subsets(metric=metric, parameter=parameter, generate_plot=False)
+        grpobj = subset_performance.groupby('subset')
+        res = []
+        for subset, gdf in grpobj:
+            d = dict()
+            d['subset'] = subset
+            d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max(),3)
+            d['best_mod'] = gdf.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()
+
+            res.append(d)
             
+        if len(res) > 0:
+            print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+            for d in res:
+                print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+            
+        ## Bias
+        equity_metrics = self.efficiency_and_equity(
+            efficiency_metric=metric,
+            equity_metric=equity_metric,
+            parameter=parameter
+        )
+        
+        grpobj = equity_metrics[(equity_metrics.baserate > 0) & (equity_metrics.model_group_id == best_model_group)].groupby('attribute_name')
+        for attr, gdf in grpobj:
+            print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
+            d = gdf.groupby('attribute_value').mean()[equity_metric]
+            print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
+        
         
     
 def visualize_validation_splits(engine, experiment_hash):
