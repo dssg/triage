@@ -73,13 +73,52 @@ def get_most_recent_experiment_hash(engine):
     return experiment_hash
 
 
+def load_config(engine, experiment_hash):
+    "return the experiment config"
+    
+    q = f'''
+        select 
+        config 
+        from triage_metadata.experiments
+        where experiment_hash = '{experiment_hash}'
+    '''
+    
+    return pd.read_sql(q, engine).config.at[0]
+    
+
+def load_report_parameters_from_config(engine, experiment_hash):
+    config = load_config(engine, experiment_hash=experiment_hash)
+    
+    d = dict()
+    d['performance_metric'] = config['scoring'].get('priority_metric')
+    d['threshold'] = config['scoring'].get('priority_parameter')
+    
+    bias_audit = config.get('bias_audit')
+    d['bias_metric'] = None
+    d['priority_groups'] = None 
+    
+    if bias_audit is not None:
+        d['bias_metric'] = bias_audit.get('priority_metric')
+        d['priority_groups'] = bias_audit.get('priority_groups')
+    
+    return d 
+
 
 class ExperimentSummary:
     
-    def __init__(self, engine, experiment_hashes):
+    def __init__(self, engine, experiment_hashes=None, priority_metric=None, priority_parameter=None, priority_bias_metric=None):
         self.engine = engine
-        self.experiment_hashes = experiment_hashes
-    
+        
+        if experiment_hashes is None:
+            self.experiment_hashes = [get_most_recent_experiment_hash]
+        else:
+            self.experiment_hashes = experiment_hashes
+        
+        # TODO - Load these from the experriment config
+        self.priority_metric = priority_metric
+        self.priority_parameter = priority_parameter
+        self.priority_bias_metric = priority_bias_metric
+            
     
     def timesplits(self):
         """Generate an interactive plot of the time splits used for cross validation
@@ -105,20 +144,7 @@ class ExperimentSummary:
         visualize_chops_plotly(
             chops
         )
-        
-    @property
-    def config(self):
-        "return the experiment config"
-    
-        q = f'''
-            select 
-            config 
-            from triage_metadata.experiments
-            where experiment_hash = '{self.experiment_hash[0]}'
-        '''
-        
-        return pd.read_sql(q, self.engine).config.at[0]
-    
+           
     def cohorts(self, generate_plots=True):
         """Generate a summary of cohorts (size, baserate)
 
@@ -899,35 +925,7 @@ def visualize_validation_splits(engine, experiment_hash):
     )
     
 
-def load_config(engine, experiment_hash):
-    "return the experiment config"
-    
-    q = f'''
-        select 
-        config 
-        from triage_metadata.experiments
-        where experiment_hash = '{experiment_hash}'
-    '''
-    
-    return pd.read_sql(q, engine).config.at[0]
-    
 
-def load_report_parameters_from_config(engine, experiment_hash):
-    config = load_config(engine, experiment_hash=experiment_hash)
-    
-    d = dict()
-    d['performance_metric'] = config['scoring'].get('priority_metric')
-    d['threshold'] = config['scoring'].get('priority_parameter')
-    
-    bias_audit = config.get('bias_audit')
-    d['bias_metric'] = None
-    d['priority_groups'] = None 
-    
-    if bias_audit is not None:
-        d['bias_metric'] = bias_audit.get('priority_metric')
-        d['priority_groups'] = bias_audit.get('priority_groups')
-    
-    return d 
   
     
 def summarize_cohorts(engine, experiment_hash, generate_plots=True):
